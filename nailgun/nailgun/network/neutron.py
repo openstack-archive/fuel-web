@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.network.manager import NetworkManager
@@ -62,4 +63,38 @@ class NeutronManager(NetworkManager):
 
 
 class NeutronManager70(NeutronManager):
-    pass
+
+    @classmethod
+    def roles_to_ifaces(cls):
+        return {consts.NETWORKS.fuelweb_admin: 'br-fw-admin',
+                consts.NETWORKS.storage: 'br-storage',
+                consts.NETWORKS.management: 'br-mgmt',
+                consts.NETWORKS.public: 'br-ex'}
+
+    @classmethod
+    def roles_to_ips(cls, node):
+        mapping = {}
+        for net in cls.roles_to_ifaces():
+            netgroup = cls.get_node_network_by_netname(node, net)
+            if netgroup.get('ip'):
+                mapping[net] = netgroup['ip'].split('/')[0]
+        return mapping
+
+    @classmethod
+    def map_roles(cls, node, to_interfaces=False):
+        if to_interfaces:
+            mapping = cls.roles_to_ifaces()
+        else:
+            mapping = cls.roles_to_ips(node)
+
+        roles = {}
+        for role in objects.Cluster.get_network_roles(node.cluster):
+            roles[role['id']] = \
+                mapping.get(role['default_mapping'], mapping[consts.NETWORKS.management])
+
+        if objects.Node.should_have_public(node):
+            roles['ex'] = mapping[consts.NETWORKS.public]  # not needed
+            roles['public/vip'] = mapping[consts.NETWORKS.public]
+            roles['ceph/radosgw'] = mapping[consts.NETWORKS.public]
+
+        return roles

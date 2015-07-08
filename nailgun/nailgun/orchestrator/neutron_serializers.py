@@ -814,44 +814,12 @@ class NeutronNetworkDeploymentSerializer70(
         attrs = super(NeutronNetworkDeploymentSerializer70,
                       cls).generate_network_scheme(node)
 
-        attrs['roles']['neutron/api'] = 'br-mgmt'
-        attrs['roles']['neutron/mesh'] = 'br-mgmt'
-        attrs['roles']['neutron/private'] = 'br-prv'
+        nm = Cluster.get_network_manager(node.cluster)
+        mapping = nm.map_roles(node, to_interfaces=True)
 
-        attrs['roles']['mgmt/corosync'] = 'br-mgmt'
-        attrs['roles']['mgmt/database'] = 'br-mgmt'
-        attrs['roles']['mgmt/messaging'] = 'br-mgmt'
-        attrs['roles']['mgmt/api'] = 'br-mgmt'
-        attrs['roles']['mgmt/memcache'] = 'br-mgmt'
-        attrs['roles']['mgmt/vip'] = 'br-mgmt'
-
-        attrs['roles']['nova/api'] = 'br-mgmt'
-        attrs['roles']['murano/api'] = 'br-mgmt'
-        attrs['roles']['sahara/api'] = 'br-mgmt'
-        attrs['roles']['ceilometer/api'] = 'br-mgmt'
-        attrs['roles']['heat/api'] = 'br-mgmt'
-        attrs['roles']['keystone/api'] = 'br-mgmt'
-        attrs['roles']['horizon'] = 'br-mgmt'
-        attrs['roles']['glance/api'] = 'br-mgmt'
-
-        if Node.should_have_public(node):
-            attrs['roles']['neutron/floating'] = 'br-floating'
-            attrs['roles']['public/vip'] = 'br-ex'
-            attrs['roles']['ceph/radosgw'] = 'br-ex'
-
-        attrs['roles']['admin/pxe'] = 'br-fw-admin'
-
-        attrs['roles']['ceph/replication'] = 'br-storage'
-        attrs['roles']['ceph/public'] = 'br-mgmt'
-
-        attrs['roles']['swift/replication'] = 'br-storage'
-        attrs['roles']['swift/api'] = 'br-mgmt'
-
-        attrs['roles']['cinder/iscsi'] = 'br-storage'
-        attrs['roles']['cinder/api'] = 'br-mgmt'
-
-        attrs['roles']['mongo/db'] = 'br-mgmt'
-
+        old_mapping_6_1 = attrs['roles']
+        mapping.update(old_mapping_6_1)
+        attrs['roles'] = mapping
         return attrs
 
     @classmethod
@@ -913,6 +881,7 @@ class NeutronNetworkDeploymentSerializer70(
                 'cinder/iscsi': ip_by_net['storage'],
 
             }
+
             if Node.should_have_public(n):
                 netw_roles.update({
                     'ex': ip_by_net['public'],

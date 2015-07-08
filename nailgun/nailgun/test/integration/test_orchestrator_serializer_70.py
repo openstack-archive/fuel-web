@@ -126,7 +126,9 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 self.assertDictEqual(offload_blk,
                                      changed_offloading_modes[iface_name])
 
-    def test_network_metadata(self):
+    @mock.patch.object(models.Release, 'environment_version',
+                       new_callable=mock.PropertyMock(return_value='7.0'))
+    def test_network_metadata(self, *args):
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])
         ip_by_net = {
             'fuelweb_admin': None,

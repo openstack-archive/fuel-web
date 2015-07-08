@@ -92,7 +92,9 @@ default_messages = {
     # Plugin errors
     "PackageVersionIsNotCompatible": "Package version is not compatible",
     "PluginsTasksOverlapping":
-        "There is task with same id supplied by another plugin",
+    "There is task with same id supplied by another plugin",
+    "PluginVolumesOverlapping":
+    "There is volume with same id supplied by another plugin or release",
 
     # unknown
     "UnknownError": "Unknown error"

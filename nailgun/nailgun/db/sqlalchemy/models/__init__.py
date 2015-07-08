@@ -43,6 +43,7 @@ from nailgun.db.sqlalchemy.models.network_config import NeutronConfig
 from nailgun.db.sqlalchemy.models.network_config import NovaNetworkConfig
 
 from nailgun.db.sqlalchemy.models.notification import Notification
+from nailgun.db.sqlalchemy.models.dashboard_entry import DashboardEntry
 
 from nailgun.db.sqlalchemy.models.task import Task
 

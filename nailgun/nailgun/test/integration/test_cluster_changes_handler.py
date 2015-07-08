@@ -251,7 +251,7 @@ class TestHandlers(BaseIntegrationTest):
                 '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
             pnd = {
                 'uid': n.uid,
-                'slave_name': objects.Node.make_slave_name(n),
+                'slave_name': objects.Node.get_slave_name(n),
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
@@ -261,7 +261,7 @@ class TestHandlers(BaseIntegrationTest):
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
-                'name': objects.Node.make_slave_name(n),
+                'name': objects.Node.get_slave_name(n),
                 'hostname': n.fqdn,
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
@@ -702,7 +702,7 @@ class TestHandlers(BaseIntegrationTest):
 
             pnd = {
                 'uid': n.uid,
-                'slave_name': objects.Node.make_slave_name(n),
+                'slave_name': objects.Node.get_slave_name(n),
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
@@ -712,7 +712,7 @@ class TestHandlers(BaseIntegrationTest):
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
-                'name': objects.Node.make_slave_name(n),
+                'name': objects.Node.get_slave_name(n),
                 'hostname': n.fqdn,
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
@@ -1168,7 +1168,7 @@ class TestHandlers(BaseIntegrationTest):
 
             pnd = {
                 'uid': n.uid,
-                'slave_name': objects.Node.make_slave_name(n),
+                'slave_name': objects.Node.get_slave_name(n),
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
@@ -1178,7 +1178,7 @@ class TestHandlers(BaseIntegrationTest):
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
-                'name': objects.Node.make_slave_name(n),
+                'name': objects.Node.get_slave_name(n),
                 'hostname': n.fqdn,
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
@@ -1342,7 +1342,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(n_rpc_provision), 1)
         self.assertEqual(
             n_rpc_provision[0]['name'],
-            objects.Node.make_slave_name(self.env.nodes[0])
+            objects.Node.get_slave_name(self.env.nodes[0])
         )
 
         # deploy method call [1][0][1][1]

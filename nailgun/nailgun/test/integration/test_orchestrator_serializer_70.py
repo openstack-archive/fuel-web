@@ -138,7 +138,7 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                     netgroup = nm.get_node_network_by_netname(node, net)
                     if netgroup.get('ip'):
                         ip_by_net[net] = netgroup['ip'].split('/')[0]
-                self.assertEqual(objects.Node.make_slave_name(node), k)
+                self.assertEqual(objects.Node.get_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
                 self.assertEqual(v['fqdn'], node.fqdn)
                 self.assertEqual(v['name'], k)
@@ -261,7 +261,7 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                     ['uid', 'fqdn', 'name', 'user_node_name',
                      'swift_zone', 'node_roles', 'network_roles']
                 )
-                self.assertEqual(objects.Node.make_slave_name(node), k)
+                self.assertEqual(objects.Node.get_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
                 self.assertEqual(v['fqdn'], node.fqdn)
                 self.assertEqual(v['name'], k)

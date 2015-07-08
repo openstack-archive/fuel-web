@@ -194,7 +194,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         return {
             'uid': node.uid,
             'fqdn': node.fqdn,
-            'name': objects.Node.make_slave_name(node),
+            'name': objects.Node.get_slave_name(node),
             'role': role}
 
     # TODO(apopovych): we have more generical method 'filter_by_roles'

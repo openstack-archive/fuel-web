@@ -484,6 +484,12 @@ class Cluster(NailgunObject):
                     u"'{0}' to environment".format(node.id)
                 )
 
+        # we should reset hostname to default value to guarantee
+        # hostnames uniqueness for nodes outside clusters
+        from nailgun.objects import Node
+        for node in nodes_to_remove:
+            node.hostname = Node.default_slave_name(node)
+
         map(instance.nodes.remove, nodes_to_remove)
         map(instance.nodes.append, nodes_to_add)
 
@@ -937,6 +943,11 @@ class Cluster(NailgunObject):
         template = instance.network_config.configuration_template
         for node in nodes:
             Node.apply_network_template(node, template)
+
+    @classmethod
+    def get_nodes_ids(cls, instance):
+        return [x[0] for x in db().query(models.Node.id).filter(
+            models.Node.cluster_id == instance.id).all()]
 
 
 class ClusterCollection(NailgunCollection):

@@ -16,9 +16,6 @@
 
 import os
 
-from copy import deepcopy
-
-from nailgun.db import db
 from nailgun.extensions import BaseExtension
 
 from .handlers.disks import NodeDefaultsDisksHandler
@@ -44,36 +41,12 @@ class VolumeManagerExtension(BaseExtension):
         {'uri': r'/nodes/(?P<node_id>\d+)/volumes/?$',
          'handler': NodeVolumesInformationHandler}]
 
-    # TODO(eli): all gettters, setters and retrieving logic will
-    # be implemented in extension objects.
-    # Should be done as a part of blueprint:
-    # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
     @classmethod
     def get_volumes(cls, node):
-        volumes_db = cls._get_model_by_node_id(node.id)
-        if volumes_db:
-            return volumes_db.volumes
-
-        return None
+        from .objects.volumes import VolumeObject
+        return VolumeObject.get_volumes(node)
 
     @classmethod
     def set_volumes(cls, node, volumes):
-        from .models.node_volumes import NodeVolumes
-
-        volume_db = cls._get_model_by_node_id(node.id)
-
-        if volume_db:
-            volume_db.volumes = deepcopy(volumes)
-        else:
-            volumes = NodeVolumes(node_id=node.id, volumes=volumes)
-            db().add(volumes)
-
-        db().flush()
-
-        return volumes
-
-    @classmethod
-    def _get_model_by_node_id(cls, node_id):
-        from .models.node_volumes import NodeVolumes
-
-        return db().query(NodeVolumes).filter_by(node_id=node_id).first()
+        from .objects.volumes import VolumeObject
+        return VolumeObject.set_volumes(node, volumes)

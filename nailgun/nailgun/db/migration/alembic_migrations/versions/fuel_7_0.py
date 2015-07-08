@@ -85,10 +85,18 @@ def extend_node_model_upgrade():
                   nullable=False,
                   server_default='[]'))
 
+    op.add_column(
+        'nodes',
+        sa.Column('hostname',
+                  sa.Text(),
+                  nullable=True)
+    )
+
 
 def extend_node_model_downgrade():
     op.drop_column('node_bond_interfaces', 'offloading_modes')
     op.drop_column('node_nic_interfaces', 'offloading_modes')
+    op.drop_column('nodes', 'hostname')
 
 
 def extend_ip_addrs_model_upgrade():

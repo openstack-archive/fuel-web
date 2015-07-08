@@ -62,6 +62,7 @@ from nailgun.objects import Cluster
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import Node
 from nailgun.objects import NodeGroup
+from nailgun.objects import Plugin
 from nailgun.objects import Release
 
 from nailgun.app import build_app
@@ -107,6 +108,7 @@ class EnvironmentManager(object):
         self.releases = []
         self.clusters = []
         self.nodes = []
+        self.plugins = []
         self.network_manager = NetworkManager
 
     def create(self, **kwargs):
@@ -390,6 +392,30 @@ class EnvironmentManager(object):
 
         return ng
 
+    def create_plugin(self, api=False, cluster=None, **kwargs):
+        plugin_data = self.get_default_plugin_metadata()
+        plugin_data.update(kwargs)
+
+        if api:
+            resp = self.app.post(
+                reverse('PluginCollectionHandler'),
+                jsonutils.dumps(plugin_data),
+                headers=self.default_headers,
+                expect_errors=False
+            )
+
+            plugin = Plugin.get_by_uid(resp.json_body['id'])
+            self.plugins.append(plugin)
+        else:
+            plugin = Plugin.create(plugin_data)
+            self.plugins.append(plugin)
+
+        # Enable plugin for specific cluster
+        if cluster:
+            cluster.plugins.append(plugin)
+
+        return plugin
+
     def default_metadata(self):
         item = self.find_item_by_pk_model(
             self.read_fixtures(("sample_environment",)),
@@ -532,11 +558,9 @@ class EnvironmentManager(object):
 
     def get_default_plugin_node_roles_config(self, **kwargs):
         node_roles = {
-            'test_node_role': {
-                'metadata': {
-                    'name': 'Some plugin role',
-                    'description': 'Some description'
-                }
+            'testing_plugin': {
+                'name': 'Some plugin role',
+                'description': 'Some description'
             }
         }
 
@@ -545,11 +569,14 @@ class EnvironmentManager(object):
 
     def get_default_plugin_volumes_config(self, **kwargs):
         volumes = {
+            'volumes_roles_mapping': {
+                'testing_plugin': [
+                    {'allocate_size': 'min', 'id': 'os'},
+                    {'allocate_size': 'all', 'id': 'test_volume'}
+                ]
+            },
             'volumes': [
-                {
-                    'id': 'test_node_volume',
-                    'type': 'vg'
-                }
+                {'id': 'test_volume', 'type': 'vg'}
             ]
         }
 

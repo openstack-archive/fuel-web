@@ -80,6 +80,7 @@ def upgrade():
 
     extend_ip_addrs_model_upgrade()
     extend_node_model_upgrade()
+    configurable_hostnames_upgrade()
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
     node_roles_as_plugin_upgrade()
@@ -100,6 +101,7 @@ def downgrade():
     node_roles_as_plugin_downgrade()
     extend_plugin_model_downgrade()
     extend_node_model_downgrade()
+    configurable_hostnames_downgrade()
     extend_ip_addrs_model_downgrade()
     downgrade_task_names()
     vms_conf_downgrade()
@@ -130,9 +132,46 @@ def extend_node_model_upgrade():
                   server_default='[]'))
 
 
+def configurable_hostnames_upgrade():
+    op.add_column(
+        'nodes',
+        sa.Column('hostname',
+                  sa.Text(),
+                  nullable=False,
+                  server_default='')
+    )
+    op.drop_column('nodes', 'fqdn')
+    # upgrade data
+    connection = op.get_bind()
+
+    select = sa.text(
+        """SELECT id from nodes""")
+    update = sa.text(
+        """UPDATE nodes
+        SET hostname = :hostname
+        WHERE id = :id""")
+    nodes = connection.execute(select)
+
+    for node in nodes:
+        node_id = node[0]
+        connection.execute(
+            update,
+            id=node_id,
+            hostname=u"node-{node_id}".format(node_id=node_id)
+        )
+
+
 def extend_node_model_downgrade():
     op.drop_column('node_bond_interfaces', 'offloading_modes')
     op.drop_column('node_nic_interfaces', 'offloading_modes')
+
+
+def configurable_hostnames_downgrade():
+    op.drop_column('nodes', 'hostname')
+    op.add_column(
+        'nodes',
+        sa.Column('fqdn', sa.Text())
+    )
 
 
 def extend_ip_addrs_model_upgrade():

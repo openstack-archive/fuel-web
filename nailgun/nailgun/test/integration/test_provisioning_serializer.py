@@ -113,7 +113,7 @@ class TestProvisioningSerializer(BaseIntegrationTest):
     def test_node_serialization(self):
         for node in self.serialized_cluster['nodes']:
             node_db = self.db.query(Node).filter_by(
-                fqdn=node['hostname']
+                hostname=node['name']
             ).first()
             # Get interface (in our case we created only one for each node)
             intr_db = node_db.nic_interfaces[0]

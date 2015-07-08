@@ -411,8 +411,7 @@ class TestLogs(BaseIntegrationTest):
     def test_snapshot_conf(self):
         self.env.create_node(
             status='ready',
-            name='node1',
-            fqdn='node1.domain.tld'
+            hostname='node111'
         )
         conf = {
             'dump': {
@@ -430,7 +429,7 @@ class TestLogs(BaseIntegrationTest):
                 },
                 'slave': {
                     'hosts': [{
-                        'address': 'node1.domain.tld',
+                        'address': 'node111.example.com',
                         'ssh-key': '/root/.ssh/id_rsa',
                     }],
                     'objects': [],

@@ -127,6 +127,8 @@ class ClusterValidator(BasicValidator):
                 )
 
         cls._validate_mode(d, instance.release)
+        if 'nodes' in d:
+            cls._validate_nodes(d, instance)
 
         return d
 
@@ -139,6 +141,29 @@ class ClusterValidator(BasicValidator):
                 " Need to be one of {1}".format(
                     mode, release.modes),
                 log_message=True
+            )
+
+    @classmethod
+    def _validate_nodes(cls, data, instance):
+        new_nodes = set(data.get("nodes"))
+        set_old_node_ids = set([n.id for n in instance.nodes])
+        nodes_to_add = new_nodes - set_old_node_ids
+        nodes_to_remove = set_old_node_ids - new_nodes
+        duplicated = []
+        for node_id in nodes_to_add:
+            node = objects.Node.get_by_uid(node_id)
+            node_w_same_hostname = \
+                objects.Node.get_by_hostname(
+                    node.hostname,
+                    instance.id)
+            if node_w_same_hostname and \
+               node_w_same_hostname.id not in nodes_to_remove:
+                duplicated.append(node.hostname)
+
+        if duplicated:
+            raise errors.InvalidData(
+                "Nodes with hostnames [{0}] already exist in cluster {1}."
+                .format(",".join(duplicated), instance.id)
             )
 
 

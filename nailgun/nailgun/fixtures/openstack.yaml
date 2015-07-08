@@ -853,18 +853,12 @@
           metadata:
             label: "Provision"
             weight: 80
+            restrictions:
+              - condition: "true"
+                action: "hide"
           method:
-            type: "radio"
-            label: "Provision method"
-            description: "Which provision method to use for this cluster."
+            type: "hidden"
             value: "image"
-            values:
-              - data: "image"
-                label: "Image"
-                description: "Copying pre-built images on a disk."
-              - data: "cobbler"
-                label: "(DEPRECATED) Classic (use anaconda or debian-installer)"
-                description: "Install from scratch using anaconda or debian-installer."
         external_dns:
           metadata:
             label: "Host OS DNS Servers"

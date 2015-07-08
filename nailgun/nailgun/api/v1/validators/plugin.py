@@ -26,7 +26,7 @@ class PluginValidator(BasicValidator):
     def validate_delete(cls, data, instance):
         if instance.clusters:
             raise errors.CannotDelete(
-                "Can't delete plugin which is enabled"
+                "Can't delete plugin which is enabled "
                 "for some environment."
             )
 

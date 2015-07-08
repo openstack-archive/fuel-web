@@ -192,6 +192,10 @@ class PluginAdapterBase(object):
         return settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
             plugin_name=self.path_name)
 
+    @property
+    def volumes_metadata(self):
+        return self.plugin.volumes_metadata
+
     def get_release_info(self, release):
         """Returns plugin release information which corresponds to
             a provided release.

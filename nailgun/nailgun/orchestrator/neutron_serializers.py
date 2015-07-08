@@ -814,43 +814,20 @@ class NeutronNetworkDeploymentSerializer70(
         attrs = super(NeutronNetworkDeploymentSerializer70,
                       cls).generate_network_scheme(node)
 
-        attrs['roles']['neutron/api'] = 'br-mgmt'
-        attrs['roles']['neutron/mesh'] = 'br-mgmt'
-        attrs['roles']['neutron/private'] = 'br-prv'
+        transform = {'fuelweb_admin': 'br-fw-admin',
+                     'storage': 'br-storage',
+                     'public': 'br-ex'}
 
-        attrs['roles']['mgmt/corosync'] = 'br-mgmt'
-        attrs['roles']['mgmt/database'] = 'br-mgmt'
-        attrs['roles']['mgmt/messaging'] = 'br-mgmt'
-        attrs['roles']['mgmt/api'] = 'br-mgmt'
-        attrs['roles']['mgmt/memcache'] = 'br-mgmt'
-        attrs['roles']['mgmt/vip'] = 'br-mgmt'
-
-        attrs['roles']['nova/api'] = 'br-mgmt'
-        attrs['roles']['murano/api'] = 'br-mgmt'
-        attrs['roles']['sahara/api'] = 'br-mgmt'
-        attrs['roles']['ceilometer/api'] = 'br-mgmt'
-        attrs['roles']['heat/api'] = 'br-mgmt'
-        attrs['roles']['keystone/api'] = 'br-mgmt'
-        attrs['roles']['horizon'] = 'br-mgmt'
-        attrs['roles']['glance/api'] = 'br-mgmt'
+        for role in Cluster.get_network_roles(node.cluster):
+            # Skip role transformation if it exists in 'attrs' already
+            if role['id'] in attrs['roles']:
+                continue
+            attrs['roles'][role['id']] = \
+                transform.get(role['default_mapping'], 'br-mgmt')
 
         if Node.should_have_public(node):
-            attrs['roles']['neutron/floating'] = 'br-floating'
             attrs['roles']['public/vip'] = 'br-ex'
             attrs['roles']['ceph/radosgw'] = 'br-ex'
-
-        attrs['roles']['admin/pxe'] = 'br-fw-admin'
-
-        attrs['roles']['ceph/replication'] = 'br-storage'
-        attrs['roles']['ceph/public'] = 'br-mgmt'
-
-        attrs['roles']['swift/replication'] = 'br-storage'
-        attrs['roles']['swift/api'] = 'br-mgmt'
-
-        attrs['roles']['cinder/iscsi'] = 'br-storage'
-        attrs['roles']['cinder/api'] = 'br-mgmt'
-
-        attrs['roles']['mongo/db'] = 'br-mgmt'
 
         return attrs
 

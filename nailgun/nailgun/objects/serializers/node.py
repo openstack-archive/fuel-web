@@ -35,6 +35,7 @@ class NodeSerializer(BasicSerializer):
         'status',
         'mac',
         'fqdn',
+        'hostname',
         'ip',
         'manufacturer',
         'platform_name',

@@ -112,6 +112,20 @@ class Node(NailgunObject):
         return node
 
     @classmethod
+    def get_by_hostname(cls, hostname):
+        """Get Node instance by MAC or ID.
+
+        :param hostname: hostname as string
+        :returns: Node instance
+        """
+
+        if not hostname:
+            return None
+
+        q = db().query(cls.model)
+        return q.filter_by(hostname=hostname).first()
+
+    @classmethod
     def get_by_meta(cls, meta):
         """Search for instance using mac, node id or interfaces
 
@@ -753,7 +767,9 @@ class Node(NailgunObject):
 
     @classmethod
     def make_slave_name(cls, instance):
-        return u"node-{node_id}".format(node_id=instance.id)
+        if not getattr(instance, 'hostname', None):
+            return u"node-{node_id}".format(node_id=instance.id)
+        return instance.hostname
 
     @classmethod
     def make_slave_fqdn(cls, instance):

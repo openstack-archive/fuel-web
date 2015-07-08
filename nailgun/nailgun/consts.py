@@ -202,6 +202,7 @@ TASK_NAMES = Enum(
     'stop_deployment',
     'reset_environment',
     'update',
+    'spawn_vms',
 
     'node_deletion',
     'cluster_deletion',
@@ -278,6 +279,13 @@ LOG_RECORD_SEND_STATUS = Enum(
 
 NOVA_SERVICE_TYPE = Enum(
     'compute',
+)
+
+VIRTUAL_NODE_TYPES = Enum(
+    "kvm-virt",
+    names=(
+        "kvm"
+    )
 )
 
 OPENSTACK_IMAGES_SETTINGS = Enum(

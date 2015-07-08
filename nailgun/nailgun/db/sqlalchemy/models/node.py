@@ -221,6 +221,7 @@ class NodeAttributes(Base):
     id = Column(Integer, primary_key=True)
     node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))
     interfaces = Column(JSON, default={})
+    vms_conf = Column(JSON, default=[], server_default='[]')
 
 
 class NodeNICInterface(Base):

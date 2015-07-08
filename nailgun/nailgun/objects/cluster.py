@@ -805,6 +805,25 @@ class Cluster(NailgunObject):
             return release_deployment_tasks + plugin_deployment_tasks
 
     @classmethod
+    def get_volumes_metadata(cls, instance):
+        """Return proper volumes metadata for cluster and consists
+        with general volumes metadata from release and volumes
+        metadata from plugins which releated to this cluster
+
+        :param instance: Cluster DB instance
+        :returns: dict -- object with merged volumes metadata
+        """
+        volumes_metadata = copy.deepcopy(instance.release.volumes_metadata)
+        plugin_volumes = PluginManager.get_volumes_metadata(instance)
+
+        volumes_metadata['volumes_roles_mapping'].update(
+            plugin_volumes['volumes_roles_mapping'])
+
+        volumes_metadata['volumes'].extend(plugin_volumes['volumes'])
+
+        return volumes_metadata
+
+    @classmethod
     def create_vmware_attributes(cls, instance):
         """Store VmwareAttributes instance into DB.
         """

@@ -83,20 +83,6 @@ class PluginManager(object):
         return cluster_plugins
 
     @classmethod
-    def sync_plugins_metadata(cls, plugin_ids=None):
-        """Sync metadata for plugins by given ids. If there is not
-        ids all newest plugins will be synced
-        """
-        if plugin_ids:
-            plugins = PluginCollection.get_by_uids(plugin_ids)
-        else:
-            plugins = PluginCollection.all()
-
-        for plugin in plugins:
-            plugin_adapter = wrap_plugin(plugin)
-            plugin_adapter.sync_metadata_to_db()
-
-    @classmethod
     def get_plugins_deployment_tasks(cls, cluster):
         deployment_tasks = []
 
@@ -143,3 +129,44 @@ class PluginManager(object):
             rv.update(plugin_roles)
 
         return rv
+
+    @classmethod
+    def get_volumes_metadata(cls, cluster):
+        """Get volumes metadata for specific cluster from all
+        plugins which enabled for it.
+
+        :param cluster: Cluster DB model
+        :returns: dict -- object with merged volumes data from plugins
+        """
+        volumes_metadata = {
+            'volumes': [],
+            'volumes_roles_mapping': {}
+        }
+
+        for plugin in cluster.plugins:
+            plugin_adapter = wrap_plugin(plugin)
+            metadata = plugin_adapter.volumes_metadata
+            # TODO(apopovych): In future we should resolve case when
+            # same roles in plugins volumes metadata have different
+            # volumes mapping. Now we expect that roles to volumes
+            # mapping not cross for different plugins.
+            volumes_metadata.get('volumes_roles_mapping', {}).update(
+                metadata.get('volumes_roles_mapping', {}))
+            volumes_metadata.get('volumes', []).extend(
+                metadata.get('volumes', []))
+
+        return volumes_metadata
+
+    @classmethod
+    def sync_plugins_metadata(cls, plugin_ids=None):
+        """Sync metadata for plugins by given ids. If there is not
+        ids all newest plugins will be synced
+        """
+        if plugin_ids:
+            plugins = PluginCollection.get_by_uids(plugin_ids)
+        else:
+            plugins = PluginCollection.all()
+
+        for plugin in plugins:
+            plugin_adapter = wrap_plugin(plugin)
+            plugin_adapter.sync_metadata_to_db()

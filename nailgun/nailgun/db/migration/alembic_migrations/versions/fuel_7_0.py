@@ -54,7 +54,11 @@ def upgrade():
     upgrade_node_roles_metadata()
     node_roles_as_plugin_upgrade()
     migrate_volumes_into_extension_upgrade()
+<<<<<<< HEAD
     extend_releases_model_upgrade()
+=======
+    dashborad_entries_upgrade()
+>>>>>>> 008c87a... API for dashboard entries
 
 
 def downgrade():
@@ -64,6 +68,7 @@ def downgrade():
     extend_plugin_model_downgrade()
     extend_node_model_downgrade()
     extend_ip_addrs_model_downgrade()
+    dashborad_entries_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
@@ -365,3 +370,29 @@ def node_roles_as_plugin_downgrade():
 
 def extend_releases_model_downgrade():
     op.drop_column('releases', 'network_roles_metadata')
+
+
+def dashborad_entries_upgrade():
+    op.create_table(
+        'dashborad_entries',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'cluster_id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column(
+            'title', sa.VARCHAR(length=50), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id'))
+#TODO(vsharshov): add index for cluster id selecting
+
+
+def dashborad_entries_downgrade():
+
+    # NOTE(vsharshov):
+    #
+    # WE DO NOT SUPPORT DOWNGRADE DATE MIGRATION BY HISTORICAL REASONS.
+    # SO ANY DOWNGRADE WILL LOST DATA.
+
+    op.drop_table('dashborad_entries')
+

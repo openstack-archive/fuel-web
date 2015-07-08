@@ -37,6 +37,11 @@ from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
 
+from nailgun.api.v1.handlers.dashboard_entry \
+    import DashboardEntryCollectionHandler
+from nailgun.api.v1.handlers.dashboard_entry \
+    import DashboardEntryHandler
+
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
 from nailgun.api.v1.handlers.logs import LogPackageHandler
@@ -201,6 +206,12 @@ urls = (
     VmwareAttributesHandler,
     r'/clusters/(?P<cluster_id>\d+)/vmware_attributes/defaults/?$',
     VmwareAttributesDefaultsHandler,
+
+    r'/clusters/(?P<cluster_id>\d+)/dashboard_entries/?$',
+    DashboardEntryCollectionHandler,
+    r'/clusters/(?P<cluster_id>\d+)/dashboard_entries/'
+    '?$(?P<obj_id>\d+)/?$',
+    DashboardEntryHandler,
 
     r'/nodegroups/?$',
     NodeGroupCollectionHandler,

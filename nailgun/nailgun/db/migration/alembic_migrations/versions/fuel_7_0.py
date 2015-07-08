@@ -98,6 +98,7 @@ def upgrade():
     extensions_field_upgrade()
     set_deployable_false_for_old_releases()
     upgrade_node_labels()
+    dashborad_entries_upgrade()
 
 
 def downgrade():
@@ -115,6 +116,7 @@ def downgrade():
     extend_ip_addrs_model_downgrade()
     downgrade_task_names()
     vms_conf_downgrade()
+    dashborad_entries_downgrade()
 
     op.execute('UPDATE clusters SET name=LEFT(name, 50)')
     op.alter_column('clusters', 'name', type_=sa.VARCHAR(50))
@@ -695,3 +697,28 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def dashborad_entries_upgrade():
+    op.create_table(
+        'dashborad_entries',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'cluster_id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column(
+            'title', sa.VARCHAR(length=50), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id'))
+#TODO(vsharshov): add index for cluster id selecting
+
+
+def dashborad_entries_downgrade():
+
+    # NOTE(vsharshov):
+    #
+    # WE DO NOT SUPPORT DOWNGRADE DATE MIGRATION BY HISTORICAL REASONS.
+    # SO ANY DOWNGRADE WILL LOST DATA.
+
+    op.drop_table('dashborad_entries')

@@ -52,6 +52,22 @@ class AssignmentValidator(BasicValidator):
                 log_message=True
             )
 
+    @classmethod
+    def check_uniq_hostnames(cls, nodes, cluster_id):
+        duplicated = []
+        for node in nodes:
+            if objects.Node.get_by_hostname(
+                node.hostname,
+                cluster_id
+            ):
+                duplicated.append(node.hostname)
+
+        if duplicated:
+            raise errors.InvalidData(
+                "Nodes with hostnames [{0}] already exist in cluster {1}."
+                .format(",".join(duplicated), cluster_id)
+            )
+
 
 class NodeAssignmentValidator(AssignmentValidator):
 
@@ -72,6 +88,7 @@ class NodeAssignmentValidator(AssignmentValidator):
         cluster = objects.Cluster.get_by_uid(
             cluster_id, fail_if_not_found=True
         )
+        cls.check_uniq_hostnames(nodes, cluster_id)
 
         for node_id in received_node_ids:
             cls.validate_roles(

@@ -23,6 +23,7 @@ from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
+from nailgun import objects
 from nailgun.test import base
 
 
@@ -481,6 +482,24 @@ class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
                       .c.offloading_modes]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestNodeHostnamePropertyMigration(base.BaseAlembicMigrationTest):
+
+    def test_hostname_field_exists_and_contains_correct_values(self):
+        result = db.execute(
+            sa.select([self.meta.tables['nodes'].c.id,
+                       self.meta.tables['nodes'].c.hostname]))
+        result_row = result.fetchone()
+        while result_row:
+            self.assertEqual(
+                objects.Node.default_slave_name(result_row[0]),
+                result_row[1])
+            result_row = result.fetchone()
+
+    def test_fqdn_field_is_dropped(self):
+        node_table = self.meta.tables['nodes']
+        self.assertNotIn('fqdn', node_table.c)
 
 
 class TestInterfacesPxePropertyMigration(base.BaseAlembicMigrationTest):

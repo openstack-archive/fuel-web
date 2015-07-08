@@ -81,6 +81,17 @@ class PluginManager(object):
         return cluster_plugins
 
     @classmethod
+    def get_volumes_metadata(cls, cluster):
+        volumes_metadata = []
+
+        for plugin in cluster.plugins:
+            plugin_adapter = wrap_plugin(plugin)
+            volumes_metadata.append(
+                plugin_adapter.volumes_metadata())
+
+        return volumes_metadata
+
+    @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
         """Sync metadata for plugins by given ids. If there is not
         ids all newest plugins will be synced

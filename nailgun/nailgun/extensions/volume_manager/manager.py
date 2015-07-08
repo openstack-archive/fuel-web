@@ -26,6 +26,7 @@ from oslo.serialization import jsonutils
 
 from nailgun.errors import errors
 from nailgun.logger import logger
+#from nailgun.plugins.manager import PluginManager
 
 
 def is_service(space):
@@ -115,14 +116,19 @@ def get_node_spaces(node):
     """
     node_spaces = []
 
-    role_mapping = node.cluster.release.volumes_metadata[
-        'volumes_roles_mapping']
+    cluster = node.cluster
+    core_volumes_metadata = cluster.release.volumes_metadata
+    plugin_volumes_metadata = PluginManager.get_volumes_metadata(cluster)
+
+    role_mapping = core_volumes_metadata['volumes_roles_mapping'] + \
+        plugin_volumes_metadata['volumes_roles_mapping']
 
     # TODO(dshulyak)
     # This logic should go to openstack.yaml (or other template)
     # when it will be extended with flexible template engine
     modify_volumes_hook(role_mapping, node)
-    all_spaces = node.cluster.release.volumes_metadata['volumes']
+    all_spaces = core_volumes_metadata['volumes'] + \
+        plugin_volumes_metadata['volumes']
 
     for role in node.all_roles:
         if not role_mapping.get(role):

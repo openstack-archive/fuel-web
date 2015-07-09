@@ -14,10 +14,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import yaml
+
+from nailgun import objects
 from nailgun.test import base
 
 
 class TestClusterRolesHandler(base.BaseTestCase):
+
+    ROLES = yaml.load("""
+        test_role:
+          name: "Some plugin role"
+          description: "Some description"
+          conflicts:
+            - some_not_compatible_role
+          limits:
+            min: 1
+          restrictions:
+            - condition: "some logic condition"
+              message: "Some message for restriction warning"
+    """)
 
     def setUp(self):
         super(TestClusterRolesHandler, self).setUp()
@@ -38,7 +54,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
 
         for method in not_allowed_methods:
             resp = getattr(self.app, method)(**req_kwargs)
-            self.assertEquals(resp.status_code, 405)
+            self.assertEqual(resp.status_code, 405)
             self.assertIn("Method Not Allowed", resp.status)
 
     def test_get_all_roles(self):
@@ -80,7 +96,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
             )
         ).json
 
-        self.assertEquals(role['name'], self.role_name)
+        self.assertEqual(role['name'], self.role_name)
         self.assertDictEqual(
             role['meta'],
             self.expected_roles_data[role['name']]
@@ -100,7 +116,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 404)
         self.assertIn("Role is not found for the cluster",
                       resp.json_body['message'])
 
@@ -110,3 +126,46 @@ class TestClusterRolesHandler(base.BaseTestCase):
             {'cluster_id': self.cluster.id, 'role_name': self.role_name}
         )
         self._check_methods_not_allowed(url)
+
+    def test_all_roles_w_plugin(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['roles_metadata'] = self.ROLES
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+        self.db.flush()
+
+        roles = self.app.get(
+            url=base.reverse(
+                'ClusterRolesCollectionHandler',
+                {'cluster_id': self.cluster.id}
+            ),
+            headers=self.default_headers
+        ).json
+
+        self.assertItemsEqual(
+            [role['name'] for role in roles],
+            set(self.expected_roles_data) | set(self.ROLES),
+        )
+
+    def test_get_particular_role_for_cluster_w_plugin(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['roles_metadata'] = self.ROLES
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+        self.db.flush()
+
+        role = self.app.get(
+            url=base.reverse(
+                'ClusterRolesHandler',
+                {'cluster_id': self.cluster.id, 'role_name': 'test_role'}
+            )
+        ).json
+
+        self.assertEqual(role['name'], 'test_role')
+        self.assertDictEqual(
+            role['meta'],
+            self.ROLES['test_role']
+        )
+
+        # TODO(ikalnitsky): Add check for volumes when volumes for plugins
+        # are implemented.

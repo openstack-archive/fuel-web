@@ -59,11 +59,11 @@ from nailgun import objects
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.settings import settings
-from nailgun.test.base import BaseIntegrationTest
+from nailgun.test import base
 from nailgun.utils import reverse
 
 
-class OrchestratorSerializerTestBase(BaseIntegrationTest):
+class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
     """Class containts helpers."""
 
     def setUp(self):
@@ -2392,7 +2392,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
                          True)
 
 
-class BaseDeploymentSerializer(BaseIntegrationTest):
+class BaseDeploymentSerializer(base.BaseIntegrationTest):
 
     node_name = 'node name'
     # Needs to be set in childs
@@ -2681,7 +2681,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
         self.check_no_murano_data()
 
 
-class TestSerializeInterfaceDriversData(BaseIntegrationTest):
+class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
     def setUp(self):
         super(TestSerializeInterfaceDriversData, self).setUp()

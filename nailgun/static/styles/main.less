@@ -140,6 +140,74 @@
   background: url(@common-icons-sprite) -12px -132px no-repeat;
 }
 
+.glyphicon-info-sign {
+  content: none;
+  width: 15px;
+  height: 15px;
+  background: url(@common-icons-sprite) -13px -612px no-repeat;
+  &:before, &:after {
+    content: none;
+  }  
+}
+.glyphicon-bell {
+  content: none;
+  width: 15px;
+  height: 15px;
+  background: url(@common-icons-sprite) -13px -652px no-repeat;
+  &:before, &:after {
+    content: none;
+  }  
+}
+.glyphicon-trash {
+  content: none;
+  width: 15px;
+  height: 15px;
+  background: url(@common-icons-sprite) -13px -691px no-repeat;
+  &:before, &:after {
+    content: none;
+  }
+}
+.glyphicon-edit {
+  content: none;
+  width: 15px;
+  height: 15px;
+  background: url(@common-icons-sprite) -56px -691px no-repeat;
+  &:before, &:after {
+    content: none;
+  }
+}
+.glyphicon-th {
+  content: none;
+  width: 16px;
+  height: 17px;
+  background: url(@common-icons-sprite) -12px -252px no-repeat;
+  &:before, &:after {
+    content: none;
+  }
+}
+.glyphicon-th-list {
+  content: none;
+  width: 16px;
+  height: 17px;
+  background: url(@common-icons-sprite) -12px -292px no-repeat;
+  &:before, &:after {
+    content: none;
+  }
+}
+.glyphicon-pencil {
+  content: none;
+  width: 15px;
+  height: 15px;
+  background: url(@common-icons-sprite) -13px -492px no-repeat;
+  &:hover {
+    background: url(@common-icons-sprite) -53px -492px no-repeat;
+    cursor: pointer;
+  }
+  &:before, &:after {
+    content: none;
+  }
+}
+
 // BASE SETTINGS
 
 :focus {
@@ -624,6 +692,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
           font-size: @base-font-size + 2px;
           float: left;
           width: 10%;
+          margin-top: 2px;
         }
         p {
           display: block;
@@ -1235,6 +1304,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .btn-group label {
       width: auto;
       font-size: @base-font-size;
+      padding: 7px 10px 3px;
     }
   }
 }

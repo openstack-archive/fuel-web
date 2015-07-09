@@ -178,6 +178,7 @@
             "navbar": {
                 "environments": "Environments",
                 "releases": "Releases",
+                "plugins": "Plugins",
                 "support": "Support",
                 "stats": {
                     "total": ["Total", "node"],
@@ -190,6 +191,7 @@
                 "home": "Home",
                 "environments": "Environments",
                 "releases": "Releases",
+                "plugins": "Plugins",
                 "support": "Support",
                 "notifications": "Notifications",
                 "capacity": "Capacity"
@@ -239,6 +241,19 @@
                     "error": "Error",
                     "not_available": "Not available"
                 }
+            },
+            "plugins_page": {
+                "title": "Installed Plugins",
+                "groups": "Groups",
+                "releases": "Releases",
+                "version": "Plugin version",
+                "description": "Description",
+                "homepage": "Homepage",
+                "authors": "Authors",
+                "licenses": "Licenses",
+                "ubuntu": "Ubuntu",
+                "centos": "CentOS",
+                "no_plugins": "There are no plugins installed."
             },
             "clusters_page": {
                 "title": "My OpenStack Environments",

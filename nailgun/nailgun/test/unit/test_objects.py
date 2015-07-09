@@ -780,6 +780,26 @@ class TestClusterObject(BaseTestCase):
             objects.Cluster.get_network_roles(cluster),
             cluster.release.network_roles_metadata)
 
+    def test_get_plugin_network_roles(self):
+        cluster = self.env.clusters[0]
+        network_roles = [{
+            'id': 'test_network_role',
+            'default_mapping': 'public',
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': {'name': 'test_vip_a', 'shared': False}
+            }
+        }]
+        plugin_data = self.env.get_default_plugin_metadata(
+            network_roles_metadata=network_roles)
+        plugin = objects.Plugin.create(plugin_data)
+        cluster.plugins.append(plugin)
+
+        self.assertEqual(
+            objects.Cluster.get_network_roles(cluster),
+            cluster.release.network_roles_metadata + network_roles)
+
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):
     def setUp(self):

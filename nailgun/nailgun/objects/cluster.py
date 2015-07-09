@@ -904,7 +904,11 @@ class Cluster(NailgunObject):
         :param cluster: nailgun.db.sqlalchemy.models.Cluster instance
         :returns: List of network roles' descriptions
         """
-        return cluster.release.network_roles_metadata
+        all_roles = cluster.release.network_roles_metadata[:]
+        for plugin in cluster.plugins:
+            all_roles.extend(plugin.network_roles_metadata)
+
+        return all_roles
 
 
 class ClusterCollection(NailgunCollection):

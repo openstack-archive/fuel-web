@@ -103,3 +103,22 @@ class PluginManager(object):
             deployment_tasks.extend(plugin_adapter.deployment_tasks)
 
         return deployment_tasks
+
+    @classmethod
+    def get_plugins_node_roles(cls, cluster):
+        node_roles = {}
+
+        for plugin_db in cluster.plugins:
+            roles_metadata = plugin_db.roles_metadata
+
+            if set(roles_metadata) & set(node_roles):
+                logger.warning(
+                    "Plugin (ID=%s) is unable to register the following "
+                    "node roles: %s".format(
+                        plugin_db.id,
+                        ", ".join(set(roles_metadata) & set(node_roles))))
+                continue
+
+            node_roles.update(roles_metadata)
+
+        return node_roles

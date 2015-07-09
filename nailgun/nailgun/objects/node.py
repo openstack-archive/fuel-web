@@ -862,11 +862,14 @@ class NodeCollection(NailgunCollection):
     @classmethod
     def prepare_for_provisioning(cls, instances):
         """Prepare environment for provisioning,
-        update fqdns, assign admin IPs
+        update fqdns, assign admin IPs, remove
+        primory roles
         """
         cls.update_slave_nodes_fqdn(instances)
         netmanager = Cluster.get_network_manager()
         netmanager.assign_admin_ips(instances)
+        for instance in instances:
+            Node.update_primary_roles(instance, [])
 
     @classmethod
     def lock_nodes(cls, instances):

@@ -805,6 +805,31 @@
             description: "When disabled, public network will be assigned to controllers only"
             weight: 10
             type: "checkbox"
+        network:
+          metadata:
+            weight: 50
+            label: "Network"
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
+          neutron_l2_pop:
+            value: false
+            label: "Neutron L2 population"
+            description: "Enable L2 population mechanism in Neutron"
+            weight: 10
+            type: "checkbox"
+            restrictions:
+              - condition: "networking_parameters:segmentation_type == 'vlan'"
+                action: "hide"
+          neutron_dvr:
+            value: false
+            label: "Neutron DVR"
+            description: "Enable Distributed Virtual Routers in Neutron"
+            weight: 20
+            type: "checkbox"
+            # TODO(obondarev): uncomment restrictions once bug 1474945 is fixed
+            #restrictions:
+            #  - "networking_parameters:segmentation_type != 'vlan' and settings:network.neutron_l2_pop.value == false": "DVR requires L2 population to be enabled."
         corosync:
           metadata:
             label: "Corosync"

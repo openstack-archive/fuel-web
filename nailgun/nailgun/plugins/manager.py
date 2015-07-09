@@ -121,3 +121,35 @@ class PluginManager(object):
             deployment_tasks.extend(depl_tasks)
 
         return deployment_tasks
+
+    @classmethod
+    def get_plugins_node_roles(cls, cluster):
+        rv = {}
+        core_roles = set(cluster.release.roles_metadata)
+
+        for plugin_db in cluster.plugins:
+            plugin_roles = plugin_db.roles_metadata
+
+            # we should check all possible cases of roles intersection
+            # with core ones and those from other plugins
+            # and afterwards show them in error message;
+            # thus role names for which following checks
+            # fails are accumulated in err_info variable
+            err_roles = set()
+            if set(plugin_roles) & core_roles:
+                err_roles |= set(plugin_roles) & core_roles
+            if set(plugin_roles) & set(rv):
+                err_roles |= set(plugin_roles) & set(rv)
+
+            if err_roles:
+                raise errors.PluginRolesConflict(
+                    "Plugin (ID={0}) is unable to register the following "
+                    "node roles: {1}".format(plugin_db.id,
+                                             ", ".join(err_roles))
+                )
+
+            # update info on processed roles in case of
+            # success of all intersection checks
+            rv.update(plugin_roles)
+
+        return rv

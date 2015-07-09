@@ -152,11 +152,13 @@ class TaskHelper(object):
     # nailgun Cluster object's methods
     @classmethod
     def nodes_to_deploy(cls, cluster):
+        from nailgun import objects  # preventing cycle import error
+
         nodes_to_deploy = []
         update_required = set()
         update_once = set()
         cluster_roles = set()
-        roles_metadata = cluster.release.roles_metadata
+        roles_metadata = objects.Cluster.get_roles(cluster)
 
         for node in cluster.nodes:
             cluster_roles.update(node.roles)

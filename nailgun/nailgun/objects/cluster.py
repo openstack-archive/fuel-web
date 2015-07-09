@@ -667,6 +667,17 @@ class Cluster(NailgunObject):
                 cls.set_primary_role(instance, nodes, role)
 
     @classmethod
+    def remove_primary_roles(cls, nodes):
+        """Remove primary attribute for node roles
+
+        :param nodes: list of Node db objects
+        """
+        for node in nodes:
+            node.primary_roles = []
+        
+        db().flush()
+
+    @classmethod
     def get_nodes_by_role(cls, instance, role_name):
         """Get nodes related to some specific role
 

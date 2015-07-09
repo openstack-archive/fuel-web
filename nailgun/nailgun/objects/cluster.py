@@ -20,11 +20,11 @@ Cluster-related objects and collections
 
 import copy
 from distutils.version import StrictVersion
-import six
 
+import six
+import sqlalchemy as sa
 import yaml
 
-import sqlalchemy as sa
 
 from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.orchestrator import graph_configuration
@@ -618,8 +618,10 @@ class Cluster(NailgunObject):
         :param instance: cluster instance
         :returns: a dictionary of roles metadata
         """
-        # TODO(ikalnitsky): merge here release roles with plugins one
-        return instance.release.roles_metadata
+        available_roles = copy.deepcopy(instance.release.roles_metadata)
+        available_roles.update(
+            PluginManager.get_plugins_node_roles(instance))
+        return available_roles
 
     @classmethod
     def set_primary_role(cls, instance, nodes, role_name):

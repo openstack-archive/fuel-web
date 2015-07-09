@@ -159,8 +159,9 @@ class Node(NailgunObject):
             return True
 
         roles = itertools.chain(instance.roles, instance.pending_roles)
+        roles_metadata = Cluster.get_roles(instance.cluster)
+
         for role in roles:
-            roles_metadata = instance.cluster.release.roles_metadata
             if roles_metadata.get(role, {}).get('public_ip_required'):
                 return True
 
@@ -192,7 +193,7 @@ class Node(NailgunObject):
         data["timestamp"] = datetime.now()
         data.pop("id", None)
 
-        #TODO(enchantner): fix this temporary hack in clients
+        # TODO(enchantner): fix this temporary hack in clients
         if "cluster_id" not in data and "cluster" in data:
             cluster_id = data.pop("cluster", None)
             data["cluster_id"] = cluster_id
@@ -579,7 +580,7 @@ class Node(NailgunObject):
                         instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
-        #(dshulyak) change this verification to NODE_STATUSES.deploying
+        # (dshulyak) change this verification to NODE_STATUSES.deploying
         # after we will reuse ips from dhcp range
         netmanager = Cluster.get_network_manager()
         admin_ng = netmanager.get_admin_network_group(instance.id)
@@ -637,7 +638,7 @@ class Node(NailgunObject):
                 new_pending_roles))
 
         if new_pending_roles == []:
-            #TODO(enchantner): research why the hell we need this
+            # TODO(enchantner): research why the hell we need this
             Cluster.clear_pending_changes(
                 instance.cluster,
                 node_id=instance.id

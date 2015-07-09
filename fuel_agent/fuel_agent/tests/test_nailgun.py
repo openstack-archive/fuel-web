@@ -41,7 +41,8 @@ CEPH_DATA = {
     "disk_label": "",
     "type": "partition",
     "file_system": "none",
-    "size": 3333
+    "size": 3333,
+    "keep_data": False
 }
 PROVISION_SAMPLE_DATA = {
     "profile": "pro_fi-le",
@@ -153,7 +154,8 @@ PROVISION_SAMPLE_DATA = {
                             "size": 200,
                             "type": "raid",
                             "file_system": "ext2",
-                            "name": "Boot"
+                            "name": "Boot",
+                            "keep_data": False
                         },
                         {
                             "mount": "/tmp",
@@ -161,7 +163,8 @@ PROVISION_SAMPLE_DATA = {
                             "type": "partition",
                             "file_system": "ext2",
                             "partition_guid": "fake_guid",
-                            "name": "TMP"
+                            "name": "TMP",
+                            "keep_data": False
                         },
                         {
                             "type": "lvm_meta_pool",
@@ -171,13 +174,15 @@ PROVISION_SAMPLE_DATA = {
                             "size": 19438,
                             "type": "pv",
                             "lvm_meta_size": 64,
-                            "vg": "os"
+                            "vg": "os",
+                            "keep_data": False
                         },
                         {
                             "size": 45597,
                             "type": "pv",
                             "lvm_meta_size": 64,
-                            "vg": "image"
+                            "vg": "image",
+                            "keep_data": False
                         }
                     ],
                     "type": "disk",
@@ -202,7 +207,8 @@ PROVISION_SAMPLE_DATA = {
                             "size": 200,
                             "type": "raid",
                             "file_system": "ext2",
-                            "name": "Boot"
+                            "name": "Boot",
+                            "keep_data": False
                         },
                         {
                             "type": "lvm_meta_pool",
@@ -212,13 +218,15 @@ PROVISION_SAMPLE_DATA = {
                             "size": 0,
                             "type": "pv",
                             "lvm_meta_size": 0,
-                            "vg": "os"
+                            "vg": "os",
+                            "keep_data": False
                         },
                         {
                             "size": 64971,
                             "type": "pv",
                             "lvm_meta_size": 64,
-                            "vg": "image"
+                            "vg": "image",
+                            "keep_data": False
                         }
                     ],
                     "type": "disk",
@@ -243,7 +251,8 @@ PROVISION_SAMPLE_DATA = {
                             "size": 200,
                             "type": "raid",
                             "file_system": "ext2",
-                            "name": "Boot"
+                            "name": "Boot",
+                            "keep_data": False
                         },
                         {
                             "type": "lvm_meta_pool",
@@ -253,13 +262,15 @@ PROVISION_SAMPLE_DATA = {
                             "size": 0,
                             "type": "pv",
                             "lvm_meta_size": 0,
-                            "vg": "os"
+                            "vg": "os",
+                            "keep_data": False
                         },
                         {
                             "size": 64971,
                             "type": "pv",
                             "lvm_meta_size": 64,
-                            "vg": "image"
+                            "vg": "image",
+                            "keep_data": False
                         }
                     ],
                     "type": "disk",
@@ -419,14 +430,16 @@ SINGLE_DISK_KS_SPACES = [
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext2",
-                "name": "Boot"
+                "name": "Boot",
+                "keep_data": False
             },
             {
                 "mount": "/",
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext4",
-                "name": "Root"
+                "name": "Root",
+                "keep_data": True
             },
         ],
         "type": "disk",
@@ -450,7 +463,8 @@ NO_BOOT_KS_SPACES = [
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext4",
-                "name": "Root"
+                "name": "Root",
+                "keep_data": False
             },
         ],
         "type": "disk",
@@ -474,14 +488,16 @@ FIRST_DISK_HUGE_KS_SPACES = [
                 "size": 200,
                 "type": "raid",
                 "file_system": "ext2",
-                "name": "Boot"
+                "name": "Boot",
+                "keep_data": False
             },
             {
                 "mount": "/",
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext4",
-                "name": "Root"
+                "name": "Root",
+                "keep_data": False
             },
         ],
         "type": "disk",
@@ -502,14 +518,16 @@ FIRST_DISK_HUGE_KS_SPACES = [
                 "size": 200,
                 "type": "raid",
                 "file_system": "ext2",
-                "name": "Boot"
+                "name": "Boot",
+                "keep_data": False
             },
             {
                 "mount": "/tmp",
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext2",
-                "name": "TMP"
+                "name": "TMP",
+                "keep_data": False
             },
         ],
         "type": "disk",
@@ -533,14 +551,16 @@ MANY_HUGE_DISKS_KS_SPACES = [
                 "size": 200,
                 "type": "raid",
                 "file_system": "ext2",
-                "name": "Boot"
+                "name": "Boot",
+                "keep_data": False
             },
             {
                 "mount": "/",
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext4",
-                "name": "Root"
+                "name": "Root",
+                "keep_data": False
             },
         ],
         "type": "disk",
@@ -561,14 +581,16 @@ MANY_HUGE_DISKS_KS_SPACES = [
                 "size": 200,
                 "type": "raid",
                 "file_system": "ext2",
-                "name": "Boot"
+                "name": "Boot",
+                "keep_data": False
             },
             {
                 "mount": "/tmp",
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext2",
-                "name": "TMP"
+                "name": "TMP",
+                "keep_data": False
             },
         ],
         "type": "disk",
@@ -950,6 +972,20 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual(
             drv.partition_scheme.fs_by_mount('/boot').device,
             '/dev/sda3')
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_elevate_keep_data_single_disk(self, mock_lbd,
+                                           mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        data['ks_meta']['pm_data']['ks_spaces'] = SINGLE_DISK_KS_SPACES
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(
+            drv.partition_scheme.fs_by_mount('/').keep_data,
+            True)
+
 
     @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
     @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')

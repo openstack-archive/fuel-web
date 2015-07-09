@@ -37,3 +37,19 @@ class Serializable(object):
     @abstractclassmethod
     def from_dict(cls, data):
         pass
+
+
+class BasePartition(Serializable):
+
+    def __init__(self, **kwargs):
+        self.keep_data = kwargs.get("keep_data", False)
+
+    def set_keep_data(self, keep_data):
+        self.keep_data = keep_data
+
+    def to_dict(self):
+        return {'keep_data': self.keep_data}
+
+    @classmethod
+    def from_dict(cls,  data):
+        return cls(**data)

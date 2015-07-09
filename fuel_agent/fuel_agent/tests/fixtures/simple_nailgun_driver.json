@@ -107,52 +107,60 @@
                 "fs_label": "",
                 "fs_options": "",
                 "fs_type": "ext2",
-                "mount": "/boot"
+                "mount": "/boot",
+                "keep_data": false
             },
             {
                 "device": "/dev/sda4",
                 "fs_label": "",
                 "fs_options": "",
                 "fs_type": "ext2",
-                "mount": "/tmp"
+                "mount": "/tmp",
+                "keep_data": false
             },
             {
                 "device": "/dev/mapper/os-root",
                 "fs_label": "",
                 "fs_options": "",
                 "fs_type": "ext4",
-                "mount": "/"
+                "mount": "/",
+                "keep_data": false
             },
             {
                 "device": "/dev/mapper/os-swap",
                 "fs_label": "",
                 "fs_options": "",
                 "fs_type": "swap",
-                "mount": "swap"
+                "mount": "swap",
+                "keep_data": false
             },
             {
                 "device": "/dev/mapper/image-glance",
                 "fs_label": "",
                 "fs_options": "",
                 "fs_type": "xfs",
-                "mount": "/var/lib/glance"
+                "mount": "/var/lib/glance",
+                "keep_data": false
             }
         ],
         "lvs": [
             {
                 "name": "root",
                 "size": 15360,
-                "vgname": "os"
+                "vgname": "os",
+                "keep_data": false
             },
             {
                 "name": "swap",
                 "size": 4014,
-                "vgname": "os"
+                "vgname": "os",
+                "keep_data": false
             },
             {
                 "name": "glance",
                 "size": 175347,
-                "vgname": "image"
+                "vgname": "image",
+                "keep_data": false
             }
         ],
         "mds": [],
@@ -172,7 +180,8 @@
                         ],
                         "guid": null,
                         "name": "/dev/sdb1",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 25,
@@ -183,7 +192,8 @@
                         "flags": [],
                         "guid": null,
                         "name": "/dev/sdb2",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 225,
@@ -194,7 +204,8 @@
                         "flags": [],
                         "guid": null,
                         "name": "/dev/sdb3",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     }
                 ]
             },
@@ -213,7 +224,8 @@
                         ],
                         "guid": null,
                         "name": "/dev/sda1",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 25,
@@ -224,7 +236,8 @@
                         "flags": [],
                         "guid": null,
                         "name": "/dev/sda2",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 225,
@@ -235,7 +248,8 @@
                         "flags": [],
                         "guid": null,
                         "name": "/dev/sda3",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 425,
@@ -246,7 +260,8 @@
                         "flags": [],
                         "guid": "fake_guid",
                         "name": "/dev/sda4",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 625,
@@ -257,7 +272,8 @@
                         "flags": [],
                         "guid": null,
                         "name": "/dev/sda5",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 20063,
@@ -268,7 +284,8 @@
                         "flags": [],
                         "guid": null,
                         "name": "/dev/sda6",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     },
                     {
                         "begin": 65660,
@@ -279,7 +296,8 @@
                         "flags": [],
                         "guid": null,
                         "name": "/dev/sda7",
-                        "partition_type": "primary"
+                        "partition_type": "primary",
+                        "keep_data": false
                     }
                 ]
             }
@@ -288,22 +306,26 @@
             {
                 "metadatacopies": 2,
                 "metadatasize": 28,
-                "name": "/dev/sda5"
+                "name": "/dev/sda5",
+                "keep_data": false
             },
             {
                 "metadatacopies": 2,
                 "metadatasize": 28,
-                "name": "/dev/sda6"
+                "name": "/dev/sda6",
+                "keep_data": false
             },
             {
                 "metadatacopies": 2,
                 "metadatasize": 28,
-                "name": "/dev/sdb3"
+                "name": "/dev/sdb3",
+                "keep_data": false
             },
             {
                 "metadatacopies": 2,
                 "metadatasize": 28,
-                "name": "/dev/sdc3"
+                "name": "/dev/sdc3",
+                "keep_data": false
             }
         ],
         "vgs": [
@@ -313,13 +335,15 @@
                     "/dev/sda6",
                     "/dev/sdb3",
                     "/dev/sdc3"
-                ]
+                ],
+                "keep_data": false
             },
             {
                 "name": "os",
                 "pvnames": [
                     "/dev/sda5"
-                ]
+                ],
+                "keep_data": false
             }
         ]
     }

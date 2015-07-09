@@ -122,6 +122,7 @@ Requires:  rubygem-httpclient
 Requires:  rubygem-ipaddress
 Requires:  rubygem-json
 Requires:  rubygems
+Requires:  ethtool
 
 %description -n nailgun-agent
 Nailgun startup agent that register node at Nailgun and make a little setup

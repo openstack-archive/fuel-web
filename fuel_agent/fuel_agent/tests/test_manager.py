@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import mock
 import os
 import signal
@@ -45,6 +46,29 @@ class TestManager(test_base.BaseTestCase):
         super(TestManager, self).setUp()
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         self.mgr = manager.Manager(test_nailgun.PROVISION_SAMPLE_DATA)
+
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(hu, 'list_block_devices')
+    @mock.patch.object(fu, 'make_fs')
+    def test_skip_partitioning(self, mock_fu_mf, mock_lbd, mock_http,
+                               mock_yaml):
+        mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
+        data = copy.deepcopy(test_nailgun.PROVISION_SAMPLE_DATA)
+
+        for disk in data['ks_meta']['pm_data']['ks_spaces']:
+            for volume in disk['volumes']:
+                if volume['type'] == 'pv' and volume['vg'] == 'image':
+                    volume['keep_data'] = True
+
+        self.mgr = manager.Manager(data)
+
+        self.mgr.do_partitioning()
+        mock_fu_mf_expected_calls = [
+            mock.call('ext2', '', '', '/dev/sda3'),
+            mock.call('ext2', '', '', '/dev/sda4'),
+            mock.call('swap', '', '', '/dev/mapper/os-swap')]
+        self.assertEqual(mock_fu_mf_expected_calls, mock_fu_mf.call_args_list)
 
     @mock.patch('six.moves.builtins.open')
     @mock.patch.object(os, 'symlink')

@@ -426,7 +426,8 @@ SINGLE_DISK_KS_SPACES = [
                 "size": 200,
                 "type": "partition",
                 "file_system": "ext4",
-                "name": "Root"
+                "name": "Root",
+                "keep_data": True
             },
         ],
         "type": "disk",
@@ -950,6 +951,37 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual(
             drv.partition_scheme.fs_by_mount('/boot').device,
             '/dev/sda3')
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_elevate_keep_data_single_disk(self, mock_lbd,
+                                           mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        data['ks_meta']['pm_data']['ks_spaces'] = SINGLE_DISK_KS_SPACES
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(data)
+        self.assertTrue(drv.partition_scheme.fs_by_mount('/').keep_data)
+
+        for parted in drv.partition_scheme.parteds:
+            for partition in parted.partitions:
+                self.assertFalse(partition.keep_data)
+
+        for md in drv.partition_scheme.mds:
+            self.assertFalse(md.keep_data)
+
+        for pv in drv.partition_scheme.pvs:
+            self.assertFalse(pv.keep_data)
+
+        for vg in drv.partition_scheme.vgs:
+            self.assertFalse(vg.keep_data)
+
+        for lv in drv.partition_scheme.lvs:
+            self.assertFalse(lv.keep_data)
+
+        for fs in drv.partition_scheme.fss:
+            if fs.mount != '/':
+                self.assertFalse(fs.keep_data)
 
     @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
     @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')

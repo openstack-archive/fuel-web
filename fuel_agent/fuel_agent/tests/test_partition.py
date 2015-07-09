@@ -69,6 +69,7 @@ class TestMultipleDevice(unittest2.TestCase):
             'level': 'level',
             'devices': ['device_a', ],
             'spares': ['device_b', ],
+            'keep_data': False,
         }
         new_md = partition.MD.from_dict(serialized)
         assert serialized == new_md.to_dict()
@@ -101,6 +102,7 @@ class TestPartition(unittest2.TestCase):
             'guid': 'some_guid',
             'name': 'name',
             'partition_type': 'partition_type',
+            'keep_data': False,
         }
         new_pt = partition.Partition.from_dict(serialized)
         assert serialized == new_pt.to_dict()
@@ -160,6 +162,16 @@ class TestPartitionScheme(unittest2.TestCase):
             partition.MD('/dev/md%s' % x, 'level') for x in range(0, 128)]
         self.assertRaises(errors.MDAlreadyExistsError,
                           self.p_scheme.md_next_name)
+
+    def test_partition_by_name(self):
+        parted_1 = self.p_scheme.add_parted(name='name_1', label='label_1')
+        parted_1.add_partition(size=1)
+
+        parted_2 = self.p_scheme.add_parted(name='name_2', label='label_2')
+        expected_prt = parted_2.add_partition(size=1)
+
+        actual_prt = self.p_scheme.partition_by_name(expected_prt.name)
+        self.assertEqual(expected_prt, actual_prt)
 
     def test_md_by_name(self):
         self.assertEqual(0, len(self.p_scheme.mds))
@@ -289,6 +301,14 @@ class TestParted(unittest2.TestCase):
         self.prtd.partitions.extend(expected_partitions)
         self.assertEqual(expected_partitions, self.prtd.primary)
 
+    def test_partition_by_name(self):
+        self.prtd.add_partition(size=1)
+        self.prtd.add_partition(size=1)
+        expected_prt = self.prtd.add_partition(size=1)
+
+        actual_prt = self.prtd.partition_by_name(expected_prt.name)
+        self.assertEqual(expected_prt, actual_prt)
+
     def test_conversion(self):
         prt = partition.Partition(
             name='name',
@@ -296,7 +316,8 @@ class TestParted(unittest2.TestCase):
             device='device',
             begin='begin',
             end='end',
-            partition_type='primary'
+            partition_type='primary',
+            keep_data=True
         )
         self.prtd.partitions.append(prt)
         serialized = self.prtd.to_dict()
@@ -324,6 +345,7 @@ class TestLogicalVolume(unittest2.TestCase):
             'name': 'lv-name',
             'vgname': 'vg-name',
             'size': 1234,
+            'keep_data': False,
         }
         new_lv = partition.LV.from_dict(serialized)
         assert serialized == new_lv.to_dict()
@@ -342,6 +364,7 @@ class TestPhisicalVolume(unittest2.TestCase):
             'name': 'pv-name',
             'metadatasize': 987,
             'metadatacopies': 112,
+            'keep_data': False,
         }
         new_pv = partition.PV.from_dict(serialized)
         assert serialized == new_pv.to_dict()
@@ -357,7 +380,8 @@ class TestVolumesGroup(unittest2.TestCase):
         serialized = vg.to_dict()
         assert serialized == {
             'name': 'vg-name',
-            'pvnames': ['pv-name-a', ]
+            'pvnames': ['pv-name-a', ],
+            'keep_data': False,
         }
         new_vg = partition.VG.from_dict(serialized)
         assert serialized == new_vg.to_dict()
@@ -380,6 +404,7 @@ class TestFileSystem(unittest2.TestCase):
             'fs_type': 'type',
             'fs_options': 'some-option',
             'fs_label': 'some-label',
+            'keep_data': False,
         }
         new_fs = partition.FS.from_dict(serialized)
         assert serialized == new_fs.to_dict()

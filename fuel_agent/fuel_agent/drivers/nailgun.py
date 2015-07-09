@@ -262,7 +262,9 @@ class Nailgun(BaseDataDriver):
                     if volume.get('mount') != '/boot':
                         LOG.debug('Adding partition on disk %s: size=%s' %
                                   (disk['name'], volume['size']))
-                        prt = parted.add_partition(size=volume['size'])
+                        prt = parted.add_partition(
+                            size=volume['size'],
+                            keep_data=volume.get('keep_data', False))
                         LOG.debug('Partition name: %s' % prt.name)
 
                     elif volume.get('mount') == '/boot' \
@@ -275,7 +277,9 @@ class Nailgun(BaseDataDriver):
                         # huge disks if it is possible.
                         LOG.debug('Adding /boot partition on disk %s: '
                                   'size=%s', disk['name'], volume['size'])
-                        prt = parted.add_partition(size=volume['size'])
+                        prt = parted.add_partition(
+                            size=volume['size'],
+                            keep_data=volume.get('keep_data', False))
                         LOG.debug('Partition name: %s', prt.name)
                         self._boot_partition_done = True
                         # FIXME(prmtl): is it even possible to get here?
@@ -389,6 +393,46 @@ class Nailgun(BaseDataDriver):
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
 
+        return self.elevate_keep_data(partition_scheme)
+
+    @classmethod
+    def elevate_keep_data(cls, partition_scheme):
+        LOG.debug('Elevate keep_data flag from partitions')
+
+        for vg in partition_scheme.vgs:
+            for pvname in vg.pvnames:
+                partition = partition_scheme.partition_by_name(pvname)
+                if partition and partition.keep_data:
+                    partition.keep_data = False
+                    vg.keep_data = True
+                    LOG.debug('Set keep_data to vg=%s' % vg.name)
+
+        for lv in partition_scheme.lvs:
+            vg = partition_scheme.vg_by_name(lv.vgname)
+            if vg.keep_data:
+                lv.keep_data = True
+
+        # Need to loop over lv again to remove keep flag from vg
+        for lv in partition_scheme.lvs:
+            vg = partition_scheme.vg_by_name(lv.vgname)
+            if vg.keep_data and lv.keep_data:
+                vg.keep_data = False
+
+        for fs in partition_scheme.fss:
+            lv = partition_scheme.lv_by_device_name(fs.device)
+            if lv:
+                if lv.keep_data:
+                    lv.keep_data = False
+                    fs.keep_data = True
+                    LOG.debug('Set keep_data to fs=%s from lv=%s' %
+                              (fs.mount, lv.name))
+                continue
+            partition = partition_scheme.partition_by_name(fs.device)
+            if partition and partition.keep_data:
+                partition.keep_data = False
+                fs.keep_data = True
+                LOG.debug('Set keep flag to fs=%s from partition=%s' %
+                          (fs.mount, partition.name))
         return partition_scheme
 
     def parse_configdrive_scheme(self):

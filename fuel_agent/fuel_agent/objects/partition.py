@@ -102,6 +102,11 @@ class Parted(base.Serializable):
             separator = 'p'
         return '%s%s%s' % (self.name, separator, self.next_count())
 
+    def partition_by_name(self, name):
+        found = filter(lambda x: (x.name == name), self.partitions)
+        if found:
+            return found[0]
+
     def to_dict(self):
         partitions = [partition.to_dict() for partition in self.partitions]
         return {
@@ -119,10 +124,11 @@ class Parted(base.Serializable):
         return cls(partitions=partitions, **data)
 
 
-class Partition(base.Serializable):
+class Partition(base.BasePartition):
 
     def __init__(self, name, count, device, begin, end, partition_type,
-                 flags=None, guid=None, configdrive=False):
+                 flags=None, guid=None, configdrive=False, **kwargs):
+        super(Partition, self).__init__(**kwargs)
         self.name = name
         self.count = count
         self.device = device
@@ -141,7 +147,8 @@ class Partition(base.Serializable):
         self.guid = guid
 
     def to_dict(self):
-        return {
+        data = super(Partition, self).to_dict()
+        data.update({
             'name': self.name,
             'count': self.count,
             'device': self.device,
@@ -151,38 +158,35 @@ class Partition(base.Serializable):
             'flags': self.flags,
             'guid': self.guid,
             'configdrive': self.configdrive,
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(**data)
+        })
+        return data
 
 
-class PhysicalVolume(base.Serializable):
+class PhysicalVolume(base.BasePartition):
 
-    def __init__(self, name, metadatasize=16, metadatacopies=2):
+    def __init__(self, name, metadatasize=16, metadatacopies=2, **kwargs):
+        super(PhysicalVolume, self).__init__(**kwargs)
         self.name = name
         self.metadatasize = metadatasize
         self.metadatacopies = metadatacopies
 
     def to_dict(self):
-        return {
+        data = super(PhysicalVolume, self).to_dict()
+        data.update({
             'name': self.name,
             'metadatasize': self.metadatasize,
             'metadatacopies': self.metadatacopies,
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(**data)
+        })
+        return data
 
 
 PV = PhysicalVolume
 
 
-class VolumeGroup(base.Serializable):
+class VolumeGroup(base.BasePartition):
 
-    def __init__(self, name, pvnames=None):
+    def __init__(self, name, pvnames=None, **kwargs):
+        super(VolumeGroup, self).__init__(**kwargs)
         self.name = name
         self.pvnames = pvnames or []
 
@@ -191,22 +195,21 @@ class VolumeGroup(base.Serializable):
             self.pvnames.append(pvname)
 
     def to_dict(self):
-        return {
+        data = super(VolumeGroup, self).to_dict()
+        data.update({
             'name': self.name,
             'pvnames': self.pvnames
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(**data)
+        })
+        return data
 
 
 VG = VolumeGroup
 
 
-class LogicalVolume(base.Serializable):
+class LogicalVolume(base.BasePartition):
 
-    def __init__(self, name, vgname, size):
+    def __init__(self, name, vgname, size, **kwargs):
+        super(LogicalVolume, self).__init__(**kwargs)
         self.name = name
         self.vgname = vgname
         self.size = size
@@ -217,24 +220,23 @@ class LogicalVolume(base.Serializable):
                                       self.name.replace('-', '--'))
 
     def to_dict(self):
-        return {
+        data = super(LogicalVolume, self).to_dict()
+        data.update({
             'name': self.name,
             'vgname': self.vgname,
             'size': self.size,
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(**data)
+        })
+        return data
 
 
 LV = LogicalVolume
 
 
-class MultipleDevice(base.Serializable):
+class MultipleDevice(base.BasePartition):
 
     def __init__(self, name, level,
-                 devices=None, spares=None):
+                 devices=None, spares=None, **kwargs):
+        super(MultipleDevice, self).__init__(**kwargs)
         self.name = name
         self.level = level
         self.devices = devices or []
@@ -255,25 +257,24 @@ class MultipleDevice(base.Serializable):
         self.spares.append(device)
 
     def to_dict(self):
-        return {
+        data = super(MultipleDevice, self).to_dict()
+        data.update({
             'name': self.name,
             'level': self.level,
             'devices': self.devices,
             'spares': self.spares,
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(**data)
+        })
+        return data
 
 
 MD = MultipleDevice
 
 
-class FileSystem(base.Serializable):
+class FileSystem(base.BasePartition):
 
-    def __init__(self, device, mount=None,
-                 fs_type=None, fs_options=None, fs_label=None):
+    def __init__(self, device, mount=None, fs_type=None,
+                 fs_options=None, fs_label=None, **kwargs):
+        super(FileSystem, self).__init__(**kwargs)
         self.device = device
         self.mount = mount
         self.type = fs_type or 'xfs'
@@ -281,17 +282,15 @@ class FileSystem(base.Serializable):
         self.label = fs_label or ''
 
     def to_dict(self):
-        return {
+        data = super(FileSystem, self).to_dict()
+        data.update({
             'device': self.device,
             'mount': self.mount,
             'fs_type': self.type,
             'fs_options': self.options,
             'fs_label': self.label,
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(**data)
+        })
+        return data
 
 
 FS = FileSystem
@@ -375,6 +374,11 @@ class PartitionScheme(object):
                     'names from /dev/md0 to /dev/md127 seem to be busy, '
                     'try to generate md name manually')
             count += 1
+
+    def partition_by_name(self, name):
+        return next((parted.partition_by_name(name)
+                    for parted in self.parteds
+                    if parted.partition_by_name(name)), None)
 
     def vg_by_name(self, vgname):
         found = filter(lambda x: (x.name == vgname), self.vgs)

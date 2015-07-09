@@ -87,6 +87,7 @@ def upgrade():
     vms_conf_upgrade()
     extend_nic_model_upgrade()
     upgrade_cluster_ui_settings()
+    upgrade_cluster_bond_settings()
 
 
 def downgrade():
@@ -490,3 +491,48 @@ def downgrade_cluster_ui_settings():
         )
     )
     op.drop_column('clusters', 'ui_settings')
+
+
+def upgrade_cluster_bond_settings():
+    connection = op.get_bind()
+
+    select = sa.sql.text(
+        "SELECT id, networks_metadata from releases")
+    update = sa.sql.text(
+        """UPDATE releases
+        SET networks_metadata = :networks
+        WHERE id = :id""")
+    r = connection.execute(select)
+    new_bond_meta = {
+        "linux": [
+            {
+                "values": ["balance-rr", "active-backup", "802.3ad"],
+                "condition": "interface:pxe == false"
+            },
+            {
+                "values": ["balance-xor", "broadcast", "balance-tlb",
+                           "balance-alb"],
+                "condition": "interface:pxe == false or "
+                             "'experimental' in version:feature_groups"
+            }
+        ],
+        "ovs": [
+            {
+                "values": ["active-backup", "balance-slb",
+                           "lacp-balance-tcp"],
+                "condition": "interface:pxe == false"
+            }
+        ]
+    }
+
+    for release in r:
+        networks_meta = jsonutils.loads(release[1])
+        db_bond_meta = networks_meta['bonding']['properties']
+        for bond_mode in new_bond_meta:
+            if db_bond_meta.get(bond_mode):
+                db_bond_meta[bond_mode]['mode'] = new_bond_meta[bond_mode]
+        connection.execute(
+            update,
+            id=release[0],
+            networks=jsonutils.dumps(networks_meta)
+        )

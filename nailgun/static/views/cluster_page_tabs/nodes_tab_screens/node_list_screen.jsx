@@ -804,10 +804,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             );
         },
         renderNodeProgress: function(showPercentage) {
-            var nodeProgress = _.max([this.props.node.get('progress'), 3]);
+            var nodeProgress = this.props.node.get('progress');
             return (
                 <div className='progress'>
-                    <div className='progress-bar' role='progressbar' style={{width: nodeProgress + '%'}}>
+                    <div className='progress-bar' role='progressbar' style={{width: _.max([nodeProgress, 3]) + '%'}}>
                         {showPercentage && (nodeProgress + '%')}
                     </div>
                 </div>

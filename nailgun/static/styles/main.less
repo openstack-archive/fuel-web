@@ -125,20 +125,60 @@
 
 // ICONS
 
-.glyphicon-warning-sign {
-  content: none;
+.icon-default-styles(@top, @left) {
   width: 15px;
   height: 15px;
-  background: url(@common-icons-sprite) -52px -132px no-repeat;
-  &:before, &:after {
+  background: url(@common-icons-sprite) @top @left no-repeat;
+  &, &:before, &:after {
     content: none;
   }
 }
 
-.glyphicon-danger-sign {
-  .glyphicon-warning-sign;
-  background: url(@common-icons-sprite) -12px -132px no-repeat;
+.glyphicon-warning-sign {
+  .icon-default-styles(-52px, -132px);
 }
+
+.glyphicon-danger-sign {
+  .icon-default-styles(-12px, -132px);
+  width: 16px;
+}
+
+.glyphicon-info-sign {
+  .icon-default-styles(-13px, -612px);
+}
+
+.glyphicon-bell {
+  .icon-default-styles(-13px, -652px);
+}
+
+.glyphicon-trash {
+  .icon-default-styles(-13px, -691px);
+}
+
+.glyphicon-edit {
+  .icon-default-styles(-56px, -691px);
+}
+
+.glyphicon-th {
+  .icon-default-styles(-12px, -252px);
+  width: 16px;
+  height: 17px;
+}
+
+.glyphicon-th-list {
+  .icon-default-styles(-12px, -292px);
+  width: 16px;
+  height: 17px;
+}
+
+.glyphicon-pencil {
+  .icon-default-styles(-13px, -492px);
+  &:hover {
+    background: url(@common-icons-sprite) -53px -492px no-repeat;
+    cursor: pointer;
+  }
+}
+
 
 // BASE SETTINGS
 
@@ -480,12 +520,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .navbar-icons {
   @navbar-icon-count: 4;
-  @navbar-icon-size: 44px;
+  @navbar-icon-default-size: 44px;
   @navbar-icon-spacing: 10px;
   @navbar-icon-font: 'bebas bold';
   margin-top: 13px;
   margin-right: 0;
-  height: @navbar-icon-size;
+  height: @navbar-icon-default-size;
   position: relative;
   > li {
     color: @navbar-icon-color;
@@ -493,8 +533,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
     float: left;
     margin: 0;
     padding: 0;
-    width: @navbar-icon-size;
-    height: @navbar-icon-size;
+    width: @navbar-icon-default-size;
+    height: @navbar-icon-default-size;
     margin-left: @navbar-icon-spacing;
     -webkit-font-smoothing: antialiased;
     cursor: pointer;
@@ -517,9 +557,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
     .navbar-icon-sprite-index(@index) {
       @icon-sprite-img: "../img/icons/header-icons-sprite.svg";
-      background: url(@icon-sprite-img) no-repeat 0 -@navbar-icon-size * @index;
+      background: url(@icon-sprite-img) no-repeat 0 -@navbar-icon-default-size * @index;
       &:hover {
-        background: url(@icon-sprite-img) no-repeat -@navbar-icon-size -@navbar-icon-size * @index;
+        background: url(@icon-sprite-img) no-repeat -@navbar-icon-default-size -@navbar-icon-default-size * @index;
       }
     }
 
@@ -575,7 +615,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     display: block;
     position: absolute;
     left: 0;
-    top: @navbar-icon-size;
+    top: @navbar-icon-default-size;
     max-width: none;
     width: @default-popover-width;
     z-index: 1060;
@@ -602,9 +642,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
     .popover-layout(@index, @width: @default-popover-width) {
       width: @width;
-      @navbar-icon-width: @navbar-icon-size + @navbar-icon-spacing;
+      @navbar-icon-width: @navbar-icon-default-size + @navbar-icon-spacing;
       @popover-right-align-offset: @navbar-icon-width * @navbar-icon-count - @width;
-      @popover-center-align-offset: @popover-right-align-offset - @navbar-icon-width * @index  + @width / 2 - @navbar-icon-size / 2;
+      @popover-center-align-offset: @popover-right-align-offset - @navbar-icon-width * @index  + @width / 2 - @navbar-icon-default-size / 2;
       @popover-offset: min(@popover-right-align-offset, @popover-center-align-offset);
       left: @popover-offset;
       > .arrow {
@@ -624,6 +664,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
           font-size: @base-font-size + 2px;
           float: left;
           width: 10%;
+          margin-top: 2px;
         }
         p {
           display: block;
@@ -1067,7 +1108,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .tabs-box {
   @tab-height: 52px;
-  @tab-icon-size: 40px;
+  @tab-icon-default-size: 40px;
   @tab-icons-sprite: "../img/tabs/tabs-icons-sprite.svg";
   width: 100%;
   height: @tab-height;
@@ -1118,8 +1159,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
 
       .icon {
-        width: @tab-icon-size;
-        height: @tab-icon-size;
+        width: @tab-icon-default-size;
+        height: @tab-icon-default-size;
         margin-left: auto;
         margin-right: auto;
         margin-top: 0;
@@ -1127,11 +1168,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
       .tab-icon-sprite-index(@index) {
         .icon {
-          background: url(@tab-icons-sprite) no-repeat 0 -@tab-icon-size * @index;
+          background: url(@tab-icons-sprite) no-repeat 0 -@tab-icon-default-size * @index;
         }
         &:hover, &.active {
           .icon {
-            background: url(@tab-icons-sprite) no-repeat -@tab-icon-size -@tab-icon-size * @index;
+            background: url(@tab-icons-sprite) no-repeat -@tab-icon-default-size -@tab-icon-default-size * @index;
           }
         }
       }
@@ -1235,6 +1276,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .btn-group label {
       width: auto;
       font-size: @base-font-size;
+      padding: 7px 10px 3px;
     }
   }
 }

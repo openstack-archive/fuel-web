@@ -60,41 +60,95 @@ def prepare():
 
     result = db.execute(
         meta.tables['releases'].insert(),
-        [{
-            'name': 'test_name',
-            'version': '2014.2-6.0',
-            'operating_system': 'ubuntu',
-            'state': 'available',
-            'roles': jsonutils.dumps([
-                'controller',
-                'compute',
-                'mongo',
-            ]),
-            'roles_metadata': jsonutils.dumps({
-                'controller': {
-                    'name': 'Controller',
-                    'description': 'Controller role',
-                    'has_primary': True,
-                },
-                'zabbix-server': {
-                    'name': 'Zabbix Server',
-                    'description': 'Zabbix Server role'
-                },
-                'cinder': {
-                    'name': 'Cinder',
-                    'description': 'Cinder role'
-                },
-                'mongo': {
-                    'name': 'Telemetry - MongoDB',
-                    'description': 'mongo is',
-                    'has_primary': True,
-                }
-            }),
-            'attributes_metadata': jsonutils.dumps({}),
-            'networks_metadata': jsonutils.dumps({}),
-            'is_deployable': True,
-        }])
-    releaseid = result.inserted_primary_key[0]
+        [
+            {
+                'id': 1,
+                'name': 'test_name',
+                'version': '2014.2-6.0',
+                'operating_system': 'ubuntu',
+                'state': 'available',
+                'roles': jsonutils.dumps([
+                    'controller',
+                    'compute',
+                    'mongo',
+                ]),
+                'roles_metadata': jsonutils.dumps({
+                    'controller': {
+                        'name': 'Controller',
+                        'description': 'Controller role',
+                        'has_primary': True,
+                    },
+                    'zabbix-server': {
+                        'name': 'Zabbix Server',
+                        'description': 'Zabbix Server role'
+                    },
+                    'cinder': {
+                        'name': 'Cinder',
+                        'description': 'Cinder role'
+                    },
+                    'mongo': {
+                        'name': 'Telemetry - MongoDB',
+                        'description': 'mongo is',
+                        'has_primary': True,
+                    }
+                }),
+                'attributes_metadata': jsonutils.dumps({}),
+                'networks_metadata': jsonutils.dumps({
+                    'bonding': {
+                        'properties': {
+                            'linux': {
+                                'mode': [
+                                    {
+                                        "values": ["balance-rr",
+                                                   "active-backup",
+                                                   "802.3ad"]
+                                    },
+                                    {
+                                        "values": ["balance-xor",
+                                                   "broadcast",
+                                                   "balance-tlb",
+                                                   "balance-alb"],
+                                        "condition": "'experimental' in "
+                                                     "version:feature_groups"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                }),
+                'is_deployable': True,
+            },
+            {
+                'id': 2,
+                'name': 'test_name_2',
+                'version': '2014.2-6.0',
+                'operating_system': 'ubuntu',
+                'state': 'available',
+                'roles': jsonutils.dumps([
+                    'controller',
+                    'compute',
+                    'mongo',
+                ]),
+                'roles_metadata': jsonutils.dumps({}),
+                'attributes_metadata': jsonutils.dumps({}),
+                'networks_metadata': jsonutils.dumps({
+                    'bonding': {
+                        'properties': {
+                            'ovs': {
+                                'mode': [
+                                    {
+                                        "values": ["active-backup",
+                                                   "balance-slb",
+                                                   "lacp-balance-tcp"]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                }),
+                'is_deployable': True
+            }])
+    releaseid = 1
 
     db.execute(
         meta.tables['clusters'].insert(),
@@ -571,3 +625,38 @@ class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
         self.assertItemsEqual(
             ui_settings['grouping'],
             consts.CLUSTER_GROUPING.roles)
+
+
+class TestClusterBondMetaMigration(base.BaseAlembicMigrationTest):
+    def test_cluster_bond_meta_field_exists_and_has_proper_value(self):
+        lnx_meta = [
+            {
+                "values": ["balance-rr", "active-backup", "802.3ad"],
+                "condition": "interface:pxe == false"
+            },
+            {
+                "values": ["balance-xor", "broadcast", "balance-tlb",
+                           "balance-alb"],
+                "condition": "interface:pxe == false and "
+                             "'experimental' in version:feature_groups"
+            }
+        ]
+        ovs_meta = [
+            {
+                "values": ["active-backup", "balance-slb",
+                           "lacp-balance-tcp"],
+                "condition": "interface:pxe == false"
+            }
+        ]
+        # check data for linux bonds (fuel 6.1 version)
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.networks_metadata]).
+            where(self.meta.tables['releases'].c.name == 'test_name'))
+        bond_meta = jsonutils.loads(result.fetchone()[0])['bonding']
+        self.assertEqual(bond_meta['properties']['linux']['mode'], lnx_meta)
+        # check data for ovs bonds (fuel < 6.1 version)
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.networks_metadata]).
+            where(self.meta.tables['releases'].c.name == 'test_name_2'))
+        bond_meta = jsonutils.loads(result.fetchone()[0])['bonding']
+        self.assertEqual(bond_meta['properties']['ovs']['mode'], ovs_meta)

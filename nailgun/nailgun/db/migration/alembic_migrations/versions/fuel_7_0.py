@@ -490,3 +490,30 @@ def downgrade_cluster_ui_settings():
         )
     )
     op.drop_column('clusters', 'ui_settings')
+
+
+def upgrade_cluster_bond_settings():
+    connection = op.get_bind()
+
+    select = sa.sql.text(
+        "SELECT id, networks_metadata from releases")
+    update = sa.sql.text(
+        """UPDATE releases
+        SET networks_metadata = :networks
+        WHERE id = :id""")
+    r = connection.execute(select)
+    admin_bond_restriction = {
+        "values": ["balance-rr", "active-backup", "802.3ad", "balance-xor",
+                   "broadcast", "balance-tlb", "balance-alb"],
+        "condition": "interface:pxe == false"
+    }
+
+    for release in r:
+        networks_meta = jsonutils.loads(release[1])
+        networks_meta['bonding']['properties']['linux']['mode']\
+            .append(admin_bond_restriction)
+        connection.execute(
+            update,
+            id=release[0],
+            networks=jsonutils.dumps(networks_meta),
+        )

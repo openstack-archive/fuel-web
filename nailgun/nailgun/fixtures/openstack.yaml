@@ -263,6 +263,9 @@
           linux:
             mode:
               - values: ["balance-rr", "active-backup", "802.3ad"]
+              - values: ["802.3ad"]
+                condition: "'experimental' in version:feature_groups or
+                             interface:pxe == false"
               - values: ["balance-xor", "broadcast", "balance-tlb", "balance-alb"]
                 condition: "'experimental' in version:feature_groups"
             xmit_hash_policy:

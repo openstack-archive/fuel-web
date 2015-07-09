@@ -444,6 +444,23 @@ class TestNodeObject(BaseIntegrationTest):
             self.assertEqual(node.ip_addrs, [])
             self.assertEqual(node.pending_roles, prev_roles)
 
+    def test_update_primary_roles(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'role': 'controller'},
+            ]
+        )
+        node = self.env.nodes[0]
+        objects.Node.update_primary_roles(node, ['controller'])
+        self.db().flush()
+        self.db().refresh(node)
+        self.assertEqual(node.primary_roles, ['controller'])
+
+        objects.Node.update_primary_roles(node, [])
+        self.db().flush
+        self.db().refresh(node)
+        self.assertEqual(node.primary_roles, [])
+
 
 class TestTaskObject(BaseIntegrationTest):
 

@@ -125,20 +125,60 @@
 
 // ICONS
 
-.glyphicon-warning-sign {
-  content: none;
+.icon-default-styles(@top, @left) {
   width: 15px;
   height: 15px;
-  background: url(@common-icons-sprite) -52px -132px no-repeat;
-  &:before, &:after {
+  background: url(@common-icons-sprite) @top @left no-repeat;
+  &, &:before, &:after {
     content: none;
   }
 }
 
-.glyphicon-danger-sign {
-  .glyphicon-warning-sign;
-  background: url(@common-icons-sprite) -12px -132px no-repeat;
+.glyphicon-warning-sign {
+  .icon-default-styles(-52px, -132px);
 }
+
+.glyphicon-danger-sign {
+  .icon-default-styles(-12px, -132px);
+  width: 16px;
+}
+
+.glyphicon-info-sign {
+  .icon-default-styles(-13px, -612px);
+}
+
+.glyphicon-bell {
+  .icon-default-styles(-13px, -652px);
+}
+
+.glyphicon-trash {
+  .icon-default-styles(-13px, -691px);
+}
+
+.glyphicon-edit {
+  .icon-default-styles(-56px, -691px);
+}
+
+.glyphicon-th {
+  .icon-default-styles(-12px, -252px);
+  width: 16px;
+  height: 17px;
+}
+
+.glyphicon-th-list {
+  .icon-default-styles(-12px, -292px);
+  width: 16px;
+  height: 17px;
+}
+
+.glyphicon-pencil {
+  .icon-default-styles(-13px, -492px);
+  &:hover {
+    background: url(@common-icons-sprite) -53px -492px no-repeat;
+    cursor: pointer;
+  }
+}
+
 
 // BASE SETTINGS
 
@@ -624,6 +664,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
           font-size: @base-font-size + 2px;
           float: left;
           width: 10%;
+          margin-top: 2px;
         }
         p {
           display: block;
@@ -1235,6 +1276,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .btn-group label {
       width: auto;
       font-size: @base-font-size;
+      padding: 7px 10px 3px;
     }
   }
 }

@@ -17,13 +17,12 @@
 from copy import deepcopy
 
 from ..models.node_volumes import NodeVolumes
+from .adapters import NailgunNodeAdapter
 from nailgun.db import db
 
 
 class VolumeObject(object):
-    """Here we keep buisness logic which is related to
-    volumes configuration
-    """
+    """Keep buisness logic which is related to volumes configuration."""
 
     @classmethod
     def get_volumes(cls, node):
@@ -32,6 +31,8 @@ class VolumeObject(object):
         :param node: node object
         :returns: volumes for the node
         """
+        node = NailgunNodeAdapter(node)
+
         volumes_db = cls._get_model_by_node_id(node.id)
         if volumes_db:
             return volumes_db.volumes
@@ -46,8 +47,9 @@ class VolumeObject(object):
         :param volumes: volumes for node
         :returns: volumes
         """
-        volume_db = cls._get_model_by_node_id(node.id)
+        node = NailgunNodeAdapter(node)
 
+        volume_db = cls._get_model_by_node_id(node.id)
         if volume_db:
             volume_db.volumes = deepcopy(volumes)
         else:

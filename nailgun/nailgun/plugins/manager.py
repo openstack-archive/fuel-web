@@ -120,3 +120,26 @@ class PluginManager(object):
             deployment_tasks.extend(depl_tasks)
 
         return deployment_tasks
+
+    @classmethod
+    def get_plugins_node_roles(cls, cluster):
+        rv = {}
+        core_roles = set(cluster.release.roles_metadata)
+
+        for plugin_db in cluster.plugins:
+            plugin_roles = plugin_db.roles_metadata
+
+            if set(plugin_roles) & set(plugin_roles) & core_roles:
+                err_roles = set(plugin_roles) & set(rv) & core_roles
+
+                # TODO(ikalnitsky): consider to raise exception instead
+                # of logging, though it looks strange to me right now.
+                logger.warning(
+                    "Plugin (ID=%s) is unable to register the following "
+                    "node roles: %s".format(
+                        plugin_db.id, ", ".join(err_roles)))
+                continue
+
+            rv.update(plugin_roles)
+
+        return rv

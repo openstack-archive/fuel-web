@@ -17,14 +17,14 @@
 import copy
 import datetime
 import hashlib
-import jsonschema
-import six
-import uuid
-
 from itertools import cycle
 from itertools import ifilter
+import uuid
 
+import jsonschema
 from oslo.serialization import jsonutils
+import six
+from six.moves import range
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
@@ -50,7 +50,7 @@ class TestObjects(BaseIntegrationTest):
     def test_filter_by(self):
         names = cycle('ABCD')
         os = cycle(['CentOS', 'Ubuntu'])
-        for i in xrange(12):
+        for i in range(12):
             self.env.create_release(
                 name=names.next(),
                 operating_system=os.next()
@@ -99,7 +99,7 @@ class TestObjects(BaseIntegrationTest):
 
         # create releases: we'll have only two releases with both
         # name A and operating_system CentOS
-        for i in xrange(12):
+        for i in range(12):
             self.env.create_release(
                 name=names.next(),
                 operating_system=os.next()
@@ -827,6 +827,69 @@ class TestClusterObject(BaseTestCase):
         with self.assertRaisesRegexp(errors.PluginsTasksOverlapping,
                                      expected_message):
             objects.Cluster.get_deployment_tasks(cluster)
+
+
+class TestClusterObjectGetRoles(BaseTestCase):
+
+    def setUp(self):
+        super(TestClusterObjectGetRoles, self).setUp()
+
+        self.env.create(
+            release_kwargs={
+                'roles_metadata': {
+                    'role_a': {
+                        'name': 'Role A', 'description': 'Role A is ...', },
+                    'role_b': {
+                        'name': 'Role B', 'description': 'Role B is ...', },
+                }
+            })
+        self.cluster = self.env.clusters[0]
+
+    def create_plugin(self, roles_metadata):
+        plugin = objects.Plugin.create(self.env.get_default_plugin_metadata(
+            roles_metadata=roles_metadata,
+        ))
+        self.cluster.plugins.append(plugin)
+        self.db.flush()
+
+    def test_no_plugins_no_additional_roles(self):
+        roles = objects.Cluster.get_roles(self.cluster)
+        self.assertEqual(roles, {
+            'role_a': {
+                'name': 'Role A', 'description': 'Role A is ...', },
+            'role_b': {
+                'name': 'Role B', 'description': 'Role B is ...', },
+        })
+
+    def test_plugin_adds_new_roles(self):
+        self.create_plugin({
+            'role_c': {
+                'name': 'Role C', 'description': 'Role C is ...', },
+        })
+
+        roles = objects.Cluster.get_roles(self.cluster)
+        self.assertEqual(roles, {
+            'role_a': {
+                'name': 'Role A', 'description': 'Role A is ...', },
+            'role_b': {
+                'name': 'Role B', 'description': 'Role B is ...', },
+            'role_c': {
+                'name': 'Role C', 'description': 'Role C is ...', },
+        })
+
+    def test_plugin_does_not_overwrite_existing_roles(self):
+        self.create_plugin({
+            'role_a': {
+                'name': 'Role X', 'description': 'Role X is ...', },
+        })
+
+        roles = objects.Cluster.get_roles(self.cluster)
+        self.assertEqual(roles, {
+            'role_a': {
+                'name': 'Role A', 'description': 'Role A is ...', },
+            'role_b': {
+                'name': 'Role B', 'description': 'Role B is ...', },
+        })
 
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):

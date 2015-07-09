@@ -195,7 +195,8 @@ class DisksFormatConvertor(object):
                     {
                         "size": 938905,
                         "type": "pv",
-                        "vg": "os"
+                        "vg": "os",
+                        "keep_data": true
                     }
                 ]
             }
@@ -210,6 +211,7 @@ class DisksFormatConvertor(object):
                     {
                         "name": "os",
                         "size": 938905,
+                        "keep_data": true
                     }
                 ]
             }
@@ -220,14 +222,15 @@ class DisksFormatConvertor(object):
     def format_disks_to_full(cls, node, disks):
         '''convert disks from simple format to full format
         '''
-        full_format = []
         volume_manager = node.volume_manager
         for disk in disks:
             for volume in disk['volumes']:
-                full_format = volume_manager.set_volume_size(
-                    disk['id'], volume['name'], volume['size'])
+                volume_manager.set_volume_size(disk['id'],
+                                               volume['name'],
+                                               volume['size'])
+                volume_manager.set_volume_flags(disk['id'], volume)
 
-        return full_format
+        return volume_manager.volumes
 
     @classmethod
     def format_disks_to_simple(cls, full):
@@ -287,22 +290,24 @@ class DisksFormatConvertor(object):
             calculated_size = volume['size'] - volume['lvm_meta_size']
             size = calculated_size if calculated_size > 0 else 0
 
-            volume_simple = {
+            volumes_simple_format.append({
                 'name': volume['vg'],
-                'size': size}
-
-            volumes_simple_format.append(volume_simple)
+                'size': size,
+                'keep_data': volume.get('keep_data', False)
+            })
 
         for partition in partitions_full_format:
             volumes_simple_format.append({
                 'name': partition['name'],
-                'size': partition['size']
+                'size': partition['size'],
+                'keep_data': volume.get('keep_data', False)
             })
 
         for raid in raid_full_format:
             volumes_simple_format.append({
                 'name': raid['name'],
-                'size': raid['size']
+                'size': raid['size'],
+                'keep_data': volume.get('keep_data', False)
             })
 
         return volumes_simple_format
@@ -547,6 +552,17 @@ class Disk(object):
                 volume['size'] = size
                 self.free_space -= size
 
+    def set_keep_data_flag(self, name, value):
+        """Set keep_data flag
+        """
+        for volume in self.volumes:
+            if volume.get('type') not in ('pv', 'partition', 'raid'):
+                continue
+
+            volume_name = volume.get('name', None) or volume.get('vg')
+            if volume_name == name:
+                volume['keep_data'] = value
+
     def reset(self):
         self.volumes = []
         self.free_space = self.size
@@ -649,6 +665,21 @@ class VolumeManager(object):
                 self.volumes[idx] = self.expand_generators(vg_template)
 
         self.__logger('Updated volume size %s' % self.volumes)
+        return self.volumes
+
+    def set_volume_flags(self, disk_id, volume):
+        """Set flags of volume
+        """
+        volume_name = volume['name']
+        self.__logger('Update volume flags for disk=%s volume_name=%s' %
+                      (disk_id, volume_name))
+
+        disk = next(d for d in self.disks if d.id == disk_id)
+
+        if volume.get('keep_data', False):
+            disk.set_keep_data_flag(volume_name, volume.get('keep_data'))
+
+        self.__logger('Updated volume flags %s' % self.volumes)
         return self.volumes
 
     def get_space_type(self, volume_name):

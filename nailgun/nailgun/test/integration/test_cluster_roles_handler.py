@@ -14,10 +14,29 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import yaml
+
+from nailgun import objects
 from nailgun.test import base
 
 
 class TestClusterRolesHandler(base.BaseTestCase):
+
+    ROLES = yaml.load("""
+        test_role:
+          name: "Some plugin role"
+          description: "Some description"
+          conflicts:
+            - some_not_compatible_role
+          limits:
+            min: 1
+          restrictions:
+            - condition: "some logic condition"
+              message: "Some message for restriction warning"
+          volumes_mapping:
+            - {allocate_size: "min", id: "os"}
+            - {allocate_size: "all", id: "role_volume_name"}
+    """)
 
     def setUp(self):
         super(TestClusterRolesHandler, self).setUp()
@@ -110,3 +129,47 @@ class TestClusterRolesHandler(base.BaseTestCase):
             {'cluster_id': self.cluster.id, 'role_name': self.role_name}
         )
         self._check_methods_not_allowed(url)
+
+    def test_all_roles_w_plugin(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['roles_metadata'] = self.ROLES
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+        self.db.flush()
+
+        roles = self.app.get(
+            url=base.reverse(
+                'ClusterRolesCollectionHandler',
+                {'cluster_id': self.cluster.id}
+            ),
+            headers=self.default_headers
+        ).json
+
+        self.assertItemsEqual(
+            [role['name'] for role in roles],
+            set(self.expected_roles_data) | set(self.ROLES),
+        )
+
+    def test_get_particular_role_for_cluster_w_plugin(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['roles_metadata'] = self.ROLES
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+        self.db.flush()
+
+        role = self.app.get(
+            url=base.reverse(
+                'ClusterRolesHandler',
+                {'cluster_id': self.cluster.id, 'role_name': 'test_role'}
+            )
+        ).json
+
+        self.assertEquals(role['name'], 'test_role')
+        self.assertDictEqual(
+            role['meta'],
+            self.ROLES['test_role']
+        )
+        self.assertItemsEqual(
+            role['volumes_roles_mapping'],
+            self.ROLES['test_role']['volumes_mapping']
+        )

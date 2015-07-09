@@ -59,11 +59,11 @@ from nailgun import objects
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.settings import settings
-from nailgun.test.base import BaseIntegrationTest
+from nailgun.test import base
 from nailgun.utils import reverse
 
 
-class OrchestratorSerializerTestBase(BaseIntegrationTest):
+class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
     """Class containts helpers."""
 
     def setUp(self):
@@ -2368,7 +2368,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
                          True)
 
 
-class BaseDeploymentSerializer(BaseIntegrationTest):
+class BaseDeploymentSerializer(base.BaseIntegrationTest):
 
     node_name = 'node name'
     # Needs to be set in childs
@@ -2657,7 +2657,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
         self.check_no_murano_data()
 
 
-class TestSerializeInterfaceDriversData(BaseIntegrationTest):
+class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
     def setUp(self):
         super(TestSerializeInterfaceDriversData, self).setUp()
@@ -2771,3 +2771,116 @@ class TestDeploymentMultinodeSerializer50(BaseDeploymentSerializer):
 
     def test_glance_properties(self):
         self.check_murano_data()
+
+
+class TestRolesSerializationWithPlugins(OrchestratorSerializerTestBase):
+
+    ROLES = yaml.load("""
+        test_role:
+          metadata:
+            name: "Some plugin role"
+            description: "Some description"
+            conflicts:
+              - some_not_compatible_role
+            limits:
+              min: 1
+            restrictions:
+              - condition: "some logic condition"
+                message: "Some message for restriction warning"
+          volumes_mapping:
+            - {allocate_size: "min", id: "os"}
+            - {allocate_size: "all", id: "role_volume_name"}
+    """)
+
+    DEPLOYMENT_TASKS = yaml.load("""
+        - id: test_role
+          type: group
+          role: [test_role]
+          required_for: [deploy_end]
+          requires: [deploy_start]
+          parameters:
+            strategy:
+              type: one_by_one
+
+        - id: do-something
+          type: puppet
+          groups: [test_role]
+          required_for: [deploy_end]
+          requires: [deploy_start]
+          parameters:
+            puppet_manifest: /path/to/manifests
+            puppet_modules: /path/to/modules
+            timeout: 3600
+    """)
+
+    def test_roles_are_serialized(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['roles_metadata'] = self.ROLES
+        plugin_data['deployment_tasks'] = self.DEPLOYMENT_TASKS
+        plugin = objects.Plugin.create(plugin_data)
+
+        self.env.create_cluster(
+            node_kwargs=[
+                {'roles': ['test_role']}
+            ])
+        cluster = self.env.clusters[0]
+        cluster.plugins.append(plugin)
+        self.db.flush()
+
+        serialized_data = self.serializer.serialize(cluster, cluster.nodes)
+        self.assertItemsEqual(serialized_data[0]['tasks'], [
+        ])
+
+
+# class TestClusterRolesHandlerWithPlugins(base.BaseTestCase):
+#
+#     ROLES = yaml.load("""
+#         test_role:
+#           metadata:
+#             name: "Some plugin role"
+#             description: "Some description"
+#             conflicts:
+#               - some_not_compatible_role
+#             limits:
+#               min: 1
+#             restrictions:
+#               - condition: "some logic condition"
+#                 message: "Some message for restriction warning"
+#           volumes_mapping:
+#             - {allocate_size: "min", id: "os"}
+#             - {allocate_size: "all", id: "role_volume_name"}
+#     """)
+# 
+#      def setUp(self):
+#         super(TestClusterRolesHandler, self).setUp()
+# 
+#         self.env.create_cluster(api=False)
+#         self.cluster = self.env.clusters[0]
+#         self.expected_roles_data = self.cluster.release.roles_metadata
+#         self.expected_volumes_data = \
+#             self.cluster.release.volumes_metadata['volumes_roles_mapping']
+#         self.role_name = 'compute'
+# 
+#     def test_get_all_roles_w_plugins(self):
+#         roles = self.app.get(
+#             url=base.reverse(
+#                 'ClusterRolesCollectionHandler',
+#                 {'cluster_id': self.cluster.id}
+#             ),
+#             headers=self.default_headers
+#         ).json
+# 
+#         self.assertItemsEqual(
+#             [role['name'] for role in roles],
+#             self.expected_roles_data.keys()
+#         )
+# 
+#         for role in roles:
+#             self.assertDictEqual(
+#                 role['meta'],
+#                 self.expected_roles_data[role['name']]
+#             )
+#             self.assertItemsEqual(
+#                 role['volumes_roles_mapping'],
+#                 self.expected_volumes_data[role['name']]
+#             )

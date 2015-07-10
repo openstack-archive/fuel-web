@@ -23,9 +23,9 @@ Preparing Development Environment
 #. Install Python 2.6 using
    `PPA <https://launchpad.net/~fkrull/+archive/ubuntu/deadsnakes>`::
 
-     sudo add-apt-repository ppa:fkrull/deadsnakes
+     sudo add-apt-repository --yes ppa:fkrull/deadsnakes
      sudo apt-get update
-     sudo apt-get install python2.6 python2.6-dev
+     sudo apt-get install --yes python2.6 python2.6-dev
 
 #. Nailgun can be found in fuel-web/nailgun
 
@@ -33,8 +33,12 @@ Preparing Development Environment
    Ubuntu 12.04 requires postgresql-server-dev-9.1 while
    Ubuntu 14.04 requires postgresql-server-dev-9.3::
 
-    sudo apt-get install postgresql postgresql-server-dev-9.1
-    sudo -u postgres createuser -SDRP nailgun  # enter password "nailgun"
+    sudo apt-get install --yes postgresql postgresql-server-dev-all
+
+    sudo sed -ir 's/peer/trust/' /etc/postgresql/9.*/main/pg_hba.conf
+    sudo service postgresql restart
+
+    sudo -u postgres psql -c "CREATE ROLE nailgun WITH LOGIN PASSWORD 'nailgun'"
     sudo -u postgres createdb nailgun
 
    If required, you can specify Unix-domain
@@ -52,7 +56,7 @@ Preparing Development Environment
 
 #. Install pip and development tools::
 
-    sudo apt-get install python-dev python-pip
+    sudo apt-get install --yes python-dev python-pip
 
 #. Install virtualenv. This step increases flexibility
    when dealing with environment settings and package installation.
@@ -60,7 +64,7 @@ Preparing Development Environment
    (that Nailgun depends on)::
 
     sudo pip install virtualenv virtualenvwrapper
-    source /usr/local/bin/virtualenvwrapper.sh  # you can save this to .bashrc
+    . /usr/local/bin/virtualenvwrapper.sh  # you can save this to .bashrc
     whereis python2.6 # Prints the intall path of python 2.6, let's say /usr/bin/python2.6.
                       # Copy the output and paste it in the command below for option -p
     mkvirtualenv fuel -p /usr/bin/python2.6  # you can use any name instead of 'fuel'
@@ -71,6 +75,8 @@ Preparing Development Environment
    Otherwise, you must install all packages globally.
    You can install pip and use it to require all the other packages at once::
 
+    sudo apt-get install --yes git
+    git clone https://github.com/stackforge/fuel-web.git
     cd fuel-web
     pip install ./shotgun  # this fuel project is listed in setup.py requirements
     pip install --allow-all-external -r nailgun/test-requirements.txt
@@ -152,15 +158,20 @@ Setup for Web UI Tests
 
 #. Install NodeJS and JS dependencies::
 
-    sudo apt-get remove nodejs nodejs-legacy
-    sudo apt-get install software-properties-common
-    sudo apt-get install libfontconfig # missing package required by phantomjs
-    sudo add-apt-repository ppa:chris-lea/node.js
+    sudo apt-get remove --yes nodejs nodejs-legacy
+    sudo apt-get install --yes software-properties-common
+    sudo apt-get install --yes libfontconfig # missing package required by phantomjs
+    sudo add-apt-repository --yes ppa:chris-lea/node.js
     sudo apt-get update
-    sudo apt-get install nodejs
+    sudo apt-get install --yes nodejs
     sudo npm install -g gulp phantomjs
     cd nailgun
-    sudo npm install
+
+    # The following fixes a know bug
+    # https://bugs.launchpad.net/fuel/+bug/1337343/comments/6
+    sudo chown --recursive --from=root `id -un`:`id -gn` `npm config get cache`
+
+    npm install
 
 #. Run full Web UI test suite (this will wipe your Nailgun database in
    PostgreSQL)::
@@ -244,6 +255,11 @@ Running Nailgun in Fake Mode
    make fake environment use real RabbitMQ instead of fake one::
 
     python manage.py run -p 8000 --fake-tasks-amqp | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun.log 2>&1 &
+
+
+#. To rebuild the static resources (css and js)::
+
+    gulp build
 
 #. (optional) To create a compressed version of UI and put it into static_compressed dir::
 

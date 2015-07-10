@@ -222,6 +222,10 @@ class TestCheckRequiredVersions(BaseTestCase):
             'can_upgrade_from': ['5.1.1']})
         checker.check()
 
+    def test_check_for_current_version(self):
+        checker = self.get_checker({'from_version': '6.1'})
+        checker.check()
+
     def test_check_unsupport_version(self):
         checker = self.get_checker({
             'from_version': '5.1',

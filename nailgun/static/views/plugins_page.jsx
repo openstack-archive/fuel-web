@@ -92,8 +92,20 @@ function(_, i18n, React, models, utils) {
                                 {this.props.plugins.length ?
                                     this.props.plugins.map(this.renderPlugin)
                                 :
-                                    <div className='alert alert-warning'>
+                                    <div>
                                         {i18n('plugins_page.no_plugins')}
+                                        <span> For more information please visit:</span>
+                                        {_.contains(app.version.get('feature_groups'), 'mirantis') ?
+                                            <ul>
+                                                <li><a href='https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' target='_blank'>{i18n('plugins_page.plugins_catalog')}</a></li>
+                                                <li><a href='https://docs.mirantis.com/openstack/fuel/fuel-master/user-guide.html#install-fuel-plugins' target='_blank'>{i18n('plugins_page.plugins_documentation')}</a></li>
+                                            </ul>
+                                        :
+                                            <ul>
+                                                <li><a href='https://github.com/stackforge/?query=fuel-plugin' target='_blank'>{i18n('plugins_page.plugins_catalog')}</a></li>
+                                                <li><a href='https://github.com/stackforge/fuel-plugins' target='_blank'>{i18n('plugins_page.plugins_documentation')}</a></li>
+                                            </ul>
+                                        }
                                     </div>
                                 }
                             </div>

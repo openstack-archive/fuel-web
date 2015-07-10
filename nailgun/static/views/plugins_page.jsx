@@ -81,6 +81,17 @@ function(_, i18n, React, models, utils) {
             );
         },
         render: function() {
+            var links = {
+                mirantis: {
+                    catalog: 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/',
+                    documentation: 'https://docs.mirantis.com/openstack/fuel/fuel-master/user-guide.html#install-fuel-plugins'
+                },
+                experimental: {
+                    catalog: 'https://github.com/stackforge/?query=fuel-plugin',
+                    documentation: 'https://github.com/stackforge/fuel-plugins'
+                }
+            };
+            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
             return (
                 <div className='plugins-page'>
                     <div className='page-title'>
@@ -92,8 +103,13 @@ function(_, i18n, React, models, utils) {
                                 {this.props.plugins.length ?
                                     this.props.plugins.map(this.renderPlugin)
                                 :
-                                    <div className='alert alert-warning'>
+                                    <div>
                                         {i18n('plugins_page.no_plugins')}
+                                        <span> {i18n('plugins_page.more_info')}:</span>
+                                        <ul>
+                                            <li><a href={links[isMirantisIso ? 'mirantis' : 'experimental'].catalog} target='_blank'>{i18n('plugins_page.plugins_catalog')}</a></li>
+                                            <li><a href={links[isMirantisIso ? 'mirantis' : 'experimental'].documentation} target='_blank'>{i18n('plugins_page.plugins_documentation')}</a></li>
+                                        </ul>
                                     </div>
                                 }
                             </div>

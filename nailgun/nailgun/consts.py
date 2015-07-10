@@ -350,3 +350,8 @@ OSWL_RESOURCE_TYPES = Enum(
     'cluster_stats',
     'image',
 )
+
+PROTOCOL = Enum(
+    'http',
+    'https',
+)

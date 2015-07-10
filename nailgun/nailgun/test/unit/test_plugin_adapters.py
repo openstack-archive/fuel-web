@@ -189,6 +189,7 @@ class TestPluginV3(TestPluginBase):
         attributes_metadata = self.env.get_default_plugin_env_config()
         roles_metadata = self.env.get_default_plugin_node_roles_config()
         volumes_metadata = self.env.get_default_plugin_volumes_config()
+        network_roles_metadata = self.env.get_default_network_roles_config()
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()
         tasks = self.env.get_default_plugin_tasks()
 
@@ -197,6 +198,7 @@ class TestPluginV3(TestPluginBase):
             self._find_path('environment_config'): attributes_metadata,
             self._find_path('node_roles'): roles_metadata,
             self._find_path('volumes'): volumes_metadata,
+            self._find_path('network_roles'): network_roles_metadata,
             self._find_path('deployment_tasks'): deployment_tasks,
             self._find_path('tasks'): tasks,
         }

@@ -367,31 +367,21 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
 
     def test_new_fields_exists_and_empty(self):
         # check attributes_metadata field exists
-        result = db.execute(
-            sa.select([self.meta.tables['plugins'].c.attributes_metadata]))
-        # check attributes_metadata value is empty
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), {})
+        plugin_table = self.meta.tables['plugins']
+        column_values = [
+            (plugin_table.c.attributes_metadata, {}),
+            (plugin_table.c.volumes_metadata, {}),
+            (plugin_table.c.roles_metadata, {}),
+            (plugin_table.c.network_roles_metadata, []),
+            (plugin_table.c.deployment_tasks, []),
+            (plugin_table.c.tasks, []),
+        ]
+        result = db.execute(sa.select(
+            [item[0] for item in column_values]))
+        db_values = result.fetchone()
 
-        result = db.execute(
-            sa.select([self.meta.tables['plugins'].c.volumes_metadata]))
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), {})
-
-        result = db.execute(
-            sa.select([self.meta.tables['plugins'].c.roles_metadata]))
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), {})
-
-        result = db.execute(
-            sa.select([self.meta.tables['plugins'].c.deployment_tasks]))
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), [])
-
-        result = db.execute(
-            sa.select([self.meta.tables['plugins'].c.tasks]))
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), [])
+        for idx, db_value in enumerate(db_values):
+            self.assertEqual(jsonutils.loads(db_value), column_values[idx][1])
 
 
 class TestPublicIpRequired(base.BaseAlembicMigrationTest):

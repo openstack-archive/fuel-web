@@ -13,6 +13,7 @@
 #    under the License.
 
 import datetime
+import json
 from mock import Mock
 from mock import patch
 import requests
@@ -22,6 +23,7 @@ from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
 from nailgun.objects import Cluster
+from nailgun.objects import MasterNodeSettings
 from nailgun.objects import OpenStackWorkloadStats
 from nailgun.settings import settings
 from nailgun.statistics.statsenderd import StatsSender
@@ -107,7 +109,8 @@ class TestStatisticsSender(BaseTestCase):
         )
         requests_post.assert_called_once_with(
             sender.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
-            headers={'content-type': 'application/json'},
+            headers={'content-type': 'application/json',
+                     'master-node-uid': None},
             data='{}',
             timeout=settings.COLLECTOR_RESP_TIMEOUT)
 
@@ -319,3 +322,20 @@ class TestStatisticsSender(BaseTestCase):
         }
         for status, is_sent in status_vs_sent.iteritems():
             self.check_oswl_data_send_result(send_data_to_url, status, is_sent)
+
+    @patch('nailgun.statistics.statsenderd.requests.post')
+    def test_master_node_in_headers(self, requests_post):
+        requests_post.return_value = Mock(status_code=200)
+        sender = StatsSender()
+        url = ''
+        data = {}
+        master_node_uid = 'xxx'
+        MasterNodeSettings.create({'master_node_uid': master_node_uid})
+
+        sender.send_data_to_url(url=url, data={})
+        requests_post.assert_called_once_with(
+            url,
+            headers={'content-type': 'application/json',
+                     'master-node-uid': master_node_uid},
+            data=json.dumps(data),
+            timeout=settings.COLLECTOR_RESP_TIMEOUT)

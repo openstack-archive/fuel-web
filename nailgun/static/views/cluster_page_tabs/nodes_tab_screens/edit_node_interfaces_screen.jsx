@@ -486,12 +486,19 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             var ifc = this.props.interface;
             return ifc.get('mode') || (ifc.get('bond_properties') || {}).mode;
         },
-        getAvailableModes: function() {
+        getAvailableBondingModes: function() {
             var modes = this.props.bondingProperties[this.props.bondType].mode;
-            return _.reduce(modes, function(result, modeSet) {
-                if (modeSet.condition && !utils.evaluateExpression(modeSet.condition, this.props.configModels).value) return result;
-                return result.concat(modeSet.values);
-            }, [], this);
+            var configModels = _.clone(this.props.configModels);
+            var availableModes = [];
+            var interfaces = this.props.interface.isBond() ? this.props.interface.getSlaveInterfaces() : [this.props.interface];
+            _.each(interfaces, function(ifc) {
+                configModels.interface = ifc;
+                availableModes.push(_.reduce(modes, function(result, modeSet) {
+                    if (modeSet.condition && !utils.evaluateExpression(modeSet.condition, configModels).value) return result;
+                    return result.concat(modeSet.values);
+                }, [], this));
+            }, this);
+            return _.intersection.apply(_, availableModes);
         },
         getBondPropertyValues: function(propertyName, value) {
             var bondType = this.props.bondType;
@@ -550,6 +557,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             var ifc = this.props.interface,
                 cluster = this.props.cluster,
                 locked = this.props.locked,
+                availableBondingModes = this.props.bondingAvailable ? this.getAvailableBondingModes() : [],
+                bondable = !!availableBondingModes.length,
                 networkConfiguration = cluster.get('networkConfiguration'),
                 networks = networkConfiguration.get('networks'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
@@ -593,7 +602,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     onChange={this.bondingModeChanged}
                                     value={this.getBondMode()}
                                     label={i18n(ns + 'bonding_mode')}
-                                    children={this.getBondingOptions(this.getAvailableModes(), 'bonding_modes')}
+                                    children={this.getBondingOptions(availableBondingModes, 'bonding_modes')}
                                     wrapperClassName='pull-right'
                                 />
                                 {this.isHashPolicyNeeded() &&
@@ -624,7 +633,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                         <div className='networks-block row'>
                             <div className='col-xs-3'>
                                 <div className='ifc-checkbox pull-left'>
-                                    {!ifc.isBond() && this.props.bondingAvailable ?
+                                    {!ifc.isBond() && bondable ?
                                         <controls.Input
                                             type='checkbox'
                                             onChange={this.bondingChanged}

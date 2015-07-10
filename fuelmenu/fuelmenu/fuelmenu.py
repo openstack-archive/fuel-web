@@ -13,7 +13,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from common import dialog
 from common import timeout
+from common import urwidwrapper as widget
 import dhcp_checker.api
 import dhcp_checker.utils
 import logging
@@ -269,6 +271,11 @@ class FuelSetup(object):
 
         signal.signal(signal.SIGUSR1, self.handle_sigusr1)
 
+        dialog.display_dialog(
+            self.child,
+            widget.TextLabel("It is highly recommended to change default "
+                             "admin password."),
+            "WARNING!")
         self.mainloop.run()
 
     def exit_program(self, button):

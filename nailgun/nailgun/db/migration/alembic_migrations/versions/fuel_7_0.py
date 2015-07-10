@@ -506,7 +506,7 @@ def downgrade_cluster_ui_settings():
             sa.Enum(
                 'roles', 'hardware', 'both', name='cluster_grouping'),
             nullable=False,
-            default=consts.CLUSTER_GROUPING.roles
+            default='roles'
         )
     )
     op.drop_column('clusters', 'ui_settings')

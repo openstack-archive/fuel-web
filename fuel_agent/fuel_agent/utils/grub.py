@@ -40,12 +40,14 @@ def guess_grub2_conf(chroot=''):
     for filename in ('/boot/grub/grub.cfg', '/boot/grub2/grub.cfg'):
         if os.path.isdir(os.path.dirname(chroot + filename)):
             return filename
+    raise errors.GrubUtilsError('grub2 config file not found')
 
 
 def guess_grub2_default(chroot=''):
     for filename in ('/etc/default/grub', '/etc/sysconfig/grub'):
         if os.path.isfile(chroot + filename):
             return filename
+    raise errors.GrubUtilsError('grub2 defaul config file not found')
 
 
 def guess_grub2_mkconfig(chroot=''):
@@ -54,6 +56,7 @@ def guess_grub2_mkconfig(chroot=''):
              '/usr/sbin/grub-mkconfig', '/usr/sbin/grub2-mkconfig'):
         if os.path.isfile(chroot + grub_mkconfig):
             return grub_mkconfig
+    raise errors.GrubUtilsError('grub2 mkconfig binary not found')
 
 
 def guess_grub_version(chroot=''):
@@ -94,6 +97,8 @@ def guess_grub1_datadir(chroot='', arch='x86_64'):
             LOG.debug('Looks like grub data directory '
                       'is /usr/share/grub/%s' % d)
             return '/usr/share/grub/' + d
+    raise errors.GrubUtilsError(
+        'grub data directory not found for arch %s' % arch)
 
 
 def guess_kernel(chroot='', regexp=None):

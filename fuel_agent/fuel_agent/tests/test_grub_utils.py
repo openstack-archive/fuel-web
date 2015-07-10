@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import mock
-import os
 from oslotest import base as test_base
 import six
 import StringIO
@@ -25,12 +24,11 @@ else:
 
 from fuel_agent import errors
 from fuel_agent.utils import grub as gu
-from fuel_agent.utils import utils
 
 
 class TestGrubUtils(test_base.BaseTestCase):
 
-    @mock.patch.object(os.path, 'isdir')
+    @mock.patch('fuel_agent.utils.grub.os.path.isdir')
     def test_guess_grub2_conf(self, mock_isdir):
         side_effect_values = {
             '/target/boot/grub': True,
@@ -51,7 +49,12 @@ class TestGrubUtils(test_base.BaseTestCase):
         self.assertEqual(gu.guess_grub2_conf('/target'),
                          '/boot/grub2/grub.cfg')
 
-    @mock.patch.object(os.path, 'isfile')
+    @mock.patch('fuel_agent.utils.grub.os.path.isdir', return_value=False)
+    def test_guess_grub2_conf_not_found(self, mock_isdir):
+        self.assertRaises(errors.GrubUtilsError, gu.guess_grub2_conf,
+                          '/target')
+
+    @mock.patch('fuel_agent.utils.grub.os.path.isfile')
     def test_guess_grub2_default(self, mock_isfile):
         side_effect_values = {
             '/target/etc/default/grub': True,
@@ -72,7 +75,17 @@ class TestGrubUtils(test_base.BaseTestCase):
         self.assertEqual(gu.guess_grub2_default('/target'),
                          '/etc/sysconfig/grub')
 
-    @mock.patch.object(os.path, 'isfile')
+    @mock.patch('fuel_agent.utils.grub.os.path.isfile', return_value=False)
+    def test_guess_grub2_default_not_found(self, mock_isfile):
+        self.assertRaises(errors.GrubUtilsError, gu.guess_grub2_default,
+                          '/target')
+
+    @mock.patch('fuel_agent.utils.grub.os.path.isfile', return_value=False)
+    def test_guess_grub2_mkconfig_not_found(self, mock_isfile):
+        self.assertRaises(errors.GrubUtilsError, gu.guess_grub2_mkconfig,
+                          '/target')
+
+    @mock.patch('fuel_agent.utils.grub.os.path.isfile')
     def test_guess_grub2_mkconfig(self, mock_isfile):
         side_effect_values = {
             '/target/sbin/grub-mkconfig': True,
@@ -115,8 +128,8 @@ class TestGrubUtils(test_base.BaseTestCase):
         self.assertEqual(gu.guess_grub2_mkconfig('/target'),
                          '/usr/sbin/grub2-mkconfig')
 
-    @mock.patch.object(gu, 'guess_grub_install')
-    @mock.patch.object(utils, 'execute')
+    @mock.patch('fuel_agent.utils.grub.guess_grub_install')
+    @mock.patch('fuel_agent.utils.grub.utils.execute')
     def test_guess_grub_version_1(self, mock_exec, mock_ggi):
         mock_ggi.return_value = '/grub_install'
         mock_exec.return_value = ('foo 0.97 bar', '')
@@ -125,8 +138,8 @@ class TestGrubUtils(test_base.BaseTestCase):
         mock_exec.assert_called_once_with(*cmd)
         self.assertEqual(version, 1)
 
-    @mock.patch.object(gu, 'guess_grub_install')
-    @mock.patch.object(utils, 'execute')
+    @mock.patch('fuel_agent.utils.grub.guess_grub_install')
+    @mock.patch('fuel_agent.utils.grub.utils.execute')
     def test_guess_grub_version_2(self, mock_exec, mock_ggi):
         mock_ggi.return_value = '/grub_install'
         mock_exec.return_value = ('foo bar', '')
@@ -135,7 +148,7 @@ class TestGrubUtils(test_base.BaseTestCase):
         mock_exec.assert_called_once_with(*cmd)
         self.assertEqual(version, 2)
 
-    @mock.patch.object(os.path, 'isfile')
+    @mock.patch('fuel_agent.utils.grub.os.path.isfile')
     def test_guess_grub(self, mock_isfile):
         side_effect_values = {
             '/target/sbin/grub': True,
@@ -162,8 +175,13 @@ class TestGrubUtils(test_base.BaseTestCase):
         }
         self.assertRaises(errors.GrubUtilsError, gu.guess_grub, '/target')
 
-    @mock.patch.object(os.path, 'isfile')
-    def test_grub_install(self, mock_isfile):
+    @mock.patch('fuel_agent.utils.grub.os.path.isfile', return_value=False)
+    def test_guess_grub_install_not_found(self, mock_isfile):
+        self.assertRaises(errors.GrubUtilsError, gu.guess_grub_install,
+                          '/target')
+
+    @mock.patch('fuel_agent.utils.grub.os.path.isfile')
+    def test_guess_grub_install(self, mock_isfile):
         side_effect_values = {
             '/target/sbin/grub-install': True,
             '/target/sbin/grub2-install': False,
@@ -205,6 +223,24 @@ class TestGrubUtils(test_base.BaseTestCase):
         self.assertEqual(gu.guess_grub_install('/target'),
                          '/usr/sbin/grub2-install')
 
+    @mock.patch('fuel_agent.utils.grub.os.listdir')
+    def test_guess_grub1_datadir_default(self, mock_listdir):
+        mock_listdir.return_value = ['dir', 'x86_64_dir']
+        self.assertEqual('/usr/share/grub/x86_64_dir',
+                         gu.guess_grub1_datadir('/target'))
+
+    @mock.patch('fuel_agent.utils.grub.os.listdir')
+    def test_guess_grub1_datadir_arch(self, mock_listdir):
+        mock_listdir.return_value = ['dir', 'x86_64_dir', 'i386_dir']
+        self.assertEqual('/usr/share/grub/i386_dir',
+                         gu.guess_grub1_datadir('/target', 'i386'))
+
+    @mock.patch('fuel_agent.utils.grub.os.listdir')
+    def test_guess_grub1_datadir_not_found(self, mock_listdir):
+        mock_listdir.return_value = ['dir', 'x86_64_dir', 'i386_dir']
+        self.assertRaises(errors.GrubUtilsError,
+                          gu.guess_grub1_datadir, '/target', 'fake_arch')
+
     @mock.patch('fuel_agent.utils.grub.utils.guess_filename')
     def test_guess_kernel(self, mock_guess):
         mock_guess.return_value = 'vmlinuz-version'
@@ -241,8 +277,8 @@ class TestGrubUtils(test_base.BaseTestCase):
         mock_guess.return_value = None
         self.assertRaises(errors.GrubUtilsError, gu.guess_initrd, '/target')
 
-    @mock.patch.object(gu, 'grub1_stage1')
-    @mock.patch.object(gu, 'grub1_mbr')
+    @mock.patch('fuel_agent.utils.grub.grub1_stage1')
+    @mock.patch('fuel_agent.utils.grub.grub1_mbr')
     def test_grub1_install(self, mock_mbr, mock_stage1):
         install_devices = ['/dev/foo', '/dev/bar']
         expected_calls_mbr = []
@@ -257,9 +293,9 @@ class TestGrubUtils(test_base.BaseTestCase):
         self.assertRaises(errors.GrubUtilsError, gu.grub1_install,
                           '/dev/foo', '/dev/foo', chroot='/target')
 
-    @mock.patch.object(gu, 'guess_grub')
-    @mock.patch.object(os, 'chmod')
-    @mock.patch.object(utils, 'execute')
+    @mock.patch('fuel_agent.utils.grub.guess_grub')
+    @mock.patch('fuel_agent.utils.grub.os.chmod')
+    @mock.patch('fuel_agent.utils.grub.utils.execute')
     def test_grub1_mbr_install_differs_boot(self, mock_exec,
                                             mock_chmod, mock_guess):
         mock_guess.return_value = '/sbin/grub'
@@ -293,9 +329,9 @@ class TestGrubUtils(test_base.BaseTestCase):
             'chroot', '/target', '/tmp/grub.sh',
             run_as_root=True, check_exit_code=[0])
 
-    @mock.patch.object(gu, 'guess_grub')
-    @mock.patch.object(os, 'chmod')
-    @mock.patch.object(utils, 'execute')
+    @mock.patch('fuel_agent.utils.grub.guess_grub')
+    @mock.patch('fuel_agent.utils.grub.os.chmod')
+    @mock.patch('fuel_agent.utils.grub.utils.execute')
     def test_grub1_mbr_install_same_as_boot(self, mock_exec,
                                             mock_chmod, mock_guess):
         mock_guess.return_value = '/sbin/grub'
@@ -327,8 +363,37 @@ class TestGrubUtils(test_base.BaseTestCase):
             'chroot', '/target', '/tmp/grub.sh',
             run_as_root=True, check_exit_code=[0])
 
-    @mock.patch.object(gu, 'guess_kernel')
-    @mock.patch.object(gu, 'guess_initrd')
+    @mock.patch('fuel_agent.utils.grub.shutil.copy')
+    @mock.patch('fuel_agent.utils.grub.guess_grub1_datadir',
+                return_value='/fake_datadir')
+    @mock.patch('fuel_agent.utils.grub.os.remove')
+    @mock.patch('fuel_agent.utils.grub.os.listdir')
+    def test_grub1_stage1(self, mock_listdir, mock_remove, mock_datadir,
+                          mock_copy):
+        mock_listdir.side_effect = [['stage1', 'stage2', 'e2fs_stage_1_5',
+                                     'fat_stage1_5'],
+                                    ['stage1', 'stage2', 'e2fs_stage_1_5',
+                                     'fat_stage1_5', 'jfs_stage1_5']]
+        gu.grub1_stage1(chroot='/target')
+        mock_datadir.assert_called_once_with(chroot='/target')
+        expected_remove_calls = [
+            mock.call('/target/boot/grub/stage1'),
+            mock.call('/target/boot/grub/stage2'),
+            mock.call('/target/boot/grub/fat_stage1_5')]
+        self.assertEqual(expected_remove_calls, mock_remove.call_args_list)
+        expected_copy_calls = [
+            mock.call('/target/fake_datadir/stage1',
+                      '/target/boot/grub/stage1'),
+            mock.call('/target/fake_datadir/stage2',
+                      '/target/boot/grub/stage2'),
+            mock.call('/target/fake_datadir/fat_stage1_5',
+                      '/target/boot/grub/fat_stage1_5'),
+            mock.call('/target/fake_datadir/jfs_stage1_5',
+                      '/target/boot/grub/jfs_stage1_5')]
+        self.assertEqual(expected_copy_calls, mock_copy.call_args_list)
+
+    @mock.patch('fuel_agent.utils.grub.guess_kernel')
+    @mock.patch('fuel_agent.utils.grub.guess_initrd')
     def test_grub1_cfg_kernel_initrd_are_not_set(self, mock_initrd,
                                                  mock_kernel):
         mock_kernel.return_value = 'kernel-version'
@@ -367,8 +432,8 @@ title Default (kernel-version-set)
         mock_open_file = mock_open()
         mock_open_file.write.assert_called_once_with(config)
 
-    @mock.patch.object(utils, 'execute')
-    @mock.patch.object(gu, 'guess_grub_install')
+    @mock.patch('fuel_agent.utils.grub.utils.execute')
+    @mock.patch('fuel_agent.utils.grub.guess_grub_install')
     def test_grub2_install(self, mock_guess_grub, mock_exec):
         mock_guess_grub.return_value = '/sbin/grub'
         expected_calls = [
@@ -380,10 +445,10 @@ title Default (kernel-version-set)
         gu.grub2_install(['/dev/foo', '/dev/bar'], chroot='/target')
         self.assertEqual(mock_exec.call_args_list, expected_calls)
 
-    @mock.patch.object(gu, 'guess_grub2_conf')
-    @mock.patch.object(gu, 'guess_grub2_mkconfig')
-    @mock.patch.object(utils, 'execute')
-    @mock.patch.object(gu, 'guess_grub2_default')
+    @mock.patch('fuel_agent.utils.grub.guess_grub2_conf')
+    @mock.patch('fuel_agent.utils.grub.guess_grub2_mkconfig')
+    @mock.patch('fuel_agent.utils.grub.utils.execute')
+    @mock.patch('fuel_agent.utils.grub.guess_grub2_default')
     def test_grub2_cfg(self, mock_def, mock_exec, mock_mkconfig, mock_conf):
         mock_def.return_value = '/etc/default/grub'
         mock_mkconfig.return_value = '/sbin/grub-mkconfig'
@@ -397,7 +462,6 @@ bar
 GRUB_RECORDFAIL_TIMEOUT=10
 """
 
-        # mock_open = mock.mock_open(read_data=orig_content)
         with mock.patch(OPEN_FUNCTION_NAME,
                         new=mock.mock_open(read_data=orig_content),
                         create=True) as mock_open:

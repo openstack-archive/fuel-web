@@ -253,6 +253,9 @@
                 "licenses": "Licenses",
                 "ubuntu": "Ubuntu",
                 "centos": "CentOS",
+                "more_info": "For more information please visit",
+                "plugins_catalog": "Plugins Catalog",
+                "plugins_documentation": "Plugins Documentation",
                 "no_plugins": "There are no plugins installed."
             },
             "clusters_page": {

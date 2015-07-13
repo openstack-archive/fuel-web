@@ -377,15 +377,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         showDialog: function(Dialog) {
             Dialog.show({cluster: this.props.cluster});
         },
-        onDeployRequest: function() {
+        onActionRequest: function(Dialog) {
             if (this.props.hasChanges()) {
                 dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(function() {
                     this.props.revertChanges();
                     if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                    this.showDialog(dialogs.DeployChangesDialog);
+                    this.showDialog(Dialog);
                 }, this)});
             } else {
-                this.showDialog(dialogs.DeployChangesDialog);
+                this.showDialog(Dialog);
             }
         },
         render: function() {
@@ -395,8 +395,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 taskName = task ? task.get('name') : '',
                 taskProgress = task && task.get('progress') || 0,
                 infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
-                stoppableTask = !_.contains(['stop_deployment', 'reset_environment', 'update'], taskName),
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
+                stoppableTask = !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], taskName),
+                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment()),
+                isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
+                    return node.get('pending_addition') && node.hasRole('kvm-virt');
+                });
             return (
                 <div className='col-xs-6 col-md-3'>
                     <div className='deploy-box pull-right'>
@@ -436,15 +439,25 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                     <div className='discard-changes-icon'></div>
                                 </button>
                             ),
-                            <button
-                                key='deploy-changes'
-                                className='btn btn-primary deploy-btn'
-                                disabled={isDeploymentImpossible}
-                                onClick={this.onDeployRequest}
-                            >
-                                <div className='deploy-icon'></div>
-                                {i18n('cluster_page.deploy_changes')}
-                            </button>
+                            isVMsProvisioningAvailable ?
+                                <button
+                                    key='provision-vms'
+                                    className='btn btn-primary deploy-btn'
+                                    onClick={_.partial(this.onActionRequest, dialogs.ProvisionVMsDialog)}
+                                >
+                                    <div className='deploy-icon'></div>
+                                    {i18n('cluster_page.provision_vms')}
+                                </button>
+                            :
+                                <button
+                                    key='deploy-changes'
+                                    className='btn btn-primary deploy-btn'
+                                    disabled={isDeploymentImpossible}
+                                    onClick={_.partial(this.onActionRequest, dialogs.DeployChangesDialog)}
+                                >
+                                    <div className='deploy-icon'></div>
+                                    {i18n('cluster_page.deploy_changes')}
+                                </button>
                         ]}
                     </div>
                 </div>

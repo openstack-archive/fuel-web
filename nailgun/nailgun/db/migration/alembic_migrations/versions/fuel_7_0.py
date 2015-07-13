@@ -90,9 +90,11 @@ def upgrade():
     extend_nic_model_upgrade()
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
+    extensions_field_upgrade()
 
 
 def downgrade():
+    extensions_field_downgrade()
     downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
     extend_releases_model_downgrade()
@@ -573,3 +575,31 @@ def upgrade_cluster_bond_settings():
             id=release_id,
             networks=jsonutils.dumps(networks_meta)
         )
+
+
+def extensions_field_upgrade():
+    connection = op.get_bind()
+    default_extensions = ['volume_manager']
+
+    for table_name in ['nodes', 'releases', 'clusters']:
+        op.add_column(
+            table_name,
+            sa.Column(
+                'extensions',
+                psql.ARRAY(sa.String(64)),
+                server_default='{}',
+                nullable=False))
+
+    select_query = sa.sql.text("SELECT id FROM clusters")
+    for cluster_id in connection.execute(select_query):
+        connection.execute(
+            sa.text(
+                "UPDATE clusters SET extensions = :extensions "
+                "WHERE id = :id"),
+            id=cluster_id[0],
+            extensions=default_extensions)
+
+
+def extensions_field_downgrade():
+    for table_name in ['nodes', 'releases', 'clusters']:
+        op.drop_column(table_name, 'extensions')

@@ -28,6 +28,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun import objects
 from nailgun import utils
@@ -161,9 +162,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         )).options(joinedload('attributes'))
 
         for node in nodes:
-            from nailgun.extensions.volume_manager.extension \
-                import VolumeManagerExtension
-            for disk in VolumeManagerExtension.get_volumes(node):
+            for disk in node_extension_call('get_node_volumes', node):
                 for part in disk.get('volumes', []):
                     if part.get('name') == 'ceph' and part.get('size', 0) > 0:
                         osd_num += 1
@@ -251,10 +250,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         if images_ceph:
             image_cache_max_size = '0'
         else:
-            from nailgun.extensions.volume_manager.extension \
-                import VolumeManagerExtension
             image_cache_max_size = volume_manager.calc_glance_cache_size(
-                VolumeManagerExtension.get_volumes(node))
+                node_extension_call('get_node_volumes', node))
         return {'glance': {'image_cache_max_size': image_cache_max_size}}
 
     def generate_test_vm_image_data(self, node):

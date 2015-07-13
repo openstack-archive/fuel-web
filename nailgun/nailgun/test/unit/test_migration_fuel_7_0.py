@@ -683,3 +683,12 @@ class TestClusterBondMetaMigration(base.BaseAlembicMigrationTest):
             where(self.meta.tables['releases'].c.name == 'test_name_2'))
         bond_meta = jsonutils.loads(result.fetchone()[0])['bonding']
         self.assertEqual(bond_meta['properties']['ovs']['mode'], ovs_meta)
+
+
+class TestExtensionsField(base.BaseAlembicMigrationTest):
+
+    def test_extensions_field_with_default_data(self):
+        result = db.execute(
+            sa.select([self.meta.tables['clusters'].c.extensions])).fetchone()
+
+        self.assertEqual(list(result)[0], ['volume_manager'])

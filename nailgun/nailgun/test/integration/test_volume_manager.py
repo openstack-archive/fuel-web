@@ -33,7 +33,7 @@ class TestVolumeManagerHelpers(base.BaseIntegrationTest):
             ]
         )
         self.node = self.env.nodes[0]
-        self.volumes = VolumeManagerExtension.get_volumes(self.node)
+        self.volumes = VolumeManagerExtension.get_node_volumes(self.node)
 
     def test_get_volumes_by_name(self):
         result = manager.get_logical_volumes_by_name(

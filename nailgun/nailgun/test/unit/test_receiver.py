@@ -30,7 +30,8 @@ class TestNailgunReceiver(base.BaseTestCase):
         self.env.create(
             status=consts.CLUSTER_STATUSES.operational,
             nodes_kwargs=[
-                {'roles': 'controller', 'status': consts.NODE_STATUSES.ready}])
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready}])
         self.cluster = self.env.clusters[0]
 
         for i in range(2):

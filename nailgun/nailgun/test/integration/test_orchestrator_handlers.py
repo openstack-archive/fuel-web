@@ -228,20 +228,13 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.emulate_nodes_provisioning(controller_nodes)
 
-        nodes_uids = [n.uid for n in controller_nodes]
-
-        controller_to_deploy = nodes_uids[0]
-
-        # if cluster is ha, then DeploySelectedNodes must call
-        # TaskHelper.nodes_to_deploy_ha(cluster, nodes) and it must
-        # append third controller to the list of nodes which are to deploy
         deploy_action_url = self.make_action_url(
             "DeploySelectedNodes",
-            [controller_to_deploy]
+            self.node_uids
         )
         self.send_put(deploy_action_url)
 
-        self.check_deployment_call_made(nodes_uids, mcast)
+        self.check_deployment_call_made(self.node_uids, mcast)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')

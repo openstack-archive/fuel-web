@@ -281,13 +281,6 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
     def get_nodes(self, cluster):
         nodes_to_deploy = super(
             DeploySelectedNodes, self).get_nodes(cluster)
-        # NOTE(dshulyak) we still need to rerun all controllers
-        # if all tasks are added to execution
-        if cluster.is_ha_mode:
-            nodes_to_deploy = TaskHelper.nodes_to_deploy_ha(
-                cluster,
-                nodes_to_deploy
-            )
 
         self.validate(cluster, nodes_to_deploy)
 

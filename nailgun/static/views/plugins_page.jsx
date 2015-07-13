@@ -87,7 +87,7 @@ function(_, i18n, React, models, utils) {
                     documentation: 'https://docs.mirantis.com/openstack/fuel/fuel-master/user-guide.html#install-fuel-plugins'
                 },
                 experimental: {
-                    catalog: 'https://github.com/stackforge/?query=fuel-plugin',
+                    catalog: 'https://www.fuel-infra.org/plugins/catalog.html',
                     documentation: 'https://github.com/stackforge/fuel-plugins'
                 }
             };

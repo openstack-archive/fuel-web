@@ -14,7 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from nailgun import consts
+from nailgun import objects
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.network.manager import NetworkManager
@@ -62,4 +65,35 @@ class NeutronManager(NetworkManager):
 
 
 class NeutronManager70(NeutronManager):
-    pass
+
+    @classmethod
+    def get_network_group_by_role(cls, network_role):
+        return network_role['default_mapping']
+
+    @classmethod
+    def assign_vips_for_net_groups(cls, cluster):
+        net_roles = objects.Cluster.get_network_roles(cluster)
+        vips = {}
+
+        for role in net_roles:
+            properties = role.get('properties', {})
+            net_group = cls.get_network_group_by_role(role)
+            for vip_info in properties.get('vip', ()):
+                vip_name = cls._sanitize_vip_name(vip_info['name'])
+                vip_addr = cls.assign_vip(
+                    cluster, net_group, vip_type=vip_name)
+
+                vips[vip_name] = {
+                    'network_role': role['id'],
+                    'namespace': vip_info.get('namespace', vip_name),
+                    'ipaddr': vip_addr,
+                }
+
+        return vips
+
+    @classmethod
+    def _sanitize_vip_name(cls, vip_name):
+        vip_name = vip_name.lower().replace('\_', '_')
+        vip_name = re.sub(r'[^a-z_]', '_', vip_name)
+        vip_name = vip_name.strip('_')
+        return vip_name

@@ -17,6 +17,9 @@
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NeutronConfig
+from nailgun.errors import errors
+from nailgun import objects
+
 from nailgun.network.manager import NetworkManager
 
 
@@ -62,4 +65,66 @@ class NeutronManager(NetworkManager):
 
 
 class NeutronManager70(NeutronManager):
-    pass
+
+    @classmethod
+    def get_network_group_by_role(cls, network_role):
+        return network_role['default_mapping']
+
+    @classmethod
+    def find_network_role_by_id(cls, cluster, role_id):
+        net_roles = objects.Cluster.get_network_roles(cluster)
+        for role in net_roles:
+            if role['id'] == role_id:
+                return role
+        return None
+
+    @classmethod
+    def get_end_point_ip(cls, cluster_id):
+        cluster_db = objects.Cluster.get_by_uid(cluster_id)
+        net_role = cls.find_network_role_by_id(cluster_db, 'public/vip')
+        if net_role:
+            net_group = cls.get_network_group_by_role(net_role)
+            return cls.assign_vip(cluster_db, net_group, vip_type='public')
+        else:
+            raise errors.CanNotDetermineEndPointIP(
+                u'Can not determine end point IP for cluster %s' %
+                cluster_db.full_name)
+
+    @classmethod
+    def _assign_vips_for_net_groups(cls, cluster):
+        net_roles = objects.Cluster.get_network_roles(cluster)
+        for role in net_roles:
+            properties = role.get('properties', {})
+            net_group = cls.get_network_group_by_role(role)
+            for vip_info in properties.get('vip', ()):
+                vip_name = vip_info['name']
+                vip_addr = cls.assign_vip(
+                    cluster, net_group, vip_type=vip_name)
+
+                yield role, vip_info, vip_addr
+
+    @classmethod
+    def assign_vips_for_net_groups_for_api(cls, cluster):
+        vips = {}
+        for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
+                cluster):
+            alias = vip_info.get('alias')
+            if alias:
+                vips[alias] = vip_addr
+
+        return vips
+
+    @classmethod
+    def assign_vips_for_net_groups(cls, cluster):
+        vips = {}
+        for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
+                cluster):
+            vip_name = vip_info['name']
+            vips[vip_name] = {
+                'network_role': role['id'],
+                'namespace': vip_info.get('namespace'),
+                'ipaddr': vip_addr,
+            }
+
+        return vips
+

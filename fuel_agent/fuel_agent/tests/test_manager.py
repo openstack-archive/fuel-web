@@ -329,6 +329,99 @@ class TestManager(test_base.BaseTestCase):
         self.assertRaises(errors.ImageChecksumMismatchError,
                           self.mgr.do_copyimage)
 
+    @mock.patch('fuel_agent.manager.fu', create=True)
+    @mock.patch('fuel_agent.manager.utils', create=True)
+    @mock.patch('fuel_agent.manager.open',
+                create=True, new_callable=mock.mock_open)
+    @mock.patch('fuel_agent.manager.os', create=True)
+    def test_mount_target_mtab_is_link(self, mock_os, mock_open, mock_utils,
+                                       mock_fu):
+        mock_os.path.islink.return_value = True
+        mock_utils.execute.return_value = (None, None)
+        self.mgr.driver.partition_scheme = objects.PartitionScheme()
+        self.mgr.mount_target('fake_chroot')
+        mock_open.assert_called_once_with('fake_chroot/etc/mtab', 'wb')
+        mock_os.path.islink.assert_called_once_with('fake_chroot/etc/mtab')
+        mock_os.remove.assert_called_once_with('fake_chroot/etc/mtab')
+
+    @mock.patch('fuel_agent.manager.fu', create=True)
+    @mock.patch('fuel_agent.manager.utils', create=True)
+    @mock.patch('fuel_agent.manager.open',
+                create=True, new_callable=mock.mock_open)
+    @mock.patch('fuel_agent.manager.os', create=True)
+    def test_mount_target(self, mock_os, mock_open, mock_utils, mock_fu):
+        mock_os.path.islink.return_value = False
+        self.mgr.driver.partition_scheme = objects.PartitionScheme()
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/var/lib', fs_type='xfs')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/', fs_type='ext4')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/boot', fs_type='ext2')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='swap', fs_type='swap')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/var', fs_type='ext4')
+        fake_mtab = """
+proc /proc proc rw,noexec,nosuid,nodev 0 0
+sysfs /sys sysfs rw,noexec,nosuid,nodev 0 0
+none /sys/fs/fuse/connections fusectl rw 0 0
+none /sys/kernel/debug debugfs rw 0 0
+none /sys/kernel/security securityfs rw 0 0
+udev /dev devtmpfs rw,mode=0755 0 0
+devpts /dev/pts devpts rw,noexec,nosuid,gid=5,mode=0620 0 0
+tmpfs /run tmpfs rw,noexec,nosuid,size=10%,mode=0755 0 0
+none /run/lock tmpfs rw,noexec,nosuid,nodev,size=5242880 0 0
+none /run/shm tmpfs rw,nosuid,nodev 0 0"""
+        mock_utils.execute.return_value = (fake_mtab, None)
+        self.mgr.mount_target('fake_chroot')
+        self.assertEqual([mock.call('fake_chroot/'),
+                          mock.call('fake_chroot/boot'),
+                          mock.call('fake_chroot/var'),
+                          mock.call('fake_chroot/var/lib'),
+                          mock.call('fake_chroot/sys'),
+                          mock.call('fake_chroot/dev'),
+                          mock.call('fake_chroot/proc')],
+                         mock_utils.makedirs_if_not_exists.call_args_list)
+        self.assertEqual([mock.call('ext4', 'fake', 'fake_chroot/'),
+                          mock.call('ext2', 'fake', 'fake_chroot/boot'),
+                          mock.call('ext4', 'fake', 'fake_chroot/var'),
+                          mock.call('xfs', 'fake', 'fake_chroot/var/lib')],
+                         mock_fu.mount_fs.call_args_list)
+        self.assertEqual([mock.call('fake_chroot', '/sys'),
+                          mock.call('fake_chroot', '/dev'),
+                          mock.call('fake_chroot', '/proc')],
+                         mock_fu.mount_bind.call_args_list)
+        file_handle = mock_open.return_value.__enter__.return_value
+        file_handle.write.assert_called_once_with(fake_mtab)
+        mock_open.assert_called_once_with('fake_chroot/etc/mtab', 'wb')
+        mock_os.path.islink.assert_called_once_with('fake_chroot/etc/mtab')
+        self.assertFalse(mock_os.remove.called)
+
+    @mock.patch('fuel_agent.manager.fu', create=True)
+    def test_umount_target(self, mock_fu):
+        self.mgr.driver.partition_scheme = objects.PartitionScheme()
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/var/lib', fs_type='xfs')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/', fs_type='ext4')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/boot', fs_type='ext2')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='swap', fs_type='swap')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='fake', mount='/var', fs_type='ext4')
+        self.mgr.umount_target('fake_chroot')
+        self.assertEqual([mock.call('fake_chroot/proc', try_lazy_umount=True),
+                          mock.call('fake_chroot/dev', try_lazy_umount=True),
+                          mock.call('fake_chroot/sys', try_lazy_umount=True),
+                          mock.call('fake_chroot/var/lib',
+                                    try_lazy_umount=True),
+                          mock.call('fake_chroot/boot', try_lazy_umount=True),
+                          mock.call('fake_chroot/var', try_lazy_umount=True),
+                          mock.call('fake_chroot/', try_lazy_umount=True)],
+                         mock_fu.umount_fs.call_args_list)
+
     @mock.patch('fuel_agent.manager.bu', create=True)
     @mock.patch('fuel_agent.manager.fu', create=True)
     @mock.patch('fuel_agent.manager.utils', create=True)

@@ -332,7 +332,6 @@ class Manager(object):
                           (image.format, image.target_device))
                 fu.extend_fs(image.format, image.target_device)
 
-    # TODO(kozhukalov): write tests
     def mount_target(self, chroot, treat_mtab=True, pseudo=True):
         """Mount a set of file systems into a chroot
 
@@ -364,7 +363,6 @@ class Manager(object):
             with open(mtab_path, 'wb') as f:
                 f.write(mtab)
 
-    # TODO(kozhukalov): write tests for this method
     def umount_target(self, chroot, pseudo=True, try_lazy_umount=True):
         LOG.debug('Umounting target file systems: %s', chroot)
         if pseudo:

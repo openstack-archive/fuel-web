@@ -377,3 +377,14 @@ class NetAssignmentValidator(BasicValidator):
                     "bond".format(node['id'], iface['id']),
                     log_message=True
                 )
+
+
+class NetworkGroupValidator(BasicValidator):
+
+    @classmethod
+    def validate_delete(cls, data, instance, force=False):
+        pass
+
+    @classmethod
+    def validate_update(cls, data, **kwargs):
+        return cls.validate_json(data)

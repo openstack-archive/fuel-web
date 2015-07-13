@@ -3901,8 +3901,8 @@
       }
     },
     "gulp-lintspaces": {
-      "version": "0.2.3",
-      "from": "gulp-lintspaces@~0.2.3",
+      "version": "0.2.5",
+      "from": "gulp-lintspaces@~0.2.5",
       "dependencies": {
         "gulp-util": {
           "version": "2.2.20",

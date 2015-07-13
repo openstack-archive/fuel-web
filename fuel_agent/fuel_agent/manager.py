@@ -545,6 +545,7 @@ class Manager(object):
             # mounting all images into chroot tree
             self.mount_target(chroot, treat_mtab=False, pseudo=False)
 
+            # Irrelevant silly comment to demonstrate CI is badly broken
             LOG.info('*** Shipping image content ***')
             LOG.debug('Installing operating system into image')
             # FIXME(kozhukalov): !!! we need this part to be OS agnostic

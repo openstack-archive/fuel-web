@@ -17,14 +17,14 @@ import mock
 import unittest2
 
 from fuel_agent import errors
-from fuel_agent.objects import partition
+from fuel_agent import objects
 
 
 class TestMultipleDevice(unittest2.TestCase):
 
     def setUp(self):
         super(self.__class__, self).setUp()
-        self.md = partition.MD(name='name', level='level')
+        self.md = objects.MD(name='name', level='level')
 
     def test_add_device_ok(self):
         self.assertEqual(0, len(self.md.devices))
@@ -71,7 +71,7 @@ class TestMultipleDevice(unittest2.TestCase):
             'spares': ['device_b', ],
             'keep_data': False,
         }
-        new_md = partition.MD.from_dict(serialized)
+        new_md = objects.MD.from_dict(serialized)
         assert serialized == new_md.to_dict()
 
 
@@ -79,8 +79,8 @@ class TestPartition(unittest2.TestCase):
 
     def setUp(self):
         super(TestPartition, self).setUp()
-        self.pt = partition.Partition('name', 'count', 'device', 'begin',
-                                      'end', 'partition_type')
+        self.pt = objects.Partition('name', 'count', 'device', 'begin',
+                                    'end', 'partition_type')
 
     def test_set_flag(self):
         self.assertEqual(0, len(self.pt.flags))
@@ -104,7 +104,7 @@ class TestPartition(unittest2.TestCase):
             'partition_type': 'partition_type',
             'keep_data': False,
         }
-        new_pt = partition.Partition.from_dict(serialized)
+        new_pt = objects.Partition.from_dict(serialized)
         assert serialized == new_pt.to_dict()
 
 
@@ -112,37 +112,37 @@ class TestPartitionScheme(unittest2.TestCase):
 
     def setUp(self):
         super(TestPartitionScheme, self).setUp()
-        self.p_scheme = partition.PartitionScheme()
+        self.p_scheme = objects.PartitionScheme()
 
     def test_root_device_not_found(self):
         self.assertRaises(errors.WrongPartitionSchemeError,
                           self.p_scheme.root_device)
 
     def test_fs_by_device(self):
-        expected_fs = partition.FS('device')
+        expected_fs = objects.FS('device')
         self.p_scheme.fss.append(expected_fs)
-        self.p_scheme.fss.append(partition.FS('wrong_device'))
+        self.p_scheme.fss.append(objects.FS('wrong_device'))
         actual_fs = self.p_scheme.fs_by_device('device')
         self.assertEqual(expected_fs, actual_fs)
 
     def test_fs_by_mount(self):
-        expected_fs = partition.FS('d', mount='mount')
+        expected_fs = objects.FS('d', mount='mount')
         self.p_scheme.fss.append(expected_fs)
-        self.p_scheme.fss.append(partition.FS('w_d', mount='wrong_mount'))
+        self.p_scheme.fss.append(objects.FS('w_d', mount='wrong_mount'))
         actual_fs = self.p_scheme.fs_by_mount('mount')
         self.assertEqual(expected_fs, actual_fs)
 
     def test_pv_by_name(self):
-        expected_pv = partition.PV('pv')
+        expected_pv = objects.PV('pv')
         self.p_scheme.pvs.append(expected_pv)
-        self.p_scheme.pvs.append(partition.PV('wrong_pv'))
+        self.p_scheme.pvs.append(objects.PV('wrong_pv'))
         actual_pv = self.p_scheme.pv_by_name('pv')
         self.assertEqual(expected_pv, actual_pv)
 
     def test_vg_by_name(self):
-        expected_vg = partition.VG('vg')
+        expected_vg = objects.VG('vg')
         self.p_scheme.vgs.append(expected_vg)
-        self.p_scheme.vgs.append(partition.VG('wrong_vg'))
+        self.p_scheme.vgs.append(objects.VG('wrong_vg'))
         actual_vg = self.p_scheme.vg_by_name('vg')
         self.assertEqual(expected_vg, actual_vg)
 
@@ -159,7 +159,7 @@ class TestPartitionScheme(unittest2.TestCase):
 
     def test_md_next_name_fail(self):
         self.p_scheme.mds = [
-            partition.MD('/dev/md%s' % x, 'level') for x in range(0, 128)]
+            objects.MD('/dev/md%s' % x, 'level') for x in range(0, 128)]
         self.assertRaises(errors.MDAlreadyExistsError,
                           self.p_scheme.md_next_name)
 
@@ -175,27 +175,27 @@ class TestPartitionScheme(unittest2.TestCase):
 
     def test_md_by_name(self):
         self.assertEqual(0, len(self.p_scheme.mds))
-        expected_md = partition.MD('name', 'level')
+        expected_md = objects.MD('name', 'level')
         self.p_scheme.mds.append(expected_md)
-        self.p_scheme.mds.append(partition.MD('wrong_name', 'level'))
+        self.p_scheme.mds.append(objects.MD('wrong_name', 'level'))
         self.assertEqual(expected_md, self.p_scheme.md_by_name('name'))
 
     def test_md_by_mount(self):
         self.assertEqual(0, len(self.p_scheme.mds))
         self.assertEqual(0, len(self.p_scheme.fss))
-        expected_md = partition.MD('name', 'level')
-        expected_fs = partition.FS('name', mount='mount')
+        expected_md = objects.MD('name', 'level')
+        expected_fs = objects.FS('name', mount='mount')
         self.p_scheme.mds.append(expected_md)
         self.p_scheme.fss.append(expected_fs)
-        self.p_scheme.fss.append(partition.FS('wrong_name',
+        self.p_scheme.fss.append(objects.FS('wrong_name',
                                  mount='wrong_mount'))
         self.assertEqual(expected_md, self.p_scheme.md_by_mount('mount'))
 
     def test_md_attach_by_mount_md_exists(self):
         self.assertEqual(0, len(self.p_scheme.mds))
         self.assertEqual(0, len(self.p_scheme.fss))
-        expected_md = partition.MD('name', 'level')
-        expected_fs = partition.FS('name', mount='mount')
+        expected_md = objects.MD('name', 'level')
+        expected_fs = objects.FS('name', mount='mount')
         self.p_scheme.mds.append(expected_md)
         self.p_scheme.fss.append(expected_fs)
         actual_md = self.p_scheme.md_attach_by_mount('device', 'mount')
@@ -220,25 +220,25 @@ class TestPartitionScheme(unittest2.TestCase):
 class TestParted(unittest2.TestCase):
     def setUp(self):
         super(TestParted, self).setUp()
-        self.prtd = partition.Parted('name', 'label')
+        self.prtd = objects.Parted('name', 'label')
 
-    @mock.patch.object(partition.Parted, 'next_count')
-    @mock.patch.object(partition.Parted, 'next_type')
+    @mock.patch.object(objects.Parted, 'next_count')
+    @mock.patch.object(objects.Parted, 'next_type')
     def test_next_name_none(self, nt_mock, nc_mock):
         nc_mock.return_value = 1
         nt_mock.return_value = 'extended'
         self.assertEqual(None, self.prtd.next_name())
 
-    @mock.patch.object(partition.Parted, 'next_count')
-    @mock.patch.object(partition.Parted, 'next_type')
+    @mock.patch.object(objects.Parted, 'next_count')
+    @mock.patch.object(objects.Parted, 'next_type')
     def test_next_name_no_separator(self, nt_mock, nc_mock):
         nc_mock.return_value = 1
         nt_mock.return_value = 'not_extended'
         expected_name = '%s%s' % (self.prtd.name, 1)
         self.assertEqual(expected_name, self.prtd.next_name())
 
-    @mock.patch.object(partition.Parted, 'next_count')
-    @mock.patch.object(partition.Parted, 'next_type')
+    @mock.patch.object(objects.Parted, 'next_count')
+    @mock.patch.object(objects.Parted, 'next_type')
     def test_next_name_with_separator(self, nt_mock, nc_mock):
         nc_mock.return_value = 1
         nt_mock.return_value = 'not_extended'
@@ -257,14 +257,14 @@ class TestParted(unittest2.TestCase):
 
     def test_next_begin_last_extended_partition(self):
         self.prtd.partitions.append(
-            partition.Partition('name', 'count', 'device', 'begin', 'end',
-                                'extended'))
+            objects.Partition('name', 'count', 'device', 'begin', 'end',
+                              'extended'))
         self.assertEqual('begin', self.prtd.next_begin())
 
     def test_next_begin_no_last_extended_partition(self):
         self.prtd.partitions.append(
-            partition.Partition('name', 'count', 'device', 'begin', 'end',
-                                'primary'))
+            objects.Partition('name', 'count', 'device', 'begin', 'end',
+                              'primary'))
         self.assertEqual('end', self.prtd.next_begin())
 
     def test_next_count_no_logical(self):
@@ -272,8 +272,8 @@ class TestParted(unittest2.TestCase):
 
     def test_next_count_has_logical(self):
         self.prtd.partitions.append(
-            partition.Partition('name', 'count', 'device', 'begin', 'end',
-                                'logical'))
+            objects.Partition('name', 'count', 'device', 'begin', 'end',
+                              'logical'))
         self.assertEqual(6, self.prtd.next_count('logical'))
 
     def test_next_type_gpt(self):
@@ -284,20 +284,20 @@ class TestParted(unittest2.TestCase):
         self.prtd.label = 'msdos'
         self.assertEqual('primary', self.prtd.next_type())
         self.prtd.partitions.extend(
-            3 * [partition.Partition('name', 'count', 'device', 'begin',
-                                     'end', 'primary')])
+            3 * [objects.Partition('name', 'count', 'device', 'begin',
+                                   'end', 'primary')])
         self.assertEqual('extended', self.prtd.next_type())
 
     def test_next_type_has_extended(self):
         self.prtd.label = 'msdos'
         self.prtd.partitions.append(
-            partition.Partition('name', 'count', 'device', 'begin', 'end',
-                                'extended'))
+            objects.Partition('name', 'count', 'device', 'begin', 'end',
+                              'extended'))
         self.assertEqual('logical', self.prtd.next_type())
 
     def test_primary(self):
-        expected_partitions = [partition.Partition('name', 'count', 'device',
-                                                   'begin', 'end', 'primary')]
+        expected_partitions = [objects.Partition('name', 'count', 'device',
+                                                 'begin', 'end', 'primary')]
         self.prtd.partitions.extend(expected_partitions)
         self.assertEqual(expected_partitions, self.prtd.primary)
 
@@ -310,7 +310,7 @@ class TestParted(unittest2.TestCase):
         self.assertEqual(expected_prt, actual_prt)
 
     def test_conversion(self):
-        prt = partition.Partition(
+        prt = objects.Partition(
             name='name',
             count='count',
             device='device',
@@ -328,14 +328,14 @@ class TestParted(unittest2.TestCase):
                 prt.to_dict(),
             ]
         }
-        new_prtd = partition.Parted.from_dict(serialized)
+        new_prtd = objects.Parted.from_dict(serialized)
         assert serialized == new_prtd.to_dict()
 
 
 class TestLogicalVolume(unittest2.TestCase):
 
     def test_conversion(self):
-        lv = partition.LV(
+        lv = objects.LV(
             name='lv-name',
             vgname='vg-name',
             size=1234
@@ -347,14 +347,14 @@ class TestLogicalVolume(unittest2.TestCase):
             'size': 1234,
             'keep_data': False,
         }
-        new_lv = partition.LV.from_dict(serialized)
+        new_lv = objects.LV.from_dict(serialized)
         assert serialized == new_lv.to_dict()
 
 
 class TestPhisicalVolume(unittest2.TestCase):
 
     def test_conversion(self):
-        pv = partition.PV(
+        pv = objects.PV(
             name='pv-name',
             metadatasize=987,
             metadatacopies=112,
@@ -366,14 +366,14 @@ class TestPhisicalVolume(unittest2.TestCase):
             'metadatacopies': 112,
             'keep_data': False,
         }
-        new_pv = partition.PV.from_dict(serialized)
+        new_pv = objects.PV.from_dict(serialized)
         assert serialized == new_pv.to_dict()
 
 
 class TestVolumesGroup(unittest2.TestCase):
 
     def test_conversion(self):
-        vg = partition.VG(
+        vg = objects.VG(
             name='vg-name',
             pvnames=['pv-name-a', ]
         )
@@ -383,14 +383,14 @@ class TestVolumesGroup(unittest2.TestCase):
             'pvnames': ['pv-name-a', ],
             'keep_data': False,
         }
-        new_vg = partition.VG.from_dict(serialized)
+        new_vg = objects.VG.from_dict(serialized)
         assert serialized == new_vg.to_dict()
 
 
 class TestFileSystem(unittest2.TestCase):
 
     def test_conversion(self):
-        fs = partition.FS(
+        fs = objects.FS(
             device='some-device',
             mount='/mount',
             fs_type='type',
@@ -406,5 +406,5 @@ class TestFileSystem(unittest2.TestCase):
             'fs_label': 'some-label',
             'keep_data': False,
         }
-        new_fs = partition.FS.from_dict(serialized)
+        new_fs = objects.FS.from_dict(serialized)
         assert serialized == new_fs.to_dict()

@@ -24,7 +24,6 @@ from fuel_agent.drivers import nailgun
 from fuel_agent import errors
 from fuel_agent import manager
 from fuel_agent import objects
-from fuel_agent.objects import partition
 from fuel_agent.tests import test_nailgun
 from fuel_agent.utils import artifact as au
 from fuel_agent.utils import fs as fu
@@ -215,7 +214,7 @@ class TestManager(test_base.BaseTestCase):
 
     @mock.patch('yaml.load')
     @mock.patch.object(utils, 'init_http_request')
-    @mock.patch.object(partition.PartitionScheme, 'configdrive_device')
+    @mock.patch.object(objects.PartitionScheme, 'configdrive_device')
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(utils, 'render_and_save')
     @mock.patch.object(hu, 'list_block_devices')

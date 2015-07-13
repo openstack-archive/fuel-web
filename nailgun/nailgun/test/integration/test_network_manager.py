@@ -32,6 +32,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.network.neutron import NeutronManager
+from nailgun.network.neutron import NeutronManager70
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -495,3 +496,19 @@ class TestNeutronManager(BaseIntegrationTest):
             ])
 
         self.check_networks_assignment(self.env.nodes[0])
+
+
+class TestNeutronManager70(BaseIntegrationTest):
+
+    def test_assign_vips_for_net_groups(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+                {'roles': ['cinder']}])
+        cluster = self.env.clusters[0]
+
+        vips = NeutronManager70.assign_vips_for_net_groups(cluster)
+        self.assertIn('haproxy', vips)
+        self.assertIn('vrouter', vips)

@@ -90,9 +90,11 @@ def upgrade():
     extend_nic_model_upgrade()
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
+    extensions_field_upgrade()
 
 
 def downgrade():
+    extensions_field_downgrade()
     downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
     extend_releases_model_downgrade()
@@ -573,3 +575,19 @@ def upgrade_cluster_bond_settings():
             id=release_id,
             networks=jsonutils.dumps(networks_meta)
         )
+
+
+def extensions_field_upgrade():
+    for table_name in ['nodes', 'releases', 'clusters']:
+        op.add_column(
+            table_name,
+            sa.Column(
+                'extensions',
+                psql.ARRAY(sa.String(64)),
+                server_default='{}',
+                nullable=False))
+
+
+def extensions_field_downgrade():
+    for table_name in ['nodes', 'releases', 'clusters']:
+        op.drop_column(table_name, 'extensions')

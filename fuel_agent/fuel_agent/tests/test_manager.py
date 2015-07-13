@@ -464,7 +464,7 @@ class TestManager(test_base.BaseTestCase):
             mock_fu.umount_fs.call_args_list)
         self.assertEqual(
             [mock.call(
-                '/tmp/imgdir', try_lazy_umount=False, pseudo=False)] * 2,
+                '/tmp/imgdir', pseudo=False)] * 2,
             mock_umount_target.call_args_list)
         self.assertEqual(
             [mock.call('/dev/loop0'), mock.call('/dev/loop1')] * 2,

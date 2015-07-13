@@ -365,7 +365,7 @@ class Manager(object):
                 f.write(mtab)
 
     # TODO(kozhukalov): write tests for this method
-    def umount_target(self, chroot, pseudo=True, try_lazy_umount=True):
+    def umount_target(self, chroot, pseudo=True, try_lazy_umount=False):
         LOG.debug('Umounting target file systems: %s', chroot)
         if pseudo:
             for path in ('/proc', '/dev', '/sys'):
@@ -635,7 +635,7 @@ class Manager(object):
             LOG.info('*** Finalizing image space ***')
             fu.umount_fs(proc_path)
             # umounting all loop devices
-            self.umount_target(chroot, pseudo=False, try_lazy_umount=False)
+            self.umount_target(chroot, pseudo=False)
 
             for image in self.driver.image_scheme.images:
                 # find fs with the same loop device object
@@ -699,7 +699,7 @@ class Manager(object):
             LOG.debug('Finally: umounting procfs %s', proc_path)
             fu.umount_fs(proc_path)
             LOG.debug('Finally: umounting chroot tree %s', chroot)
-            self.umount_target(chroot, pseudo=False, try_lazy_umount=False)
+            self.umount_target(chroot, pseudo=False)
             for image in self.driver.image_scheme.images:
                 LOG.debug('Finally: detaching loop device: %s',
                           str(image.target_device))

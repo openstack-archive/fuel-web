@@ -120,3 +120,15 @@ class TestFSUtils(test_base.BaseTestCase):
             mock.call('umount', '-l', '/fake', check_exit_code=[0])
         ]
         self.assertEqual(expected_calls, mock_exec.call_args_list)
+
+    @mock.patch.object(utils, 'execute')
+    def test_umount_fs_error_lazy_false(self, mock_exec):
+        mock_exec.side_effect = [
+            None, errors.ProcessExecutionError('message')]
+        expected_calls = [
+            mock.call('mountpoint', '-q', '/fake', check_exit_code=[0]),
+            mock.call('umount', '/fake', check_exit_code=[0]),
+        ]
+        self.assertRaises(errors.ProcessExecutionError,
+                          fu.umount_fs, '/fake', try_lazy_umount=False)
+        self.assertEqual(expected_calls, mock_exec.call_args_list)

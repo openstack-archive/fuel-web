@@ -79,6 +79,7 @@ def upgrade():
         'oswl_stats_cluster_id_created_date_resource_type_unique_key',
         'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
     op.alter_column('clusters', 'name', type_=sa.TEXT())
+    op.alter_column('network_groups', 'name', type_=sa.TEXT())
 
     extend_ip_addrs_model_upgrade()
     extend_node_model_upgrade()

@@ -102,9 +102,24 @@ class TestNailgunReceiver(base.BaseTestCase):
         update_verify_networks.assert_called_with(
             self.task, 'ready', 100, '', [])
 
+    @patch('nailgun.rpc.receiver.set', create=True)
     @patch('nailgun.objects.Task.update_verify_networks')
-    def test_check_repositories_resp_error(self, update_verify_networks):
-        urls = ['url1', 'url2']
+    def test_check_repositories_resp_error(self, update_verify_networks,
+                                           mock_set):
+        class FakeSet(object):
+            def __init__(self):
+                self.items = []
+
+            def __getitem__(self, i):
+                    return self.items[i]
+
+            def update(self, item):
+                self.items.extend(sorted(item))
+                return self.items
+
+        mock_set.return_value = FakeSet()
+        # order doesn't matter
+        urls = ['url2', 'url1', 'url3']
         repo_check_message = {
             "status": "ready",
             "progress": 100,
@@ -119,4 +134,5 @@ class TestNailgunReceiver(base.BaseTestCase):
         update_verify_networks.assert_called_with(
             self.task, 'error', 100,
             ('These nodes: "1" failed to '
-             'connect to some of these repositories: "url1", "url2"'), [])
+             'connect to some of these repositories: "url1", "url2", "url3"'),
+            [])

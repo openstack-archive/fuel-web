@@ -136,7 +136,7 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             })
 
             self.assertDictEqual(node['ks_meta']['pm_data'], {
-                'ks_spaces': VolumeManagerExtension.get_volumes(node_db),
+                'ks_spaces': VolumeManagerExtension.get_node_volumes(node_db),
                 'kernel_params': kernal_params
             })
             # Check node interfaces section

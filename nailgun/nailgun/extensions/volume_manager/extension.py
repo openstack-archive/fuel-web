@@ -27,6 +27,10 @@ class VolumeManagerExtension(BaseExtension):
 
     name = 'volume_manager'
     version = '1.0.0'
+    provides = [
+        'get_node_volumes',
+        'set_node_volumes',
+        'set_default_node_volumes']
 
     @classmethod
     def alembic_migrations_path(cls):
@@ -42,11 +46,21 @@ class VolumeManagerExtension(BaseExtension):
          'handler': NodeVolumesInformationHandler}]
 
     @classmethod
-    def get_volumes(cls, node):
+    def get_node_volumes(cls, node):
         from .objects.volumes import VolumeObject
         return VolumeObject.get_volumes(node)
 
     @classmethod
-    def set_volumes(cls, node, volumes):
+    def set_node_volumes(cls, node, volumes):
         from .objects.volumes import VolumeObject
         return VolumeObject.set_volumes(node, volumes)
+
+    @classmethod
+    def set_default_node_volumes(cls, node):
+        from .objects.volumes import VolumeObject
+        return VolumeObject.set_default_node_volumes(node)
+
+    @classmethod
+    def on_node_create(cls, node):
+        from .objects.volumes import VolumeObject
+        return VolumeObject.set_default_node_volumes(node)

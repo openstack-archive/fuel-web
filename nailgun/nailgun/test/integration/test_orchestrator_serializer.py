@@ -243,7 +243,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(
             serialized_data['glance'],
             {'image_cache_max_size': manager.calc_glance_cache_size(
-                VolumeManagerExtension.get_volumes(node_db))})
+                VolumeManagerExtension.get_node_volumes(node_db))})
 
     def test_serialize_node_vms_conf(self):
         node = self.env.create_node(

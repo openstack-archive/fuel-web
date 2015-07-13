@@ -22,6 +22,7 @@ from sqlalchemy import String
 from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 
+from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy.orm import relationship
 
 from nailgun import consts
@@ -64,8 +65,9 @@ class Release(Base):
         "Cluster",
         primaryjoin="Release.id==Cluster.release_id",
         backref="release",
-        cascade="all,delete"
-    )
+        cascade="all,delete")
+    extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
+                        default=[], nullable=False, server_default='{}')
 
     # TODO(enchantner): get rid of properties
 

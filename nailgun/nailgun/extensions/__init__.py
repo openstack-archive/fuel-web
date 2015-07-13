@@ -16,3 +16,5 @@
 
 from nailgun.extensions.base import BaseExtension
 from nailgun.extensions.base import get_all_extensions
+from nailgun.extensions.base import node_extension_call
+from nailgun.extensions.base import fire_callback_on_node_create

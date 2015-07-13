@@ -34,6 +34,8 @@ from nailgun.objects.serializers.node import NodeSerializer
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.extensions import node_extension_call
+from nailgun.extensions import fire_callback_on_node_create
 from nailgun.errors import errors
 from nailgun.logger import logger
 
@@ -175,8 +177,6 @@ class Node(NailgunObject):
         (see :func:`update_roles` and :func:`update_pending_roles`)
         * creating interfaces for Node in DB (see :func:`update_interfaces`)
         * creating default Node attributes (see :func:`create_attributes`)
-        * creating default volumes allocation for Node \
-        (see :func:`update_volumes`)
         * creating Notification about newly discovered Node \
         (see :func:`create_discover_notification`)
 
@@ -223,9 +223,10 @@ class Node(NailgunObject):
 
         # creating attributes
         cls.create_attributes(new_node)
-        cls.update_volumes(new_node)
-
         cls.create_discover_notification(new_node)
+
+        fire_callback_on_node_create(new_node)
+
         return new_node
 
     @classmethod
@@ -322,11 +323,7 @@ class Node(NailgunObject):
             # Should be done as a part of blueprint:
             # https://blueprints.launchpad.net/fuel/+spec
             #                                 /volume-manager-refactoring
-            from nailgun.extensions.volume_manager.extension \
-                import VolumeManagerExtension
-            VolumeManagerExtension.set_volumes(
-                instance,
-                instance.volume_manager.gen_volumes_info())
+            node_extension_call('set_default_node_volumes', instance)
         except Exception as exc:
             msg = (
                 u"Failed to generate volumes "

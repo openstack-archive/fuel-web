@@ -16,6 +16,7 @@
 
 import itertools
 
+import mock
 from mock import Mock
 from mock import patch
 from netaddr import IPAddress
@@ -32,6 +33,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.network.neutron import NeutronManager
+from nailgun.network.neutron import NeutronManager70
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -495,3 +497,59 @@ class TestNeutronManager(BaseIntegrationTest):
             ])
 
         self.check_networks_assignment(self.env.nodes[0])
+
+
+class TestNeutronManager70(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNeutronManager70, self).setUp()
+        self.cluster = self._create_env()
+        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
+        self.assertIs(self.net_manager, NeutronManager70)
+
+    def _create_env(self):
+        return self.env.create(
+            release_kwargs={'version': '1111-7.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': 'neutron'
+            }
+        )
+
+    def test_get_endpoint_ip(self):
+        vip = '172.16.0.1'
+
+        with patch.object(NeutronManager70, 'assign_vip',
+                          return_value=vip) as assign_vip_mock:
+            endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
+            assign_vip_mock.assert_called_once_with(
+                self.cluster, mock.ANY, vip_type='public')
+            self.assertEqual(endpoint_ip, vip)
+
+    def test_assign_vips_for_net_groups_for_api(self):
+        expected_aliases = [
+            'management_vip', 'management_vrouter_vip',
+            'public_vip', 'public_vrouter_vip'
+        ]
+
+        assigned_vips = self.net_manager.assign_vips_for_net_groups_for_api(
+            self.cluster)
+
+        self.assertItemsEqual(expected_aliases, assigned_vips.keys())
+
+    def test_assign_vips_for_net_groups(self):
+        expected_vips = [
+            {'name': 'vrouter', 'namespace': 'vrouter'},
+            {'name': 'vrouter_pub', 'namespace': 'vrouter'},
+            {'name': 'management', 'namespace': 'haproxy'},
+            {'name': 'public', 'namespace': 'haproxy'},
+        ]
+
+        assigned_vips = self.net_manager.assign_vips_for_net_groups(
+            self.cluster)
+
+        for vip in expected_vips:
+            name = vip['name']
+            self.assertIn(name, assigned_vips)
+            self.assertEqual(assigned_vips[name]['namespace'],
+                             vip['namespace'])

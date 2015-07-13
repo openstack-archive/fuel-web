@@ -62,5 +62,29 @@ class NeutronManager(NetworkManager):
 
 
 class NeutronManager70(NeutronManager):
-    pass
+
+    @classmethod
+    def get_network_group_by_role(cls, network_role):
+        return network_role['default_mapping']
+
+    @classmethod
+    def assign_vips_for_net_groups(cls, cluster):
+        net_roles = objects.Cluster.get_network_roles(cluster)
+        vips = {}
+
+        for role in net_roles:
+            properties = role.get('properties', {})
+            net_group = cls.get_network_group_by_role(role)
+            for vip_info in properties.get('vips', ()):
+                vip_type = vip_info['name']
+
+                if vip_type == consts.NETWORK_VIP_TYPES.haproxy:
+                    vip_name = '{0}_vip'.format(net_group)
+                else:
+                    vip_name = '{0}_{1}_vip'.format(net_group, vip_type)
+
+                vips[vip_name] = cls.assign_vip(
+                    cluster, net_group, vip_type=vip_type)
+
+        return vips
 

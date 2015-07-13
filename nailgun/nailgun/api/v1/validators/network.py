@@ -377,3 +377,30 @@ class NetAssignmentValidator(BasicValidator):
                     "bond".format(node['id'], iface['id']),
                     log_message=True
                 )
+
+
+class NetworkGroupValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data):
+        d = cls.validate_json(data)
+        node_group = objects.NodeGroup.get_by_uid(d.get('group_id'))
+
+        if not node_group:
+            raise errors.InvalidData("Specified node group does not exist")
+
+        if d.get('name') in [n.name for n in node_group.networks]:
+            raise errors.InvalidData(
+                "Network with name {0} already exists "
+                "in node group {1}".format(d['name'], node_group.name)
+            )
+
+        return d
+
+    @classmethod
+    def validate_delete(cls, data, instance, force=False):
+        pass
+
+    @classmethod
+    def validate_update(cls, data, **kwargs):
+        return cls.validate_json(data)

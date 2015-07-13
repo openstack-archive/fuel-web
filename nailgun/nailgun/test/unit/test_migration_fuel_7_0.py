@@ -797,3 +797,22 @@ class TestTunSegmentType(base.BaseAlembicMigrationTest):
                 [self.meta.tables['neutron_config'].c.segmentation_type])).\
             fetchall()
         self.assertIn(('tun',), types)
+
+
+class TestStringNetworkGroupName(base.BaseAlembicMigrationTest):
+
+    def test_tun_segment_type_added(self):
+        db.execute(
+            self.meta.tables['network_groups'].insert(),
+            [{
+                'id': 3,
+                'name': 'custom_name',
+                'vlan_start': None,
+                'cidr': '10.20.0.0/24',
+                'gateway': '10.20.0.200',
+            }])
+        names = db.execute(
+            sa.select(
+                [self.meta.tables['network_groups'].c.name])). \
+            fetchall()
+        self.assertIn(('custom_name',), names)

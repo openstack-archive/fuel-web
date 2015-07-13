@@ -338,6 +338,10 @@ class NetworkManager(object):
         return result
 
     @classmethod
+    def assign_vips_for_net_groups_for_api(cls, cluster):
+        return cls.assign_vips_for_net_groups(cluster)
+
+    @classmethod
     def check_ip_belongs_to_net(cls, ip_addr, network):
         addr = IPAddress(ip_addr)
         for r in network.ip_ranges:

@@ -92,6 +92,9 @@ default_messages = {
     # Plugin errors
     "PackageVersionIsNotCompatible": "Package version is not compatible",
 
+    # Extensions
+    "CannotFindExtension": "Cannot find extension",
+
     # unknown
     "UnknownError": "Unknown error"
 }

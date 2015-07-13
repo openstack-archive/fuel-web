@@ -14,7 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
+from nailgun.errors import errors
 from nailgun.extensions import BaseExtension
+from nailgun.extensions import fire_callback_on_node_create
+from nailgun.extensions import fire_callback_on_node_reset
+from nailgun.extensions import fire_callback_on_node_update
+from nailgun.extensions import get_extension
+from nailgun.extensions import node_extension_call
 from nailgun.test.base import BaseTestCase
 
 
@@ -46,3 +54,110 @@ class TestBaseExtension(BaseTestCase):
         self.assertEqual(
             self.extension.full_name(),
             'ext_name-1.0.0')
+
+
+def make_mock_extensions():
+    mocks = []
+    for name in ['ex1', 'ex2']:
+        # NOTE(eli): since 'name' is reserved world
+        # for mock constructor, we should assign
+        # name explicitly
+        ex_m = mock.MagicMock()
+        ex_m.name = name
+        ex_m.provides = ['method_call']
+        mocks.append(ex_m)
+
+    return mocks
+
+
+class TestExtensionUtils(BaseTestCase):
+
+    def make_node(self, node_extensions=[], cluster_extensions=[]):
+        node = mock.MagicMock()
+        node.extensions = node_extensions
+        node.cluster.extensions = cluster_extensions
+
+        return node
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_get_extension(self, get_m):
+        get_extension('ex1')
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_get_extension_raises_errors(self, get_m):
+        self.assertRaisesRegexp(
+            errors.CannotFindExtension,
+            "Cannot find extension with name 'unknown_ex'",
+            get_extension,
+            'unknown_ex')
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_node_extension_call_raises_error(self, _):
+        self.assertRaisesRegexp(
+            errors.CannotFindExtension,
+            "Cannot find extension which provides 'method_call' call",
+            node_extension_call,
+            'method_call',
+            self.make_node())
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_node_extension_call_extension_from_node(self, get_m):
+        node = self.make_node(
+            node_extensions=['ex1'],
+            cluster_extensions=['ex2'])
+
+        node_extension_call('method_call', node)
+        ex1 = get_m.return_value[0]
+        self.assertEqual('ex1', ex1.name)
+        ex2 = get_m.return_value[1]
+        self.assertEqual('ex2', ex2.name)
+
+        ex1.method_call.assert_called_once_with(node)
+        self.assertFalse(ex2.method_call.called)
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_node_extension_call_default_extension_from_cluster(self, get_m):
+        node = self.make_node(
+            node_extensions=[],
+            cluster_extensions=['ex2'])
+
+        node_extension_call('method_call', node)
+        ex1 = get_m.return_value[0]
+        self.assertEqual('ex1', ex1.name)
+        ex2 = get_m.return_value[1]
+        self.assertEqual('ex2', ex2.name)
+
+        self.assertFalse(ex1.method_call.called)
+        ex2.method_call.assert_called_once_with(node)
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_node_create(self, get_m):
+        node = mock.MagicMock()
+        fire_callback_on_node_create(node)
+
+        for ext in get_m.return_value:
+            ext.on_node_create.assert_called_once_with(node)
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_node_update(self, get_m):
+        node = mock.MagicMock()
+        fire_callback_on_node_update(node)
+
+        for ext in get_m.return_value:
+            ext.on_node_update.assert_called_once_with(node)
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_node_reset(self, get_m):
+        node = mock.MagicMock()
+        fire_callback_on_node_reset(node)
+
+        for ext in get_m.return_value:
+            ext.on_node_reset.assert_called_once_with(node)

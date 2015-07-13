@@ -16,7 +16,12 @@
 
 import os
 
+import six
+
 from nailgun.extensions import BaseExtension
+from nailgun.logger import logger
+from nailgun.objects import Node
+from nailgun.objects import Notification
 
 from .handlers.disks import NodeDefaultsDisksHandler
 from .handlers.disks import NodeDisksHandler
@@ -27,6 +32,10 @@ class VolumeManagerExtension(BaseExtension):
 
     name = 'volume_manager'
     version = '1.0.0'
+    provides = [
+        'get_node_volumes',
+        'set_node_volumes',
+        'set_default_node_volumes']
 
     @classmethod
     def alembic_migrations_path(cls):
@@ -42,11 +51,41 @@ class VolumeManagerExtension(BaseExtension):
          'handler': NodeVolumesInformationHandler}]
 
     @classmethod
-    def get_volumes(cls, node):
+    def get_node_volumes(cls, node):
         from .objects.volumes import VolumeObject
         return VolumeObject.get_volumes(node)
 
     @classmethod
-    def set_volumes(cls, node, volumes):
+    def set_node_volumes(cls, node, volumes):
         from .objects.volumes import VolumeObject
         return VolumeObject.set_volumes(node, volumes)
+
+    @classmethod
+    def set_default_node_volumes(cls, node):
+        from .objects.volumes import VolumeObject
+
+        try:
+            VolumeObject.set_default_node_volumes(node)
+        except Exception as exc:
+            logger.exception(exc)
+            msg = "Failed to generate volumes for node '{0}': '{1}'".format(
+                node.human_readable_name, six.text_type(exc))
+            Notification.create({
+                'topic': 'error',
+                'message': msg,
+                'node_id': node.id})
+
+        if node.cluster_id:
+            Node.add_pending_change(node, 'disks')
+
+    @classmethod
+    def on_node_create(cls, node):
+        cls.set_default_node_volumes(node)
+
+    @classmethod
+    def on_node_update(cls, node):
+        cls.set_default_node_volumes(node)
+
+    @classmethod
+    def on_node_reset(cls, node):
+        cls.set_default_node_volumes(node)

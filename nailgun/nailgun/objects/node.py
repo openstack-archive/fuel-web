@@ -35,6 +35,9 @@ from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.extensions import fire_callback_on_node_create
+from nailgun.extensions import fire_callback_on_node_reset
+from nailgun.extensions import fire_callback_on_node_update
 from nailgun.logger import logger
 
 from nailgun.objects import Cluster
@@ -175,8 +178,6 @@ class Node(NailgunObject):
         (see :func:`update_roles` and :func:`update_pending_roles`)
         * creating interfaces for Node in DB (see :func:`update_interfaces`)
         * creating default Node attributes (see :func:`create_attributes`)
-        * creating default volumes allocation for Node \
-        (see :func:`update_volumes`)
         * creating Notification about newly discovered Node \
         (see :func:`create_discover_notification`)
 
@@ -223,9 +224,10 @@ class Node(NailgunObject):
 
         # creating attributes
         cls.create_attributes(new_node)
-        cls.update_volumes(new_node)
-
         cls.create_discover_notification(new_node)
+
+        fire_callback_on_node_create(new_node)
+
         return new_node
 
     @classmethod
@@ -305,54 +307,6 @@ class Node(NailgunObject):
         db().refresh(instance)
 
     @classmethod
-    def update_volumes(cls, instance):
-        """Update volumes for Node instance.
-        Adds pending "disks" changes for Cluster which Node belongs to
-
-        :param instance: Node instance
-        :returns: None
-        """
-        attrs = instance.attributes
-        if not attrs:
-            attrs = cls.create_attributes(instance)
-
-        try:
-            # TODO(eli): update volumes method should be moved
-            # into an extension
-            # Should be done as a part of blueprint:
-            # https://blueprints.launchpad.net/fuel/+spec
-            #                                 /volume-manager-refactoring
-            from nailgun.extensions.volume_manager.extension \
-                import VolumeManagerExtension
-            VolumeManagerExtension.set_volumes(
-                instance,
-                instance.volume_manager.gen_volumes_info())
-        except Exception as exc:
-            msg = (
-                u"Failed to generate volumes "
-                u"info for node '{0}': '{1}'"
-            ).format(
-                instance.name or instance.mac or instance.id,
-                str(exc) or "see logs for details"
-            )
-            logger.warning(traceback.format_exc())
-            Notification.create({
-                "topic": "error",
-                "message": msg,
-                "node_id": instance.id
-            })
-
-        if instance.cluster_id:
-            Cluster.add_pending_changes(
-                instance.cluster,
-                "disks",
-                node_id=instance.id
-            )
-
-        db().add(attrs)
-        db().flush()
-
-    @classmethod
     def create_discover_notification(cls, instance):
         """Create notification about discovering new Node
 
@@ -412,8 +366,6 @@ class Node(NailgunObject):
         (see :func:`remove_from_cluster`)
         * updating interfaces for Node in DB (see :func:`update_interfaces`)
         * creating default Node attributes (see :func:`create_attributes`)
-        * updating volumes allocation for Node using Cluster's Release \
-        metadata (see :func:`update_volumes`)
 
         :param data: dictionary of key-value pairs as object fields
         :returns: Node instance
@@ -507,7 +459,15 @@ class Node(NailgunObject):
             consts.NODE_STATUSES.provisioning,
             consts.NODE_STATUSES.deploying
         ):
-            cls.update_volumes(instance)
+            # TODO(eli): we somehow should move this
+            # condition into extension, in order to do
+            # that probably we will have to create separate
+            # table to keep disks which were used to create
+            # volumes mapping.
+            # Should be solved as a part of blueprint
+            # https://blueprints.launchpad.net/fuel/+spec
+            #                                 /volume-manager-refactoring
+            fire_callback_on_node_update(instance)
 
         return instance
 
@@ -525,7 +485,6 @@ class Node(NailgunObject):
             "pending_addition": True,
             "pending_deletion": False,
         }
-        cls.update_volumes(instance)
         cls.update(instance, node_data)
         cls.move_roles_to_pending_roles(instance)
         # when node reseted to discover:
@@ -535,6 +494,7 @@ class Node(NailgunObject):
         # added to cluster (without any additonal state in database)
         netmanager = Cluster.get_network_manager()
         netmanager.clear_assigned_ips(instance)
+        fire_callback_on_node_reset(instance)
         db().flush()
 
     @classmethod

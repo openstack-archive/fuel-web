@@ -83,7 +83,7 @@ def exclude_glance_partition(role_mapping, node):
     In case images_ceph used as glance image storage
     no need to create partition /var/lib/glance
     """
-    if node.cluster.attributes.editable['storage'].get('images_ceph'):
+    if node.cluster.attributes.editable.get('storage', {}).get('images_ceph'):
         images_ceph = (node.cluster.attributes['editable']['storage']
                        ['images_ceph']['value'])
         if images_ceph:
@@ -592,7 +592,8 @@ class VolumeManager(object):
 
         # Make sure that we don't change volumes directly from manager
         from .extension import VolumeManagerExtension
-        self.volumes = deepcopy(VolumeManagerExtension.get_volumes(node)) or []
+        self.volumes = deepcopy(
+            VolumeManagerExtension.get_node_volumes(node)) or []
         # For swap calculation
         self.ram = node.ram
         self.allowed_volumes = node.get_node_spaces()

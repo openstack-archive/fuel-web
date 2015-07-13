@@ -162,6 +162,7 @@ class InstallationInfo(object):
                 'nodes': self.get_nodes_info(cluster.nodes),
                 'node_groups': self.get_node_groups_info(cluster.node_groups),
                 'status': cluster.status,
+                'extensions': cluster.extensions,
                 'attributes': self.get_attributes(cluster.attributes.editable,
                                                   self.attributes_white_list),
                 'vmware_attributes': self.get_attributes(

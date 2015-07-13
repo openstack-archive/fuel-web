@@ -19,9 +19,11 @@ from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UnicodeText
 
+from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
@@ -107,6 +109,8 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
     deployment_tasks = Column(JSON, default=[])
+    extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
+                        default=[], nullable=False, server_default='{}')
 
     @property
     def changes(self):

@@ -17,6 +17,8 @@
 import abc
 import six
 
+from nailgun.errors import errors
+
 
 def get_all_extensions():
     # TODO(eli): implement extensions autodiscovery
@@ -26,6 +28,65 @@ def get_all_extensions():
         import VolumeManagerExtension
 
     return [VolumeManagerExtension]
+
+
+def get_extension(name):
+    """Retrieves extension by name
+
+    :param str name: name of the extension
+    :returns: extension class
+    """
+    extensions = filter(lambda e: e.name == name, get_all_extensions())
+
+    if not extensions:
+        raise errors.CannotFindExtension(
+            "Cannot find extension with name '{0}'".format(name))
+
+    return extensions[0]
+
+
+def _get_extension_by_node_or_env(call_name, node):
+    found_extension = None
+
+    # Try to find extension in node
+    if node:
+        for extension in node.extensions:
+            if call_name in get_extension(extension).provides:
+                found_extension = extension
+
+    # Try to find extension by environment
+    if not found_extension and node.cluster:
+        for extension in node.cluster.extensions:
+            if call_name in get_extension(extension).provides:
+                found_extension = extension
+
+    if not found_extension:
+        raise errors.CannotFindExtension(
+            "Cannot find extension which provides "
+            "'{0}' call".format(call_name))
+
+    return get_extension(found_extension)
+
+
+def node_extension_call(call_name, node, *args, **kwargs):
+    extension = _get_extension_by_node_or_env(call_name, node)
+
+    return getattr(extension, call_name)(node, *args, **kwargs)
+
+
+def fire_callback_on_node_create(node):
+    for extension in get_all_extensions():
+        extension.on_node_create(node)
+
+
+def fire_callback_on_node_update(node):
+    for extension in get_all_extensions():
+        extension.on_node_update(node)
+
+
+def fire_callback_on_node_reset(node):
+    for extension in get_all_extensions():
+        extension.on_node_reset(node)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -40,6 +101,11 @@ class BaseExtension(object):
     #   }
     # ]
     urls = []
+
+    # Specify a list of calls which extension provides.
+    # This list is required for core and other extensions
+    # to find extension with specific functionality.
+    provides = []
 
     @classmethod
     def alembic_migrations_path(cls):
@@ -71,3 +137,18 @@ class BaseExtension(object):
     @classmethod
     def alembic_table_version(cls):
         return '{0}alembic_version'.format(cls.table_prefix())
+
+    @classmethod
+    def on_node_create(cls, node):
+        """Callback which gets executed when node is created
+        """
+
+    @classmethod
+    def on_node_update(cls, node):
+        """Callback which gets executed when node is updated
+        """
+
+    @classmethod
+    def on_node_reset(cls, node):
+        """Callback which gets executed when node is reseted
+        """

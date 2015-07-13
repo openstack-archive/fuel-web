@@ -43,6 +43,8 @@ from nailgun.api.v1.handlers.logs import LogPackageHandler
 from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
 from nailgun.api.v1.handlers.logs import SnapshotDownloadHandler
+from nailgun.api.v1.handlers.network_group import NetworkGroupCollectionHandler
+from nailgun.api.v1.handlers.network_group import NetworkGroupHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
@@ -191,6 +193,11 @@ urls = (
     ClusterUpdateHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
+
+    r'/networks/?$',
+    NetworkGroupCollectionHandler,
+    r'/networks/(?P<obj_id>\d+)/?$',
+    NetworkGroupHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,

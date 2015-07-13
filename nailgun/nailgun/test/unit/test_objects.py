@@ -788,7 +788,7 @@ class TestClusterObject(BaseTestCase):
             'properties': {
                 'subnet': True,
                 'gateway': False,
-                'vip': {'name': 'test_vip_a', 'shared': False}
+                'vip': {'name': 'test_vip_a'}
             }
         }]
         plugin_data = self.env.get_default_plugin_metadata(

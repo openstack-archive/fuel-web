@@ -74,6 +74,11 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             else:
                 serialized_nodes.extend(self.serialize_generated(
                     cluster, node_group))
+
+        # NOTE(dshulyak) tasks should not be preserved from replaced deployment
+        # info, there is different mechanism to control changes in tasks
+        # introduced during granular deployment, and that mech should be used
+        self.set_tasks(serialized_nodes)
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
@@ -82,7 +87,6 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
-        self.set_tasks(nodes)
         return [utils.dict_merge(node, common_attrs) for node in nodes]
 
     def serialize_customized(self, cluster, nodes):

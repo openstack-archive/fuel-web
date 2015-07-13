@@ -862,7 +862,6 @@ class TestClusterObject(BaseTestCase):
         ]
 
         cluster = self._create_cluster_with_plugins(plugins_kw_list)
-        objects.Cluster.get_network_roles(cluster)
         self.assertRaises(
             errors.NetworkRoleConflict,
             objects.Cluster.get_network_roles, cluster)

@@ -1392,6 +1392,7 @@
             datacenter: ""
             datastore: ""
     modes: ['ha_compact']
+    extensions: ['volume_manager']
 - pk: 1
   extend: *base_release
   fields:

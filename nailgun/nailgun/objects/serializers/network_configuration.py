@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun.network.manager import NetworkManager
+from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
 
 
@@ -38,7 +39,7 @@ class NetworkConfigurationSerializer(BasicSerializer):
     @classmethod
     def serialize_net_groups_and_vips(cls, cluster):
         result = {}
-        net_manager = NetworkManager
+        net_manager = objects.Cluster.get_network_manager(cluster)
         nets = cluster.network_groups + [net_manager.get_admin_network_group()]
 
         result['networks'] = map(
@@ -46,7 +47,8 @@ class NetworkConfigurationSerializer(BasicSerializer):
             nets
         )
         if cluster.is_ha_mode:
-            result.update(net_manager.assign_vips_for_net_groups(cluster))
+            result.update(
+                net_manager.assign_vips_for_net_groups_for_api(cluster))
 
         return result
 

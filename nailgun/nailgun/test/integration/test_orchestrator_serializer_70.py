@@ -38,9 +38,11 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
         objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'vlan')
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        serializer = get_serializer_for_cluster(cluster_db)
-        self.serialized_for_astute = serializer(
-            AstuteGraph(cluster_db)).serialize(cluster_db, cluster_db.nodes)
+        serializer_type = get_serializer_for_cluster(cluster_db)
+        self.serializer = serializer_type(AstuteGraph(cluster_db))
+        self.serialized_for_astute = self.serializer.serialize(
+            cluster_db, cluster_db.nodes)
+        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def create_env(self, mode):
         return self.env.create(
@@ -203,6 +205,9 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                     network_roles
                 )
 
+    def test_generate_vmware_attributes_data(self):
+        self.check_generate_vmware_attributes_data()
+
 
 class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
     @mock.patch.object(models.Release, 'environment_version',
@@ -214,9 +219,11 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
         # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
         objects.NodeCollection.prepare_for_deployment(self.env.nodes)
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        serializer = get_serializer_for_cluster(cluster_db)
-        self.serialized_for_astute = serializer(
-            AstuteGraph(cluster_db)).serialize(cluster_db, cluster_db.nodes)
+        serializer_type = get_serializer_for_cluster(cluster_db)
+        self.serializer = serializer_type(AstuteGraph(cluster_db))
+        self.serialized_for_astute = self.serializer.serialize(
+            cluster_db, cluster_db.nodes)
+        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def create_env(self, mode):
         return self.env.create(
@@ -345,3 +352,5 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                     v['network_roles'],
                     network_roles
                 )
+    def test_generate_vmware_attributes_data(self):
+        self.check_generate_vmware_attributes_data()

@@ -938,8 +938,9 @@ class CheckBeforeDeploymentTask(object):
             if all_public:
                 nodes_count = nodes.count()
             else:
-                nodes_count = sum(int(objects.Node.should_have_public(node))
-                                  for node in nodes)
+                nodes_count = sum(
+                    int(objects.Node.should_have_public_with_ip(node)) for
+                    node in nodes)
             vip_count = 0
             if task.cluster.is_ha_mode and (
                 any('controller' in node.all_roles

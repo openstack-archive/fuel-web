@@ -161,7 +161,7 @@ class NetworkDeploymentSerializer(object):
             addresses = {}
             for net in node.cluster.network_groups:
                 if net.name == 'public' and \
-                        not Node.should_have_public(node):
+                        not Node.should_have_public_with_ip(node):
                     continue
                 if net.meta.get('render_addr_mask'):
                     addresses.update(cls.get_addr_mask(

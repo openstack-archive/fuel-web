@@ -675,7 +675,7 @@ class NeutronNetworkDeploymentSerializer61(
 
         is_public = Node.should_have_public(node)
         if is_public:
-            attrs['endpoints']['br-ex'] = {}
+            attrs['endpoints']['br-ex'] = {'IP': 'none'}
             attrs['endpoints']['br-floating'] = {'IP': 'none'}
             attrs['roles']['ex'] = 'br-ex'
             attrs['roles']['neutron/floating'] = 'br-floating'
@@ -712,7 +712,7 @@ class NeutronNetworkDeploymentSerializer61(
             })
 
         # Add gateway.
-        if is_public:
+        if is_public and netgroups['public'].get('gateway'):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
@@ -827,7 +827,8 @@ class NeutronNetworkDeploymentSerializer70(
             consts.NETWORKS.management: 'br-mgmt',
             consts.NETWORKS.private: 'br-prv'}
 
-        if Node.should_have_public(node):
+        # roles can be assigned to br-ex only in case it has a public IP
+        if Node.should_have_public_with_ip(node):
             mapping[consts.NETWORKS.public] = 'br-ex'
 
         return mapping

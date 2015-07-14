@@ -220,7 +220,7 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.get_kernel_params(self.env.nodes[0]),
             kernel_params)
 
-    def test_should_have_public(self):
+    def test_should_have_public_with_ip(self):
         nodes = [
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
@@ -245,8 +245,9 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertFalse(
             objects.Cluster.should_assign_public_to_all_nodes(cluster))
 
-        nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
-                                   for node in self.env.nodes)
+        nodes_w_public_count = sum(
+            int(objects.Node.should_have_public_with_ip(node))
+            for node in self.env.nodes)
         self.assertEqual(nodes_w_public_count, 3)
 
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
@@ -262,9 +263,53 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertTrue(
             objects.Cluster.should_assign_public_to_all_nodes(cluster))
 
-        nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
-                                   for node in self.env.nodes)
+        nodes_w_public_count = sum(
+            int(objects.Node.should_have_public_with_ip(node))
+            for node in self.env.nodes)
         self.assertEqual(nodes_w_public_count, len(nodes))
+
+    def test_should_have_public(self):
+        nodes = [
+            {'roles': ['controller', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute'], 'pending_addition': True},
+            {'roles': ['mongo'], 'pending_addition': True},
+            {'roles': [], 'pending_roles': ['cinder'],
+             'pending_addition': True},
+            {'roles': [], 'pending_roles': ['controller'],
+             'pending_addition': True}]
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron'},
+            nodes_kwargs=nodes)
+
+        cluster = self.env.clusters[0]
+        attrs = cluster.attributes.editable
+        attrs['neutron_advanced_configuration']['neutron_dvr']['value'] = True
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(
+            objects.Cluster.neutron_dvr_enabled(cluster))
+        self.assertFalse(
+            objects.Cluster.should_assign_public_to_all_nodes(cluster))
+
+        nodes_w_public_count = sum(
+            int(objects.Node.should_have_public(node))
+            for node in self.env.nodes)
+        # only controllers and computes should have public for DVR
+        self.assertEqual(4, nodes_w_public_count)
+
+        nodes_w_public_ip_count = sum(
+            int(objects.Node.should_have_public_with_ip(node))
+            for node in self.env.nodes)
+        # only controllers should have public with IP address for DVR
+        self.assertEqual(2, nodes_w_public_ip_count)
 
     def test_removing_from_cluster(self):
         self.env.create(

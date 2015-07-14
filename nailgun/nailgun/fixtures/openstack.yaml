@@ -207,7 +207,7 @@
           vip: []
       -
         id: "neutron/mesh"
-        default_mapping: "management"
+        default_mapping: "private"
         properties: *default_network_roles_metadata_properties
       -
         id: "neutron/floating"

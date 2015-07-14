@@ -50,6 +50,8 @@ from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer
 from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer61
+from nailgun.orchestrator.nova_serializers import \
+    NovaNetworkDeploymentSerializer70
 
 
 class DeploymentMultinodeSerializer(GraphBasedSerializer):
@@ -481,7 +483,7 @@ class DeploymentHASerializer61(DeploymentHASerializer,
 class DeploymentHASerializer70(DeploymentHASerializer):
     # nova_network_serializer is just for compatibility with current BVTs
     # and other tests. It can be removed when tests are fixed.
-    nova_network_serializer = NovaNetworkDeploymentSerializer61
+    nova_network_serializer = NovaNetworkDeploymentSerializer70
     neutron_network_serializer = NeutronNetworkDeploymentSerializer70
 
 

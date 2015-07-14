@@ -30,8 +30,8 @@
                     "gb": "GB",
                     "tb": "TB"
                 },
-                "node":"__count__ node",
-                "node_plural":"__count__ nodes",
+                "node": "__count__ node",
+                "node_plural": "__count__ nodes",
                 "important": "Important",
                 "success": "Success",
                 "error": "Error",
@@ -59,7 +59,17 @@
                 "system": "System",
                 "memory": "Memory",
                 "disks": "Disks",
-                "interfaces": "Interfaces"
+                "interfaces": "Interfaces",
+                "interfaces_amount": "__count__ interface",
+                "interfaces_amount_plural": "__count__ interfaces",
+                "disks_amount": "__count__ disk (__size__)",
+                "disks_amount_plural": "__count__ disks (__size__)",
+                "cpu_details": "__real__ real (__total__ total) CPU",
+                "cores": "__count__ real CPU",
+                "ht_cores": "__count__ total CPU",
+                "total_hdd": "__total__ HDD",
+                "total_ram": "__total__ RAM",
+                "offline": "Offline"
             },
             "cluster": {
                 "status": {
@@ -279,6 +289,42 @@
                     "roles": "Roles",
                     "hardware_info": "Hardware Info",
                     "roles_and_hardware_info": "Roles and hardware info",
+                    "sorters": {
+                        "roles": "Roles",
+                        "status": "Status",
+                        "offline": "Offline status",
+                        "name": "Name",
+                        "mac": "MAC address",
+                        "ip": "IP address",
+                        "manufacturer": "Manufacturer",
+                        "cores": "CPU (real)",
+                        "ht_cores": "CPU (total)",
+                        "hdd": "HDD total size",
+                        "disks": "Disks amount and sizes",
+                        "ram": "RAM total size",
+                        "interfaces": "Interfaces amount"
+                    },
+                    "filters": {
+                        "roles": "Roles",
+                        "hdd": "HDD total size (Gb)",
+                        "status": "Status",
+                        "manufacturer": "Manufacturer",
+                        "cores": "CPU (real)",
+                        "ht_cores": "CPU (total)",
+                        "disks_amount": "Disks amount",
+                        "ram": "RAM total size (Gb)",
+                        "interfaces": "Interfaces amount",
+                        "prefixes": {
+                            "cores": "CPU (real)",
+                            "ht_cores": "CPU (total)",
+                            "hdd": "Gb HDD",
+                            "disks_amount": "disks",
+                            "ram": "Gb RAM",
+                            "interfaces": "interfaces"
+                        }
+                    },
+                    "filter_results_amount": "Shown __count__ result for ",
+                    "filter_results_amount_plural": "Shown __count__ results for ",
                     "assign_roles": "Assign Roles",
                     "breadcrumbs": {
                         "add": "Add Nodes",
@@ -356,10 +402,18 @@
                     },
                     "node_management_panel": {
                         "group_by": "Group By",
+                        "sort_by": "Sort By",
+                        "clear_all": "Clear All",
+                        "more": "More",
                         "filter_by": "Filter By",
                         "filter_placeholder": "Node name/mac",
+                        "search_placeholder": "Search by node name, MAC or IP address",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
+                        "more_than": "More than ",
+                        "less_than": "Less than ",
+                        "selected_options": "__count__ selected",
+                        "select_all": "Select All",
                         "node_management_error": {
                             "title": "Node Management Error",
                             "saving_warning": "Unable to apply changes",
@@ -398,7 +452,7 @@
                         "title": "Node Deletion Error",
                         "node_deletion_warning": "Unable to delete nodes"
                     },
-                    "no_filtered_nodes_warning": "There are no nodes found matching the filter value.",
+                    "no_filtered_nodes_warning": "No nodes found matching the selected filters.",
                     "filtered_nodes_count":"__filteredNodesCount__ of __count__ node",
                     "filtered_nodes_count_plural": "__filteredNodesCount__ of __count__ nodes"
                 },
@@ -2144,8 +2198,8 @@
                     "gb": "GB",
                     "tb": "TB"
                 },
-                "node":"__count__ 노드",
-                "node_plural":"__count__ 노드",
+                "node": "__count__ 노드",
+                "node_plural": "__count__ 노드",
                 "important": "중요",
                 "success": "성공",
                 "error": "오류",

@@ -43,7 +43,40 @@ function($, _, React, models, NodeListScreen) {
             return this.refs.screen.revertChanges();
         },
         render: function() {
-            return <NodeListScreen {... _.omit(this.props, 'screenOptions')} ref='screen' mode='add' />;
+            return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
+                ref='screen'
+                mode='add'
+                sorters={[
+                    'status',
+                    'name',
+                    'mac',
+                    'ip',
+                    'manufacturer',
+                    'cores',
+                    'ht_cores',
+                    'hdd',
+                    'disks',
+                    'ram',
+                    'interfaces'
+                ]}
+                defaultSorting={[{status: 'asc'}]}
+                filters={[
+                    'status',
+                    'manufacturer',
+                    'cores',
+                    'ht_cores',
+                    'hdd',
+                    'disks_amount',
+                    'ram',
+                    'interfaces'
+                ]}
+                statusesToFilter={[
+                    'discover',
+                    'error',
+                    'offline'
+                ]}
+                defaultFilters={['status']}
+            />;
         }
     });
 

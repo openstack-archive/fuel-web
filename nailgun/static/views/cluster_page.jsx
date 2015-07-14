@@ -59,15 +59,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             breadcrumbsPath: function(pageOptions) {
                 var cluster = pageOptions.cluster,
                     tabOptions = pageOptions.tabOptions[0],
-                    screenRegexp = /^\w+$/,
-                    isScreen = tabOptions && tabOptions.match(screenRegexp),
+                    addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/),
                     breadcrumbs = [
                         ['home', '#'],
                         ['environments', '#clusters'],
                         [cluster.get('name'), '#cluster/' + cluster.get('id') + '/nodes'],
-                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, !isScreen]
+                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, !addScreenBreadcrumb]
                     ];
-                if (isScreen) breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null, true]);
+                if (addScreenBreadcrumb) {
+                    breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null, true]);
+                }
                 return breadcrumbs;
             },
             title: function(pageOptions) {

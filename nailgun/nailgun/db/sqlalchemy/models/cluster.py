@@ -25,6 +25,8 @@ from sqlalchemy import Unicode
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
+from oslo.serialization import jsonutils
+
 from nailgun import consts
 
 from nailgun.db import db
@@ -69,7 +71,12 @@ class Cluster(Base):
     ui_settings = Column(
         JSON,
         nullable=False,
-        server_default='{"view_mode": "standard", "grouping": "roles"}'
+        server_default=jsonutils.dumps({
+            "view_mode": "standard",
+            "filter": {},
+            "sort": [{"roles": "asc"}],
+            "search": ""
+        }),
     )
     name = Column(Unicode(50), unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)

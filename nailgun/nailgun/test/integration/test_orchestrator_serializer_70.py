@@ -31,27 +31,32 @@ from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 
 
-class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
+class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
                   'ceilometer/api', 'cinder/api', 'glance/api', 'heat/api',
                   'nova/api', 'murano/api', 'horizon', 'management',
                   'mgmt/api', 'mgmt/database', 'mgmt/messaging',
                   'mgmt/corosync', 'mgmt/memcache', 'mgmt/vip', 'mongo/db',
-                  'neutron/mesh', 'ceph/public']
+                  'ceph/public']
     fuelweb_admin = ['admin/pxe', 'fw-admin']
     neutron = ['neutron/private', 'neutron/floating']
     storage = ['storage', 'ceph/replication', 'swift/replication',
                'cinder/iscsi']
     public = ['ex', 'public/vip', 'ceph/radosgw']
+    private = ['neutron/mesh']
 
-    @mock.patch.object(models.Release, 'environment_version',
-                       new_callable=mock.PropertyMock(return_value='7.0'))
-    def setUp(self, *args):
-        super(TestDeploymentAttributesSerialization70, self).setUp()
+    networks = ['fuelweb_admin', 'storage', 'management', 'public', 'private']
+
+    # Must be set in subclasses
+    segmentation_type = None
+
+    def setUp(self):
+        super(BaseTestDeploymentAttributesSerialization70, self).setUp()
         self.cluster = self.create_env('ha_compact')
 
         # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'vlan')
+        objects.NodeCollection.prepare_for_deployment(
+            self.env.nodes, self.segmentation_type)
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
         serializer_type = get_serializer_for_cluster(cluster_db)
         self.serializer = serializer_type(AstuteGraph(cluster_db))
@@ -61,26 +66,29 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
 
     def create_env(self, mode):
         return self.env.create(
+            release_kwargs={'version': '2015.1.0-7.0'},
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
-                'net_segment_type': 'vlan'},
+                'net_segment_type': self.segmentation_type},
             nodes_kwargs=[
                 {'roles': ['controller'],
-                 'pending_addition': True,
-                 },
+                 'pending_addition': True},
                 {'roles': ['compute'],
-                 'pending_addition': True,
-                 }
-            ])
+                 'pending_addition': True}])
+
+
+class TestDeploymentAttributesSerialization70(
+    BaseTestDeploymentAttributesSerialization70
+):
+    segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
 
     def test_network_scheme(self):
         for node in self.serialized_for_astute:
             roles = node['network_scheme']['roles']
             node = objects.Node.get_by_uid(node['uid'])
-            expected_roles = [
-                ('neutron/private', 'br-prv')]
-            expected_roles += zip(
+
+            expected_roles = zip(
                 self.management, ['br-mgmt'] * len(self.management))
             expected_roles += zip(
                 self.fuelweb_admin, ['br-fw-admin'] * len(self.fuelweb_admin))
@@ -88,9 +96,17 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 self.storage, ['br-storage'] * len(self.storage))
 
             if objects.Node.should_have_public(node):
-                expected_roles += zip(self.public,
-                                      ['br-ex'] * len(self.public))
+                expected_roles += zip(
+                    self.public, ['br-ex'] * len(self.public))
                 expected_roles += [('neutron/floating', 'br-floating')]
+
+            if node.cluster.network_config.segmentation_type == \
+                    consts.NEUTRON_SEGMENT_TYPES.vlan:
+                expected_roles += [('neutron/private', 'br-prv')]
+
+            if node.cluster.network_config.segmentation_type == \
+                    consts.NEUTRON_SEGMENT_TYPES.gre:
+                expected_roles += [('neutron/mesh', 'br-mesh')]
 
             self.assertEqual(roles, dict(expected_roles))
 
@@ -118,13 +134,6 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                                      changed_offloading_modes[iface_name])
 
     def test_network_metadata(self):
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        ip_by_net = {
-            'fuelweb_admin': None,
-            'storage': None,
-            'management': None,
-            'public': None
-        }
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
@@ -135,10 +144,9 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                      'swift_zone', 'node_roles', 'network_roles']
                 )
                 node = objects.Node.get_by_uid(v['uid'])
-                for net in ip_by_net:
-                    netgroup = nm.get_node_network_by_netname(node, net)
-                    if netgroup.get('ip'):
-                        ip_by_net[net] = netgroup['ip'].split('/')[0]
+                neutron_serializer = self.serializer.neutron_network_serializer
+                ip_by_net = neutron_serializer.get_network_to_ip_mapping(node)
+
                 self.assertEqual(objects.Node.make_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
                 self.assertEqual(v['fqdn'], node.fqdn)
@@ -157,13 +165,25 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 network_roles += zip(self.neutron, [None] * len(self.neutron))
 
                 if objects.Node.should_have_public(node):
-                    network_roles += zip(self.public,
-                                         [ip_by_net['public']] * len(
-                                             self.public))
+                    network_roles += zip(
+                        self.public, [ip_by_net['public']] * len(self.public))
+
+                if node.cluster.network_config.segmentation_type == \
+                        consts.NEUTRON_SEGMENT_TYPES.gre:
+                    network_roles += zip(
+                        self.private,
+                        [ip_by_net['private']] * len(self.private))
+
                 self.assertEqual(v['network_roles'], dict(network_roles))
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
+
+
+class TestDeploymentAttributesSerializationSegmentationGre70(
+    TestDeploymentAttributesSerialization70
+):
+    segmentation_type = consts.NEUTRON_SEGMENT_TYPES.gre
 
 
 class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
@@ -371,7 +391,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
             cluster_kwargs={
                 'mode': 'ha_compact',
                 'net_provider': 'neutron',
-                'net_segment_type': 'vlan',
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
             },
             nodes_kwargs=[
                 {'roles': ['controller'], 'primary_roles': ['controller'],

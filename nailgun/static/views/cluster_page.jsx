@@ -401,7 +401,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 <div className='col-xs-6 col-md-3'>
                     <div className='deploy-box pull-right'>
                         {task ? (
-                            <div className={'deploy-process ' + taskName}>
+                            <div className={'deploy-process ' + taskName} key={taskName}>
                                 <div className='progress'>
                                     <div
                                         className={utils.classNames({
@@ -409,10 +409,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                             'progress-bar-warning': infiniteTask,
                                             'progress-bar-success': !infiniteTask
                                         })}
-                                        style={{width: (taskProgress > 3 ? taskProgress : 3) + '%'}}
+                                        style={{width: (infiniteTask ? 100 : taskProgress > 3 ? taskProgress : 3) + '%'}}
                                     >
+                                        {i18n('cluster_page.' + taskName, {defaultValue: ''})}
                                     </div>
-                                    <div className='deploy-status'>{i18n('cluster_page.' + taskName, {defaultValue: ''})}</div>
                                 </div>
                                 {stoppableTask &&
                                     <button

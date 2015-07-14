@@ -20,6 +20,7 @@
           - cinder
         has_primary: true
         public_ip_required: true
+        public_for_dvr_required: true
         limits:
           min: 1
           overrides:
@@ -33,6 +34,7 @@
         name: "Compute"
         description: "A Compute node creates, manages, and terminates virtual machine instances."
         weight: 20
+        public_for_dvr_required: true
         limits:
           recommended: 1
         fault_tolerance: "2%"

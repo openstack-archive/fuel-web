@@ -83,6 +83,25 @@ class PluginManager(object):
         return cluster_plugins
 
     @classmethod
+    def get_network_roles(cls, cluster):
+        core_roles = cluster.release.network_roles_metadata
+        known_roles = set(role['id'] for role in core_roles)
+
+        plugin_roles = []
+        for plugin in cluster.plugins:
+            for role in plugin.network_roles_metadata:
+                role_id = role['id']
+                if role_id in known_roles:
+                    raise errors.NetworkRoleConflict(
+                        "Cannot override existing network "
+                        "role '{0}' in plugin '{1}'".format(
+                            role_id, plugin.name))
+                known_roles.add(role_id)
+            plugin_roles.extend(plugin.network_roles_metadata)
+
+        return plugin_roles
+
+    @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
         """Sync metadata for plugins by given ids. If there is not
         ids all newest plugins will be synced

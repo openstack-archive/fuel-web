@@ -16,6 +16,7 @@
 
 from itertools import chain
 from itertools import repeat
+import os
 from random import randrange
 import threading
 import time
@@ -30,6 +31,7 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.utils import tests
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
 
@@ -669,6 +671,41 @@ class FakeCheckRepositories(FakeAmpqThread):
         }]
 
 
+class FakeVMsSpawn(FakeThread):
+    def run(self):
+        super(FakeResetEnvironmentThread, self).run()
+        receiver = NailgunReceiver
+
+        fixture_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                   "..", "fixtures")
+        nodes_db = db().query(Node).filter(
+            Node.id.in_([
+                n['uid'] for n in self.data['args']['nodes']
+            ])
+        ).all()
+
+        for node in nodes_db:
+            for vm in node.attributes.vms_conf:
+                if not vm.get('created'):
+                    _meta, node_data = tests.generate_node_data(
+                        fixture_dir)
+                    node = Node.create(node_data)
+        self.sleep(self.tick_interval)
+        kwargs = {
+            'task_uuid': self.task_uuid,
+            'nodes': self.data['args']['nodes'],
+            'status': 'ready',
+            'progress': 100
+        }
+        resp_method = getattr(receiver, self.respond_to)
+        try:
+            resp_method(**kwargs)
+            db().commit()
+        except Exception as e:
+            db().rollback()
+            raise e
+
+
 FAKE_THREADS = {
     'native_provision': FakeProvisionThread,
     'image_provision': FakeProvisionThread,
@@ -685,4 +722,5 @@ FAKE_THREADS = {
     'execute_tasks': FakeExecuteTasksThread,
     'check_repositories': FakeCheckRepositories,
     'check_repositories_with_setup': FakeCheckRepositories,
+    'spawn_vms': FakeVMsSpawn
 }

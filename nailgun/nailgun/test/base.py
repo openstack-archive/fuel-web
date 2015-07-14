@@ -69,6 +69,7 @@ from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
+from nailgun.utils import tests
 from nailgun.utils import reverse
 
 
@@ -256,38 +257,9 @@ class EnvironmentManager(object):
             expected_error=None,
             **kwargs):
         # TODO(alekseyk) Simplify 'interfaces' and 'mac' manipulation logic
-        metadata = kwargs.get('meta')
-        default_metadata = self.default_metadata()
-        if metadata:
-            default_metadata.update(metadata)
-            meta_ifaces = 'interfaces' in metadata
-
-        mac = kwargs.get('mac', self.generate_random_mac())
-        if default_metadata['interfaces']:
-            default_metadata['interfaces'][0]['mac'] = mac
-            if not metadata or not meta_ifaces:
-                for iface in default_metadata['interfaces'][1:]:
-                    if 'mac' in iface:
-                        iface['mac'] = self.generate_random_mac()
-
-        node_data = {
-            'mac': mac,
-            'status': 'discover',
-            'ip': '10.20.0.130',
-            'meta': default_metadata
-        }
-        if kwargs:
-            meta = kwargs.pop('meta', None)
-            node_data.update(kwargs)
-            if meta:
-                kwargs['meta'] = meta
-
-        if exclude and isinstance(exclude, list):
-            for ex in exclude:
-                try:
-                    del node_data[ex]
-                except KeyError as err:
-                    logger.warning(err)
+        meta, node_data = tests.generate_node_data(self.fixture_dir,
+                                                   exclude,
+                                                   **kwargs)
         if api:
             resp = self.app.post(
                 reverse('NodeCollectionHandler'),
@@ -310,7 +282,7 @@ class EnvironmentManager(object):
                     or not node_data['meta']['interfaces']:
                 self._set_interfaces_if_not_set_in_meta(
                     node_db.id,
-                    kwargs.get('meta', None))
+                    meta)
             self.nodes.append(node_db)
         else:
             node = Node.create(node_data)
@@ -318,6 +290,12 @@ class EnvironmentManager(object):
             self.nodes.append(node)
 
         return node
+
+    def default_metadata(self):
+        return tests.default_metadata(self.fixture_dir)
+
+    def generate_random_mac(self):
+        return tests.generate_random_mac()
 
     def create_nodes(self, count, *args, **kwargs):
         """Helper to generate specific number of nodes."""
@@ -334,7 +312,7 @@ class EnvironmentManager(object):
             if_list = [
                 {
                     "name": "eth{0}".format(i),
-                    "mac": self.generate_random_mac(),
+                    "mac": tests.generate_random_mac(),
                 }
                 for i in range(if_count)]
             if_list[0]['pxe'] = True
@@ -390,15 +368,8 @@ class EnvironmentManager(object):
 
         return ng
 
-    def default_metadata(self):
-        item = self.find_item_by_pk_model(
-            self.read_fixtures(("sample_environment",)),
-            1, 'nailgun.node')
-        return item.get('fields').get('meta')
-
-    def generate_random_mac(self):
-        mac = [randint(0x00, 0x7f) for _ in xrange(6)]
-        return ':'.join(map(lambda x: "%02x" % x, mac)).lower()
+    def read_fixtures(self, fxtr_names):
+        return tests.read_fixtures(fxtr_names, self.fixture_dir)
 
     def generate_interfaces_in_meta(self, amount):
         nics = []
@@ -406,7 +377,7 @@ class EnvironmentManager(object):
             nics.append(
                 {
                     'name': 'eth{0}'.format(i),
-                    'mac': self.generate_random_mac(),
+                    'mac': tests.generate_random_mac(),
                     'current_speed': 100,
                     'max_speed': 1000,
                     'offloading_modes': [
@@ -470,7 +441,7 @@ class EnvironmentManager(object):
             interface = NodeNICInterface(
                 node_id=node_id,
                 name='eth{0}'.format(i),
-                mac=self.generate_random_mac(),
+                mac=tests.generate_random_mac(),
                 current_speed=100,
                 max_speed=1000,
                 assigned_networks=networks_to_assign
@@ -641,48 +612,10 @@ class EnvironmentManager(object):
             ['openstack'])[0]['fields']['vmware_attributes_metadata']
 
     def upload_fixtures(self, fxtr_names):
-        for fxtr_path in self.fxtr_paths_by_names(fxtr_names):
+        for fxtr_path in tests.fxtr_paths_by_names(fxtr_names,
+                                                   self.fixture_dir):
             with open(fxtr_path, "r") as fxtr_file:
                 upload_fixture(fxtr_file)
-
-    def read_fixtures(self, fxtr_names):
-        data = []
-        for fxtr_path in self.fxtr_paths_by_names(fxtr_names):
-            with open(fxtr_path, "r") as fxtr_file:
-                try:
-                    data.extend(load_fixture(fxtr_file))
-                except Exception as exc:
-                    logger.error(
-                        'Error "%s" occurred while loading '
-                        'fixture %s' % (exc, fxtr_path)
-                    )
-        return data
-
-    def fxtr_paths_by_names(self, fxtr_names):
-        for fxtr in fxtr_names:
-            for ext in ['json', 'yaml']:
-                fxtr_path = os.path.join(
-                    self.fixture_dir,
-                    "%s.%s" % (fxtr, ext)
-                )
-
-                if os.path.exists(fxtr_path):
-                    logger.debug(
-                        "Fixture file is found, yielding path: %s",
-                        fxtr_path
-                    )
-                    yield fxtr_path
-                    break
-            else:
-                logger.warning(
-                    "Fixture file was not found: %s",
-                    fxtr
-                )
-
-    def find_item_by_pk_model(self, data, pk, model):
-        for item in data:
-            if item.get('pk') == pk and item.get('model') == model:
-                return item
 
     def launch_provisioning_selected(self, nodes_uids=None):
         if self.clusters:

@@ -61,7 +61,7 @@ class TestSpawnVMs(BaseIntegrationTest):
             ]
         )
         cluster = self.env.clusters[0]
-        vms_conf = [{'id': 1, 'cluster_id': cluster.id}]
+        vms_conf = {"vms_conf": [{'id': 1, 'cluster_id': cluster.id}]}
         self.app.put(
             reverse(
                 'NodeVMsHandler',

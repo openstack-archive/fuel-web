@@ -149,8 +149,9 @@ class Node(NailgunObject):
         ).first()
 
     @classmethod
-    def should_have_public(cls, instance):
-        """Determine whether this node has Public network.
+    def should_have_public_with_ip(cls, instance):
+        """Determine whether this node should be connected to Public network
+        with an IP address assigned from that network
 
         :param instance: Node DB instance
         :returns: True when node has Public network
@@ -165,6 +166,24 @@ class Node(NailgunObject):
                 return True
 
         return False
+
+    @classmethod
+    def should_have_public(cls, instance):
+        """Determine whether this node should be connected to Public network,
+        no matter with or without an IP address assigned from that network
+
+        For example Neutron DVR does require Public network access on compute
+        nodes, but does not require IP address assigned to external bridge.
+
+        :param instance: Node DB instance
+        :returns: True when node has Public network
+        """
+        if cls.should_have_public_with_ip(instance):
+            return True
+
+        dvr_enabled = Cluster.neutron_dvr_enabled(instance.cluster)
+        return dvr_enabled and (
+            'compute' in (instance.roles + instance.pending_roles))
 
     @classmethod
     def create(cls, data):

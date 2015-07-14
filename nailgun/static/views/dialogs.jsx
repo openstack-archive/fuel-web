@@ -637,7 +637,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return {modalClass: 'always-show-scrollbar'};
         },
         getInitialState: function() {
-            return {title: i18n('dialog.show_node.default_dialog_title')};
+            return {
+                title: i18n('dialog.show_node.default_dialog_title'),
+                VMsConf: null,
+                VMsConfValidationError: null
+            };
         },
         goToConfigurationScreen: function(url) {
             this.close();
@@ -700,6 +704,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             this.assignAccordionEvents();
             this.setDialogTitle();
+            if (this.props.node.get('pending_addition') && this.props.node.hasRole('kvm-virt')) {
+                var VMsConfModel = new models.BaseModel();
+                VMsConfModel.url = _.result(this.props.node, 'url') + '/vms_conf';
+                this.setProps({VMsConfModel: VMsConfModel});
+                this.setState({actionInProgress: true});
+                VMsConfModel.fetch().always(_.bind(function() {
+                    this.setState({
+                        actionInProgress: false,
+                        VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
+                    });
+                }, this));
+            }
         },
         setDialogTitle: function() {
             var name = this.props.node && this.props.node.get('name');
@@ -714,6 +730,27 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         toggle: function(groupIndex) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
         },
+        onVMsConfChange: function() {
+            this.setState({VMsConfValidationError: null});
+        },
+        saveVMsConf: function() {
+            var parsedVMsConf;
+            try {
+                parsedVMsConf = JSON.parse(this.refs['vms-config'].getInputDOMNode().value);
+            } catch (e) {
+                this.setState({VMsConfValidationError: i18n('node_details.invalid_vms_conf_msg')});
+            }
+            if (parsedVMsConf) {
+                this.setState({actionInProgress: true});
+                this.props.VMsConfModel.save({vms_conf: parsedVMsConf}, {method: 'PUT'})
+                    .fail(_.bind(function(response) {
+                        this.setState({VMsConfValidationError: utils.getResponseText(response)});
+                    }, this))
+                    .always(_.bind(function() {
+                        this.setState({actionInProgress: false});
+                    }, this));
+            }
+        },
         renderBody: function() {
             var node = this.props.node,
                 meta = node.get('meta');
@@ -724,6 +761,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     disks: ['name', 'model', 'size'],
                     interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
                 };
+            if (this.state.VMsConf) groups.push('config');
+
             return (
                 <div className='node-details-popup'>
                     <div className='row'>
@@ -785,8 +824,27 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                                     }
                                                 </div>
                                             }
-                                            {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries)) &&
+                                            {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries) && !_.isUndefined(groupEntries)) &&
                                                 <div>{groupEntries}</div>
+                                            }
+                                            {group == 'config' &&
+                                                <div className='vms-config'>
+                                                    <controls.Input
+                                                        ref='vms-config'
+                                                        type='textarea'
+                                                        label={i18n('node_details.vms_config_msg')}
+                                                        error={this.state.VMsConfValidationError}
+                                                        onChange={this.onVMsConfChange}
+                                                        defaultValue={this.state.VMsConf}
+                                                    />
+                                                    <button
+                                                        className='btn btn-success'
+                                                        onClick={this.saveVMsConf}
+                                                        disabled={this.state.VMsConfValidationError || this.state.actionInProgress}
+                                                    >
+                                                        {i18n('common.save_settings_button')}
+                                                    </button>
+                                                </div>
                                             }
                                         </div>
                                     </div>

@@ -896,6 +896,27 @@ class Cluster(NailgunObject):
             node.attributes.vms_conf = vms_conf
         db().flush()
 
+    @classmethod
+    def get_network_roles(cls, cluster):
+        """Method for receiving network roles for particular cluster
+
+        :param cluster: nailgun.db.sqlalchemy.models.Cluster instance
+        :returns: List of network roles' descriptions
+        """
+        all_roles = copy.copy(cluster.release.network_roles_metadata)
+        for plugin in cluster.plugins:
+            all_roles.extend(plugin.network_roles_metadata)
+
+        known_roles = set()
+        for role in all_roles:
+            if role['id'] in known_roles:
+                raise errors.NetworkRoleConflict(
+                    "Cannot override existing network "
+                    "role '{0}'".format(role['id']))
+            known_roles.add(role['id'])
+
+        return all_roles
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

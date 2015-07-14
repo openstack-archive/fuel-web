@@ -48,13 +48,13 @@ def exec_cmd(cmd):
 
     :param cmd: shell command
     """
-    logger.debug(u'Execute command "%s"', cmd)
+    logger.debug('Execute command "%s"', cmd)
     child = subprocess.Popen(
         cmd, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         shell=True)
 
-    logger.debug(u'Stdout and stderr of command "%s":', cmd)
+    logger.debug('Stdout and stderr of command "%s":', cmd)
     for line in child.stdout:
         logger.debug(line.rstrip())
 
@@ -82,13 +82,13 @@ def exec_cmd_iterator(cmd):
     :returns: generator where yeach item
               is line from stdout
     """
-    logger.debug(u'Execute command "%s"', cmd)
+    logger.debug('Execute command "%s"', cmd)
     child = subprocess.Popen(
         cmd, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         shell=True)
 
-    logger.debug(u'Stdout and stderr of command "%s":', cmd)
+    logger.debug('Stdout and stderr of command "%s":', cmd)
     for line in child.stdout:
         logger.debug(line.rstrip())
         yield line
@@ -108,10 +108,10 @@ def _wait_and_check_exit_code(cmd, child):
 
     if exit_code != 0:
         raise errors.ExecutedErrorNonZeroExitCode(
-            u'Shell command executed with "{0}" '
+            'Shell command executed with "{0}" '
             'exit code: {1} '.format(exit_code, cmd))
 
-    logger.debug(u'Command "%s" successfully executed', cmd)
+    logger.debug('Command "%s" successfully executed', cmd)
 
 
 def get_request(url):
@@ -155,7 +155,7 @@ def topological_sorting(dep_graph):
 
         if cyclic:
             raise errors.CyclicDependenciesError(
-                u'Cyclic dependencies error {0}'.format(graph))
+                'Cyclic dependencies error {0}'.format(graph))
 
     return sorted_nodes
 
@@ -215,7 +215,7 @@ def symlink(source, destination, overwrite=True):
     :param overwrite: overwrite a destination if True
     """
     logger.debug(
-        u'Symlinking "%s" -> "%s" [overwrite=%d]',
+        'Symlinking "%s" -> "%s" [overwrite=%d]',
         source, destination, overwrite)
 
     if overwrite or not os.path.exists(destination):
@@ -234,7 +234,7 @@ def symlink_if_src_exists(source, destination, overwrite=True):
     """
     if not os.path.exists(source):
         logger.debug(
-            u'Skip creating symlink, because "%s" does not exists', source)
+            'Skip creating symlink, because "%s" does not exists', source)
         return
     symlink(source, destination, overwrite=overwrite)
 
@@ -247,7 +247,7 @@ def hardlink(source, destination, overwrite=True):
     :param overwrite: overwrite a destination if True
     """
     logger.debug(
-        u'Creating hardlink "%s" -> "%s" [overwrite=%d]',
+        'Creating hardlink "%s" -> "%s" [overwrite=%d]',
         source, destination, overwrite)
 
     if overwrite or not os.path.exists(destination):
@@ -263,7 +263,7 @@ def remove_if_exists(path):
     :param path: path to file for removal
     """
     if os.path.exists(path):
-        logger.debug(u'Remove file "%s"', path)
+        logger.debug('Remove file "%s"', path)
         os.remove(path)
 
 
@@ -277,7 +277,7 @@ def file_contains_lines(file_path, patterns):
               False if file doesn't match one or more patterns
     """
     logger.debug(
-        u'Check if file "%s" matches to pattern "%s"', file_path, patterns)
+        'Check if file "%s" matches to pattern "%s"', file_path, patterns)
 
     regexps = [re.compile(pattern) for pattern in patterns]
 
@@ -351,7 +351,7 @@ def copy_file(source, destination, overwrite=True):
     :param overwrite: overwrite destination if True
     """
     logger.debug(
-        u'Copying "%s" -> "%s" [overwrite=%d]',
+        'Copying "%s" -> "%s" [overwrite=%d]',
         source, destination, overwrite)
 
     # tranform destinatio to path/to/file, not path/to/dir
@@ -375,7 +375,7 @@ def copy_dir(source, destination, overwrite=True, symlinks=True):
     :param symlinks: resolve symlinks if True
     """
     logger.debug(
-        u'Copying "%s" -> "%s" [overwrite=%d symlinks=%d]',
+        'Copying "%s" -> "%s" [overwrite=%d symlinks=%d]',
         source, destination, overwrite, symlinks)
 
     if overwrite or not os.path.lexists(destination):
@@ -393,7 +393,7 @@ def remove(path, ignore_errors=True):
     :param path: a file or directory to remove
     :param ignore_errors: ignore some errors and non existense if True
     """
-    logger.debug(u'Removing "%s"', path)
+    logger.debug('Removing "%s"', path)
 
     if ignore_errors and not os.path.lexists(path):
         return
@@ -410,7 +410,7 @@ def rmtree(source, ignore_errors=True):
     :param str source: path to directory
     :param bool ignore_errors: ignores error if True
     """
-    logger.debug(u'Removing %s', source)
+    logger.debug('Removing %s', source)
     if os.path.exists(source):
         shutil.rmtree(source, ignore_errors=ignore_errors)
 
@@ -424,7 +424,7 @@ def rename(source, destination, overwrite=True):
     :param str destination: rename to
     """
     logger.debug(
-        u'Renaming "%s" -> "%s" [overwrite=%d]',
+        'Renaming "%s" -> "%s" [overwrite=%d]',
         source, destination, overwrite)
 
     if overwrite or not os.path.exists(destination):

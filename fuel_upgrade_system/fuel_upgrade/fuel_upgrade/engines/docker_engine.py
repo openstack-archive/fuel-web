@@ -119,7 +119,7 @@ class DockerUpgrader(UpgradeEngine):
     def save_db(self):
         """Saves postgresql database into the file
         """
-        logger.debug(u'Backup database')
+        logger.debug('Backup database')
         pg_dump_path = os.path.join(self.working_directory, 'pg_dump_all.sql')
         pg_dump_files = utils.VersionedFile(pg_dump_path)
         pg_dump_tmp_path = pg_dump_files.next_file_name()
@@ -137,7 +137,7 @@ class DockerUpgrader(UpgradeEngine):
                 valid_dumps[self.config.keep_db_backups_count:])
         else:
             raise errors.DatabaseDumpError(
-                u'Failed to make database dump, there '
+                'Failed to make database dump, there '
                 'are no valid database backup '
                 'files, {0}'.format(pg_dump_path))
 
@@ -159,7 +159,7 @@ class DockerUpgrader(UpgradeEngine):
 
             self.exec_cmd_in_container(
                 container_name,
-                u"su postgres -c 'pg_dumpall --clean' > {0}".format(
+                "su postgres -c 'pg_dumpall --clean' > {0}".format(
                     pg_dump_tmp_path))
         except (errors.ExecutedErrorNonZeroExitCode,
                 errors.CannotFindContainerError) as exc:
@@ -169,7 +169,7 @@ class DockerUpgrader(UpgradeEngine):
                 return False
 
             logger.debug(
-                u'Failed to make database dump, '
+                'Failed to make database dump, '
                 'will be used dump from previous run: %s', exc)
 
         return True
@@ -203,41 +203,41 @@ class DockerUpgrader(UpgradeEngine):
         # contain at least one file (default.json)
         if len(configs) < 1:
             raise errors.WrongCobblerConfigsError(
-                u'Cannot find json files in directory {0}'.format(
+                'Cannot find json files in directory {0}'.format(
                     self.cobbler_config_path))
 
         for config in configs:
             if not utils.check_file_is_valid_json(config):
                 raise errors.WrongCobblerConfigsError(
-                    u'Invalid json config {0}'.format(config))
+                    'Invalid json config {0}'.format(config))
 
     def upload_images(self):
         """Uploads images to docker
         """
-        logger.info(u'Start image uploading')
+        logger.info('Start image uploading')
 
         if not os.path.exists(self.config.images):
-            logger.warn(u'Cannot find docker images "%s"', self.config.images)
+            logger.warn('Cannot find docker images "%s"', self.config.images)
             return
 
         # NOTE(eli): docker-py binding
         # doesn't have equal call for
         # image importing which equals to
         # `docker load`
-        utils.exec_cmd(u'docker load -i "{0}"'.format(self.config.images))
+        utils.exec_cmd('docker load -i "{0}"'.format(self.config.images))
 
     def create_and_start_new_containers(self):
         """Create containers in the right order
         """
-        logger.info(u'Started containers creation')
+        logger.info('Started containers creation')
         graph = self.build_dependencies_graph(self.new_release_containers)
-        logger.debug(u'Built dependencies graph %s', graph)
+        logger.debug('Built dependencies graph %s', graph)
         containers_to_creation = utils.topological_sorting(graph)
-        logger.debug(u'Resolved creation order %s', containers_to_creation)
+        logger.debug('Resolved creation order %s', containers_to_creation)
 
         for container_id in containers_to_creation:
             container = self.container_by_id(container_id)
-            logger.debug(u'Start container %s', container)
+            logger.debug('Start container %s', container)
 
             links = self.get_container_links(container)
 
@@ -367,7 +367,7 @@ class DockerUpgrader(UpgradeEngine):
             params = {
                 'config_name': container['id'],
                 'service_name': self.make_service_name(container['id']),
-                'command': u'docker start -a {0}'.format(
+                'command': 'docker start -a {0}'.format(
                     container['container_name']),
                 'autostart': autostart
             }
@@ -423,7 +423,7 @@ class DockerUpgrader(UpgradeEngine):
             containers)
 
         for container in containers_to_stop:
-            logger.debug(u'Stop container: %s', container)
+            logger.debug('Stop container: %s', container)
 
             self.stop_container(container['Id'])
 
@@ -448,7 +448,7 @@ class DockerUpgrader(UpgradeEngine):
 
         :param container_id: container id
         """
-        logger.debug(u'Stop container: %s', container_id)
+        logger.debug('Stop container: %s', container_id)
 
         try:
             self.docker_client.stop(
@@ -460,7 +460,7 @@ class DockerUpgrader(UpgradeEngine):
             # Here we just want to make sure that
             # container was stopped.
             logger.warn(
-                u'Couldn\'t stop ctonainer, try '
+                'Couldn\'t stop ctonainer, try '
                 'to stop it again: %s', container_id)
             self.docker_client.stop(
                 container_id, self.config.docker['stop_container_timeout'])
@@ -471,7 +471,7 @@ class DockerUpgrader(UpgradeEngine):
         :param container: container name
         :param params: dict of arguments for container starting
         """
-        logger.debug(u'Start container "%s": %s', container['Id'], params)
+        logger.debug('Start container "%s": %s', container['Id'], params)
         self.docker_client.start(container['Id'], **params)
 
     def create_container(self, image_name, **params):
@@ -491,7 +491,7 @@ class DockerUpgrader(UpgradeEngine):
         new_params = deepcopy(params)
         new_params['ports'] = self.get_ports(new_params)
 
-        logger.debug(u'Create container from image %s: %s',
+        logger.debug('Create container from image %s: %s',
                      image_name, new_params)
 
         def func_create():
@@ -531,7 +531,7 @@ class DockerUpgrader(UpgradeEngine):
         if version is None:
             version = self.config.new_version
 
-        return u'{0}{1}-{2}'.format(
+        return '{0}{1}-{2}'.format(
             self.config.container_prefix, version, container_id)
 
     def make_image_name(self, image_id):
@@ -540,7 +540,7 @@ class DockerUpgrader(UpgradeEngine):
         :param image_id: image id from config file
         :returns: full name
         """
-        return u'{0}{1}_{2}'.format(
+        return '{0}{1}_{2}'.format(
             self.config.image_prefix,
             image_id,
             self.config.new_version)
@@ -587,7 +587,7 @@ class DockerUpgrader(UpgradeEngine):
 
         for container in found_containers:
             self.stop_container(container['Id'])
-            logger.debug(u'Delete container %s', container)
+            logger.debug('Delete container %s', container)
 
             # TODO(eli): refactor it and make retries
             # as a decorator
@@ -603,7 +603,7 @@ class DockerUpgrader(UpgradeEngine):
 
     def _get_containers_by_name(self, container_name):
         return filter(
-            lambda c: u'/{0}'.format(container_name) in c['Names'],
+            lambda c: '/{0}'.format(container_name) in c['Names'],
             self.docker_client.containers(all=True))
 
     def _delete_containers_for_image(self, image):
@@ -620,10 +620,10 @@ class DockerUpgrader(UpgradeEngine):
             all_containers)
 
         for container in containers:
-            logger.debug(u'Try to stop container %s which '
+            logger.debug('Try to stop container %s which '
                          'depends on image %s', container['Id'], image)
             self.docker_client.stop(container['Id'])
-            logger.debug(u'Delete container %s which '
+            logger.debug('Delete container %s which '
                          'depends on image %s', container['Id'], image)
             self.docker_client.remove_container(container['Id'])
 
@@ -645,4 +645,4 @@ class DockerInitializer(DockerUpgrader):
         self.supervisor.restart_and_wait()
 
     def rollback(self):
-        logger.warn(u"DockerInitializer doesn't support rollback")
+        logger.warn("DockerInitializer doesn't support rollback")

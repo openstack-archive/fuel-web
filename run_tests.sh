@@ -103,6 +103,8 @@ NAILGUN_SHUTDOWN_TIMEOUT=${NAILGUN_SHUTDOWN_TIMEOUT:-3}
 ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
 TEST_WORKERS=${TEST_WORKERS:-0}
 mkdir -p $ARTIFACTS
+DISPLAY=${DISPLAY:-":99"}
+BROWSER_DISPLAY=${BROWSER_DISPLAY:-":99"}
 
 # disabled/enabled flags that are set from the cli.
 # used for manipulating run logic.
@@ -333,11 +335,13 @@ function run_ui_func_tests {
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_ui_func_selenium_tests {
+  local WEBUI_TESTING_DISPLAY=:0
   local SERVER_PORT=$UI_SERVER_PORT
   local TESTS_DIR=$ROOT/nailgun/static/tests/functional
   local TESTS=$TESTS_DIR/test_*.js
   local artifacts=$ARTIFACTS/ui_func
   local config=$artifacts/test.yaml
+  local xvfb_pid=0
   prepare_artifacts $artifacts $config
   local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
 
@@ -357,6 +361,20 @@ function run_ui_func_selenium_tests {
   fi
   echo "done"
 
+  xdpyinfo -display $BROWSER_DISPLAY >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo -n "Display $BROWSER_DISPLAY is not available, "
+    which Xvfb > /dev/null
+    if [ $? -eq 0 ]; then
+      echo "using xvfb"
+      Xvfb -ac $BROWSER_DISPLAY >/dev/null 2>&1 &
+      xvfb_pid=$!
+    else
+      echo "xvfb not available, using display $DISPLAY"
+      BROWSER_DISPLAY=$DISPLAY
+    fi
+  fi
+
   # run js testcases
   local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
   local result=0
@@ -371,6 +389,7 @@ function run_ui_func_selenium_tests {
       { echo 'Failed to start Nailgun'; return 1; }
 
     SERVER_PORT=$SERVER_PORT \
+    DISPLAY=$BROWSER_DISPLAY \
     ${GULP} functional-tests --suites=$testcase
     if [ $? -ne 0 ]; then
       result=1
@@ -380,6 +399,10 @@ function run_ui_func_selenium_tests {
     kill_server $SERVER_PORT
 
   done
+
+  if [ $xvfb_pid -ne 0 ]; then
+    kill $xvfb_pid
+  fi
 
   rm $server_log
   popd >> /dev/null

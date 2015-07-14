@@ -829,8 +829,7 @@ class NeutronNetworkDeploymentSerializer70(
         mapping = dict()
         for net in cls.get_default_network_to_endpoint_mapping(node):
             netgroup = nm.get_node_network_by_netname(node, net)
-            if netgroup.get('ip'):
-                mapping[net] = netgroup['ip'].split('/')[0]
+            mapping[net] = netgroup.get('ip', '').split('/')[0]
 
         return mapping
 
@@ -855,7 +854,12 @@ class NeutronNetworkDeploymentSerializer70(
         :return: dict of network roles mapping
         """
         mapping = cls.get_default_network_to_endpoint_mapping(node)
-        return cls._get_network_role_mapping(node, mapping)
+        roles = cls._get_network_role_mapping(node, mapping)
+
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            roles.pop('neutron/mesh')
+
+        return roles
 
     @classmethod
     def get_network_role_mapping_to_ip(cls, node):
@@ -866,8 +870,8 @@ class NeutronNetworkDeploymentSerializer70(
         """
         mapping = cls.get_network_to_ip_mapping(node)
         roles = cls._get_network_role_mapping(node, mapping)
-        roles['neutron/floating'] = None
-        roles['neutron/private'] = None
+        roles['neutron/floating'] = str()
+        roles['neutron/private'] = str()
         return roles
 
     @classmethod

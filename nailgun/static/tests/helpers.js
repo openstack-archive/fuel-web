@@ -14,6 +14,8 @@
  * under the License.
  **/
 
+// jshint node:true
+
 define(['underscore'], function(_) {
     'use strict';
 

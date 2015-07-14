@@ -265,6 +265,28 @@ class TestNodeObject(BaseIntegrationTest):
                                    for node in self.env.nodes)
         self.assertEqual(nodes_w_public_count, len(nodes))
 
+        attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
+            False
+        attrs['network']['neutron_dvr']['value'] = True
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(
+            objects.Cluster.neutron_dvr_enabled(cluster))
+        self.assertFalse(
+            objects.Cluster.should_assign_public_to_all_nodes(cluster))
+
+        nodes_w_public_count = sum(
+            int(objects.Node.should_have_public(node))
+            for node in self.env.nodes)
+        # only controllers and computes should have public for DVR
+        self.assertEqual(5, nodes_w_public_count)
+
     def test_removing_from_cluster(self):
         self.env.create(
             cluster_kwargs={},

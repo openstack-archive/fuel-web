@@ -480,7 +480,7 @@ class DeploymentHASerializer61(DeploymentHASerializer,
         return images_data
 
 
-class DeploymentHASerializer70(DeploymentHASerializer):
+class DeploymentHASerializer70(DeploymentHASerializer61):
     # nova_network_serializer is just for compatibility with current BVTs
     # and other tests. It can be removed when tests are fixed.
     nova_network_serializer = NovaNetworkDeploymentSerializer70

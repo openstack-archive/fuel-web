@@ -139,7 +139,24 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showNodeDetails: function(e) {
             e.preventDefault();
             if (this.state.extendedView) this.toggleExtendedNodePanel();
-            dialogs.ShowNodeInfoDialog.show({node: this.props.node});
+            var VMsConf;
+            if (this.props.node.get('pending_addition') && this.props.node.hasRole('kvm-virt')) {
+                VMsConf = new Backbone.Model();
+                VMsConf.url = _.result(this.props.node, 'url') + '/vms_conf/';
+                VMsConf.validate = function(attrs) {
+                    console.log('validate', attrs.vms_conf);
+                    var result;
+                    try {
+                        result = JSON.parse(attrs.vms_conf);
+                    } catch (ignore) {}
+                    return result ? null : i18n('node_details.invalid_json_msg');
+                };
+                VMsConf.fetch();
+            }
+            dialogs.ShowNodeInfoDialog.show({
+                node: this.props.node,
+                VMsConf: VMsConf
+            });
         },
         sortRoles: function(roles) {
             var preferredOrder = this.props.cluster.get('release').get('roles');

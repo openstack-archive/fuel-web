@@ -631,10 +631,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
     dialogs.ShowNodeInfoDialog = React.createClass({
         mixins: [
             dialogMixin,
-            componentMixins.backboneMixin('node')
+            componentMixins.backboneMixin('node'),
+            componentMixins.backboneMixin('VMsConf', 'update change invalid')
         ],
         getDefaultProps: function() {
-            return {modalClass: 'always-show-scrollbar'};
+            return {
+                modalClass: 'always-show-scrollbar'
+            };
         },
         getInitialState: function() {
             return {title: i18n('dialog.show_node.default_dialog_title')};
@@ -700,6 +703,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             this.assignAccordionEvents();
             this.setDialogTitle();
+            //f (this.state.isKvmVirt) this.getNodeConfiguration();
         },
         setDialogTitle: function() {
             var name = this.props.node && this.props.node.get('name');
@@ -714,6 +718,27 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         toggle: function(groupIndex) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
         },
+        getNodeConfiguration: function() {
+            this.props.VMsConf.fetch().then(_.bind(function() {
+                console.log('getNodeConfiguration', this.props.VMsConf);
+            }, this));
+        },
+        saveNodeConfiguration: function() {
+            console.log('saveNodeConfiguration', this.props.VMsConf);
+            this.props.VMsConf.save(null, {method: 'PUT'})
+            .done(function() {
+                console.log('done', this.props.VMsConf);
+            }.bind(this))
+            .fail(function() {
+                console.log('fail');
+            }.bind(this))
+            .always(_.bind(function() {
+                this.setState({actionInProgress: false});
+            }, this));
+        },
+        onChange: function(name, value) {
+            this.props.VMsConf.set({'vms_conf': value}, {validate: true});
+        },
         renderBody: function() {
             var node = this.props.node,
                 meta = node.get('meta');
@@ -724,6 +749,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     disks: ['name', 'model', 'size'],
                     interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
                 };
+            if (this.props.VMsConf) {
+                var FUCK = this.props.VMsConf.get('vms_conf') ? this.props.VMsConf.get('vms_conf') : '{}' ;
+                groups.push('config');
+            };
+            console.log(this.props.VMsConf)
             return (
                 <div className='node-details-popup'>
                     <div className='row'>
@@ -787,6 +817,25 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                             }
                                             {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries)) &&
                                                 <div>{groupEntries}</div>
+                                            }
+                                            {_.contains(groups, 'config') &&
+                                                <div className='vm-config'>
+                                                    <div>{i18n('node_details.vm_config_msg')}</div>
+                                                    {this.props.VMsConf.validationError &&
+                                                        <div className='text-danger'>
+                                                            <i className='glyphicon glyphicon-danger-sign' />
+                                                            {this.props.VMsConf.validationError}
+                                                        </div>
+                                                    }
+                                                    <controls.Input
+                                                        type='textarea'
+                                                        defaultValue={FUCK}
+                                                        onChange={this.onChange}
+                                                    />
+                                                    <button className='btn btn-default' onClick={this.saveNodeConfiguration} disabled={this.state.actionInProgress}>
+                                                        {i18n('save')}
+                                                    </button>
+                                                </div>
                                             }
                                         </div>
                                     </div>

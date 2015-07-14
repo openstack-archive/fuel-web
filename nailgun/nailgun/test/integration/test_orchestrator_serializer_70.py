@@ -28,7 +28,7 @@ from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 
 
-class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
+class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
                   'ceilometer/api', 'cinder/api', 'glance/api', 'heat/api',
                   'nova/api', 'murano/api', 'horizon', 'management',
@@ -41,20 +41,30 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                'cinder/iscsi']
     public = ['ex', 'public/vip', 'ceph/radosgw']
 
-    @mock.patch.object(models.Release, 'environment_version',
-                       new_callable=mock.PropertyMock(return_value='7.0'))
-    def setUp(self, *args):
-        super(TestDeploymentAttributesSerialization70, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+    def custom_setup(self, segmentation_type):
+        with mock.patch.object(
+                models.Release, 'environment_version',
+                new_callable=mock.PropertyMock(return_value='7.0')):
+            super(BaseTestDeploymentAttributesSerialization70, self).setUp()
+            self.cluster = self.create_env('ha_compact')
 
-        # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'vlan')
-        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        serializer_type = get_serializer_for_cluster(cluster_db)
-        self.serializer = serializer_type(AstuteGraph(cluster_db))
-        self.serialized_for_astute = self.serializer.serialize(
-            cluster_db, cluster_db.nodes)
-        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
+            # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
+            objects.NodeCollection.prepare_for_deployment(
+                self.env.nodes, segmentation_type)
+            cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+            serializer_type = get_serializer_for_cluster(cluster_db)
+            self.serializer = serializer_type(AstuteGraph(cluster_db))
+            self.serialized_for_astute = self.serializer.serialize(
+                cluster_db, cluster_db.nodes)
+            self.vm_data = self.env.read_fixtures(['vmware_attributes'])
+
+
+class TestDeploymentAttributesSerialization70(
+    BaseTestDeploymentAttributesSerialization70
+):
+
+    def setUp(self):
+        self.custom_setup('vlan')
 
     def create_env(self, mode):
         return self.env.create(
@@ -75,8 +85,8 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         for node in self.serialized_for_astute:
             roles = node['network_scheme']['roles']
             node = objects.Node.get_by_uid(node['uid'])
-            expected_roles = [
-                ('neutron/private', 'br-prv')]
+
+            expected_roles = [('neutron/private', 'br-prv')]
             expected_roles += zip(
                 self.management, ['br-mgmt'] * len(self.management))
             expected_roles += zip(
@@ -85,8 +95,8 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 self.storage, ['br-storage'] * len(self.storage))
 
             if objects.Node.should_have_public(node):
-                expected_roles += zip(self.public,
-                                      ['br-ex'] * len(self.public))
+                expected_roles += zip(
+                    self.public, ['br-ex'] * len(self.public))
                 expected_roles += [('neutron/floating', 'br-floating')]
 
             self.assertEqual(roles, dict(expected_roles))
@@ -163,21 +173,22 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         self.check_generate_vmware_attributes_data()
 
 
-class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
-    @mock.patch.object(models.Release, 'environment_version',
-                       new_callable=mock.PropertyMock(return_value='7.0'))
-    def setUp(self, *args):
-        super(TestDeploymentSerializationForNovaNetwork70, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+class TestDeploymentAttributesSerializationSegmentationVlan70(
+    BaseTestDeploymentAttributesSerialization70
+):
 
-        # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
-        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        serializer_type = get_serializer_for_cluster(cluster_db)
-        self.serializer = serializer_type(AstuteGraph(cluster_db))
-        self.serialized_for_astute = self.serializer.serialize(
-            cluster_db, cluster_db.nodes)
-        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
+    def setUp(self):
+        self.custom_setup('gre')
+
+    def test_neutron_mesh_endpoint(self):
+        for node in self.serialized_for_astute:
+            roles = node['network_scheme']['roles']
+            self.assertEqual(roles['neutron/mesh'], 'br-mesh')
+
+
+class TestDeploymentSerializationForNovaNetwork70(
+    TestDeploymentAttributesSerialization70
+):
 
     def create_env(self, mode):
         return self.env.create(

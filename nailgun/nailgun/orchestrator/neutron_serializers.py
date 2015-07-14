@@ -877,6 +877,9 @@ class NeutronNetworkDeploymentSerializer70(
 
         mapping = cls.get_network_role_mapping_to_interfaces(node)
 
+        if node.cluster.network_config.segmentation_type == 'gre':
+            attrs['roles']['neutron/mesh'] = 'br-mesh'
+
         old_mapping_6_1 = attrs['roles']
         mapping.update(old_mapping_6_1)
         attrs['roles'] = mapping

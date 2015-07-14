@@ -881,6 +881,12 @@ class NeutronNetworkDeploymentSerializer70(
         mapping.update(old_mapping_6_1)
         attrs['roles'] = mapping
 
+        if node.cluster.network_config.segmentation_type == 'gre':
+            attrs['roles'].pop('neutron/private', None)
+
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            attrs['roles'].pop('neutron/mesh', None)
+
         return attrs
 
     @classmethod

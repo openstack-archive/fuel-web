@@ -855,7 +855,9 @@ class NeutronNetworkDeploymentSerializer70(
         :return: dict of network roles mapping
         """
         mapping = cls.get_default_network_to_endpoint_mapping(node)
-        return cls._get_network_role_mapping(node, mapping)
+        roles = cls._get_network_role_mapping(node, mapping)
+
+        return roles
 
     @classmethod
     def get_network_role_mapping_to_ip(cls, node):
@@ -880,6 +882,12 @@ class NeutronNetworkDeploymentSerializer70(
         old_mapping_6_1 = attrs['roles']
         mapping.update(old_mapping_6_1)
         attrs['roles'] = mapping
+
+        if node.cluster.network_config.segmentation_type == 'gre':
+            attrs['roles'].pop('neutron/private', None)
+
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            attrs['roles'].pop('neutron/mesh', None)
 
         return attrs
 

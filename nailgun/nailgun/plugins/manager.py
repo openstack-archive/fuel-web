@@ -12,6 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 import six
 from six.moves import map
 
@@ -81,6 +86,22 @@ class PluginManager(object):
             plugin_adapter.set_cluster_tasks()
             cluster_plugins.append(plugin_adapter)
         return cluster_plugins
+
+    @classmethod
+    def get_network_roles(cls, cluster):
+        plugin_roles = OrderedDict()
+
+        for plugin in cluster.plugins:
+            for role in plugin.network_roles_metadata:
+                role_id = role['id']
+                if role_id in plugin_roles:
+                    raise errors.NetworkRoleConflict(
+                        "Cannot override existing network "
+                        "role '{0}' in plugin '{1}'".format(
+                            role['id'], plugin.name))
+                plugin_roles[role_id] = role
+
+        return plugin_roles.values()
 
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):

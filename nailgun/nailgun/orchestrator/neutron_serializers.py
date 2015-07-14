@@ -668,10 +668,11 @@ class NeutronNetworkDeploymentSerializer61(
 
         is_public = Node.should_have_public(node)
         if is_public:
-            attrs['endpoints']['br-ex'] = {}
+            attrs['endpoints']['br-ex'] = {'IP': 'none'}
             attrs['endpoints']['br-floating'] = {'IP': 'none'}
-            attrs['roles']['ex'] = 'br-ex'
             attrs['roles']['neutron/floating'] = 'br-floating'
+        if Node.should_have_public_with_ip(node):
+            attrs['roles']['ex'] = 'br-ex'
 
         nm = Cluster.get_network_manager(node.cluster)
 
@@ -704,7 +705,7 @@ class NeutronNetworkDeploymentSerializer61(
             })
 
         # Add gateway.
-        if is_public:
+        if is_public and netgroups['public'].get('gateway'):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
@@ -836,6 +837,7 @@ class NeutronNetworkDeploymentSerializer70(
 
         if Node.should_have_public(node):
             attrs['roles']['neutron/floating'] = 'br-floating'
+        if Node.should_have_public_with_ip(node):
             attrs['roles']['public/vip'] = 'br-ex'
             attrs['roles']['ceph/radosgw'] = 'br-ex'
 

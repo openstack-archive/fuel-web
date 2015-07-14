@@ -597,6 +597,20 @@ class Cluster(NailgunObject):
         return False
 
     @classmethod
+    def neutron_dvr_enabled(cls, instance):
+        logger.info(u"cluster editable attributes: {0}".format(
+            instance.attributes.editable))
+        network_attrs = instance.attributes.editable.get('network')
+        logger.info(u"network attributes: {0}".format(network_attrs))
+        if network_attrs:
+            logger.info(u"Returning {0}".format(
+                network_attrs['neutron_dvr']['value']))
+            return network_attrs['neutron_dvr']['value']
+        else:
+            logger.info(u"Returning False")
+            return False
+
+    @classmethod
     def get_roles(cls, instance):
         """Returns a dictionary of node roles available for deployment.
 

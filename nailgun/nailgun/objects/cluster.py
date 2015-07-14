@@ -615,6 +615,15 @@ class Cluster(NailgunObject):
         return False
 
     @classmethod
+    def neutron_dvr_enabled(cls, instance):
+        neutron_attrs = instance.attributes.editable.get(
+            'neutron_advanced_configuration')
+        if neutron_attrs:
+            return neutron_attrs['neutron_dvr']['value']
+        else:
+            return False
+
+    @classmethod
     def get_roles(cls, instance):
         """Returns a dictionary of node roles available for deployment.
 

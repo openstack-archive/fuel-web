@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import ANY
 from mock import patch
 
 from nailgun import consts
@@ -104,7 +105,7 @@ class TestNailgunReceiver(base.BaseTestCase):
 
     @patch('nailgun.objects.Task.update_verify_networks')
     def test_check_repositories_resp_error(self, update_verify_networks):
-        urls = ['url1', 'url2']
+        urls = ['url2', 'url1', 'url3', 'url1']
         repo_check_message = {
             "status": "ready",
             "progress": 100,
@@ -117,6 +118,13 @@ class TestNailgunReceiver(base.BaseTestCase):
         NailgunReceiver.check_repositories_resp(**repo_check_message)
 
         update_verify_networks.assert_called_with(
-            self.task, 'error', 100,
-            ('These nodes: "1" failed to '
-             'connect to some of these repositories: "url1", "url2"'), [])
+            self.task, 'error', 100, ANY, [])
+        actual_msg = update_verify_networks.call_args[0][3]
+        expected_urls_set = set(urls)
+        actual_urls = actual_msg.replace('"', '').replace(',', '').\
+            split()[-len(expected_urls_set):]
+        self.assertItemsEqual(expected_urls_set, actual_urls)
+        self.assertRegexpMatches(
+            actual_msg,
+            r'These nodes: "1" failed to '
+            'connect to some of these repositories: .*')

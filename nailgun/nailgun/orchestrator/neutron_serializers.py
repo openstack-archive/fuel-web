@@ -704,7 +704,7 @@ class NeutronNetworkDeploymentSerializer61(
             })
 
         # Add gateway.
-        if is_public:
+        if is_public and netgroups['public'].get('gateway'):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:

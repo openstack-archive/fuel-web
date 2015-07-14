@@ -666,7 +666,7 @@ class BaseNetworkVerification(object):
         nodes_w_public = []
         offline_nodes = 0
         for node in self.task.cluster.nodes:
-            if node.online and objects.Node.should_have_public(node):
+            if node.online and objects.Node.should_have_public_with_ip(node):
                 nodes_w_public.append(node.id)
         if len(nodes_w_public) < 2:
             # don't check public VLANs if there is the only node with public
@@ -938,8 +938,9 @@ class CheckBeforeDeploymentTask(object):
             if all_public:
                 nodes_count = nodes.count()
             else:
-                nodes_count = sum(int(objects.Node.should_have_public(node))
-                                  for node in nodes)
+                nodes_count = sum(
+                    int(objects.Node.should_have_public_with_ip(node)) for
+                    node in nodes)
             vip_count = 0
             if task.cluster.is_ha_mode and (
                 any('controller' in node.all_roles
@@ -1211,7 +1212,8 @@ class CheckRepoAvailabilityWithSetup(object):
 
             for node in group_nodes:
 
-                if not (all_public or objects.Node.should_have_public(node)):
+                if not (all_public or
+                            objects.Node.should_have_public_with_ip(node)):
                     continue
 
                 ip = NetworkManager.get_ip_by_network_name(node, public.name)

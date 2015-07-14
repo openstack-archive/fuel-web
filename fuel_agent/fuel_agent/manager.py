@@ -208,9 +208,13 @@ class Manager(object):
         lu.vgremove_all()
         lu.pvremove_all()
 
+        if 'centos' in self.driver.configdrive_scheme.profile.lower():
+            metadata = '0.90'
+        else:
+            metadata = 'default'
         # creating meta disks
         for md in self.driver.partition_scheme.mds:
-            mu.mdcreate(md.name, md.level, *md.devices)
+            mu.mdcreate(md.name, md.level, metadata, *md.devices)
 
         # creating physical volumes
         for pv in self.driver.partition_scheme.pvs:

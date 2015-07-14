@@ -637,7 +637,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return {modalClass: 'always-show-scrollbar'};
         },
         getInitialState: function() {
-            return {title: i18n('dialog.show_node.default_dialog_title')};
+            var node = this.props.node;
+            var nodeConfigurationModel = new models.Node();
+            nodeConfigurationModel.url = _.result(this.props.node, 'url') + '/vms_conf/';
+            return {
+                title: i18n('dialog.show_node.default_dialog_title'),
+                isKvmVirt: _.indexOf(node.get('roles').length ? node.get('roles') : node.get('pending_roles'), 'kvm-virt') != -1,
+                nodeConfigurationModel: nodeConfigurationModel,
+                disabled: true
+            };
         },
         goToConfigurationScreen: function(url) {
             this.close();
@@ -700,6 +708,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             this.assignAccordionEvents();
             this.setDialogTitle();
+            if (this.state.isKvmVirt) this.getNodeConfigutation();
         },
         setDialogTitle: function() {
             var name = this.props.node && this.props.node.get('name');
@@ -714,6 +723,35 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         toggle: function(groupIndex) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
         },
+        getNodeConfigutation: function() {
+            this.state.nodeConfigurationModel.fetch().then(_.bind(function() {
+                this.setState({nodeConfiguration: this.state.nodeConfigurationModel.get('vms_conf').vms_conf});
+            }, this));
+        },
+        saveNodeConfiguration: function() {
+            if (this.isJson()) {
+                this.state.nodeConfigurationModel.save({vms_conf: this.state.nodeConfiguration}, {method: 'PUT'}).then(_.bind(function() {
+                    this.setState({disabled: true});
+                }, this));
+            } else {
+                this.setState({
+                    error: i18n('node_details.invalid_json_msg'),
+                    disabled: true
+                });
+            }
+        },
+        isJson: function() {
+            try { JSON.parse(this.state.nodeConfiguration); }
+            catch (e) { return false; }
+            return true;
+        },
+        onChange: function(name, newValue) {
+            this.setState({
+                nodeConfiguration: newValue,
+                error: '',
+                disabled: false
+            });
+        },
         renderBody: function() {
             var node = this.props.node,
                 meta = node.get('meta');
@@ -724,6 +762,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     disks: ['name', 'model', 'size'],
                     interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
                 };
+            if (this.state.isKvmVirt) groups.push('config');
             return (
                 <div className='node-details-popup'>
                     <div className='row'>
@@ -787,6 +826,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                             }
                                             {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries)) &&
                                                 <div>{groupEntries}</div>
+                                            }
+                                            {this.state.isKvmVirt &&
+                                                <div className='vm-config'>
+                                                    <div>{i18n('node_details.vm_config_msg')}</div>
+                                                    {this.state.error &&
+                                                        <div className='text-danger'>
+                                                            <i className='glyphicon glyphicon-danger-sign' />
+                                                            {this.state.error}
+                                                        </div>
+                                                    }
+                                                    <controls.Input
+                                                        type='textarea'
+                                                        value={this.state.nodeConfiguration}
+                                                        onChange={this.onChange}/>
+                                                    <button className='btn' onClick={this.saveNodeConfiguration} disabled={this.state.disabled}>Save</button>
+                                                </div>
                                             }
                                         </div>
                                     </div>

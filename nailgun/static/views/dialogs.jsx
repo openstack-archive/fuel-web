@@ -420,6 +420,35 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         }
     });
 
+    dialogs.ProvisionVMsDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: i18n('dialog.provision_vms.title')};},
+        startProvisioning: function() {
+            this.setState({actionInProgress: true});
+            var task = new models.Task();
+            task.save({}, {url: _.result(this.props.cluster, 'url') + '/spawn_vms', type: 'PUT'})
+                .done(function() {
+                    this.close();
+                    dispatcher.trigger('deploymentTaskStarted');
+                }.bind(this))
+                .fail(_.bind(function(response) {
+                    this.showError(response, i18n('dialog.provision_vms.provision_vms_error'));
+                }, this));
+        },
+        renderBody: function() {
+            var vmsCount = this.props.cluster.get('nodes').where(function(node) {
+                return node.get('pending_addition') && node.hasRole('kvm-virt');
+            }).length;
+            return i18n('dialog.provision_vms.text', {count: vmsCount});
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
+                <button key='provision' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.startProvisioning}>{i18n('common.start_button')}</button>
+            ]);
+        }
+    });
+
     dialogs.StopDeploymentDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.stop_deployment.title')};},

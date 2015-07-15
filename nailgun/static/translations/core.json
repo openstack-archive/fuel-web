@@ -12,6 +12,7 @@
                 "rename_button": "Rename",
                 "delete_button": "Delete",
                 "remove_button": "Remove",
+                "start_button": "Start",
                 "stop_button": "Stop",
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
@@ -626,6 +627,7 @@
                 },
                 "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
+                "provision_vms": "Provision VMs",
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
@@ -778,6 +780,12 @@
                     "networks_link": "Networks tab",
                     "invalid_settings": "Environment settings are invalid.",
                     "settings_link": "Settings tab"
+                },
+                "provision_vms": {
+                    "title": "Provision VMs",
+                    "text": "Are you sure you want to start VMs provisioning on __count__ node?",
+                    "text_plural": "Are you sure you want to start VMs provisioning on __count__ nodes?",
+                    "provision_vms_error": "Unable to start provisioning"
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",

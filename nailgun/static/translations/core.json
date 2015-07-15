@@ -70,7 +70,10 @@
                 "ht_cores": "__count__ total CPU",
                 "total_hdd": "__total__ HDD",
                 "total_ram": "__total__ RAM",
-                "offline": "Offline"
+                "offline": "Offline",
+                "config": "VMs Config",
+                "vms_config_msg": "You can define your own VM configuration. It should be valid JSON object.",
+                "invalid_vms_conf_msg": "Invalid JSON object"
             },
             "cluster": {
                 "status": {

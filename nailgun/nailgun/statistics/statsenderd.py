@@ -63,7 +63,10 @@ class StatsSender(object):
     def send_data_to_url(self, url, data):
         resp = None
         try:
-            headers = {'content-type': 'application/json'}
+            headers = {
+                'content-type': 'application/json',
+                'master-node-uid': InstallationInfo().get_master_node_uid()
+            }
             resp = requests.post(
                 url,
                 headers=headers,

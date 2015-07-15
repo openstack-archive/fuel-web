@@ -16,3 +16,8 @@ ADMIN_NETWORK:
 FUEL_ACCESS:
   user: "admin"
   password: "admin"
+BOOTSTRAP:
+  MIRROR_DISTRO: "http://archive.ubuntu.com/ubuntu"
+  MIRROR_MOS: "http://mirror.fuel-infra.org/mos/ubuntu"
+  HTTP_PROXY: ""
+  EXTRA_APT_REPOS: ""

@@ -29,7 +29,7 @@ class TestRpcUtils(base.BaseTestCase):
 
         self.assertIn(
             cluster.attributes.editable['public_ssl']['horizon']['value'],
-            (True, False)
+            (True, True)
         )
 
         with mock.patch.dict(cluster.attributes.editable, {}):

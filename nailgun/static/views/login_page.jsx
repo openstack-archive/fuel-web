@@ -18,9 +18,10 @@ define(
     'jquery',
     'underscore',
     'i18n',
-    'react'
+    'react',
+    'models'
 ],
-function($, _, i18n, React) {
+function($, _, i18n, React, models) {
     'use strict';
 
     var LoginPage = React.createClass({
@@ -64,6 +65,15 @@ function($, _, i18n, React) {
                         username: username,
                         token: keystoneClient.token
                     });
+
+                    if (password == 'admin') {
+                        var notification = new models.Notification({
+                            topic: 'warning',
+                            message: 'Please change your default admin password as soon as possible'
+                        });
+                        notification.save();
+                    }
+
                     return app.settings.fetch({cache: true});
                 }, this))
                 .done(_.bind(function() {

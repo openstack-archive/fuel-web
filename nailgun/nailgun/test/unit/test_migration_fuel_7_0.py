@@ -610,7 +610,7 @@ class TestSchemalessRoles(base.BaseAlembicMigrationTest):
             "ceph-osd": 50,
             "mongo": 60,
             "base-os": 70,
-            "kvm-virt": 80
+            "virt": 80
         }
 
         for r_name in r_meta:

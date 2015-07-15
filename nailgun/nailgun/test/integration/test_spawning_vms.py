@@ -30,7 +30,7 @@ class TestSpawnVMs(BaseIntegrationTest):
         self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True,
-                 "roles": ["kvm-virt"]},
+                 "roles": ["virt"]},
             ]
         )
         cluster = self.env.clusters[0]
@@ -57,7 +57,7 @@ class TestSpawnVMs(BaseIntegrationTest):
         self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True,
-                 "roles": ["kvm-virt"]},
+                 "roles": ["virt"]},
             ]
         )
         cluster = self.env.clusters[0]

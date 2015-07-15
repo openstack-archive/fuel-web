@@ -31,7 +31,7 @@ from nailgun.task import manager
 
 
 class SpawnVmsHandler(BaseHandler):
-    """Handler for provision and spawn vms on kvm-virt nodes."""
+    """Handler for provision and spawn vms on virt nodes."""
 
     task_manager = manager.SpawnVMsTaskManager
     validator = DeploySelectedNodesValidator

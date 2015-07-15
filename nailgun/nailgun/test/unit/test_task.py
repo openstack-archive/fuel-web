@@ -33,7 +33,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller']},
-                {'roles': ['compute', 'kvm-virt']},
+                {'roles': ['compute', 'virt']},
                 {'roles': ['cinder']}])
 
     def node_should_be_error_with_type(self, node, error_type):

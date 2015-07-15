@@ -281,10 +281,7 @@ NOVA_SERVICE_TYPE = Enum(
 )
 
 VIRTUAL_NODE_TYPES = Enum(
-    "kvm-virt",
-    names=(
-        "kvm"
-    )
+    "virt",
 )
 
 OPENSTACK_IMAGES_SETTINGS = Enum(

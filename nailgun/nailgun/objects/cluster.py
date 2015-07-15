@@ -890,7 +890,7 @@ class Cluster(NailgunObject):
     def get_nodes_to_spawn_vms(cls, instance):
         nodes = []
         for node in cls.get_nodes_by_role(instance,
-                                          consts.VIRTUAL_NODE_TYPES.kvm):
+                                          consts.VIRTUAL_NODE_TYPES.virt):
             for vm in node.attributes.vms_conf:
                 if not vm.get('created'):
                     nodes.append(node)
@@ -898,7 +898,7 @@ class Cluster(NailgunObject):
 
     @classmethod
     def mark_vms_as_created(cls, instance):
-        nodes = cls.get_nodes_by_role(instance, consts.VIRTUAL_NODE_TYPES.kvm)
+        nodes = cls.get_nodes_by_role(instance, consts.VIRTUAL_NODE_TYPES.virt)
         for node in nodes:
             vms_conf = copy.deepcopy(node.attributes.vms_conf)
             for vm in vms_conf:

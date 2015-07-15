@@ -339,8 +339,15 @@ define([
             };
             var model1Value = getValue(model1),
                 model2Value = getValue(model2);
-            if (_.isString(model1Value)) return utils.natsort(model1Value, model2Value, options);
-            var result = model1Value - model2Value;
+            if (_.isString(model1Value) && _.isString(model1Value)) {
+                return utils.natsort(model1Value, model2Value, options);
+            }
+            var result;
+            if (_.isNumber(model1Value) && _.isNumber(model1Value)) {
+                result = model1Value - model2Value;
+            } else {
+                result = !model1Value && !model2Value ? 0 : !model1Value ? 1 : -1;
+            }
             return options.desc ? -result : result;
         }
     };

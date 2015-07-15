@@ -145,7 +145,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }, this);
         },
         changeSearch: _.debounce(function(value) {
-            this.updateSearch(value);
+            this.updateSearch(_.trim(value));
         }, 200, {leading: true}),
         clearSearchField: function() {
             this.updateSearch('');
@@ -236,7 +236,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 if (this.state.search) {
                     var search = this.state.search.toLowerCase();
                     if (!_.any(node.pick('name', 'mac', 'ip'), function(attribute) {
-                        return _.contains(attribute.toLowerCase(), search);
+                        return _.contains((attribute || '').toLowerCase(), search);
                     })) {
                         return false;
                     }
@@ -382,9 +382,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             }
                             {_.map(this.props.options, function(option, index) {
                                 return (
-                                    <controls.Input {...option}
+                                    <controls.Input
                                         key={index}
                                         type='checkbox'
+                                        name={option.name}
+                                        label={option.label || i18n('common.not_specified')}
                                         checked={_.contains(this.props.values, option.name)}
                                         onChange={this.onChange}
                                     />
@@ -504,6 +506,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     break;
                 case 'manufacturer':
                     options = _.uniq(this.props.screenNodes.pluck('manufacturer')).map(function(manufacturer) {
+                        manufacturer = manufacturer || '';
                         return {
                             name: manufacturer.replace(/\s/g, '_'),
                             label: manufacturer
@@ -1085,6 +1088,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var uniqValueSorters = ['name', 'mac', 'ip'],
                 activeSorters = _.uniq(_.flatten(_.map(this.props.activeSorters, _.keys)));
 
+            var composeNodeDiskSizesLabel = function(node) {
+                var diskSizes = node.resource('disks');
+                return i18n('node_details.disks_amount', {
+                    count: diskSizes.length,
+                    size: diskSizes.map(function(size) {
+                            return utils.showDiskSize(size) + ' ' + i18n('node_details.hdd');
+                        }).join(', ')
+                });
+            };
+
             var groupingMethod = _.bind(function(node) {
                 return (_.map(_.difference(activeSorters, uniqValueSorters), function(sorter) {
                     if (sorter == 'roles') {
@@ -1096,7 +1109,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         });
                     }
                     if (sorter == 'manufacturer') {
-                        return node.get('manufacturer');
+                        return node.get('manufacturer') || i18n('common.not_specified');
                     }
                     if (sorter == 'hdd') {
                         return i18n('node_details.total_hdd', {
@@ -1104,13 +1117,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         });
                     }
                     if (sorter == 'disks') {
-                        var diskSizes = node.resource('disks');
-                        return i18n('node_details.disks_amount', {
-                            count: diskSizes.length,
-                            size: diskSizes.map(function(size) {
-                                    return utils.showDiskSize(size) + ' ' + i18n('node_details.hdd');
-                                }).join(', ')
-                        });
+                        return composeNodeDiskSizesLabel(node);
                     }
                     if (sorter == 'ram') {
                         return i18n('node_details.total_ram', {
@@ -1132,7 +1139,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }));
                 _.each(groups, function(group) {
                     group[1].sort(function(node1, node2) {
-                        return utils.multiSort(node1, node2, formattedSorters);
+                        return utils.compare(node1, node2, formattedSorters);
                     });
                 });
             }
@@ -1158,10 +1165,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             result = _.indexOf(this.props.statusesToFilter, node1.getStatusSummary()) - _.indexOf(this.props.statusesToFilter, node2.getStatusSummary());
                             break;
                         case 'manufacturer':
-                            result = utils.natsort(node1.get('manufacturer'), node2.get('manufacturer'));
+                            result = utils.compare(node1, node2, {attr: 'manufacturer'});
                             break;
                         case 'disks':
-                            result = utils.natsort(node1.resource('disks'), node2.resource('disks'));
+                            result = utils.natsort(composeNodeDiskSizesLabel(node1), composeNodeDiskSizesLabel(node2));
                             break;
                         default:
                             result = node1.resource(sorterName) - node2.resource(sorterName);

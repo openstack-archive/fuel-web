@@ -264,7 +264,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             };
             nodePanelClasses[status] = status;
 
-            var manufacturer = node.get('manufacturer'),
+            var manufacturer = node.get('manufacturer') || '',
                 logoClasses = {
                     'manufacturer-logo': true
                 };

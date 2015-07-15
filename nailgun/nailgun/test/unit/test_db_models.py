@@ -53,6 +53,16 @@ class TestDbModels(BaseTestCase):
                 Release(version=version).environment_version,
                 enviroment_version)
 
+    def test_cluster_name_length(self):
+        cluster_data = {
+            'name': u'ю' * 2048,
+            'fuel_version': '',
+            'release_id': self.env.create_release(api=False).id
+        }
+        cluster = Cluster(**cluster_data)
+        self.db.add(cluster)
+        self.db.commit()
+
 
 class TestNodeInterfacesDbModels(BaseTestCase):
     sample_nic_interface_data = {

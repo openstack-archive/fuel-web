@@ -1080,7 +1080,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
             }
         },
-        renderSelectAllCheckbox: function() {
+        renderSelectAllCheckbox: function(selectAllLabel) {
             var availableNodesIds = _.compact(this.props.nodes.map(function(node) {if (node.isSelectable()) return node.id;})),
                 checked = this.props.mode == 'edit' || (availableNodesIds.length && !_.any(availableNodesIds, function(id) {return !this.props.selectedNodeIds[id];}, this));
             return (
@@ -1093,8 +1093,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length ||
                         !checked && !_.isNull(this.props.maxNumberOfNodes) && this.props.maxNumberOfNodes < availableNodesIds.length
                     }
-                    label={i18n('common.select_all')}
-                    wrapperClassName='select-all pull-right'
+                    label={selectAllLabel || null}
+                    wrapperClassName='select-all pull-left'
                     onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)} />
             );
         }
@@ -1205,18 +1205,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var groups = this.groupNodes(),
                 rolesWithLimitReached = _.keys(_.omit(this.props.processedRoleLimits, function(roleLimit, roleName) {
                     return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
-                }, this));
+                }, this)),
+                selectAllLabel = i18n('cluster_page.nodes_tab.count_selected_nodes', {count: _.filter(this.props.selectedNodeIds).length, total: this.props.nodes.length});
             return (
                 <div className={utils.classNames({'node-list row': true, compact: this.props.viewMode == 'compact'})}>
                     {groups.length > 1 &&
                         <div className='col-xs-12 node-list-header'>
-                            {this.renderSelectAllCheckbox()}
+                            {this.renderSelectAllCheckbox(selectAllLabel)}
                         </div>
                     }
                     <div className='col-xs-12 content-elements'>
-                        {groups.map(function(group) {
+                        {groups.map(function(group, index) {
                             return <NodeGroup {...this.props}
                                 key={group[0]}
+                                index={index}
                                 label={group[0]}
                                 nodes={group[1]}
                                 rolesWithLimitReached={rolesWithLimitReached}
@@ -1242,22 +1244,37 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
     NodeGroup = React.createClass({
         mixins: [SelectAllMixin],
+        getInitialState: function() {
+            return {collapsed: false};
+        },
+        componentDidMount: function() {
+            $('.nodes-list', this.getDOMNode())
+                .on('show.bs.collapse', this.setState.bind(this, {collapsed: false}, null))
+                .on('hide.bs.collapse', this.setState.bind(this, {collapsed: true}, null));
+        },
         render: function() {
             var availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
                 nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, function(node) {
                     return _.any(this.props.rolesWithLimitReached, function(role) {return !node.hasRole(role);}, this);
-                }, this), 'id');
+                }, this), 'id'),
+                selectedNodes = this.props.nodes.filter(function(node) {
+                    return this.props.selectedNodeIds[node.id];
+                }, this),
+                statuses = this.props.nodes.reduce(function(result, node) {
+                    result[node.getStatusSummary()] = (result[node.getStatusSummary()] || 0) + 1;
+                    return result;
+                }, {}, this),
+                totalNodesCount = this.props.nodes.length;
             return (
                 <div className='nodes-group'>
-                    <div className='row node-group-header'>
-                        <div className='col-xs-10'>
-                            <h4>{this.props.label} ({this.props.nodes.length})</h4>
-                        </div>
-                        <div className='col-xs-2'>
+                    <div className='node-group-header'>
                             {this.renderSelectAllCheckbox()}
-                        </div>
+                            <div className='pull-right toggle' data-toggle='collapse' data-target={'.list-nodes-' + this.props.index + ',.summary-nodes-' + this.props.index}>
+                                <i className={'glyphicon glyphicon-chevron-' + (this.state.collapsed ? 'up' : 'down')}></i>
+                            </div>
+                            <h4>{this.props.label} ({totalNodesCount})</h4>
                     </div>
-                    <div className='row'>
+                    <div className={'row collapse in nodes-list list-nodes-' + this.props.index}>
                         {this.props.nodes.map(function(node) {
                             return <Node
                                 {... _.pick(this.props, 'cluster', 'mode', 'viewMode')}
@@ -1268,6 +1285,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}
                             />;
                         }, this)}
+                    </div>
+                    <div className={'collapse nodes-summary summary-nodes-' + this.props.index}>
+                        <ul>
+                            <li>{i18n('cluster_page.nodes_tab.count_selected_nodes', {count: selectedNodes.length, total: totalNodesCount})}</li>
+                            <li>
+                                {_.map(statuses, function(nodesCount, status) {
+                                    return (
+                                        <span className={status}>{i18n('cluster_page.nodes_tab.count_nodes_statuses', {count: nodesCount, status: i18n('cluster_page.nodes_tab.node.status.' + status)})}; </span>
+                                    );
+                                })}
+                            </li>
+                        </ul>
                     </div>
                 </div>
             );

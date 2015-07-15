@@ -330,6 +330,9 @@
                     },
                     "filter_results_amount": "Shown __count__ result for ",
                     "filter_results_amount_plural": "Shown __count__ results for ",
+                    "count_selected_nodes": "__count__ of __total__ nodes selected",
+                    "count_nodes_statuses": "__count__ node __status__",
+                    "count_nodes_statuses_plural": "__count__ nodes __status__",
                     "assign_roles": "Assign Roles",
                     "breadcrumbs": {
                         "add": "Add Nodes",

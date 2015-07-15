@@ -1451,7 +1451,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
   .node-list-header .select-all {
-    margin: 0 21px 8px 7px;
+    margin: 0 21px 8px 23px;
+    .custom-tumbler {margin-right: 15px;}
   }
 
   .nodes-group {
@@ -1468,8 +1469,21 @@ button, .btn:not(.btn-link) {.font-semibold;}
     margin-bottom: @node-indent;
     box-sizing: border-box;
 
+    .node-group-header {
+      .checkbox-group {
+        max-height: 22px;
+        margin: -2px 10px 0 2px;
+      }
+      .toggle {cursor: pointer;}
+    }
+
+    .nodes-summary {
+      .offline, .error {color: @red;}
+      li {list-style-type: none;}
+    }
+
     h4 {
-      margin: 0 0 @node-indent 0;
+      margin: 0 0 15px 0;
     }
 
     .node {

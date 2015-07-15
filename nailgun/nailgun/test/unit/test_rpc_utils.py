@@ -29,11 +29,11 @@ class TestRpcUtils(base.BaseTestCase):
 
         self.assertIn(
             cluster.attributes.editable['public_ssl']['horizon']['value'],
-            (True, False)
+            (True, True)
         )
 
         with mock.patch.dict(cluster.attributes.editable, {}):
-            self.assertEqual(consts.PROTOCOL.http,
+            self.assertEqual(consts.PROTOCOL.https,
                              utils.get_protocol_for_horizon(cluster))
 
         with mock.patch.dict(cluster.attributes.editable, {'public_ssl': {}}):

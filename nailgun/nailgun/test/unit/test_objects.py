@@ -519,7 +519,7 @@ class TestTaskObject(BaseIntegrationTest):
 
     def test_update_vms_conf(self):
         kvm_node = self.cluster.nodes[0]
-        kvm_node.roles = [consts.VIRTUAL_NODE_TYPES.kvm]
+        kvm_node.roles = [consts.VIRTUAL_NODE_TYPES.virt]
         self.db.flush()
         objects.Node.set_vms_conf(kvm_node,
                                   [{'id': 1, 'cluster_id': self.cluster.id}])
@@ -532,7 +532,7 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
 
         for node in self.cluster.nodes:
-            if consts.VIRTUAL_NODE_TYPES.kvm in node.roles:
+            if consts.VIRTUAL_NODE_TYPES.virt in node.roles:
                 self.assertTrue(node.attributes.vms_conf[0].get('created'))
             else:
                 self.assertNotEquals(node.status, 'ready')

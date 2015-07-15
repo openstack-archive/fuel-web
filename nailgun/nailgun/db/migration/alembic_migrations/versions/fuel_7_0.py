@@ -285,7 +285,7 @@ def upgrade_node_roles_metadata():
             "ceph-osd": 50,
             "mongo": 60,
             "base-os": 70,
-            "kvm-virt": 80
+            "virt": 80
         }
         for role_name in roles_metadata:
             # if role is not in weight mapping, give it enormous value

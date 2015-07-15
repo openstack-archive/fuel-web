@@ -726,7 +726,6 @@
                         "title": "Additional Services",
                         "release_alert": "Additional services are not available in __NameAndRelease.release_name__",
                         "network_mode_alert": "Murano requires Neutron as a network option.",
-                        "qemu_alert": "Sahara and Murano require KVM as a hypervisor.",
                         "install_sahara": "Install Sahara",
                         "install_sahara_description": "Sahara enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
                         "install_murano": "Install Murano",

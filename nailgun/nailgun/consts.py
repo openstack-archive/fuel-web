@@ -281,7 +281,7 @@ NOVA_SERVICE_TYPE = Enum(
 )
 
 VIRTUAL_NODE_TYPES = Enum(
-    "kvm-virt",
+    "virt",
     names=(
         "kvm"
     )

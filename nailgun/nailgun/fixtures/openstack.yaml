@@ -97,7 +97,7 @@
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
         weight: 70
-      kvm-virt:
+      virt:
         name: "Virtual"
         description: "Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
         weight: 80
@@ -437,7 +437,7 @@
         # https://bugs.launchpad.net/fuel/+bug/1278964
         base-os:
           - {allocate_size: "min", id: "os"}
-        kvm-virt:
+        virt:
           - {allocate_size: "min", id: "os"}
       volumes:
         - id: "os"

@@ -88,7 +88,7 @@
 
 - id: generate_vms
   type: puppet
-  groups: [kvm-virt]
+  groups: [virt]
   requires: [netconfig]
   required_for: [deploy_end]
   parameters:
@@ -98,7 +98,7 @@
 
 - id: netconfig
   type: puppet
-  groups: [compute, kvm-virt]
+  groups: [compute, virt]
   required_for: [deploy_end]
   requires: [deploy_start]
   parameters:
@@ -118,9 +118,9 @@
     puppet_modules: /etc/puppet/modules
     timeout: 3600
 
-- id: kvm-virt
+- id: virt
   type: group
-  role: [kvm-virt]
+  role: [virt]
   required_for: [deploy_end]
   parameters:
     strategy:

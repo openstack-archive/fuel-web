@@ -165,7 +165,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.updateSorting(_.difference(this.state.activeSorters, [sorter]));
         },
         resetSorters: function() {
-            this.updateSorting(this.props.defaultSorting);
+            this.updateSorting(_.clone(this.props.defaultSorting));
         },
         changeSortingOrder: function(sorterName) {
             var activeSorters = this.state.activeSorters,

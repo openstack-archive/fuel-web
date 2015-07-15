@@ -32,7 +32,6 @@ from sqlalchemy.dialects import postgresql as psql
 from alembic import op
 from oslo.serialization import jsonutils
 
-from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
 from nailgun.utils.migration import drop_enum
@@ -62,7 +61,9 @@ task_names_old = (
     'create_stats_user',
     'remove_stats_user'
 )
-task_names_new = consts.TASK_NAMES
+task_names_new = task_names_old + (
+    'spawn_vms',
+)
 
 
 def upgrade():

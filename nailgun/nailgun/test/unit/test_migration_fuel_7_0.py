@@ -19,7 +19,6 @@ from oslo.serialization import jsonutils
 import six
 import sqlalchemy as sa
 
-from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -640,9 +639,7 @@ class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
                 sa.select([clusters_table.c.ui_settings])
             ).fetchone()[0]
         )
-        self.assertItemsEqual(
-            ui_settings['view_mode'],
-            consts.NODE_VIEW_MODES.standard)
+        self.assertItemsEqual(ui_settings['view_mode'], 'standard')
         self.assertItemsEqual(ui_settings['filter'], {})
         self.assertItemsEqual(ui_settings['sort'], [{'roles': 'asc'}])
         self.assertItemsEqual(ui_settings['search'], '')

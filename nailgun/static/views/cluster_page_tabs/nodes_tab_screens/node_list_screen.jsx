@@ -357,8 +357,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return utils.natsort(option1.label, option2.label);
             });
 
+            var classNames = {'btn-group multiselect': true, open: this.state.isOpen};
+            if (this.props.className) classNames[this.props.className] = true;
+
             return (
-                <div className={utils.classNames({'btn-group multiselect': true, open: this.state.isOpen})}>
+                <div className={utils.classNames(classNames)}>
                     <button
                         className={'btn dropdown-toggle ' + ((this.props.dynamicValues && !this.state.isOpen) ? 'btn-link' : 'btn-default')}
                         onClick={this.toggle}
@@ -460,8 +463,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     i18n(ns + 'less_than') + values[1] + ' ' + this.props.prefix
                     );
 
+            var classNames = {'btn-group number-range': true, open: this.state.isOpen};
+            if (this.props.className) classNames[this.props.className] = true;
+
             return (
-                <div className={utils.classNames({'btn-group number-range': true, open: this.state.isOpen})}>
+                <div className={utils.classNames(classNames)}>
                     <button className='btn btn-default dropdown-toggle' onClick={this.toggle}>
                         {label} <span className='caret'></span>
                     </button>
@@ -573,6 +579,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         clearSearchField: function() {
             this.setState({isSearchButtonVisible: false});
             this.refs.search.getInputDOMNode().value = '';
+            this.refs.search.getInputDOMNode().focus();
             this.props.clearSearchField();
         },
         activateSearch: function() {
@@ -582,6 +589,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     this.setState({activeSearch: false});
                 }
             }, this));
+        },
+        onSearchKeyDown: function(e) {
+            if (e.key == 'Escape') {
+                this.clearSearchField();
+                this.setState({activeSearch: false});
+            }
         },
         componentWillUnmount: function() {
             $('html').off('click.search');
@@ -724,6 +737,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             placeholder={i18n(ns + 'search_placeholder')}
                                             disabled={!this.props.screenNodes.length}
                                             onChange={this.searchNodes}
+                                            onKeyDown={this.onSearchKeyDown}
                                             autoFocus
                                         />
                                         {this.state.isSearchButtonVisible &&
@@ -823,7 +837,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             if (!_.contains(this.props.sorters, sorterName)) return null;
                                             var asc = sortObject[sorterName] == 'asc';
                                             return (
-                                                <div key={'sort_by-' + sorterName} className='pull-left'>
+                                                <div key={'sort_by-' + sorterName} className='sorter-control pull-left'>
                                                     <button className='btn btn-default' onClick={_.partial(this.props.changeSortingOrder, sorterName)}>
                                                         {i18n('cluster_page.nodes_tab.sorters.' + sorterName)}
                                                         <i
@@ -874,6 +888,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     key={filterName}
                                                     ref={filterName}
                                                     name={filterName}
+                                                    className='filter-control'
                                                     label={i18n('cluster_page.nodes_tab.filters.' + filterName)}
                                                     options={options}
                                                     values={values}

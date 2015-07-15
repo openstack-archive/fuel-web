@@ -1416,10 +1416,18 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .popover {
       span {
         padding-top: 6px;
-      }
-      .form-control {
-        width: 72px;
+        display: inline-block;
         margin: 0 5px;
+      }
+      .form-group {
+        float: left;
+        .form-control {
+          width: 76px;
+          margin: 0;
+        }
+        .help-block {
+          display: none;
+        }
       }
     }
   }

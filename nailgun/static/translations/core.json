@@ -22,6 +22,7 @@
                 "retry_button": "Retry Update",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
+                "not_specified" : "Not specified",
                 "size": {
                     "byte": "byte",
                     "byte_plural": "bytes",

@@ -450,11 +450,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 label = _.isEmpty(values) ?
                     this.props.label
                 :
-                    ((values[0] && values[1] || values[0] == values[1]) ?
-                        values[0] == values[1] ? values[0] : values[0] + ' - ' + values[1]
-                    :
-                        values[0] ? i18n(ns + 'more_than') + values[0] : i18n(ns + 'less_than') + values[1]
-                    ) + ' ' + this.props.prefix;
+                    this.props.label + ': ' + (
+                        !_.isUndefined(values[0]) && !_.isUndefined(values[1]) ?
+                            _.uniq(values).join(' - ')
+                        :
+                            !_.isUndefined(values[0]) ?
+                                    i18n(ns + 'more_than') + values[0]
+                                :
+                                    i18n(ns + 'less_than') + values[1] + ' ' + this.props.prefix
+                    );
 
             return (
                 <div className={utils.classNames({'btn-group number-range': true, open: this.state.isOpen})}>
@@ -918,10 +922,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                                             return _.find(options, {name: value}).label;
                                                                         }).join(', ')
                                                                     :
-                                                                        !values[0] ?
-                                                                            i18n(ns + 'less_than') + values[1]
+                                                                        !_.isUndefined(values[0]) && !_.isUndefined(values[1]) ?
+                                                                            _.uniq(values).join(' - ')
                                                                         :
-                                                                            !values[1] ? i18n(ns + 'more_than') + values[0] : _.uniq(values).join(' - ')
+                                                                            !_.isUndefined(values[0]) ? i18n(ns + 'more_than') + values[0] : i18n(ns + 'less_than') + values[1]
                                                                     }
                                                                 </strong>
                                                             </div>

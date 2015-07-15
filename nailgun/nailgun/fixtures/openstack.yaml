@@ -525,8 +525,6 @@
             description: "If selected, Sahara component will be installed"
             weight: 10
             type: "checkbox"
-            restrictions:
-              - "settings:common.libvirt_type.value == 'qemu'": "Sahara requires KVM as a hypervisor."
           murano:
             value: false
             label: "Install Murano"
@@ -535,7 +533,6 @@
             type: "checkbox"
             restrictions:
               - "cluster:net_provider != 'neutron'"
-              - "settings:common.libvirt_type.value == 'qemu'": "Murano requires KVM as a hypervisor."
           heat:
             value: true
             label: ""
@@ -1002,8 +999,6 @@
           description: "dialog.create_cluster_wizard.additional.install_sahara_description"
           bind: "settings:additional_components.sahara.value"
           weight: 10
-          restrictions:
-            - "Compute.hypervisor == 'qemu'": "dialog.create_cluster_wizard.additional.qemu_alert"
         murano:
           type: "checkbox"
           label: "dialog.create_cluster_wizard.additional.install_murano"
@@ -1012,7 +1007,6 @@
           weight: 20
           restrictions:
             - "Network.manager == 'nova-network'": "dialog.create_cluster_wizard.additional.network_mode_alert"
-            - "Compute.hypervisor == 'qemu'": "dialog.create_cluster_wizard.additional.qemu_alert"
         ceilometer:
           type: "checkbox"
           label: "dialog.create_cluster_wizard.additional.install_ceilometer"

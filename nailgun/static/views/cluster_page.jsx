@@ -398,7 +398,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 stoppableTask = !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], taskName),
                 isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment()),
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
-                    return node.get('pending_addition') && node.hasRole('kvm-virt');
+                    return node.get('pending_addition') && node.hasRole('virt');
                 });
             return (
                 <div className='col-xs-6 col-md-3'>

@@ -437,7 +437,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             var vmsCount = this.props.cluster.get('nodes').where(function(node) {
-                return node.get('pending_addition') && node.hasRole('kvm-virt');
+                return node.get('pending_addition') && node.hasRole('virt');
             }).length;
             return i18n('dialog.provision_vms.text', {count: vmsCount});
         },
@@ -733,7 +733,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             this.assignAccordionEvents();
             this.setDialogTitle();
-            if (this.props.node.get('pending_addition') && this.props.node.hasRole('kvm-virt')) {
+            if (this.props.node.get('pending_addition') && this.props.node.hasRole('virt')) {
                 var VMsConfModel = new models.BaseModel();
                 VMsConfModel.url = _.result(this.props.node, 'url') + '/vms_conf';
                 this.setProps({VMsConfModel: VMsConfModel});

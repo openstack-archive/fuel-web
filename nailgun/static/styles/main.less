@@ -1243,7 +1243,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .node-management-panel {
   @management-panel-indent: 5px;
-  min-height: 70px;
 
   .view-mode-switcher {
     margin-right: @management-panel-indent * 3;
@@ -1256,8 +1255,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 
   .node-list-management-buttons {
+    margin-bottom: @management-panel-indent * 3;
     button {
       margin-right: @management-panel-indent;
+      &.close {
+        margin-right: @management-panel-indent * 2;
+      }
     }
     .search {
       min-width: 350px;
@@ -1274,11 +1277,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 
   .well {
-    margin: @management-panel-indent * 2 0;
-    > div {
-      margin: 0 0 @management-panel-indent @management-panel-indent;
-    }
+    margin-bottom: @management-panel-indent * 3;
     .well-heading {
+      margin-bottom: @management-panel-indent;
       .font-semibold;
       .btn-link {
         padding: 0;
@@ -1303,7 +1304,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     border-radius: @management-panel-indent;
     border: 1px solid @gray + 80%;
     padding: @management-panel-indent * 2;
-    margin: @management-panel-indent * 2 0 @management-panel-indent * 4;
+    margin-bottom: @management-panel-indent * 3;
     cursor: pointer;
     .active-sorters, .active-filters {
       position: relative;
@@ -1321,7 +1322,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         padding: 0;
         position: absolute;
         top: 0;
-        right: @management-panel-indent * 2;
+        right: @management-panel-indent * 3;
       }
       &.active-filters {
         margin-bottom: @management-panel-indent * 2;
@@ -1339,6 +1340,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 
   .control-buttons-box {
+    margin-bottom: @management-panel-indent * 3;
     overflow: hidden;
     .btn-group {
       margin-left: @management-panel-indent;
@@ -1369,7 +1371,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
 
-  .sorters, .filters {
+  .sorter-control, .filter-control {
+    margin-right: @management-panel-indent;
     .glyphicon {
       padding-left: @management-panel-indent;
     }
@@ -1397,6 +1400,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       > div {
         padding: 0 5px;
         .custom-tumbler + span {
+          cursor: pointer;
           position: relative;
           top: 3px;
         }

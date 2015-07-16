@@ -123,6 +123,8 @@
   word-break: break-word; /* non standard for webkit */
 }
 
+.break-all() {word-break: break-all;}
+
 // ICONS
 
 .icon-default-styles(@top, @left) {
@@ -1041,9 +1043,17 @@ button, .btn:not(.btn-link) {.font-semibold;}
             font-family: monospace;
             white-space: pre-wrap;
             font-size: 90%;
-            .break-word;
+            .break-all;
           }
         }
+        &.debug td {background-color: #dff0d8;}
+        &.info td {background-color: #d9edf7;}
+        &.notice td {background-color: #bce3b8;}
+        &.warning td {background-color: #fcf8e3;}
+        &.error td {background-color: #eccecf;}
+        &.critical td {background-color: #c56d6f; color: #fff;}
+        &.alert td {background-color: #d89d9f;}
+        &.emerg td {background-color: #8a080b; color: #fff;}
       }
       tfoot td {
         padding-bottom: 0;

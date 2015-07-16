@@ -1,8 +1,0 @@
-Fabric>=1.9.0
-ipaddr>=2.1.11
-libvirt-python>=1.2.5
-xmlbuilder>=1.0
-PyYAML>=3.11
-# pygit2>=0.20.3
-venvgit2>=0.20.3.0
-requests>=1.2.3

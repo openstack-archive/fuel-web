@@ -381,11 +381,16 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         handleShowMoreClick: function(value) { return this.props.onShowMoreClick(value); },
         getLevelClass: function(level) {
             return {
-                DEBUG: '',
-                INFO: 'text-info',
-                WARNING: 'text-warning',
-                ERROR: 'text-danger',
-                CRITICAL: 'text-critical'
+                DEBUG: 'debug',
+                INFO: 'info',
+                NOTICE: 'notice',
+                WARNING: 'warning',
+                ERROR: 'error',
+                ERR: 'error',
+                CRITICAL: 'critical',
+                CRIT: 'critical',
+                ALERT: 'alert',
+                EMERG: 'emerg'
             }[level];
         },
         render: function() {
@@ -421,15 +426,17 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                         <tfoot className='entries-skipped-msg'>
                             <tr>
                                 <td colSpan='3' className='text-center'>
-                                    <span>{i18n('cluster_page.logs_tab.bottom_text')}</span>:
-                                    {
-                                        [100, 500, 1000, 5000].map(
-                                            function(count) {
-                                                return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count} </button>;
-                                            },
-                                            this
-                                        )
-                                    }
+                                    <div>
+                                        <span>{i18n('cluster_page.logs_tab.bottom_text')}</span>:
+                                        {
+                                            [100, 500, 1000, 5000].map(
+                                                function(count) {
+                                                    return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count} </button>;
+                                                },
+                                                this
+                                            )
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         </tfoot>

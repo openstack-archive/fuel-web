@@ -46,7 +46,17 @@
 @blue:       #4e85aa; //#688db4;
 @orange:     #bc6e12;
 @gray:       #8c8c8c;
-@light-blue: #eaf0f2;
+
+// Background colors
+@light-blue:       #eaf0f2;
+@pale-blue:        #c9e4ee;
+@light-green:      #d0f2dd;
+@light-yellow:     #f7e4bf;
+@light-red:        #f6c4c3;
+@aquamarine:       #bbedcf;
+@rose:             #f2aaa9;
+@coral:            #ea7170;
+@emergency-red:    #a34f4e;
 
 @alert-success-bg: #cae8c6;
 @alert-info-bg:    #c1d4e1;
@@ -1025,6 +1035,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
   .logs-tab {
     .log-entries {
+      > thead > tr > th, > tbody > tr > th, > tfoot > tr > th, > thead > tr > td, > tbody > tr > td, > tfoot > tr > td {
+        border-top: 1px solid @gray + 98%;
+      }
       tr {
         th {
           &.col-date {
@@ -1042,12 +1055,24 @@ button, .btn:not(.btn-link) {.font-semibold;}
             font-family: monospace;
             white-space: pre-wrap;
             font-size: 90%;
-            .break-word;
+            word-break: break-all;
           }
         }
+        &.debug td {background-color: @light-green;}
+        &.info td {background-color: @pale-blue;}
+        &.notice td {background-color: @aquamarine;}
+        &.warning td {background-color: @light-yellow;}
+        &.error td {background-color: @light-red;}
+        &.critical td {background-color: @rose;}
+        &.alert td {background-color: @coral; color: @white;}
+        &.emerg td {background-color: @emergency-red; color: @white;}
       }
       tfoot td {
         padding-bottom: 0;
+        > div {
+          height: 25px;
+          overflow: hidden;
+        }
       }
     }
     button.show-more-entries {

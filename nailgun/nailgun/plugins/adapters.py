@@ -196,7 +196,8 @@ class PluginAdapterBase(object):
     def deployment_tasks(self):
         deployment_tasks = []
         for task in self.plugin.deployment_tasks:
-            task['parameters'].setdefault('cwd', self.slaves_scripts_path)
+            if task.get('parameters'):
+                task['parameters'].setdefault('cwd', self.slaves_scripts_path)
             deployment_tasks.append(task)
         return deployment_tasks
 

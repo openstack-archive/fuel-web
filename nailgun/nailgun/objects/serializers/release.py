@@ -54,6 +54,7 @@ class ReleaseSerializer(BasicSerializer):
             'mongo',
             'base-os',
             'virt',
+            'ironic',
         ]
 
         return release_dict

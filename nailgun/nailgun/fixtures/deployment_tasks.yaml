@@ -78,6 +78,14 @@
   parameters:
     strategy:
       type: parallel
+- id: ironic
+  type: group
+  role: [ironic]
+  requires: [controller]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel
 - id: base-os
   type: group
   role: [base-os]

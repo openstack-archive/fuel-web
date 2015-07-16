@@ -259,9 +259,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) : [!setting[valueAttribute]];
         },
         checkValues: function(values, path, currentValue, condition) {
+            var extraModels = {settings: this.props.settingsForChecks};
             var result = _.all(values, function(value) {
                 this.props.settingsForChecks.set(path, value);
-                return new Expression(condition, {settings: this.props.settingsForChecks}).evaluate();
+                return new Expression(condition, this.props.configModels).evaluate(extraModels);
             }, this);
             this.props.settingsForChecks.set(path, currentValue);
             return result;

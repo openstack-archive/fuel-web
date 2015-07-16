@@ -1,0 +1,103 @@
+[
+    {
+        "pk": 1,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "logging",
+            "title": "The Logging, Monitoring and Alerting (LMA) Collector Plugin",
+            "version": "0.7.0",
+            "description": "Collect logs, metrics and notifications from system and OpenStack services and forward that information to external backends such as Elasticsearch and InfluxDB.",
+            "fuel_version": ["6.1"],
+            "authors": ["Mirantis Inc."],
+            "licenses": ["Apache License Version 2.0"],
+            "homepage": "https://github.com/stackforge/fuel-plugin-lma-collector",
+            "groups": ["monitoring"],
+            "releases": [
+                {
+                    "os": "ubuntu",
+                    "version": "2014.2-6.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2014.2-6.1",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                },
+                {
+                    "os": "centos",
+                    "version": "2014.2-6.1",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/centos"
+                }
+            ],
+            "package_version": "2.0.0"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "VPNaaS",
+            "title": "VPNaaS plugin for Neutron",
+            "version": "1.1.0",
+            "description": "Neutron extension that introduces VPN feature set",
+            "fuel_version": ["6.1"],
+            "authors": ["Andrey Epifanov, Sergey Kolekonov"],
+            "groups": ["monitoring"],
+            "releases": [
+                {
+                    "os": "ubuntu",
+                    "version": "2014.2-6.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                },
+                {
+                    "os": "centos",
+                    "version": "2014.2-6.1",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/centos"
+                }
+            ],
+            "package_version": "2.0.0"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "zabbix_monitoring",
+            "title": "Zabbix for Fuel",
+            "version": "1.0.0",
+            "description": "Enables Zabbix Monitoring. For information how to access Zabbix UI refer to Zabbix plugin User Guide. Zabbix URL schema is http://<VIP>/zabbix",
+            "fuel_version": ["6.1"],
+            "authors": ["Dmitry Klenov <dklenov@mirantis.com>", "Piotr Misiak <pmisiak@mirantis.com>", "Szymon Banka <sbanka@mirantis.com>", "Bartosz Kupidura <bkupidura@mirantis.com>", "Alexander Zatserklyany <azatserklyany@mirantis.com>"],
+            "licenses": ["Apache License Version 2.0"],
+            "homepage": "https://github.com/stackforge/fuel-plugin-external-zabbix",
+            "groups": ["monitoring"],
+            "releases": [
+                {
+                    "os": "ubuntu",
+                    "version": "2014.2-6.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                },
+                {
+                    "os": "centos",
+                    "version": "2014.2-6.1",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/centos"
+                }
+            ],
+            "package_version": "2.0.0"
+        }
+    }
+]

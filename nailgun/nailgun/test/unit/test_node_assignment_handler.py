@@ -163,6 +163,95 @@ class TestAssignmentHandlers(BaseIntegrationTest):
 
         self.assertEquals(404, resp.status_code)
 
+    def test_add_node_with_cluster_network_template(self):
+        net_template = """
+            {
+            "adv_net_template": {
+                "default": {
+                    "network_assignments": {
+                        "management": {
+                            "ep": "br-mgmt"
+                        },
+                        "storage": {
+                            "ep": "br-storage"
+                        },
+                        "public": {
+                            "ep": "br-ex"
+                        },
+                        "private": {
+                            "ep": "br-prv"
+                        },
+                        "fuelweb_admin": {
+                            "ep": "br-fw-admin"
+                        }
+                    },
+                    "templates_for_node_role": {
+                        "controller": [
+                            "common"
+                        ]
+                    },
+                    "nic_mapping": {
+                        "default": {
+                            "if4": "eth3",
+                            "if1": "eth0",
+                            "if2": "eth1",
+                            "if3": "eth2"
+                        }
+                    },
+                    "network_scheme": {
+                        "common": {
+                            "endpoints": [
+                                "br-mgmt"
+                            ],
+                            "transformations": [
+                                {
+                                    "action": "add-br",
+                                    "name": "br-mgmt"
+                                },
+                                {
+                                    "action": "add-port",
+                                    "bridge": "br-mgmt",
+                                    "name": "<% if2 %>"
+                                }
+                            ],
+                            "roles": {
+                                "management": "br-mgmt"
+                            }
+                        }
+                    }
+                }
+            }
+            }
+        """
+        net_template = jsonutils.loads(net_template)
+        cluster = self.env.create_cluster(api=False)
+        cluster.network_config.configuration_template = net_template
+
+        node = self.env.create_node()
+        assignment_data = [
+            {
+                "id": node.id,
+                "roles": ['controller']
+            }
+        ]
+        self.app.post(
+            reverse(
+                'NodeAssignmentHandler',
+                kwargs={'cluster_id': cluster.id}
+            ),
+            jsonutils.dumps(assignment_data),
+            headers=self.default_headers
+        )
+        net_scheme = node.network_template['templates']['common']
+        self.assertNotEqual({}, node.network_template)
+        self.assertEquals(['br-mgmt'], net_scheme['endpoints'])
+        self.assertEquals({'management': 'br-mgmt'}, net_scheme['roles'])
+
+        # The order of transformations matters
+        self.assertIn('add-br', net_scheme['transformations'][0].values())
+        self.assertIn('add-port', net_scheme['transformations'][1].values())
+        self.assertEquals('eth1', net_scheme['transformations'][1]['name'])
+
 
 class TestClusterStateUnassigment(BaseIntegrationTest):
 

@@ -415,9 +415,7 @@ define([
         constructorName: 'Nodes',
         model: models.Node,
         url: '/api/nodes',
-        comparator: function(node1, node2) {
-            return utils.multiSort(node1, node2, [{attr: 'online', desc: true}, {attr: 'id'}]);
-        },
+        comparator: 'id',
         hasChanges: function() {
             return !!this.filter(function(node) {
                 return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;

@@ -52,30 +52,32 @@ function(_, i18n, React, models, utils) {
                     </div>
                     {_.map(this.props.details, function(attribute) {
                         var data = plugin.get(attribute);
-                        if (attribute == 'releases') {
-                            data = _.map(_.groupBy(data, 'os'), function(osReleases, osName) {
-                                return (
-                                    <div key={osName}>
-                                        {i18n('plugins_page.' + osName) + ': '}
-                                        {_.pluck(osReleases, 'version').join(', ')}
+                        if (!_.isEmpty(data)) {
+                            if (attribute == 'releases') {
+                                data = _.map(_.groupBy(data, 'os'), function(osReleases, osName) {
+                                    return (
+                                        <div key={osName}>
+                                            {i18n('plugins_page.' + osName) + ': '}
+                                            {_.pluck(osReleases, 'version').join(', ')}
+                                        </div>
+                                    );
+                                });
+                            } else if (_.isArray(data)) {
+                                data = _.map(data).join(', ');
+                            }
+                            return (
+                                <div className='row' key={attribute}>
+                                    <div className='col-xs-2 detail-title text-right'>{i18n('plugins_page.' + attribute)}:</div>
+                                    <div className='col-xs-10'>
+                                        {attribute == 'homepage' ?
+                                            <span dangerouslySetInnerHTML={{__html: utils.composeLink(data)}} />
+                                        :
+                                            data
+                                        }
                                     </div>
-                                );
-                            });
-                        } else if (_.isArray(data)) {
-                            data = _.map(data).join(', ');
-                        }
-                        return (
-                            <div className='row' key={attribute}>
-                                <div className='col-xs-2 detail-title text-right'>{i18n('plugins_page.' + attribute)}:</div>
-                                <div className='col-xs-10'>
-                                    {attribute == 'homepage' ?
-                                        <span dangerouslySetInnerHTML={{__html: utils.composeLink(data)}} />
-                                    :
-                                        data
-                                    }
                                 </div>
-                            </div>
-                        );
+                            );
+                        }
                     }, this)}
                 </div>
             );
@@ -84,11 +86,11 @@ function(_, i18n, React, models, utils) {
             var links = {
                 mirantis: {
                     catalog: 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/',
-                    documentation: 'https://docs.mirantis.com/openstack/fuel/fuel-master/user-guide.html#install-fuel-plugins'
+                    documentation: 'https://docs.mirantis.com/openstack/fuel/fuel-master/plugin-dev.html'
                 },
                 experimental: {
                     catalog: 'https://www.fuel-infra.org/plugins/catalog.html',
-                    documentation: 'https://github.com/stackforge/fuel-plugins'
+                    documentation: 'https://docs.mirantis.com/openstack/fuel/fuel-master/plugin-dev.html'
                 }
             };
             var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');

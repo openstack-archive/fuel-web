@@ -439,6 +439,7 @@
           - {allocate_size: "min", id: "os"}
         virt:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "vm"}
       volumes:
         - id: "os"
           type: "vg"

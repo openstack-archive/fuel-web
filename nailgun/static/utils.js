@@ -337,16 +337,16 @@ define([
                 var attr = options.attr;
                 return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
             };
-            var model1Value = getValue(model1),
-                model2Value = getValue(model2);
-            if (_.isString(model1Value) && _.isString(model1Value)) {
-                return utils.natsort(model1Value, model2Value, options);
+            var value1 = getValue(model1),
+                value2 = getValue(model2);
+            if (_.isString(value1) && _.isString(value2)) {
+                return utils.natsort(value1, value2, options);
             }
             var result;
-            if (_.isNumber(model1Value) && _.isNumber(model1Value)) {
-                result = model1Value - model2Value;
+            if (_.isNumber(value1) && _.isNumber(value2)) {
+                result = value1 - value2;
             } else {
-                result = !model1Value && !model2Value ? 0 : !model1Value ? 1 : -1;
+                result = !value1 && !value2 ? 0 : !value1 ? 1 : -1;
             }
             return options.desc ? -result : result;
         }

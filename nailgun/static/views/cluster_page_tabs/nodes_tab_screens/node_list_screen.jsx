@@ -1158,7 +1158,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }));
                 _.each(groups, function(group) {
                     group[1].sort(function(node1, node2) {
-                        return utils.compare(node1, node2, formattedSorters);
+                        return utils.multiSort(node1, node2, formattedSorters);
                     });
                 });
             }

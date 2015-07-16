@@ -14,10 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-'''
+"""
 Classes for working with disks and volumes.
 All sizes in megabytes.
-'''
+"""
 
 from copy import deepcopy
 from functools import partial
@@ -27,35 +27,32 @@ from oslo.serialization import jsonutils
 from nailgun.errors import errors
 from nailgun.logger import logger
 
+from .objects.adapters import NailgunNodeAdapter
+
 
 def is_service(space):
-    '''Helper to check if the space is a service partition
-    '''
+    """Helper to check if the space is a service partition."""
     return (space.get('mount') == '/boot' or
             space.get('type') not in ('pv', 'partition', 'raid'))
 
 
 def only_disks(spaces):
-    '''Helper for retrieving only disks from spaces
-    '''
+    """Helper for retrieving only disks from spaces."""
     return filter(lambda space: space['type'] == 'disk', spaces)
 
 
 def only_vg(spaces):
-    '''Helper for retrieving only volumes groups from spaces
-    '''
+    """Helper for retrieving only volumes groups from spaces."""
     return filter(lambda space: space['type'] == 'vg', spaces)
 
 
 def gb_to_mb(gb):
-    '''Convert gigabytes to megabytes
-    '''
+    """Convert gigabytes to megabytes."""
     return int(gb * 1024)
 
 
 def byte_to_megabyte(byte):
-    '''Convert bytes to megabytes
-    '''
+    """Convert bytes to megabytes."""
     return byte / 1024 ** 2
 
 
@@ -73,8 +70,7 @@ def find_space_by_id(spaces, space_id):
 
 
 def get_allocate_size(node, vol):
-    """Determine 'allocate_size' value for a given volume
-    """
+    """Determine 'allocate_size' value for a given volume."""
     if len(node.meta['disks']) == 1 and vol['allocate_size'] == 'full-disk':
         return 'all'
     else:
@@ -82,7 +78,9 @@ def get_allocate_size(node, vol):
 
 
 def exclude_glance_partition(role_mapping, node):
-    """In case images_ceph used as glance image storage
+    """Filter out image volume.
+
+    In case images_ceph used as glance image storage
     no need to create partition /var/lib/glance
     """
     if node.cluster.attributes.editable['storage'].get('images_ceph'):
@@ -97,8 +95,7 @@ def exclude_glance_partition(role_mapping, node):
 
 
 def modify_volumes_hook(role_mapping, node):
-    """Filter node volumes based on filter functions logic
-    """
+    """Filter node volumes based on filter functions logic."""
     filters = [exclude_glance_partition]
 
     for f in filters:
@@ -108,6 +105,7 @@ def modify_volumes_hook(role_mapping, node):
 
 def get_node_spaces(node):
     """Helper for retrieving node volumes.
+
     If spaces don't defained for role, will be used
     partitioning for role `other`.
     Sets key `_allocate_size` which used only for internal calculation
@@ -148,7 +146,9 @@ def get_node_spaces(node):
 
 
 def calc_glance_cache_size(volumes):
-    """Calculate glance cache size based on formula:
+    """Calculate glance cache size.
+
+    Based on formula:
     10%*(/var/lib/glance) if > 5GB else 5GB
     """
     cache_size_form = lambda size: int(0.1 * mb_to_byte(size))
@@ -167,14 +167,15 @@ def get_logical_volumes_by_name(volumes, name, id_type):
 
 
 def find_size_by_name(volumes, name, id_type):
-    """Find volumes with specific type
-    """
+    """Find volumes with specific type."""
     return sum(v.get('size', 0)
                for v in get_logical_volumes_by_name(volumes, name, id_type))
 
 
 class DisksFormatConvertor(object):
-    '''Class converts format from `simple` in which we
+    """Disks format converter.
+
+    Class converts format from `simple` in which we
     communicate with UI to `full` in which we store
     data about disks\volumes in database, send to
     orchestrator and vice versa.
@@ -216,12 +217,11 @@ class DisksFormatConvertor(object):
                 ]
             }
         ]
-    '''
+    """
 
     @classmethod
     def format_disks_to_full(cls, node, disks):
-        '''convert disks from simple format to full format
-        '''
+        """Convert disks from simple format to full format."""
         volume_manager = node.volume_manager
         for disk in disks:
             for volume in disk['volumes']:
@@ -234,8 +234,7 @@ class DisksFormatConvertor(object):
 
     @classmethod
     def format_disks_to_simple(cls, full):
-        '''convert disks from full format to simple format
-        '''
+        """Convert disks from full format to simple format."""
         disks_in_simple_format = []
 
         # retrieve only physical disks
@@ -271,8 +270,7 @@ class DisksFormatConvertor(object):
 
     @classmethod
     def serialize_volumes(cls, all_partitions):
-        """Convert volumes from full format to simple format
-        """
+        """Convert volumes from full format to simple format."""
         non_service_volumes = filter(
             lambda vg: not is_service(vg), all_partitions)
 
@@ -314,7 +312,7 @@ class DisksFormatConvertor(object):
 
     @classmethod
     def get_volumes_info(cls, node):
-        '''Return volumes info for node
+        """Return volumes info for node.
 
         :returns: [
                 {
@@ -323,7 +321,7 @@ class DisksFormatConvertor(object):
                     "minimum": 100002
                 }
             ]
-        '''
+        """
         volumes_info = []
         for space in get_node_spaces(node):
             # Here we calculate min_size of nodes
@@ -343,7 +341,7 @@ class Disk(object):
     def __init__(self, volumes, generator_method, disk_id, name,
                  size, boot_is_raid=True, possible_pvs_count=0,
                  disk_extra=None):
-        """Create disk
+        """Create disk.
 
         :param volumes: volumes which need to allocate on disk
         :param generator_method: method with size generator
@@ -373,22 +371,19 @@ class Disk(object):
         self.create_service_partitions()
 
     def set_volumes(self, volumes):
-        """Add volumes and reduce free space
-        """
+        """Add volumes and reduce free space."""
         self.volumes = volumes
         for volume in volumes:
             self.free_space -= volume.get('size', 0)
 
     def create_service_partitions(self):
-        """Reserve space for service partitions
-        """
+        """Reserve space for service partitions."""
         self.create_boot_records()
         self.create_boot_partition()
         self.create_lvm_meta_pool(self.max_lvm_meta_pool_size)
 
     def create_boot_partition(self):
-        """Reserve space for boot partition
-        """
+        """Reserve space for boot partition."""
         boot_size = self.call_generator('calc_boot_size')
         partition_type = 'partition'
         if self.boot_is_raid:
@@ -406,8 +401,7 @@ class Disk(object):
                 'size': self.get_size(boot_size)})
 
     def create_boot_records(self):
-        """Reserve space for efi, gpt, bios
-        """
+        """Reserve space for efi, gpt, bios."""
         boot_records_size = self.call_generator('calc_boot_records_size')
         existing_boot = filter(
             lambda volume: volume.get('type') == 'boot', self.volumes)
@@ -417,8 +411,9 @@ class Disk(object):
                 {'type': 'boot', 'size': self.get_size(boot_records_size)})
 
     def get_size(self, size):
-        """Get size and reduce free space. Returns 0 if
-        not enough free space.
+        """Get size and reduce free space.
+
+        Returns 0 if not enough free space.
         """
         size_to_allocate = size if self.free_space >= size else 0
         self.free_space -= size_to_allocate
@@ -426,6 +421,7 @@ class Disk(object):
 
     def create_lvm_meta_pool(self, size):
         """Create lvm pool.
+
         When new PV will be created, from this pool
         deducated size of single lvm meta for each
         PV on disk.
@@ -438,8 +434,7 @@ class Disk(object):
                 {'type': 'lvm_meta_pool', 'size': self.get_size(size)})
 
     def get_lvm_meta_from_pool(self):
-        """Take lvm meta from lvm meta pool
-        """
+        """Take lvm meta from lvm meta pool."""
         lvm_meta_pool = filter(
             lambda volume: volume['type'] == 'lvm_meta_pool', self.volumes)[0]
 
@@ -452,15 +447,15 @@ class Disk(object):
         return allocated_size
 
     def put_size_to_lvm_meta_pool(self, size):
-        """Return back lvm meta to pool
-        """
+        """Return back lvm meta to pool."""
         lvm_meta_pool = filter(
             lambda volume: volume['type'] == 'lvm_meta_pool', self.volumes)[0]
 
         lvm_meta_pool['size'] += size
 
     def create_pv(self, volume_info, size=None):
-        """Allocates all available space if size is None
+        """Allocates all available space if size is None.
+
         Size in parameter should include size of lvm meta
         """
         name = volume_info['id']
@@ -484,8 +479,7 @@ class Disk(object):
             'lvm_meta_size': lvm_meta_size})
 
     def create_partition(self, partition_info, size=None, ptype='partition'):
-        """Create partitions according templates in partition_info
-        """
+        """Create partitions according templates in partition_info."""
         logger.debug('Creating or updating partition: disk=%s patition=%s',
                      self.id, partition_info)
 
@@ -506,8 +500,7 @@ class Disk(object):
             'mount': partition_info['mount']})
 
     def remove_pv(self, name):
-        """Remove PV and return back lvm_meta size to pool
-        """
+        """Remove PV and return back lvm_meta size to pool."""
         for i, volume in enumerate(self.volumes[:]):
             if volume.get('type') == 'pv' and volume.get('vg') == name:
                 lvm_meta_pool = filter(
@@ -523,8 +516,7 @@ class Disk(object):
                 break
 
     def set_pv_size(self, name, size):
-        """Set PV size
-        """
+        """Set PV size."""
         for volume in self.volumes:
             if volume.get('type') == 'pv' and volume.get('vg') == name:
                 # Recreate lvm meta
@@ -532,8 +524,7 @@ class Disk(object):
                 self.create_pv({"id": name}, size)
 
     def set_partition_size(self, name, size):
-        """Set partition size
-        """
+        """Set partition size."""
         for volume in self.volumes:
             if volume.get('type') == 'partition' and \
                volume.get('name') == name:
@@ -542,8 +533,7 @@ class Disk(object):
                 self.free_space -= size
 
     def set_raid_size(self, name, size):
-        """Set partition size
-        """
+        """Set partition size."""
         for volume in self.volumes:
             if volume.get('type') == 'raid' and \
                volume.get('name') == name and \
@@ -553,8 +543,7 @@ class Disk(object):
                 self.free_space -= size
 
     def set_keep_data_flag(self, name, value):
-        """Set keep_data flag
-        """
+        """Set keep_data flag."""
         for volume in self.volumes:
             if volume.get('type') not in ('pv', 'partition', 'raid'):
                 continue
@@ -587,27 +576,30 @@ class Disk(object):
 
 
 class VolumeManager(object):
+
+    def _wrap_node(self, node):
+        # NOTE(prmtl) right now we only have nodes from Nailgun
+        return NailgunNodeAdapter(node)
+
     def __init__(self, node):
         """Disks and volumes will be set according to node attributes.
+
         VolumeManager should not make any updates in database.
         """
+        node = self._wrap_node(node)
+
         self.node_name = node.name
 
         # Make sure that we don't change volumes directly from manager
         from .extension import VolumeManagerExtension
         self.volumes = deepcopy(VolumeManagerExtension.get_volumes(node)) or []
         # For swap calculation
-        self.ram = node.meta['memory']['total']
-        self.allowed_volumes = []
-
-        # If node bound to the cluster than it has a role
-        # and volume groups which we should to allocate
-        if node.cluster:
-            self.allowed_volumes = get_node_spaces(node)
+        self.ram = node.ram
+        self.allowed_volumes = node.get_node_spaces()
 
         self.disks = []
-        for d in sorted(node.meta['disks'], key=lambda i: i['name']):
-            disks_count = len(node.meta["disks"])
+        disks_count = len(node.disks)
+        for d in sorted(node.disks, key=lambda i: i['name']):
             boot_is_raid = True if disks_count > 1 else False
 
             existing_disk = filter(
@@ -635,8 +627,7 @@ class VolumeManager(object):
         self.__logger('Initialized with disks: %s' % self.disks)
 
     def set_volume_size(self, disk_id, volume_name, size):
-        """Set size of volume
-        """
+        """Set size of volume."""
         self.__logger('Update volume size for disk=%s volume_name=%s size=%s' %
                       (disk_id, volume_name, size))
 
@@ -668,8 +659,7 @@ class VolumeManager(object):
         return self.volumes
 
     def set_volume_flags(self, disk_id, volume):
-        """Set flags of volume
-        """
+        """Set flags of volume."""
         volume_name = volume['name']
         self.__logger('Update volume flags for disk=%s volume_name=%s' %
                       (disk_id, volume_name))
@@ -683,16 +673,13 @@ class VolumeManager(object):
         return self.volumes
 
     def get_space_type(self, volume_name):
-        """Get type of space which represents on disk
-        as volume with volume_name
-        """
+        """Get type of space represente on disk as volume."""
         for volume in self.allowed_volumes:
             if volume['id'] == volume_name:
                 return volume['type']
 
     def get_pv_size(self, disk_id, volume_name):
-        """Get PV size without lvm meta size
-        """
+        """Get PV size without lvm meta size."""
         disk = filter(
             lambda volume: volume['id'] == disk_id,
             only_disks(self.volumes))[0]
@@ -781,7 +768,7 @@ class VolumeManager(object):
         return vg_space
 
     def _calc_swap_size(self):
-        '''Calc swap size according to RAM
+        """Calc swap size according to RAM.
 
         | RAM          | Recommended swap space      |
         |--------------+-----------------------------|
@@ -793,7 +780,7 @@ class VolumeManager(object):
         Source https://access.redhat.com/site/documentation/en-US/
                        Red_Hat_Enterprise_Linux/6/html/Installation_Guide/
                        s2-diskpartrecommend-ppc.html#id4394007
-        '''
+        """
         mem = int(float(self.ram) / 1024 ** 2)
         if mem <= 2048:
             return (2 * mem)
@@ -857,8 +844,7 @@ class VolumeManager(object):
                 self._get_allocator(disk, volume_info)(volume_info)
 
     def _get_allocator(self, disk, volume_info):
-        """Returns disk method for volume allocation
-        """
+        """Returns disk method for volume allocation."""
         if volume_info['type'] == 'vg':
             return disk.create_pv
         elif volume_info['type'] == 'partition':
@@ -954,11 +940,12 @@ class VolumeManager(object):
         return value
 
     def check_disk_space_for_deployment(self):
-        '''Check disks space for minimal installation.
+        """Check disks space for minimal installation.
+
         This method calls in before deployment task.
 
         :raises: errors.NotEnoughFreeSpace
-        '''
+        """
         disks_space = sum([d.size for d in self.disks])
         minimal_installation_size = self.__calc_minimal_installation_size()
 
@@ -987,8 +974,7 @@ class VolumeManager(object):
             raise errors.NotEnoughFreeSpace('\n'.join(msgs))
 
     def __calc_minimal_installation_size(self):
-        '''Calc minimal installation size depend on node role
-        '''
+        """Calc minimal installation size depend on node role."""
         disks_count = len(filter(lambda disk: disk.size > 0, self.disks))
         boot_size = self.call_generator('calc_boot_size') + \
             self.call_generator('calc_boot_records_size')

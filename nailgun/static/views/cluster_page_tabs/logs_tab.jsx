@@ -381,11 +381,16 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         handleShowMoreClick: function(value) { return this.props.onShowMoreClick(value); },
         getLevelClass: function(level) {
             return {
-                DEBUG: '',
-                INFO: 'text-info',
-                WARNING: 'text-warning',
-                ERROR: 'text-danger',
-                CRITICAL: 'text-critical'
+                DEBUG: 'debug',
+                INFO: 'info',
+                NOTICE: 'notice',
+                WARNING: 'warning',
+                ERROR: 'error',
+                ERR: 'error',
+                CRITICAL: 'critical',
+                CRIT: 'critical',
+                ALERT: 'alert',
+                EMERG: 'emerg'
             }[level];
         },
         render: function() {

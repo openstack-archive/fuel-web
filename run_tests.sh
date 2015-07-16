@@ -20,8 +20,6 @@ function usage {
   echo "Usage: $0 [OPTION]..."
   echo "Run Fuel-Web test suite(s)"
   echo ""
-  echo "  -a, --agent                 Run FUEL_AGENT unit tests"
-  echo "  -A, --no-agent              Don't run FUEL_AGENT unit tests"
   echo "  -h, --help                  Print this usage message"
   echo "  -k, --tasklib               Run tasklib unit and functional tests"
   echo "  -K, --no-tasklib            Don't run tasklib unit and functional tests"
@@ -55,8 +53,6 @@ function process_options {
   for arg in $@; do
     case "$arg" in
       -h|--help) usage;;
-      -a|--agent) agent_tests=1;;
-      -A|--no-agent) no_agent_tests=1;;
       -n|--nailgun) nailgun_tests=1;;
       -N|--no-nailgun) no_nailgun_tests=1;;
       -x|--performance) performance_tests=1;;
@@ -114,8 +110,6 @@ mkdir -p $ARTIFACTS
 
 # disabled/enabled flags that are set from the cli.
 # used for manipulating run logic.
-agent_tests=0
-no_agent_tests=0
 nailgun_tests=0
 no_nailgun_tests=0
 performance_tests=0
@@ -158,8 +152,7 @@ function run_tests {
   fi
 
   # Enable all tests if none was specified skipping all explicitly disabled tests.
-  if [[ $agent_tests -eq 0 && \
-      $nailgun_tests -eq 0 && \
+  if [[ $nailgun_tests -eq 0 && \
       $performance_tests -eq 0 && \
       $tasklib_tests -eq 0 && \
       $ui_lint_checks -eq 0 && \
@@ -170,7 +163,6 @@ function run_tests {
       $shotgun_tests -eq 0 && \
       $flake8_checks -eq 0 ]]; then
 
-    if [ $no_agent_tests -ne 1 ];  then agent_tests=1;  fi
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
     if [ $no_tasklib_tests -ne 1 ];  then tasklib_tests=1;  fi
     if [ $no_ui_lint_checks -ne 1 ]; then ui_lint_checks=1; fi
@@ -185,11 +177,6 @@ function run_tests {
   if [ $flake8_checks -eq 1 ]; then
     echo "Starting Flake8 tests..."
     run_flake8 || errors+=" flake8_checks"
-  fi
-
-  if [ $agent_tests -eq 1 ]; then
-    echo "Starting Agent tests..."
-    run_agent_tests || errors+=" agent_tests"
   fi
 
   if [ $nailgun_tests -eq 1 ] || [ $performance_tests -eq 1 ]; then
@@ -239,24 +226,6 @@ function run_tests {
   fi
 
   exit
-}
-
-# Run agent tests
-#
-# Arguments:
-#
-#   $@ -- tests to be run; with no arguments all tests will be run
-function run_agent_tests {
-  local result=0
-
-  pushd $ROOT/fuel_agent >> /dev/null
-
-  # run tests
-  tox -epy26 || result=1
-
-  popd >> /dev/null
-
-  return $result
 }
 
 # Run both integration and unit Nailgun's tests.
@@ -507,7 +476,6 @@ function run_flake8_subproject {
 # * H802 --- first line of git commit commentary should be less than 50 characters
 function run_flake8 {
   local result=0
-  run_flake8_subproject fuel_agent && \
   run_flake8_subproject nailgun && \
   run_flake8_subproject tasklib && \
   run_flake8_subproject fuelmenu && \

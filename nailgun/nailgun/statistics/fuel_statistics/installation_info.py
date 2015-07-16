@@ -96,6 +96,8 @@ class InstallationInfo(object):
                       'ceilometer', None),
         WhiteListRule(('additional_components', 'mongo', 'value'),
                       'mongo', None),
+        WhiteListRule(('additional_components', 'ironic', 'value'),
+                      'ironic', None),
 
         WhiteListRule(('workloads_collector', 'enabled', 'value'),
                       'workloads_collector_enabled', None),

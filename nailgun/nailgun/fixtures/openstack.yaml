@@ -102,6 +102,21 @@
         description: "Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
         weight: 80
         public_ip_required: true
+      ironic:
+        name: "Ironic"
+        description: "Ironic conductor"
+        weight: 90
+        limits:
+          min: 1
+          overrides:
+            - condition: "cluster:mode == 'ha_compact'"
+              recommended: 3
+              message: "At least 3 Ironic conductor nodes are recommended for HA deployment."
+        conflicts:
+          - compute
+        restrictions:
+          - condition: "settings:additional_components.ironic.value == false"
+            message: "Ironic should be enabled."
 
     network_roles_metadata:
       -
@@ -439,6 +454,8 @@
           - {allocate_size: "min", id: "os"}
         virt:
           - {allocate_size: "min", id: "os"}
+        ironic:
+          - {allocate_size: "all", id: "os"}
       volumes:
         - id: "os"
           type: "vg"
@@ -537,7 +554,7 @@
             weight: 10
             type: "text"
             regex:
-              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$)(?!.* +.*$).+'
+              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?!ironic$)(?![Gg]uest$)(?!.* +.*$).+'
               error: "Invalid username"
           email:
             value: "admin@localhost"
@@ -724,6 +741,16 @@
             type: "checkbox"
             restrictions:
               - "settings:additional_components.ceilometer.value == false"
+          ironic:
+            value: false
+            label: "Install Ironic"
+            description: "If selected, Ironic component will be installed"
+            weight: 50
+            type: "checkbox"
+            restrictions:
+              - "cluster:net_provider != 'neutron'": "Ironic requires Neutron as network provider."
+              - "networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
+              - "settings:storage.images_ceph.value == true": "Ironic requires Swift as a backend for Glance image service."
         common:
           metadata:
             label: "Common"
@@ -1122,6 +1149,13 @@
         puppet:
           manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
           modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"
+        ironic:
+          user_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+          swift_tempurl_key:
+            generator: "password"
     wizard_metadata:
       Mode:
         metadata:
@@ -1230,6 +1264,15 @@
           description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
+        ironic:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_ironic"
+          description: "dialog.create_cluster_wizard.additional.install_ironic_description"
+          bind: "settings:additional_components.ironic.value"
+          weight: 40
+          restrictions:
+            - "Network.manager != 'neutron-vlan'": "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+            - "Storage.ceph == 'enable'": "dialog.create_cluster_wizard.additional.ironic_storage_mode_alert"
       Ready: {}
     vmware_attributes_metadata:
       editable:

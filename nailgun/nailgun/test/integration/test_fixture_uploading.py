@@ -15,6 +15,7 @@
 #    under the License.
 
 import cStringIO
+import mock
 import os
 from oslo.serialization import jsonutils
 import yaml
@@ -23,6 +24,23 @@ from nailgun.db.sqlalchemy import fixman
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.test.base import BaseIntegrationTest
+
+
+class TestExtensionsCallback(BaseIntegrationTest):
+
+    fixtures = ['admin_network', 'sample_environment']
+
+    def setUp(self):
+        # NOTE(eli): the method should be mocked before
+        # setUp execution in parent class
+        self.patcher = mock.patch(
+            'nailgun.db.sqlalchemy.fixman.fire_callback_on_node_create')
+        self.callback_mock = self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+        super(TestExtensionsCallback, self).setUp()
+
+    def test_upload_working(self):
+        self.assertEqual(self.callback_mock.call_count, 8)
 
 
 class TestFixture(BaseIntegrationTest):

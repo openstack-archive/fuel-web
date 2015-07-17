@@ -159,16 +159,39 @@
   .icon-default-styles(-56px, -691px);
 }
 
-.glyphicon-th {
-  .icon-default-styles(-12px, -252px);
+.node-management-button-sizes {
   width: 16px;
   height: 17px;
 }
 
+.glyphicon-th {
+  .icon-default-styles(-12px, -252px);
+  .node-management-button-sizes;
+}
+
 .glyphicon-th-list {
   .icon-default-styles(-12px, -292px);
-  width: 16px;
-  height: 17px;
+  .node-management-button-sizes;
+}
+
+.glyphicon-sort {
+  .icon-default-styles(-12px, -372px);
+  .node-management-button-sizes;
+}
+
+.glyphicon-filter {
+  .icon-default-styles(-12px, -412px);
+  .node-management-button-sizes;
+}
+
+.glyphicon-search {
+  .icon-default-styles(-12px, -452px);
+  .node-management-button-sizes;
+}
+
+.glyphicon-tag {
+  .icon-default-styles(-12px, -332px);
+  .node-management-button-sizes;
 }
 
 .glyphicon-pencil {
@@ -1251,7 +1274,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .btn-group label {
       width: auto;
       font-size: @base-font-size;
-      padding: 7px 10px 3px;
     }
   }
 
@@ -1275,6 +1297,10 @@ button, .btn:not(.btn-link) {.font-semibold;}
         top: 6px;
       }
     }
+  }
+
+  .view-mode-switcher .btn-group label, .node-list-management-buttons button {
+    padding: 7px 10px 3px;
   }
 
   .well {

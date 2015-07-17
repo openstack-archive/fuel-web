@@ -572,3 +572,33 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
             post_deployment[0]['parameters']['puppet_manifest'],
             'post_depl_plugin_task'
         )
+
+    def test_process_skipped_task(self):
+        self.prepare_plugins_for_cluster(
+            self.cluster,
+            [
+                {
+                    'name': 'task_with_skipped_plugin',
+                    'deployment_tasks': [
+                        {
+                            'id': 'skipped_task',
+                            'type': 'skipped',
+                        },
+                    ],
+                },
+            ]
+        )
+
+        graph = AstuteGraph(self.cluster)
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        serializer = \
+            get_serializer_for_cluster(self.cluster)(graph)
+        serialized = serializer.serialize(self.cluster, self.cluster.nodes)
+
+        tasks = serialized[0]['tasks']
+        release_depl_tasks_ids = ('first-fake-depl-task',
+                                  'second-fake-depl-task')
+
+        serialized_tasks_ids = (t['parameters']['puppet_manifest']
+                                for t in tasks)
+        self.assertItemsEqual(release_depl_tasks_ids, serialized_tasks_ids)

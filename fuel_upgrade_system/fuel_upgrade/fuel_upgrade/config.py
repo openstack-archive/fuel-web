@@ -208,13 +208,6 @@ def get_host_system(update_path, new_version):
             'fuel-{0}'.format(normversion(new_version)),
         ],
 
-        'manifest_path': join(
-            '/etc/puppet', openstack_version,
-            'modules/nailgun/examples/host-upgrade.pp'),
-
-        'puppet_modules_path': join(
-            '/etc/puppet', openstack_version, 'modules'),
-
         'repo_config_path': join(
             '/etc/yum.repos.d',
             '{0}_nailgun.repo'.format(new_version)),

@@ -34,15 +34,12 @@ class TestHostSystemUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.update_repo')
     @mock.patch(
-        'fuel_upgrade.engines.host_system.HostSystemUpgrader.run_puppet')
-    @mock.patch(
         'fuel_upgrade.engines.host_system.utils')
-    def test_upgrade(self, mock_utils, run_puppet_mock, update_repo_mock,
+    def test_upgrade(self, mock_utils, update_repo_mock,
                      install_repos_mock):
         self.upgrader.upgrade()
 
         self.called_once(install_repos_mock)
-        self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
         self.called_once(self.upgrader.supervisor.stop_all_services)
         mock_utils.exec_cmd.assert_called_with(
@@ -62,15 +59,6 @@ class TestHostSystemUpgrader(BaseTestCase):
                 'gpgcheck': 0,
                 'skip_if_unavailable': 0,
             })
-
-    @mock.patch('fuel_upgrade.engines.host_system.utils')
-    def test_run_puppet(self, utils_mock):
-        self.upgrader.run_puppet()
-        utils_mock.exec_cmd.assert_called_once_with(
-            'puppet apply -d -v '
-            '/etc/puppet/2014.1.1-5.1/modules/nailgun/examples'
-            '/host-upgrade.pp '
-            '--modulepath=/etc/puppet/2014.1.1-5.1/modules')
 
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.remove_repos')

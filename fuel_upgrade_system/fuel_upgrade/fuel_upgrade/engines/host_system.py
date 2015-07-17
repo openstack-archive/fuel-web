@@ -41,13 +41,6 @@ class HostSystemUpgrader(UpgradeEngine):
         #: host system upgarder specific configs
         self.host_system_config = self.config.host_system
 
-        #: path to puppet manifests
-        self.manifest_path = self.host_system_config['manifest_path']
-
-        #: path to puppet modules
-        self.puppet_modules_path = self.host_system_config[
-            'puppet_modules_path']
-
         #: path to repo template
         self.repo_template_path = os.path.join(
             self.templates_dir, 'nailgun.repo')
@@ -95,7 +88,6 @@ class HostSystemUpgrader(UpgradeEngine):
         self.install_repos()
         self.update_repo()
         self.install_packages()
-        self.run_puppet()
 
     def rollback(self):
         """The only thing which we can rollback here
@@ -141,14 +133,6 @@ class HostSystemUpgrader(UpgradeEngine):
         """
         for package in self.packages:
             utils.exec_cmd('yum install -v -y {0}'.format(package))
-
-    def run_puppet(self):
-        """Run puppet to upgrade host system
-        """
-        utils.exec_cmd(
-            'puppet apply -d -v '
-            '{0} --modulepath={1}'.format(
-                self.manifest_path, self.puppet_modules_path))
 
     def remove_repo_config(self):
         """Remove yum repository config

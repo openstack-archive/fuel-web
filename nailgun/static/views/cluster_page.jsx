@@ -293,7 +293,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         render: function() {
             var cluster = this.props.cluster;
             return (
-                <div className='col-xs-12 col-md-9'>
+                <div className='col-xs-9'>
                     <div className='page-title'>
                         <h1 className='title'>
                             {cluster.get('name')}
@@ -401,7 +401,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
             return (
-                <div className='col-xs-6 col-md-3'>
+                <div className='col-xs-3'>
                     <div className='deploy-box pull-right'>
                         {task ? (
                             <div className={'deploy-process ' + taskName} key={taskName}>

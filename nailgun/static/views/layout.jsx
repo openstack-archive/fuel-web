@@ -96,88 +96,90 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             return (
                 <div className='navigation-box'>
                     <div className='navbar-bg'></div>
-                    <div className='row'>
                         <nav className='navbar navbar-default' role='navigation'>
-                            <div className='container-fluid'>
-                                <div className='navbar-header'>
+                            <div className='row'>
+                                <div className='navbar-header col-xs-2'>
                                     <a className='navbar-logo' href='#'></a>
                                 </div>
-                                <ul className='nav navbar-nav'>
-                                    {_.map(this.props.elements, function(element) {
-                                        return (
-                                            <li className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} key={element.label}>
-                                                <a href={element.url}>
-                                                    {i18n('navbar.' + element.label, {defaultValue: element.label})}
-                                                </a>
-                                            </li>
-                                        );
-                                    }, this)}
-                                </ul>
-                                <ul className='nav navbar-icons navbar-right'>
-                                    <li
-                                        key='language-icon'
-                                        className='language-icon'
-                                        onClick={this.togglePopover('language')}
-                                    >
-                                        <div className='language-text'>{i18n.getLocaleName(i18n.getCurrentLocale())}</div>
-                                    </li>
-                                    <li
-                                        key='statistics-icon'
-                                        className={'statistics-icon ' + (this.props.statistics.get('unallocated') ? '' : 'no-unallocated')}
-                                        onClick={this.togglePopover('statistics')}
-                                    >
-                                        {!!this.props.statistics.get('unallocated') &&
-                                            <div className='unallocated'>{this.props.statistics.get('unallocated')}</div>
-                                        }
-                                        <div className='total'>{this.props.statistics.get('total')}</div>
-                                    </li>
-                                    {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
+                                <div className='col-xs-5'>
+                                    <ul className='nav navbar-nav pull-left'>
+                                        {_.map(this.props.elements, function(element) {
+                                            return (
+                                                <li className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} key={element.label}>
+                                                    <a href={element.url}>
+                                                        {i18n('navbar.' + element.label, {defaultValue: element.label})}
+                                                    </a>
+                                                </li>
+                                            );
+                                        }, this)}
+                                    </ul>
+                                </div>
+                                <div className='col-xs-5'>
+                                    <ul className='nav navbar-icons pull-right'>
                                         <li
-                                            key='user-icon'
-                                            className='user-icon'
-                                            onClick={this.togglePopover('user')}
-                                        ></li>
-                                    }
-                                    <li
-                                        key='notifications-icon'
-                                        className='notifications-icon'
-                                        onClick={this.togglePopover('notifications')}
-                                    >
-                                        {unreadNotificationsCount ? <span className='badge'>{unreadNotificationsCount}</span> : null}
-                                    </li>
+                                            key='language-icon'
+                                            className='language-icon'
+                                            onClick={this.togglePopover('language')}
+                                        >
+                                            <div className='language-text'>{i18n.getLocaleName(i18n.getCurrentLocale())}</div>
+                                        </li>
+                                        <li
+                                            key='statistics-icon'
+                                            className={'statistics-icon ' + (this.props.statistics.get('unallocated') ? '' : 'no-unallocated')}
+                                            onClick={this.togglePopover('statistics')}
+                                        >
+                                            {!!this.props.statistics.get('unallocated') &&
+                                                <div className='unallocated'>{this.props.statistics.get('unallocated')}</div>
+                                            }
+                                            <div className='total'>{this.props.statistics.get('total')}</div>
+                                        </li>
+                                        {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
+                                            <li
+                                                key='user-icon'
+                                                className='user-icon'
+                                                onClick={this.togglePopover('user')}
+                                            ></li>
+                                        }
+                                        <li
+                                            key='notifications-icon'
+                                            className='notifications-icon'
+                                            onClick={this.togglePopover('notifications')}
+                                        >
+                                            {unreadNotificationsCount ? <span className='badge'>{unreadNotificationsCount}</span> : null}
+                                        </li>
 
-                                    {this.state.languagePopoverVisible &&
-                                        <LanguagePopover
-                                            key='language-popover'
-                                            toggle={this.togglePopover('language')}
-                                        />
-                                    }
-                                    {this.state.statisticsPopoverVisible &&
-                                        <StatisticsPopover
-                                            key='statistics-popover'
-                                            statistics={this.props.statistics}
-                                            toggle={this.togglePopover('statistics')}
-                                        />
-                                    }
-                                    {this.state.userPopoverVisible &&
-                                        <UserPopover
-                                            key='user-popover'
-                                            user={this.props.user}
-                                            toggle={this.togglePopover('user')}
-                                        />
-                                    }
-                                    {this.state.notificationsPopoverVisible &&
-                                        <NotificationsPopover
-                                            key='notifications-popover'
-                                            notifications={this.props.notifications}
-                                            displayCount={this.props.notificationsDisplayCount}
-                                            toggle={this.togglePopover('notifications')}
-                                        />
-                                    }
-                                </ul>
+                                        {this.state.languagePopoverVisible &&
+                                            <LanguagePopover
+                                                key='language-popover'
+                                                toggle={this.togglePopover('language')}
+                                            />
+                                        }
+                                        {this.state.statisticsPopoverVisible &&
+                                            <StatisticsPopover
+                                                key='statistics-popover'
+                                                statistics={this.props.statistics}
+                                                toggle={this.togglePopover('statistics')}
+                                            />
+                                        }
+                                        {this.state.userPopoverVisible &&
+                                            <UserPopover
+                                                key='user-popover'
+                                                user={this.props.user}
+                                                toggle={this.togglePopover('user')}
+                                            />
+                                        }
+                                        {this.state.notificationsPopoverVisible &&
+                                            <NotificationsPopover
+                                                key='notifications-popover'
+                                                notifications={this.props.notifications}
+                                                displayCount={this.props.notificationsDisplayCount}
+                                                toggle={this.togglePopover('notifications')}
+                                            />
+                                        }
+                                    </ul>
+                                </div>
                             </div>
                         </nav>
-                    </div>
                 </div>
             );
         }

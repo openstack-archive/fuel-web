@@ -45,7 +45,8 @@ class NodeSerializer(BasicSerializer):
         'online',
         'cluster',
         'network_data',
-        'group_id'
+        'group_id',
+        'labels'
     )
 
 

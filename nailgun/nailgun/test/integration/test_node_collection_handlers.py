@@ -491,3 +491,12 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         node_name_test(node_mac.lower())
+
+    def test_update_labels_for_node(self):
+        pass
+
+    def test_get_labels_for_node(self):
+        pass
+
+    def test_get_labels_for_nodes(self):
+        pass

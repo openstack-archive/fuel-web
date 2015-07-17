@@ -472,6 +472,7 @@ class TestPublicIpRequired(base.BaseAlembicMigrationTest):
 
 
 class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
+
     def test_old_fields_exists(self):
         # check node_nic_interfaces fields
         nic_table = self.meta.tables['node_nic_interfaces']
@@ -505,6 +506,7 @@ class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
 
 
 class TestNetworkingTemplatesMigration(base.BaseAlembicMigrationTest):
+
     def test_new_fields_exists_and_empty(self):
         result = db.execute(
             sa.select([self.meta.tables['networking_configs']
@@ -660,6 +662,7 @@ class TestSchemalessRoles(base.BaseAlembicMigrationTest):
 
 
 class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
+
     def test_grouping_field_removed(self):
         clusters_table = self.meta.tables['clusters']
         self.assertNotIn('grouping', clusters_table.c)
@@ -680,6 +683,7 @@ class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
 
 
 class TestClusterBondMetaMigration(base.BaseAlembicMigrationTest):
+
     def test_cluster_bond_meta_field_exists_and_has_proper_value_lnx(self):
         lnx_meta = [
             {
@@ -726,3 +730,12 @@ class TestExtensionsField(base.BaseAlembicMigrationTest):
 
         self.assertEqual(list(cluster_result)[0], ['volume_manager'])
         self.assertEqual(list(release_result)[0], ['volume_manager'])
+
+
+class TestNodeLabelsMigration(base.BaseAlembicMigrationTest):
+
+    def test_json_type_lables_field_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['nodes'].c.labels]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), {})

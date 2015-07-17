@@ -1202,6 +1202,15 @@ class NetworkManager(object):
             cls.create_nova_network_config(cluster)
 
     @classmethod
+    def get_network_config_create_data(cls, cluster):
+        data = {
+            'net_segment_type': cluster.network_config.segmentation_type,
+        }
+        if cluster.net_provider == 'neutron':
+            data['net_l23_provider'] = cluster.network_config.net_l23_provider
+        return data
+
+    @classmethod
     def get_default_gateway(cls, node_id):
         """Returns GW from Admin network if it's set, else returns Admin IP.
         """

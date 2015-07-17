@@ -636,10 +636,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             );
         },
         renderDeleteSorterButton: function(sorter) {
-            var isDefaultSorter = _.any(this.props.defaultSorting, function(defaultSorter) {
-                return _.isEqual(defaultSorter, sorter);
-            });
-            if (isDefaultSorter) return null;
             return (
                 <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeSorting, sorter)} />
             );
@@ -848,7 +844,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                             })}
                                                         />
                                                     </button>
-                                                    {this.renderDeleteSorterButton(sortObject)}
+                                                    {this.props.activeSorters.length > 1 && this.renderDeleteSorterButton(sortObject)}
                                                 </div>
                                             );
                                         }, this)}

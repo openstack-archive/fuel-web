@@ -408,7 +408,7 @@
                     "node_management_panel": {
                         "group_by": "Group By",
                         "sort_by": "Sort By",
-                        "clear_all": "Clear All",
+                        "clear_all": "Reset",
                         "more": "More",
                         "filter_by": "Filter By",
                         "filter_placeholder": "Node name/mac",

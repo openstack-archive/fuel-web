@@ -22,10 +22,11 @@ def get_all_extensions():
     # TODO(eli): implement extensions autodiscovery
     # should be done as a part of blueprint
     # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
+    from nailgun.extensions.upgrades.extension import UpgradesExtention
     from nailgun.extensions.volume_manager.extension \
         import VolumeManagerExtension
 
-    return [VolumeManagerExtension]
+    return [VolumeManagerExtension, UpgradesExtention]
 
 
 @six.add_metaclass(abc.ABCMeta)

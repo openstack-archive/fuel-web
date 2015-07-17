@@ -124,6 +124,9 @@ class NeutronManager70(NeutronManager):
                 'network_role': role['id'],
                 'namespace': vip_info.get('namespace'),
                 'ipaddr': vip_addr,
+                'node_roles': vip_info.get('node_roles',
+                                           ['controller',
+                                            'primary-controller'])
             }
 
         return vips

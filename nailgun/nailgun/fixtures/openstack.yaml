@@ -104,6 +104,18 @@
         public_ip_required: true
         restrictions:
           - condition: "not ('advanced' in version:feature_groups)"
+      compute-vmware:
+        name: "Compute - nova-compute host for managing vSphere clusters"
+        description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
+        weight: 90
+        conflicts:
+          - controller
+          - compute
+          - cinder
+          - ceph-osd
+          - mongo
+        restrictions:
+          - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
 
     network_roles_metadata:
@@ -457,6 +469,8 @@
         virt:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
+        compute-vmware:
+          - {allocate_size: "min", id: "os"}
       volumes:
         - id: "os"
           type: "vg"
@@ -1343,6 +1357,14 @@
                     regex:
                       source: *non_empty_string
                       error: "Invalid datastore regex"
+                  -
+                    name: "target_node"
+                    type: "select"
+                    label: "Target node"
+                    description: "Target node for nova-compute service"
+                    regex:
+                      source: *non_empty_string
+                      error: "Empty target node"
           -
             name: "network"
             type: "object"
@@ -1417,6 +1439,7 @@
                   vsphere_cluster: ""
                   service_name: ""
                   datastore_regex: ""
+                  target_node: "controllers"
               cinder:
                 enable: true
           network:

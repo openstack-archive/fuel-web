@@ -318,9 +318,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 }
 
+.modal-open .modal {
+  overflow-x: auto;
+}
+
 .clamp {
   width: 100%;
   max-width: @page-width;
+  min-width: @page-width;
   margin-left: auto;
   margin-right: auto;
   height: auto !important;
@@ -484,11 +489,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
   height: 70px;
   background-color: @white;
   box-shadow: 0 0 10px @shadow-color;
+  min-width: @page-width;
 }
 
 .navigation-box {
   width: 100%;
-  height: 70px;
+  background-color: @white;
 }
 
 .navbar {
@@ -503,9 +509,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
   background-color: transparent;
   border-color: transparent;
   .navbar-nav {
+    margin: 0;
     margin-top: 18px;
-    height: 34px;
     li {
+      display: inline-block;
+      width: auto;
+      background-color: @white;
       a {
         font-family: 'bebas';
         font-size: @base-font-size + 7;

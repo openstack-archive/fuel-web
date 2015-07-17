@@ -57,8 +57,10 @@ class SpawnVmsHandler(BaseHandler):
                 logger.warn(
                     u'Cannot execute %s task nodes: %s',
                     task_manager.__class__.__name__, traceback.format_exc())
-                raise self.http(400, message=six.text_type(exc))
+                raise self.http(400, six.text_type(exc))
             self.raise_task(task)
+        else:
+            raise self.http(400, "No VMs to spawn")
 
     @content
     def PUT(self, cluster_id):
@@ -97,5 +99,5 @@ class NodeVMsHandler(BaseHandler):
         node = self.get_object_or_404(objects.Node, node_id)
         data = self.checked_data()
 
-        objects.Node.set_vms_conf(node, data)
+        objects.Node.set_vms_conf(node, data.get("vms_conf"))
         return {"vms_conf": node.attributes.vms_conf}

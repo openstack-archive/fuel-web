@@ -2464,7 +2464,7 @@ class BaseDeploymentSerializer(BaseIntegrationTest):
         result = self.serializer.serialize_node(
             self.env.nodes[0], 'controller')
 
-        self.assertEqual(len(result['vcenter']['computes']), 4)
+        self.assertEqual(len(result['vcenter']['computes']), 5)
 
         self.assertIn(
             result['vcenter']['computes'][0]['service_name'],
@@ -2506,7 +2506,7 @@ class BaseDeploymentSerializer(BaseIntegrationTest):
         self.assertEqual(result['vcenter']['esxi_vlan_interface'], "eth0")
 
         # check cinder parameters
-        self.assertEqual(len(result['cinder']['instances']), 2)
+        self.assertEqual(len(result['cinder']['instances']), 3)
         self.assertEqual(
             result['cinder']['instances'][0]['availability_zone_name'],
             "Zone 1")

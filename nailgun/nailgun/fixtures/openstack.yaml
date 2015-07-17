@@ -262,6 +262,10 @@
         id: "storage"
         default_mapping: "storage"
         properties: *default_network_roles_metadata_properties
+      -
+        id: "nova/migration"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
 
     networks_metadata:
       bonding:

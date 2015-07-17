@@ -1310,11 +1310,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
   .node-list-management-buttons {
     margin-bottom: @management-panel-indent * 3;
-    button {
+    button.btn {
       margin-right: @management-panel-indent;
-      &.close {
-        margin-right: @management-panel-indent * 2;
-      }
     }
     .search {
       min-width: 350px;
@@ -1322,10 +1319,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .form-group {
         margin: 0;
       }
+      input {
+        padding-right: 30px;
+      }
       .btn-clear-search {
+        margin: 0;
+        padding: 6px 10px;
         position: absolute;
         right: 0;
-        top: 6px;
+        top: 0;
       }
     }
   }

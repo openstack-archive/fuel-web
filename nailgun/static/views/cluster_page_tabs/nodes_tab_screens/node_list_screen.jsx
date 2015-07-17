@@ -345,13 +345,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
         },
         render: function() {
-            var valuesAmount = this.props.values.length,
-                label = (this.props.dynamicValues || !valuesAmount) ? this.props.label : valuesAmount > 3 ?
+            var valuesAmount = this.props.values.length;
+            var label = this.props.label;
+            if (!this.props.dynamicValues && valuesAmount) {
+                label = this.props.label + ': ' + (valuesAmount > 3 ?
                         i18n('cluster_page.nodes_tab.node_management_panel.selected_options', {label: this.props.label, count: valuesAmount})
                     :
                         _.map(this.props.values, function(itemName) {
                         return _.find(this.props.options, {name: itemName}).label;
-                    }, this).join(', ');
+                    }, this).join(', '));
+            }
 
             this.props.options.sort(function(option1, option2) {
                 return utils.natsort(option1.label, option2.label);

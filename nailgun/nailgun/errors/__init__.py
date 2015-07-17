@@ -94,6 +94,9 @@ default_messages = {
     "PluginsTasksOverlapping":
         "There is task with same id supplied by another plugin",
 
+    # Extensions
+    "CannotFindExtension": "Cannot find extension",
+
     # unknown
     "UnknownError": "Unknown error"
 }

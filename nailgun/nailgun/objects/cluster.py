@@ -26,27 +26,18 @@ import yaml
 
 import sqlalchemy as sa
 
-from nailgun.objects.serializers.cluster import ClusterSerializer
-from nailgun.orchestrator import graph_configuration
-
 from nailgun import consts
-
 from nailgun.db import db
-
 from nailgun.db.sqlalchemy import models
-
 from nailgun.errors import errors
-
 from nailgun.logger import logger
-
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Release
-
+from nailgun.objects.serializers.cluster import ClusterSerializer
+from nailgun.orchestrator import graph_configuration
 from nailgun.plugins.manager import PluginManager
-
 from nailgun.settings import settings
-
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import traverse
@@ -221,6 +212,7 @@ class Cluster(NailgunObject):
 
         cls.create_attributes(new_cluster)
         cls.create_vmware_attributes(new_cluster)
+        cls.create_default_extensions(new_cluster)
 
         try:
             cls.get_network_manager(new_cluster).\
@@ -272,6 +264,16 @@ class Cluster(NailgunObject):
         Attributes.generate_fields(attributes)
         db().flush()
         return attributes
+
+    @classmethod
+    def create_default_extensions(cls, instance):
+        """Sets default extensions list from release model
+
+        :param instance: Cluster instance
+        :returns: None
+        """
+        instance.extensions = instance.release.extensions
+        db().flush()
 
     @classmethod
     def get_default_editable_attributes(cls, instance):
@@ -398,6 +400,7 @@ class Cluster(NailgunObject):
         )
         if node_id:
             ch.node_id = node_id
+
         db().add(ch)
         db().flush()
 

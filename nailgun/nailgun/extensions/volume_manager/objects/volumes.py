@@ -16,6 +16,7 @@
 
 from copy import deepcopy
 
+from ..manager import VolumeManager
 from ..models.node_volumes import NodeVolumes
 from .adapters import NailgunNodeAdapter
 from nailgun.db import db
@@ -59,6 +60,10 @@ class VolumeObject(object):
         db().flush()
 
         return volumes
+
+    @classmethod
+    def set_default_node_volumes(cls, node):
+        cls.set_volumes(node, VolumeManager(node).gen_volumes_info())
 
     @classmethod
     def _get_model_by_node_id(cls, node_id):

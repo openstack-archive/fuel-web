@@ -105,6 +105,8 @@ class Node(Base):
     replaced_provisioning_info = Column(JSON, default={})
     network_template = Column(JSON, default=None, server_default=None,
                               nullable=True)
+    extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
+                        default=[], nullable=False, server_default='{}')
 
     @property
     def interfaces(self):

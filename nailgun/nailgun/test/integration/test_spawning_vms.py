@@ -61,7 +61,7 @@ class TestSpawnVMs(BaseIntegrationTest):
             ]
         )
         cluster = self.env.clusters[0]
-        vms_conf = [{'id': 1, 'cluster_id': cluster.id}]
+        vms_conf = {"vms_conf": [{'id': 1, 'cluster_id': cluster.id}]}
         self.app.put(
             reverse(
                 'NodeVMsHandler',
@@ -75,4 +75,4 @@ class TestSpawnVMs(BaseIntegrationTest):
                 kwargs={'node_id': cluster.nodes[0].id}),
             headers=self.default_headers
         )
-        self.assertEqual(spawning_nodes.json.get('vms_conf'), vms_conf)
+        self.assertEqual(spawning_nodes.json, vms_conf)

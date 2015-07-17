@@ -231,7 +231,8 @@ gulp.task('jshint', function() {
         .pipe(react())
         .pipe(jsxFilter.restore())
         .pipe(jshint(jshintConfig))
-        .pipe(jshint.reporter('jshint-stylish'));
+        .pipe(jshint.reporter('jshint-stylish'))
+        .pipe(jshint.reporter('fail'));
 });
 
 var lintspacesConfig = {

@@ -29,6 +29,7 @@ import sqlalchemy.types
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.extensions import fire_callback_on_node_create
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.settings import settings
@@ -198,6 +199,7 @@ def upload_fixture(fileobj, loader=None):
         if new_obj.__class__.__name__ == 'Node':
             objects.Node.create_attributes(new_obj)
             objects.Node.update_interfaces(new_obj)
+            fire_callback_on_node_create(new_obj)
             db().commit()
 
 

@@ -923,14 +923,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             <div className='active-filters row' onClick={this.toggleFilters}>
                                                 <strong className='col-xs-1'>{i18n(ns + 'filter_by')}</strong>
                                                 <div className='col-xs-11'>
-                                                    {i18n('cluster_page.nodes_tab.filter_results_amount', {count: this.props.filteredNodesLength})}
+                                                    {i18n('cluster_page.nodes_tab.filter_results_amount', {
+                                                        count: this.props.filteredNodesLength,
+                                                        total: this.props.screenNodes.length
+                                                    })}
                                                     {_.map(this.props.activeFilters, function(values, filterName) {
                                                         if (!values.length) return null;
                                                         var options = this.getFilterOptions(filterName);
                                                         return (
                                                             <div key={filterName}>
-                                                                <span>{i18n('cluster_page.nodes_tab.filters.' + filterName)}: </span>
-                                                                <strong>
+                                                                <strong>{i18n('cluster_page.nodes_tab.filters.' + filterName)}: </strong>
+                                                                <span>
                                                                     {options ?
                                                                         _.map(values, function(value) {
                                                                             return _.find(options, {name: value}).label;
@@ -941,7 +944,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                                         :
                                                                             !_.isUndefined(values[0]) ? i18n(ns + 'more_than') + values[0] : i18n(ns + 'less_than') + values[1]
                                                                     }
-                                                                </strong>
+                                                                </span>
                                                             </div>
                                                         );
                                                     }, this)}

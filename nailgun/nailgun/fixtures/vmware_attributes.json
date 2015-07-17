@@ -55,6 +55,12 @@
                         ],
                         "type": "array",
                         "name": "nova_computes"
+                    },
+                    {
+                        "type": "select",
+                        "description": "Target node for nova-compute service",
+                        "name": "target_node",
+                        "label": "Target node"
                     }
                 ],
                 "type": "array",
@@ -153,7 +159,8 @@
                             "service_name": "Compute 3",
                             "datastore_regex": ""
                         }
-                    ]
+                    ],
+                    "target_node": "test_target_node"
                 },
                 {
                     "az_name": "Zone 2",
@@ -171,7 +178,8 @@
                             "service_name": "Compute 7",
                             "datastore_regex": ""
                         }
-                    ]
+                    ],
+                    "target_node": ""
                 }
             ],
             "glance": {

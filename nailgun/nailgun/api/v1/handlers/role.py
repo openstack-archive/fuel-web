@@ -44,7 +44,7 @@ class RoleHandler(base.SingleHandler):
             * 404 (no such object found)
         """
         release = self.get_object_or_404(objects.Release, release_id)
-        return RoleSerializer.serialize(release, role_name)
+        return RoleSerializer.serialize_from_release(release, role_name)
 
     @content
     def PUT(self, release_id, role_name):
@@ -55,7 +55,7 @@ class RoleHandler(base.SingleHandler):
         data = self.checked_data()
         release = self.get_object_or_404(objects.Release, release_id)
         objects.Release.update_role(release, data)
-        return RoleSerializer.serialize(release, role_name)
+        return RoleSerializer.serialize_from_release(release, role_name)
 
     def DELETE(self, release_id, role_name):
         """:http:
@@ -98,7 +98,8 @@ class RoleCollectionHandler(base.CollectionHandler):
                     name=role_name, release=release_id))
 
         objects.Release.update_role(release, data)
-        raise self.http(201, RoleSerializer.serialize(release, role_name))
+        raise self.http(
+            201, RoleSerializer.serialize_from_release(release, role_name))
 
     @content
     def GET(self, release_id):
@@ -107,7 +108,8 @@ class RoleCollectionHandler(base.CollectionHandler):
         """
         release = self.get_object_or_404(objects.Release, release_id)
         role_names = six.iterkeys(release.roles_metadata)
-        return [RoleSerializer.serialize(release, name) for name in role_names]
+        return [RoleSerializer.serialize_from_release(release, name)
+                for name in role_names]
 
 
 class ClusterRolesHandler(base.BaseHandler):
@@ -126,7 +128,7 @@ class ClusterRolesHandler(base.BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self._check_role(cluster, role_name)
-        return RoleSerializer.serialize(cluster.release, role_name)
+        return RoleSerializer.serialize_from_cluster(cluster, role_name)
 
 
 class ClusterRolesCollectionHandler(base.BaseHandler):
@@ -140,5 +142,5 @@ class ClusterRolesCollectionHandler(base.BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         roles_names = six.iterkeys(objects.Cluster.get_roles(cluster))
-        return [RoleSerializer.serialize(cluster.release, name) for name in
-                roles_names]
+        return [RoleSerializer.serialize_from_cluster(cluster, name)
+                for name in roles_names]

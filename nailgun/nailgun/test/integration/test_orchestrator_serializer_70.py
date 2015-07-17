@@ -16,6 +16,7 @@
 
 import mock
 import six
+import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
@@ -602,3 +603,122 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         serialized_tasks_ids = (t['parameters']['puppet_manifest']
                                 for t in tasks)
         self.assertItemsEqual(release_depl_tasks_ids, serialized_tasks_ids)
+
+
+class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
+
+    ROLES = yaml.safe_load("""
+        test_role:
+          name: "Some plugin role"
+          description: "Some description"
+          conflicts:
+            - some_not_compatible_role
+          limits:
+            min: 1
+          restrictions:
+            - condition: "some logic condition"
+              message: "Some message for restriction warning"
+          volumes_mapping:
+            - {allocate_size: "min", id: "os"}
+            - {allocate_size: "all", id: "role_volume_name"}
+    """)
+
+    DEPLOYMENT_TASKS = yaml.safe_load("""
+        - id: test_role
+          type: group
+          role: [test_role]
+          required_for: [deploy_end]
+          requires: [deploy_start]
+          parameters:
+            strategy:
+              type: one_by_one
+
+        - id: do-something
+          type: puppet
+          groups: [test_role]
+          required_for: [deploy_end]
+          requires: [deploy_start]
+          parameters:
+            puppet_manifest: /path/to/manifests
+            puppet_modules: /path/to/modules
+            timeout: 3600
+    """)
+
+    def setUp(self):
+        super(TestRolesSerializationWithPlugins, self).setUp()
+
+        self.env.create(
+            release_kwargs={
+                'version': '2015.1.0-7.0',
+            },
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
+            })
+        self.cluster = self.env.clusters[0]
+
+    def _get_serializer(self, cluster):
+        return get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
+
+    def test_tasks_were_serialized(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['roles_metadata'] = self.ROLES
+        plugin_data['deployment_tasks'] = self.DEPLOYMENT_TASKS
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+
+        self.env.create_node(
+            api=True,
+            cluster_id=self.cluster.id,
+            pending_roles=['test_role'],
+            pending_addition=True)
+        self.db.flush()
+
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+
+        serializer = self._get_serializer(self.cluster)
+        serialized_data = serializer.serialize(
+            self.cluster, self.cluster.nodes)
+        self.assertItemsEqual(serialized_data[0]['tasks'], [{
+            'parameters': {
+                'cwd': '/etc/fuel/plugins/testing_plugin-0.1.0/',
+                'puppet_manifest': '/path/to/manifests',
+                'puppet_modules': '/path/to/modules',
+                'timeout': 3600,
+            },
+            'priority': 100,
+            'type': 'puppet',
+            'uids': [self.cluster.nodes[0].uid],
+        }])
+
+    def test_tasks_were_not_serialized(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['roles_metadata'] = {}
+        plugin_data['deployment_tasks'] = self.DEPLOYMENT_TASKS
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+
+        self.env.create_node(
+            api=True,
+            cluster_id=self.cluster.id,
+            pending_roles=['controller'],
+            pending_addition=True)
+        self.db.flush()
+
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+
+        serializer = self._get_serializer(self.cluster)
+        serialized_data = serializer.serialize(
+            self.cluster, self.cluster.nodes)
+        self.assertItemsEqual(serialized_data[0]['tasks'], [{
+            'parameters': {
+                'cwd': '/',
+                'puppet_manifest': '/etc/puppet/manifests/site.pp',
+                'puppet_modules': '/etc/puppet/modules',
+                'timeout': 3600,
+            },
+            'priority': 100,
+            'type': 'puppet',
+            'uids': [self.cluster.nodes[0].uid],
+        }])

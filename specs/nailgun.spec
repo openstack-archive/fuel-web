@@ -57,16 +57,77 @@ Requires:    python-ordereddict >= 1.1
 # Workaroud for babel bug
 Requires:    pytz
 
+BuildRequires: nodejs-bower
+BuildRequires: nodejs-casperjs
+BuildRequires: nodejs-esprima-fb
+BuildRequires: nodejs-event-stream
+BuildRequires: nodejs-glob
+BuildRequires: nodejs-gulp
+BuildRequires: nodejs-gulp-autoprefixer
+BuildRequires: nodejs-gulp-bower
+BuildRequires: nodejs-gulp-filter
+BuildRequires: nodejs-gulp-intermediate
+BuildRequires: nodejs-gulp-jison
+BuildRequires: nodejs-gulp-jscs
+BuildRequires: nodejs-gulp-jshint
+BuildRequires: nodejs-gulp-less
+BuildRequires: nodejs-gulp-lintspaces
+BuildRequires: nodejs-gulp-react
+BuildRequires: nodejs-gulp-replace
+BuildRequires: nodejs-gulp-shell
+BuildRequires: nodejs-gulp-util
+BuildRequires: nodejs-intern
+BuildRequires: nodejs-jshint-stylish
+BuildRequires: nodejs-lodash-node
+BuildRequires: nodejs-main-bower-files
+BuildRequires: nodejs-minimist
+BuildRequires: nodejs-phantomjs
+BuildRequires: nodejs-requirejs
+BuildRequires: nodejs-rimraf
+BuildRequires: nodejs-run-sequence
+BuildRequires: nodejs-selenium-standalone
+BuildRequires: nodejs-uglify-js
+BuildRequires: nodejs-libjs-jquery
+BuildRequires: nodejs-libjs-js-cookie
+BuildRequires: nodejs-libjs-classnames
+BuildRequires: nodejs-libjs-react
+BuildRequires: nodejs-libjs-requirejs
+BuildRequires: nodejs-libjs-requirejs-plugins
+BuildRequires: nodejs-libjs-requirejs-text
+BuildRequires: nodejs-libjs-require-css
+BuildRequires: nodejs-libjs-jsx-requirejs-plugin
+BuildRequires: nodejs-libjs-routefilter
+BuildRequires: nodejs-libjs-lodash
+BuildRequires: nodejs-libjs-autoNumeric
+BuildRequires: nodejs-libjs-backbone
+BuildRequires: nodejs-libjs-backbone.stickit
+BuildRequires: nodejs-libjs-i18next
+BuildRequires: nodejs-libjs-less
+BuildRequires: nodejs-libjs-bootstrap
+BuildRequires: nodejs-libjs-open-sans-fontface
+BuildRequires: nodejs-libjs-react-dnd
+BuildRequires: nodejs-libjs-es5-shim
+BuildRequires: nodejs-libjs-sinon
+
 %description
 Nailgun package
 
 %prep
 %setup -cq -n %{name}-%{version}
-npm install --prefix %{_builddir}/%{name}-%{version}/nailgun/ gulp
+#npm install --prefix %{_builddir}/%{name}-%{version}/nailgun/ gulp
+
+cp -R /usr/lib/node_modules/ %{_builddir}/%{name}-%{version}/nailgun/node_modules/
+cp -R /usr/lib/bower_components/ %{_builddir}/%{name}-%{version}/nailgun/bower_components/
 
 %build
-mkdir -p %{_builddir}/%{name}-%{version}/nailgun/npm-cache
-cd %{_builddir}/%{name}-%{version}/nailgun && npm --cache %{_builddir}/%{name}-%{version}/nailgun/npm-cache install && %{_builddir}/%{name}-%{version}/nailgun/node_modules/.bin/gulp build --static-dir=compressed_static
+#mkdir -p %{_builddir}/%{name}-%{version}/nailgun/npm-cache
+#cd %{_builddir}/%{name}-%{version}/nailgun && npm --cache %{_builddir}/%{name}-%{version}/nailgun/npm-cache install && %{_builddir}/%{name}-%{version}/nailgun/node_modules/.bin/gulp build --static-dir=compressed_static
+#FIXME add to package for requirejs
+mkdir -p %{_builddir}/%{name}-%{version}/nailgun/node_modules/.bin
+ln -s %{_builddir}/%{name}-%{version}/nailgun/node_modules/requirejs/bin/r.js %{_builddir}/%{name}-%{version}/nailgun/node_modules/.bin/r.js
+###
+cd %{_builddir}/%{name}-%{version}/nailgun && %{_builddir}/%{name}-%{version}/nailgun/node_modules/gulp/bin/gulp.js build --static-dir=compressed_static
+
 [ -n %{_builddir} ] && rm -rf %{_builddir}/%{name}-%{version}/nailgun/static
 mv %{_builddir}/%{name}-%{version}/nailgun/compressed_static %{_builddir}/%{name}-%{version}/nailgun/static
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py build

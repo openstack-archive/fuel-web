@@ -639,10 +639,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             );
         },
         renderDeleteSorterButton: function(sorter) {
-            var isDefaultSorter = _.any(this.props.defaultSorting, function(defaultSorter) {
-                return _.isEqual(defaultSorter, sorter);
-            });
-            if (isDefaultSorter) return null;
             return (
                 <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeSorting, sorter)} />
             );
@@ -831,7 +827,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             <i className='glyphicon glyphicon-sort' /> {i18n(ns + 'sort_by')}
                                             {!_.isEqual(this.props.activeSorters, this.props.defaultSorting) &&
                                                 <button className='btn btn-link pull-right' onClick={this.resetSorters}>
-                                                    <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'clear_all')}
+                                                    <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'reset')}
                                                 </button>
                                             }
                                         </div>
@@ -851,7 +847,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                             })}
                                                         />
                                                     </button>
-                                                    {this.renderDeleteSorterButton(sortObject)}
+                                                    {this.props.activeSorters.length > 1 && this.renderDeleteSorterButton(sortObject)}
                                                 </div>
                                             );
                                         }, this)}
@@ -879,7 +875,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             <i className='glyphicon glyphicon-filter' /> {i18n(ns + 'filter_by')}
                                             {!_.isEmpty(this.props.activeFilters) &&
                                                 <button className='btn btn-link pull-right' onClick={this.resetFilters}>
-                                                    <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'clear_all')}
+                                                    <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'reset')}
                                                 </button>
                                             }
                                         </div>

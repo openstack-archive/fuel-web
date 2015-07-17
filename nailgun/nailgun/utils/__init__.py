@@ -12,13 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import base64
 import collections
 import glob
 import os
 import re
 import shutil
 import string
+import struct
 import six
+import time
 import yaml
 
 from copy import deepcopy
@@ -26,6 +29,8 @@ from itertools import chain
 from random import choice
 
 from six.moves import zip_longest
+
+from uuid import uuid4
 
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -162,6 +167,28 @@ class AttributesGenerator(object):
     def from_settings(cls, arg):
         return getattr(settings, arg)
 
+    @classmethod
+    def uuid4(cls, arg=None):
+        return uuid4()
+
+    @classmethod
+    def cephx_key(cls, arg=None):
+    """Returns a cephx auth key.
+
+    this is taken verbatim from
+    https://github.com/ceph/ceph-deploy/blob/master/ceph_deploy/new.py#L21-30
+
+    :returns: string (base64 encoded binary) usable as a cephx auth key
+    """
+        key = os.urandom(16)
+        header = struct.pack(
+            '<hiih',
+            1,                 # le16 type: CEPH_CRYPTO_AES
+            int(time.time()),  # le32 created: seconds
+            0,                 # le32 created: nanoseconds,
+            len(key),          # le16: len(key)
+        )
+        return base64.b64encode(header + key)
 
 def get_fuel_release_versions(path_mask):
     """Returns release versions from files match to path_mask

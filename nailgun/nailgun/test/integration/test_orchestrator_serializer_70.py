@@ -164,6 +164,19 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
 
+        result = self.serializer.serialize_node(
+            self.env.nodes[0], 'compute-vmware')
+
+        self.assertEqual(
+            result['vcenter']['computes'][0]['target_node'],
+            "test_target_node")
+        self.assertEqual(
+            result['vcenter']['computes'][2]['target_node'],
+            "")
+        self.assertEqual(
+            result['vcenter']['computes'][4]['target_node'],
+            "controllers")
+
 
 class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
     @mock.patch.object(models.Release, 'environment_version',
@@ -311,6 +324,19 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
+
+        result = self.serializer.serialize_node(
+            self.env.nodes[0], 'compute-vmware')
+
+        self.assertEqual(
+            result['vcenter']['computes'][0]['target_node'],
+            "test_target_node")
+        self.assertEqual(
+            result['vcenter']['computes'][2]['target_node'],
+            "")
+        self.assertEqual(
+            result['vcenter']['computes'][4]['target_node'],
+            "controllers")
 
 
 class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):

@@ -14,11 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.extensions.base import BaseExtension
-from nailgun.extensions.base import get_extension
-from nailgun.extensions.base import get_all_extensions
-from nailgun.extensions.base import node_extension_call
-from nailgun.extensions.base import fire_callback_on_node_create
-from nailgun.extensions.base import fire_callback_on_node_update
-from nailgun.extensions.base import fire_callback_on_node_reset
-from nailgun.extensions.base import fire_callback_on_cluster_delete
+from sqlalchemy import Column
+from sqlalchemy import Integer
+
+from nailgun.db.sqlalchemy.models.base import Base
+
+from .extension import ClusterUpgradeExtention
+
+
+class UpgradeRelation(Base):
+    __tablename__ = '{0}relations'.format(
+        ClusterUpgradeExtention.table_prefix())
+
+    id = Column(Integer, primary_key=True)
+    orig_cluster_id = Column(Integer, unique=True, nullable=False)
+    seed_cluster_id = Column(Integer, unique=True, nullable=False)

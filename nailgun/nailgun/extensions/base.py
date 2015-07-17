@@ -24,10 +24,16 @@ def get_all_extensions():
     # TODO(eli): implement extensions autodiscovery
     # should be done as a part of blueprint
     # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
+    from nailgun.extensions.cluster_upgrade.extension \
+        import ClusterUpgradeExtention
     from nailgun.extensions.volume_manager.extension \
         import VolumeManagerExtension
 
-    return [VolumeManagerExtension]
+    extensions = [
+        VolumeManagerExtension,
+        ClusterUpgradeExtention,
+    ]
+    return extensions
 
 
 def get_extension(name):
@@ -87,6 +93,11 @@ def fire_callback_on_node_update(node):
 def fire_callback_on_node_reset(node):
     for extension in get_all_extensions():
         extension.on_node_reset(node)
+
+
+def fire_callback_on_cluster_delete(cluster):
+    for extension in get_all_extensions():
+        extension.on_cluster_delete(cluster)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -151,4 +162,9 @@ class BaseExtension(object):
     @classmethod
     def on_node_reset(cls, node):
         """Callback which gets executed when node is reseted
+        """
+
+    @classmethod
+    def on_cluster_delete(cls, cluster):
+        """Callback which gets executed when cluster is deleted
         """

@@ -30,6 +30,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -973,6 +974,11 @@ class Cluster(NailgunObject):
     def get_nodes_ids(cls, instance):
         return [x[0] for x in db().query(models.Node.id).filter(
             models.Node.cluster_id == instance.id).all()]
+
+    @classmethod
+    def delete(cls, instance):
+        fire_callback_on_cluster_delete(instance)
+        super(Cluster, cls).delete(instance)
 
 
 class ClusterCollection(NailgunCollection):

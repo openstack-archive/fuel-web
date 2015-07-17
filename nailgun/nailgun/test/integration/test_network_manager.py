@@ -553,3 +553,6 @@ class TestNeutronManager70(BaseIntegrationTest):
             self.assertIn(name, assigned_vips)
             self.assertEqual(assigned_vips[name]['namespace'],
                              vip['namespace'])
+            self.assertEqual(assigned_vips[name]['node_roles'],
+                             ['controller',
+                              'primary-controller'])

@@ -375,5 +375,16 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         }
     });
 
+    components.DefaultPasswordWarning = React.createClass({
+        render: function() {
+            return (
+                <div className='alert default-password-alert'>
+                    <button className='close' onClick={this.props.close}>&times;</button>
+                    {i18n('common.default_password_warning')}
+                </div>
+            );
+        }
+    });
+
     return components;
 });

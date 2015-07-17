@@ -1,3 +1,0 @@
-type: exec
-cmd: 'echo 42 | grep 100'
-description: "grep will return 1, if nothing will be found"

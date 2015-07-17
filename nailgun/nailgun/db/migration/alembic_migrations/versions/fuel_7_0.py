@@ -94,9 +94,11 @@ def upgrade():
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
     extensions_field_upgrade()
+    extend_node_with_labels_upgrade()
 
 
 def downgrade():
+    extend_node_with_labels_downgrade()
     extensions_field_downgrade()
     downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
@@ -146,8 +148,8 @@ def extend_node_model_downgrade():
 def extend_ip_addrs_model_upgrade():
     op.alter_column('ip_addrs', 'vip_type',
                     type_=sa.String(length=50),
-                    existing_type=sa.Enum('haproxy', 'vrouter',
-                    name='network_vip_types'))
+                    existing_type=sa.Enum(
+                        'haproxy', 'vrouter', name='network_vip_types'))
     drop_enum('network_vip_types')
 
 
@@ -636,3 +638,19 @@ def extensions_field_upgrade():
 def extensions_field_downgrade():
     for table_name in ['nodes', 'releases', 'clusters']:
         op.drop_column(table_name, 'extensions')
+
+
+def extend_node_with_labels_upgrade():
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'labels',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+
+def extend_node_with_labels_downgrade():
+    op.drop_column('nodes', 'labels')

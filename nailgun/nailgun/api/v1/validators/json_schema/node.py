@@ -140,6 +140,7 @@ single_schema = {
         "online": {"type": "boolean"},
         "roles": {"type": "array"},
         "pending_roles": {"type": "array"},
-        "agent_checksum": {"type": "string"}
-    },
+        "agent_checksum": {"type": "string"},
+        "labels": {'type': 'object'}
+    }
 }

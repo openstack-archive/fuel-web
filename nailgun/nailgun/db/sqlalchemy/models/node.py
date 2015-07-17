@@ -107,6 +107,7 @@ class Node(Base):
                               nullable=True)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    labels = Column(JSON, default={}, server_default='{}', nullable=False)
 
     @property
     def interfaces(self):

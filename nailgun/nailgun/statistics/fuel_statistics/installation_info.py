@@ -51,6 +51,10 @@ class InstallationInfo(object):
 
         WhiteListRule(('public_network_assignment', 'assign_to_all_nodes',
                        'value'), 'assign_public_to_all_nodes', None),
+        WhiteListRule(('neutron_advanced_configuration', 'neutron_l2_pop',
+                       'value'), 'neutron_l2_pop', None),
+        WhiteListRule(('neutron_advanced_configuration', 'neutron_dvr',
+                       'value'), 'neutron_dvr', None),
         WhiteListRule(('syslog', 'syslog_transport', 'value'),
                       'syslog_transport', None),
         WhiteListRule(('provision', 'method', 'value'),

@@ -51,6 +51,12 @@
                                 "description": "Datastore regex",
                                 "name": "datastore_regex",
                                 "label": "Datastore regex"
+                            },
+                            {
+                                "type": "select",
+                                "description": "Target node for nova-compute service",
+                                "name": "target_node",
+                                "label": "Target node"
                             }
                         ],
                         "type": "array",
@@ -146,12 +152,14 @@
                         {
                             "vsphere_cluster": "cluster1",
                             "service_name": "Compute 1",
-                            "datastore_regex": ""
+                            "datastore_regex": "",
+                            "target_node": "test_target_node"
                         },
                         {
                             "vsphere_cluster": "cluster2",
                             "service_name": "Compute 3",
-                            "datastore_regex": ""
+                            "datastore_regex": "",
+                            "target_node": "test_target_node"
                         }
                     ]
                 },
@@ -164,7 +172,8 @@
                         {
                             "vsphere_cluster": "cluster1",
                             "service_name": "Compute 4",
-                            "datastore_regex": "^openstack-[0-9]$"
+                            "datastore_regex": "^openstack-[0-9]$",
+                            "target_node": ""
                         },
                         {
                             "vsphere_cluster": "",

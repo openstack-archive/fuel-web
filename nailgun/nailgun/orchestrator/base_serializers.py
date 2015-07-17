@@ -51,7 +51,13 @@ class VmwareDeploymentSerializerMixin(object):
         """Extend serialize data with vmware attributes
         """
         vmware_data = {}
-        allowed_roles = ['controller', 'primary-controller', 'cinder-vmware']
+        allowed_roles = [
+            'controller',
+            'primary-controller',
+            'compute-vmware',
+            'cinder-vmware'
+        ]
+
         all_roles = Node.all_roles(node)
         use_vcenter = node.cluster.attributes.editable.get('common', {}) \
             .get('use_vcenter', {}).get('value')
@@ -84,7 +90,9 @@ class VmwareDeploymentSerializerMixin(object):
                         'vc_password': vc_password,
                         'service_name': compute.get('service_name', ''),
                         'vc_cluster': compute.get('vsphere_cluster', ''),
-                        'datastore_regex': datastore_regex
+                        'datastore_regex': datastore_regex,
+                        'target_node': compute.get(
+                            'target_node', 'controllers')
                     }
 
                     compute_instances.append(compute_item)

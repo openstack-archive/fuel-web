@@ -538,13 +538,20 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """
     objects.Cluster.set_primary_roles(cluster, nodes)
     env_version = cluster.release.environment_version
+    nst = cluster.network_config.get('segmentation_type')
 
     # Only assign IPs for private (GRE) network in 6.1+
     if any([env_version.startswith(v) for v in ['5.0', '5.1', '6.0']]):
         objects.NodeCollection.prepare_for_lt_6_1_deployment(cluster.nodes)
+    elif env_version.startswith('6.1'):
+        objects.NodeCollection.prepare_for_6_1_deployment(cluster.nodes, nst)
     else:
-        nst = cluster.network_config.get('segmentation_type')
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes, nst)
+        assign_baremetal_ip = False
+        if filter(lambda net: net.name == consts.NETWORKS.baremetal,
+                  cluster.network_groups):
+            assign_baremetal_ip = True
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes, nst,
+                                                      assign_baremetal_ip)
 
     serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 

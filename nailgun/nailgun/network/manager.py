@@ -486,7 +486,7 @@ class NetworkManager(object):
 
             if to_assign_ids:
                 allowed_ids = \
-                    ng_wo_admin_ids if nic != cls.get_admin_interface(node) \
+                    ng_wo_admin_ids if nic != cls.get_pxe_interface(node) \
                     else ng_ids
                 can_assign = [ng_id for ng_id in to_assign_ids
                               if ng_id in allowed_ids]
@@ -922,11 +922,21 @@ class NetworkManager(object):
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
 
-        for interface in node.nic_interfaces:
-            if cls.is_ip_belongs_to_admin_subnet(interface.ip_addr):
-                return interface
+        for iface in node.nic_interfaces:
+            if cls.is_ip_belongs_to_admin_subnet(iface.ip_addr):
+                return iface
 
         logger.warning(u'Cannot find admin interface for node '
+                       'return first interface: "%s"', node.full_name)
+        return node.interfaces[0]
+
+    @classmethod
+    def get_pxe_interface(cls, node):
+        for iface in node.nic_interfaces:
+            if iface.pxe:
+                return iface
+
+        logger.warning(u'Cannot find pxe interface for node '
                        'return first interface: "%s"', node.full_name)
         return node.interfaces[0]
 

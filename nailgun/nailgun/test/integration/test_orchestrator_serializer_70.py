@@ -37,7 +37,7 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                   'nova/api', 'murano/api', 'horizon', 'management',
                   'mgmt/api', 'mgmt/database', 'mgmt/messaging',
                   'mgmt/corosync', 'mgmt/memcache', 'mgmt/vip', 'mongo/db',
-                  'ceph/public', 'nova/migration']
+                  'ceph/public', 'nova/migration', 'ironic/api']
     fuelweb_admin = ['admin/pxe', 'fw-admin']
     neutron = ['neutron/private', 'neutron/floating']
     storage = ['storage', 'ceph/replication', 'swift/replication',

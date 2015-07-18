@@ -110,6 +110,9 @@ class NeutronManager70(NeutronManager):
         for role in net_roles:
             properties = role.get('properties', {})
             net_group = cls.get_network_group_for_role(role)
+            if not filter(lambda net: net.name == net_group,
+                          cluster.network_groups):
+                continue
             for vip_info in properties.get('vip', ()):
                 vip_name = vip_info['name']
                 vip_addr = cls.assign_vip(

@@ -272,6 +272,14 @@ PATCHING = """
   parameters:
     strategy:
       type: one_by_one
+- id: ironic
+  type: group
+  role: [ironic]
+  requires: [controller]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel
 
 - id: deploy_legacy
   type: puppet

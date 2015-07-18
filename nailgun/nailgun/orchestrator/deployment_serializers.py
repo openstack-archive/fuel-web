@@ -534,7 +534,12 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
         objects.NodeCollection.prepare_for_lt_6_1_deployment(cluster.nodes)
     else:
         nst = cluster.network_config.get('segmentation_type')
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes, nst)
+        assign_baremetal_ip = False
+        if filter(lambda net: net.name == 'baremetal',
+                  cluster.network_groups):
+            assign_baremetal_ip = True
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes, nst,
+                                                      assign_baremetal_ip)
 
     serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 

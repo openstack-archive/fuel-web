@@ -314,6 +314,30 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
+    def patch_baremetal_network(cls, instance, data):
+        is_ironic_enabled = (instance.attributes.
+                             editable['additional_components']['ironic']
+                             ['value'])
+        need_ironic_enabled = (data['editable']['additional_components']
+                               ['ironic']['value'])
+
+        if is_ironic_enabled != need_ironic_enabled:
+            if need_ironic_enabled:
+                # enable and create baremetal network
+                cluster_nets = (instance.release.
+                                networks_metadata[instance.net_provider]
+                                ['networks'])
+                baremetal_net = filter(lambda net: net['name'] == 'baremetal',
+                                       cluster_nets)[0]
+                baremetal_net['disabled'] = False
+                (cls.get_network_manager(instance).
+                 create_network_group(instance, baremetal_net))
+            else:
+                # delete baremetal network
+                (cls.get_network_manager(instance).
+                 delete_network_group_from_cluster(instance, 'baremetal'))
+
+    @classmethod
     def patch_attributes(cls, instance, data):
         PluginManager.process_cluster_attributes(instance, data['editable'])
         instance.attributes.editable = dict_merge(

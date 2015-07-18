@@ -426,11 +426,44 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         }
 
     @classmethod
-    def generate_predefined_networks(cls, cluster):
+    def _generate_baremetal_network(cls, cluster):
+        cidr, gateway = db().query(
+            NetworkGroup.cidr,
+            NetworkGroup.gateway
+        ).filter_by(
+            group_id=Cluster.get_default_group(cluster).id,
+            name='baremetal'
+        ).first()
+
         return {
+            "L3": {
+                "subnet": cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_ranges[0]),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": Cluster.get_creds(cluster)['tenant']['value'],
+            "shared": True
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = {
             "net04_ext": cls._generate_external_network(cluster),
             "net04": cls._generate_internal_network(cluster)
         }
+        if (cluster.attributes.editable['additional_components']['ironic']
+                ['value']):
+            nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets
 
     @classmethod
     def generate_l2(cls, cluster):

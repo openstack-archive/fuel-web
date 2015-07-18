@@ -854,7 +854,8 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_admin_ips(instances)
 
     @classmethod
-    def prepare_for_deployment(cls, instances, nst=None):
+    def prepare_for_deployment(cls, instances, nst=None,
+                               assign_baremetal_ip=False):
         """Prepare environment for deployment,
         assign management, public, storage, private ips
         """
@@ -868,6 +869,8 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_ips(instances, 'storage')
             if nst == consts.NEUTRON_SEGMENT_TYPES.gre:
                 netmanager.assign_ips(instances, 'private')
+            if assign_baremetal_ip:
+                netmanager.assign_ips(instances, 'baremetal')
             netmanager.assign_admin_ips(instances)
 
     @classmethod

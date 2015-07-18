@@ -843,6 +843,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 hiddenControls={this.props.netProvider == 'neutron'}
                             />
                         }
+                        {network.get('name') == 'baremetal' &&
+                            <Range
+                                {...this.composeProps('baremetal_ranges', true)}
+                                rowsClassName='baremetal-ranges-rows'
+                                hiddenControls={this.props.netProvider == 'neutron'}
+                            />
+                        }
                     </div>
                 </div>
             );

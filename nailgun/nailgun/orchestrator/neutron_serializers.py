@@ -820,12 +820,188 @@ class NeutronNetworkDeploymentSerializer70(
 ):
 
     @classmethod
+    def generate_l2(cls, cluster):
+        res = {
+            "base_mac": cluster.network_config.base_mac,
+            "segmentation_type": cluster.network_config.segmentation_type,
+            "phys_nets": {
+                "physnet1": {
+                    "bridge": "br-ex",
+                    "vlan_range": None
+                }
+            }
+        }
+        if cluster.network_config.segmentation_type == 'gre':
+            res["tunnel_id_ranges"] = utils.join_range(
+                cluster.network_config.gre_id_range)
+        elif cluster.network_config.segmentation_type == 'vlan':
+            res["phys_nets"]["physnet2"] = {
+                "bridge": "br-prv",
+                "vlan_range": utils.join_range(
+                    cluster.network_config.vlan_range)
+            }
+            if filter(lambda net: net.name == consts.NETWORKS.baremetal,
+                      cluster.network_groups):
+                res["phys_nets"]["physnet-ironic"] = {
+                    "bridge": "br-ironic",
+                    "vlan_range": None
+                }
+
+        # Set non-default ml2 configurations
+        attrs = Cluster.get_attributes(cluster).editable
+        if 'neutron_mellanox' in attrs and \
+                attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
+            res['mechanism_drivers'] = 'mlnx,openvswitch'
+            seg_type = cluster.network_config.segmentation_type
+            res['tenant_network_types'] = seg_type
+            res['type_drivers'] = '{0},flat,local'.format(seg_type)
+
+        return res
+
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = []
+
+        iface_types = consts.NETWORK_INTERFACE_TYPES
+
+        has_baremetal = False
+        if filter(lambda net: net['name'] == consts.NETWORKS.baremetal,
+                  node.network_data):
+            has_baremetal = True
+
+        brnames = ['br-fw-admin', 'br-mgmt', 'br-storage']
+        if is_public:
+            brnames.append('br-ex')
+        if has_baremetal:
+            brnames.append('br-baremetal')
+
+        # Add bridges for networks.
+        for brname in brnames:
+            transformations.append(cls.add_bridge(brname))
+
+        if is_public:
+            # br-floating is an OVS bridge and it's always connected with br-ex
+            transformations.append(
+                cls.add_bridge('br-floating', provider='ovs'))
+            transformations.append(cls.add_patch(
+                bridges=['br-floating', 'br-ex'],
+                provider='ovs',
+                mtu=65000))
+
+        if has_baremetal:
+            transformations.append(
+                cls.add_bridge('br-ironic', provider='ovs'))
+            transformations.append(cls.add_patch(
+                bridges=['br-ironic', 'br-baremetal'],
+                provider='ovs'))
+
+        # Dance around Neutron segmentation type.
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            transformations.append(
+                cls.add_bridge('br-prv', provider='ovs'))
+
+            if not prv_base_ep:
+                prv_base_ep = 'br-aux'
+                transformations.append(cls.add_bridge(prv_base_ep))
+
+            transformations.append(cls.add_patch(
+                bridges=['br-prv', prv_base_ep],
+                provider='ovs',
+                mtu=65000))
+
+        elif node.cluster.network_config.segmentation_type == 'gre':
+            transformations.append(
+                cls.add_bridge('br-mesh'))
+
+        # Add ports and bonds.
+        for iface in node.interfaces:
+            if iface.type == iface_types.ether:
+                # Add ports for all networks on every unbonded NIC.
+                if not iface.bond and iface.name in nets_by_ifaces:
+                    tagged = []
+                    for net in nets_by_ifaces[iface.name]:
+                        # Interface must go prior to subinterfaces.
+                        sub_iface = cls.subiface_name(iface.name, net)
+                        if not net['vlan_id']:
+                            transformations.append(cls.add_port(
+                                sub_iface, net['br_name']))
+                        else:
+                            tagged.append(cls.add_port(
+                                sub_iface, net['br_name']))
+                    transformations.extend(tagged)
+            elif iface.type == iface_types.bond:
+                # Add bonds and connect untagged networks' bridges to them.
+                # There can be no more than one untagged network on each bond.
+                bond_params = {
+                    'bond_properties': nm.get_lnx_bond_properties(iface),
+                    'interface_properties': nm.get_iface_properties(iface)
+                }
+                bond_ports = []
+                if iface.name in nets_by_ifaces:
+                    for net in nets_by_ifaces[iface.name]:
+                        if net['vlan_id']:
+                            bond_ports.append(cls.add_port(
+                                cls.subiface_name(iface.name, net),
+                                net['br_name']))
+                        else:
+                            bond_params['bridge'] = net['br_name']
+                transformations.append(cls.add_bond(iface, bond_params))
+                transformations.extend(bond_ports)
+
+        return transformations
+
+    @classmethod
+    def _generate_baremetal_network(cls, cluster):
+        cidr, gateway = db().query(
+            NetworkGroup.cidr,
+            NetworkGroup.gateway
+        ).filter_by(
+            group_id=Cluster.get_default_group(cluster).id,
+            name=consts.NETWORKS.baremetal
+        ).first()
+
+        return {
+            "L3": {
+                "subnet": cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_ranges[0]),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": Cluster.get_creds(cluster)['tenant']['value'],
+            "shared": True
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = {
+            "net04_ext": cls._generate_external_network(cluster),
+            "net04": cls._generate_internal_network(cluster)
+        }
+        if (cluster.attributes.editable['additional_components']['ironic']
+                ['value']):
+            nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets
+
+    @classmethod
     def get_default_network_to_endpoint_mapping(cls, node):
         mapping = {
             consts.NETWORKS.fuelweb_admin: 'br-fw-admin',
             consts.NETWORKS.storage: 'br-storage',
             consts.NETWORKS.management: 'br-mgmt',
             consts.NETWORKS.private: 'br-prv'}
+
+        if filter(lambda net: net['name'] == consts.NETWORKS.baremetal,
+                  node.network_data):
+            mapping[consts.NETWORKS.baremetal] = 'br-baremetal'
 
         if Node.should_have_public(node):
             mapping[consts.NETWORKS.public] = 'br-ex'

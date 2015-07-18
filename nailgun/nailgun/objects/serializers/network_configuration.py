@@ -78,7 +78,7 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
         'dns_nameservers', 'segmentation_type', 'net_l23_provider',
         'floating_ranges', 'vlan_range', 'gre_id_range',
         'base_mac', 'internal_cidr', 'internal_gateway',
-        'configuration_template')
+        'configuration_template', 'baremetal_ranges')
 
     @classmethod
     def serialize_for_cluster(cls, cluster):

@@ -854,7 +854,7 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_admin_ips(instances)
 
     @classmethod
-    def prepare_for_deployment(cls, instances, nst=None):
+    def prepare_for_6_1_deployment(cls, instances, nst=None):
         """Prepare environment for deployment,
         assign management, public, storage, private ips
         """
@@ -868,6 +868,26 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_ips(instances, 'storage')
             if nst == consts.NEUTRON_SEGMENT_TYPES.gre:
                 netmanager.assign_ips(instances, 'private')
+            netmanager.assign_admin_ips(instances)
+
+    @classmethod
+    def prepare_for_deployment(cls, instances, nst=None,
+                               assign_baremetal_ip=False):
+        """Prepare environment for deployment,
+        assign management, public, storage, private ips
+        """
+        cls.update_slave_nodes_fqdn(instances)
+
+        # TODO(enchantner): check network manager instance for each node
+        netmanager = Cluster.get_network_manager()
+        if instances:
+            netmanager.assign_ips(instances, 'management')
+            netmanager.assign_ips(instances, 'public')
+            netmanager.assign_ips(instances, 'storage')
+            if nst == consts.NEUTRON_SEGMENT_TYPES.gre:
+                netmanager.assign_ips(instances, 'private')
+            if assign_baremetal_ip:
+                netmanager.assign_ips(instances, 'baremetal')
             netmanager.assign_admin_ips(instances)
 
     @classmethod

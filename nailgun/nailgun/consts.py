@@ -64,7 +64,8 @@ NETWORKS = Enum(
 
     # private in terms of fuel
     'fixed',
-    'private'
+    'private',
+    'baremetal'
 )
 
 NOVA_NET_MANAGERS = Enum(

@@ -223,6 +223,7 @@ def upgrade():
                     sa.Column('cluster_id', sa.Integer(), nullable=True),
                     sa.Column('dns_nameservers', JSON(), nullable=True),
                     sa.Column('floating_ranges', JSON(), nullable=True),
+                    sa.Column('baremetal_ranges', JSON(), nullable=True),
                     sa.ForeignKeyConstraint(
                         ['cluster_id'], ['clusters.id'], ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id')
@@ -230,7 +231,7 @@ def upgrade():
     op.create_table('network_groups',
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('name', sa.Enum('fuelweb_admin', 'storage',
-                                              'management',
+                                              'management', 'baremetal',
                                               'public', 'fixed', 'private',
                                               name='network_group_name'),
                               nullable=False),

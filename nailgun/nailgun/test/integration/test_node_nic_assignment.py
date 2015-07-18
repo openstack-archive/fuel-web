@@ -462,10 +462,10 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         mac1, mac2 = (self.env.generate_random_mac(),
                       self.env.generate_random_mac())
         meta = self.env.default_metadata()
-        meta['interfaces'] = [{'name': 'eth0', 'mac': mac1},
-                              {'name': 'eth1', 'mac': mac2, 'ip': admin_ip,
-                               'pxe': True}]
-        self.env.create_node(api=True, meta=meta, mac=mac1,
+        meta['interfaces'] = [{'name': 'eth1', 'mac': mac2, 'ip': admin_ip,
+                               'pxe': True},
+                              {'name': 'eth0', 'mac': mac1}]
+        self.env.create_node(api=True, meta=meta, mac=mac2,
                              cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
         admin_iface = self.env.network_manager.get_admin_interface(node_db)

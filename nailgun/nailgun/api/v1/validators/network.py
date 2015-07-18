@@ -287,17 +287,17 @@ class NetAssignmentValidator(BasicValidator):
             iface_nets = [n.get('name')
                           for n in iface.get('assigned_networks')]
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
-                db_iface = next(six.moves.filter(
+                db_ifaces = list(six.moves.filter(
                     lambda i: i.id == iface['id'],
                     db_interfaces
-                ), None)
-                if not db_iface:
+                ))
+                if not db_ifaces:
                     raise errors.InvalidData(
                         "Node '{0}': there is no interface with ID '{1}'"
                         " in DB".format(node['id'], iface['id']),
                         log_message=True
                     )
-                if not db_iface.pxe:
+                if not any(iface.pxe for iface in db_ifaces):
                     if consts.NETWORKS.fuelweb_admin in iface_nets:
                         raise errors.InvalidData(
                             "Node '{0}': admin network can not be assigned to"

@@ -416,10 +416,21 @@ class NetworkManager(object):
         function `get_admin_physical_iface`.
         """
         db_interfaces = node.nic_interfaces
-        pxe = next((
-            i for i in node.meta['interfaces'] if i.get('pxe') or
-                i.get('mac') == node.mac),
-            None)
+
+        # Building index of assigned networks by interface name
+        iface_assigned_nws_idx = {}
+        for db_iface in db_interfaces:
+            iface_assigned_nws_idx[db_iface.name] = \
+                [net.name for net in db_iface.assigned_networks_list]
+
+        def filter_pxe_iface(iface_data):
+            assigned_nws = iface_assigned_nws_idx.get(
+                iface_data.get('name'), [])
+            has_admin_nw = consts.NETWORKS.fuelweb_admin in assigned_nws
+            return iface_data.get('pxe') or has_admin_nw
+
+        pxe = next(six.moves.filter(
+            filter_pxe_iface, node.meta['interfaces']), None)
         if pxe:
             return pxe.get('name')
         pxe_db = next((i for i in db_interfaces if i.pxe), None)

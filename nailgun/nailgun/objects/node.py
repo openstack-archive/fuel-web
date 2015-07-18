@@ -692,8 +692,11 @@ class Node(NailgunObject):
         if admin_iface.type != consts.NETWORK_INTERFACE_TYPES.bond:
             return admin_iface
 
-        iface = filter(lambda i: i.mac == instance.mac, admin_iface.slaves)
-        return iface[0] if iface else admin_iface.slaves[-1]
+        for slave in admin_iface.slaves:
+            if slave.pxe or slave.mac == instance.mac:
+                return slave
+
+        return admin_iface.slaves[-1]
 
     @classmethod
     def remove_from_cluster(cls, instance):

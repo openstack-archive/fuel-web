@@ -187,6 +187,16 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
         self.check_time_exec(func)
 
     @base.evaluate_unit_performance
+    def test_patch_baremetal_network(self):
+        func = functools.partial(
+            self.patch_handler,
+            'ClusterAttributesHandler',
+            {'editable': {'foo': 'bar'}},
+            handler_kwargs={'cluster_id': self.cluster['id']}
+        )
+        self.check_time_exec(func)
+
+    @base.evaluate_unit_performance
     def test_get_default_attributes(self):
         func = functools.partial(
             self.get_handler,

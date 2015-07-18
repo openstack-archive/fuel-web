@@ -109,6 +109,7 @@ class TestNetworkModels(BaseIntegrationTest):
             "internal_cidr": "192.168.111.0/24",
             "internal_gateway": "192.168.111.1",
             "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
+            "baremetal_ranges": [["192.168.3.52", "192.168.3.254"]],
             "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
             "cluster_id": cluster.id,
             "configuration_template": {}

@@ -99,9 +99,11 @@ def upgrade():
     set_deployable_false_for_old_releases()
     upgrade_node_labels()
     extend_segmentation_type()
+    add_baremetal_net_upgrade()
 
 
 def downgrade():
+    add_baremetal_net_downgrade()
     downgrade_node_labels()
     extensions_field_downgrade()
     downgrade_cluster_ui_settings()
@@ -721,3 +723,25 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def add_baremetal_net_upgrade():
+    op.add_column('networking_configs',
+                  sa.Column('baremetal_ranges', fields.JSON(), nullable=True,
+                            server_default=None))
+    name_old = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private')
+    name_new = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private', 'baremetal')
+    upgrade_enum('network_groups', 'name', 'network_group_name', name_old,
+                 name_new)
+
+
+def add_baremetal_net_downgrade():
+    op.drop_column('networking_configs', 'baremetal_ranges')
+    name_old = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private')
+    name_new = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private', 'baremetal')
+    upgrade_enum('network_groups', 'name', 'network_group_name', name_new,
+                 name_old)

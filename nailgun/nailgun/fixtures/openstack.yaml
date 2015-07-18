@@ -107,6 +107,18 @@
         restrictions:
           - condition: "not ('advanced' in version:feature_groups)"
             action: "hide"
+      ironic:
+        name: "Ironic"
+        description: "Ironic conductor"
+        weight: 90
+        limits:
+          min: 1
+          recommended: 3
+        conflicts:
+          - compute
+        restrictions:
+          - condition: "settings:additional_components.ironic.value == false"
+            message: "Ironic should be enabled."
 
     network_roles_metadata:
       -
@@ -255,6 +267,21 @@
         id: "mongo/db"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
+      -
+        id: "ironic/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ironic/baremetal"
+        default_mapping: "baremetal"
+        properties:
+          subnet: true
+          gateway: false
+          vip:
+            -
+              name: "baremetal"
+              namespace: "haproxy"
+              alias: "baremetal_vip"
       -
         id: "fw-admin"
         default_mapping: "fuelweb_admin"
@@ -414,6 +441,18 @@
             render_addr_mask: "private"
             map_priority: 2
             configurable: true
+          - name: "baremetal"
+            cidr: "192.168.3.0/24"
+            ip_range: ["192.168.3.1", "192.168.3.50"]
+            gateway: "192.168.3.51"
+            vlan_start: 104
+            use_gateway: true
+            notation: "ip_ranges"
+            render_type: null
+            map_priority: 2
+            configurable: true
+            optional: true
+            baremetal_range_var: "baremetal_ranges"
         config:
           vlan_range: [1000, 1030]
           gre_id_range: [2, 65535]
@@ -421,6 +460,7 @@
           internal_cidr: "192.168.111.0/24"
           internal_gateway: "192.168.111.1"
           floating_ranges: [["172.16.0.130", "172.16.0.254"]]
+          baremetal_ranges: [["192.168.3.52", "192.168.3.254"]]
           parameters:
             amqp:
               provider: "rabbitmq"
@@ -469,6 +509,8 @@
         virt:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
+        ironic:
+          - {allocate_size: "all", id: "os"}
       volumes:
         - id: "os"
           type: "vg"
@@ -567,7 +609,7 @@
             weight: 10
             type: "text"
             regex:
-              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$)(?!.* +.*$).+'
+              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?!ironic$)(?![Gg]uest$)(?!.* +.*$).+'
               error: "Invalid username"
           email:
             value: "admin@localhost"
@@ -754,6 +796,15 @@
             type: "checkbox"
             restrictions:
               - "settings:additional_components.ceilometer.value == false"
+          ironic:
+            value: false
+            label: "Install Ironic"
+            description: "If selected, Ironic component will be installed"
+            weight: 50
+            type: "hidden"
+            restrictions:
+              - "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
+              - "settings:storage.images_ceph.value == true": "Ironic requires Swift as a backend for Glance image service."
         common:
           metadata:
             label: "Common"
@@ -1173,6 +1224,13 @@
           metadata:
             metadata_proxy_shared_secret:
               generator: "password"
+        ironic:
+          user_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+          swift_tempurl_key:
+            generator: "password"
         puppet:
           manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
           modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"
@@ -1284,6 +1342,15 @@
           description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
+        ironic:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_ironic"
+          description: "dialog.create_cluster_wizard.additional.install_ironic_description"
+          bind: "settings:additional_components.ironic.value"
+          weight: 40
+          restrictions:
+            - "Network.manager != 'neutron-vlan'": "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+            - "Storage.ceph == 'enable'": "dialog.create_cluster_wizard.additional.ironic_storage_mode_alert"
       Ready: {}
     vmware_attributes_metadata:
       editable:

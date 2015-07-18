@@ -167,6 +167,7 @@ def prepare():
             'cluster_id': None,
             'dns_nameservers': ['8.8.8.8'],
             'floating_ranges': [],
+            'baremetal_ranges': [],
             'configuration_template': None,
         }])
     db.execute(
@@ -797,3 +798,24 @@ class TestTunSegmentType(base.BaseAlembicMigrationTest):
                 [self.meta.tables['neutron_config'].c.segmentation_type])).\
             fetchall()
         self.assertIn(('tun',), types)
+
+
+class TestAddBaremetalMigration(base.BaseAlembicMigrationTest):
+
+    def test_baremetal_net_allowed(self):
+        db.execute(
+            self.meta.tables['network_groups'].insert(),
+            [{
+                'id': 3,
+                'name': 'baremetal',
+                'vlan_start': 104,
+                'cidr': '10.40.0.0/24',
+                'gateway': '10.40.0.200'
+            }])
+        ng_table = self.meta.tables['network_groups']
+        result = db.execute(
+            sa.select([ng_table.c.name, ng_table.c.vlan_start,
+                       ng_table.c.cidr, ng_table.c.gateway]).
+            where(ng_table.c.id == 3)).fetchone()
+        check_res = [u'baremetal', 104, u'10.40.0.0/24', u'10.40.0.200']
+        self.assertListEqual(list(result), check_res)

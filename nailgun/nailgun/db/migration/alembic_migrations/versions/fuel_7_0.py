@@ -80,6 +80,12 @@ def upgrade():
         'oswl_stats_cluster_id_created_date_resource_type_unique_key',
         'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
     op.alter_column('clusters', 'name', type_=sa.TEXT())
+    op.add_column(
+                  'networking_configs',
+                  sa.Column(
+                            'baremetal_ranges',
+                            fields.JSON(), nullable=True,
+                            server_default=None))
 
     extend_ip_addrs_model_upgrade()
     extend_node_model_upgrade()
@@ -97,6 +103,7 @@ def upgrade():
     upgrade_cluster_bond_settings()
     extensions_field_upgrade()
     set_deployable_false_for_old_releases()
+    extend_network_groups_name_upgrade()
 
 
 def downgrade():
@@ -113,6 +120,7 @@ def downgrade():
     extend_ip_addrs_model_downgrade()
     downgrade_task_names()
     vms_conf_downgrade()
+    extend_network_groups_name_downgrade()
 
     op.execute('UPDATE clusters SET name=LEFT(name, 50)')
     op.alter_column('clusters', 'name', type_=sa.VARCHAR(50))
@@ -125,6 +133,7 @@ def downgrade():
     op.drop_constraint('nodes_nodegroups_fk', 'nodes', type_='foreignkey')
     op.drop_constraint('network_groups_nodegroups_fk', 'network_groups',
                        type_='foreignkey')
+    op.drop_column('networking_configs', 'baremetal_ranges')
 
 
 def extend_node_model_upgrade():
@@ -682,3 +691,15 @@ def extensions_field_downgrade():
 def set_deployable_false_for_old_releases():
     connection = op.get_bind()
     upgrade_release_set_deployable_false(connection, ['2014.2.2-6.1'])
+
+
+def extend_network_groups_name_upgrade():
+    name_old = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed', 'private')
+    name_new = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed', 'private', 'baremetal')
+    upgrade_enum('network_groups', 'name', 'network_group_name', name_old, name_new)
+
+
+def extend_network_groups_name_downgrade():
+    name_old = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed', 'private')
+    name_new = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed', 'private', 'baremetal')
+    upgrade_enum('network_groups', 'name', 'network_group_name', name_new, name_old)

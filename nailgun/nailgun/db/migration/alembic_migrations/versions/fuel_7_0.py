@@ -80,6 +80,9 @@ def upgrade():
         'oswl_stats_cluster_id_created_date_resource_type_unique_key',
         'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
     op.alter_column('clusters', 'name', type_=sa.TEXT())
+    op.add_column('networking_configs',
+                  sa.Column('baremetal_ranges', fields.JSON(), nullable=True,
+                            server_default=None))
 
     extend_ip_addrs_model_upgrade()
     extend_node_model_upgrade()
@@ -99,9 +102,11 @@ def upgrade():
     set_deployable_false_for_old_releases()
     upgrade_node_labels()
     extend_segmentation_type()
+    extend_network_groups_name_upgrade()
 
 
 def downgrade():
+    extend_network_groups_name_downgrade()
     downgrade_node_labels()
     extensions_field_downgrade()
     downgrade_cluster_ui_settings()
@@ -129,6 +134,7 @@ def downgrade():
     op.drop_constraint('nodes_nodegroups_fk', 'nodes', type_='foreignkey')
     op.drop_constraint('network_groups_nodegroups_fk', 'network_groups',
                        type_='foreignkey')
+    op.drop_column('networking_configs', 'baremetal_ranges')
 
 
 def extend_node_model_upgrade():
@@ -721,3 +727,21 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def extend_network_groups_name_upgrade():
+    name_old = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private')
+    name_new = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private', 'baremetal')
+    upgrade_enum('network_groups', 'name', 'network_group_name', name_old,
+                 name_new)
+
+
+def extend_network_groups_name_downgrade():
+    name_old = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private')
+    name_new = ('fuelweb_admin', 'storage', 'management', 'public', 'fixed',
+                'private', 'baremetal')
+    upgrade_enum('network_groups', 'name', 'network_group_name', name_new,
+                 name_old)

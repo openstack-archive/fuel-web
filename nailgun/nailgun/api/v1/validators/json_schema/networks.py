@@ -35,6 +35,7 @@ NETWORK = {
         'map_priority': {'type': 'number'},
         'configurable': {'type': 'boolean'},
         'floating_range_var': {'type': 'string'},
+        'baremetal_range_var': {'type': 'string'},
         'ext_net_data': {'type': 'array'},
         'vips': VIPS,
     },

@@ -100,7 +100,8 @@
                 "floating": "Floating",
                 "management": "Management",
                 "storage": "Storage",
-                "private": "Private"
+                "private": "Private",
+                "baremetal": "Baremetal"
             },
             "login_page": {
                 "username": "Username",
@@ -570,7 +571,8 @@
                         "ip_ranges": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
-                        "use_vlan_tagging": "Use VLAN tagging"
+                        "use_vlan_tagging": "Use VLAN tagging",
+                        "baremetal_ranges": "Baremetal IP ranges"
                     },
                     "networking_parameters": {
                         "fixed_networks_cidr": "Fixed network CIDR",
@@ -587,7 +589,8 @@
                         "base_mac": "Base MAC address",
                         "internal_cidr": "Internal network CIDR",
                         "internal_gateway": "Internal network gateway",
-                        "floating_ranges": "Floating IP ranges"
+                        "floating_ranges": "Floating IP ranges",
+                        "baremetal_ranges": "Baremetal IP ranges"
                     },
                     "validation": {
                         "large_network": "Network is too large",
@@ -757,7 +760,11 @@
                         "install_murano": "Install Murano",
                         "install_murano_description": "Murano is an application catalog, which allows application developers and cloud administrators to publish various cloud-ready applications in a browsable categorized catalog, which may be used by the cloud users (including the inexperienced ones) to pick-up the needed applications and services and composes the reliable environments out of them in a “push-the-button” manner.",
                         "install_ceilometer": "Install Ceilometer (OpenStack Telemetry)",
-                        "install_ceilometer_description": "Ceilometer provides metering and monitoring of an OpenStack cloud."
+                        "install_ceilometer_description": "Ceilometer provides metering and monitoring of an OpenStack cloud.",
+                        "install_ironic": "Install Ironic",
+                        "install_ironic_description": "Ironic enables baremetal provisioning.",
+                        "ironic_network_mode_alert": "Ironic requires Neutron with VLAN segmentation as a network option.",
+                        "ironic_storage_mode_alert": "Ironic requires Swift object storage as a backend for Glance image service."
                     },
                     "ready": {
                         "title": "Finish",

@@ -389,15 +389,16 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             },
             'eth1': {
                 'interface': 'eth1',
-                'ipaddr': ['10.20.0.129/24']
+                'ipaddr': ['172.16.0.2/24'],
+                'gateway': '172.16.0.1',
+                'default_gateway': True
+
             },
             'eth0': {
                 'interface': 'eth0',
-                'ipaddr': ['172.16.0.2/24',
-                           '192.168.0.1/24',
-                           '192.168.1.1/24'],
-                'gateway': '172.16.0.1',
-                'default_gateway': True
+                'ipaddr': ['192.168.0.1/24',
+                           '192.168.1.1/24',
+                           '10.20.0.129/24'],
             }
         }
         self.datadiff(expected_interfaces, interfaces, ignore_keys=['ipaddr'])
@@ -1791,7 +1792,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 self.assertEqual(
                     {
                         'action': 'add-patch',
-                        'bridges': ['br-eth0', 'br-ex'],
+                        'bridges': ['br-eth1', 'br-ex'],
                         'trunks': [0]
                     } in node['network_scheme']['transformations'],
                     is_public

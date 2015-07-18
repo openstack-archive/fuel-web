@@ -87,10 +87,10 @@ class TestHandlers(BaseIntegrationTest):
 
             'management_interface': 'eth0.101',
             'fixed_interface': 'eth0.103',
-            'fuelweb_admin_interface': 'eth1',
+            'fuelweb_admin_interface': 'eth0',
             'storage_interface': 'eth0.102',
-            'public_interface': 'eth0',
-            'floating_interface': 'eth0',
+            'public_interface': 'eth1',
+            'floating_interface': 'eth1',
             'tasks': [],
 
             'master_ip': '127.0.0.1',
@@ -193,8 +193,8 @@ class TestHandlers(BaseIntegrationTest):
                     'priority': 100,
 
                     'network_data': {
-                        'eth0': {
-                            'interface': 'eth0',
+                        'eth1': {
+                            'interface': 'eth1',
                             'ipaddr': ['%s/24' % ips['public']],
                             'gateway': '172.16.0.1',
                             'default_gateway': True},
@@ -210,8 +210,8 @@ class TestHandlers(BaseIntegrationTest):
                         'lo': {
                             'interface': 'lo',
                             'ipaddr': ['127.0.0.1/8']},
-                        'eth1': {
-                            'interface': 'eth1',
+                        'eth0': {
+                            'interface': 'eth0',
                             'ipaddr': [ips['admin']]}
                     }}
 
@@ -656,11 +656,11 @@ class TestHandlers(BaseIntegrationTest):
                                 "tags": [101, 0]},
                             {
                                 "action": "add-patch",
-                                "bridges": [u"br-eth1", "br-fw-admin"],
+                                "bridges": [u"br-eth0", "br-fw-admin"],
                                 "trunks": [0]},
                             {
                                 "action": "add-patch",
-                                "bridges": [u"br-eth0", "br-ex"],
+                                "bridges": [u"br-eth1", "br-ex"],
                                 "trunks": [0]},
                         ]
                     }
@@ -1123,11 +1123,11 @@ class TestHandlers(BaseIntegrationTest):
                                 "vlan_ids": [101, 0]},
                             {
                                 "action": "add-patch",
-                                "bridges": [u"br-eth1", "br-fw-admin"],
+                                "bridges": [u"br-eth0", "br-fw-admin"],
                                 "trunks": [0]},
                             {
                                 "action": "add-patch",
-                                "bridges": [u"br-eth0", "br-ex"],
+                                "bridges": [u"br-eth1", "br-ex"],
                                 "trunks": [0]},
                         ]
                     }

@@ -922,9 +922,9 @@ class NetworkManager(object):
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
 
-        for interface in node.nic_interfaces:
-            if cls.is_ip_belongs_to_admin_subnet(interface.ip_addr):
-                return interface
+        for iface in node.nic_interfaces:
+            if cls.is_ip_belongs_to_admin_subnet(iface.ip_addr) or iface.pxe:
+                return iface
 
         logger.warning(u'Cannot find admin interface for node '
                        'return first interface: "%s"', node.full_name)

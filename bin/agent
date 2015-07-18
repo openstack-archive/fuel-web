@@ -247,7 +247,7 @@ class NodeAgent
       :memory => (_dmi_memory or _ohai_memory),
     }
 
-    admin_mac = _master_ip_and_mac[:mac] rescue nil
+    admin_mac = (_master_ip_and_mac[:mac] or @os[:macaddress]) rescue nil
     begin
       (@os[:network][:interfaces] or {} rescue {}).each do |int, intinfo|
         # Send info about physical interfaces only

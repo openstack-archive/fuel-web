@@ -671,3 +671,46 @@ class TestHandlers(BaseIntegrationTest):
             # check the node is visible for api
             nodes_data = get_nodes()
             self.assertEqual(len(nodes_data), 1)
+
+    def test_pxe_for_admin_nws_restriction(self):
+        meta = self.env.default_metadata()
+        # We are using reverse ordered by iface name list
+        # for reproducing bug #1474330
+        meta['interfaces'] = [
+            {'name': 'eth1', 'mac': self.env.generate_random_mac(),
+             'pxe': False},
+            {'name': 'eth0', 'mac': self.env.generate_random_mac(),
+             'pxe': False},
+        ]
+        self.env.create(nodes_kwargs=[{'api': False, 'meta': meta}])
+
+        cluster = self.env.clusters[0]
+        node = cluster.nodes[0]
+
+        # Processing data through NodeHandler
+        resp = self.app.get(
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
+            headers=self.default_headers,
+        )
+        data = resp.json_body
+
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': data['id']}),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        # Processing data through NICsHander
+        resp = self.app.get(
+            reverse("NodeNICsHandler", kwargs={"node_id": node.id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json_body
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler", kwargs={"node_id": node.id}),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+        )
+        self.assertEqual(resp.status_code, 200)

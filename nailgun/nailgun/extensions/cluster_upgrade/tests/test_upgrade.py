@@ -18,6 +18,7 @@ import copy
 import six
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.objects.serializers import network_configuration
 from nailgun.test import base
 
@@ -122,3 +123,33 @@ class TestUpgradeHelperCloneCluster(base.BaseIntegrationTest):
             self.orig_cluster.id)
         self.assertEqual(relation.orig_cluster_id, self.orig_cluster.id)
         self.assertEqual(relation.seed_cluster_id, new_cluster.id)
+
+
+class TestUpgradeHelperCloneIPs(base.BaseIntegrationTest):
+    helper = upgrade.UpgradeHelper
+
+    def test_copy_ips_and_hostnames(self):
+        orig_cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}] * 2)
+        seed_cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}] * 2)
+        self.helper.get_default_deployment_info(orig_cluster, '')
+
+        self.helper.copy_controllers_ips_and_hostnames(
+            orig_cluster.id, seed_cluster.id)
+
+        orig_manager = objects.Cluster.get_network_manager(
+            instance=orig_cluster)
+        seed_manager = objects.Cluster.get_network_manager(
+            instance=seed_cluster)
+
+        for orig_node in orig_cluster.nodes:
+            seed_node = objects.Node.get_by_hostname(
+                orig_node.hostname, seed_cluster.id)
+            orig_ips_by_net_names = orig_manager.get_node_networks_ips(
+                orig_node)
+            seed_ips_by_net_names = seed_manager.get_node_networks_ips(
+                seed_node)
+            self.assertEquals(orig_ips_by_net_names, seed_ips_by_net_names)

@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators import base
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 
@@ -78,3 +79,37 @@ class ClusterUpgradeValidator(base.BasicValidator):
                 "Upgrade is not possible because of the original cluster is "
                 "already involed in the upgrade routine.",
                 log_message=True)
+
+
+class NodeReassignValidator(base.BasicValidator):
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Assign Node Parameters",
+        "description": "Serialized parameters to assign node",
+        "type": "object",
+        "properties": {
+            "node_id": {"type": "number"},
+        },
+    }
+
+    @classmethod
+    def validate(cls, data, cluster):
+        data = super(NodeReassignValidator, cls).validate(data)
+        cls.validate_schema(data, cls.schema)
+        cls.validate_node(data['node_id'])
+        return data
+
+    @classmethod
+    def validate_node(cls, node_id):
+        node = objects.Node.get_by_uid(node_id)
+
+        if not node:
+            raise errors.ObjectNotFound("Node with id {0} was not found".
+                                        format(node_id), log_message=True)
+
+        # node can go to error state while upgrade process
+        if node.status not in (consts.NODE_STATUSES.ready,
+                               consts.NODE_STATUSES.provisioned,
+                               consts.NODE_STATUSES.error):
+            raise errors.InvalidData("Node should be in ready state",
+                                     log_message=True)

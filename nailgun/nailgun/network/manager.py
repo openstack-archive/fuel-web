@@ -37,6 +37,7 @@ from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import NodeNICInterface
@@ -168,6 +169,54 @@ class NetworkManager(object):
                                network=admin_net.id)
                 db().add(ip_db)
             db().flush()
+
+    @classmethod
+    def get_node_networks_ips(cls, node):
+        return dict(db().query(NetworkGroup.name, IPAddr.ip_addr).\
+            filter(NetworkGroup.group_id == node.group_id).\
+            filter(IPAddr.network == NetworkGroup.id).\
+            filter(IPAddr.node == node.id).\
+            all())
+
+    @classmethod
+    def set_node_networks_ips(cls, node, ips_by_network_name):
+        ngs = db().query(NetworkGroup.name, IPAddr).\
+            filter(NetworkGroup.group_id == node.group_id).\
+            filter(IPAddr.network == NetworkGroup.id).\
+            filter(IPAddr.node == node.id).\
+            filter(NetworkGroup.name.in_(ips_by_network_name)).\
+            all()
+        for ng_name, ip_addr in ngs:
+            ip_addr.ip_addr = ips_by_network_name[ng_name]
+        db().flush()
+
+    @classmethod
+    def set_node_netgroups_ids(cls, node, netgroups_id_mapping):
+        ip_addrs = db().query(IPAddr).filter(IPAddr.node == node.id).all()
+        for ip_addr in ip_addrs:
+            ip_addr.network = netgroups_id_mapping[ip_addr.network]
+        db().flush()
+
+    @classmethod
+    def set_nic_assignment_netgroups_ids(cls, node, netgroups_id_mapping):
+        nic_assignments = db.query(NetworkNICAssignment).\
+            join(NodeNICInterface).\
+            filter(NodeNICInterface.node_id == node.id).\
+            all()
+        for nic_assignment in nic_assignments:
+            nic_assignment.network_id = \
+                netgroups_id_mapping[nic_assignment.network_id]
+        db().flush()
+
+    @classmethod
+    def set_bond_assignment_netgroups_ids(cls, node, netgroups_id_mapping):
+        bond_assignments = db.query(NetworkBondAssignment).\
+            join(NodeBondInterface).\
+            filter(NodeBondInterface.node_id == node.id).\
+            all()
+        for bond_assignment in bond_assignments:
+            bond_assignment.network_id = \
+                netgroups_mapping[bond_assignment.network_id]
 
     @classmethod
     def assign_ips(cls, nodes, network_name):

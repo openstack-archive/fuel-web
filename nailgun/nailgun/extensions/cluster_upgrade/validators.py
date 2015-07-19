@@ -77,3 +77,46 @@ class ClusterUpgradeValidator(base.BasicValidator):
                 "Upgrade is not possible because of the original cluster is "
                 "already involed in the upgrade routine.",
                 log_message=True)
+
+
+class ClusterCloneIPsValidator(base.BasicValidator):
+
+    @classmethod
+    def validate(cls, data, cluster):
+        seed_cluster_id = cls.validate_orig_cluster(cluster)
+        cls.validate_controllers_amount(cluster, seed_cluster_id)
+
+        return seed_cluster_id
+
+    @classmethod
+    def validate_orig_cluster(cls, cluster_id):
+        from .objects.relations import UpgradeRelationObject
+        relation = UpgradeRelationObject.get_cluster_relations(cluster_id)
+
+        if not relation:
+            raise errors.IvalidData(
+                "Cluster with ID {0} is not in upgrade stage"
+                .format(cluster_id),
+                log_message=True)
+
+        if relation.orig_cluster_id != cluster_id:
+            raise errors.InvalidData(
+                "Need original cluster ID [{0}] instead of seed"
+                " ID[{1}]".format(relation.seed_cluster_id, cluster_id))
+
+        return relation.seed_cluster_id
+
+    @classmethod
+    def validate_controllers_amount(cls, orig_cluster_id, seed_cluster_id):
+        seed_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            seed_cluster_id)
+        orig_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            orig_cluster_id)
+
+        seed_controllers = adapters.NailgunClusterAdapter.get_nodes_by_role(
+            seed_cluster, 'controllers')
+        orig_controllers = adapters.NailgunClusterAdapter.get_nodes_by_role(
+            orig_cluster, 'controllers')
+        if len(seed_controllers) > len(orig_controllers):
+            raise errors.InvalidData("Original cluster has less"
+                                     " controllers than seed cluster")

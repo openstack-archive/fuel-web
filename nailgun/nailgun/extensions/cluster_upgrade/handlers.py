@@ -50,3 +50,28 @@ class ClusterUpgradeHandler(base.BaseHandler):
         new_cluster = upgrade.UpgradeHelper.clone_cluster(orig_cluster,
                                                           request_data)
         return self.single.to_json(new_cluster)
+
+
+class ClusterCloneIPsHandler(base.BaseHandler):
+    validator = validators.ClusterCloneIPsValidator
+
+    @base.content
+    def POST(self, cluster_id):
+        """Initialize the clone of IPs
+
+        Set IPs and hostnames to new controllers for all networks except admin
+        according controllers from original cluster.
+
+        :param cluster_id: ID of the original cluster which controllers IPs
+                           would be cloned
+        :returns: None
+        :http: * 200 (OK)
+               * 400 (clone parameters are invalid)
+               * 404 (cluster not found in db)
+        """
+        from . import upgrade
+
+        seed_cluster_id = self.checked_data(cluster=cluster_id)
+
+        upgrade.UpgradeHelper.copy_ips_and_hostnames(
+            cluster_id, seed_cluster_id)

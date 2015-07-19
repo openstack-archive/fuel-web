@@ -168,6 +168,24 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
+    def get_node_networks_ips(cls, node):
+        ips_by_network_name = {}
+        for ip_addr in node.ip_addrs:
+            network = db().query(NetworkGroup).\
+                    filter(NetworkGroup.id == ip_addr.network).first()
+            ips_by_network_name[network.name] = ip_addr.ip_addr
+        return ips_by_network_name
+
+    @classmethod
+    def set_node_networks_ips(cls, node, ips_by_network_name):
+        for ip_addr in node.ip_addrs:
+            network = db().query(NetworkGroup).\
+                    filter(NetworkGroup.id == ip_addr.network).first()
+            if network.name in ips_by_network_name:
+                ip_addr.ip_addr = ips_by_network_name[network.name]
+        db().flush()
+
+    @classmethod
     def assign_ips(cls, nodes, network_name):
         """Idempotent assignment IP addresses to nodes.
 

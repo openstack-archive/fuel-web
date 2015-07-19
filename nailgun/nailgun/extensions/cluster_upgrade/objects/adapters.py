@@ -62,6 +62,9 @@ class NailgunClusterAdapter(object):
             instance=self.cluster)
         return NailgunNetworkManager(self.cluster, net_manager)
 
+    def get_nodes_by_role(self, role):
+        return objects.Cluster.get_nodes_by_role(self.cluster, role)
+
     @classmethod
     def get_by_uid(cls, cluster_id):
         cluster = objects.Cluster.get_by_uid(cluster_id)
@@ -110,6 +113,12 @@ class NailgunNetworkManager(object):
     def get_admin_network_group(self, node_id=None):
         ng = self.net_manager.get_admin_network_group(node_id)
         return NailgunNetworkGroupAdapter(ng)
+
+    def get_node_networks_ips(self, node):
+        return self.net_manager.get_node_networks_ips(node)
+
+    def set_node_networks_ips(self, node, ips_by_network_name):
+        self.net_manager.set_node_networks_ips(node, ips_by_network_name)
 
 
 class NailgunNodeAdapter(object):

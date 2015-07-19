@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import copy
 
 from nailgun import consts
@@ -21,6 +22,8 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun.objects.serializers import network_configuration
+from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import deployment_serializers
 from nailgun import utils
 
 
@@ -127,3 +130,39 @@ class UpgradeHelper(object):
         net_manager.update(new_cluster, nets)
         copy_vips(orig_cluster, new_cluster)
         net_manager.assign_vips_for_net_groups(new_cluster)
+
+    @classmethod
+    def clone_ips(cls, orig_cluster_id, seed_cluster_id):
+        seed_cluster = objects.Cluster.get_by_uid(seed_cluster_id)
+        orig_cluster = objects.Cluster.get_by_uid(orig_cluster_id)
+
+        seed_controllers = objects.Cluster.get_nodes_by_role(seed_cluster,
+                                                             'controller')
+        orig_controllers = objects.Cluster.get_nodes_by_role(orig_cluster,
+                                                             'controller')
+
+        cls.assign_ips(seed_cluster, seed_controllers)
+
+        node_by_net_names = collections.defaultdict(list)
+        net_by_node = {}
+
+        for node in orig_controllers:
+            net_names = sorted(addr.network.name for addr in node.ip_addrs)
+            net_by_node[node] = dict((addr.network.name, addr.ip_addr)
+                                     for addr in node.ip_addrs)
+            node_by_net_names[net_names].append(node)
+
+        for node in seed_controllers:
+            net_names = sorted(addr.network.name for addr in node.ip_addrs)
+            orig_node = node_by_net_names[net_names].pop()
+            for addr in node.ip_addrs:
+                addr.ip_addr = net_by_node[orig_node][addr.network.name]
+
+        db.flush()
+
+    @staticmethod
+    def assign_ips(cluster, nodes):
+        # copied from DefaultDeploymentInfo
+        graph = deployment_graph.AstuteGraph(cluster)
+        deployment_serializers.serialize(graph, cluster, nodes,
+                                         ignore_customized=True)

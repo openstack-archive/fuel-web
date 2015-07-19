@@ -128,3 +128,35 @@ class TestClusterUpgradeValidator(base.BaseTestCase):
         mock_cluster_adapter.return_value = cluster = mock.Mock(id=42)
         with self.assertRaises(errors.InvalidData):
             self.validator.validate(data, cluster)
+
+
+class TestNodeReassignValidator(base.BaseTestCase):
+    validator = validators.NodeReassignValidator
+
+    @mock.patch(EXTENSION + "validators.adapters.NailgunNodeAdapter."
+                "get_by_uid")
+    def test_validate_node_not_found(self, mock_gbu):
+        mock_gbu.return_value = None
+        with self.assertRaises(errors.ObjectNotFound):
+            self.validator.validate_node(42)
+
+    @mock.patch(EXTENSION + "validators.adapters.NailgunNodeAdapter."
+                "get_by_uid")
+    def test_validate_node_wrong_status(self, mock_gbu):
+        mock_gbu.return_value = mock.Mock(status='wrong_state')
+        with self.assertRaises(errors.InvalidData):
+            self.validator.validate_node(42)
+
+    @mock.patch(EXTENSION + "validators.adapters.NailgunNodeAdapter."
+                "get_by_uid")
+    def test_validate_node_wrong_error_type(self, mock_gbu):
+        mock_gbu.return_value = mock.Mock(status='error',
+                                          error_type='wrong')
+        with self.assertRaises(errors.InvalidData):
+            self.validator.validate_node(42)
+
+    def test_validate_node_cluster(self):
+        node = mock.Mock(id=42, cluster_id=42)
+        cluster = mock.Mock(id=42)
+        with self.assertRaises(errors.InvalidData):
+            self.validator.validate_node_cluster(node, cluster)

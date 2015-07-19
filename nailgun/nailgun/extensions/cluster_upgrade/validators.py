@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators import base
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 
@@ -78,3 +79,55 @@ class ClusterUpgradeValidator(base.BasicValidator):
                 "Upgrade is not possible because of the original cluster is "
                 "already involed in the upgrade routine.",
                 log_message=True)
+
+
+class NodeReassignValidator(base.BasicValidator):
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Assign Node Parameters",
+        "description": "Serialized parameters to assign node",
+        "type": "object",
+        "properties": {
+            "node_id": {"type": "number"},
+        },
+    }
+
+    @classmethod
+    def validate(cls, data, cluster):
+        data = super(NodeReassignValidator, cls).validate(data)
+        cls.validate_schema(data, cls.schema)
+        node = cls.validate_node(data['node_id'])
+        cls.validate_node_cluster(node, cluster)
+        return data
+
+    @classmethod
+    def validate_node(cls, node_id):
+        node = adapters.NailgunNodeAdapter.get_by_uid(node_id)
+
+        if not node:
+            raise errors.ObjectNotFound("Node with id {0} was not found.".
+                                        format(node_id), log_message=True)
+
+        # node can go to error state while upgrade process
+        allowed_statuses = (consts.NODE_STATUSES.ready,
+                            consts.NODE_STATUSES.provisioned,
+                            consts.NODE_STATUSES.error)
+        if node.status not in allowed_statuses:
+            raise errors.InvalidData("Node should be in one of statuses: {0}."
+                                     " Currently node has {1} status.".
+                                     format(allowed_statuses, node.status),
+                                     log_message=True)
+        if node.status == consts.NODE_STATUSES.error and\
+           node.error_type != consts.NODE_ERRORS.deploy:
+            raise errors.InvalidData("Node should be in error state only with"
+                                     "deploy error type. Currently error type"
+                                     " of node is {0}".format(node.error_type),
+                                     log_message=True)
+        return node
+
+    @classmethod
+    def validate_node_cluster(cls, node, cluster):
+        if node.cluster_id == cluster.id:
+            raise errors.InvalidData("Node {0} already is assigned to cluster"
+                                     " {1}".format(node.id, cluster.id),
+                                     log_message=True)

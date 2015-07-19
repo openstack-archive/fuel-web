@@ -78,3 +78,24 @@ class ClusterUpgradeValidator(base.BasicValidator):
                 "Upgrade is not possible because of the original cluster is "
                 "already involed in the upgrade routine.",
                 log_message=True)
+
+
+class NodeReassignValidator(base.BasicValidator):
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Assign Node Parameters",
+        "description": "Serialized parameters to assign node",
+        "type": "object",
+        "properties": {
+            "node_id": {"type": "number"},
+        },
+    }
+
+    @classmethod
+    def validate(cls, data, cluster_id):
+        data = super(NodeReassignValidator, cls).validate(data)
+        cls.validate_schema(data, cls.schema)
+        # check cluster_id existence
+        # check node_id existence
+        # check node status (ready)
+        # check something else

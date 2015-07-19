@@ -50,3 +50,24 @@ class ClusterUpgradeHandler(base.BaseHandler):
         new_cluster = upgrade.UpgradeHelper.clone_cluster(orig_cluster,
                                                           request_data)
         return self.single.to_json(new_cluster)
+
+
+class NodeReassignHandler(base.BaseHandler):
+    single = objects.Cluster
+    validator = validators.NodeReassignValidator
+
+    @base.content
+    def POST(self, cluster_id):
+        """Reassign node to cluster via reinstallation
+
+           :param cluster_id: ID of the cluster which node should be
+                              assigned to.
+           :returns: None
+           :http: * 200 (OK)
+        """
+        from . import upgrade
+
+        data = self.checked_data(cluster_id=cluster_id)
+
+        upgrade.UpgradeHelper.assign_node_to_cluster(
+            cluster_id, data['node_id'])

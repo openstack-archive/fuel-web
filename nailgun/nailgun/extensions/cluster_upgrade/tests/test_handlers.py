@@ -93,3 +93,72 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         self.assertEqual(400, resp.status_code)
         self.assertRegexpMatches(resp.json_body['message'],
                                  "^Node should be in one of statuses:")
+
+
+class ClusterCloneIPsHandler(base.BaseIntegrationTest):
+
+    def test_cluster_clone_ips_handler(self):
+        orig_cluster = self.env.create(api=False)
+        seed_cluster = self.env.create(
+            api=False,
+            nodes_kwargs=[{'role': 'controller'}])
+
+        from ..objects import relations
+        relations.UpgradeRelationObject.create_relation(orig_cluster['id'],
+                                                        seed_cluster['id'])
+
+        resp = self.app.post(
+            reverse('ClusterCloneIPsHandler',
+                    kwargs={'cluster_id': orig_cluster['id']}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+
+    def test_cluster_clone_ips_handler_no_relation(self):
+        orig_cluster = self.env.create(api=False)
+
+        resp = self.app.post(
+            reverse('ClusterCloneIPsHandler',
+                    kwargs={'cluster_id': orig_cluster['id']}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual("Cluster with ID {0} is not in upgrade stage."
+                         .format(orig_cluster['id']),
+                         resp.json_body['message'])
+
+    def test_cluster_clone_ips_handler_wrong_cluster_id(self):
+        orig_cluster = self.env.create(api=False)
+        seed_cluster = self.env.create(
+            api=False,
+            nodes_kwargs=[{'role': 'controller'}])
+
+        from ..objects import relations
+        relations.UpgradeRelationObject.create_relation(orig_cluster['id'],
+                                                        seed_cluster['id'])
+
+        resp = self.app.post(
+            reverse('ClusterCloneIPsHandler',
+                    kwargs={'cluster_id': seed_cluster['id']}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual("There is no original cluster with ID {0}."
+                         .format(seed_cluster['id']),
+                         resp.json_body['message'])
+
+    def test_cluster_clone_ips_handler_wrong_controllers_amount(self):
+        orig_cluster = self.env.create(api=False)
+        seed_cluster = self.env.create(api=False)
+
+        from ..objects import relations
+        relations.UpgradeRelationObject.create_relation(orig_cluster['id'],
+                                                        seed_cluster['id'])
+
+        resp = self.app.post(
+            reverse('ClusterCloneIPsHandler',
+                    kwargs={'cluster_id': orig_cluster['id']}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual("Seed cluster should has at least one controller",
+                         resp.json_body['message'])

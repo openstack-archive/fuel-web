@@ -69,6 +69,19 @@ class NailgunClusterAdapter(object):
     def to_json(self):
         return objects.Cluster.to_json(self.cluster)
 
+    @classmethod
+    def get_by_uid(cls, cluster_id):
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        return cls(cluster)
+
+    def get_network_groups(self):
+        return (NailgunNetworkGroupAdapter(ng)
+                for ng in self.cluster.network_groups)
+
+    def get_admin_network_group(self):
+        manager = self.get_network_manager()
+        return manager.get_admin_network_group()
+
 
 class NailgunReleaseAdapter(object):
     def __init__(self, release):
@@ -106,3 +119,81 @@ class NailgunNetworkManager(object):
 
     def assign_given_vips_for_net_groups(self, vips):
         self.net_manager.assign_given_vips_for_net_groups(self.cluster, vips)
+
+    def get_admin_network_group(self, node_id=None):
+        ng = self.net_manager.get_admin_network_group(node_id)
+        return NailgunNetworkGroupAdapter(ng)
+
+    def set_node_netgroups_ids(self, node, mapping):
+        return self.net_manager.set_node_netgroups_ids(node.node, mapping)
+
+    def set_nic_assignment_netgroups_ids(self, node, mapping):
+        return self.net_manager.set_nic_assignment_netgroups_ids(
+            node.node, mapping)
+
+    def set_bond_assignment_netgroups_ids(self, node, mapping):
+        return self.net_manager.set_bond_assignment_netgroups_ids(
+            node.node, mapping)
+
+
+class NailgunNodeAdapter(object):
+
+    def __new__(cls, node=None):
+        if not node:
+            return None
+        return super(NailgunNodeAdapter, cls).__new__(cls, node)
+
+    def __init__(self, node):
+        self.node = node
+
+    @property
+    def id(self):
+        return self.node.id
+
+    @property
+    def cluster_id(self):
+        return self.node.cluster_id
+
+    @property
+    def hostname(self):
+        return self.node.hostname
+
+    @hostname.setter
+    def hostname(self, hostname):
+        self.node.hostname = hostname
+
+    @property
+    def status(self):
+        return self.node.status
+
+    @property
+    def error_type(self):
+        return self.node.error_type
+
+    @classmethod
+    def get_by_uid(cls, node_id):
+        return cls(objects.Node.get_by_uid(node_id))
+
+    @property
+    def roles(self):
+        return self.node.roles
+
+    def update_cluster_assignment(self, cluster):
+        objects.Node.update_cluster_assignment(self.node, cluster)
+
+    def add_pending_change(self, change):
+        objects.Node.add_pending_change(self.node, change)
+
+
+class NailgunNetworkGroupAdapter(object):
+
+    def __init__(self, network_group):
+        self.network_group = network_group
+
+    @property
+    def id(self):
+        return self.network_group.id
+
+    @property
+    def name(self):
+        return self.network_group.name

@@ -30,6 +30,8 @@ class ClusterUpgradeExtension(extensions.BaseExtension):
          'handler': handlers.ClusterUpgradeHandler},
         {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/clone_ips/?$',
          'handler': handlers.ClusterCloneIPsHandler},
+        {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/assing/?$',
+         'handler': handlers.NodeReassginHandler},
     ]
 
     @classmethod

@@ -172,3 +172,63 @@ class UpgradeHelper(object):
         graph = deployment_graph.AstuteGraph(cluster)
         deployment_serializers.serialize(graph, cluster, nodes,
                                          ignore_customized=True)
+
+    @classmethod
+    def assign_node_to_cluster(cls, cluster_id, node_id):
+        node = adapters.NailgunNodeAdapter.get_by_uid(node_id)
+
+        dst_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            cluster_id)
+        src_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            node.cluster_id)
+
+        src_manager = dst_cluster.get_network_manager()
+
+        netgroups_id_mapping = cls.get_netgroups_id_mapping(
+            src_cluster, dst_cluster)
+
+        node_roles = node.roles
+        node.update_roles([])
+        node.update_pending_roles(node_roles)
+
+        node.replaced_deployment_info = []
+        node.deployment_info = []
+        node.kernel_params = None
+        node.cluster_id = dst_cluster.id
+        node.group_id = None
+
+        node.assgin_group()
+
+        # change ip_addrs.network
+        src_manager.set_node_netgroups_ids(node.node, netgroups_id_mapping)
+
+        # change nic_assignment
+        src_manager.set_nic_assigment_netgroups_ids(
+            node.node, netgroups_id_mapping)
+
+        # change bond_assignment
+        src_manager.set_bond_assigment_netgroups_ids(
+            node.node, netgroups_id_mapping)
+
+        node.add_pending_change(consts.CLUSTER_CHANGES.interfaces)
+
+        cls.run_reinstallation_task(node)
+
+    @classmethod
+    def get_netgroups_id_mapping(src_cluster, dst_cluster):
+        src_ng = src_cluster.get_network_groups()
+        dst_ng = dst_cluster.get_network_groups()
+
+        dst_ng_dict = dict((ng.name, ng.id) for ng in dst_ng)
+
+        mapping = dict((ng.id, dst_ng_dict[ng.name]) for ng in src_ng)
+
+        mapping[src_cluster.get_admin_network_group().id] = \
+            dst_cluster.get_admin_network_group().id
+
+        return mapping
+
+    @classmethod
+    def run_reinstallation_task(cls, node):
+        # some node reinstallation task
+        pass

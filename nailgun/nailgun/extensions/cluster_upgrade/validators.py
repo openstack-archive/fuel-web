@@ -126,3 +126,15 @@ class ClusterCloneIPsValidator(base.BasicValidator):
             raise errors.InvalidData("Original cluster has less"
                                      " controllers than seed cluster",
                                      log_message=True)
+
+
+class NodeRelocateValidator(base.BasicValidator):
+    single_schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Assign Node Parameters",
+        "description": "Serialized parameters to assign node",
+        "type": "object",
+        "properties": {
+            "node_id": {"type": "number"},
+        },
+    }

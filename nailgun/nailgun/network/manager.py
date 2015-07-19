@@ -188,6 +188,34 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
+    def set_node_netgroups_ids(cls, node, netgroups_id_mapping):
+        ip_addrs = db().query(IPAddr).filter(IPAddr.node == node.id).all()
+        for ip_addr in in_addrs:
+            ip_addr.network = netgroups_id_mapping[ip_addr.network]
+        db().flush()
+
+    @classmethod
+    def set_nic_assigment_netgroups_ids(cls, node, netgroups_id_mapping):
+        nic_assignments = db.query(NetworkNICAssignment).\
+            join(NodeNICInterface).\
+            filter(NodeNICInterface.node_id == node.id).\
+            all()
+        for nic_assignment in nic_assignments:
+            nic_assignment.network_id = \
+                netgroups_id_mapping[nic_assignment.network_id]
+        db().flush()
+
+    @classmethod
+    def set_bond_assigment_netgroups_ids(cls, node, netgroups_id_mapping):
+        bond_assignments = db.query(NetworkBondAssignment).\
+            join(NodeBondInterface).\
+            filter(NodeBondInterface.node_id == node.id).\
+            all()
+        for bond_assignment in bond_assignments:
+            bond_assignment.network_id = \
+                netgroups_mapping[bond_assignment.network_id]
+
+    @classmethod
     def assign_ips(cls, nodes, network_name):
         """Idempotent assignment IP addresses to nodes.
 

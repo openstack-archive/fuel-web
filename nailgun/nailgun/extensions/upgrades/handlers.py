@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import copy
 
 from nailgun.api.v1.handlers import base
@@ -239,3 +240,68 @@ class NodeRelocateHandler(base.BaseHandler):
             }
         )
         rpc.cast('naily', msg_delete)
+
+
+class ClusterCloneIPsHandler(base.BaseHandler):
+    validator = validators.ClusterCloneIPsValidator
+
+    @base.content
+    def POST(self, cluster_id):
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        data = self.checked_data()
+        original_id = data["original_cluster_id"]
+        orig_cluster = self.get_object_or_404(objects.Cluster, original_id)
+
+        new_controllers = objects.Cluster.get_nodes_by_role(
+            cluster, 'controller')
+        self.assign_ips(cluster, new_controllers)
+        orig_controllers = objects.Cluster.get_nodes_by_role(
+            orig_cluster, 'controller')
+
+        orig_addrs_by_node = []
+        orig_addrs_by_net = collections.defaultdict(dict)
+        for node in orig_controllers:
+            node_ips = {}
+            for addr in node.ip_addrs:
+                net_name = addr.network_data.name
+                node_ips[net_name] = addr.ip_addr
+                orig_addrs_by_net[net_name][addr.ip_addr] = node_ips
+            orig_addrs_by_node.append(node_ips)
+
+        new_addrs_by_node = []
+        for node in new_controllers:
+            node_ips = []
+            candidate = None
+            for addr in node.ip_addrs:
+                net_name = addr.network_data.name
+                node_ips.append((net_name, addr))
+                if addr.ip_addr in orig_addrs_by_net[net_name]:
+                    new_candidate = orig_addrs_by_net[net_name][addr.ip_addr]
+                    if candidate is None:
+                        candidate = new_candidate
+                    elif new_candidate is not candidate:
+                        raise Exception("IPs on one new node match different"
+                                        " original nodes")
+            new_addrs_by_node.append((node, node_ips, candidate))
+            if candidate is not None:
+                orig_addrs_by_node.remove(candidate)
+
+        for node, node_ips, old_ips in new_addrs_by_node:
+            if old_ips is None:
+                old_ips = orig_addrs_by_node.pop()
+            for net_name, addr in node_ips:
+                addr.ip_addr = old_ips[net_name]
+        db.commit()
+
+    @staticmethod
+    def assign_ips(cluster, nodes):
+        # Taken from nailgun.orchestrator.deployment_serializers:serialize
+        objects.Cluster.set_primary_roles(cluster, nodes)
+        env_version = utils.extract_env_version(cluster.release.version)
+
+        # Only assign IPs for private (GRE) network in 6.1+
+        if any([env_version.startswith(v) for v in ['5.0', '5.1', '6.0']]):
+            objects.NodeCollection.prepare_for_lt_6_1_deployment(cluster.nodes)
+        else:
+            nst = cluster.network_config.get('segmentation_type')
+            objects.NodeCollection.prepare_for_deployment(cluster.nodes, nst)

@@ -40,3 +40,15 @@ class NodeRelocateValidator(base.BasicValidator):
             "node_id": {"type": "number"},
         },
     }
+
+
+class ClusterCloneIPsValidator(base.BasicValidator):
+    single_schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Cluster Clone IPs",
+        "description": "Serialized parameters to clone IPs to seed cluster",
+        "type": "object",
+        "properties": {
+            "original_cluster_id": {"type": "number"},
+        },
+    }

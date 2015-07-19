@@ -14,14 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import copy
 
 from nailgun import consts
 from nailgun import objects
 from nailgun.objects.serializers import network_configuration
+from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import deployment_serializers
 from nailgun import utils
 
-from . import adapters
+from .objects.adapters import NailgunClusterAdapter
+from .objects.adapters import NailgunNodeAdapter
 
 
 def merge_attributes(a, b):
@@ -79,7 +83,7 @@ class UpgradeHelper(object):
         create_data = orig_cluster.get_create_data()
         create_data["name"] = data["name"]
         create_data["release_id"] = data["release_id"]
-        new_cluster = adapters.NailgunClusterAdapter(
+        new_cluster = NailgunClusterAdapter(
             objects.Cluster.create(create_data))
         return new_cluster
 
@@ -110,3 +114,53 @@ class UpgradeHelper(object):
                 vips.pop(ng_name)
         new_net_manager.assign_given_vips_for_net_groups(new_cluster, vips)
         new_net_manager.assign_vips_for_net_groups(new_cluster)
+
+    @classmethod
+    def copy_ips_and_hostnames(cls, orig_cluster_id, seed_cluster_id):
+        seed_cluster = NailgunClusterAdapter.get_by_uid(
+            seed_cluster_id)
+        orig_cluster = NailgunClusterAdapter.get_by_uid(
+            orig_cluster_id)
+
+        seed_controllers = NailgunClusterAdapter.get_nodes_by_role(
+            seed_cluster, 'controller')
+        orig_controllers = NailgunClusterAdapter.get_nodes_by_role(
+            orig_cluster, 'controller')
+
+        seed_manager = NailgunClusterAdapter(seed_cluster).\
+            get_network_manager()
+        orig_manager = NailgunClusterAdapter(orig_cluster).\
+            get_network_manager()
+
+        # Need to allocate ips for seed controllers
+        cls.get_default_deployment_info(seed_cluster, seed_controllers)
+
+        node_by_net_names = collections.defaultdict(list)
+        net_by_node = collections.defaultdict(dict)
+
+        # controller nodes will be mapped by set of network group names
+        for orig_node in orig_controllers:
+            node = NailgunNodeAdapter(orig_node)
+            ip_by_network_name = orig_manager.node_ip_by_network_name(
+                orig_node)
+            net_by_node[node] = ip_by_network_name
+            net_names = tuple(sorted(k for k, v in ip_by_network_name.items()))
+            node_by_net_names[net_names].append(node)
+
+        for seed_node in seed_controllers:
+            node = NailgunNodeAdapter(seed_node)
+            ip_by_network_name = seed_manager.node_ip_by_network_name(
+                seed_node)
+            net_names = tuple(sorted(k for k, v in ip_by_network_name.items()))
+            orig_node = node_by_net_names[net_names].pop()
+
+            node.hostname = orig_node.hostname
+            seed_manager.set_ips(seed_node, net_by_node[orig_node])
+
+    @staticmethod
+    def get_default_deployment_info(cluster, nodes):
+        # copied from DefaultDeploymentInfo
+
+        graph = deployment_graph.AstuteGraph(cluster)
+        deployment_serializers.serialize(graph, cluster, nodes,
+                                         ignore_customized=True)

@@ -27,6 +27,10 @@ class UpgradeRelationObject(object):
             (models.UpgradeRelation.seed_cluster_id == cluster_id))
 
     @classmethod
+    def get_cluster_relations(cls, cluster_id):
+        return cls._query_cluster_relations(cluster_id).first()
+
+    @classmethod
     def delete_relation(cls, cluster_id):
         cls._query_cluster_relations(cluster_id).delete()
 

@@ -62,6 +62,14 @@ class NailgunClusterAdapter(object):
             instance=self.cluster)
         return NailgunNetworkManager(self.cluster, net_manager)
 
+    def get_nodes_by_role(self, role):
+        return objects.Cluster.get_nodes_by_role(self.cluster, role)
+
+    @classmethod
+    def get_by_uid(cls, cluster_id):
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        return cls(cluster)
+
 
 class NailgunReleaseAdapter(object):
     def __init__(self, release):
@@ -93,3 +101,23 @@ class NailgunNetworkManager(object):
 
     def assign_given_vips_for_net_groups(self, vips):
         self.net_manager.assign_given_vips_for_net_groups(self.cluster, vips)
+
+    def get_node_networks_ips(self, node):
+        return self.net_manager.get_node_networks_ips(node)
+
+    def set_node_networks_ips(self, node, ips_by_network_name):
+        self.net_manager.set_node_networks_ips(node, ips_by_network_name)
+
+
+class NailgunNodeAdapter(object):
+
+    def __init__(self, node):
+        self.node = node
+
+    @property
+    def hostname(self):
+        return self.node.hostname
+
+    @hostname.setter
+    def hostname(self, hostname):
+        self.node.hostname = hostname

@@ -57,6 +57,14 @@ class NailgunClusterAdapter(object):
             instance=self.cluster)
         return net_manager
 
+    @classmethod
+    def get_nodes_by_role(cls, cluster, role):
+        return objects.Cluster.get_nodes_by_role(cluster, role)
+
+    @classmethod
+    def get_by_uid(cls, cluster_id):
+        return objects.Cluster.get_by_uid(cluster_id)
+
 
 class NailgunReleaseAdapter(object):
     def __init__(self, release):
@@ -70,3 +78,17 @@ class NailgunReleaseAdapter(object):
         if isinstance(other, NailgunReleaseAdapter):
             other = other.release
         return self.release.__cmp__(other)
+
+
+class NailgunNodeAdapter(object):
+
+    def __init__(self, node):
+        self.node = node
+
+    @property
+    def hostname(self):
+        return self.node.hostname
+
+    @hostname.setter
+    def hostname(self, hostname):
+        self.node.hostname = hostname

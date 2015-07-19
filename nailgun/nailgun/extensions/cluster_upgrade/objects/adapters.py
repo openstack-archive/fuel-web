@@ -69,6 +69,9 @@ class NailgunClusterAdapter(object):
     def to_json(self):
         return objects.Cluster.to_json(self.cluster)
 
+    def get_nodes_by_role(self, role):
+        return objects.Cluster.get_nodes_by_role(self.cluster, role)
+
     @classmethod
     def get_by_uid(cls, cluster_id):
         cluster = objects.Cluster.get_by_uid(cluster_id)
@@ -138,6 +141,12 @@ class NailgunNetworkManager(object):
     def set_bond_assignment_netgroups_ids(self, node, mapping):
         return self.net_manager.set_bond_assignment_netgroups_ids(
             node.node, mapping)
+
+    def get_node_networks_ips(self, node):
+        return self.net_manager.get_node_networks_ips(node)
+
+    def set_node_networks_ips(self, node, ips_by_network_name):
+        self.net_manager.set_node_networks_ips(node, ips_by_network_name)
 
 
 class NailgunNodeAdapter(object):

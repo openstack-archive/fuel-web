@@ -118,3 +118,33 @@ class UpgradeHelper(object):
                 vips.pop(ng_name)
         new_net_manager.assign_given_vips_for_net_groups(vips)
         new_net_manager.assign_vips_for_net_groups()
+
+    @classmethod
+    def assign_node_to_cluster(cls, seed_cluster, node):
+        orig_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            node.cluster_id)
+
+        orig_manager = orig_cluster.get_network_manager()
+        seed_manager = seed_cluster.get_network_manager()
+
+        netgroups_id_mapping = cls.get_netgroups_id_mapping(
+            orig_cluster, seed_cluster)
+
+        node.update_assignment(seed_cluster, node.roles)
+        seed_manager.set_node_netgroups_ids(node, netgroups_id_mapping)
+        orig_manager.set_nic_assignment_netgroups_ids(
+            node, netgroups_id_mapping)
+        orig_manager.set_bond_assignment_netgroups_ids(
+            node, netgroups_id_mapping)
+        node.add_pending_change(consts.CLUSTER_CHANGES.interfaces)
+
+    @classmethod
+    def get_netgroups_id_mapping(self, src_cluster, dst_cluster):
+        src_ng = src_cluster.get_network_groups()
+        dst_ng = dst_cluster.get_network_groups()
+
+        dst_ng_dict = dict((ng.name, ng.id) for ng in dst_ng)
+        mapping = dict((ng.id, dst_ng_dict[ng.name]) for ng in src_ng)
+        mapping[src_cluster.get_admin_network_group().id] = \
+            dst_cluster.get_admin_network_group().id
+        return mapping

@@ -14,9 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
 
 from nailgun.api.v1.handlers import base
 from nailgun import objects
+from nailgun.task import manager
 
 from . import validators
 from .objects import adapters
@@ -50,3 +52,42 @@ class ClusterUpgradeHandler(base.BaseHandler):
         new_cluster = upgrade.UpgradeHelper.clone_cluster(orig_cluster,
                                                           request_data)
         return self.single.to_json(new_cluster)
+
+
+class NodeReassignHandler(base.BaseHandler):
+    single = objects.Cluster
+    validator = validators.NodeReassignValidator
+    task_manager = manager.ProvisioningTaskManager
+
+    def handle_task(self, cluster_id, nodes):
+        try:
+            task_manager = self.task_manager(cluster_id=cluster_id)
+            task = task_manager.execute(nodes)
+        except Exception as exc:
+            raise self.http(400, msg=six.text_type(exc))
+
+        self.raise_task(task)
+
+    @base.content
+    def POST(self, cluster_id):
+        """Reassign node to cluster via reinstallation
+
+           :param cluster_id: ID of the cluster which node should be
+                              assigned to.
+           :returns: None
+           :http: * 202 (OK)
+                  * 400 (Incorrect node state or problem with task execution)
+                  * 404 (Cluster or node not found)
+        """
+        from . import upgrade
+
+        cluster = adapters.NailgunClusterAdapter(
+            self.get_object_or_404(self.single, cluster_id))
+
+        data = self.checked_data(cluster=cluster)
+        node = adapters.NailgunNodeAdapter(
+            self.get_object_or_404(objects.Node, data['node_id']))
+
+        upgrade.UpgradeHelper.assign_node_to_cluster(cluster, node)
+
+        self.handle_task(cluster_id, [node.node, ])

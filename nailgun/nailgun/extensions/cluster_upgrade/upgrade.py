@@ -14,11 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import copy
 import six
 
 from nailgun import consts
 from nailgun.objects.serializers import network_configuration
+from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import deployment_serializers
 from nailgun import utils
 
 from .objects import adapters
@@ -148,3 +151,66 @@ class UpgradeHelper(object):
         mapping[src_cluster.get_admin_network_group().id] = \
             dst_cluster.get_admin_network_group().id
         return mapping
+
+    @classmethod
+    def run_reinstallation_task(cls, node):
+        # TODO(akscram): some node reinstallation task
+        pass
+
+    @classmethod
+    def copy_controllers_ips_and_hostnames(cls,
+                                           orig_cluster_id,
+                                           seed_cluster_id):
+        # Controllers from original and seed clusters are
+        # matched by set of network names and then IPs from
+        # original controllers are copied to seed controllers
+        # excluding fuelweb_admin network.
+        seed_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            seed_cluster_id)
+        orig_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            orig_cluster_id)
+
+        seed_controllers = seed_cluster.get_nodes_by_role('controller')
+        orig_controllers = orig_cluster.get_nodes_by_role('controller')
+
+        seed_manager = seed_cluster.get_network_manager()
+        orig_manager = orig_cluster.get_network_manager()
+
+        # Need to allocate ips for seed controllers
+        cls.get_default_deployment_info(seed_cluster.cluster, seed_controllers)
+
+        node_by_net_names = collections.defaultdict(list)
+        nets_ips_by_node = collections.defaultdict(dict)
+
+        # controller nodes will be mapped by set of network group names
+        for orig_node in orig_controllers:
+            orig_node_adapter = adapters.NailgunNodeAdapter(orig_node)
+            ips_by_network_name = orig_manager.get_node_networks_ips(
+                orig_node)
+            ips_by_network_name.pop(consts.NETWORKS.fuelweb_admin, None)
+            nets_ips_by_node[orig_node_adapter] = ips_by_network_name
+            net_names = tuple(sorted(ips_by_network_name))
+            node_by_net_names[net_names].append(orig_node_adapter)
+
+        for seed_node in seed_controllers:
+            seed_node_adapter = adapters.NailgunNodeAdapter(seed_node)
+            ips_by_network_name = seed_manager.get_node_networks_ips(
+                seed_node)
+            ips_by_network_name.pop(consts.NETWORKS.fuelweb_admin, None)
+            net_names = tuple(sorted(ips_by_network_name))
+
+            if net_names not in node_by_net_names:
+                continue
+            orig_node_adapter = node_by_net_names[net_names].pop()
+
+            seed_node_adapter.hostname = orig_node_adapter.hostname
+            seed_manager.set_node_networks_ips(
+                seed_node, nets_ips_by_node[orig_node_adapter])
+
+    @staticmethod
+    def get_default_deployment_info(cluster, nodes):
+        # copied from DefaultDeploymentInfo
+
+        graph = deployment_graph.AstuteGraph(cluster)
+        deployment_serializers.serialize(graph, cluster, nodes,
+                                         ignore_customized=True)

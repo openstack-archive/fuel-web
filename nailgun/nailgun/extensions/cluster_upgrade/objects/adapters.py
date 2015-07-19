@@ -62,6 +62,19 @@ class NailgunClusterAdapter(object):
             instance=self.cluster)
         return NailgunNetworkManager(self.cluster, net_manager)
 
+    @classmethod
+    def get_by_uid(cls, cluster_id):
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        return cls(cluster)
+
+    def get_network_groups(self):
+        return (NailgunNetworkGroupAdapter(ng)
+                for ng in self.cluster.network_groups)
+
+    def get_admin_network_group(self):
+        manager = self.get_network_manager()
+        return manager.get_admin_network_group()
+
 
 class NailgunReleaseAdapter(object):
     def __init__(self, release):
@@ -93,3 +106,50 @@ class NailgunNetworkManager(object):
 
     def assign_given_vips_for_net_groups(self, vips):
         self.net_manager.assign_given_vips_for_net_groups(self.cluster, vips)
+
+    def get_admin_network_group(self, node_id=None):
+        ng = self.net_manager.get_admin_network_group(node_id)
+        return NailgunNetworkGroupAdapter(ng)
+
+    def set_node_netgroups_ids(self, node, mapping):
+        return self.net_manager.set_node_netgroups_ids(node, mapping)
+
+    def set_nic_assignment_netgroups_ids(self, node, mapping):
+        return self.net_manager.set_nic_assignment_netgroups_ids(
+            node, mapping)
+
+    def set_bond_assignment_netgroups_ids(self, node, mapping):
+        return self.net_manager.set_bond_assignment_netgroups_ids(
+            node, mapping)
+
+
+class NailgunNodeAdapter(object):
+
+    def __init__(self, node):
+        self.node = node
+
+    @property
+    def cluster_id(self):
+        return self.node.cluster_id
+
+    @property
+    def hostname(self):
+        return self.node.hostname
+
+    @hostname.setter
+    def hostname(self, hostname):
+        self.node.hostname = hostname
+
+
+class NailgunNetworkGroupAdapter(object):
+
+    def __init__(self, network_group):
+        self.network_group = network_group
+
+    @property
+    def id(self):
+        return self.network_group.id
+
+    @property
+    def name(self):
+        return self.network_group.name

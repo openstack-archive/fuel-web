@@ -21,18 +21,18 @@ from .. import models
 
 class UpgradeRelationObject(object):
     @staticmethod
-    def _query_cluster_relations(cluster_id):
+    def get_cluster_relations(cluster_id):
         return db.query(models.UpgradeRelation).filter(
             (models.UpgradeRelation.orig_cluster_id == cluster_id) |
-            (models.UpgradeRelation.seed_cluster_id == cluster_id))
+            (models.UpgradeRelation.seed_cluster_id == cluster_id)).first()
 
     @classmethod
     def delete_relation(cls, cluster_id):
-        cls._query_cluster_relations(cluster_id).delete()
+        cls.get_cluster_relations(cluster_id).delete()
 
     @classmethod
     def is_cluster_in_upgrade(cls, cluster_id):
-        relation = cls._query_cluster_relations(cluster_id).first()
+        relation = cls.get_cluster_relations(cluster_id).first()
         return bool(relation)
 
     @classmethod

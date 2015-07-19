@@ -28,6 +28,8 @@ class UpgradesExtention(extensions.BaseExtension):
     urls = [
         {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/start/?$',
          'handler': handlers.ClusterUpgradeHandler},
+        {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/relocate/?$',
+         'handler': handlers.NodeRelocateHandler},
     ]
 
     @classmethod

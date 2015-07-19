@@ -20,8 +20,12 @@ from nailgun.api.v1.handlers import base
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun.objects.serializers import network_configuration
+from nailgun import rpc
+from nailgun.settings import settings
+from nailgun.task import task as tasks
 from nailgun import utils
 
 from . import validators
@@ -127,3 +131,111 @@ class ClusterUpgradeHandler(base.BaseHandler):
                 continue
             networking_params[key] = source_params[key]
         return new_settings
+
+
+class NodeRelocateHandler(base.BaseHandler):
+    validator = validators.NodeRelocateValidator
+
+    @classmethod
+    def get_netgroups_map(cls, orig_cluster, new_cluster):
+        netgroups = dict((ng.name, ng.id)
+                         for ng in orig_cluster.network_groups)
+        mapping = dict((netgroups[ng.name], ng.id)
+                       for ng in new_cluster.network_groups)
+        orig_admin_ng = cls.get_admin_network_group(orig_cluster)
+        admin_ng = cls.get_admin_network_group(new_cluster)
+        mapping[orig_admin_ng.id] = admin_ng.id
+        return mapping
+
+    @staticmethod
+    def get_admin_network_group(cluster):
+        query = db().query(models.NetworkGroup).filter_by(
+            name="fuelweb_admin",
+        )
+        default_group = objects.Cluster.get_default_group(cluster)
+        admin_ng = query.filter_by(group_id=default_group.id).first()
+        if admin_ng is None:
+            admin_ng = query.filter_by(group_id=None).first()
+            if admin_ng is None:
+                raise errors.AdminNetworkNotFound()
+        return admin_ng
+
+    @base.content
+    def POST(self, cluster_id):
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        data = self.checked_data()
+        node_id = data["node_id"]
+        node = self.get_object_or_404(objects.Node, node_id)
+
+        netgroups_mapping = self.get_netgroups_map(node.cluster, cluster)
+
+        orig_roles = node.roles
+
+        objects.Node.update_roles(node, [])  # flush
+        objects.Node.update_pending_roles(node, [])  # flush
+
+        node.replaced_deployment_info = []
+        node.deployment_info = []
+        node.kernel_params = None
+        node.cluster_id = cluster.id
+        node.group_id = None
+
+        objects.Node.assign_group(node)  # flush
+        objects.Node.update_pending_roles(node, orig_roles)  # flush
+
+        for ip in node.ip_addrs:
+            ip.network = netgroups_mapping[ip.network]
+
+        nic_assignments = db.query(models.NetworkNICAssignment).\
+            join(models.NodeNICInterface).\
+            filter(models.NodeNICInterface.node_id == node.id).\
+            all()
+        for nic_assignment in nic_assignments:
+            nic_assignment.network_id = \
+                netgroups_mapping[nic_assignment.network_id]
+
+        bond_assignments = db.query(models.NetworkBondAssignment).\
+            join(models.NodeBondInterface).\
+            filter(models.NodeBondInterface.node_id == node.id).\
+            all()
+        for bond_assignment in bond_assignments:
+            bond_assignment.network_id = \
+                netgroups_mapping[bond_assignment.network_id]
+
+        objects.Node.add_pending_change(node,
+                                        consts.CLUSTER_CHANGES.interfaces)
+
+        node.pending_addition = True
+        node.pending_deletion = False
+
+        task = models.Task(name=consts.TASK_NAMES.node_deletion,
+                           cluster=cluster)
+        #FIXME(akscram): Do not save the task to prevet removing of this
+        #                node the nailgun receiver. For this rpcedure
+        #                the node should be deleted from Cobbler and
+        #                booted in the newest bootstrap image.
+        #db.add(task)
+
+        db.commit()
+
+        self.delete_node_by_astute(task, node)
+
+    @staticmethod
+    def delete_node_by_astute(task, node):
+        node_to_delete = tasks.DeletionTask.format_node_to_delete(node)
+        msg_delete = tasks.make_astute_message(
+            task,
+            'remove_nodes',
+            'remove_nodes_resp',
+            {
+                'nodes': [node_to_delete],
+                'check_ceph': False,
+                'engine': {
+                    'url': settings.COBBLER_URL,
+                    'username': settings.COBBLER_USER,
+                    'password': settings.COBBLER_PASSWORD,
+                    'master_ip': settings.MASTER_IP,
+                }
+            }
+        )
+        rpc.cast('naily', msg_delete)

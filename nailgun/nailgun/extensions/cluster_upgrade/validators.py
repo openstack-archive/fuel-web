@@ -99,3 +99,44 @@ class NodeReassignValidator(base.BasicValidator):
         # check node_id existence
         # check node status (ready)
         # check something else
+
+
+class ClusterCloneIPsValidator(base.BasicValidator):
+
+    @classmethod
+    def validate(cls, data, orig_cluster_id):
+        seed_cluster_id = cls.validate_orig_cluster(orig_cluster_id)
+        cls.validate_controllers_amount(seed_cluster_id)
+
+        return seed_cluster_id
+
+    @classmethod
+    def validate_orig_cluster(cls, orig_cluster_id):
+        from .objects.relations import UpgradeRelationObject
+        relation = UpgradeRelationObject.get_cluster_relation(
+            orig_cluster_id)
+
+        if not relation:
+            raise errors.InvalidData(
+                "Cluster with ID {0} is not in upgrade stage."
+                .format(orig_cluster_id),
+                log_message=True)
+
+        if relation.orig_cluster_id != int(orig_cluster_id):
+            raise errors.InvalidData(
+                "There is no original cluster with ID {0}."
+                .format(orig_cluster_id),
+                log_message=True)
+
+        return relation.seed_cluster_id
+
+    @classmethod
+    def validate_controllers_amount(cls, seed_cluster_id):
+        seed_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+            seed_cluster_id)
+        seed_controllers = adapters.NailgunClusterAdapter.get_nodes_by_role(
+            seed_cluster, 'controller')
+
+        if len(seed_controllers) == 0:
+            raise errors.InvalidData("Seed cluster should has at least"
+                                     " one controller", log_message=True)

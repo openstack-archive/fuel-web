@@ -923,12 +923,13 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_network_roles(cls, instance):
-        """Method for receiving network roles for particular cluster.
+        """Method for receiving network roles for particular cluster
 
         :param instance: nailgun.db.sqlalchemy.models.Cluster instance
         :returns: List of network roles' descriptions
         """
-        return instance.release.network_roles_metadata
+        return (instance.release.network_roles_metadata +
+                PluginManager.get_network_roles(instance))
 
     @classmethod
     def set_network_template(cls, instance, template):

@@ -752,6 +752,21 @@ class TestClusterObject(BaseTestCase):
 
         return cluster
 
+    def _get_network_role_metadata(self, **kwargs):
+        network_role = {
+            'id': 'test_network_role',
+            'default_mapping': 'public',
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': [
+                    {'name': 'test_vip_a'}
+                ]
+            }
+        }
+        network_role.update(kwargs)
+        return network_role
+
     def test_all_controllers(self):
         self.assertEqual(len(objects.Cluster.get_nodes_by_role(
             self.env.clusters[0], 'controller')), 2)
@@ -828,6 +843,29 @@ class TestClusterObject(BaseTestCase):
         with self.assertRaisesRegexp(errors.PluginsTasksOverlapping,
                                      expected_message):
             objects.Cluster.get_deployment_tasks(cluster)
+
+    def test_get_plugin_network_roles(self):
+        network_roles = [self._get_network_role_metadata()]
+        plugin_data = self.env.get_default_plugin_metadata(
+            network_roles_metadata=network_roles)
+        cluster = self._create_cluster_with_plugins([plugin_data])
+        self.assertItemsEqual(
+            objects.Cluster.get_network_roles(cluster),
+            cluster.release.network_roles_metadata + network_roles)
+
+    def test_get_plugin_network_roles_fail(self):
+        network_roles = [self._get_network_role_metadata()]
+        plugins_kw_list = [
+            self.env.get_default_plugin_metadata(
+                name=plugin_name,
+                network_roles_metadata=network_roles)
+            for plugin_name in ('test_plugin_first', 'test_plugin_second')
+        ]
+
+        cluster = self._create_cluster_with_plugins(plugins_kw_list)
+        self.assertRaises(
+            errors.NetworkRoleConflict,
+            objects.Cluster.get_network_roles, cluster)
 
 
 class TestClusterObjectGetRoles(BaseTestCase):

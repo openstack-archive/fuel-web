@@ -84,6 +84,12 @@ class InstallationInfo(object):
                       'objects_ceph', None),
         WhiteListRule(('storage', 'osd_pool_size', 'value'),
                       'osd_pool_size', None),
+        WhiteListRule(('storage', 'external_ceph', 'value'),
+                      'external_ceph', None),
+        WhiteListRule(('storage', 'external_ceph_url', 'value'),
+                      'external_ceph_url', None),
+        WhiteListRule(('storage', 'external_ceph_key', 'value'),
+                      'external_ceph_key', None),
 
         WhiteListRule(('neutron_mellanox', 'plugin', 'value'),
                       'mellanox', None),

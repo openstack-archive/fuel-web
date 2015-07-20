@@ -14,7 +14,10 @@ iso8601==0.1.9
 jsonschema==2.3.0
 kombu==3.0.16
 netaddr>=0.7.10
-oslo.config>=1.2.1
+# TODO(xarses): remove upper bound on oslo.config
+# They are pinned because 2.0.0 breaks import
+oslo.config>=1.2.1, <2.0.0
+oslo.utils<2.0.0
 # TODO(prmtl): remove upper bounds after all openstack packages will
 # release versions that have the same pbr requirements.
 # for the day of writing this comment there was 2 outdated packages:

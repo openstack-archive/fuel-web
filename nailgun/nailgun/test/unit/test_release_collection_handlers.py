@@ -16,7 +16,7 @@
 from uuid import uuid4
 
 from mock import patch
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.test.base import BaseIntegrationTest

@@ -16,7 +16,7 @@ from itertools import chain
 import re
 
 from alembic import op
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text

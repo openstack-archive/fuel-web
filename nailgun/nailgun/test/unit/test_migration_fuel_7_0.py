@@ -15,7 +15,7 @@
 import datetime
 
 import alembic
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
 

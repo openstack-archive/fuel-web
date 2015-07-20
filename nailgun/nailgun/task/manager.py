@@ -18,7 +18,7 @@ from distutils.version import StrictVersion
 import traceback
 
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer

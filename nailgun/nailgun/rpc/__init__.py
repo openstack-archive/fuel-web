@@ -20,7 +20,7 @@ import functools
 import amqp.exceptions as amqp_exceptions
 from kombu import Connection
 from kombu import Exchange
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 from kombu import Queue
 
 from nailgun.logger import logger

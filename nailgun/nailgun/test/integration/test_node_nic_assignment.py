@@ -17,7 +17,7 @@
 from copy import deepcopy
 from netaddr import IPNetwork
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster

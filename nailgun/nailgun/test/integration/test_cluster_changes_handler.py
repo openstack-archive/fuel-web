@@ -18,7 +18,7 @@ from copy import deepcopy
 from mock import patch
 import netaddr
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 import nailgun
 from nailgun import consts

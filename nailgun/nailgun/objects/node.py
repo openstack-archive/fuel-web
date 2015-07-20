@@ -20,7 +20,7 @@ Node-related objects and collections
 import itertools
 import jinja2
 import operator
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import traceback
 
 from datetime import datetime

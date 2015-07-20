@@ -19,9 +19,9 @@ Handlers dealing with disks
 """
 
 from ..manager import DisksFormatConvertor
+from ..validators.disks import NodeDisksValidator
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.validators.node import NodeDisksValidator
 from nailgun import objects
 
 

@@ -396,6 +396,9 @@ define([
         hasChanges: function() {
             return this.get('pending_addition') || this.get('pending_deletion');
         },
+        isNodeConfigurationPossible: function() {
+            return this.get('pending_addition') || this.get('status') == 'error';
+        },
         getRolesSummary: function(releaseRoles) {
             return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {
                 return releaseRoles.findWhere({name: role}).get('label');
@@ -425,6 +428,11 @@ define([
             return !!this.filter(function(node) {
                 return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
             }).length;
+        },
+        isNodesConfigurationPossible: function() {
+            return this.any(function(node) {
+                return node.get('pending_addition') || node.get('status') == 'error';
+            });
         },
         nodesAfterDeployment: function() {
             return this.filter(function(node) {return !node.get('pending_deletion');});

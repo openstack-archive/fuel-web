@@ -43,6 +43,7 @@ class TestUrls(BaseTestCase):
         all_vars = result[1]
 
         self.assertIn('/ext/url/', all_urls[-2])
+        self.assertIn('/clusters/(?P<cluster_id>\d+)/spawn_vms/?$', all_urls)
         self.assertIn('FakeHandler', all_urls[-1])
 
         self.assertEqual(all_vars['FakeHandler'], FakeHandler)
@@ -57,3 +58,14 @@ class TestUrls(BaseTestCase):
             get_extensions_urls(),
             {'urls': ['/ext/uri', 'FakeHandler'],
              'handlers': [{'class': FakeHandler, 'name': 'FakeHandler'}]})
+
+    @mock.patch.dict('nailgun.api.v1.urls.settings.VERSION',
+                     {'feature_groups': ['mirantis']})
+    def test_get_feature_urls(self):
+
+        result = get_all_urls()
+        # Urls
+        all_urls = result[0]
+
+        self.assertNotIn('/clusters/(?P<cluster_id>\d+)/spawn_vms/?$',
+                         all_urls)

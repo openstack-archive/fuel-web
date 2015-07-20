@@ -14,7 +14,7 @@
 #    under the License.
 
 from mock import patch
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task

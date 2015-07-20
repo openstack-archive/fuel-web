@@ -15,7 +15,7 @@
 
 from mock import Mock
 from mock import patch
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun import consts

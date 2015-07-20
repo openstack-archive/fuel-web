@@ -20,7 +20,7 @@ oslo.config>=1.2.1
 # for the day of writing this comment there was 2 outdated packages:
 # - keystonemiddleware
 # - python-cinderclient
-oslo.serialization>=1.0.0,<=1.5.0
+oslo.serialization>=1.0.0,<1.5.0
 # NOTE(eli): specified version of keystonemiddleware doesn't
 # work properly with 2.0.0 version of oslo.i18n which is
 # released on pypi

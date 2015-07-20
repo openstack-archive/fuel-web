@@ -16,7 +16,7 @@
 
 import inspect
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.urls import urls

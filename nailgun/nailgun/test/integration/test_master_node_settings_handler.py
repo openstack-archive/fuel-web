@@ -14,7 +14,7 @@
 
 import copy
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun import objects
 from nailgun.statistics.fuel_statistics.installation_info \

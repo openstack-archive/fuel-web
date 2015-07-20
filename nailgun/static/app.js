@@ -194,6 +194,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             }
 
             _.defer(function() {
+                $('button.close').click();
                 app.navigate('login', {trigger: true, replace: true});
             });
         },

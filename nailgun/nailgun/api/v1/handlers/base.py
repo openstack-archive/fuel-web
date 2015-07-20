@@ -19,7 +19,7 @@ import six
 import traceback
 
 from decorator import decorator
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 from sqlalchemy import exc as sa_exc
 import web
 

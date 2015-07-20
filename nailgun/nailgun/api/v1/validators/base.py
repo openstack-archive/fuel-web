@@ -16,7 +16,7 @@
 import jsonschema
 from jsonschema.exceptions import ValidationError
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.errors import errors
 from nailgun import objects

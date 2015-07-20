@@ -46,10 +46,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 uiSettings = cluster.get('ui_settings'),
-                roles = cluster.get('release').get('roles'),
-                selectedRoles = this.props.nodes.length ? _.filter(roles, function(role) {
-                    return !this.props.nodes.any(function(node) {return !node.hasRole(role);});
-                }, this) : [];
+                roles = cluster.get('roles'),
+                selectedRoles = this.props.nodes.length ? _.compact(roles.map(function(role) {
+                    var roleName = role.get('name');
+                    if (!this.props.nodes.any(function(node) {return !node.hasRole(roleName);})) {
+                        return roleName;
+                    }
+                }, this)) : [];
             return {
                 search: this.props.mode == 'add' ? '' : uiSettings.search,
                 activeSorters: this.props.mode == 'add' ? _.clone(this.props.defaultSorting) : uiSettings.sort,
@@ -60,9 +63,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     return result;
                 }, {}, this),
                 selectedRoles: selectedRoles,
-                indeterminateRoles: this.props.nodes.length ? _.filter(_.difference(roles, selectedRoles), function(role) {
-                    return this.props.nodes.any(function(node) {return node.hasRole(role);});
-                }, this) : [],
+                indeterminateRoles: this.props.nodes.length ? _.compact(roles.map(function(role) {
+                    var roleName = role.get('name');
+                    if (!_.contains(selectedRoles, roleName) && this.props.nodes.any(function(node) {return node.hasRole(roleName);})) {
+                        return roleName;
+                    }
+                }, this)) : [],
                 configModels: {
                     cluster: cluster,
                     settings: settings,
@@ -1031,7 +1037,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 roles = this.props.cluster.get('roles'),
                 conflicts = _.chain(this.props.selectedRoles)
                     .union(this.props.indeterminateRoles)
-                    .map(function(role) {return roles.findWhere({name: role}).conflicts;})
+                    .map(function(role) {
+                        return roles.find({name: role}).get('conflicts');
+                    })
                     .flatten()
                     .uniq()
                     .value(),

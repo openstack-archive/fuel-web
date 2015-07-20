@@ -48,3 +48,11 @@ class NailgunNodeAdapter(object):
     @property
     def ram(self):
         return self.node.meta['memory']['total']
+
+    @property
+    def is_ubuntu(self):
+        """Returns True if operating system of the node
+        is Ubuntu, False otherwise
+        """
+        return (self.node.cluster and
+                self.node.cluster.release.operating_system.lower() == "ubuntu")

@@ -124,12 +124,12 @@ is accessible"}
 
     def setEtcResolv(self, nameserver="default"):
         if nameserver == "default":
-            ns = self.defaults['DNS_UPSTREAM']['value']
+            nss = self.defaults['DNS_UPSTREAM']['value'].split(',')
         else:
-            ns = nameserver
+            nss = [nameserver]
         with open("/etc/resolv.conf", "w") as fh:
-            fh.write("nameserver %s\n" % ns)
-            fh.close()
+            for ns in nss:
+                fh.write("nameserver %s\n" % ns)
 
     def check(self, args):
         """Validate that all fields have valid values through sanity checks."""
@@ -270,13 +270,21 @@ is accessible"}
                                      responses['DNS_DOMAIN'],
                                      responses["HOSTNAME"]))
             etchosts.close()
+
+        def make_resolv_conf(filename):
+            with open(filename, 'w') as f:
+                f.write("search %s\n" % responses['DNS_SEARCH'])
+                f.write("domain %s\n" % responses['DNS_DOMAIN'])
+                for upstream_dns in responses['DNS_UPSTREAM'].split(','):
+                    f.write("nameserver %s\n" % upstream_dns)
+
         #Write dnsmasq upstream server
-        with open('/etc/dnsmasq.upstream', 'w') as f:
-            f.write("search %s\n" % responses['DNS_SEARCH'])
-            f.write("domain %s\n" % responses['DNS_DOMAIN'])
-            for upstream_dns in responses['DNS_UPSTREAM'].split(','):
-                f.write("nameserver %s\n" % upstream_dns)
-        f.close()
+        make_resolv_conf('/etc/dnsmasq.upstream')
+        # Create a temporary resolv.conf so DNS works before the cobbler
+        # container is up and running.
+        # TODO(asheplyakov): puppet does a similar thing, perhaps we can
+        # use the corresponding template instead of duplicating it here.
+        make_resolv_conf('/etc/resolv.conf')
 
         return True
 

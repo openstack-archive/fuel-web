@@ -276,10 +276,9 @@ class FuelSetup(object):
         noout = open('/dev/null', 'w')
         subprocess.call(["sysctl", "-w", "kernel.printk=7 4 1 7"],
                         stdout=noout, stderr=noout)
-        #Fix /etc/hosts and /etc/resolv.conf before quitting
+        #Fix /etc/hosts before quitting
         dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
         dnsobj.fixEtcHosts()
-        dnsobj.setEtcResolv('127.0.0.1')
 
         raise urwid.ExitMainLoop()
 

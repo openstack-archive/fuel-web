@@ -405,6 +405,9 @@ define([
         hasChanges: function() {
             return this.get('pending_addition') || this.get('pending_deletion');
         },
+        isNodeConfigurationPossible: function() {
+            return this.get('pending_addition') || this.get('status') == 'error';
+        },
         getRolesSummary: function(releaseRoles) {
             return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {
                 return releaseRoles.findWhere({name: role}).get('label');

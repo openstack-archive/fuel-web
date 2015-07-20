@@ -5,6 +5,7 @@
         "fields": {
             "status": "discover",
             "name": "Supermicro X9DRW",
+            "hostname": "node-1",
             "ip": "172.18.67.168",
             "online": true,
             "pending_addition": false,
@@ -341,6 +342,7 @@
         "fields": {
             "status": "discover",
             "name": "Dell Inspiron",
+            "hostname": "node-2",
             "ip": "10.20.0.1",
             "online": true,
             "pending_addition": false,
@@ -551,6 +553,7 @@
         "fields": {
             "status": "discover",
             "name": "Supermicro X9SCD",
+            "hostname": "node-3",
             "ip": "172.18.67.167",
             "online": true,
             "pending_addition": false,
@@ -703,6 +706,7 @@
         "fields": {
             "status": "discover",
             "name": "Supermicro X9SCD (offline)",
+            "hostname": "node-4",
             "ip": "172.18.67.173",
             "online": false,
             "pending_addition": false,
@@ -833,6 +837,7 @@
             "status": "error",
             "error_msg": "You need more money",
             "name": "Supermicro X9SCD (error)",
+            "hostname": "node-5",
             "ip": "172.18.82.135",
             "online": true,
             "pending_addition": false,
@@ -962,6 +967,7 @@
         "fields": {
             "status": "discover",
             "name": "VirtualBox",
+            "hostname": "node-6",
             "ip": "10.20.0.63",
             "online": true,
             "pending_addition": false,
@@ -1049,6 +1055,7 @@
         "fields": {
             "status": "discover",
             "name": "KVM",
+            "hostname": "node-7",
             "ip": "10.20.0.226",
             "online": true,
             "pending_addition": false,
@@ -1159,6 +1166,7 @@
         "fields": {
             "status": "discover",
             "name": "Supermicro X9DRW (srv07)",
+            "hostname": "node-8",
             "ip": "172.18.67.170",
             "online": true,
             "pending_addition": false,

@@ -368,7 +368,13 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                             if (breadcrumb[2]) {
                                 return <li key={index} className='active'>{breadcrumb[0]}</li>;
                             }
-                            return <li key={index}><a href={breadcrumb[1]}>{i18n('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a></li>;
+                            return <li key={index}><a href={breadcrumb[1]}>
+                                { breadcrumb[3] ?
+                                    breadcrumb[0]
+                                :
+                                    i18n('breadcrumbs.' + breadcrumb[0].replace('.', ' '), {defaultValue: breadcrumb[0]})
+                                }
+                            </a></li>;
                         }
                         return <li key={index} className='active'>{i18n('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
                     })}

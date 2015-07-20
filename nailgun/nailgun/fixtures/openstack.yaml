@@ -1069,6 +1069,29 @@
             regex:
               source: '^[1-9]\d*$'
               error: "Invalid number"
+            restrictions:
+              - "settings:storage.images_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.images_ceph.value == false"
+          external_ceph:
+            value: false
+            label: "Use external ceph storage"
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.volumes_lvm.value == true"
+          external_ceph_url:
+            value: ""
+            label: "Ceph monitors"
+            type: "text"
+            description: "Ceph monitors ip address comma separated ex. 1.2.3.4,1.2.3.5"
+            restrictions:
+              - condition: "settings:storage.external_ceph.value == false"
+                action: "hide"
+          external_ceph_key:
+            value: ""
+            label: "Ceph access key"
+            type: "textarea"
+            restrictions:
+              - condition: "settings:storage.external_ceph.value == false"
+                action: "hide"
       generated:
         mysql:
           root_password:

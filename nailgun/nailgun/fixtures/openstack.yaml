@@ -184,20 +184,30 @@
         properties:
           subnet: true
           gateway: false
-          vip: &default_network_roles_metadata_properties_vip
-            -
-              name: "haproxy"
-              shared: true
+          vip:
             -
               name: "vrouter"
-              shared: false
+              namespace: "vrouter"
+              alias: "management_vrouter_vip"
+            -
+              name: "management"
+              namespace: "haproxy"
+              alias: "management_vip"
       -
         id: "public/vip"
         default_mapping: "public"
         properties:
           subnet: true
           gateway: true
-          vip: *default_network_roles_metadata_properties_vip
+          vip:
+            -
+              name: "vrouter_pub"
+              namespace: "vrouter"
+              alias: "public_vrouter_vip"
+            -
+              name: "public"
+              namespace: "haproxy"
+              alias: "public_vip"
       -
         id: "neutron/private"
         default_mapping: "private"

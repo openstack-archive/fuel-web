@@ -108,6 +108,13 @@ NULLABLE_MAC_ADDRESS = {
     'anyOf': [MAC_ADDRESS, NULL]
 }
 
+FQDN = {
+    'type': 'string',
+    'pattern': '^({label}\.)*{label}$'.format(
+        label='[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?'
+    )
+}
+
 ERROR_RESPONSE = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'title': 'Error response',

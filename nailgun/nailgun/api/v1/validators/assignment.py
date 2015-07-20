@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from operator import attrgetter
+import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.assignment \
@@ -52,6 +53,22 @@ class AssignmentValidator(BasicValidator):
                 log_message=True
             )
 
+    @classmethod
+    def check_unique_hostnames(cls, nodes, cluster_id):
+        hostnames = [node.hostname for node in nodes]
+        conflicting_hostnames = [x[0] for x in db.query(
+            Node.hostname).filter(
+                sa.and_(
+                    Node.hostname.in_(hostnames),
+                    Node.cluster_id == cluster_id,
+                )
+            ).all()]
+        if conflicting_hostnames:
+            raise errors.AlreadyExists(
+                "Nodes with hostnames [{0}] already exist in cluster {1}."
+                .format(",".join(conflicting_hostnames), cluster_id)
+            )
+
 
 class NodeAssignmentValidator(AssignmentValidator):
 
@@ -72,6 +89,7 @@ class NodeAssignmentValidator(AssignmentValidator):
         cluster = objects.Cluster.get_by_uid(
             cluster_id, fail_if_not_found=True
         )
+        cls.check_unique_hostnames(nodes, cluster_id)
 
         for node_id in received_node_ids:
             cls.validate_roles(

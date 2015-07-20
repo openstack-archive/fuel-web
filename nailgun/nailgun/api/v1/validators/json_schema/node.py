@@ -130,7 +130,7 @@ single_schema = {
         "is_agent": {"type": "boolean"},
         "platform_name": base_types.NULLABLE_STRING,
         "group_id": {"type": "number"},
-        "fqdn": base_types.NULLABLE_STRING,
+        "hostname": base_types.FQDN,
         "kernel_params": base_types.NULLABLE_STRING,
         "progress": {"type": "number"},
         "pending_addition": {"type": "boolean"},

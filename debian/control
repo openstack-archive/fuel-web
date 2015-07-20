@@ -18,18 +18,6 @@ Depends: ohai (<< 7),
 Description: <insert up to 60 chars description>
  <insert long description, indented with spaces>
 
-Package: nailgun-agent
-Architecture: all
-Depends: ohai (<< 7),
-  ruby-httpclient,
-  ruby-rethtool,
-  ruby-cstruct,
-  ruby-json,
-  ethtool,
-  ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
-
 Package: nailgun-net-check
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, python-pypcap, vlan, python-scapy, cliff-tablib, python-stevedore, python-daemonize, python-yaml, tcpdump, python-requests

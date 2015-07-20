@@ -113,6 +113,8 @@ from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 from nailgun.api.v1.handlers.master_node_settings \
     import MasterNodeSettingsHandler
 
+from nailgun.settings import settings
+
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
@@ -189,8 +191,6 @@ urls = (
     ClusterUpdateHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
-    r'/clusters/(?P<cluster_id>\d+)/spawn_vms/?$',
-    SpawnVmsHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,
@@ -223,8 +223,6 @@ urls = (
     NodeNICsDefaultHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
-    r'/nodes/(?P<node_id>\d+)/vms_conf/?$',
-    NodeVMsHandler,
     r'/tasks/?$',
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
@@ -279,6 +277,16 @@ urls = (
     MasterNodeSettingsHandler,
 )
 
+feature_groups_urls = {
+    'advanced': (
+        r'/clusters/(?P<cluster_id>\d+)/spawn_vms/?$',
+        SpawnVmsHandler,
+        r'/nodes/(?P<node_id>\d+)/vms_conf/?$',
+        NodeVMsHandler,
+    )
+}
+
+
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]
 
 _locals = locals()
@@ -315,12 +323,26 @@ def get_extensions_urls():
     return {'urls': urls, 'handlers': handlers}
 
 
+def get_feature_groups_urls():
+    """Method is used to retrieve urls depended on feature groups like
+    'experimental' or 'advanced' which should be enable only for this modes.
+
+    :returns: list of urls
+    """
+    urls = []
+    for feature in settings.VERSION['feature_groups']:
+        urls.extend([i if isinstance(i, str) else i.__name__ for i in
+                     feature_groups_urls.get(feature, [])])
+    return urls
+
+
 def get_all_urls():
     """Merges urls and handlers from core with
     urls and handlers from extensions
     """
     ext_urls = get_extensions_urls()
     all_urls = list(urls)
+    all_urls.extend(get_feature_groups_urls())
     all_urls.extend(ext_urls['urls'])
 
     for handler in ext_urls['handlers']:

@@ -99,9 +99,10 @@
         weight: 70
       virt:
         name: "Virtual"
-        description: "Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
+        description: "ADVANCED: Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
         weight: 80
         public_ip_required: true
+        condition: "'advanced' in version:feature_groups"
 
     network_roles_metadata:
       -

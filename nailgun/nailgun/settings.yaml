@@ -26,6 +26,7 @@ VERSION:
   ostf_sha: "Unknown build"
   feature_groups:
     - experimental
+    - advanced
 
 FUEL_KEY: "Unknown"
 

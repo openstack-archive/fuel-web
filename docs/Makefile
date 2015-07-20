@@ -7,6 +7,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
 PLANTUML	  = plantuml.jar
+PLANTUML_FROM_PKG  = /usr/share/plantuml/plantuml.jar
 
 
 # Internal variables.
@@ -45,7 +46,14 @@ clean:
 	-rm -rf $(BUILDDIR)/*
 
 $(PLANTUML):
-	wget http://downloads.sourceforge.net/project/plantuml/plantuml.jar -O $(PLANTUML)
+	@if [ -f $(PLANTUML_FROM_PKG) ]; \
+	then \
+		echo "Have installed plantuml. Creating link $(PLANTUML) on $(PLANTUML_FROM_PKG)."; \
+		ln -sf $(PLANTUML_FROM_PKG) $(PLANTUML); \
+	else \
+		echo "Downloading plantuml.jar."; \
+		wget https://downloads.sourceforge.net/project/plantuml/plantuml.jar -O $(PLANTUML); \
+	fi
 	$(ACTION.TOUCH)
 
 html: $(PLANTUML)

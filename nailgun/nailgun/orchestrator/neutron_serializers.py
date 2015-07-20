@@ -320,7 +320,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 logger.error('Invalid vlan for network: %s' % str(netgroup))
 
         # Dance around Neutron segmentation type.
-        if node.cluster.network_config.segmentation_type == 'vlan':
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
             attrs['endpoints']['br-prv'] = {'IP': 'none'}
             attrs['roles']['private'] = 'br-prv'
 
@@ -339,7 +340,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                     'br-prv'
                 ]
             })
-        elif node.cluster.network_config.segmentation_type == 'gre':
+        elif node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.gre:
             attrs['roles']['mesh'] = 'br-mgmt'
 
         return attrs
@@ -357,7 +359,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if use_vlan_splinters == 'hard':
             for ng in iface.assigned_networks_list:
                 if ng.name == 'private' and \
-                        cluster.network_config.segmentation_type == 'vlan':
+                    cluster.network_config.segmentation_type == \
+                        consts.NEUTRON_SEGMENT_TYPES.vlan:
                     vlan_range = cluster.network_config.vlan_range
                     trunks.extend(xrange(*vlan_range))
                     trunks.append(vlan_range[1])
@@ -444,10 +447,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 }
             }
         }
-        if cluster.network_config.segmentation_type == 'gre':
+        if cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.gre:
             res["tunnel_id_ranges"] = utils.join_range(
                 cluster.network_config.gre_id_range)
-        elif cluster.network_config.segmentation_type == 'vlan':
+        elif cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
             res["phys_nets"]["physnet2"] = {
                 "bridge": "br-prv",
                 "vlan_range": utils.join_range(
@@ -596,7 +601,8 @@ class NeutronNetworkDeploymentSerializer61(
                 mtu=65000))
 
         # Dance around Neutron segmentation type.
-        if node.cluster.network_config.segmentation_type == 'vlan':
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
             transformations.append(
                 cls.add_bridge('br-prv', provider='ovs'))
 
@@ -609,7 +615,8 @@ class NeutronNetworkDeploymentSerializer61(
                 provider='ovs',
                 mtu=65000))
 
-        elif node.cluster.network_config.segmentation_type == 'gre':
+        elif node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.gre:
             transformations.append(
                 cls.add_bridge('br-mesh'))
 
@@ -684,7 +691,8 @@ class NeutronNetworkDeploymentSerializer61(
         if is_public:
             netgroup_mapping.append(('public', 'br-ex'))
 
-        if node.cluster.network_config.segmentation_type == 'gre':
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.gre:
             netgroup_mapping.append(('private', 'br-mesh'))
             attrs['endpoints']['br-mesh'] = {}
             attrs['roles']['neutron/mesh'] = 'br-mesh'
@@ -721,7 +729,8 @@ class NeutronNetworkDeploymentSerializer61(
 
         # Dance around Neutron segmentation type.
         prv_base_ep = None
-        if node.cluster.network_config.segmentation_type == 'vlan':
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
             attrs['endpoints']['br-prv'] = {'IP': 'none'}
             attrs['roles']['neutron/private'] = 'br-prv'
 
@@ -784,7 +793,8 @@ class NeutronNetworkDeploymentSerializer61(
             if netgroup['vlan'] > 1:
                 ep_dict['vlans'] = netgroup['vlan']
 
-        if node.cluster.network_config.segmentation_type == 'vlan':
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
             private_ep = endpoints[network_mapping['neutron/private']]
             netgroup = nm.get_node_network_by_netname(node, 'private')
             phys = cls.get_phy_interfaces(bonds_map, netgroup)
@@ -880,6 +890,14 @@ class NeutronNetworkDeploymentSerializer70(
         old_mapping_6_1 = attrs['roles']
         mapping.update(old_mapping_6_1)
         attrs['roles'] = mapping
+
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.gre:
+            attrs['roles'].pop('neutron/private', None)
+
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
+            attrs['roles'].pop('neutron/mesh', None)
 
         return attrs
 

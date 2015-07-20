@@ -140,9 +140,7 @@ mkdir -p %{buildroot}/etc/cron.d
 mkdir -p %{buildroot}/etc/fuel
 install -d -m 755 %{buildroot}/etc/fuel
 install -m 600 %{_builddir}/%{name}-%{version}/fuelmenu/fuelmenu/settings.yaml %{buildroot}/etc/fuel/astute.yaml
-install -m 755 %{_builddir}/%{name}-%{version}/bin/agent %{buildroot}/opt/nailgun/bin/agent
 install -m 755 %{_builddir}/%{name}-%{version}/bin/fencing-agent.rb %{buildroot}/opt/nailgun/bin/fencing-agent.rb
-install -m 644 %{_builddir}/%{name}-%{version}/bin/nailgun-agent.cron %{buildroot}/etc/cron.d/nailgun-agent
 install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/etc/cron.d/fencing-agent
 install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/download-debian-installer %{buildroot}%{_bindir}/download-debian-installer
 
@@ -152,31 +150,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -f %{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
 %defattr(0755,root,root)
-
-
-%package -n nailgun-agent
-
-Summary:   Nailgun startup agent
-Version:   %{version}
-Release:   %{release}
-License:   GPLv2
-BuildRoot: %{_tmppath}/%{name}-%{version}
-URL:       http://mirantis.com
-Requires:  rubygem-rethtool
-Requires:  rubygem-ohai
-Requires:  rubygem-httpclient
-Requires:  rubygem-ipaddress
-Requires:  rubygem-json
-Requires:  rubygems
-Requires:  ethtool
-
-%description -n nailgun-agent
-Nailgun startup agent that register node at Nailgun and make a little setup
-of other services.
-
-%files -n nailgun-agent
-/etc/cron.d/nailgun-agent
-/opt/nailgun/bin/agent
 
 %package -n nailgun-net-check
 

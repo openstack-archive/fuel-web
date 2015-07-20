@@ -414,7 +414,7 @@
                         "more": "More",
                         "filter_by": "Filter By",
                         "filter_placeholder": "Node name/mac",
-                        "search_placeholder": "Search by node name, MAC or IP address",
+                        "search_placeholder": "Search by node name, MAC or IP",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "more_than": "More than ",
@@ -424,8 +424,8 @@
                         "node_management_error": {
                             "title": "Node Management Error",
                             "saving_warning": "Unable to apply changes",
-                            "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
-                            "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                            "disks_configuration_warning": "This disks have different disk capacities.",
+                            "interfaces_configuration_warning": "This nodes have different number of network interfaces."
                         }
                     },
                     "node": {
@@ -793,8 +793,8 @@
                     "mac_address_label": "MAC Address",
                     "fqdn_label": "FQDN",
                     "ssh_console": "SSH console",
-                    "network_configuration_button": "Configure Interfaces",
-                    "disk_configuration_button": "Configure Disks",
+                    "network_configuration_button": "Interface Configuration",
+                    "disk_configuration_button": "Disk Configuration",
                     "default_dialog_title": "Node Information",
                     "close_button": "Close",
                     "total": "total",

@@ -36,6 +36,7 @@ from nailgun.db.sqlalchemy.models import fields
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
+from nailgun.utils.migration import upgrade_release_set_deployable_false
 
 
 task_names_old = (
@@ -94,6 +95,7 @@ def upgrade():
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
     extensions_field_upgrade()
+    set_deployable_false_for_old_releases()
 
 
 def downgrade():
@@ -636,3 +638,8 @@ def extensions_field_upgrade():
 def extensions_field_downgrade():
     for table_name in ['nodes', 'releases', 'clusters']:
         op.drop_column(table_name, 'extensions')
+
+
+def set_deployable_false_for_old_releases():
+    connection = op.get_bind()
+    upgrade_release_set_deployable_false(connection, ['2014.2.2-6.1'])

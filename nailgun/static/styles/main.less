@@ -2819,6 +2819,56 @@ button, .btn:not(.btn-link) {.font-semibold;}
             margin: 0 10px 0 7px;
           }
         }
+        .toggle-offloading {
+          margin-left: 50px;
+        }
+      }
+      // Offline modes control
+      .offloading-modes {
+        margin: 0 10px 0 50px;
+        .btn-default .glyphicon {
+          margin-left: 4px;
+          &.glyphicon-question-sign {
+            color: darkgrey;
+          }
+        }
+        .table {
+          margin-bottom: 0;
+          tr {
+            @mode-indent: 15px;
+            .indent-levels(@n, @i: 2) when (@i =< @n) {
+              &.level@{i} td:first-child {
+                padding-left: (@i * @mode-indent);
+              }
+              .indent-levels(@n, (@i + 1));
+            }
+            .indent-levels(4);
+
+            &.level1 {
+              font-weight: 600;
+            }
+          }
+
+          th:nth-child(n+2) {
+            width: 70px;
+            text-align: center;
+          }
+          td {
+            &:nth-child(n+2) {
+              text-align: center;
+            }
+
+            .btn-link {
+              border: 0;
+              padding: 0;
+              opacity: 0.1;
+              color: black;
+              &.active, &:hover {
+                opacity: 1;
+              }
+            }
+          }
+        }
       }
 
       .networks-block {

@@ -25,9 +25,10 @@ define(
     'dispatcher',
     'jsx!views/controls',
     'jsx!component_mixins',
-    'react-dnd'
+    'react-dnd',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND, OffloadingModes) {
     'use strict';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.';
@@ -100,7 +101,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         },
         interfacesPickFromJSON: function(json) {
             // Pick certain interface fields that have influence on hasChanges.
-            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties']);
+            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties', 'offloading_modes']);
         },
         interfacesToJSON: function(interfaces, remainingNodesMode) {
             // Sometimes 'state' is sent from the API and sometimes not
@@ -175,14 +176,20 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
 
                 // Assigning networks according to user choice and interface properties
                 node.interfaces.each(function(ifc, index) {
+                    var updatedIfc = interfaces.at(index);
                     ifc.set({
-                        assigned_networks: new models.InterfaceNetworks(interfaces.at(index).get('assigned_networks').toJSON()),
-                        interface_properties: interfaces.at(index).get('interface_properties')
+                        assigned_networks: new models.InterfaceNetworks(updatedIfc.get('assigned_networks').toJSON()),
+                        interface_properties: updatedIfc.get('interface_properties')
                     });
                     if (ifc.isBond()) {
                         var bondProperties = ifc.get('bond_properties');
                         ifc.set({bond_properties: _.extend(bondProperties, {type__:
                             this.getBondType() == 'linux' ? 'linux' : 'ovs'})});
+                    }
+                    if (ifc.get('offloading_modes')) {
+                        ifc.set({
+                            offloading_modes: updatedIfc.get('offloading_modes')
+                        });
                     }
                 }, this);
 
@@ -225,10 +232,44 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 }, this);
             }, this)))[0];
         },
+        findOffloadingModesIntersection: function(set1, set2) {
+            return _.map(
+                _.intersection(
+                    _.pluck(set1, 'name'),
+                    _.pluck(set2, 'name')
+                ),
+                function(name) {
+                    return {
+                        name: name,
+                        state: null,
+                        sub: this.findOffloadingModesIntersection(
+                            _.find(set1, {name: name}).sub,
+                            _.find(set2, {name: name}).sub
+                        )
+                    };
+                },
+                this);
+        },
+        getIntersectedOffloadingModes: function(interfaces) {
+            var offloadingModes = interfaces.map(function(ifc) {
+                return ifc.get('offloading_modes') || [];
+            });
+            if (!offloadingModes.length) return [];
+
+            return offloadingModes.reduce(
+                (function(result, modes) {
+                    return this.findOffloadingModesIntersection(result, modes);
+                }).bind(this)
+            );
+        },
         bondInterfaces: function() {
             this.setState({actionInProgress: true});
-            var interfaces = this.props.interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();}),
-                bonds = this.props.interfaces.find(function(ifc) {return ifc.get('checked') && ifc.isBond();}),
+            var interfaces = this.props.interfaces.filter(function(ifc) {
+                    return ifc.get('checked') && !ifc.isBond();
+                }),
+                bonds = this.props.interfaces.find(function(ifc) {
+                    return ifc.get('checked') && ifc.isBond();
+                }),
                 bondingProperties = this.props.bondingConfig.properties;
 
             if (!bonds) {
@@ -246,11 +287,15 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     interface_properties: {
                         mtu: null,
                         disable_offloading: true
-                    }
+                    },
+                    offloading_modes: this.getIntersectedOffloadingModes(interfaces)
                 });
             } else {
                 // adding interfaces to existing bond
-                bonds.set({slaves: bonds.get('slaves').concat(_.invoke(interfaces, 'pick', 'name'))});
+                bonds.set({
+                    slaves: bonds.get('slaves').concat(_.invoke(interfaces, 'pick', 'name')),
+                    offloading_modes: this.getIntersectedOffloadingModes(interfaces.concat(bonds))
+                });
                 // remove the bond to add it later and trigger re-rendering
                 this.props.interfaces.remove(bonds, {silent: true});
             }
@@ -270,13 +315,16 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             this.setState({actionInProgress: false});
         },
         removeInterfaceFromBond: function(bondName, slaveInterfaceName) {
-            var networks = this.props.cluster.get('networkConfiguration').get('networks');
-            var bond = this.props.interfaces.find({name: bondName});
-            var bondHasUnmovableNetwork = bond.get('assigned_networks').any(function(interfaceNetwork) {
-                return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
-            });
-            var slaveInterfaceNames = _.pluck(bond.get('slaves'), 'name');
-            var targetInterface = bond;
+            var networks = this.props.cluster.get('networkConfiguration').get('networks'),
+                bond = this.props.interfaces.find({name: bondName}),
+                slaves = bond.get('slaves'),
+                bondHasUnmovableNetwork = bond.get('assigned_networks').any(
+                    function(interfaceNetwork) {
+                        return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
+                    }
+                ),
+                slaveInterfaceNames = _.pluck(slaves, 'name'),
+                targetInterface = bond;
 
             // if PXE interface is being removed - place networks there
             if (bondHasUnmovableNetwork) {
@@ -290,19 +338,30 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
 
             // if slaveInterfaceName is set - remove it from slaves, otherwise remove all
             if (slaveInterfaceName) {
-                bond.set('slaves', _.reject(bond.get('slaves'), {name: slaveInterfaceName}));
+                var slavesUpdated = _.reject(slaves, {name: slaveInterfaceName}),
+                    names = _.pluck(slavesUpdated, 'name'),
+                    bondSlaveInterfaces = this.props.interfaces.filter(function(ifc) {
+                        return _.contains(names, ifc.get('name'));
+                    });
+
+                bond.set({
+                    slaves: slavesUpdated,
+                    offloading_modes: this.getIntersectedOffloadingModes(bondSlaveInterfaces)
+                });
             } else {
                 bond.set('slaves', []);
             }
 
-            // destroy bond if all slave interfaces are being removed
+            // destroy bond if all slave interfaces have been removed
             if (!slaveInterfaceName && targetInterface === bond) {
                 targetInterface = this.props.interfaces.findWhere({name: slaveInterfaceNames[0]});
             }
 
             // move networks if needed
             if (targetInterface !== bond) {
-                var interfaceNetworks = bond.get('assigned_networks').remove(bond.get('assigned_networks').models);
+                var interfaceNetworks = bond.get('assigned_networks').remove(
+                    bond.get('assigned_networks').models
+                );
                 targetInterface.get('assigned_networks').add(interfaceNetworks);
             }
 
@@ -364,16 +423,26 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 }, this);
 
             // calculate interfaces speed
-            var getIfcSpeed = function(index) {
+            var offset = 0,
+                indexOffsets = interfaces.map(function(ifc, index) {
+                    if (ifc.isBond()) offset++;
+                    return index - offset;
+                }),
+                getIfcSpeed = function(index) {
                     return _.unique(nodes.map(function(node) {
-                        return utils.showBandwidth(node.interfaces.at(index).get('current_speed'));
+                        return utils.showBandwidth(
+                            node.interfaces.at(indexOffsets[index]).get('current_speed')
+                        );
                     }));
                 },
                 interfaceSpeeds = interfaces.map(function(ifc, index) {
-                    if (!ifc.isBond()) return [getIfcSpeed(index)];
-                    return _.map(ifc.get('slaves'), function(slave) {
-                        return getIfcSpeed(interfaces.indexOf(interfaces.findWhere(slave)));
-                    });
+                    if (ifc.isBond()) {
+                        return _.map(ifc.get('slaves'), function(slave) {
+                            return getIfcSpeed(interfaces.indexOf(interfaces.findWhere(slave)));
+                        });
+                    } else {
+                        return [getIfcSpeed(index)];
+                    }
                 });
 
             return (
@@ -551,6 +620,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     </option>);
             }, this);
         },
+        toggleOffloading: function() {
+            var interfaceProperties = this.props.interface.get('interface_properties'),
+                name = 'disable_offloading';
+            this.onInterfacePropertiesChange(name, !interfaceProperties[name]);
+        },
         onInterfacePropertiesChange: function(name, value) {
             function convertToNullIfNaN(value) {
                 var convertedValue = parseInt(value, 10);
@@ -583,7 +657,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     };
                 },
                 bondProperties = ifc.get('bond_properties'),
-                interfaceProperties = ifc.get('interface_properties') || null;
+                interfaceProperties = ifc.get('interface_properties') || null,
+                offloadingModes = ifc.get('offloading_modes') || [];
 
             return this.props.connectDropTarget(
                 <div className='ifc-container'>
@@ -705,26 +780,28 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                         {interfaceProperties &&
                             <div className='ifc-properties clearfix forms-box'>
                                 <controls.Input
-                                    type='checkbox'
-                                    label={i18n(ns + 'disable_offloading')}
-                                    checked={interfaceProperties.disable_offloading}
-                                    name='disable_offloading'
-                                    onChange={this.onInterfacePropertiesChange}
-                                    disabled={locked}
-                                    wrapperClassName='pull-right'
-                                />
-                                <controls.Input
                                     type='text'
                                     label={i18n(ns + 'mtu')}
                                     value={interfaceProperties.mtu || ''}
+                                    placeholder={i18n(ns + 'mtu_placeholder')}
                                     name='mtu'
                                     onChange={this.onInterfacePropertiesChange}
                                     disabled={locked}
                                     wrapperClassName='pull-right'
                                 />
+                                {offloadingModes.length ?
+                                    <OffloadingModes interface={ifc} />
+                                :
+                                    <button
+                                        onClick={this.toggleOffloading}
+                                        disabled={locked}
+                                        className='btn btn-default toggle-offloading'>
+                                        {i18n(ns + (interfaceProperties.disable_offloading ? 'disable_offloading' : 'default_offloading'))}
+                                    </button>
+                                }
                             </div>
-                        }
 
+                        }
                     </div>
                     {this.props.errors && <div className='ifc-error'>{this.props.errors}</div>}
                 </div>

@@ -126,13 +126,15 @@ function($, _, React, i18n, utils) {
                                 'btn-link': true,
                                 active: mode.state === modeState
                             };
-                            return <td key={mode.name + modeState}>
-                                <button
-                                    className={utils.classNames(styles)}
-                                    onClick={this.onModeStateChange(mode.name, modeState)}>
-                                    <i className='glyphicon glyphicon-ok'></i>
-                                </button>
-                            </td>
+                            return (
+                                <td key={mode.name + modeState}>
+                                    <button
+                                        className={utils.classNames(styles)}
+                                        onClick={this.onModeStateChange(mode.name, modeState)}>
+                                        <i className='glyphicon glyphicon-ok'></i>
+                                    </button>
+                                </td>
+                            );
                         }).bind(this))}
                     </tr>
                 ];
@@ -144,28 +146,30 @@ function($, _, React, i18n, utils) {
         },
         render: function() {
             var modes = this.props.interface.get('offloading_modes') || [];
-            return <div className='offloading-modes'>
-                <div>
-                    <button className='btn btn-default' onClick={this.toggleVisibility}>
-                        {i18n(ns + 'offloading_modes')}: {this.makeOffloadingModesExcerpt()}
-                    </button>
-                    {this.state.isVisible &&
-                        <table className='table'>
-                            <thead>
-                                <tr>
-                                    <th>{i18n(ns + 'offloading_mode')}</th>
-                                    <th>{i18n(ns + 'offloading_enabled')}</th>
-                                    <th>{i18n(ns + 'offloading_disabled')}</th>
-                                    <th>{i18n(ns + 'offloading_default')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {this.renderChildModes(modes, 1)}
-                            </tbody>
-                        </table>
-                    }
+            return (
+                <div className='offloading-modes'>
+                    <div>
+                        <button className='btn btn-default' onClick={this.toggleVisibility}>
+                            {i18n(ns + 'offloading_modes')}: {this.makeOffloadingModesExcerpt()}
+                        </button>
+                        {this.state.isVisible &&
+                            <table className='table'>
+                                <thead>
+                                    <tr>
+                                        <th>{i18n(ns + 'offloading_mode')}</th>
+                                        <th>{i18n(ns + 'offloading_enabled')}</th>
+                                        <th>{i18n(ns + 'offloading_disabled')}</th>
+                                        <th>{i18n(ns + 'offloading_default')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {this.renderChildModes(modes, 1)}
+                                </tbody>
+                            </table>
+                        }
+                    </div>
                 </div>
-            </div>
+            );
         }
     });
 

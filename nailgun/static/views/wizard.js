@@ -571,7 +571,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             return result;
         },
         handleWarnings: function() {
-            this.$('.alert:not(.alert-regular)').remove();
+            this.$('.alert:not(.alert-nailed)').remove();
             var messages = [];
             _.each(this.wizard.restrictions[this.constructorName], function(paneConfig) {
                 _.each(paneConfig, function(paneRestriction) {

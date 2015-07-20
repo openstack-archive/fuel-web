@@ -2340,7 +2340,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     width: 830px;
     height: 485px;
     .modal-body {
-      height: 305px;
+      height: 315px;
     }
     .wizard-steps-nav {
       padding-left: 0;
@@ -2356,11 +2356,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
   }
-  .release-alert {
-    margin: 10px 0;
-    padding: 7px;
-    line-height: 14px;
-  }
   label.parameter-box {
     cursor: pointer;
     padding-left: 0;
@@ -2370,8 +2365,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .font-semibold;
     }
   }
-  .alert-regular {
+  .alert {
+    margin: 10px 0;
+    padding: 7px;
+    line-height: 14px;
     font-size: @base-font-size - 2;
+  }
+  .pane-content > div > .alert {
+    margin-top: 0;
   }
   .control-label {
     padding-left: 0;

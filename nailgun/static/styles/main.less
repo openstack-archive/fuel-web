@@ -204,7 +204,7 @@
   .node-management-button-sizes;
 }
 
-.glyphicon-pencil {
+.glyphicon-pencil-alt {
   .icon-default-styles(-13px, -492px);
   &:hover {
     background: url(@common-icons-sprite) -53px -492px no-repeat;
@@ -2412,7 +2412,24 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .node-image-outline {
     width: 200px;
     height: 58px;
+    margin-top: 10px;
     background: url("../img/node-image.svg") no-repeat 0 0 transparent;
+  }
+  .change-hostname {
+    button.glyphicon-pencil {
+      margin-left: 5px;
+      text-decoration: none;
+      font-size: @base-font-size - 2;
+    }
+    .form-group {
+      margin: 0;
+      label {display: none;}
+      .help-block {
+        .break-word;
+        margin-bottom: 0;
+        font-size: @base-font-size - 2;
+      }
+    }
   }
   .panel-group {
     margin-top: 10px;

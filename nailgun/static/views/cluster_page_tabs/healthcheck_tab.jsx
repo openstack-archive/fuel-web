@@ -217,7 +217,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                     disabled={hasRunningTests}
                                     label={i18n('common.select_all')}
                                     wrapperClassName='select-all'
-                                    />
+                                />
                             </div>
                             {hasRunningTests ?
                                 (<button className='btn btn-danger stop-tests-btn pull-right'
@@ -389,9 +389,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 status = this.props.status,
                 currentStatusClassName = 'text-center healthcheck-status healthcheck-status-' + status,
                 iconClasses = {
-                    success: 'glyphicon glyphicon-ok',
-                    failure: 'glyphicon glyphicon-remove',
-                    error: 'glyphicon glyphicon-remove',
+                    success: 'glyphicon glyphicon-ok text-success',
+                    failure: 'glyphicon glyphicon-remove text-danger',
+                    error: 'glyphicon glyphicon-remove text-danger',
                     running: 'glyphicon glyphicon-refresh animate-spin',
                     wait_running: 'glyphicon glyphicon-time'
                 };
@@ -410,16 +410,20 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <td className='healthcheck-name'>
                         <label htmlFor={'test-checkbox-' + test.id}>{test.get('name')}</label>
                         {_.contains(['failure', 'error', 'skipped'], status) &&
-                            <div className='healthcheck-msg healthcheck-status-failure'>
+                            <div className='text-danger'>
                                 {(result && result.message) &&
                                     <div>
                                         <b>{result.message}</b>
                                     </div>
                                 }
                                 <div className='well' dangerouslySetInnerHTML={{__html:
-                                    utils.urlify((result && _.isNumber(result.step)) ?
-                                        this.highlightStep(test.escape('description'), result.step) : test.escape('description'))
-                                }}>
+                                    utils.urlify(
+                                        (result && _.isNumber(result.step)) ?
+                                            this.highlightStep(test.escape('description'), result.step)
+                                        :
+                                            test.escape('description')
+                                        )
+                                    }}>
                                 </div>
                             </div>
                         }

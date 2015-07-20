@@ -2283,6 +2283,23 @@ button, .btn:not(.btn-link) {.font-semibold;}
   100% { opacity: 0; }
 }
 
+.animate-spin {
+  animation-name: spin;
+  animation-duration: 4000ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+@keyframes spin {
+  from {
+    transform:rotate(0deg);
+  }
+  to {
+    transform:rotate(360deg);
+  }
+}
+
+
 .role-panel {
   .checkbox-group {
     label {
@@ -2966,10 +2983,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 // Healthcheck tab
 .healthcheck-tab {
-  @padding-top-controls: 13px;
+  @padding-top-controls: 10px;
   .healthcheck-controls {
     margin: 2px 0 @padding-top-controls 0;
     padding-bottom: 0;
+    padding-left: 7px;
     .toggle-credentials {
       margin-right: 10px;
       .provide-credentials {
@@ -2977,7 +2995,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
     .select-all {
-      margin-top: @padding-top-controls;
+      margin-top: 14px;
+      label {
+        cursor: pointer;
+        > span {
+          margin-left: 10px;
+        }
+      }
     }
     .btn {
       margin-top: 8px;
@@ -2998,9 +3022,23 @@ button, .btn:not(.btn-link) {.font-semibold;}
         &.healthcheck-col-status {
           padding-top: @padding-top-controls;
         }
+        &.healthcheck-col-duration,
+        &.healthcheck-col-status {
+          line-height: 35px;
+        }
         label {
+          cursor: pointer;
           font-weight: normal;
           line-height: 35px;
+          margin: 0;
+        }
+        .custom-tumbler {
+          span {
+            margin-top: @padding-top-controls - 2;
+          }
+        }
+        .well {
+          margin: 10px 0;
         }
       }
       th {
@@ -3014,11 +3052,10 @@ button, .btn:not(.btn-link) {.font-semibold;}
         &.healthcheck-col-duration,
         &.healthcheck-col-status {
           line-height: 25px;
-
         }
         .custom-tumbler {
           span {
-            margin-top: @padding-top-controls + 5;
+            margin-top: @padding-top-controls + 8;
           }
         }
       }

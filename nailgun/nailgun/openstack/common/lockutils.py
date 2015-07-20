@@ -28,7 +28,7 @@ import threading
 import time
 import weakref
 
-from oslo.config import cfg
+from oslo_config import cfg
 
 from nailgun.openstack.common import fileutils
 from nailgun.openstack.common.gettextutils import _  # noqa

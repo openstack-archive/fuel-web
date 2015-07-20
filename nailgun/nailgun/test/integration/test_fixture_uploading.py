@@ -17,7 +17,7 @@
 import cStringIO
 import mock
 import os
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import yaml
 
 from nailgun.db.sqlalchemy import fixman

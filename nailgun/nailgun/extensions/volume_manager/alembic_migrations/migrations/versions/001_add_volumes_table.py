@@ -26,7 +26,7 @@ down_revision = None
 
 from alembic import context
 from alembic import op
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 import sqlalchemy as sa
 

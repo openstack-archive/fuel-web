@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.release import ReleaseValidator
 from nailgun.errors import errors

@@ -16,7 +16,7 @@
 import datetime
 import time
 
-from oslo.config import cfg
+from oslo_config import cfg
 import six
 
 from nailgun.openstack.common.gettextutils import _  # noqa

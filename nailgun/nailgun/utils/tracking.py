@@ -18,7 +18,7 @@ import requests
 
 from six.moves.urllib.parse import urljoin
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.errors import errors
 from nailgun.settings import settings

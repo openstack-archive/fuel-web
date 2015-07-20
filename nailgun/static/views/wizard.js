@@ -134,6 +134,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             };
             this.processRestrictions();
             this.attachModelListeners();
+            Backbone.history.on('route', this.close, this);
         },
         processPaneRestrictions: function() {
             _.each(this.config, function(pane, paneName) {
@@ -198,6 +199,9 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
         beforeSettingsSaving: function() {
             var success = this.processBinds('settings');
             return $.Deferred()[success ? 'resolve' : 'reject']();
+        },
+        beforeTearDown: function() {
+            Backbone.history.off(null, null, this);
         },
         processBinds: function(prefix, paneNameToProcess) {
             var result = true;
@@ -313,6 +317,9 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             this.updatePanesStatuses();
             this.$('.pane-content').html('').append(pane.render().el);
         },
+        close: function() {
+            this.$el.modal('hide');
+        },
         createCluster: function() {
             var cluster = this.cluster;
             this.beforeClusterCreation();
@@ -329,11 +336,11 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                                 return this.settings.save(this.settings.attributes, {validate: false});
                             }, this))
                             .done(_.bind(function() {
-                                this.$el.modal('hide');
+                                this.close();
                                 app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
                             }, this))
                             .fail(_.bind(function() {
-                                this.$el.modal('hide');
+                                this.close();
                                 utils.showErrorDialog({message: i18n('dialog.create_cluster_wizard.configuration_failed_warning')});
                             }, this));
                     }, this))
@@ -343,7 +350,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                             this.panesModel.set('activePaneIndex', 0);
                             cluster.trigger('invalid', cluster, {name: utils.getResponseText(response)});
                         } else {
-                            this.$el.modal('hide');
+                            this.close();
                             utils.showErrorDialog({
                                 title: i18n('dialog.create_cluster_wizard.create_cluster_error.title'),
                                 message: response.status == 400 ? utils.getResponseText(response) : undefined

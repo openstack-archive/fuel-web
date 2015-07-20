@@ -16,7 +16,7 @@
 import functools
 import unittest2 as unittest
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 from random import randint
 
 from nailgun import consts

@@ -23,7 +23,7 @@ import time
 from timeit import Timer
 from webtest import app
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.app import build_app
 from nailgun.db import db

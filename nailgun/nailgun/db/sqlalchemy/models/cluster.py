@@ -27,7 +27,7 @@ from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun import consts
 

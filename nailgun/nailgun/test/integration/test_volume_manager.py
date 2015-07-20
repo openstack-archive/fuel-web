@@ -15,7 +15,7 @@
 #    under the License.
 
 from mock import patch
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager

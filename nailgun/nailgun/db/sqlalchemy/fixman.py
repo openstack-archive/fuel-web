@@ -23,7 +23,7 @@ import StringIO
 import sys
 import yaml
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 from sqlalchemy import orm
 import sqlalchemy.types
 

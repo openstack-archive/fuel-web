@@ -25,7 +25,7 @@ revision = '37608259013'
 down_revision = '1b1d4016375d'
 
 from alembic import op
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text

@@ -16,7 +16,7 @@
 
 import os
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import requests
 import six
 

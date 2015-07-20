@@ -32,6 +32,7 @@ class TestVersionHandler(BaseIntegrationTest):
         "astute_sha": "Unknown build",
         "fuellib_sha": "Unknown build",
         "ostf_sha": "Unknown build",
+        "feature_groups": [],
     })
     def test_version_handler(self):
         with nested(
@@ -59,6 +60,7 @@ class TestVersionHandler(BaseIntegrationTest):
                 "fuellib_sha": "Unknown build",
                 "ostf_sha": "Unknown build",
                 "auth_required": True,
+                "feature_groups": [],
                 "release_versions": {
                     "test": "test_data"
                 }

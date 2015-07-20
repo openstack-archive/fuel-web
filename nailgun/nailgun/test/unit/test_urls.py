@@ -29,13 +29,15 @@ class FakeHandler(object):
 class TestUrls(BaseTestCase):
 
     @mock.patch('nailgun.api.v1.urls.get_extensions_urls')
-    def test_get_all_urls(self, mock_get_extensions_urls):
+    @mock.patch('nailgun.api.v1.urls.get_feature_groups_urls')
+    def test_get_all_urls(self, mock_get_feature_groups_urls,
+                          mock_get_extensions_urls):
         mock_get_extensions_urls.return_value = {
             'urls': (r'/ext/url/', 'FakeHandler'),
             'handlers': [{
                 'class': FakeHandler,
                 'name': 'FakeHandler'}]}
-
+        mock_get_feature_groups_urls.return_value = ['/advanced/url/']
         result = get_all_urls()
         # Urls
         all_urls = result[0]
@@ -43,6 +45,7 @@ class TestUrls(BaseTestCase):
         all_vars = result[1]
 
         self.assertIn('/ext/url/', all_urls[-2])
+        self.assertIn('/advanced/url/', all_urls)
         self.assertIn('FakeHandler', all_urls[-1])
 
         self.assertEqual(all_vars['FakeHandler'], FakeHandler)
@@ -57,3 +60,14 @@ class TestUrls(BaseTestCase):
             get_extensions_urls(),
             {'urls': ['/ext/uri', 'FakeHandler'],
              'handlers': [{'class': FakeHandler, 'name': 'FakeHandler'}]})
+
+    @mock.patch.dict('nailgun.api.v1.urls.settings.VERSION',
+                     {'feature_groups': ['mirantis']})
+    def test_get_feature_urls(self):
+
+        result = get_all_urls()
+        # Urls
+        all_urls = result[0]
+
+        self.assertNotIn('/clusters/(?P<cluster_id>\d+)/spawn_vms/?$',
+                         all_urls)

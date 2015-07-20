@@ -367,13 +367,18 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             return (
                 <ol className='breadcrumb'>
                     {_.map(this.state.path, function(breadcrumb, index) {
-                        if (_.isArray(breadcrumb)) {
-                            if (breadcrumb[2]) {
-                                return <li key={index} className='active'>{breadcrumb[0]}</li>;
-                            }
-                            return <li key={index}><a href={breadcrumb[1]}>{i18n('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a></li>;
+                        if (!_.isArray(breadcrumb)) breadcrumb = [breadcrumb, null, {active: true}];
+                        var text = breadcrumb[0];
+                        var link = breadcrumb[1];
+                        var options = breadcrumb[2] || {};
+                        if (!options.skipTranslation) {
+                            text = i18n('breadcrumbs.' + text, {defaultValue: text});
                         }
-                        return <li key={index} className='active'>{i18n('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
+                        if (options.active) {
+                            return <li key={index} className='active'>{text}</li>;
+                        } else {
+                            return <li key={index}><a href={link}>{text}</a></li>;
+                        }
                     })}
                 </ol>
             );

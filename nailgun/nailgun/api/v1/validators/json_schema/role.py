@@ -102,7 +102,7 @@ ROLE_META_INFO = {
             "type": "string",
             "description": "Short description of role functionality"},
         "conflicts": {
-            "type": "array",
+            "type": ["array", "string"],
             "description": "Specify which roles conflict this one."},
         "has_primary": {
             "type": "boolean",

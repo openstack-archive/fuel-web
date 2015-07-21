@@ -754,7 +754,9 @@ class VolumeManager(object):
             # 2GB reuquired for journal, leave 1GB for data
             'calc_min_ceph_size': lambda: gb_to_mb(3),
             'calc_min_ceph_journal_size': lambda: 0,
-            'calc_min_mysql_size': lambda: gb_to_mb(10)
+            'calc_min_mysql_size': lambda: gb_to_mb(10),
+            'calc_min_controller_log_size': lambda: gb_to_mb(10),
+            'calc_min_controller_var_size': lambda: gb_to_mb(15)
         }
 
         generators['calc_os_size'] = \

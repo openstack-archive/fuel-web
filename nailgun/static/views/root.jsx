@@ -62,7 +62,7 @@ define([
                         {!Page.hiddenLayout && [
                             <layoutComponents.Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
                             <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
-                            this.state.showDefaultPasswordWarning && <layoutComponents.DefaultPasswordWarning close={this.hideDefaultPasswordWarning} />
+                            this.state.showDefaultPasswordWarning && <layoutComponents.DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />
                         ]}
                         <div id='content'>
                             <Page ref='page' {...this.state.pageOptions} />

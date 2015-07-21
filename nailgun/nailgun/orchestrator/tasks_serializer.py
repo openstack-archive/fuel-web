@@ -241,6 +241,13 @@ class CopyKeys(GenericRolesHook):
         yield templates.make_generic_task(
             uids, self.task)
 
+class GenerateFernetKeys(GenerateKeys):
+
+    identity = 'generate_fernet_keys'
+
+class CopyFernetKeys(CopyKeys):
+
+    identity = 'copy_fernet_keys'
 
 class GenerateHaproxyKeys(GenericRolesHook):
 
@@ -252,7 +259,7 @@ class GenerateHaproxyKeys(GenericRolesHook):
             CLUSTER_ID=self.cluster.id,
             CN_HOSTNAME=self.cluster.attributes.editable
             ['public_ssl']['hostname']['value'])
-        yield templates.make_shell_task(uids, self.task)
+i        yield templates.make_shell_task(uids, self.task)
 
 
 class CopyHaproxyKeys(CopyKeys):
@@ -347,8 +354,8 @@ class UpdateHosts(GenericRolesHook):
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, RestartRadosGW,
-                         UploadNodesInfo, UpdateHosts, GenerateKeys,
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, CopyFernetKeys, RestartRadosGW,
+                         UploadNodesInfo, UpdateHosts, GenerateKeys, GenerateFernetKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 

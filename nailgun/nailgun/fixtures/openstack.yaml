@@ -102,7 +102,9 @@
         description: "ADVANCED: Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
         weight: 80
         public_ip_required: true
-        condition: "'advanced' in version:feature_groups"
+        restrictions:
+          - condition: "not ('advanced' in version:feature_groups)"
+          - action: "hide"
 
     network_roles_metadata:
       -

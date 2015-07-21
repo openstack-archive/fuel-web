@@ -14,18 +14,18 @@ iso8601==0.1.9
 jsonschema==2.3.0
 kombu==3.0.16
 netaddr>=0.7.10
-oslo.config>=1.2.1
+oslo.config>=1.2.1,<1.10.0
 # TODO(prmtl): remove upper bounds after all openstack packages will
 # release versions that have the same pbr requirements.
 # for the day of writing this comment there was 2 outdated packages:
 # - keystonemiddleware
 # - python-cinderclient
-oslo.serialization>=1.0.0,<=1.5.0
+oslo.serialization>=1.0.0,<1.5.0
 # NOTE(eli): specified version of keystonemiddleware doesn't
 # work properly with 2.0.0 version of oslo.i18n which is
 # released on pypi
 # See: https://bugs.launchpad.net/fuel/+bug/1468053
-oslo.i18n>=1.3.0,<=1.7.0
+oslo.i18n>=1.3.0,<1.6.0
 ply==3.4
 psycopg2==2.5.1
 pycrypto==2.6.1
@@ -44,3 +44,4 @@ python-cinderclient>=1.0.7,<=1.2.1
 networkx>=1.8
 pydot-ng>=1.0.0
 ordereddict>=1.1
+oslo.utils<1.5.0

@@ -1,3 +1,0 @@
-type: exec
-cmd: echo 1
-description: "Most primitive task available"

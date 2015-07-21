@@ -1,3 +1,0 @@
-type: exec
-cmd: sleep 1.5
-description: "Will be used for testing stop action"

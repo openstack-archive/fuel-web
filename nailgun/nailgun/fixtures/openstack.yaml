@@ -430,6 +430,8 @@
       volumes_roles_mapping:
         controller:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "controller_log"}
+          - {allocate_size: "min", id: "controller_var"}
           - {allocate_size: "all", id: "image"}
         compute:
           - {allocate_size: "min", id: "os"}
@@ -473,6 +475,30 @@
               name: "swap"
               size: {generator: "calc_swap_size"}
               file_system: "swap"
+        - id: "controller_log"
+          type: "vg"
+          min_size: {generator: "calc_min_controller_log_size"}
+          label: "Controller logs"
+          volumes:
+            - mount: "/var/log"
+              type: "lv"
+              name: "log"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["controller_log"]
+              file_system: "ext4"
+        - id: "controller_var"
+          type: "vg"
+          min_size: {generator: "calc_min_controller_var_size"}
+          label: "Controller var"
+          volumes:
+            - mount: "/var"
+              type: "lv"
+              name: "var"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["controller_var"]
+              file_system: "ext4"
         - id: "mongo"
           type: "vg"
           label: "MongoDB"

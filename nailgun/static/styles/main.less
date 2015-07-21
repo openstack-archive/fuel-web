@@ -286,11 +286,25 @@ button, .btn:not(.btn-link) {.font-semibold;}
 @common-icons-sprite: "../img/icons/icons-sprite.svg";
 
 .loading {
-  background: url(../img/cloud-loader.gif) no-repeat scroll center top rgba(0, 0, 0, 0);
-  position: absolute;
-  top: 200px;
-  height: 90px;
-  width: 100%;
+  display: block;
+  width: 98px;
+  height: 98px;
+  overflow: hidden;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 200px;
+  background: url(../img/loader-bg.svg);
+  animation: loader 6s linear infinite;
+}
+.loading-logo {
+  display: block;
+  height: 98px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: -124px;
+  position: relative;
+  width: 98px;
+  z-index: 9999; background: url(../img/loader-logo.svg);
 }
 
 .loading-ticket {
@@ -2426,6 +2440,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 }
 
+@keyframes loader {
+  100% { transform:rotate(360deg); }
+}
 
 .role-panel {
   .checkbox-group {

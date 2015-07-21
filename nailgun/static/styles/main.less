@@ -286,11 +286,27 @@ button, .btn:not(.btn-link) {.font-semibold;}
 @common-icons-sprite: "../img/icons/icons-sprite.svg";
 
 .loading {
-  background: url(../img/cloud-loader.gif) no-repeat scroll center top rgba(0, 0, 0, 0);
-  position: absolute;
-  top: 200px;
-  height: 90px;
-  width: 100%;
+  @loader-logo-size: 98px;
+  &:before {
+    content: "";
+    display: block;
+    width: @loader-logo-size;
+    height: @loader-logo-size;
+    overflow: hidden;
+    margin: 200px auto 0;
+    background: url(../img/loader-bg.svg);
+    animation: spin 6s linear infinite;
+  }
+  &:after {
+    content: "";
+    display: block;
+    width: @loader-logo-size;
+    height: @loader-logo-size;
+    margin: -124px auto 0;
+    position: relative;
+    z-index: 9999;
+    background: url(../img/loader-logo.svg);
+  }
 }
 
 .loading-ticket {

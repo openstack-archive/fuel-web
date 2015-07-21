@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NeutronConfig
@@ -67,15 +69,46 @@ class NeutronManager(NetworkManager):
 class NeutronManager70(NeutronManager):
 
     @classmethod
-    def get_network_group_for_role(cls, network_role):
+    def _get_role_endpoint(cls, role_id, network_scheme):
+        for scheme in six.itervalues(network_scheme):
+            for role, endpoint in six.iteritems(scheme['roles']):
+                if role == role_id:
+                    return endpoint
+
+    @classmethod
+    def get_network_group_for_role(cls, cluster, network_role):
         """Returns network group to which network role is associated.
+        If networking template is set first lookup happens in the
+        template. Otherwise the default network group from
+        the network role is returned.
 
         :param network_role: Network role dict
         :type network_role: dict
         :return: Network group name
         :rtype: str
         """
-        return network_role['default_mapping']
+        default_net_group = network_role['default_mapping']
+        template = cluster.network_config.configuration_template
+        if template is None:
+            return default_net_group
+
+        net_template = template['adv_net_template']
+        group_id = objects.Cluster.get_controllers_group_id(cluster)
+        node_group_db = objects.NodeGroup.get_by_uid(group_id)
+        node_group = net_template[node_group_db.name]
+        network_scheme = node_group['network_scheme']
+
+        role_endpoint = cls._get_role_endpoint(
+            network_role['id'], network_scheme)
+        if role_endpoint is None:
+            return default_net_group
+
+        net_assignments = node_group['network_assignments']
+        for net_group, value in six.iteritems(net_assignments):
+            if value['ep'] == role_endpoint:
+                return net_group
+
+        return default_net_group
 
     @classmethod
     def find_network_role_by_id(cls, cluster, role_id):
@@ -97,7 +130,7 @@ class NeutronManager70(NeutronManager):
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
         net_role = cls.find_network_role_by_id(cluster_db, 'public/vip')
         if net_role:
-            net_group = cls.get_network_group_for_role(net_role)
+            net_group = cls.get_network_group_for_role(cluster_db, net_role)
             return cls.assign_vip(cluster_db, net_group, vip_type='public')
         else:
             raise errors.CanNotDetermineEndPointIP(
@@ -109,7 +142,7 @@ class NeutronManager70(NeutronManager):
         net_roles = objects.Cluster.get_network_roles(cluster)
         for role in net_roles:
             properties = role.get('properties', {})
-            net_group = cls.get_network_group_for_role(role)
+            net_group = cls.get_network_group_for_role(cluster, role)
             for vip_info in properties.get('vip', ()):
                 vip_name = vip_info['name']
                 vip_addr = cls.assign_vip(

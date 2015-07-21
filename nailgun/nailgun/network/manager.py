@@ -422,7 +422,7 @@ class NetworkManager(object):
         db_interfaces = node.nic_interfaces
         pxe = next((
             i for i in node.meta['interfaces'] if i.get('pxe') or
-                i.get('mac') == node.mac),
+                i.get('mac').lower() == node.mac.lower()),
             None)
         if pxe:
             return pxe.get('name')
@@ -481,6 +481,10 @@ class NetworkManager(object):
         ng_ids = set(ng.id for ng in ngs)
         ng_wo_admin_ids = \
             ng_ids ^ set([cls.get_admin_network_group_id(node.id)])
+        pxe_iface = next(six.moves.filter(
+            lambda i: i.pxe == True,
+            node.nic_interfaces
+        ), None)
         for nic in node.nic_interfaces:
             nic_dict = NodeInterfacesSerializer.serialize(nic)
             if 'interface_properties' in nic_dict:
@@ -490,7 +494,7 @@ class NetworkManager(object):
 
             if to_assign_ids:
                 allowed_ids = \
-                    ng_wo_admin_ids if nic != cls.get_admin_interface(node) \
+                    ng_wo_admin_ids if nic != pxe_iface \
                     else ng_ids
                 can_assign = [ng_id for ng_id in to_assign_ids
                               if ng_id in allowed_ids]
@@ -926,9 +930,9 @@ class NetworkManager(object):
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
 
-        for interface in node.nic_interfaces:
-            if cls.is_ip_belongs_to_admin_subnet(interface.ip_addr):
-                return interface
+        for iface in node.nic_interfaces:
+            if cls.is_ip_belongs_to_admin_subnet(iface.ip_addr):
+                return iface
 
         logger.warning(u'Cannot find admin interface for node '
                        'return first interface: "%s"', node.full_name)

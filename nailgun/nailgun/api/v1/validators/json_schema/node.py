@@ -140,9 +140,7 @@ single_schema = {
         "online": {"type": "boolean"},
         "labels": {
             "type": "object",
-            "additionalProperties": {
-                "type": ["string", "null"]
-            }
+            "additionalProperties": base_types.NULLABLE_STRING
         },
         "roles": {"type": "array"},
         "pending_roles": {"type": "array"},

@@ -32,17 +32,17 @@ blank = urwid.Divider()
 
 class fueluser(urwid.WidgetWrap):
     def __init__(self, parent):
-        self.name = "Fuel User"
+        self.name = "OakCloud User"
         self.priority = 70
         self.visible = True
         self.parent = parent
         # UI text
-        self.header_content = ["Set Fuel user password", "Default user: admin",
+        self.header_content = ["Set OakCloud user password", "Default user: admin",
                                "Default pass: admin", ""]
         self.fields = ["FUEL_ACCESS/password", "CONFIRM_PASSWORD"]
         self.defaults = \
             {
-                "FUEL_ACCESS/password": {"label": "Fuel password",
+                "FUEL_ACCESS/password": {"label": "OakCloud password",
                                          "tooltip": "ASCII characters only",
                                          "value": ""},
                 "CONFIRM_PASSWORD": {"label": "Confirm password",

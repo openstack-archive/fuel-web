@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import yaml
+
 from oslo.serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import NodeBondInterface
@@ -23,6 +25,17 @@ from nailgun.utils import reverse
 
 
 class TestAssignmentHandlers(BaseIntegrationTest):
+    def _assign_roles(self, assignment_data, expect_errors=False):
+        return self.app.post(
+            reverse(
+                'NodeAssignmentHandler',
+                kwargs={'cluster_id': self.cluster.id}
+            ),
+            jsonutils.dumps(assignment_data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
     def test_assignment(self):
         self.env.create(
             cluster_kwargs={"api": True},
@@ -33,7 +46,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 }
             ]
         )
-        cluster = self.env.clusters[0]
+        self.cluster = self.env.clusters[0]
         node = self.env.nodes[0]
         assignment_data = [
             {
@@ -41,30 +54,15 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 "roles": ['controller']
             }
         ]
-        resp = self.app.post(
-            reverse(
-                'NodeAssignmentHandler',
-                kwargs={'cluster_id': cluster.id}
-            ),
-            jsonutils.dumps(assignment_data),
-            headers=self.default_headers
-        )
+        resp = self._assign_roles(assignment_data)
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(node.cluster, cluster)
+        self.assertEqual(node.cluster, self.cluster)
         self.datadiff(
             node.pending_roles,
             assignment_data[0]["roles"]
         )
 
-        resp = self.app.post(
-            reverse(
-                'NodeAssignmentHandler',
-                kwargs={'cluster_id': cluster.id}
-            ),
-            jsonutils.dumps(assignment_data),
-            headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self._assign_roles(assignment_data, True)
         self.assertEqual(400, resp.status_code)
 
     def test_unassignment(self):
@@ -160,8 +158,70 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-
         self.assertEquals(404, resp.status_code)
+
+    def test_assign_conflicting_roles(self):
+        self.env.create(
+            cluster_kwargs={"api": True},
+            nodes_kwargs=[
+                {
+                    "cluster_id": None,
+                    "api": True
+                }
+            ]
+        )
+        self.cluster = self.env.clusters[0]
+        node = self.env.nodes[0]
+        assignment_data = [
+            {
+                "id": node.id,
+                "roles": ['controller', 'compute']
+            }
+        ]
+        resp = self._assign_roles(assignment_data, True)
+        self.assertEquals(400, resp.status_code)
+
+    def test_assign_conflicting_all_role(self):
+        ROLE = yaml.safe_load("""
+            name: test_role
+            meta:
+              name: "Some plugin role"
+              description: "Some description"
+              conflicts: "*"
+            volumes_roles_mapping:
+                - id: os
+                  allocate_size: all
+        """)
+
+        release = self.env.create_release()
+        resp = self.env.create_role(release.id, ROLE)
+
+        self.env.create(
+            cluster_kwargs={
+                "api": True,
+                "release_id": release.id
+            },
+            nodes_kwargs=[
+                {
+                    "cluster_id": None,
+                    "api": True
+                }
+            ]
+        )
+        self.cluster = self.env.clusters[0]
+        node = self.env.nodes[0]
+        assignment_data = [
+            {
+                "id": node.id,
+                "roles": ['controller', 'test_role']
+            }
+        ]
+        resp = self._assign_roles(assignment_data, True)
+        self.assertEquals(400, resp.status_code, resp.body)
+
+        assignment_data[0]["roles"] = ['test_role']
+        resp = self._assign_roles(assignment_data)
+        self.assertEquals(200, resp.status_code, resp.body)
 
     def test_add_node_with_cluster_network_template(self):
         net_template = """

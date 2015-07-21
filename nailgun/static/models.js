@@ -276,15 +276,24 @@ define([
         model: models.Role,
         processConflicts: function() {
             this.each(function(role) {
-                role.conflicts = _.chain(role.conflicts)
-                    .union(role.get('conflicts'))
-                    .uniq()
-                    .compact()
-                    .value();
-                _.each(role.get('conflicts'), function(conflict) {
-                    var conflictingRole = this.findWhere({name: conflict});
-                    conflictingRole.conflicts = conflictingRole.conflicts || [];
-                    conflictingRole.conflicts.push(role.get('name'));
+                var roleConflicts = role.get('conflicts'),
+                    roleName = role.get('name');
+
+                if (roleConflicts == '*') {
+                    role.conflicts = _.map(this.reject({name: roleName}), function(role) {
+                            return role.get('name');
+                        });
+                } else {
+                    role.conflicts = _.chain(role.conflicts)
+                        .union(roleConflicts)
+                        .uniq()
+                        .compact()
+                        .value();
+                }
+
+                _.each(role.conflicts, function(conflictRoleName) {
+                    var conflictingRole = this.findWhere({name: conflictRoleName});
+                    conflictingRole.conflicts = _.uniq(_.union(conflictingRole.conflicts || [], [roleName]));
                 }, this);
             }, this);
         }

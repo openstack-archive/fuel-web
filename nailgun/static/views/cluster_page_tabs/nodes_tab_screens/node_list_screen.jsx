@@ -1331,7 +1331,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 conflicts = _.chain(this.props.selectedRoles)
                     .union(this.props.indeterminateRoles)
                     .map(function(role) {
-                        return roles.find({name: role}).get('conflicts');
+                        return roles.find({name: role}).conflicts;
                     })
                     .flatten()
                     .uniq()

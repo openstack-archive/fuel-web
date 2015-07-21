@@ -68,7 +68,12 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             var preventRouting = false;
             var specialRoutes = [
                 {url: 'login', condition: function() {
-                    return app.version.get('auth_required') && !app.user.get('authenticated');
+                    var result = app.version.get('auth_required') && !app.user.get('authenticated');
+                    if (result) {
+                        var url = Backbone.history.getHash();
+                        if (url != 'login' && url != 'logout') app.router.returnUrl = url;
+                    }
+                    return result;
                 }},
                 {url: 'welcome', condition: function(previousUrl) {
                     return previousUrl != 'logout' && !app.settings.get('statistics.user_choice_saved.value');

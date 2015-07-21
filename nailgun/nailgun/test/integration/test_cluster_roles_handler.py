@@ -21,8 +21,8 @@ from nailgun.test import base
 
 
 class TestClusterRolesHandler(base.BaseTestCase):
-
-    ROLES = yaml.load("""
+    # TODO(apopovych): use test data from base test file
+    ROLES = yaml.safe_load("""
         test_role:
           name: "Some plugin role"
           description: "Some description"
@@ -33,6 +33,14 @@ class TestClusterRolesHandler(base.BaseTestCase):
           restrictions:
             - condition: "some logic condition"
               message: "Some message for restriction warning"
+    """)
+
+    VOLUMES = yaml.safe_load("""
+        volumes_roles_mapping:
+          test_role:
+            - {allocate_size: "min", id: "os"}
+            - {allocate_size: "all", id: "image"}
+
     """)
 
     def setUp(self):
@@ -150,6 +158,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
     def test_get_particular_role_for_cluster_w_plugin(self):
         plugin_data = self.env.get_default_plugin_metadata()
         plugin_data['roles_metadata'] = self.ROLES
+        plugin_data['volumes_metadata'] = self.VOLUMES
         plugin = objects.Plugin.create(plugin_data)
         self.cluster.plugins.append(plugin)
         self.db.flush()
@@ -166,6 +175,6 @@ class TestClusterRolesHandler(base.BaseTestCase):
             role['meta'],
             self.ROLES['test_role']
         )
-
-        # TODO(ikalnitsky): Add check for volumes when volumes for plugins
-        # are implemented.
+        self.assertItemsEqual(
+            role['volumes_roles_mapping'],
+            self.VOLUMES['volumes_roles_mapping']['test_role'])

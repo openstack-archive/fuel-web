@@ -111,16 +111,17 @@ def get_node_spaces(node):
     Sets key `_allocate_size` which used only for internal calculation
     and not used in partitioning system.
     """
+    # FIXME(apopovych): ugly hack to avoid circular dependency
+    from nailgun import objects
+
     node_spaces = []
-
-    role_mapping = node.cluster.release.volumes_metadata[
-        'volumes_roles_mapping']
-
+    volumes_metadata = objects.Cluster.get_volumes_metadata(node.cluster)
+    role_mapping = volumes_metadata['volumes_roles_mapping']
+    all_spaces = volumes_metadata['volumes']
     # TODO(dshulyak)
     # This logic should go to openstack.yaml (or other template)
     # when it will be extended with flexible template engine
     modify_volumes_hook(role_mapping, node)
-    all_spaces = node.cluster.release.volumes_metadata['volumes']
 
     for role in node.all_roles:
         if not role_mapping.get(role):

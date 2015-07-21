@@ -95,3 +95,26 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
         self.assertEqual(len(image_volume['volumes']), 1)
         self.assertEqual(image_volume['volumes'][0]['mount'],
                          '/var/lib/glance')
+
+
+class TestVolumeManagerControllerPartition(base.BaseIntegrationTest):
+
+    def test_controller_var_log_dirs(self):
+        self.env.create(
+            nodes_kwargs=[{'roles': ['controller']}],
+        )
+        volumes = self.env.nodes[0].volume_manager.gen_volumes_info()
+
+        # checks in format ((volume_id, mount_point),)
+        checks = (
+            ('controller_log', '/var/log'),
+            ('controller_var', '/var'),
+        )
+        for volume_id, expected_mount_point in checks:
+            volume_data = next((v for v in volumes
+                                if v['id'] == volume_id),
+                               None)
+            self.assertIsNotNone(volume_data)
+            mount_points = (v_data['mount'] for v_data in
+                            volume_data['volumes'])
+            self.assertIn(expected_mount_point, mount_points)

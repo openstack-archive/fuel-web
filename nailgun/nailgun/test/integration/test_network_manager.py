@@ -516,6 +516,50 @@ class TestNeutronManager70(BaseIntegrationTest):
             }
         )
 
+    def _get_network_role_metadata(self, **kwargs):
+        network_role = {
+            'id': 'test_network_role',
+            'default_mapping': 'public',
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': [
+                    {'name': 'test_vip_a'}
+                ]
+            }
+        }
+        network_role.update(kwargs)
+        return network_role
+
+    def test_get_network_group_for_role(self):
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        objects.Cluster.set_network_template(self.cluster, net_template)
+
+        node_group = objects.Cluster.get_controllers_node_group(self.cluster)
+
+        self.assertEqual(
+            self.net_manager.get_network_group_for_role(
+                self.cluster, node_group.name,
+                self._get_network_role_metadata(id='public/vip')),
+            'public')
+        self.assertEqual(
+            self.net_manager.get_network_group_for_role(
+                self.cluster, node_group.name,
+                self._get_network_role_metadata(id='keystone/api')),
+            'management')
+        self.assertEqual(
+            self.net_manager.get_network_group_for_role(
+                self.cluster, node_group.name,
+                self._get_network_role_metadata(id='management')),
+            'management')
+        self.assertEqual(
+            self.net_manager.get_network_group_for_role(
+                self.cluster, node_group.name,
+                self._get_network_role_metadata(
+                    id='role_not_in_template',
+                    default_mapping='default_net_group')),
+            'default_net_group')
+
     def test_get_endpoint_ip(self):
         vip = '172.16.0.1'
 

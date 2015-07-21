@@ -204,6 +204,10 @@
   .node-management-button-sizes;
 }
 
+.glyphicon-tag-alt {
+  .icon-default-styles(-52px, -332px);
+}
+
 .glyphicon-pencil-alt {
   .icon-default-styles(-13px, -492px);
   &:hover {
@@ -1334,9 +1338,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
     margin-bottom: @management-panel-indent * 3;
     button.btn {
       margin-right: @management-panel-indent;
+      &.btn-labels {
+        margin-right: @management-panel-indent * 3;
+      }
     }
     .search {
-      min-width: 350px;
+      min-width: 310px;
       position: relative;
       .form-group {
         margin: 0;
@@ -1465,6 +1472,63 @@ button, .btn:not(.btn-link) {.font-semibold;}
       float: left;
     }
   }
+
+  .labels {
+    p {
+      color: @base-text-color + 50%;
+      & + div {
+        margin-top: @management-panel-indent * 3;
+      }
+      strong {
+        text-decoration: underline;
+      }
+    }
+    .forms-box {
+      margin-top: @management-panel-indent * 3;
+      margin-bottom: 0;
+      .checkbox-group {
+        padding: 0;
+        margin: 0;
+        position: relative;
+        top: 7px;
+        width: 25px;
+      }
+      > div + .btn-add-label {
+        margin-top: @management-panel-indent;
+        margin-left: 35px;
+      }
+      .form-group {
+        margin-bottom: @management-panel-indent;
+        padding-right: 0;
+        position: relative;
+        label {
+          width: auto;
+          padding: 0;
+          padding-left: 13px;
+          margin: 0 0 3px;
+          .font-semibold;
+        }
+        &.has-warning {
+          label .glyphicon {
+            position: absolute;
+            left: @default-input-width + 15;
+            top: 12px;
+          }
+          .form-control {
+            border-color: @orange;
+          }
+        }
+      }
+      .has-label {
+        .checkbox-group {
+          top: 31px;
+        }
+        .has-warning label .glyphicon {
+          top: 32px;
+        }
+      }
+    }
+  }
 }
 
 .multiselect, .number-range {
@@ -1557,7 +1621,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .node {
       height: @node-height;
       margin-bottom: 5px;
-      overflow: hidden;
+      overflow: visible;
       padding: 2px 2px 0;
       font-size: @base-font-size - 2;
       border: 1px solid @base-node-border;
@@ -1619,7 +1683,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         }
 
         .node-name {
-          width: 35%;
+          width: 30%;
           .name {
             height: 31px;
             padding-top: 8px;
@@ -1708,6 +1772,35 @@ button, .btn:not(.btn-link) {.font-semibold;}
           background: url(@common-icons-sprite) no-repeat 0 0;
           &:hover {
             background: url(@common-icons-sprite) no-repeat -@node-button-size 0;
+          }
+        }
+
+        .node-labels {
+          width: 5%;
+          padding-top: 15px;
+          position: relative;
+          overflow: visible;
+          .node-labels-popover {
+            display: block;
+            top: 30px;
+            ul {
+              padding: 0;
+              margin: 0;
+            }
+          }
+          .btn-link {
+            padding: 0;
+            color: @blue;
+            font-size: @base-font-size - 2;
+            &:hover {
+              text-decoration: none;
+            }
+            .font-normal;
+            span {
+              position: relative;
+              top: -1px;
+              left: 2px;
+            }
           }
         }
       }
@@ -1989,6 +2082,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .font-semibold;
       ul {
         padding: 0;
+        display: inline;
         li {
           display: inline-block;
           float: left;
@@ -2002,6 +2096,27 @@ button, .btn:not(.btn-link) {.font-semibold;}
             content: "";
           }
         }
+      }
+    }
+
+    .node-labels {
+      text-align: left;
+      ul {
+        padding-left: 28px;
+      }
+      .glyphicon {
+        font-size: @base-font-size - 2;
+      }
+      .label {
+        color: @base-text-color;
+        border-radius: 5px;
+        background: @gray + 70%;
+        padding: 4px 6px 2px;
+        margin-right: 3px;
+        font-size: @base-font-size - 4;
+        text-transform: uppercase;
+        display: inline-block;
+        .font-semibold;
       }
     }
   }
@@ -3425,4 +3540,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
   &:hover {
     text-decoration: none;
   }
+}
+
+.tooltip-inner {
+  max-width: none;
+  min-width: 300px;
 }

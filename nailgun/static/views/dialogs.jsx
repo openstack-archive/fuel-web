@@ -1056,7 +1056,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     return this.props.cluster.fetchRelated('nodes');
                 }, this))
                 .done(_.bind(function() {
-                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
+                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
                     this.close();
                 }, this))
                 .fail(_.bind(function(response) {

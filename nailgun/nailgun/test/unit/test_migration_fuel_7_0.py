@@ -754,3 +754,16 @@ class TestOldReleasesIsUndeployable(base.BaseAlembicMigrationTest):
 
         for (is_deployable, ) in result:
             self.assertFalse(is_deployable)
+
+
+class TestNodeLabelsMigration(base.BaseAlembicMigrationTest):
+    def test_node_labels_field_exists_and_has_default_value(self):
+        nodes_table = self.meta.tables['nodes']
+        self.assertIn('labels', nodes_table.c)
+
+        default_labels = jsonutils.loads(
+            db.execute(
+                sa.select([nodes_table.c.labels])
+            ).fetchone()[0]
+        )
+        self.assertEqual(default_labels, {})

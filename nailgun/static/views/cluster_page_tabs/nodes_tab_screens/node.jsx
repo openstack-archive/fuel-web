@@ -35,7 +35,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 renaming: false,
                 actionInProgress: false,
                 eventNamespace: 'click.editnodename' + this.props.node.id,
-                extendedView: false
+                extendedView: false,
+                labelsPopoverVisible: false
             };
         },
         componentWillUnmount: function() {
@@ -101,7 +102,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
                         if (!nodeWillBeRemoved) this.setState({actionInProgress: false});
                     }, this));
-                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
+                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
                 }, this))
                 .fail(function(response) {
                     utils.showErrorDialog({
@@ -124,7 +125,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             // cluster nodes refetch with status 'Removing' which would look ugly
             // to the end user
             Backbone.sync('delete', this.props.node).then(_.bind(function(task) {
-                    dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications');
+                    dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications labelsConfigurationUpdated');
                     if (task.status == 'ready') {
                         // Do not send the 'DELETE' request again, just get rid
                         // of this node.
@@ -215,7 +216,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     type='checkbox'
                     name={this.props.node.id}
                     checked={this.props.checked}
-                    disabled={!this.props.node.isSelectable()}
+                    disabled={this.props.locked || !this.props.node.isSelectable() || this.props.mode == 'edit'}
                     onChange={this.props.mode != 'edit' && this.props.onNodeSelection}
                     wrapperClassName='pull-left'
                 />
@@ -230,7 +231,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         renderRoleList: function(roles) {
             return (
-                <ul className='clearfix'>
+                <ul>
                     {_.map(roles, function(role) {
                         return (
                             <li
@@ -248,10 +249,31 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
             dialogs.DeleteNodesDialog.show({nodes: [this.props.node], cluster: this.props.cluster});
         },
+        renderLabels: function() {
+            var labels = this.props.node.get('labels');
+            if (_.isEmpty(labels)) return null;
+            return (
+                <ul>
+                    {_.map(_.keys(labels).sort(utils.natsort), function(key) {
+                        var value = labels[key];
+                        return (
+                            <li key={key + value} className='label'>
+                                {key + (_.isNull(value) ? '' : ' "' + value + '"')}
+                            </li>
+                        );
+                    })}
+                </ul>
+            );
+        },
+        toggleLabelsPopover: function(visible) {
+            this.setState({
+                labelsPopoverVisible: _.isBoolean(visible) ? visible : !this.state.labelsPopoverVisible
+            });
+        },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
-                isSelectable = node.isSelectable() && this.props.mode != 'edit',
+                isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
                 status = node.getStatusSummary(),
                 roles = this.sortRoles(node.get('roles').length ? node.get('roles') : node.get('pending_roles'));
 
@@ -338,6 +360,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             {this.renderRoleList(roles)}
                                         </div>
                                     }
+                                    <div className='node-labels'>
+                                        <i className='glyphicon glyphicon-tags pull-left' />
+                                        {this.renderLabels()}
+                                    </div>
                                     <div className={utils.classNames(statusClasses)}>
                                         <i className='glyphicon glyphicon-time' />
                                         {_.contains(['provisioning', 'deploying'], status) ?
@@ -388,6 +414,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             <div className='role-list'>
                                 {this.renderRoleList(roles)}
                             </div>
+                        </div>
+                        <div className='node-labels'>
+                            {!_.isEmpty(node.get('labels')) &&
+                                <button className='btn btn-link' onClick={this.toggleLabelsPopover}>
+                                    <i className='glyphicon glyphicon-tag-alt' />
+                                    {_.keys(node.get('labels')).length}
+                                </button>
+                            }
+                            {this.state.labelsPopoverVisible &&
+                                <controls.Popover className='node-labels-popover' toggle={this.toggleLabelsPopover}>
+                                    {this.renderLabels()}
+                                </controls.Popover>
+                            }
                         </div>
                         <div className='node-action'>
                             {!!node.get('cluster') &&

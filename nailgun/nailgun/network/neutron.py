@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NeutronConfig
@@ -67,15 +69,42 @@ class NeutronManager(NetworkManager):
 class NeutronManager70(NeutronManager):
 
     @classmethod
-    def get_network_group_for_role(cls, network_role):
+    def get_network_group_for_role(cls, cluster, network_role):
         """Returns network group to which network role is associated.
+        If networking template is set first lookup happens in the
+        template. Otherwise the default network group from
+        the network role is returned.
 
         :param network_role: Network role dict
         :type network_role: dict
         :return: Network group name
         :rtype: str
         """
-        return network_role['default_mapping']
+        default_net_group = network_role['default_mapping']
+        template = cluster.network_config.configuration_template
+        if template is None:
+            return default_net_group
+
+        node_group = template['adv_net_template']['default']
+        network_scheme = node_group['network_scheme']
+        role_endpoint = None
+
+        for scheme in six.itervalues(network_scheme):
+            for role, endpoint in scheme['roles']:
+                if role == network_role:
+                    role_endpoint = endpoint
+                    break
+
+        if role_endpoint is None:
+            return default_net_group
+
+        net_assignments = node_group['network_assignments']
+
+        for net_group, value in six.iteritems(net_assignments):
+            if value['ip'] == role_endpoint:
+                return net_group
+
+        return default_net_group
 
     @classmethod
     def find_network_role_by_id(cls, cluster, role_id):

@@ -17,6 +17,7 @@
 from mock import patch
 from oslo.serialization import jsonutils
 
+from nailgun import consts
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.test import base
@@ -95,3 +96,19 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
         self.assertEqual(len(image_volume['volumes']), 1)
         self.assertEqual(image_volume['volumes'][0]['mount'],
                          '/var/lib/glance')
+
+
+class TestVolumeManagerControllerPartition(base.BaseIntegrationTest):
+
+    def test_controller_var(self):
+        self.env.create(
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
+            nodes_kwargs=[{'roles': ['controller']}],
+        )
+        volumes = self.env.nodes[0].volume_manager.gen_volumes_info()
+        os_ctrl = next((v for v in volumes if v['id'] == 'os_controller'),
+                       None)
+        self.assertIsNotNone(os_ctrl)
+        mount_points = set(v_data['mount'] for v_data in os_ctrl['volumes'])
+        check_mount_points = set(('/var', '/var/log'))
+        self.assertTrue(check_mount_points.issubset(mount_points))

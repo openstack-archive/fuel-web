@@ -61,7 +61,7 @@ def prepare():
         meta.tables['releases'].insert(),
         [{
             'name': 'test_name',
-            'version': '2014.2-6.1',
+            'version': '2014.2.2-6.1',
             'operating_system': 'ubuntu',
             'state': 'available',
             'roles': jsonutils.dumps([
@@ -743,3 +743,14 @@ class TestExtensionsField(base.BaseAlembicMigrationTest):
 
         self.assertEqual(list(cluster_result)[0], ['volume_manager'])
         self.assertEqual(list(release_result)[0], ['volume_manager'])
+
+
+class TestOldReleasesIsUndeployable(base.BaseAlembicMigrationTest):
+
+    def test_old_releases_has_deployable_false(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.is_deployable]).
+            where(self.meta.tables['releases'].c.version == '2014.2.2-6.1'))
+
+        for (is_deployable, ) in result:
+            self.assertFalse(is_deployable)

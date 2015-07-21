@@ -267,7 +267,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 processedRoleData = this.processRoleLimits();
 
             // labels to work with in filters and sorters panels
-            var screenNodeLabels = _.chain(nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
+            var screenNodesLabels = _.chain(nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
 
             // labels to manage in labels panel
             var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
@@ -292,13 +292,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
                 // filters
                 return _.all(this.state.activeFilters, function(values, filter) {
-                    if (!_.contains(_.union(this.props.filters, screenNodeLabels), filter) || !values.length) {
-                        return true;
+                    if (!_.contains(this.props.filters, filter) && !_.contains(screenNodesLabels, filter)) return true;
+
+                    if (_.contains(screenNodesLabels, filter)) {
+                        return values.length ? _.contains(values, node.getLabel(filter)) : !_.isUndefined(node.getLabel(filter));
                     }
 
-                    if (_.contains(screenNodeLabels, filter)) {
-                        return _.contains(values, node.getLabel(filter));
-                    }
+                    if (!values.length) return true;
 
                     if (filter == 'roles') {
                         return _.any(values, function(role) {return node.hasRole(role);});
@@ -337,7 +337,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         nodes={selectedNodes}
                         screenNodes={nodes}
                         filteredNodes={filteredNodes}
-                        screenNodeLabels={screenNodeLabels}
+                        screenNodesLabels={screenNodesLabels}
                         selectedNodeLabels={selectedNodeLabels}
                         indeterminateLabels={indeterminateLabels}
                         hasChanges={this.hasChanges()}
@@ -356,7 +356,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedNodeIds', 'selectedRoles')}
                         {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter')}
                         {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
-                        screenNodeLabels={screenNodeLabels}
+                        screenNodesLabels={screenNodesLabels}
                         nodes={filteredNodes}
                         totalNodesLength={nodes.length}
                         locked={this.state.isLabelsPanelOpen}
@@ -559,13 +559,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 isSearchButtonVisible: !!this.props.search,
                 activeSearch: !!this.props.search,
                 newLabels: [],
-                labelsWithMultipleValues: _.filter(this.props.selectedNodeLabels, function(label) {
-                    return _.uniq(_.reject(this.props.nodes.getLabelValues(label), _.isUndefined)).length > 1;
-                }, this)
+                labelsWithMultipleValues: []
             };
         },
         getFilterOptions: function(filter) {
-            if (_.contains(this.props.screenNodeLabels, filter)) {
+            if (_.contains(this.props.screenNodesLabels, filter)) {
                 var values = _.uniq(_.reject(this.props.screenNodes.getLabelValues(filter), _.isUndefined));
                 return values.map(function(value) {
                     return {
@@ -667,6 +665,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.clearSearchField();
                 this.setState({activeSearch: false});
             }
+        },
+        componentWillReceiveProps: function(newProps) {
+            // check labels have multiple values if node selection was changed
+            this.setState({
+                labelsWithMultipleValues: _.filter(newProps.selectedNodeLabels, function(label) {
+                    return _.uniq(_.reject(newProps.nodes.getLabelValues(label), _.isUndefined)).length > 1;
+                })
+            });
         },
         componentDidUpdate: function() {
             // FIXME(jkirnosova): need to call on labels panel opening only
@@ -830,13 +836,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }, this);
 
             var activeSorters, inactiveSorters;
-            var filtersToDisplay, inactiveFilters, filtersWithChosenValues;
+            var filtersToDisplay, inactiveFilters, appliedFilters;
             if (this.props.mode != 'edit') {
                 activeSorters = _.flatten(_.map(this.props.activeSorters, _.keys));
-                inactiveSorters = _.difference(_.union(this.props.sorters, this.props.screenNodeLabels), activeSorters);
+                inactiveSorters = _.difference(_.union(this.props.sorters, this.props.screenNodesLabels), activeSorters);
                 filtersToDisplay = _.extend(_.zipObject(this.props.defaultFilters, _.times(this.props.defaultFilters.length, function() {return [];})), this.props.activeFilters);
-                inactiveFilters = _.difference(_.union(this.props.filters, this.props.screenNodeLabels), _.keys(filtersToDisplay));
-                filtersWithChosenValues = _.omit(this.props.activeFilters, function(values) {return !values.length;});
+                inactiveFilters = _.difference(_.union(this.props.filters, this.props.screenNodesLabels), _.keys(filtersToDisplay));
+                appliedFilters = _.omit(this.props.activeFilters, function(values, filterName) {
+                    return _.contains(this.props.filters, filterName) && !values.length;
+                }, this);
             }
 
             this.props.selectedNodeLabels.sort(utils.natsort);
@@ -1195,9 +1203,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         ]}
                         {this.props.mode != 'edit' && !!this.props.screenNodes.length &&
                             <div className='col-xs-12'>
-                                {(!this.state.areSortersVisible || !this.state.areFiltersVisible && !_.isEmpty(filtersWithChosenValues)) &&
+                                {(!this.state.areSortersVisible || !this.state.areFiltersVisible && !_.isEmpty(appliedFilters)) &&
                                     <div className='active-sorters-filters'>
-                                        {!this.state.areFiltersVisible && !_.isEmpty(filtersWithChosenValues) &&
+                                        {!this.state.areFiltersVisible && !_.isEmpty(appliedFilters) &&
                                             <div className='active-filters row' onClick={this.toggleFilters}>
                                                 <strong className='col-xs-1'>{i18n(ns + 'filter_by')}</strong>
                                                 <div className='col-xs-11'>
@@ -1206,12 +1214,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         total: this.props.screenNodes.length
                                                     })}
                                                     {_.map(this.props.activeFilters, function(values, filterName) {
-                                                        if (!values.length) return null;
                                                         var options = this.getFilterOptions(filterName);
                                                         if (options && !options.length) return null;
                                                         return (
                                                             <div key={filterName}>
-                                                                <strong>{i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName})}: </strong>
+                                                                <strong>{i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName})}{!!values.length && ':'} </strong>
                                                                 <span>
                                                                     {options ?
                                                                         _.map(values, function(value) {
@@ -1408,7 +1415,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             var groupingMethod = _.bind(function(node) {
                 return (_.map(_.difference(activeSorters, uniqValueSorters), function(sorter) {
-                    if (_.contains(this.props.screenNodeLabels, sorter)) {
+                    if (_.contains(this.props.screenNodesLabels, sorter)) {
                         return getLabelValue(node, sorter);
                     }
 
@@ -1465,7 +1472,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     var node1 = group1[1][0], node2 = group2[1][0];
                     var sorterName = _.keys(sorter)[0];
 
-                    if (_.contains(this.props.screenNodeLabels, sorterName)) {
+                    if (_.contains(this.props.screenNodesLabels, sorterName)) {
                         var node1Label = node1.getLabel(sorterName),
                             node2Label = node2.getLabel(sorterName);
                         if (node1Label && node2Label) {

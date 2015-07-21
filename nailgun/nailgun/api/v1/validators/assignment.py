@@ -122,10 +122,15 @@ class NodeAssignmentValidator(AssignmentValidator):
 
     @classmethod
     def check_roles_for_conflicts(cls, roles, roles_metadata):
+        all_roles = set(metadata.keys())
         for role in roles:
             if "conflicts" in roles_metadata[role]:
                 other_roles = roles - set([role])
-                conflicting_roles = set(roles_metadata[role]["conflicts"])
+                conflicting_roles = roles_metadata[role]["conflicts"]
+                if conflicting_roles == "*":
+                    conflicting_roles = all_roles - set([role])
+                else:
+                    conflicting_roles = set(conflicting_roles)
                 conflicting_roles &= other_roles
                 if conflicting_roles:
                     raise errors.InvalidData(

@@ -22,7 +22,7 @@ from oslo.serialization import jsonutils
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 

@@ -22,7 +22,7 @@ from novaclient import client as nova_client
 from nailgun import consts
 from nailgun.db import db
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.settings import settings
 from nailgun.statistics.oswl.resources_description \
     import resources_description

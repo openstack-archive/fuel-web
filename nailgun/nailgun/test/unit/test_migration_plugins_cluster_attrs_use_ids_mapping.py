@@ -14,7 +14,7 @@
 
 from copy import deepcopy
 
-from nailgun.objects import Plugin
+from nailgun.objects import objects
 from nailgun.test.base import BaseTestCase
 from nailgun.utils.migration import \
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping
@@ -27,9 +27,9 @@ class TestMigrationPluginsClusterAttrs(BaseTestCase):
         self.env.create()
         self.cluster = self.env.clusters[0]
         self.plugins = [
-            Plugin.create(self.env.get_default_plugin_metadata(
+            objects.Plugin.create(self.env.get_default_plugin_metadata(
                 name='plugin_name_1')),
-            Plugin.create(self.env.get_default_plugin_metadata(
+            objects.Plugin.create(self.env.get_default_plugin_metadata(
                 name='plugin_name_2'))]
 
     def test_replaces_versions_with_ids(self):

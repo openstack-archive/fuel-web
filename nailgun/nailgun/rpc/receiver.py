@@ -27,7 +27,7 @@ from sqlalchemy import or_
 
 from nailgun import consts
 from nailgun import notifier
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.rpc import utils
 from nailgun.settings import settings
 

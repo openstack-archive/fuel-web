@@ -18,7 +18,7 @@ import json
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 

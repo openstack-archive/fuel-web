@@ -20,7 +20,7 @@ import hashlib
 import json
 import six
 
-from nailgun import objects
+from nailgun.objects import objects
 
 
 def _added(time, prev, curr, collected):

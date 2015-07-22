@@ -16,7 +16,7 @@ import datetime
 import mock
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test.base import BaseMasterNodeSettignsTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse

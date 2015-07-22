@@ -22,7 +22,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun.expression import Expression
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings

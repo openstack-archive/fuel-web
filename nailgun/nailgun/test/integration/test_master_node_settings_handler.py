@@ -16,7 +16,7 @@ import copy
 
 from oslo.serialization import jsonutils
 
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
 from nailgun.test.base import BaseMasterNodeSettignsTest

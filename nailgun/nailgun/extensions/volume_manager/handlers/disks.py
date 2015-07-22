@@ -22,7 +22,7 @@ from ..manager import DisksFormatConvertor
 from ..validators.disks import NodeDisksValidator
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
-from nailgun import objects
+from nailgun.objects import objects
 
 
 class NodeDisksHandler(BaseHandler):

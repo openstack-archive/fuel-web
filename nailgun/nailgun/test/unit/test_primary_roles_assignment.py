@@ -18,7 +18,7 @@ from contextlib import contextmanager
 import six
 
 from nailgun.consts import NODE_STATUSES
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test import base
 
 

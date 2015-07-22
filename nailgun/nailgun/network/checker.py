@@ -21,7 +21,7 @@ from itertools import product
 import netaddr
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.objects.serializers.network_configuration \
     import NetworkConfigurationSerializer

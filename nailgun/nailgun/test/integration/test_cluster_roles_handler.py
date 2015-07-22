@@ -16,7 +16,7 @@
 
 import yaml
 
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test import base
 
 

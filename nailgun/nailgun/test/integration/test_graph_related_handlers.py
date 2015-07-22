@@ -19,7 +19,7 @@ from oslo.serialization import jsonutils
 import yaml
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -261,7 +261,7 @@ class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
             end='task', start='another_task')
 
 
-@mock.patch.object(objects.Cluster, 'get_deployment_tasks')
+@mock.patch('nailgun.objects.cluster.Cluster.get_deployment_tasks')
 class TestTaskDeployGraph(BaseGraphTasksTests):
 
     content_type = 'text/vnd.graphviz'

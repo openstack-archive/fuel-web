@@ -20,10 +20,10 @@ CapacityLog objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunObject
+from nailgun.objects import objects
 
 
-class CapacityLog(NailgunObject):
+class CapacityLog(objects.NailgunObject):
 
     model = models.CapacityLog
 

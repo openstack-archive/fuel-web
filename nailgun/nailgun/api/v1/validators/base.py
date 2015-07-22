@@ -19,7 +19,7 @@ from jsonschema.exceptions import ValidationError
 from oslo.serialization import jsonutils
 
 from nailgun.errors import errors
-from nailgun import objects
+from nailgun.objects import objects
 
 
 class BasicValidator(object):

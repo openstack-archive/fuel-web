@@ -27,7 +27,7 @@ from nailgun.api.v1.handlers.base import DeploymentTasksHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.api.v1.handlers.base import content
 

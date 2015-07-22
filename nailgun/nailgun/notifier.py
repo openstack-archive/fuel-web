@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun import objects
+from nailgun.objects import objects
 
 
 def notify(topic, message, cluster_id=None, node_id=None, task_uuid=None):

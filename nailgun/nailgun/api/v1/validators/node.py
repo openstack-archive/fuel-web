@@ -19,7 +19,7 @@ from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import node_schema
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node

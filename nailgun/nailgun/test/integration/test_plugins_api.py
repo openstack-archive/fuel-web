@@ -18,7 +18,7 @@ import mock
 from oslo.serialization import jsonutils
 import yaml
 
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.plugins import adapters
 from nailgun.test import base
 

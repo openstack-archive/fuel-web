@@ -22,7 +22,7 @@ from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.statistics.fuel_statistics.tasks_params_white_lists \
     import task_output_white_list
 from nailgun.task.helpers import TaskHelper

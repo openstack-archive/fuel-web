@@ -32,9 +32,8 @@ class TestClusterValidator(BaseTestCase):
             "release": 1,
             "mode": consts.CLUSTER_MODES.ha_compact})
 
-    @patch('nailgun.api.v1.validators.cluster.objects'
-           '.ClusterCollection.filter_by')
-    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    @patch('nailgun.objects.cluster.ClusterCollection.filter_by')
+    @patch('nailgun.objects.release.Release.get_by_uid')
     def test_cluster_exists_validation(self, release_get_by_uid, cc_filter_by):
         release_get_by_uid.return_value = Mock(modes=[
             consts.CLUSTER_MODES.ha_compact])
@@ -42,9 +41,8 @@ class TestClusterValidator(BaseTestCase):
         self.assertRaises(errors.AlreadyExists,
                           ClusterValidator.validate, self.cluster_data)
 
-    @patch('nailgun.api.v1.validators.cluster.objects'
-           '.ClusterCollection.filter_by')
-    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    @patch('nailgun.objects.cluster.ClusterCollection.filter_by')
+    @patch('nailgun.objects.release.Release.get_by_uid')
     def test_cluster_does_not_exist_validation(self, release_get_by_uid,
                                                cc_filter_by):
         try:
@@ -57,14 +55,13 @@ class TestClusterValidator(BaseTestCase):
                 'Cluster exists validation failed: {0}'.format(e)
             )
 
-    @patch('nailgun.api.v1.validators.cluster.objects'
-           '.ClusterCollection.filter_by')
+    @patch('nailgun.objects.cluster.ClusterCollection.filter_by')
     def test_release_exists_validation(self, cc_filter_by):
         cc_filter_by.return_value.first.return_value = None
         self.assertRaises(errors.InvalidData,
                           ClusterValidator.validate, self.cluster_data)
 
-    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    @patch('nailgun.objects.release.Release.get_by_uid')
     def test_release_non_exists_validation(self, release_get_by_uid):
         release_get_by_uid.return_value = None
         self.assertRaises(errors.InvalidData,
@@ -151,9 +148,8 @@ class TestClusterValidator(BaseTestCase):
             )
         )
 
-    @patch('nailgun.api.v1.validators.cluster.objects'
-           '.ClusterCollection.filter_by')
-    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    @patch('nailgun.objects.cluster.ClusterCollection.filter_by')
+    @patch('nailgun.objects.release.Release.get_by_uid')
     def test_mode_check_passes(self, release_get_by_uid, cc_filter_by):
         release_get_by_uid.return_value = Mock(modes=[
             consts.CLUSTER_MODES.ha_compact])
@@ -164,9 +160,8 @@ class TestClusterValidator(BaseTestCase):
         except errors.InvalidData as e:
             self.fail('test_mode_check failed: {0}'.format(e))
 
-    @patch('nailgun.api.v1.validators.cluster.objects'
-           '.ClusterCollection.filter_by')
-    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    @patch('nailgun.objects.cluster.ClusterCollection.filter_by')
+    @patch('nailgun.objects.release.Release.get_by_uid')
     def test_mode_check_fails(self, release_get_by_uid, cc_filter_by):
         release_get_by_uid.return_value = Mock(
             modes=['trolomod', 'multinode'])
@@ -177,9 +172,8 @@ class TestClusterValidator(BaseTestCase):
                                 ClusterValidator.validate,
                                 self.cluster_data)
 
-    @patch('nailgun.api.v1.validators.cluster.objects'
-           '.ClusterCollection.filter_by')
-    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    @patch('nailgun.objects.cluster.ClusterCollection.filter_by')
+    @patch('nailgun.objects.release.Release.get_by_uid')
     def test_update_mode_check_passes(self, release_get_by_uid, cc_filter_by):
         release_mock = Mock(
             modes=[consts.CLUSTER_MODES.ha_compact, 'multinode'])
@@ -192,9 +186,8 @@ class TestClusterValidator(BaseTestCase):
         except errors.InvalidData as e:
             self.fail('test_mode_check failed: {0}'.format(e))
 
-    @patch('nailgun.api.v1.validators.cluster.objects'
-           '.ClusterCollection.filter_by')
-    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    @patch('nailgun.objects.cluster.ClusterCollection.filter_by')
+    @patch('nailgun.objects.release.Release.get_by_uid')
     def test_update_mode_check_fails(self, release_get_by_uid, cc_filter_by):
         release_mock = Mock(
             modes=['trolomod', 'multinode'])

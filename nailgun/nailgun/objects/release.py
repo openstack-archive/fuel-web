@@ -25,14 +25,12 @@ import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
-from nailgun.objects.serializers import release as release_serializer
+from nailgun import objects
 from nailgun.orchestrator import graph_configuration
 from nailgun.settings import settings
 
 
-class Release(NailgunObject):
+class Release(objects.NailgunObject):
     """Release object
     """
 
@@ -40,7 +38,7 @@ class Release(NailgunObject):
     model = models.Release
 
     #: Serializer for Release
-    serializer = release_serializer.ReleaseSerializer
+    serializer = objects.serializers.ReleaseSerializer
 
     #: Release JSON schema
     schema = {
@@ -184,7 +182,7 @@ class Release(NailgunObject):
         return instance.roles_metadata['controller']['limits']['min']
 
 
-class ReleaseCollection(NailgunCollection):
+class ReleaseCollection(objects.NailgunCollection):
     """Release collection
     """
 

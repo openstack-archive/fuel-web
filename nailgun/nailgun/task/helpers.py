@@ -27,6 +27,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.statistics.fuel_statistics.tasks_params_white_lists \
     import task_output_white_list
 
@@ -152,8 +153,6 @@ class TaskHelper(object):
     # nailgun Cluster object's methods
     @classmethod
     def nodes_to_deploy(cls, cluster):
-        from nailgun import objects  # preventing cycle import error
-
         nodes_to_deploy = []
         update_required = set()
         update_once = set()
@@ -305,8 +304,6 @@ class TaskHelper(object):
                 actor_id = web.ctx.env.get(actor_id_field)
             else:
                 # Fetching actor_id from parent task action log
-                from nailgun import objects  # preventing cycle import error
-
                 if task.parent_id:
                     parent_task = objects.Task.get_by_uid(task.parent_id)
                     action_log = objects.ActionLog.get_by_kwargs(
@@ -363,11 +360,9 @@ class TaskHelper(object):
         :param task: SqlAlchemy task object
         :return: SqlAlchemy action_log object
         """
-        from nailgun.objects import ActionLog
-
         try:
             create_kwargs = cls.prepare_action_log_kwargs(task)
-            return ActionLog.create(create_kwargs)
+            return objects.ActionLog.create(create_kwargs)
         except Exception as e:
             logger.error("create_action_log failed: %s", six.text_type(e))
 
@@ -396,12 +391,11 @@ class TaskHelper(object):
 
     @classmethod
     def update_action_log(cls, task, al_instance=None):
-        from nailgun.objects import ActionLog
-
         try:
             if not al_instance:
-                al_instance = ActionLog.get_by_kwargs(task_uuid=task.uuid,
-                                                      action_name=task.name)
+                al_instance = objects.ActionLog.get_by_kwargs(
+                    task_uuid=task.uuid, action_name=task.name)
+
             # this is needed as status for check_networks task is not set to
             # "ready" in case of success (it is left in status "running") so
             # we do it here manually, there is no such issue with "error"
@@ -424,7 +418,7 @@ class TaskHelper(object):
                                                            al_instance)
                     }
                 }
-                ActionLog.update(al_instance, update_data)
+                objects.ActionLog.update(al_instance, update_data)
         except Exception as e:
             logger.error("update_action_log failed: %s", six.text_type(e))
 

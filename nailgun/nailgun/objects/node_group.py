@@ -15,20 +15,16 @@
 #    under the License.
 
 
-from nailgun.objects.serializers.node_group import NodeGroupSerializer
-
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NodeGroup as DBNodeGroup
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
-from nailgun.objects import Cluster
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun import objects
 
 
-class NodeGroup(NailgunObject):
+class NodeGroup(objects.NailgunObject):
 
-    model = DBNodeGroup
-    serializer = NodeGroupSerializer
+    model = models.NodeGroup
+    serializer = objects.serializers.NodeGroupSerializer
 
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
@@ -46,8 +42,8 @@ class NodeGroup(NailgunObject):
     def create(cls, data):
         new_group = super(NodeGroup, cls).create(data)
         try:
-            cluster = Cluster.get_by_uid(new_group.cluster_id)
-            nm = Cluster.get_network_manager(cluster)
+            cluster = objects.Cluster.get_by_uid(new_group.cluster_id)
+            nm = objects.Cluster.get_network_manager(cluster)
             nst = cluster.network_config.segmentation_type
             nm.create_network_groups(cluster, nst,
                                      gid=new_group.id)
@@ -65,7 +61,7 @@ class NodeGroup(NailgunObject):
         return new_group
 
 
-class NodeGroupCollection(NailgunCollection):
+class NodeGroupCollection(objects.NailgunCollection):
 
     single = NodeGroup
 

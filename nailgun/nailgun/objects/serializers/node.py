@@ -18,7 +18,7 @@ from distutils.version import StrictVersion
 
 from nailgun import consts
 
-from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.objects.serializers import BasicSerializer
 from nailgun.settings import settings
 
 

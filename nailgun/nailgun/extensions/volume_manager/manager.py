@@ -25,9 +25,10 @@ from functools import partial
 from oslo.serialization import jsonutils
 
 from nailgun.errors import errors
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
+from nailgun.extensions.volume_manager.objects import NailgunNodeAdapter
 from nailgun.logger import logger
-
-from .objects.adapters import NailgunNodeAdapter
+from nailgun import objects
 
 
 def is_service(space):
@@ -111,9 +112,6 @@ def get_node_spaces(node):
     Sets key `_allocate_size` which used only for internal calculation
     and not used in partitioning system.
     """
-    # FIXME(apopovych): ugly hack to avoid circular dependency
-    from nailgun import objects
-
     node_spaces = []
     volumes_metadata = objects.Cluster.get_volumes_metadata(node.cluster)
     role_mapping = volumes_metadata['volumes_roles_mapping']
@@ -592,7 +590,6 @@ class VolumeManager(object):
         self.node_name = node.name
 
         # Make sure that we don't change volumes directly from manager
-        from .extension import VolumeManagerExtension
         self.volumes = deepcopy(
             VolumeManagerExtension.get_node_volumes(node)) or []
         # For swap calculation

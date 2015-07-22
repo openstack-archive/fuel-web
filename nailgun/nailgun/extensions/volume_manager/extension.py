@@ -23,9 +23,12 @@ from nailgun.logger import logger
 from nailgun.objects import Node
 from nailgun.objects import Notification
 
-from .handlers.disks import NodeDefaultsDisksHandler
-from .handlers.disks import NodeDisksHandler
-from .handlers.disks import NodeVolumesInformationHandler
+from nailgun.extensions.volume_manager.handlers.disks import \
+    NodeDefaultsDisksHandler
+from nailgun.extensions.volume_manager.handlers.disks import NodeDisksHandler
+from nailgun.extensions.volume_manager.handlers.disks import \
+    NodeVolumesInformationHandler
+from nailgun.extensions.volume_manager.objects.volumes import VolumeObject
 
 
 class VolumeManagerExtension(BaseExtension):
@@ -52,18 +55,14 @@ class VolumeManagerExtension(BaseExtension):
 
     @classmethod
     def get_node_volumes(cls, node):
-        from .objects.volumes import VolumeObject
         return VolumeObject.get_volumes(node)
 
     @classmethod
     def set_node_volumes(cls, node, volumes):
-        from .objects.volumes import VolumeObject
         return VolumeObject.set_volumes(node, volumes)
 
     @classmethod
     def set_default_node_volumes(cls, node):
-        from .objects.volumes import VolumeObject
-
         try:
             VolumeObject.set_default_node_volumes(node)
         except Exception as exc:

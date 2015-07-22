@@ -773,6 +773,12 @@ class Cluster(NailgunObject):
         return cls.get_default_group(instance).id
 
     @classmethod
+    def get_controllers_node_group(cls, cluster):
+        from nailgun.objects import NodeGroup
+        group_id = cls.get_controllers_group_id(cluster)
+        return NodeGroup.get_by_uid(group_id)
+
+    @classmethod
     def get_bond_interfaces_for_all_nodes(cls, instance, networks=None):
         bond_interfaces_query = db().query(models.NodeBondInterface).\
             join(models.Node).filter(models.Node.cluster_id == instance.id)

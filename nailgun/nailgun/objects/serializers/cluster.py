@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.objects.serializers import BasicSerializer
 
 
 class ClusterSerializer(BasicSerializer):

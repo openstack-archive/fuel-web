@@ -16,19 +16,17 @@ import datetime
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
-from nailgun.objects.serializers.oswl import OpenStackWorkloadStatsSerializer
+from nailgun import objects
 from nailgun.settings import settings
 
 
-class OpenStackWorkloadStats(NailgunObject):
+class OpenStackWorkloadStats(objects.NailgunObject):
 
     #: SQLAlchemy model for OpenStackWorkloadStats
     model = models.OpenStackWorkloadStats
 
     #: Serializer for OpenStackWorkloadStats
-    serializer = OpenStackWorkloadStatsSerializer
+    serializer = objects.serializers.OpenStackWorkloadStatsSerializer
 
     @classmethod
     def get_last_by(cls, cluster_id, resource_type):
@@ -43,7 +41,7 @@ class OpenStackWorkloadStats(NailgunObject):
         return instance
 
 
-class OpenStackWorkloadStatsCollection(NailgunCollection):
+class OpenStackWorkloadStatsCollection(objects.NailgunCollection):
     single = OpenStackWorkloadStats
 
     @classmethod

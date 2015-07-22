@@ -15,26 +15,23 @@
 #    under the License.
 
 
-from nailgun.objects.serializers.network_group import NetworkGroupSerializer
-
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NetworkGroup as DBNetworkGroup
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.db.sqlalchemy import models
+from nailgun import objects
 
 
-class NetworkGroup(NailgunObject):
+class NetworkGroup(objects.NailgunObject):
 
-    model = DBNetworkGroup
-    serializer = NetworkGroupSerializer
+    model = models.NetworkGroup
+    serializer = objects.serializers.NetworkGroupSerializer
 
     @classmethod
     def get_from_node_group_by_name(cls, node_group_id, network_name):
-        ng = db().query(DBNetworkGroup).filter_by(group_id=node_group_id,
-                                                  name=network_name)
+        ng = db().query(models.NetworkGroup).filter_by(group_id=node_group_id,
+                                                       name=network_name)
         return ng.first() if ng else None
 
 
-class NetworkGroupCollection(NailgunCollection):
+class NetworkGroupCollection(objects.NailgunCollection):
 
     single = NetworkGroup

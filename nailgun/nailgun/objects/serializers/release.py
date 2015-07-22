@@ -14,7 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.objects import Release
+from nailgun.objects.serializers import BasicSerializer
 
 
 class ReleaseSerializer(BasicSerializer):
@@ -36,8 +37,6 @@ class ReleaseSerializer(BasicSerializer):
 
     @classmethod
     def serialize(cls, instance, fields=None):
-        from nailgun.objects.release import Release
-
         release_dict = \
             super(ReleaseSerializer, cls).serialize(instance, fields)
         release_dict["is_deployable"] = Release.is_deployable(instance)

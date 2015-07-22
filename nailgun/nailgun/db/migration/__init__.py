@@ -23,6 +23,7 @@ from alembic import config as alembic_config
 from alembic import util as alembic_util
 
 from nailgun.db.sqlalchemy import db_str
+from nailgun.extensions import get_all_extensions
 
 
 def make_alembic_config(script_location, version_table, **kwargs):
@@ -90,7 +91,6 @@ def do_upgrade_downgrade(cmd, config):
 
 
 def do_upgrade_head_extensions():
-    from nailgun.extensions import get_all_extensions
 
     for extension in get_all_extensions():
         if extension.alembic_migrations_path():

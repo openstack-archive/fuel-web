@@ -31,16 +31,18 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
-from nailgun.objects import Release
-from nailgun.objects.serializers.cluster import ClusterSerializer
+from nailgun import objects
 from nailgun.orchestrator import graph_configuration
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import traverse
+
+from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager70
+from nailgun.network.neutron import NeutronManager
+from nailgun.network.nova_network import NovaNetworkManager
 
 
 CLUSTER_UI_SETTINGS = {
@@ -72,7 +74,7 @@ CLUSTER_UI_SETTINGS = {
 }
 
 
-class Attributes(NailgunObject):
+class Attributes(objects.NailgunObject):
     """Cluster attributes object
     """
 
@@ -142,7 +144,7 @@ class Attributes(NailgunObject):
         return attrs
 
 
-class Cluster(NailgunObject):
+class Cluster(objects.NailgunObject):
     """Cluster object
     """
 
@@ -150,7 +152,7 @@ class Cluster(NailgunObject):
     model = models.Cluster
 
     #: Serializer for Cluster
-    serializer = ClusterSerializer
+    serializer = objects.ClusterSerializer
 
     #: Cluster JSON schema
     schema = {
@@ -350,18 +352,14 @@ class Cluster(NailgunObject):
         :returns: NetworkManager/NovaNetworkManager/NeutronManager
         """
         if not instance:
-            from nailgun.network.manager import NetworkManager
             return NetworkManager
 
         if instance.net_provider == 'neutron':
             ver = instance.release.environment_version
             if StrictVersion(ver) >= StrictVersion(consts.FUEL_NEUTRON_ONLY):
-                from nailgun.network.neutron import NeutronManager70
                 return NeutronManager70
-            from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:
-            from nailgun.network.nova_network import NovaNetworkManager
             return NovaNetworkManager
 
     @classmethod
@@ -489,9 +487,8 @@ class Cluster(NailgunObject):
 
         # we should reset hostname to default value to guarantee
         # hostnames uniqueness for nodes outside clusters
-        from nailgun.objects import Node
         for node in nodes_to_remove:
-            node.hostname = Node.default_slave_name(node)
+            node.hostname = objects.Node.default_slave_name(node)
 
         map(instance.nodes.remove, nodes_to_remove)
         map(instance.nodes.append, nodes_to_add)
@@ -507,8 +504,7 @@ class Cluster(NailgunObject):
         )
         cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
         cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
-        from nailgun.objects import NodeCollection
-        NodeCollection.reset_network_template(nodes_to_remove)
+        objects.NodeCollection.reset_network_template(nodes_to_remove)
 
         map(
             net_manager.assign_networks_by_default,
@@ -774,9 +770,8 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_controllers_node_group(cls, cluster):
-        from nailgun.objects import NodeGroup
         group_id = cls.get_controllers_group_id(cluster)
-        return NodeGroup.get_by_uid(group_id)
+        return objects.NodeGroup.get_by_uid(group_id)
 
     @classmethod
     def get_bond_interfaces_for_all_nodes(cls, instance, networks=None):
@@ -827,7 +822,7 @@ class Cluster(NailgunObject):
             return yaml.load(graph_configuration.PATCHING)
         else:
             release_deployment_tasks = \
-                Release.get_deployment_tasks(instance.release)
+                objects.Release.get_deployment_tasks(instance.release)
             plugin_deployment_tasks = \
                 PluginManager.get_plugins_deployment_tasks(instance)
             return release_deployment_tasks + plugin_deployment_tasks
@@ -979,10 +974,9 @@ class Cluster(NailgunObject):
 
     @classmethod
     def update_nodes_network_template(cls, instance, nodes):
-        from nailgun.objects import Node
         template = instance.network_config.configuration_template
         for node in nodes:
-            Node.apply_network_template(node, template)
+            objects.Node.apply_network_template(node, template)
 
     @classmethod
     def get_nodes_ids(cls, instance):
@@ -1014,7 +1008,7 @@ class Cluster(NailgunObject):
         return set(pending_roles + roles)
 
 
-class ClusterCollection(NailgunCollection):
+class ClusterCollection(objects.NailgunCollection):
     """Cluster collection
     """
 
@@ -1022,5 +1016,5 @@ class ClusterCollection(NailgunCollection):
     single = Cluster
 
 
-class VmwareAttributes(NailgunObject):
+class VmwareAttributes(objects.NailgunObject):
     model = models.VmwareAttributes

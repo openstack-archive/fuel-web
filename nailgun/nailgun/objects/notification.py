@@ -21,19 +21,13 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
-
-from nailgun.objects import Task
-
-from nailgun.objects.serializers.notification import NotificationSerializer
+from nailgun import objects
 
 
-class Notification(NailgunObject):
+class Notification(objects.NailgunObject):
 
     model = models.Notification
-    serializer = NotificationSerializer
+    serializer = objects.serializers.NotificationSerializer
 
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
@@ -82,7 +76,7 @@ class Notification(NailgunObject):
 
         exist = None
         if task_uuid:
-            task = Task.get_by_uuid(task_uuid)
+            task = objects.Task.get_by_uuid(task_uuid)
             if task and node_id:
                 exist = NotificationCollection.count(
                     NotificationCollection.filter_by(
@@ -112,6 +106,6 @@ class Notification(NailgunObject):
         return notif_dict
 
 
-class NotificationCollection(NailgunCollection):
+class NotificationCollection(objects.NailgunCollection):
 
     single = Notification

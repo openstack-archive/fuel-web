@@ -16,20 +16,16 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 
 from nailgun import consts
-
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
-
-from nailgun.objects.serializers.action_log import ActionLogSerializer
+from nailgun import objects
 
 
-class ActionLog(NailgunObject):
+class ActionLog(objects.NailgunObject):
 
     #: SQLAlchemy model for ActionLog
     model = models.ActionLog
 
     #: Serializer for ActionLog
-    serializer = ActionLogSerializer
+    serializer = objects.serializers.ActionLogSerializer
 
     #: JSON schema for ActionLog
     schema = {
@@ -92,5 +88,5 @@ class ActionLog(NailgunObject):
         return instance
 
 
-class ActionLogCollection(NailgunCollection):
+class ActionLogCollection(objects.NailgunCollection):
     single = ActionLog

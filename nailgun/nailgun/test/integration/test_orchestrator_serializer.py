@@ -49,6 +49,8 @@ from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer61
 from nailgun.orchestrator.deployment_serializers import\
     get_serializer_for_cluster
+from nailgun.orchestrator.deployment_serializers import\
+    NovaNetworkDeploymentSerializer
 
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
@@ -377,8 +379,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster.network_config.fixed_networks_vlan_start = None
         self.db.commit()
         node_db = sorted(self.cluster.nodes, key=lambda n: n.id)[0]
-        from nailgun.orchestrator.deployment_serializers \
-            import NovaNetworkDeploymentSerializer
         interfaces = NovaNetworkDeploymentSerializer.\
             configure_interfaces(node_db)
 

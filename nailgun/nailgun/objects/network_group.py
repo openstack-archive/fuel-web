@@ -19,11 +19,10 @@ from nailgun.objects.serializers.network_group import NetworkGroupSerializer
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup as DBNetworkGroup
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.objects import objects
 
 
-class NetworkGroup(NailgunObject):
+class NetworkGroup(objects.NailgunObject):
 
     model = DBNetworkGroup
     serializer = NetworkGroupSerializer
@@ -35,6 +34,6 @@ class NetworkGroup(NailgunObject):
         return ng.first() if ng else None
 
 
-class NetworkGroupCollection(NailgunCollection):
+class NetworkGroupCollection(objects.NailgunCollection):
 
     single = NetworkGroup

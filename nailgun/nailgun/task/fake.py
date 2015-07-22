@@ -26,7 +26,7 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node

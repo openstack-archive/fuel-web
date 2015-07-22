@@ -25,7 +25,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.settings import settings
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo

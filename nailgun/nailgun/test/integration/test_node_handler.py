@@ -17,7 +17,7 @@
 from oslo.serialization import jsonutils
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest

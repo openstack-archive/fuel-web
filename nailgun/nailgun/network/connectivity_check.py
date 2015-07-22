@@ -19,7 +19,7 @@ import six
 
 from nailgun import consts
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 
 
 def check_received_data(cached, received):

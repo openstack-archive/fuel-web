@@ -34,7 +34,7 @@ from nailgun.utils import reverse
 
 from nailgun import consts
 
-from nailgun import objects
+from nailgun.objects import objects
 
 
 class BaseReciverTestCase(BaseIntegrationTest):

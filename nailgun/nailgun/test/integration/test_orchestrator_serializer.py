@@ -54,7 +54,7 @@ from nailgun.orchestrator.deployment_serializers import\
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 
 from nailgun.db.sqlalchemy import models
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager

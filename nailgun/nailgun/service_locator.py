@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 #    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,25 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import SingleHandler
-from nailgun.api.v1.validators.network import NetworkGroupValidator
-
-from nailgun.objects import objects
+import importlib
 
 
-class NetworkGroupHandler(SingleHandler):
-    """Network group handler
-    """
+class ServiceLocator(object):
 
-    validator = NetworkGroupValidator
-    single = objects.NetworkGroup
+    _classes = dict()
 
+    def __init__(self, mappings):
+        self._classes = mappings
 
-class NetworkGroupCollectionHandler(CollectionHandler):
-    """Network group collection handler
-    """
+    def __getattr__(self, class_name):
+        module_namespace = self._classes.get(class_name)
+        module = importlib.import_module(module_namespace)
 
-    collection = objects.NetworkGroupCollection
-    validator = NetworkGroupValidator
+        return getattr(module, class_name)

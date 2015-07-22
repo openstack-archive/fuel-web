@@ -17,8 +17,7 @@ import datetime
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
-from nailgun.objects import OpenStackWorkloadStats
-from nailgun.objects import OpenStackWorkloadStatsCollection
+from nailgun.objects import objects
 from nailgun.settings import settings
 
 
@@ -36,24 +35,24 @@ class TestOSWLObject(BaseTestCase):
 
             'resource_checksum': ""
         }
-        obj = OpenStackWorkloadStats.create(obj_data)
+        obj = objects.OpenStackWorkloadStats.create(obj_data)
         self.assertEqual(
-            OpenStackWorkloadStats.get_last_by(
+            objects.OpenStackWorkloadStats.get_last_by(
                 cluster_id, consts.OSWL_RESOURCE_TYPES.vm),
             obj
         )
         self.assertIsNone(
-            OpenStackWorkloadStats.get_last_by(
+            objects.OpenStackWorkloadStats.get_last_by(
                 0, consts.OSWL_RESOURCE_TYPES.vm)
         )
         self.assertIsNone(
-            OpenStackWorkloadStats.get_last_by(
+            objects.OpenStackWorkloadStats.get_last_by(
                 cluster_id, consts.OSWL_RESOURCE_TYPES.tenant)
         )
 
-        OpenStackWorkloadStats.delete(obj)
+        objects.OpenStackWorkloadStats.delete(obj)
         self.assertIsNone(
-            OpenStackWorkloadStats.get_last_by(
+            objects.OpenStackWorkloadStats.get_last_by(
                 cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         )
 
@@ -71,7 +70,7 @@ class TestOSWLObject(BaseTestCase):
                 "resource_checksum": ""
             }
 
-            OpenStackWorkloadStats.create(obj_kwargs)
+            objects.OpenStackWorkloadStats.create(obj_kwargs)
 
         untouched_obj_kwargs = {
             "cluster_id": 3,
@@ -80,20 +79,20 @@ class TestOSWLObject(BaseTestCase):
             "created_date": dt_now.date(),
             "resource_checksum": ""
         }
-        OpenStackWorkloadStats.create(untouched_obj_kwargs)
+        objects.OpenStackWorkloadStats.create(untouched_obj_kwargs)
 
-        OpenStackWorkloadStatsCollection.clean_expired_entries()
+        objects.OpenStackWorkloadStatsCollection.clean_expired_entries()
         self.db.commit()
 
         for cluster_id in entries_to_del_cluster_ids:
             instance = \
-                OpenStackWorkloadStats.get_last_by(
+                objects.OpenStackWorkloadStats.get_last_by(
                     cluster_id,
                     consts.OSWL_RESOURCE_TYPES.volume
                 )
             self.assertIsNone(instance)
 
-        untouched_obj = OpenStackWorkloadStats.get_last_by(
+        untouched_obj = objects.OpenStackWorkloadStats.get_last_by(
             untouched_obj_kwargs["cluster_id"],
             consts.OSWL_RESOURCE_TYPES.vm
         )

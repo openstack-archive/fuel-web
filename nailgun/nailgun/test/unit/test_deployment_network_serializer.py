@@ -34,20 +34,17 @@ class TestNeutronDeploymentSerializer(base.BaseTestCase):
     def verify_network_tenant(self, network):
         self.assertEqual(network['tenant'], CREDS['tenant']['value'])
 
-    @patch(('nailgun.orchestrator.deployment_serializers.objects.'
-            'Cluster.get_creds'), return_value=CREDS)
+    @patch('nailgun.objects.Cluster.get_creds', return_value=CREDS)
     def test_internal_network_changes_tenant_name(self, creds):
         int_network = self.serializer._generate_internal_network(self.cluster)
         self.verify_network_tenant(int_network)
 
-    @patch(('nailgun.orchestrator.deployment_serializers.objects.'
-            'Cluster.get_creds'), return_value=CREDS)
+    @patch('nailgun.objects.Cluster.get_creds', return_value=CREDS)
     def test_external_network_changes_tenant_name(self, creds):
         ext_network = self.serializer._generate_external_network(self.cluster)
         self.verify_network_tenant(ext_network)
 
-    @patch(('nailgun.orchestrator.deployment_serializers.objects.'
-            'Cluster.get_creds'), return_value=CREDS)
+    @patch('nailgun.objects.Cluster.get_creds', return_value=CREDS)
     def test_predefined_networks_tenant_name(self, creds):
         predefined_network = self.serializer.generate_predefined_networks(
             self.cluster)

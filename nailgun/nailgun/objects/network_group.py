@@ -20,14 +20,11 @@ from nailgun.objects.serializers.network_group import NetworkGroupSerializer
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-
 from nailgun.errors import errors
-
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun import objects
 
 
-class NetworkGroup(NailgunObject):
+class NetworkGroup(objects.NailgunObject):
 
     model = models.NetworkGroup
     serializer = NetworkGroupSerializer
@@ -78,6 +75,6 @@ class NetworkGroup(NailgunObject):
         return instance
 
 
-class NetworkGroupCollection(NailgunCollection):
+class NetworkGroupCollection(objects.NailgunCollection):
 
     single = NetworkGroup

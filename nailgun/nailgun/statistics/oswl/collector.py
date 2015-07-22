@@ -21,9 +21,7 @@ import time
 from nailgun import consts
 from nailgun.db import db
 from nailgun.logger import logger
-from nailgun.objects import ClusterCollection
-from nailgun.objects import MasterNodeSettings
-from nailgun.objects import OpenStackWorkloadStatsCollection
+from nailgun import objects
 from nailgun.settings import settings
 from nailgun.statistics import errors
 from nailgun.statistics.oswl import helpers
@@ -33,13 +31,13 @@ from nailgun.statistics import utils
 
 def collect(resource_type):
     try:
-        operational_clusters = ClusterCollection.filter_by(
+        operational_clusters = objects.ClusterCollection.filter_by(
             iterable=None, status=consts.CLUSTER_STATUSES.operational).all()
-        error_clusters = ClusterCollection.filter_by(
+        error_clusters = objects.ClusterCollection.filter_by(
             iterable=None, status=consts.CLUSTER_STATUSES.error).all()
 
         all_envs_last_recs = \
-            OpenStackWorkloadStatsCollection.get_last_by_resource_type(
+            objects.OpenStackWorkloadStatsCollection.get_last_by_resource_type(
                 resource_type)
         ready_or_error_ids = set([c.id for c in operational_clusters] +
                                  [c.id for c in error_clusters])
@@ -90,7 +88,7 @@ def run():
                 .format(resource_type))
     try:
         while True:
-            if MasterNodeSettings.must_send_stats():
+            if objects.MasterNodeSettings.must_send_stats():
                 collect(resource_type)
 
             time.sleep(poll_interval)

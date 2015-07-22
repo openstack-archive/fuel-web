@@ -14,42 +14,44 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.utils import ImportMapper
 
-from nailgun.objects.base import NailgunObject
-from nailgun.objects.base import NailgunCollection
+_import_mapper = ImportMapper('nailgun.objects', {
+    'NailgunObject': 'nailgun.objects.base',
+    'NailgunCollection': 'nailgun.objects.base',
 
-from nailgun.objects.action_log import ActionLog
-from nailgun.objects.action_log import ActionLogCollection
+    'ActionLog': 'nailgun.objects.action_log',
+    'ActionLogCollection': 'nailgun.objects.action_log',
 
-from nailgun.objects.oswl import OpenStackWorkloadStats
-from nailgun.objects.oswl import OpenStackWorkloadStatsCollection
+    'OpenStackWorkloadStats': 'nailgun.objects.oswl',
+    'OpenStackWorkloadStatsCollection': 'nailgun.objects.oswl',
 
-from nailgun.objects.release import Release
-from nailgun.objects.release import ReleaseCollection
+    'Release': 'nailgun.objects.release',
+    'ReleaseCollection': 'nailgun.objects.release',
 
-from nailgun.objects.cluster import Attributes
-from nailgun.objects.cluster import Cluster
-from nailgun.objects.cluster import ClusterCollection
-from nailgun.objects.cluster import VmwareAttributes
+    'Attributes': 'nailgun.objects.cluster',
+    'Cluster': 'nailgun.objects.cluster',
+    'ClusterCollection': 'nailgun.objects.cluster',
+    'VmwareAttributes': 'nailgun.objects.cluster',
 
-from nailgun.objects.task import Task
-from nailgun.objects.task import TaskCollection
+    'Task': 'nailgun.objects.task',
+    'TaskCollection': 'nailgun.objects.task',
 
-from nailgun.objects.notification import Notification
-from nailgun.objects.notification import NotificationCollection
+    'Notification': 'nailgun.objects.notification',
+    'NotificationCollection': 'nailgun.objects.notification',
 
-from nailgun.objects.node import Node
-from nailgun.objects.node import NodeCollection
+    'Node': 'nailgun.objects.node',
+    'NodeCollection': 'nailgun.objects.node',
 
-from nailgun.objects.capacity import CapacityLog
+    'CapacityLog': 'nailgun.objects.capacity',
 
-from nailgun.objects.master_node_settings import MasterNodeSettings
+    'MasterNodeSettings': 'nailgun.objects.master_node_settings',
 
-from nailgun.objects.node_group import NodeGroup
-from nailgun.objects.node_group import NodeGroupCollection
+    'NodeGroup': 'nailgun.objects.node_group',
+    'NodeGroupCollection': 'nailgun.objects.node_group',
 
-from nailgun.objects.plugin import Plugin
-from nailgun.objects.plugin import PluginCollection
+    'Plugin': 'nailgun.objects.plugin',
+    'PluginCollection': 'nailgun.objects.plugin',
 
-from nailgun.objects.network_group import NetworkGroup
-from nailgun.objects.network_group import NetworkGroupCollection
+    'NetworkGroup': 'nailgun.objects.network_group',
+    'NetworkGroupCollection': 'nailgun.objects.network_group'})

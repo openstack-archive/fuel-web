@@ -24,9 +24,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.logger import logger
-from nailgun.objects import Cluster
-from nailgun.objects import Node
-from nailgun.objects import NodeGroupCollection
+from nailgun import objects
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.settings import settings
 from nailgun import utils
@@ -43,7 +41,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.mode == 'multinode':
             for node in cluster.nodes:
                 if cls._node_has_role_by_name(node, 'controller'):
-                    net_manager = Cluster.get_network_manager(cluster)
+                    net_manager = objects.Cluster.get_network_manager(cluster)
                     networks = net_manager.get_node_networks(node)
                     mgmt_cidr = net_manager.get_network_by_netname(
                         'management', networks)['ip']
@@ -57,7 +55,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """Serialize node, then it will be
         merged with common attributes
         """
-        nm = Cluster.get_network_manager(cluster)
+        nm = objects.Cluster.get_network_manager(cluster)
         networks = nm.get_node_networks(node)
         node_attrs = {
             'network_scheme': cls.generate_network_scheme(node, networks),
@@ -73,15 +71,15 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """
         # Get Mellanox data
         neutron_mellanox_data =  \
-            Cluster.get_attributes(cluster).editable\
+            objects.Cluster.get_attributes(cluster).editable\
             .get('neutron_mellanox', {})
 
         # Get storage data
         storage_data = \
-            Cluster.get_attributes(cluster).editable.get('storage', {})
+            objects.Cluster.get_attributes(cluster).editable.get('storage', {})
 
         # Get network manager
-        nm = Cluster.get_network_manager(cluster)
+        nm = objects.Cluster.get_network_manager(cluster)
 
         # Init mellanox dict
         node_attrs['neutron_mellanox'] = {}
@@ -180,7 +178,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
 
-        cluster_attrs = Cluster.get_attributes(cluster).editable
+        cluster_attrs = objects.Cluster.get_attributes(cluster).editable
         if 'nsx_plugin' in cluster_attrs and \
                 cluster_attrs['nsx_plugin']['metadata']['enabled']:
             attrs['L2']['provider'] = 'nsx'
@@ -209,11 +207,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             'transformations': []
         }
 
-        if Node.should_have_public(node):
+        if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex'] = {}
             attrs['roles']['ex'] = 'br-ex'
 
-        nm = Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(node.cluster)
         iface_types = consts.NETWORK_INTERFACE_TYPES
 
         # Add a dynamic data to a structure.
@@ -270,7 +268,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         # to provide a right ordering of ifdown/ifup operations with
         # IP interfaces.
         brnames = ['br-ex', 'br-mgmt', 'br-storage', 'br-fw-admin']
-        if not Node.should_have_public(node):
+        if not objects.Node.should_have_public(node):
             brnames.pop(0)
 
         for brname in brnames:
@@ -285,7 +283,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             ('management', 'br-mgmt'),
             ('fuelweb_admin', 'br-fw-admin'),
         ]
-        if Node.should_have_public(node):
+        if objects.Node.should_have_public(node):
             netgroup_mapping.append(('public', 'br-ex'))
 
         netgroups = {}
@@ -297,7 +295,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
 
-        if Node.should_have_public(node):
+        if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
@@ -390,7 +388,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             NetworkGroup.cidr,
             NetworkGroup.gateway
         ).filter_by(
-            group_id=Cluster.get_default_group(cluster).id,
+            group_id=objects.Cluster.get_default_group(cluster).id,
             name='public'
         ).first()
 
@@ -409,7 +407,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 "router_ext": True,
                 "physnet": "physnet1"
             },
-            "tenant": Cluster.get_creds(cluster)['tenant']['value'],
+            "tenant": objects.Cluster.get_creds(cluster)['tenant']['value'],
             "shared": False
         }
 
@@ -430,7 +428,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 "physnet": "physnet2"
                 if cluster.network_config.segmentation_type == "vlan" else None
             },
-            "tenant": Cluster.get_creds(cluster)['tenant']['value'],
+            "tenant": objects.Cluster.get_creds(cluster)['tenant']['value'],
             "shared": False
         }
 
@@ -467,7 +465,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             }
 
         # Set non-default ml2 configurations
-        attrs = Cluster.get_attributes(cluster).editable
+        attrs = objects.Cluster.get_attributes(cluster).editable
         if 'neutron_mellanox' in attrs and \
                 attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
             res['mechanism_drivers'] = 'mlnx,openvswitch'
@@ -482,7 +480,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         l3 = {
             "use_namespaces": True
         }
-        attrs = Cluster.get_attributes(cluster).editable
+        attrs = objects.Cluster.get_attributes(cluster).editable
         if 'nsx_plugin' in attrs and \
                 attrs['nsx_plugin']['metadata']['enabled']:
             dhcp_attrs = l3.setdefault('dhcp_agent', {})
@@ -530,7 +528,7 @@ class NeutronNetworkDeploymentSerializer60(
         # Include information about all subnets that don't belong to this node.
         # This is used during deployment to configure routes to all other
         # networks in the environment.
-        nm = Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(node.cluster)
         other_nets = nm.get_networks_not_on_node(node, networks)
 
         netgroup_mapping = [
@@ -538,7 +536,7 @@ class NeutronNetworkDeploymentSerializer60(
             ('management', 'br-mgmt'),
             ('fuelweb_admin', 'br-fw-admin'),
         ]
-        if Node.should_have_public(node):
+        if objects.Node.should_have_public(node):
             netgroup_mapping.append(('public', 'br-ex'))
 
         for ngname, brname in netgroup_mapping:
@@ -548,7 +546,7 @@ class NeutronNetworkDeploymentSerializer60(
             attrs['endpoints'][brname]['other_nets'] = \
                 other_nets.get(ngname, [])
 
-        if Node.should_have_public(node):
+        if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex']['default_gateway'] = True
         else:
             gw = nm.get_default_gateway(node.id)
@@ -682,14 +680,14 @@ class NeutronNetworkDeploymentSerializer61(
             },
         }
 
-        is_public = Node.should_have_public(node)
+        is_public = objects.Node.should_have_public(node)
         if is_public:
             attrs['endpoints']['br-ex'] = {'IP': 'none'}
             attrs['endpoints']['br-floating'] = {'IP': 'none'}
             attrs['roles']['ex'] = 'br-ex'
             attrs['roles']['neutron/floating'] = 'br-floating'
 
-        nm = Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(node.cluster)
 
         # Populate IP and GW information to endpoints.
         netgroup_mapping = [
@@ -760,7 +758,7 @@ class NeutronNetworkDeploymentSerializer61(
         attrs['transformations'] = cls.generate_transformations(
             node, nm, nets_by_ifaces, is_public, prv_base_ep)
 
-        if NodeGroupCollection.get_by_cluster_id(
+        if objects.NodeGroupCollection.get_by_cluster_id(
                 node.cluster.id).count() > 1:
             cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups,
                                 networks)
@@ -839,14 +837,14 @@ class NeutronNetworkDeploymentSerializer70(
             consts.NETWORKS.private: 'br-prv'}
 
         # roles can be assigned to br-ex only in case it has a public IP
-        if Node.should_have_public_with_ip(node):
+        if objects.Node.should_have_public_with_ip(node):
             mapping[consts.NETWORKS.public] = 'br-ex'
 
         return mapping
 
     @classmethod
     def get_network_to_ip_mapping(cls, node):
-        nm = Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(node.cluster)
 
         mapping = dict()
         networks = nm.get_node_networks(node)
@@ -863,7 +861,7 @@ class NeutronNetworkDeploymentSerializer70(
         and 'get_network_role_mapping_to_interfaces'.
         """
         roles = dict()
-        for role in Cluster.get_network_roles(node.cluster):
+        for role in objects.Cluster.get_network_roles(node.cluster):
             default_mapping = mapping.get(role['default_mapping'])
             if default_mapping:
                 roles[role['id']] = default_mapping
@@ -933,11 +931,11 @@ class NeutronNetworkDeploymentSerializer70(
     @classmethod
     def generate_network_metadata(cls, cluster):
         nodes = dict()
-        nm = Cluster.get_network_manager(cluster)
+        nm = objects.Cluster.get_network_manager(cluster)
 
-        for node in Cluster.get_nodes_not_for_deletion(cluster):
-            name = Node.get_slave_name(node)
-            node_roles = Node.all_roles(node)
+        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
+            name = objects.Node.get_slave_name(node)
+            node_roles = objects.Node.all_roles(node)
             network_roles = cls.get_network_role_mapping_to_ip(node)
 
             nodes[name] = {
@@ -1041,7 +1039,7 @@ class NeutronNetworkTemplateSerializer70(
             'roles': roles,
         }
 
-        nm = Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(node.cluster)
 
         netgroups = {}
         nets_by_ifaces = defaultdict(list)
@@ -1092,7 +1090,7 @@ class NeutronNetworkTemplateSerializer70(
 
         attrs['transformations'] = cls.generate_transformations(node)
 
-        if NodeGroupCollection.get_by_cluster_id(
+        if objects.NodeGroupCollection.get_by_cluster_id(
                 node.cluster.id).count() > 1:
             cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups,
                                 networks)
@@ -1103,7 +1101,7 @@ class NeutronNetworkTemplateSerializer70(
 
     @classmethod
     def _get_endpoint_to_ip_mapping(cls, node, networks):
-        nm = Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(node.cluster)
 
         mapping = dict()
         net_to_ep = cls._get_netgroup_mapping_by_role(node)
@@ -1119,9 +1117,9 @@ class NeutronNetworkTemplateSerializer70(
         metadata = super(NeutronNetworkTemplateSerializer70,
                          cls).generate_network_metadata(cluster)
 
-        nm = Cluster.get_network_manager(cluster)
+        nm = objects.Cluster.get_network_manager(cluster)
         for node_data in six.itervalues(metadata['nodes']):
-            node = Node.get_by_uid(node_data['uid'])
+            node = objects.get_by_uid(node_data['uid'])
             networks = nm.get_node_networks(node)
             network_roles = cls._get_network_roles(node)
             ip_per_ep = cls._get_endpoint_to_ip_mapping(node, networks)

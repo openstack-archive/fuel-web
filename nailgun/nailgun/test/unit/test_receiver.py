@@ -18,7 +18,7 @@ from mock import ANY
 from mock import patch
 
 from nailgun import consts
-from nailgun.objects import Plugin
+from nailgun import objects
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test import base
 
@@ -41,7 +41,7 @@ class TestNailgunReceiver(base.BaseTestCase):
                 title='title{0}'.format(i),
                 description='description{0}'.format(i))
 
-            self.plugin = Plugin.create(meta)
+            self.plugin = objects.Plugin.create(meta)
             self.cluster.plugins.append(self.plugin)
 
         self.task = self.env.create_task(

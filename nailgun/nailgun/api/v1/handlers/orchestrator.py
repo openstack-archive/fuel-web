@@ -29,7 +29,7 @@ from nailgun.api.v1.validators.node import NodesFilterValidator
 
 from nailgun.logger import logger
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers

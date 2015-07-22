@@ -24,7 +24,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.expression import Expression
-from nailgun import objects
+from nailgun.objects import objects
 
 
 class AssignmentValidator(BasicValidator):

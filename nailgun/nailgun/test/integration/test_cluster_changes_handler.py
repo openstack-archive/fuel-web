@@ -22,7 +22,7 @@ from oslo.serialization import jsonutils
 
 import nailgun
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup

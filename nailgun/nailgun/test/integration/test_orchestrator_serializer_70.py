@@ -21,7 +21,7 @@ import yaml
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun.network.manager import NetworkManager
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.orchestrator import stages
 from nailgun.test import base
 

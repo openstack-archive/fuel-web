@@ -27,14 +27,12 @@ from nailgun.errors import errors
 
 from nailgun.logger import logger
 
-from nailgun.objects import Cluster
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.objects import objects
 
 from nailgun.task.helpers import TaskHelper
 
 
-class Task(NailgunObject):
+class Task(objects.NailgunObject):
 
     model = models.Task
     serializer = TaskSerializer
@@ -183,7 +181,7 @@ class Task(NailgunObject):
         logger.debug(
             "Updating cluster (%s) status: from %s to %s",
             cluster.full_name, cluster.status, status)
-        Cluster.update(cluster, data={'status': status})
+        objects.Cluster.update(cluster, data={'status': status})
 
     @classmethod
     def _update_cluster_data(cls, instance):
@@ -201,7 +199,7 @@ class Task(NailgunObject):
 
                 cls.__update_cluster_status(cluster, 'operational')
 
-                Cluster.clear_pending_changes(cluster)
+                objects.Cluster.clear_pending_changes(cluster)
 
             elif instance.status == 'error' and \
                     not TaskHelper.before_deployment_error(instance):
@@ -213,7 +211,7 @@ class Task(NailgunObject):
 
         elif instance.name == consts.TASK_NAMES.spawn_vms:
             if instance.status == consts.TASK_STATUSES.ready:
-                Cluster.mark_vms_as_created(cluster)
+                objects.Cluster.mark_vms_as_created(cluster)
             elif instance.status == consts.TASK_STATUSES.error and \
                     not TaskHelper.before_deployment_error(instance):
                 cls.__update_cluster_status(cluster, 'error')
@@ -287,7 +285,7 @@ class Task(NailgunObject):
             cls._update_parent_instance(instance.parent)
 
 
-class TaskCollection(NailgunCollection):
+class TaskCollection(objects.NailgunCollection):
 
     single = Task
 

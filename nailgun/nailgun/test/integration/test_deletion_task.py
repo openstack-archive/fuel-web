@@ -19,7 +19,7 @@ import mock
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.task.task import DeletionTask
 from nailgun.test.base import BaseIntegrationTest
 

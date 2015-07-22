@@ -24,7 +24,7 @@ import mock
 from sqlalchemy import sql
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.consts import ACTION_TYPES
 from nailgun.consts import NODE_STATUSES

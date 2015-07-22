@@ -209,7 +209,7 @@ class NetworkManager(object):
             node_id = node.id
 
             if network_name == 'public' and \
-                    not objects.Node.should_have_public(node):
+                    not objects.Node.should_have_public_with_ip(node):
                 continue
             group_id = (node.group_id or
                 objects.Cluster.get_default_group(node.cluster).id)

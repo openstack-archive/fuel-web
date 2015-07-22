@@ -906,7 +906,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         </div>
                         {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
                             this.props.isLabelsPanelOpen &&
-                                <NodeLabelsPanel {... _.pick(this.props, 'nodes', 'screenNodes')}
+                                <NodeLabelsPanel {... _.pick(this.props, 'nodes', 'screenNodes', 'sorters', 'filters')}
                                     key='labels'
                                     labels={this.props.selectedNodeLabels}
                                     toggleLabelsPanel={this.toggleLabelsPanel}
@@ -1090,7 +1090,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 labelsWithMultipleValues: _.filter(this.props.labels, function(label) {
                     return _.uniq(_.reject(this.props.nodes.getLabelValues(label), _.isUndefined)).length > 1;
                 }, this),
-                actionInProgress: false
+                actionInProgress: false,
+                errors: {}
             };
         },
         componentDidMount: function() {
@@ -1107,12 +1108,55 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         addNewLabelPlaceholder: function() {
             var newLabels = this.state.newLabels;
             newLabels.push('');
-            this.setState({newLabels: newLabels});
+            this.setState({newLabels: newLabels}, _.bind(function() {
+                this.checkLabelKey('');
+            }, this));
         },
         addNewLabel: function(index, name, value) {
             var newLabels = this.state.newLabels;
             newLabels[index] = _.trim(value);
-            this.setState({newLabels: newLabels});
+            this.setState({newLabels: newLabels}, _.bind(function() {
+                this.checkLabelKey(value);
+            }, this));
+        },
+        checkLabelKey: function(label, newKey) {
+            newKey = _.trim(newKey || this.refs[label + '-name'].getInputDOMNode().value);
+
+            var errors = this.state.errors;
+            delete errors[label];
+            this.setState({errors: errors});
+
+            var labelCheckbox = this.refs[label + '-checkbox'].getInputDOMNode();
+            if ((labelCheckbox.checked || labelCheckbox.indeterminate) && (newKey != label || !label)) {
+                var ns = 'cluster_page.nodes_tab.node_management_panel.labels.errors.',
+                    error;
+
+                // label key can not be empty
+                if (!newKey) {
+                    error = i18n(ns + 'empty_label_key');
+                }
+                // user tries to add a label that already exists
+                if (_.contains(this.props.labels, newKey)) {
+                    error = i18n(ns + 'existing_label');
+                }
+
+                // FIXME(jkirnosova): we should not resctrict labels that match default sorters or filters
+                // need to find a way to keep labels in filtering and sorting scopes separately
+
+                // user tries to add a label that matches default sorter
+                if (_.contains(this.props.sorters, newKey)) {
+                    error = i18n(ns + 'default_sorter');
+                }
+                // user tries to add a label that matches default filter
+                if (_.contains(this.props.filters, newKey)) {
+                    error = i18n(ns + 'default_filter');
+                }
+
+                if (error) {
+                    errors[label] = error;
+                    this.setState({errors: errors});
+                }
+            }
         },
         applyLabels: function() {
             var labels = _.union(this.props.labels, _.compact(this.state.newLabels));
@@ -1213,6 +1257,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             ref={label + '-checkbox'}
                                             defaultChecked={!_.any(labelValues, _.isUndefined)}
                                             wrapperClassName='pull-left'
+                                            onChange={_.partial(this.checkLabelKey, label)}
                                         />
                                         <controls.Input
                                             type='text'
@@ -1220,6 +1265,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             maxLength={100}
                                             label={showControlLabels && i18n(ns + 'label_key')}
                                             defaultValue={label}
+                                            onChange={_.partial(this.checkLabelKey, label)}
+                                            error={this.state.errors[label]}
                                         />
                                         <controls.Input {...labelValueProps}
                                             type='text'
@@ -1241,6 +1288,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             ref={label + '-checkbox'}
                                             defaultChecked={true}
                                             wrapperClassName='pull-left'
+                                            onChange={_.partial(this.checkLabelKey, label)}
                                         />
                                         <controls.Input
                                             type='text'
@@ -1249,6 +1297,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             label={showControlLabels && i18n(ns + 'label_key')}
                                             defaultValue={label}
                                             onChange={_.partial(this.addNewLabel, index)}
+                                            error={this.state.errors[label]}
                                         />
                                         <controls.Input
                                             type='text'
@@ -1280,7 +1329,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <button
                                         className='btn btn-success'
                                         onClick={this.applyLabels}
-                                        disabled={this.state.actionInProgress}
+                                        disabled={this.state.actionInProgress || !_.isEmpty(this.state.errors)}
                                     >
                                         {i18n('common.apply_button')}
                                     </button>

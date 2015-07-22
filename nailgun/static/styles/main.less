@@ -1499,6 +1499,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         margin-left: 35px;
       }
       .form-group {
+        @label-input-margin: 15px;
         margin-bottom: @management-panel-indent;
         padding-right: 0;
         position: relative;
@@ -1512,12 +1513,20 @@ button, .btn:not(.btn-link) {.font-semibold;}
         &.has-warning {
           label .glyphicon {
             position: absolute;
-            left: @default-input-width + 15;
+            left: @default-input-width + @label-input-margin;
             top: 12px;
           }
           .form-control {
             border-color: @orange;
           }
+        }
+        .help-block {
+          display: block;
+          margin: 0;
+          position: absolute;
+          left: @default-input-width * 2 + @label-input-margin * 2;
+          bottom: 8px;
+          min-width: 475px;
         }
       }
       .has-label {

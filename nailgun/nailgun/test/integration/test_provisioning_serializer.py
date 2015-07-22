@@ -16,7 +16,7 @@
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Node
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.orchestrator import provisioning_serializers as ps

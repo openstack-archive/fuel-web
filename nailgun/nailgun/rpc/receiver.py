@@ -27,7 +27,7 @@ from sqlalchemy import or_
 
 from nailgun import consts
 from nailgun import notifier
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.rpc import utils
 from nailgun.settings import settings
 
@@ -932,7 +932,7 @@ class NailgunReceiver(object):
                 jsonutils.dumps(kwargs))
         )
         task_uuid = kwargs.get('task_uuid')
-        task = objects.task.Task.get_by_uuid(uuid=task_uuid)
+        task = objects.Task.get_by_uuid(uuid=task_uuid)
         if kwargs.get('status'):
             task.status = kwargs['status']
         task.progress = kwargs.get('progress', 0)

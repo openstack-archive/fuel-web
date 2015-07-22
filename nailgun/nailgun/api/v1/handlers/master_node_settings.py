@@ -17,7 +17,7 @@ from nailgun.api.v1.handlers.base import DBSingletonHandler
 from nailgun.api.v1.validators.master_node_settings \
     import MasterNodeSettingsValidator
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.task.manager import CreateStatsUserTaskManager
 from nailgun.task.manager import RemoveStatsUserTaskManager
 

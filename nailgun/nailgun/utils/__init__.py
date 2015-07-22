@@ -14,6 +14,7 @@
 
 import collections
 import glob
+import importlib
 import os
 import re
 import shutil
@@ -217,7 +218,22 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
+
 def join_range(r):
     """Converts (1, 2) -> "1:2"
     """
     return ":".join(map(str, r)) if r else None
+
+
+class ServiceLocator(object):
+
+    _classes = dict()
+
+    def __init__(self, mappings):
+        self._classes = mappings
+
+    def __getattr__(self, class_name):
+        module_namespace = self._classes.get(class_name)
+        module = importlib.import_module(module_namespace)
+
+        return getattr(module, class_name)

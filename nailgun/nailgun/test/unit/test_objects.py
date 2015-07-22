@@ -45,7 +45,7 @@ from nailgun.network.manager import NetworkManager
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
 
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.plugins.manager import PluginManager
 
 

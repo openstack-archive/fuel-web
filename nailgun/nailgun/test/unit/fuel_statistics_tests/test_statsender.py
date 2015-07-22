@@ -22,9 +22,7 @@ import urllib3
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
-from nailgun.objects import Cluster
-from nailgun.objects import MasterNodeSettings
-from nailgun.objects import OpenStackWorkloadStats
+from nailgun.objects import objects
 from nailgun.settings import settings
 from nailgun.statistics.statsenderd import StatsSender
 
@@ -179,7 +177,7 @@ class TestStatisticsSender(BaseTestCase):
     def test_send_stats_once_after_dberror(self, dithered, sleep):
         def fn():
             # try to commit wrong data
-            Cluster.create(
+            objects.Cluster.create(
                 {
                     "id": "500",
                     "release_id": "500"
@@ -194,7 +192,8 @@ class TestStatisticsSender(BaseTestCase):
         self.assertEqual(sleep.call_count, 1)
         dithered.assert_called_with(0)
 
-        with patch('nailgun.objects.MasterNodeSettings.must_send_stats', fn):
+        with patch('nailgun.objects.master_node_settings.MasterNodeSettings'
+                   '.must_send_stats', fn):
             ss.send_stats_once()
         # one more call with COLLECTOR_PING_INTERVAL value
         self.assertEqual(sleep.call_count, 2)
@@ -214,9 +213,9 @@ class TestStatisticsSender(BaseTestCase):
             'updated_time': dt.time(),
             'resource_checksum': ""
         }
-        obj = OpenStackWorkloadStats.create(obj_data)
+        obj = objects.OpenStackWorkloadStats.create(obj_data)
         self.assertEqual(
-            OpenStackWorkloadStats.get_last_by(
+            objects.OpenStackWorkloadStats.get_last_by(
                 1, consts.OSWL_RESOURCE_TYPES.vm),
             obj
         )
@@ -237,9 +236,9 @@ class TestStatisticsSender(BaseTestCase):
             'updated_time': dt.time(),
             'resource_checksum': ""
         }
-        obj = OpenStackWorkloadStats.create(obj_data)
+        obj = objects.OpenStackWorkloadStats.create(obj_data)
         self.assertEqual(
-            OpenStackWorkloadStats.get_last_by(
+            objects.OpenStackWorkloadStats.get_last_by(
                 1, consts.OSWL_RESOURCE_TYPES.vm),
             obj
         )
@@ -257,9 +256,9 @@ class TestStatisticsSender(BaseTestCase):
             'updated_time': dt.time(),
             'resource_checksum': ""
         }
-        obj = OpenStackWorkloadStats.create(obj_data)
+        obj = objects.OpenStackWorkloadStats.create(obj_data)
         self.assertEqual(
-            OpenStackWorkloadStats.get_last_by(
+            objects.OpenStackWorkloadStats.get_last_by(
                 1, consts.OSWL_RESOURCE_TYPES.vm),
             obj
         )
@@ -307,10 +306,10 @@ class TestStatisticsSender(BaseTestCase):
             url=sender.build_collector_url("COLLECTOR_OSWL_INFO_URL"),
             data=obj_data_sent)
 
-        obj = OpenStackWorkloadStats.get_last_by(
+        obj = objects.OpenStackWorkloadStats.get_last_by(
             1, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertEqual(obj.is_sent, is_sent)
-        OpenStackWorkloadStats.delete(obj)
+        objects.OpenStackWorkloadStats.delete(obj)
         send_data_to_url.reset_mock()
 
     @patch('nailgun.statistics.statsenderd.StatsSender.send_data_to_url')
@@ -330,7 +329,7 @@ class TestStatisticsSender(BaseTestCase):
         url = ''
         data = {}
         master_node_uid = 'xxx'
-        MasterNodeSettings.create({'master_node_uid': master_node_uid})
+        objects.MasterNodeSettings.create({'master_node_uid': master_node_uid})
 
         sender.send_data_to_url(url=url, data={})
         requests_post.assert_called_once_with(

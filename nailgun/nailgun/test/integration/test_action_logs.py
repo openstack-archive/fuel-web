@@ -16,7 +16,7 @@ import datetime
 import mock
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test.base import BaseMasterNodeSettignsTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -115,8 +115,9 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         deploy_task = self.env.launch_deployment()
         self.env.wait_ready(deploy_task)
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=True):
             resp = self.app.patch(
                 reverse('MasterNodeSettingsHandler'),
                 headers=self.default_headers,
@@ -139,13 +140,15 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=True):
             deploy_task = self.env.launch_deployment()
             self.env.wait_ready(deploy_task)
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=False):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=False):
             resp = self.app.patch(
                 reverse('MasterNodeSettingsHandler'),
                 headers=self.default_headers,

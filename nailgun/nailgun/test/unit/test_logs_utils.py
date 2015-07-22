@@ -20,7 +20,7 @@ import shutil
 import tempfile
 
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import logs as logs_utils
 

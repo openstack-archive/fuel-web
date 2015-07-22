@@ -16,7 +16,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun import objects
+from nailgun.objects import objects
 
 
 class NodeGroupValidator(BasicValidator):

@@ -19,7 +19,7 @@ from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun import consts
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster

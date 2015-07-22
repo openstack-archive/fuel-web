@@ -19,7 +19,7 @@ from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.task.task import CheckRepoAvailability
 from nailgun.task.task import CheckRepoAvailabilityWithSetup
 from nailgun.task.task import CheckRepositoryConnectionFromMasterNodeTask

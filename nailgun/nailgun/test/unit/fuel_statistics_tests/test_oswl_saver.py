@@ -19,8 +19,7 @@ import six
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
-from nailgun.objects import OpenStackWorkloadStats
-from nailgun.objects import OpenStackWorkloadStatsCollection
+from nailgun.objects import objects
 from nailgun.statistics.oswl.saver import oswl_data_checksum
 from nailgun.statistics.oswl.saver import oswl_statistics_save
 
@@ -62,7 +61,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         return data
 
     def check_overall_rec_count(self, count):
-        saved = OpenStackWorkloadStatsCollection.all()
+        saved = objects.OpenStackWorkloadStatsCollection.all()
         self.assertEqual(saved.count(), count)
         return saved
 
@@ -77,7 +76,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
 
     def save_data_and_check_record(self, data):
         oswl_statistics_save(1, consts.OSWL_RESOURCE_TYPES.vm, data)
-        last = OpenStackWorkloadStats.get_last_by(
+        last = objects.OpenStackWorkloadStats.get_last_by(
             1, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertEqual(last, self.check_overall_rec_count(1).first())
         return last
@@ -215,8 +214,8 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         time_update = last.updated_time
         date_1st_rec = date_cur - datetime.timedelta(days=1)
         # make existing record one day older
-        OpenStackWorkloadStats.update(last,
-                                      {'created_date': date_1st_rec})
+        objects.OpenStackWorkloadStats.update(
+            last, {'created_date': date_1st_rec})
 
         # pass the same data
         # no new record was created and existing one remains unchanged
@@ -226,7 +225,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         # VM is removed
         oswl_statistics_save(1, consts.OSWL_RESOURCE_TYPES.vm, [])
         saved = self.check_overall_rec_count(2)
-        last = OpenStackWorkloadStats.get_last_by(
+        last = objects.OpenStackWorkloadStats.get_last_by(
             1, consts.OSWL_RESOURCE_TYPES.vm)
 
         self.assertEqual(last.created_date, date_cur)
@@ -253,16 +252,16 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         }
         oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.vm,
                              [vm_info])
-        last = OpenStackWorkloadStats.get_last_by(
+        last = objects.OpenStackWorkloadStats.get_last_by(
             cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         # Setting is_sent to True
-        OpenStackWorkloadStats.update(last, {'is_sent': True})
+        objects.OpenStackWorkloadStats.update(last, {'is_sent': True})
         self.assertEqual(True, last.is_sent)
 
         # Checking is_sent is not changed if data is not changed
         oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.vm,
                              [vm_info])
-        last_no_change = OpenStackWorkloadStats.get_last_by(
+        last_no_change = objects.OpenStackWorkloadStats.get_last_by(
             cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertEqual(True, last_no_change.is_sent)
 
@@ -270,6 +269,6 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         vm_info["power_state"] += 1
         oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.vm,
                              [vm_info])
-        last_changed = OpenStackWorkloadStats.get_last_by(
+        last_changed = objects.OpenStackWorkloadStats.get_last_by(
             cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertEqual(False, last_changed.is_sent)

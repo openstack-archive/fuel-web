@@ -17,7 +17,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import plugin
 from nailgun.errors import errors
-from nailgun.objects import Plugin
+from nailgun.objects import objects
 
 
 class PluginValidator(BasicValidator):
@@ -55,7 +55,7 @@ class PluginSyncValidator(BasicValidator):
             # Check plugin with given id exists in DB
             # otherwise raise ObjectNotFound exception
             for plugin_id in parsed.get('ids'):
-                Plugin.get_by_uid(plugin_id, fail_if_not_found=True)
+                objects.Plugin.get_by_uid(plugin_id, fail_if_not_found=True)
 
             return parsed
         else:

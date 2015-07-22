@@ -39,7 +39,40 @@ table_prefix = config.get_main_option('table_prefix')
 table_volumes_name = '{0}node_volumes'.format(table_prefix)
 
 
+def is_buffer_table_exist():
+    """Performs non database specific check if table exists
+    in the database. Other more clear and nice ways to do
+    it are database specific, we cannot assume that core
+    uses specific type of database in the extension.
+
+    :returns: True if table exists, False otherwise
+    """
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        'SELECT 1 FROM {0}'.format(extensions_migration_buffer_table_name))
+
+    # NOTE(eli): after SQL error db requires to commit/rollback
+    # transaction explicitly, start subtrasnsaction not to rollback
+    # the previously configured schema
+    transaction = connection.begin_nested()
+    try:
+        connection.execute(select_query)
+    except sa.exc.ProgrammingError:
+        return False
+    finally:
+        transaction.rollback()
+
+    return True
+
+
 def migrate_data_from_core(connection):
+    if not is_buffer_table_exist():
+        # NOTE(eli): if there is no buffer table it means that there
+        # is no core database we should not run data migrations in
+        # this case because extension might be installed and used
+        # separately from Nailgun core and its database
+        return
+
     ext_name = 'volume_manager'
 
     select_query = sa.sql.text(

@@ -2465,18 +2465,28 @@ button, .btn:not(.btn-link) {.font-semibold;}
   &.modal-dialog {
     width: 830px;
     height: 485px;
-    .modal-body {
-      height: 315px;
-    }
-    .wizard-steps-nav {
-      padding-left: 0;
-      li {
-        cursor: pointer;
-      }
-      .wizard-step {
-        &.available {
-          a {
-            color: @green;
+    .wizard-body {
+      @wizard-body-height: 315px;
+      @wizard-body-padding: 15px;
+      height: @wizard-body-height;
+      padding: @wizard-body-padding;
+      .wizard-steps-box {
+        height: @wizard-body-height - @wizard-body-padding * 2;
+        overflow: auto;
+        .form-group {
+          margin-right: 0;
+        }
+        .wizard-steps-nav {
+          padding-left: 0;
+          li {
+            cursor: pointer;
+          }
+          .wizard-step {
+            &.available {
+              a {
+                color: @green;
+              }
+            }
           }
         }
       }

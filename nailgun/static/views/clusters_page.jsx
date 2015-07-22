@@ -132,7 +132,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
             var deploymentTask = cluster.task({group: 'deployment', status: 'running'});
             return (
                 <div className='col-xs-3'>
-                    <a className={utils.classNames({clusterbox: true, 'cluster-disabled': !!deletionTask})} href={!deletionTask ? '#cluster/' + cluster.id + '/nodes' : 'javascript:void 0'}>
+                    <a className={utils.classNames({clusterbox: true, 'cluster-disabled': !!deletionTask})} href={!deletionTask ? '#cluster/' + cluster.id + '/dashboard' : 'javascript:void 0'}>
                         <div className='name'>{cluster.get('name')}</div>
                         <div className='tech-info'>
                             <div key='nodes-title' className='item'>{i18n('clusters_page.cluster_hardware_nodes')}</div>

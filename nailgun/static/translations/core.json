@@ -9,7 +9,6 @@
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
                 "apply_button": "Apply",
-                "rename_button": "Rename",
                 "delete_button": "Delete",
                 "remove_button": "Remove",
                 "start_button": "Start",
@@ -18,9 +17,6 @@
                 "save_settings_button": "Save Settings",
                 "close_button": "Close",
                 "cancel_button": "Cancel",
-                "update_button": "Update",
-                "rollback_button": "Rollback",
-                "retry_button": "Retry Update",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
                 "not_specified" : "Not specified",
@@ -284,12 +280,12 @@
             },
             "cluster_page": {
                 "tabs": {
+                    "dashboard": "Dashboard",
                     "nodes": "Nodes",
                     "network": "Networks",
                     "settings": "Settings",
                     "logs": "Logs",
-                    "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "healthcheck": "Health Check"
                 },
                 "nodes_tab": {
                     "roles": "Roles",
@@ -517,29 +513,71 @@
                         }
                     }
                 },
-                "actions_tab": {
-                    "title": "Actions",
-                    "rename_environment": "Rename Environment",
+                "dashboard_tab": {
+                    "title_new": "Where to Start",
+                    "title_ready": "Ready to Deploy?",
+                    "title_error": "Deployment Failed",
+                    "deploy_progress": "Deployment in Progress",
                     "delete_environment": "Delete Environment",
-                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
+                    "alert_delete": "This action will clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
                     "reset_environment": "Reset Environment",
                     "reset_environment_description": "Enables you to modify the settings for the environment and redeploy.",
                     "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
-                    "reset_disabled_for_new_cluster": "Reset Environment is not available for an environment not yet deployed.",
                     "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed.",
                     "repeated_reset_disabled": "The current environment is already being reset.",
-                    "update_environment": "Update Environment",
-                    "update_environment_description": "Enables you to update the environment to chosen release.",
-                    "update_disabled_for_new_cluster": "Update Environment is not available for an environment not yet deployed.",
-                    "update_disabled_for_deploying_cluster": "Update Environment is not available for an environment still being deployed.",
-                    "repeated_update_disabled": "The current environment is already being updated.",
-                    "rollback_environment": "Rollback Environment",
-                    "no_releases_to_update_message": "You already have the latest release installed.",
-                    "rollback_warning_message": "Update of the environment to __release__ has failed.",
-                    "rollback_message": "You can retry update, or rollback the environment",
                     "rename_error": {
                         "title": "Unable to Rename the Environment"
-                    }
+                    },
+                    "current_task": "Current task:",
+                    "cluster_info_fields": {
+                        "name": "Name",
+                        "status": "Status",
+                        "openstack_release": "Openstack Release",
+                        "operating_system": "OS",
+                        "compute": "Compute",
+                        "network": "Network",
+                        "storage_backends": "Storage Backends",
+                        "cpu_cores": "CPU (Cores)",
+                        "hdd": "HDD",
+                        "ram": "RAM",
+                        "capacity": "Capacity",
+                        "statistics": "Node Statistics",
+                        "total": "Total Nodes"
+                    },
+                    "mos_documentation": "Mirantis Openstack Documentation",
+                    "openstack_documentation": "OpenStack Documentation",
+                    "documentation_description": "Quick access to the documentation on configuring and deploying environment:",
+                    "no_nodes_warning_add_them": "You don't have any nodes in your environment. Add them first at nodes tab.",
+                    "plugin_documentation": "Plugin Documentation",
+                    "technical_bulletins": "Technical Bulletins",
+                    "cluster_information": "Cluster Information",
+                    "summary": "Summary",
+                    "changes_header": "List of Changes",
+                    "new_environment_welcome": "Welcome to New OpenStack Environment",
+                    "add_nodes": "You need to add nodes to the OpenStack Environment.",
+                    "not_deployed_instruction": "Please review all environment configurations, including node disk partitioning and interface configuration, before proceeding. These settings will be locked once the deployment is complete.",
+                    "deployment_cannot_be_started": "Deployment cannot be started due to invalid environment configuration. Please review and address the warnings below before proceeding and see the",
+                    "note_recommendations": "Please note our recommendations:",
+                    "stop": "Stop",
+                    "healthcheck": "To check out the OpenStack Healthcheck status go to ",
+                    "healthcheck_tab": "Healthcheck tab",
+                    "documentation": "Documentation",
+                    "go_to_nodes": "Add nodes",
+                    "unsuccessful_deploy": "Your deployment was unsuccessful. See the Troubleshooting section of the",
+                    "no_nodes_instruction": "You must add at least one node to your environment in order to deploy. See the",
+                    "locked_settings_alert": "Please review all environment configurations, including node disk partitioning and interface configuration, before proceeding. These settings will be locked once the deployment is complete.",
+                    "package_information": "Packages and package updates are fetched from the repositories defined on the Settings tab.  If your environment is using the default external repositories, please confirm your Fuel node has internet access. To specify alternate repositories, or to create a local mirror, please review the ",
+                    "user_guide": "User Guide",
+                    "operations_guide": "Operations Guide",
+                    "for_more_information_roles": "for more information on how to assign roles to nodes and add them to an environment.",
+                    "for_more_information_configuration": " for more information on how to configure environment and node level settings.",
+                    "and_vcenter": "and VCenter",
+                    "manager": "manager",
+                    "nova_with": "Nova Network with",
+                    "neutron_with": "Neutron with",
+                    "horizon": "Horizon",
+                    "horizon_description": "OpenStack Environment management panel (Horizon) is now available ",
+                    "go_to_horizon": "Proceed to Horizon"
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -654,6 +692,7 @@
                 "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
                 "provision_vms": "Provision VMs",
+                "deploy": "Deploying",
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
@@ -799,14 +838,14 @@
                     },
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",
-                    "locked_settings_alert": "Please note that environment settings and node configuration will be locked after deployment.",
                     "verification_not_performed": "It is recommended to verify network settings before deployment.",
                     "verification_in_progress": "Your network verification is in progress.",
                     "verification_failed": "Networks verification failed with an error.",
                     "get_more_info": "For more information please visit the",
                     "networks_link": "Networks tab",
                     "invalid_settings": "Environment settings are invalid.",
-                    "settings_link": "Settings tab"
+                    "settings_link": "Settings tab",
+                    "are_you_sure_deploy": "Your OpenStack environment will now deploy."
                 },
                 "provision_vms": {
                     "title": "Provision VMs",
@@ -865,18 +904,6 @@
                     "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configuration will also be reset to defaults.",
                     "enter_environment_name": "Please type in the name of the environment \"__name__\" to confirm."
                 },
-                "update_environment": {
-                    "title": "Update Environment",
-                    "text": "Are you sure you want to update the environment?",
-                    "downgrade_warning": "Are you sure you want to update the environment to earlier release?"
-                },
-                "rollback_environment": {
-                    "title": "Rollback Environment",
-                    "text": "Are you sure you want to rollback the environment?"
-                },
-                "retry_environment": {
-                    "text": "Are you sure you want to retry update the environment?"
-                },
                 "error_dialog": {
                     "title": "Error",
                     "warning": "A server error has occured. Please contact the administrators."
@@ -915,7 +942,6 @@
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
-                "rename_button": "重命名",
                 "delete_button": "删除",
                 "save_settings_button": "保存设置",
                 "cancel_button": "取消",
@@ -1226,9 +1252,7 @@
                         }
                     }
                 },
-                "actions_tab": {
-                    "title": "动作",
-                    "rename_environment": "重命名环境",
+                "dashboard_tab": {
                     "delete_environment": "删除环境",
                     "alert_delete": "清除每个节点并放回未分配节点池"
                 },
@@ -1439,7 +1463,6 @@
                 "load_defaults_button": "デフォルトを読み込み",
                 "cancel_changes_button": "変更をキャンセル",
                 "apply_button": "適用",
-                "rename_button": "リネーム",
                 "delete_button": "削除",
                 "remove_button": "リムーブ",
                 "stop_button": "停止",
@@ -1447,9 +1470,6 @@
                 "save_settings_button": "設定を保存",
                 "close_button": "閉じる",
                 "cancel_button": "キャンセル",
-                "update_button": "更新",
-                "rollback_button": "ロールバック",
-                "retry_button": "更新のリトライ",
                 "apply_changes_button": "変更を適用",
                 "not_available": "N/A",
                 "size": {
@@ -1836,9 +1856,7 @@
                         }
                     }
                 },
-                "actions_tab": {
-                    "title": "アクション",
-                    "rename_environment": "環境の名前変更",
+                "dashboard_tab": {
                     "delete_environment": "環境を削除",
                     "alert_delete": "各ノードをクリーンアップし、未割り当てのノードとしてプールに戻します。削除されたノードのすべてのログも削除されます。",
                     "reset_environment": "環境のリセット",
@@ -1846,16 +1864,6 @@
                     "reset_environment_warning": "このアクションは既にあるすべてのノードをリセットし、デプロイ前の状態にし、既存の環境を削除します。",
                     "reset_disabled_for_new_cluster": "環境のリセットはデプロイされていない環境では使用できません。",
                     "reset_disabled_for_deploying_cluster": "環境のリセットはデプロイ中の環境には使用できません。",
-                    "repeated_reset_disabled": "現在の環境はすでにリセットされています。",
-                    "update_environment": "環境のアップデート",
-                    "update_environment_description": "選択したリリースに環境をアップデートすることができます。",
-                    "update_disabled_for_new_cluster": "環境のアップデートはまだデプロイされていない環境には使用できません。",
-                    "update_disabled_for_deploying_cluster": "環境のアップデートはデプロイ中の環境には使用できません。",
-                    "repeated_update_disabled": "現在の環境はすでにアップデートされています。",
-                    "rollback_environment": "環境のロールバック",
-                    "no_releases_to_update_message": "すでに最新のリリースがインストールされています。",
-                    "rollback_warning_message": "__release__ への環境のアップデートは失敗しました。",
-                    "rollback_message": "アップデートをリトライするか、環境をロールバックすることができます。",
                     "rename_error": {
                         "title": "環境の名前変更ができませんでした"
                     }
@@ -2172,18 +2180,6 @@
                     "text": "本当にこの環境をリセットしてもよろしいですか？ 環境内のすべてのノードが削除され、デプロイ前の状態に戻ります。ディスクおよびインターフェイス設定もデフォルトにリセットされます。",
                     "enter_environment_name": "確認のために環境名 \"__name__\" を入力してください。"
                 },
-                "update_environment": {
-                    "title": "環境のアップデート",
-                    "text": "本当に環境をアップデートしてもよろしいですか？",
-                    "downgrade_warning": "本当に以前のリリースに環境をアップデートしてもよろしいですか？"
-                },
-                "rollback_environment": {
-                    "title": "環境のロールバック",
-                    "text": "本当に環境をロールバックしてもよろしいですか？"
-                },
-                "retry_environment": {
-                    "text": "本当に環境のアップデートをリトライしてもよろしいですか？"
-                },
                 "error_dialog": {
                     "title": "エラー",
                     "warning": "サーバエラーが発生しました。管理者に連絡してください。"
@@ -2222,7 +2218,6 @@
                 "load_defaults_button": "초기설정로드",
                 "cancel_changes_button": "변경취소",
                 "apply_button": "적용",
-                "rename_button": "개명",
                 "delete_button": "삭제",
                 "stop_button": "중지",
                 "reset_button": "재설정",
@@ -2443,9 +2438,7 @@
                         }
                     }
                 },
-                "actions_tab": {
-                    "title": "작업",
-                    "rename_environment": "환경이름 바꾸기",
+                "dashboard_tab": {
                     "delete_environment": "환경 지우기",
                     "alert_delete": "각 노드를 정리하고 할당되지 않은 노드 풀에 반환합니다.",
                     "reset_environment": "환경 재설정",

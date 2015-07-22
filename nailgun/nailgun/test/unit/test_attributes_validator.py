@@ -274,7 +274,7 @@ class TestAttributesValidator(BaseTestCase):
                           AttributesValidator.validate_editable_attributes,
                           yaml.load(attrs))
 
-    @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
+    @patch('nailgun.objects.cluster.Cluster.get_updated_editable_attributes')
     def test_invalid_provisioning_method(self, mock_cluster_attrs):
         attrs = {'editable': {'provision': {'method':
                  {'value': 'not_image', 'type': 'text'}}}}
@@ -284,7 +284,7 @@ class TestAttributesValidator(BaseTestCase):
                           AttributesValidator.validate,
                           json.dumps(attrs), cluster_mock)
 
-    @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
+    @patch('nailgun.objects.cluster.Cluster.get_updated_editable_attributes')
     def test_provision_method_missing(self, mock_cluster_attrs):
         attrs = {'editable': {'method':
                  {'value': 'not_image', 'type': 'text'}}}
@@ -294,7 +294,7 @@ class TestAttributesValidator(BaseTestCase):
                           AttributesValidator.validate,
                           json.dumps(attrs), cluster_mock)
 
-    @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
+    @patch('nailgun.objects.cluster.Cluster.get_updated_editable_attributes')
     def test_provision_method_passed(self, mock_cluster_attrs):
         attrs = {'editable': {'provision': {'method':
                  {'value': 'image', 'type': 'text'}}}}
@@ -304,7 +304,7 @@ class TestAttributesValidator(BaseTestCase):
                              AttributesValidator.validate,
                              json.dumps(attrs), cluster_mock)
 
-    @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
+    @patch('nailgun.objects.cluster.Cluster.get_updated_editable_attributes')
     def test_provision_method_passed_old(self, mock_cluster_attrs):
         attrs = {'editable': {'provision': {'method':
                  {'value': 'image', 'type': 'text'}}}}

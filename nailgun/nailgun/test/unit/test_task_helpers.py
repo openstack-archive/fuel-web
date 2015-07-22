@@ -19,7 +19,7 @@ import web
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.task.helpers import TaskHelper

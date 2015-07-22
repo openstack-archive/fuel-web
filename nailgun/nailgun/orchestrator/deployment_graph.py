@@ -25,7 +25,7 @@ import networkx as nx
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
 

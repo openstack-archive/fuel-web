@@ -23,7 +23,7 @@ from nailgun.api.v1.validators.task import TaskValidator
 
 from nailgun.errors import errors
 
-from nailgun import objects
+from nailgun.objects import objects
 
 
 """

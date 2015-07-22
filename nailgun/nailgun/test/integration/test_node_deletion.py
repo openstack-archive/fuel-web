@@ -16,7 +16,7 @@
 
 import logging
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup

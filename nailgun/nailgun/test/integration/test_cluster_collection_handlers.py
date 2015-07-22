@@ -18,7 +18,7 @@ from mock import patch
 from oslo.serialization import jsonutils
 from sqlalchemy.sql import not_
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster

@@ -19,7 +19,7 @@ import mock
 from oslo.serialization import jsonutils
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.test.base import BaseMasterNodeSettignsTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -41,8 +41,9 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         deploy_task = self.env.launch_deployment()
         self.env.wait_ready(deploy_task)
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=True):
             resp = self.app.patch(
                 reverse('MasterNodeSettingsHandler'),
                 headers=self.default_headers,
@@ -77,8 +78,9 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
             task_count_before = objects.TaskCollection.filter_by(
                 None, name=task_name).count()
 
-            with mock.patch('nailgun.objects.MasterNodeSettings.'
-                            'must_send_stats', return_value=must_send_stats):
+            with mock.patch(
+                    'nailgun.objects.master_node_settingsMasterNodeSettings'
+                    '.must_send_stats', return_value=must_send_stats):
                 with mock.patch('nailgun.task.fake.settings.'
                                 'FAKE_TASKS_TICK_INTERVAL', 10):
                     resp = self.app.patch(
@@ -121,8 +123,9 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
 
         for task_name, must_send_stats in tasks_params:
 
-            with mock.patch('nailgun.objects.MasterNodeSettings.'
-                            'must_send_stats', return_value=must_send_stats):
+            with mock.patch(
+                    'nailgun.objects.master_node_settings.MasterNodeSettings'
+                    '.must_send_stats', return_value=must_send_stats):
 
                 for cluster_status in consts.CLUSTER_STATUSES:
                     if cluster_status == consts.CLUSTER_STATUSES.operational:
@@ -143,8 +146,9 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
                     self.assertEqual(0, task_count)
 
     def test_create_stats_user_not_required(self):
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=False):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=False):
             with mock.patch('nailgun.task.manager.CreateStatsUserTaskManager.'
                             'execute') as executer:
                 resp = self.app.patch(
@@ -156,8 +160,9 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
                 self.assertFalse(executer.called)
 
     def test_create_stats_user_called(self):
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=True):
             with mock.patch('nailgun.task.manager.CreateStatsUserTaskManager.'
                             'execute') as executer:
                 resp = self.app.patch(
@@ -179,13 +184,15 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
             ]
         )
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=True):
             deploy_task = self.env.launch_deployment()
             self.env.wait_ready(deploy_task)
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=False):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=False):
             resp = self.app.patch(
                 reverse('MasterNodeSettingsHandler'),
                 headers=self.default_headers,
@@ -198,8 +205,9 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         self.assertIsNotNone(task)
 
     def test_remove_stats_user_not_required(self):
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=True):
             with mock.patch('nailgun.task.manager.RemoveStatsUserTaskManager.'
                             'execute') as executer:
                 resp = self.app.patch(
@@ -211,8 +219,9 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
                 self.assertFalse(executer.called)
 
     def test_remove_stats_user_called(self):
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=False):
+        with mock.patch(
+                'nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=False):
             with mock.patch('nailgun.task.manager.RemoveStatsUserTaskManager.'
                             'execute') as executer:
                 resp = self.app.patch(

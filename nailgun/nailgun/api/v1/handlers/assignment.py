@@ -24,7 +24,7 @@ from nailgun.api.v1.validators.assignment import NodeAssignmentValidator
 from nailgun.api.v1.validators.assignment import NodeUnassignmentValidator
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 
 class NodeAssignmentHandler(BaseHandler):

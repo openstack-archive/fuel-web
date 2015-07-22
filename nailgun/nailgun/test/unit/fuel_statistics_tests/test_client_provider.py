@@ -19,7 +19,7 @@ from mock import PropertyMock
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
-from nailgun.objects import Cluster
+from nailgun.objects import objects
 from nailgun.settings import settings
 from nailgun.statistics import errors
 from nailgun.statistics.oswl import helpers
@@ -163,7 +163,7 @@ class TestOpenStackClientProvider(BaseTestCase):
 
         cluster = self.env.create_cluster(api=False)
 
-        default_access_data = Cluster.get_creds(cluster)
+        default_access_data = objects.Cluster.get_creds(cluster)
         default_username = default_access_data["user"]["value"]
         default_password = default_access_data["password"]["value"]
         default_tenant = default_access_data["tenant"]["value"]
@@ -175,7 +175,7 @@ class TestOpenStackClientProvider(BaseTestCase):
                                   "get_mgmt_ip_of_cluster_controller")
 
         def check_creds(updated_attrs, expected_creds):
-            Cluster.update_attributes(cluster, updated_attributes)
+            objects.Cluster.update_attributes(cluster, updated_attributes)
             with patch(get_host_for_auth_path,
                        return_value=expected_auth_host):
                 client_provider = helpers.ClientProvider(cluster)

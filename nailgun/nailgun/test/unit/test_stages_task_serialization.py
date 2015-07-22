@@ -18,7 +18,7 @@ import mock
 import yaml
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import tasks_serializer
@@ -177,7 +177,7 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertFalse(task.should_execute())
 
     @mock.patch.object(NetworkDeploymentSerializer, 'update_nodes_net_info')
-    @mock.patch.object(objects.Node, 'all_roles')
+    @mock.patch('nailgun.objects.node.Node.all_roles')
     def test_upload_nodes_info(self, m_roles, m_update_nodes):
         # mark one node as ready so we can test for duplicates
         self.env.nodes[0].status = consts.NODE_STATUSES.ready

@@ -33,7 +33,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import notifier
-from nailgun import objects
+from nailgun.objects import objects
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
@@ -904,13 +904,13 @@ class VerifyNetworksTaskManager(TaskManager):
             verify_task = tasks.VerifyNetworksTask(task, vlan_ids)
 
             if tasks.CheckDhcpTask.enabled(self.cluster):
-                dhcp_subtask = objects.task.Task.create_subtask(
+                dhcp_subtask = objects.Task.create_subtask(
                     task, name=consts.TASK_NAMES.check_dhcp)
                 verify_task.add_subtask(
                     tasks.CheckDhcpTask(dhcp_subtask, vlan_ids))
 
             if tasks.MulticastVerificationTask.enabled(self.cluster):
-                multicast = objects.task.Task.create_subtask(
+                multicast = objects.Task.create_subtask(
                     task, name=consts.TASK_NAMES.multicast_verification)
                 verify_task.add_subtask(
                     tasks.MulticastVerificationTask(multicast))
@@ -921,7 +921,7 @@ class VerifyNetworksTaskManager(TaskManager):
                     StrictVersion(consts.FUEL_REMOTE_REPOS):
 
                 # repo connectivity check via default gateway
-                repo_check_task = objects.task.Task.create_subtask(
+                repo_check_task = objects.Task.create_subtask(
                     task, name=consts.TASK_NAMES.check_repo_availability)
                 verify_task.add_subtask(
                     tasks.CheckRepoAvailability(repo_check_task, vlan_ids))
@@ -932,7 +932,7 @@ class VerifyNetworksTaskManager(TaskManager):
                 # if there is no conf - there is no nodes on which
                 # we need to setup network
                 if conf:
-                    repo_check_task = objects.task.Task.create_subtask(
+                    repo_check_task = objects.Task.create_subtask(
                         task,
                         consts.TASK_NAMES.check_repo_availability_with_setup)
                     verify_task.add_subtask(

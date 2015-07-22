@@ -15,7 +15,7 @@
 #    under the License.
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup

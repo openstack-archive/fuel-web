@@ -104,8 +104,9 @@ class TestDeploymentAttributesSerialization70(
                     consts.NEUTRON_SEGMENT_TYPES.vlan:
                 expected_roles += [('neutron/private', 'br-prv')]
 
-            if node.cluster.network_config.segmentation_type == \
-                    consts.NEUTRON_SEGMENT_TYPES.gre:
+            if node.cluster.network_config.segmentation_type in \
+                    (consts.NEUTRON_SEGMENT_TYPES.gre,
+                     consts.NEUTRON_SEGMENT_TYPES.tun):
                 expected_roles += [('neutron/mesh', 'br-mesh')]
 
             self.assertEqual(roles, dict(expected_roles))
@@ -168,8 +169,9 @@ class TestDeploymentAttributesSerialization70(
                     network_roles += zip(
                         self.public, [ip_by_net['public']] * len(self.public))
 
-                if node.cluster.network_config.segmentation_type == \
-                        consts.NEUTRON_SEGMENT_TYPES.gre:
+                if node.cluster.network_config.segmentation_type in \
+                        (consts.NEUTRON_SEGMENT_TYPES.gre,
+                         consts.NEUTRON_SEGMENT_TYPES.tun):
                     network_roles += zip(
                         self.private,
                         [ip_by_net['private']] * len(self.private))
@@ -184,6 +186,12 @@ class TestDeploymentAttributesSerializationSegmentationGre70(
     TestDeploymentAttributesSerialization70
 ):
     segmentation_type = consts.NEUTRON_SEGMENT_TYPES.gre
+
+
+class TestDeploymentAttributesSerializationSegmentationTun70(
+    TestDeploymentAttributesSerialization70
+):
+    segmentation_type = consts.NEUTRON_SEGMENT_TYPES.tun
 
 
 class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):

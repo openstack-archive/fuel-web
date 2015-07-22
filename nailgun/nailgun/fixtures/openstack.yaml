@@ -1439,7 +1439,13 @@
                   vsphere_cluster: ""
                   service_name: ""
                   datastore_regex: ""
-                  target_node: "controllers"
+                  target_node:
+                    options:
+                      - id: "controllers"
+                        label: "controllers"
+                    current:
+                      id: "controllers"
+                      label: "controllers"
               cinder:
                 enable: true
           network:

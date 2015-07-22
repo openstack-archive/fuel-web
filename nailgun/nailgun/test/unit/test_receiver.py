@@ -18,7 +18,7 @@ from mock import ANY
 from mock import patch
 
 from nailgun import consts
-from nailgun.objects import Plugin
+from nailgun.objects import objects
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test import base
 
@@ -41,7 +41,7 @@ class TestNailgunReceiver(base.BaseTestCase):
                 title='title{0}'.format(i),
                 description='description{0}'.format(i))
 
-            self.plugin = Plugin.create(meta)
+            self.plugin = objects.Plugin.create(meta)
             self.cluster.plugins.append(self.plugin)
 
         self.task = self.env.create_task(
@@ -88,7 +88,7 @@ class TestNailgunReceiver(base.BaseTestCase):
             u'Deployment has failed. Method granular_deploy.',
             self.cluster.id)
 
-    @patch('nailgun.objects.Task.update_verify_networks')
+    @patch('nailgun.objects.task.Task.update_verify_networks')
     def test_check_repositories_resp_success(self, update_verify_networks):
         repo_check_message = {
             "status": "ready",
@@ -104,7 +104,7 @@ class TestNailgunReceiver(base.BaseTestCase):
         update_verify_networks.assert_called_with(
             self.task, 'ready', 100, '', [])
 
-    @patch('nailgun.objects.Task.update_verify_networks')
+    @patch('nailgun.objects.task.Task.update_verify_networks')
     def test_check_repositories_resp_error(self, update_verify_networks):
         urls = ['url2', 'url1', 'url3', 'url1']
         repo_check_message = {

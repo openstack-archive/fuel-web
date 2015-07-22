@@ -19,11 +19,11 @@ from itertools import groupby
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import plugins as plugin_db_model
-from nailgun.objects import base
+from nailgun.objects import objects
 from nailgun.objects.serializers import plugin
 
 
-class Plugin(base.NailgunObject):
+class Plugin(objects.NailgunObject):
 
     model = plugin_db_model.Plugin
     serializer = plugin.PluginSerializer
@@ -34,7 +34,7 @@ class Plugin(base.NailgunObject):
             filter_by(name=name, version=version).first()
 
 
-class PluginCollection(base.NailgunCollection):
+class PluginCollection(objects.NailgunCollection):
 
     single = Plugin
 

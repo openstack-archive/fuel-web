@@ -18,7 +18,7 @@ from mock import patch
 
 import nailgun
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.task import Task

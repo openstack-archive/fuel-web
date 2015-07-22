@@ -19,7 +19,7 @@ from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.network import NetworkGroupValidator
 
-from nailgun import objects
+from nailgun.objects import objects
 
 
 class NetworkGroupHandler(SingleHandler):

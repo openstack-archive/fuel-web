@@ -27,7 +27,7 @@ from sqlalchemy.orm import object_mapper
 
 import nailgun.rpc as rpc
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun import consts
 from nailgun.db import db
@@ -760,7 +760,7 @@ class MulticastVerificationTask(BaseNetworkVerification):
     def get_message_body(self):
         # multicast verification should be done only for network which
         # corosync uses for communication - management in our case
-        all_nics = objects.cluster.Cluster.get_ifaces_for_network_in_cluster(
+        all_nics = objects.Cluster.get_ifaces_for_network_in_cluster(
             self.task.cluster, 'management')
         return {
             'nodes': [dict(self.config, iface=nic[1], uid=str(nic[0]))

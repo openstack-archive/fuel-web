@@ -20,7 +20,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.errors import errors
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.network.manager import NetworkManager
 

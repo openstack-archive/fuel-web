@@ -31,7 +31,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.extensions import fire_callback_on_node_create
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 

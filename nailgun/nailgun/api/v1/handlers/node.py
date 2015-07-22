@@ -30,7 +30,7 @@ from nailgun.api.v1.validators.network import NetAssignmentValidator
 from nailgun.api.v1.validators.node import NodeValidator
 
 from nailgun import consts
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
 

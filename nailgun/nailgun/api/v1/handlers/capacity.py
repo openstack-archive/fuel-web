@@ -22,7 +22,7 @@ import tempfile
 
 import web
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content

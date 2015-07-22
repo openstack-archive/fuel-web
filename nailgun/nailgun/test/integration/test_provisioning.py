@@ -16,7 +16,7 @@
 
 from mock import patch
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks

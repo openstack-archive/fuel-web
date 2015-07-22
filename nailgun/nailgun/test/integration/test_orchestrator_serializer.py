@@ -54,7 +54,7 @@ from nailgun.orchestrator.deployment_serializers import\
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 
 from nailgun.db.sqlalchemy import models
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
@@ -2581,8 +2581,8 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
         objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
         self.serializer = DeploymentHASerializer61(self.cluster)
 
-    @mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                return_value=False)
+    @mock.patch('nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=False)
     def test_serialize_workloads_collector_user_opted_out(self, _):
         oswl_user = self.serializer.get_common_attrs(
             self.env.clusters[0]
@@ -2600,8 +2600,8 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
         self.assertEqual(oswl_user['tenant'], 'services')
         self.assertEqual(oswl_user['create_user'], False)
 
-    @mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                return_value=True)
+    @mock.patch('nailgun.objects.master_node_settings.MasterNodeSettings'
+                '.must_send_stats', return_value=True)
     def test_serialize_workloads_collector_user_opted_in(self, _):
         oswl_user = self.serializer.get_common_attrs(
             self.env.clusters[0]

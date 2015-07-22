@@ -14,6 +14,7 @@
 
 import collections
 import glob
+import importlib
 import os
 import re
 import shutil
@@ -217,7 +218,27 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
+
 def join_range(r):
     """Converts (1, 2) -> "1:2"
     """
     return ":".join(map(str, r)) if r else None
+
+
+class ObjectMapper(object):
+    """Object Mapper is used to map object names to namespaces where
+    they can be imported from.
+
+    Implements Service Locator pattern.
+    """
+
+    _mappings = dict()
+
+    def __init__(self, mappings):
+        self._mappings = mappings
+
+    def __getattr__(self, class_name):
+        module_namespace = self._mappings.get(class_name)
+        module = importlib.import_module(module_namespace)
+
+        return getattr(module, class_name)

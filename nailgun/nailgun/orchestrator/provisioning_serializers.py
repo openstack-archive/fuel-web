@@ -24,7 +24,7 @@ import six
 from nailgun import consts
 from nailgun.extensions import node_extension_call
 from nailgun.logger import logger
-from nailgun import objects
+from nailgun.objects import objects
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings

@@ -15,7 +15,7 @@
 #    under the License.
 from oslo.serialization import jsonutils
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import ClusterChanges

@@ -217,7 +217,7 @@ class ReleaseCollectionSortBaseTest(BaseIntegrationTest):
         self.assertEqual(actual, self.expected)
 
 
-@patch('nailgun.objects.release.settings.DEFAULT_REPO',
+@patch('nailgun.settings.settings.DEFAULT_REPO',
        dict.fromkeys(['centos', 'ubuntu', 'arch', 'debian', 'fedora'], ''))
 class TestReleaseCollectionSortingAllCriteria(ReleaseCollectionSortBaseTest):
     releases = [
@@ -303,7 +303,7 @@ class TestReleaseCollectionSortByOpenstack(ReleaseCollectionSortBaseTest):
     ]
 
 
-@patch('nailgun.objects.release.settings.DEFAULT_REPO',
+@patch('nailgun.settings.settings.DEFAULT_REPO',
        dict.fromkeys(['centos', 'ubuntu', 'arch', 'debian', 'fedora'], ''))
 class TestReleaseCollectionSortByOS(ReleaseCollectionSortBaseTest):
     releases = [

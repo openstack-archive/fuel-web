@@ -27,12 +27,12 @@ from random import choice
 
 from six.moves import zip_longest
 
+from nailgun.api.v1.urls import get_all_urls
 from nailgun.logger import logger
 from nailgun.settings import settings
 
 
 def reverse(name, kwargs=None):
-    from nailgun.api.v1.urls import get_all_urls
     urls = get_all_urls()[0]
     urldict = dict(zip(urls[1::2], urls[::2]))
     url = urldict[name]

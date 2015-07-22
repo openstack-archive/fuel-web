@@ -28,12 +28,14 @@ from sqlalchemy.orm.query import Query
 
 from nailgun.db.deadlock_detector import clean_locks
 from nailgun.db.deadlock_detector import handle_lock
+from nailgun.db import migration
+from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy import utils
 from nailgun.settings import settings
 
-
 db_str = utils.make_dsn(**settings.DATABASE)
 engine = create_engine(db_str, client_encoding='utf8')
+
 
 class NoCacheQuery(Query):
     """Override for common Query class.
@@ -89,12 +91,10 @@ db = scoped_session(
 
 
 def syncdb():
-    from nailgun.db.migration import do_upgrade_head
-    do_upgrade_head()
+    migration.do_upgrade_head()
 
 
 def dropdb():
-    from nailgun.db import migration
     conn = engine.connect()
     trans = conn.begin()
     meta = MetaData()
@@ -145,10 +145,10 @@ def dropdb():
     conn.close()
     engine.dispose()
 
+
 def flush():
     """Delete all data from all tables within nailgun metadata
     """
-    from nailgun.db.sqlalchemy.models.base import Base
     with contextlib.closing(engine.connect()) as con:
         trans = con.begin()
         for table in reversed(Base.metadata.sorted_tables):

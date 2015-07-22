@@ -18,14 +18,13 @@ import abc
 import six
 
 from nailgun.errors import errors
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 
 
 def get_all_extensions():
     # TODO(eli): implement extensions autodiscovery
     # should be done as a part of blueprint
     # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
-    from nailgun.extensions.volume_manager.extension \
-        import VolumeManagerExtension
 
     return [VolumeManagerExtension]
 

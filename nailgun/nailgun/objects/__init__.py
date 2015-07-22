@@ -53,3 +53,5 @@ from nailgun.objects.plugin import PluginCollection
 
 from nailgun.objects.network_group import NetworkGroup
 from nailgun.objects.network_group import NetworkGroupCollection
+
+from nailgun.objects import serializers

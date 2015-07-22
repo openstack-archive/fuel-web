@@ -38,6 +38,7 @@ from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.logger import logger
+from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 
 
@@ -141,7 +142,6 @@ class Node(Base):
     @property
     def network_data(self):
         # TODO(enchantner): move to object
-        from nailgun.network.manager import NetworkManager
         return NetworkManager.get_node_networks(self)
 
     @property

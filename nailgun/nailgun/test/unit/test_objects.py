@@ -159,8 +159,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(len(cluster.nodes), 0)
 
     @mock.patch(
-        'nailgun.objects.node.'
-        'fire_callback_on_node_collection_delete')
+        'nailgun.objects.node.fire_callback_on_node_collection_delete')
     def test_delete_by_ids(self, callback_mock):
         cluster = self.env.create(
             cluster_kwargs={'api': False},
@@ -886,8 +885,7 @@ class TestClusterObject(BaseTestCase):
 
     @mock.patch('nailgun.objects.cluster.fire_callback_on_cluster_delete')
     @mock.patch(
-        'nailgun.objects.cluster.'
-        'fire_callback_on_node_collection_delete')
+        'nailgun.objects.cluster.fire_callback_on_node_collection_delete')
     def test_delete(self, mock_node_coll_delete_cb, mock_cluster_delete_cb):
         cluster = self.env.clusters[0]
         ids = [node.id for node in cluster.nodes]

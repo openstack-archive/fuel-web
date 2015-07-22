@@ -24,7 +24,7 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects.plugin import Plugin
+from nailgun import objects
 from nailgun.settings import settings
 
 
@@ -65,7 +65,7 @@ class PluginAdapterBase(object):
             self.plugin_path, self.plugin_metadata)
 
         metadata = self._load_config(metadata_file_path) or {}
-        Plugin.update(self.plugin, metadata)
+        objects.Plugin.update(self.plugin, metadata)
 
     def _load_config(self, config):
         if os.access(config, os.R_OK):
@@ -324,7 +324,7 @@ class PluginAdapterV3(PluginAdapterV2):
             if attribute_data:
                 data_to_update[attribute] = attribute_data
 
-        Plugin.update(self.plugin, data_to_update)
+        objects.Plugin.update(self.plugin, data_to_update)
 
 
 __version_mapping = {

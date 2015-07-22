@@ -15,8 +15,7 @@
 #    under the License.
 
 
-from nailgun.objects import Plugin
-from nailgun.objects import PluginCollection
+from nailgun import objects
 from nailgun.test import base
 
 
@@ -25,7 +24,7 @@ class TestPluginCollection(base.BaseTestCase):
     def test_all_newest(self):
         self._create_test_plugins()
 
-        newest_plugins = PluginCollection.all_newest()
+        newest_plugins = objects.PluginCollection.all_newest()
         self.assertEqual(len(newest_plugins), 2)
 
         single_plugin = filter(
@@ -43,7 +42,7 @@ class TestPluginCollection(base.BaseTestCase):
     def test_get_by_uids(self):
         plugin_ids = self._create_test_plugins()
         ids = plugin_ids[:2]
-        plugins = PluginCollection.get_by_uids(ids)
+        plugins = objects.PluginCollection.get_by_uids(ids)
         self.assertEqual(len(list(plugins)), 2)
         self.assertListEqual(
             [plugin.id for plugin in plugins], ids)
@@ -54,12 +53,12 @@ class TestPluginCollection(base.BaseTestCase):
             plugin_data = self.env.get_default_plugin_metadata(
                 version=version,
                 name='multiversion_plugin')
-            plugin = Plugin.create(plugin_data)
+            plugin = objects.Plugin.create(plugin_data)
             plugin_ids.append(plugin.id)
 
         single_plugin_data = self.env.get_default_plugin_metadata(
             name='single_plugin')
-        plugin = Plugin.create(single_plugin_data)
+        plugin = objects.Plugin.create(single_plugin_data)
         plugin_ids.append(plugin.id)
 
         return plugin_ids

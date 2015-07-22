@@ -261,7 +261,7 @@ class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
             end='task', start='another_task')
 
 
-@mock.patch.object(objects.Cluster, 'get_deployment_tasks')
+@mock.patch('nailgun.objects.Cluster.get_deployment_tasks')
 class TestTaskDeployGraph(BaseGraphTasksTests):
 
     content_type = 'text/vnd.graphviz'

@@ -26,6 +26,7 @@ from oslo_serialization import jsonutils
 
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
 
 from .objects.adapters import NailgunNodeAdapter
 
@@ -111,9 +112,6 @@ def get_node_spaces(node):
     Sets key `_allocate_size` which used only for internal calculation
     and not used in partitioning system.
     """
-    # FIXME(apopovych): ugly hack to avoid circular dependency
-    from nailgun import objects
-
     node_spaces = []
     volumes_metadata = objects.Cluster.get_volumes_metadata(node.cluster)
     role_mapping = volumes_metadata['volumes_roles_mapping']

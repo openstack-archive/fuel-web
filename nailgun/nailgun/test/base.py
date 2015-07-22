@@ -58,12 +58,7 @@ from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
-from nailgun.objects import Cluster
-from nailgun.objects import MasterNodeSettings
-from nailgun.objects import Node
-from nailgun.objects import NodeGroup
-from nailgun.objects import Plugin
-from nailgun.objects import Release
+from nailgun import objects
 
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
@@ -168,10 +163,10 @@ class EnvironmentManager(object):
             self.tester.assertEqual(resp.status_code, 201)
             release = resp.json_body
             self.releases.append(
-                self.db.query(Release).get(release['id'])
+                self.db.query(objects.Release).get(release['id'])
             )
         else:
-            release = Release.create(release_data)
+            release = objects.Release.create(release_data)
             db().commit()
             self.releases.append(release)
         return release
@@ -240,16 +235,16 @@ class EnvironmentManager(object):
             )
             self.tester.assertEqual(resp.status_code, 201, resp.body)
             cluster = resp.json_body
-            cluster_db = Cluster.get_by_uid(cluster['id'])
+            cluster_db = objects.Cluster.get_by_uid(cluster['id'])
         else:
-            cluster = Cluster.create(cluster_data)
+            cluster = objects.Cluster.create(cluster_data)
             cluster_db = cluster
             db().commit()
         self.clusters.append(cluster_db)
 
         if editable_attributes:
-            Cluster.patch_attributes(cluster_db,
-                                     {'editable': editable_attributes})
+            objects.Cluster.patch_attributes(
+                cluster_db, {'editable': editable_attributes})
         return cluster
 
     def create_node(
@@ -307,7 +302,7 @@ class EnvironmentManager(object):
                 return None
             self.tester.assertEqual(resp.status_code, expect_http)
             node = resp.json_body
-            node_db = Node.get_by_uid(node['id'])
+            node_db = objects.Node.get_by_uid(node['id'])
             if 'interfaces' not in node_data['meta'] \
                     or not node_data['meta']['interfaces']:
                 self._set_interfaces_if_not_set_in_meta(
@@ -315,7 +310,7 @@ class EnvironmentManager(object):
                     kwargs.get('meta', None))
             self.nodes.append(node_db)
         else:
-            node = Node.create(node_data)
+            node = objects.Node.create(node_data)
             db().commit()
             self.nodes.append(node)
 
@@ -387,7 +382,7 @@ class EnvironmentManager(object):
 
             ng = resp
         else:
-            ng = NodeGroup.create(ng_data)
+            ng = objects.NodeGroup.create(ng_data)
             db().commit()
 
         return ng
@@ -404,10 +399,10 @@ class EnvironmentManager(object):
                 expect_errors=False
             )
 
-            plugin = Plugin.get_by_uid(resp.json_body['id'])
+            plugin = objects.Plugin.get_by_uid(resp.json_body['id'])
             self.plugins.append(plugin)
         else:
-            plugin = Plugin.create(plugin_data)
+            plugin = objects.Plugin.create(plugin_data)
             self.plugins.append(plugin)
 
         # Enable plugin for specific cluster
@@ -488,7 +483,7 @@ class EnvironmentManager(object):
 
     def _add_interfaces_to_node(self, node_id, count=1):
         interfaces = []
-        node = self.db.query(Node.model).get(node_id)
+        node = self.db.query(objects.Node.model).get(node_id)
         networks_to_assign = \
             list(node.cluster.network_groups) if node.cluster else []
 
@@ -1416,5 +1411,5 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
             'master_node_uid': str(uuid.uuid4()),
         }
         self.master_node_settings.update(self.master_node_settings_template)
-        MasterNodeSettings.create(self.master_node_settings)
+        objects.MasterNodeSettings.create(self.master_node_settings)
         self.db.commit()

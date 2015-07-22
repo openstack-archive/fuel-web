@@ -25,7 +25,7 @@ import six
 import sqlalchemy as sa
 import yaml
 
-
+from nailgun.service_locator import ServiceLocator
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -489,7 +489,7 @@ class Cluster(NailgunObject):
 
         # we should reset hostname to default value to guarantee
         # hostnames uniqueness for nodes outside clusters
-        from nailgun.objects import Node
+        Node = ServiceLocator.get_class('nailgun.objects.Node')
         for node in nodes_to_remove:
             node.hostname = Node.default_slave_name(node)
 

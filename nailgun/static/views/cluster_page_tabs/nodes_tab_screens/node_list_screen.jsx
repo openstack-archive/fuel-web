@@ -30,7 +30,7 @@ define(
 ],
 function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins, Node) {
     'use strict';
-    var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
+    var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
 
     NodeListScreen = React.createClass({
         mixins: [
@@ -273,10 +273,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
                     return this.state.selectedNodeIds[node.id];
                 }, this)),
-                selectedNodeLabels = _.chain(selectedNodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value(),
-                indeterminateLabels = _.filter(selectedNodeLabels, function(label) {
-                    return _.any(selectedNodes.getLabelValues(label), _.isUndefined);
-                });
+                selectedNodeLabels = _.chain(selectedNodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
 
             // filter nodes
             var filteredNodes = nodes.filter(function(node) {
@@ -339,7 +336,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         filteredNodes={filteredNodes}
                         screenNodesLabels={screenNodesLabels}
                         selectedNodeLabels={selectedNodeLabels}
-                        indeterminateLabels={indeterminateLabels}
                         hasChanges={this.hasChanges()}
                         locked={locked}
                         revertChanges={this.revertChanges}
@@ -557,9 +553,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return {
                 actionInProgress: false,
                 isSearchButtonVisible: !!this.props.search,
-                activeSearch: !!this.props.search,
-                newLabels: [],
-                labelsWithMultipleValues: []
+                activeSearch: !!this.props.search
             };
         },
         getFilterOptions: function(filter) {
@@ -666,26 +660,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.setState({activeSearch: false});
             }
         },
-        componentWillReceiveProps: function(newProps) {
-            // check labels have multiple values if node selection was changed
-            this.setState({
-                labelsWithMultipleValues: _.filter(newProps.selectedNodeLabels, function(label) {
-                    return _.uniq(_.reject(newProps.nodes.getLabelValues(label), _.isUndefined)).length > 1;
-                })
-            });
-        },
-        componentDidUpdate: function() {
-            // FIXME(jkirnosova): need to call on labels panel opening only
-            if (this.props.isLabelsPanelOpen && !this.state.actionInProgress) {
-                this.updateIndeterminateLabelsState();
-            }
-        },
-        updateIndeterminateLabelsState: function() {
-            _.each(this.props.selectedNodeLabels, function(label) {
-                var labelCheckbox = this.refs[label + '-checkbox'].getInputDOMNode();
-                labelCheckbox.indeterminate = _.contains(this.props.indeterminateLabels, label);
-            }, this);
-        },
         componentWillUnmount: function() {
             $('html').off('click.search');
         },
@@ -706,77 +680,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             e.stopPropagation();
             this.props.resetFilters();
             this.setState({filtersKey: _.now()});
-        },
-        onChangeLabelWithMultipleValues: function(label) {
-            this.setState({
-                labelsWithMultipleValues: _.without(this.state.labelsWithMultipleValues, label)
-            });
-        },
-        addNewLabelPlaceholder: function() {
-            var newLabels = this.state.newLabels;
-            newLabels.push('');
-            this.setState({newLabels: newLabels});
-        },
-        addNewLabel: function(index, name, value) {
-            var newLabels = this.state.newLabels;
-            newLabels[index] = _.trim(value);
-            this.setState({newLabels: newLabels});
-        },
-        applyLabels: function() {
-            var labels = _.union(this.props.selectedNodeLabels, _.compact(this.state.newLabels));
-            // TODO (jkirnosova): check there are changes in labels to save
-            if (labels.length) {
-                this.setState({actionInProgress: true});
-
-                var nodes = new models.Nodes(
-                    this.props.nodes.map(function(node) {
-                        var nodeLabels = node.get('labels');
-
-                        _.each(labels, function(label) {
-                            var nodeHasLabel = !_.isUndefined(nodeLabels[label]),
-                                labelCheckbox = this.refs[label + '-checkbox'].getInputDOMNode(),
-                                labelNewName = _.trim(this.refs[label + '-name'].getInputDOMNode().value);
-
-                            // rename label
-                            if ((labelCheckbox.checked || labelCheckbox.indeterminate) && nodeHasLabel) {
-                                var labelValue = nodeLabels[label];
-                                delete nodeLabels[label];
-                                nodeLabels[labelNewName] = labelValue;
-                            }
-                            // add label with null (empty) value
-                            if (labelCheckbox.checked && !nodeHasLabel) {
-                                nodeLabels[labelNewName] = null;
-                            }
-                            // delete label
-                            if (!labelCheckbox.checked && !labelCheckbox.indeterminate) {
-                                delete nodeLabels[label];
-                            }
-                            // change label value
-                            if (!_.isUndefined(nodeLabels[labelNewName]) && !_.contains(this.state.labelsWithMultipleValues, label)) {
-                                nodeLabels[labelNewName] = _.trim(this.refs[label + '-value'].getInputDOMNode().value) || null;
-                            }
-                        }, this);
-
-                        return {id: node.id, labels: nodeLabels};
-                    }, this)
-                );
-
-                Backbone.sync('update', nodes)
-                    .done(_.bind(function() {
-                        this.props.screenNodes.fetch().always(_.bind(function() {
-                            dispatcher.trigger('labelsConfigurationUpdated');
-                            this.props.screenNodes.trigger('change');
-                            this.toggleLabels();
-                            this.setState({actionInProgress: false});
-                        }, this));
-                    }, this))
-                    .fail(_.bind(function(response) {
-                        utils.showErrorDialog({
-                            message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.labels_warning'),
-                            response: response
-                        });
-                    }, this));
-            }
         },
         toggleSorters: function() {
             this.setState({
@@ -800,7 +703,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeFilter, filter)} />
             );
         },
-        toggleLabels: function() {
+        toggleLabelsPanel: function() {
             this.setState({
                 newLabels: [],
                 areFiltersVisible: false,
@@ -877,7 +780,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 <button
                                     key='labels-btn'
                                     disabled={!this.props.nodes.length}
-                                    onClick={this.toggleLabels}
+                                    onClick={this.props.nodes.length && this.toggleLabelsPanel}
                                     className={utils.classNames(managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels'))}
                                 >
                                     <i className='glyphicon glyphicon-tag' />
@@ -1001,112 +904,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 ]
                             }
                         </div>
-                        {/* TODO(jkirnosova): need to move the following blocks to separate components */}
                         {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
-                            !!this.props.nodes.length && this.props.isLabelsPanelOpen && (
-                                <div className='col-xs-12 labels' key='labels'>
-                                    <div className='well clearfix'>
-                                        <div className='well-heading'>
-                                            <i className='glyphicon glyphicon-tag' /> {i18n(ns + 'manage_labels')}
-                                        </div>
-                                        <div className='forms-box form-inline'>
-                                            <p>
-                                                {i18n(ns + 'bulk_label_action_start')}
-                                                <strong>{i18n(ns + 'selected_nodes_amount', {count: this.props.nodes.length})}</strong>
-                                                {i18n(ns + 'bulk_label_action_end')}
-                                            </p>
-                                            {_.map(this.props.selectedNodeLabels, function(label, index) {
-                                                var hasMultipleValues = _.contains(this.state.labelsWithMultipleValues, label),
-                                                    labelValues = this.props.nodes.getLabelValues(label),
-                                                    value = hasMultipleValues ? '' : _.reject(labelValues, _.isUndefined)[0];
-
-                                                var showControlLabels = index == 0;
-                                                return (
-                                                    <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={label}>
-                                                        <controls.Input
-                                                            type='checkbox'
-                                                            ref={label + '-checkbox'}
-                                                            defaultChecked={!_.any(labelValues, _.isUndefined)}
-                                                            wrapperClassName='pull-left'
-                                                        />
-                                                        <controls.Input
-                                                            type='text'
-                                                            ref={label + '-name'}
-                                                            defaultValue={label}
-                                                            label={showControlLabels && i18n(ns + 'label_key')}
-                                                            maxLength={100}
-                                                        />
-                                                        <controls.Input
-                                                            type='text'
-                                                            ref={label + '-value'}
-                                                            defaultValue={value}
-                                                            maxLength={100}
-                                                            wrapperClassName={hasMultipleValues && 'has-warning'}
-                                                            tooltipText={hasMultipleValues && i18n(ns + 'label_value_warning')}
-                                                            onChange={hasMultipleValues && _.partial(this.onChangeLabelWithMultipleValues, label)}
-                                                            label={showControlLabels && i18n(ns + 'label_value')}
-                                                        />
-                                                    </div>
-                                                );
-                                            }, this)}
-                                            {_.map(this.state.newLabels, function(label, index) {
-                                                var showControlLabels = !this.props.selectedNodeLabels.length && index == 0;
-                                                return (
-                                                    <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={index}>
-                                                        <controls.Input
-                                                            type='checkbox'
-                                                            ref={label + '-checkbox'}
-                                                            defaultChecked={true}
-                                                            wrapperClassName='pull-left'
-                                                        />
-                                                        <controls.Input
-                                                            type='text'
-                                                            ref={label + '-name'}
-                                                            defaultValue={label}
-                                                            label={showControlLabels && i18n(ns + 'label_key')}
-                                                            maxLength={100}
-                                                            onChange={_.partial(this.addNewLabel, index)}
-                                                        />
-                                                        <controls.Input
-                                                            type='text'
-                                                            ref={label + '-value'}
-                                                            label={showControlLabels && i18n(ns + 'label_value')}
-                                                            maxLength={100}
-                                                        />
-                                                    </div>
-                                                );
-                                            }, this)}
-                                            <button
-                                                className='btn btn-default btn-add-label'
-                                                onClick={this.addNewLabelPlaceholder}
-                                                disabled={this.state.actionInProgress}
-                                            >
-                                                {i18n(ns + 'add_label')}
-                                            </button>
-                                        </div>
-                                        {(!!this.props.selectedNodeLabels.length || !!this.state.newLabels.length) &&
-                                            <div className='control-buttons text-right'>
-                                                <div className='btn-group' role='group'>
-                                                    <button
-                                                        className='btn btn-default'
-                                                        onClick={this.toggleLabels}
-                                                        disabled={this.state.actionInProgress}
-                                                    >
-                                                        {i18n('common.cancel_button')}
-                                                    </button>
-                                                    <button
-                                                        className='btn btn-success'
-                                                        onClick={this.applyLabels}
-                                                        disabled={this.state.actionInProgress}
-                                                    >
-                                                        {i18n('common.apply_button')}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            ),
+                            this.props.isLabelsPanelOpen &&
+                                <NodeLabelsPanel {... _.pick(this.props, 'nodes', 'screenNodes')}
+                                    key='labels'
+                                    labels={this.props.selectedNodeLabels}
+                                    toggleLabelsPanel={this.toggleLabelsPanel}
+                                />,
                             this.state.areSortersVisible && (
                                 <div className='col-xs-12 sorters' key='sorters'>
                                     <div className='well clearfix' key={this.state.sortersKey}>
@@ -1271,6 +1075,216 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         }
                                     </div>
                                 }
+                            </div>
+                        }
+                    </div>
+                </div>
+            );
+        }
+    });
+
+    NodeLabelsPanel = React.createClass({
+        getInitialState: function() {
+            return {
+                newLabels: [],
+                labelsWithMultipleValues: _.filter(this.props.labels, function(label) {
+                    return _.uniq(_.reject(this.props.nodes.getLabelValues(label), _.isUndefined)).length > 1;
+                }, this),
+                actionInProgress: false
+            };
+        },
+        componentDidMount: function() {
+            _.each(this.props.labels, function(label) {
+                var labelCheckbox = this.refs[label + '-checkbox'].getInputDOMNode();
+                labelCheckbox.indeterminate = _.any(this.props.nodes.getLabelValues(label), _.isUndefined);
+            }, this);
+        },
+        onChangeLabelWithMultipleValues: function(label) {
+            this.setState({
+                labelsWithMultipleValues: _.without(this.state.labelsWithMultipleValues, label)
+            });
+        },
+        addNewLabelPlaceholder: function() {
+            var newLabels = this.state.newLabels;
+            newLabels.push('');
+            this.setState({newLabels: newLabels});
+        },
+        addNewLabel: function(index, name, value) {
+            var newLabels = this.state.newLabels;
+            newLabels[index] = _.trim(value);
+            this.setState({newLabels: newLabels});
+        },
+        applyLabels: function() {
+            var labels = _.union(this.props.labels, _.compact(this.state.newLabels));
+
+            // TODO (jkirnosova): check there are changes in labels to save
+            if (labels.length) {
+                this.setState({actionInProgress: true});
+
+                var nodes = new models.Nodes(
+                    this.props.nodes.map(function(node) {
+                        var nodeLabels = node.get('labels');
+
+                        _.each(labels, function(label) {
+                            var nodeHasLabel = !_.isUndefined(nodeLabels[label]),
+                                labelCheckbox = this.refs[label + '-checkbox'].getInputDOMNode(),
+                                labelNewName = _.trim(this.refs[label + '-name'].getInputDOMNode().value);
+
+                            // rename label
+                            if ((labelCheckbox.checked || labelCheckbox.indeterminate) && nodeHasLabel) {
+                                var labelValue = nodeLabels[label];
+                                delete nodeLabels[label];
+                                nodeLabels[labelNewName] = labelValue;
+                            }
+                            // add label with null (empty) value
+                            if (labelCheckbox.checked && !nodeHasLabel) {
+                                nodeLabels[labelNewName] = null;
+                            }
+                            // delete label
+                            if (!labelCheckbox.checked && !labelCheckbox.indeterminate) {
+                                delete nodeLabels[label];
+                            }
+                            // change label value
+                            if (!_.isUndefined(nodeLabels[labelNewName]) && !_.contains(this.state.labelsWithMultipleValues, label)) {
+                                nodeLabels[labelNewName] = _.trim(this.refs[label + '-value'].getInputDOMNode().value) || null;
+                            }
+                        }, this);
+
+                        return {id: node.id, labels: nodeLabels};
+                    }, this)
+                );
+
+                Backbone.sync('update', nodes)
+                    .done(_.bind(function() {
+                        this.props.screenNodes.fetch().always(_.bind(function() {
+                            dispatcher.trigger('labelsConfigurationUpdated');
+                            this.props.screenNodes.trigger('change');
+                            this.props.toggleLabelsPanel();
+                        }, this));
+                    }, this))
+                    .fail(_.bind(function(response) {
+                        utils.showErrorDialog({
+                            message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.labels_warning'),
+                            response: response
+                        });
+                    }, this));
+            }
+        },
+        render: function() {
+            var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
+
+            return (
+                <div className='col-xs-12 labels'>
+                    <div className='well clearfix'>
+                        <div className='well-heading'>
+                            <i className='glyphicon glyphicon-tag' /> {i18n(ns + 'manage_labels')}
+                        </div>
+                        <div className='forms-box form-inline'>
+                            <p>
+                                {i18n(ns + 'bulk_label_action_start')}
+                                <strong>
+                                    {i18n(ns + 'selected_nodes_amount', {count: this.props.nodes.length})}
+                                </strong>
+                                {i18n(ns + 'bulk_label_action_end')}
+                            </p>
+
+                            {_.map(this.props.labels, function(label, index) {
+                                var showControlLabels = index == 0,
+                                    labelValues = this.props.nodes.getLabelValues(label),
+                                    labelValueProps;
+
+                                if (_.contains(this.state.labelsWithMultipleValues, label)) {
+                                    labelValueProps = {
+                                        defaultValue: '',
+                                        wrapperClassName: 'has-warning',
+                                        tooltipText: i18n(ns + 'label_value_warning'),
+                                        onChange: _.partial(this.onChangeLabelWithMultipleValues, label)
+                                    };
+                                } else {
+                                    labelValueProps = {
+                                        defaultValue: _.reject(labelValues, _.isUndefined)[0]
+                                    };
+                                }
+
+                                return (
+                                    <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={label}>
+                                        <controls.Input
+                                            type='checkbox'
+                                            ref={label + '-checkbox'}
+                                            defaultChecked={!_.any(labelValues, _.isUndefined)}
+                                            wrapperClassName='pull-left'
+                                        />
+                                        <controls.Input
+                                            type='text'
+                                            ref={label + '-name'}
+                                            maxLength={100}
+                                            label={showControlLabels && i18n(ns + 'label_key')}
+                                            defaultValue={label}
+                                        />
+                                        <controls.Input {...labelValueProps}
+                                            type='text'
+                                            ref={label + '-value'}
+                                            maxLength={100}
+                                            label={showControlLabels && i18n(ns + 'label_value')}
+                                        />
+                                    </div>
+                                );
+                            }, this)}
+
+                            {_.map(this.state.newLabels, function(label, index) {
+                                var showControlLabels = !this.props.labels.length && index == 0;
+
+                                return (
+                                    <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={index}>
+                                        <controls.Input
+                                            type='checkbox'
+                                            ref={label + '-checkbox'}
+                                            defaultChecked={true}
+                                            wrapperClassName='pull-left'
+                                        />
+                                        <controls.Input
+                                            type='text'
+                                            ref={label + '-name'}
+                                            maxLength={100}
+                                            label={showControlLabels && i18n(ns + 'label_key')}
+                                            defaultValue={label}
+                                            onChange={_.partial(this.addNewLabel, index)}
+                                        />
+                                        <controls.Input
+                                            type='text'
+                                            ref={label + '-value'}
+                                            maxLength={100}
+                                            label={showControlLabels && i18n(ns + 'label_value')}
+                                        />
+                                    </div>
+                                );
+                            }, this)}
+                            <button
+                                className='btn btn-default btn-add-label'
+                                onClick={this.addNewLabelPlaceholder}
+                                disabled={this.state.actionInProgress}
+                            >
+                                {i18n(ns + 'add_label')}
+                            </button>
+                        </div>
+                        {(!!this.props.labels.length || !!this.state.newLabels.length) &&
+                            <div className='control-buttons text-right'>
+                                <div className='btn-group' role='group'>
+                                    <button
+                                        className='btn btn-default'
+                                        onClick={this.props.toggleLabelsPanel}
+                                        disabled={this.state.actionInProgress}
+                                    >
+                                        {i18n('common.cancel_button')}
+                                    </button>
+                                    <button
+                                        className='btn btn-success'
+                                        onClick={this.applyLabels}
+                                        disabled={this.state.actionInProgress}
+                                    >
+                                        {i18n('common.apply_button')}
+                                    </button>
+                                </div>
                             </div>
                         }
                     </div>

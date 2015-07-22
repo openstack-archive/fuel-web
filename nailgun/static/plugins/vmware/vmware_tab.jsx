@@ -31,7 +31,14 @@ define(
     var Field = React.createClass({
         mixins: [controls.tooltipMixin],
         onChange: function(name, value) {
-            this.props.model.set(name, value);
+            var currentValue = this.props.model.get(name);
+            if (currentValue.current) {
+                currentValue.current.id = value;
+                currentValue.current.label = value;
+            } else {
+                currentValue = value;
+            }
+            this.props.model.set(name, currentValue);
             this.setState({model: this.props.model});
             _.defer(function() {dispatcher.trigger('vcenter_model_update');});
         },
@@ -41,15 +48,15 @@ define(
             return (
                 <controls.Input
                     {... _.pick(metadata, 'name', 'type', 'label', 'description')}
-                    value={value}
+                    value={metadata.type == 'select' ? value.current.id : value}
                     checked={value}
                     toggleable={metadata.type == 'password'}
                     onChange={this.onChange}
                     disabled={this.props.disabled}
                     error={(this.props.model.validationError || {})[metadata.name]}
                 >
-                    {this.props.options && this.props.options.map(function(index) {
-                        return <option key={index.label} value={index.value}>{index.label}</option>;
+                    {metadata.type == 'select' && value.options.map(function(value) {
+                        return <option key={value.id} value={value.id}>{value.label}</option>;
                     })}
                 </controls.Input>
             );
@@ -67,7 +74,8 @@ define(
                         model={this.props.model}
                         metadata={meta}
                         disabled={this.props.disabled}
-                        disableWarning={restrictions.disable[meta.name]}/>
+                        disableWarning={restrictions.disable[meta.name]}
+                    />
                 );
             }, this);
             return (
@@ -97,6 +105,21 @@ define(
     var NovaCompute = React.createClass({
         render: function() {
             if (!this.props.model) return null;
+
+            // add nodes of 'compute-vmware' type to targetNode select
+            var targetNode = this.props.model.get('target_node');
+            targetNode.options = [{id: 'controllers', label: 'controllers'}];
+            var nodes = this.props.cluster.get('nodes').filter(function(node) {
+                return _.contains(node.get('pending_roles'), 'compute-vmware');
+            });
+            nodes.forEach(function(node) {
+                targetNode.options.push({
+                    id: node.get('hostname'),
+                    label: node.get('name') + ' (' + node.get('mac').substr(9) + ')'
+                });
+            });
+            this.props.model.set('target_node', targetNode);
+
             return (
                 <div className='nova-compute'>
                     <h4>
@@ -129,8 +152,10 @@ define(
     var AvailabilityZone = React.createClass({
         addNovaCompute: function(current) {
             var collection = this.props.model.get('nova_computes'),
-                index = collection.indexOf(current);
-            collection.add(current.clone(), {at: index + 1});
+                index = collection.indexOf(current),
+                newItem = current.clone();
+            newItem.set('target_node', _.cloneDeep(newItem.get('target_node')));
+            collection.add(newItem, {at: index + 1});
             collection.parseRestrictions();
             this.setState({model: this.props.model});
             _.defer(function() {dispatcher.trigger('vcenter_model_update'); });
@@ -152,7 +177,8 @@ define(
         renderComputes: function(actions) {
             var novaComputes = this.props.model.get('nova_computes'),
                 isSingleInstance = novaComputes.length == 1,
-                disabled = actions.disable.nova_computes;
+                disabled = actions.disable.nova_computes,
+                cluster = this.props.cluster;
 
             return (
                 <div className='col-xs-offset-1'>
@@ -168,6 +194,7 @@ define(
                                 onRemove={this.removeNovaCompute}
                                 isRemovable={isSingleInstance}
                                 disabled={disabled.result || this.props.disabled}
+                                cluster={cluster}
                             />
                         );
                     }, this)}
@@ -197,7 +224,7 @@ define(
                         {this.renderTooltipIcon()}
                     </h3>
                     {this.props.collection.map(function(model) {
-                        return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled}/>;
+                        return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled} cluster={this.props.cluster}/>;
                     }, this)}
                 </div>
             );
@@ -302,6 +329,7 @@ define(
                             collection={model.get('availability_zones')}
                             disabled={!editable || disable.availability_zones.result}
                             tooltipText={disable.availability_zones.message}
+                            cluster={this.props.cluster}
                         />
                     }
                     {!hide.network.result &&

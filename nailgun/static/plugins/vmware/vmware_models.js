@@ -26,7 +26,7 @@ function($, _, i18n, Backbone, models) {
     'use strict';
 
     function isRegularField(field) {
-        return _.contains(['text', 'password', 'checkbox'], field.type);
+        return _.contains(['text', 'password', 'checkbox', 'select'], field.type);
     }
 
     // models for testing restrictions
@@ -134,6 +134,15 @@ function($, _, i18n, Backbone, models) {
         checkDuplicates: function(keys) {
             this.checkDuplicateField(keys, 'vsphere_cluster');
             this.checkDuplicateField(keys, 'service_name');
+
+            var targetNode = this.get('target_node');
+            if (targetNode.current.id && targetNode.current.id != 'controllers' &&
+                keys.target_node && keys.target_node[targetNode.current.id]) {
+                this.validationError = this.validationError || {};
+                this.validationError.target_node = i18n('vmware.duplicate_value');
+            }
+            keys.target_node = keys.target_node || {};
+            keys.target_node[targetNode.current.id] = true;
         }
     });
 

@@ -27,7 +27,7 @@ from sqlalchemy.orm import object_mapper
 
 import nailgun.rpc as rpc
 
-from nailgun import objects
+from nailgun.objects import objects
 
 from nailgun import consts
 from nailgun.db import db

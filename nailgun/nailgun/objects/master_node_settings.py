@@ -18,12 +18,12 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import MasterNodeSettings
 from nailgun.errors import errors
 from nailgun import logger
-from nailgun.objects.base import NailgunObject
+from nailgun.objects import objects
 from nailgun.objects.serializers.master_node_settings \
     import MasterNodeSettingsSerializer
 
 
-class MasterNodeSettings(NailgunObject):
+class MasterNodeSettings(objects.NailgunObject):
 
     model = MasterNodeSettings
 

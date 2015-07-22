@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,21 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-CapacityLog objects
-"""
-
-from nailgun.db import db
-from nailgun.db.sqlalchemy import models
-from nailgun.objects import objects
+import importlib
 
 
-class CapacityLog(objects.NailgunObject):
+class ServiceLocator(object):
 
-    model = models.CapacityLog
+    # 'class_name': 'module'
+    _classes = dict()
 
-    @classmethod
-    def get_latest(cls):
-        return db().query(cls.model).order_by(
-            cls.model.datetime.desc()
-        ).first()
+    def __init__(self, mappings):
+        self._classes = mappings
+
+    def __getitem__(self, class_name):
+        module_namespace = self._classes.get(class_name)
+        module = importlib.import_module(module_namespace)
+
+        return module.get(class_name)

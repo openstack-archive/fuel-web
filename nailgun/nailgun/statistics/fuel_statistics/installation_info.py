@@ -16,9 +16,7 @@ import copy
 
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
-from nailgun.objects import ClusterCollection
-from nailgun.objects import MasterNodeSettings
-from nailgun.objects import NodeCollection
+from nailgun.objects import objects
 from nailgun.settings import settings
 from nailgun.statistics.utils import get_attr_value
 from nailgun.statistics.utils import WhiteListRule
@@ -145,11 +143,11 @@ class InstallationInfo(object):
         return result
 
     def get_clusters_info(self):
-        clusters = ClusterCollection.all()
+        clusters = objects.ClusterCollection.all()
         clusters_info = []
         for cluster in clusters:
             release = cluster.release
-            nodes_num = NodeCollection.filter_by(
+            nodes_num = objects.NodeCollection.filter_by(
                 None, cluster_id=cluster.id).count()
             vmware_attributes_editable = None
             if cluster.vmware_attributes:
@@ -285,7 +283,7 @@ class InstallationInfo(object):
     def get_installation_info(self):
         clusters_info = self.get_clusters_info()
         allocated_nodes_num = sum([c['nodes_num'] for c in clusters_info])
-        unallocated_nodes_num = NodeCollection.filter_by(
+        unallocated_nodes_num = objects.NodeCollection.filter_by(
             None, cluster_id=None).count()
 
         info = {
@@ -301,11 +299,13 @@ class InstallationInfo(object):
         return info
 
     def get_master_node_uid(self):
-        return getattr(MasterNodeSettings.get_one(), 'master_node_uid', None)
+        return getattr(objects.MasterNodeSettings.get_one(),
+                       'master_node_uid',
+                       None)
 
     def get_user_info(self):
         try:
-            stat_settings = MasterNodeSettings.get_one(). \
+            stat_settings = objects.MasterNodeSettings.get_one(). \
                 settings.get("statistics", {})
             result = {
                 "contact_info_provided":

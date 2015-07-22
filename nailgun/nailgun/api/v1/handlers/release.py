@@ -24,15 +24,14 @@ from nailgun.api.v1.handlers.base import DeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
-from nailgun.objects import Release
-from nailgun.objects import ReleaseCollection
+from nailgun.objects import objects
 
 
 class ReleaseHandler(SingleHandler):
     """Release single handler
     """
 
-    single = Release
+    single = objects.Release
     validator = ReleaseValidator
 
 
@@ -41,7 +40,7 @@ class ReleaseCollectionHandler(CollectionHandler):
     """
 
     validator = ReleaseValidator
-    collection = ReleaseCollection
+    collection = objects.ReleaseCollection
 
     @content
     def GET(self):
@@ -56,7 +55,7 @@ class ReleaseNetworksHandler(SingleHandler):
     """Release Handler for network metadata
     """
 
-    single = Release
+    single = objects.Release
     validator = ReleaseNetworksValidator
 
     @content
@@ -103,4 +102,4 @@ class ReleaseNetworksHandler(SingleHandler):
 class ReleaseDeploymentTasksHandler(DeploymentTasksHandler):
     """Release Handler for deployment graph configuration."""
 
-    single = Release
+    single = objects.Release

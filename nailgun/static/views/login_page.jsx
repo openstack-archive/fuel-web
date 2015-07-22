@@ -73,7 +73,12 @@ function($, _, i18n, React, dispatcher) {
                     return app.settings.fetch({cache: true});
                 }, this))
                 .done(_.bind(function() {
-                    app.navigate('', {trigger: true});
+                    var nextUrl = '';
+                    if (app.router.returnUrl) {
+                        nextUrl = app.router.returnUrl;
+                        delete app.router.returnUrl;
+                    }
+                    app.navigate(nextUrl, {trigger: true});
                 }));
         },
         componentDidMount: function() {

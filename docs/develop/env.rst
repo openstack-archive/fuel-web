@@ -33,6 +33,7 @@ the Fuel components:
     apt-get install git
     git clone https://github.com/stackforge/fuel-main
     git clone https://github.com/stackforge/fuel-web
+    git clone https://github.com/stackforge/fuel-agent
     git clone https://github.com/stackforge/fuel-astute
     git clone https://github.com/stackforge/fuel-ostf
     git clone https://github.com/stackforge/fuel-library

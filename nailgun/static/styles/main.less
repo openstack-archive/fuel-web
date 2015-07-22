@@ -1785,8 +1785,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
             display: block;
             overflow: visible;
             top: 35px;
-            width: 210px;
-            left: -82px;
+            left: -14px;
+            width: 150px;
+            word-break: break-all;
+            .arrow {
+              left: 22px;
+            }
             ul {
               padding: 0;
               margin: 0;
@@ -2112,15 +2116,18 @@ button, .btn:not(.btn-link) {.font-semibold;}
         font-size: @base-font-size - 2;
       }
       .label {
-        color: @base-text-color;
         border-radius: 5px;
-        background: @gray + 70%;
-        padding: 4px 6px 2px;
-        margin-right: 3px;
-        font-size: @base-font-size - 4;
         text-transform: uppercase;
         display: inline-block;
+        background-color: #d2d5d6;
+        font-size: @base-font-size - 4;
         .font-semibold;
+        color: @base-text-color;
+        font-family: @open-sans-font;
+        padding: 4px 6px;
+        margin: 0 3px 2px 0;
+        white-space: normal;
+        text-align: left;
       }
     }
   }

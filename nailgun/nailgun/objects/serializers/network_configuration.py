@@ -15,7 +15,7 @@
 #    under the License.
 
 from nailgun import objects
-from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.objects.serializers import BasicSerializer
 
 
 class NetworkConfigurationSerializer(BasicSerializer):

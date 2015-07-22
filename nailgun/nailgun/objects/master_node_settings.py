@@ -15,19 +15,17 @@
 import six
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import MasterNodeSettings
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun import logger
-from nailgun.objects.base import NailgunObject
-from nailgun.objects.serializers.master_node_settings \
-    import MasterNodeSettingsSerializer
+from nailgun import objects
 
 
-class MasterNodeSettings(NailgunObject):
+class MasterNodeSettings(objects.NailgunObject):
 
-    model = MasterNodeSettings
+    model = models.MasterNodeSettings
 
-    serializer = MasterNodeSettingsSerializer
+    serializer = objects.serializers.MasterNodeSettingsSerializer
 
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",

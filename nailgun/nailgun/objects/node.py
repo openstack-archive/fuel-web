@@ -31,9 +31,6 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
 from nailgun import consts
-
-from nailgun.objects.serializers.node import NodeSerializer
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -41,16 +38,12 @@ from nailgun.extensions import fire_callback_on_node_create
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.logger import logger
-
-from nailgun.objects import Cluster
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
-from nailgun.objects import Notification
+from nailgun import objects
 
 from nailgun.settings import settings
 
 
-class Node(NailgunObject):
+class Node(objects.NailgunObject):
     """Node object
     """
 
@@ -58,7 +51,7 @@ class Node(NailgunObject):
     model = models.Node
 
     #: Serializer for Node
-    serializer = NodeSerializer
+    serializer = objects.serializers.NodeSerializer
 
     #: Node JSON schema
     schema = {
@@ -182,11 +175,11 @@ class Node(NailgunObject):
         :param instance: Node DB instance
         :returns: True when node has Public network
         """
-        if Cluster.should_assign_public_to_all_nodes(instance.cluster):
+        if objects.Cluster.should_assign_public_to_all_nodes(instance.cluster):
             return True
 
         roles = itertools.chain(instance.roles, instance.pending_roles)
-        roles_metadata = Cluster.get_roles(instance.cluster)
+        roles_metadata = objects.Cluster.get_roles(instance.cluster)
 
         for role in roles:
             if roles_metadata.get(role, {}).get('public_ip_required'):
@@ -208,10 +201,10 @@ class Node(NailgunObject):
         if cls.should_have_public_with_ip(instance):
             return True
 
-        dvr_enabled = Cluster.neutron_dvr_enabled(instance.cluster)
+        dvr_enabled = objects.Cluster.neutron_dvr_enabled(instance.cluster)
         if dvr_enabled:
             roles = itertools.chain(instance.roles, instance.pending_roles)
-            roles_metadata = Cluster.get_roles(instance.cluster)
+            roles_metadata = objects.Cluster.get_roles(instance.cluster)
 
             for role in roles:
                 if roles_metadata.get(role, {}).get('public_for_dvr_required'):
@@ -299,7 +292,8 @@ class Node(NailgunObject):
                     break
 
         if not instance.group_id:
-            instance.group_id = Cluster.get_default_group(instance.cluster).id
+            instance.group_id = \
+                objects.Cluster.get_default_group(instance.cluster).id
 
         db().add(instance)
         db().flush()
@@ -338,8 +332,8 @@ class Node(NailgunObject):
         :returns: None
         """
         try:
-            network_manager = Cluster.get_network_manager(instance.cluster)
-            network_manager.update_interfaces_info(instance, update_by_agent)
+            nm = objects.Cluster.get_network_manager(instance.cluster)
+            nm.update_interfaces_info(instance, update_by_agent)
 
             db().refresh(instance)
         except errors.InvalidInterfacesInfo as exc:
@@ -402,7 +396,7 @@ class Node(NailgunObject):
 
         cores = str(instance.meta.get('cpu', {}).get('total', "unknown"))
 
-        Notification.create({
+        objects.Notification.create({
             "topic": "discover",
             "message": u"New node is discovered: "
                        u"{0} CPUs / {1} / {2} ".format(cores, ram, hd_size),
@@ -484,7 +478,7 @@ class Node(NailgunObject):
         if "group_id" in data:
             new_group_id = data.pop("group_id")
             if instance.group_id != new_group_id:
-                nm = Cluster.get_network_manager(instance.cluster)
+                nm = objects.Cluster.get_network_manager(instance.cluster)
                 nm.clear_assigned_networks(instance)
                 nm.clear_bond_configuration(instance)
             instance.group_id = new_group_id
@@ -548,7 +542,7 @@ class Node(NailgunObject):
         # - mac to ip mapping from dnsmasq.conf is deleted
         # imho we need to revert node to original state, as it was
         # added to cluster (without any additonal state in database)
-        netmanager = Cluster.get_network_manager()
+        netmanager = objects.Cluster.get_network_manager()
         netmanager.clear_assigned_ips(instance)
         fire_callback_on_node_reset(instance)
         db().flush()
@@ -595,7 +589,7 @@ class Node(NailgunObject):
 
         # (dshulyak) change this verification to NODE_STATUSES.deploying
         # after we will reuse ips from dhcp range
-        netmanager = Cluster.get_network_manager()
+        netmanager = objects.Cluster.get_network_manager()
         admin_ng = netmanager.get_admin_network_group(instance.id)
         if data.get('ip') and not netmanager.is_same_network(data['ip'],
                                                              admin_ng.cidr):
@@ -652,7 +646,7 @@ class Node(NailgunObject):
 
         if new_pending_roles == []:
             # TODO(enchantner): research why the hell we need this
-            Cluster.clear_pending_changes(
+            objects.Cluster.clear_pending_changes(
                 instance.cluster,
                 node_id=instance.id
             )
@@ -706,7 +700,7 @@ class Node(NailgunObject):
         instance.cluster_id = cluster_id
         db().flush()
         cls.assign_group(instance)
-        network_manager = Cluster.get_network_manager(instance.cluster)
+        network_manager = objects.Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
@@ -726,7 +720,7 @@ class Node(NailgunObject):
         :returns: None
         """
         if instance.cluster:
-            Cluster.add_pending_changes(
+            objects.Cluster.add_pending_changes(
                 instance.cluster, change, node_id=instance.id
             )
 
@@ -739,7 +733,7 @@ class Node(NailgunObject):
         :param instance: Node instance
         :returns: interface instance
         """
-        admin_iface = Cluster.get_network_manager(instance.cluster) \
+        admin_iface = objects.Cluster.get_network_manager(instance.cluster) \
             .get_admin_interface(instance)
 
         if admin_iface.type != consts.NETWORK_INTERFACE_TYPES.bond:
@@ -761,11 +755,11 @@ class Node(NailgunObject):
         :returns: None
         """
         if instance.cluster:
-            Cluster.clear_pending_changes(
+            objects.Cluster.clear_pending_changes(
                 instance.cluster,
                 node_id=instance.id
             )
-            netmanager = Cluster.get_network_manager(
+            netmanager = objects.Cluster.get_network_manager(
                 instance.cluster
             )
             netmanager.clear_assigned_networks(instance)
@@ -813,7 +807,7 @@ class Node(NailgunObject):
            custom params.
         """
         return (instance.kernel_params or
-                Cluster.get_default_kernel_params(instance.cluster))
+                objects.Cluster.get_default_kernel_params(instance.cluster))
 
     @classmethod
     def remove_replaced_params(cls, instance):
@@ -883,7 +877,7 @@ class Node(NailgunObject):
         return hostname
 
 
-class NodeCollection(NailgunCollection):
+class NodeCollection(objects.NailgunCollection):
     """Node collection
     """
 
@@ -920,7 +914,7 @@ class NodeCollection(NailgunCollection):
         cls.update_slave_nodes_fqdn(instances)
 
         # TODO(enchantner): check network manager instance for each node
-        netmanager = Cluster.get_network_manager()
+        netmanager = objects.Cluster.get_network_manager()
         if instances:
             netmanager.assign_ips(instances, 'management')
             netmanager.assign_ips(instances, 'public')
@@ -935,7 +929,7 @@ class NodeCollection(NailgunCollection):
         cls.update_slave_nodes_fqdn(instances)
 
         # TODO(enchantner): check network manager instance for each node
-        netmanager = Cluster.get_network_manager()
+        netmanager = objects.Cluster.get_network_manager()
         if instances:
             netmanager.assign_ips(instances, 'management')
             netmanager.assign_ips(instances, 'public')
@@ -951,7 +945,7 @@ class NodeCollection(NailgunCollection):
         update fqdns, assign admin IPs
         """
         cls.update_slave_nodes_fqdn(instances)
-        netmanager = Cluster.get_network_manager()
+        netmanager = objects.Cluster.get_network_manager()
         netmanager.assign_admin_ips(instances)
 
     @classmethod

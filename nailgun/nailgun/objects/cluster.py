@@ -31,10 +31,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
-from nailgun.objects import Release
-from nailgun.objects.serializers.cluster import ClusterSerializer
+from nailgun import objects
 from nailgun.orchestrator import graph_configuration
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
@@ -72,7 +69,7 @@ CLUSTER_UI_SETTINGS = {
 }
 
 
-class Attributes(NailgunObject):
+class Attributes(objects.NailgunObject):
     """Cluster attributes object
     """
 
@@ -142,7 +139,7 @@ class Attributes(NailgunObject):
         return attrs
 
 
-class Cluster(NailgunObject):
+class Cluster(objects.NailgunObject):
     """Cluster object
     """
 
@@ -150,7 +147,7 @@ class Cluster(NailgunObject):
     model = models.Cluster
 
     #: Serializer for Cluster
-    serializer = ClusterSerializer
+    serializer = objects.ClusterSerializer
 
     #: Cluster JSON schema
     schema = {
@@ -827,7 +824,7 @@ class Cluster(NailgunObject):
             return yaml.load(graph_configuration.PATCHING)
         else:
             release_deployment_tasks = \
-                Release.get_deployment_tasks(instance.release)
+                objects.Release.get_deployment_tasks(instance.release)
             plugin_deployment_tasks = \
                 PluginManager.get_plugins_deployment_tasks(instance)
             return release_deployment_tasks + plugin_deployment_tasks
@@ -1014,7 +1011,7 @@ class Cluster(NailgunObject):
         return set(pending_roles + roles)
 
 
-class ClusterCollection(NailgunCollection):
+class ClusterCollection(objects.NailgunCollection):
     """Cluster collection
     """
 
@@ -1022,5 +1019,5 @@ class ClusterCollection(NailgunCollection):
     single = Cluster
 
 
-class VmwareAttributes(NailgunObject):
+class VmwareAttributes(objects.NailgunObject):
     model = models.VmwareAttributes

@@ -18,15 +18,14 @@ from distutils.version import LooseVersion
 from itertools import groupby
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import plugins as plugin_db_model
-from nailgun.objects import base
-from nailgun.objects.serializers import plugin
+from nailgun.db.sqlalchemy import models
+from nailgun import objects
 
 
-class Plugin(base.NailgunObject):
+class Plugin(objects.NailgunObject):
 
-    model = plugin_db_model.Plugin
-    serializer = plugin.PluginSerializer
+    model = models.Plugin
+    serializer = objects.serializers.PluginSerializer
 
     @classmethod
     def get_by_name_version(cls, name, version):
@@ -34,7 +33,7 @@ class Plugin(base.NailgunObject):
             filter_by(name=name, version=version).first()
 
 
-class PluginCollection(base.NailgunCollection):
+class PluginCollection(objects.NailgunCollection):
 
     single = Plugin
 

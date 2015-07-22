@@ -17,6 +17,7 @@
 """Neutron network deployment serializers for orchestrator"""
 
 from collections import defaultdict
+from ordereddict import OrderedDict
 import six
 
 from nailgun import consts
@@ -907,6 +908,21 @@ class NeutronNetworkDeploymentSerializer70(
         return attrs
 
     @classmethod
+    def generate_driver_information(cls, node, network_scheme, nm):
+        # Add interfaces drivers data
+        for iface in node.nic_interfaces:
+            if iface.driver or iface.bus_info:
+                iface_dict = network_scheme['interfaces'][iface.name]
+                if 'vendor_specific' not in iface_dict:
+                    iface_dict['vendor_specific'] = {}
+                if iface.driver:
+                    iface_dict['vendor_specific']['driver'] = iface.driver
+                if iface.bus_info:
+                    iface_dict['vendor_specific']['bus_info'] = iface.bus_info
+
+        return network_scheme
+
+    @classmethod
     def generate_network_metadata(cls, cluster):
         nodes = dict()
         nm = Cluster.get_network_manager(cluster)
@@ -940,3 +956,166 @@ class NeutronNetworkDeploymentSerializer70(
                            cls).network_provider_node_attrs(cluster, node)
         node_attrs['network_metadata'] = cls.generate_network_metadata(cluster)
         return node_attrs
+
+
+class NeutronNetworkTemplateSerializer70(
+    NeutronNetworkDeploymentSerializer70
+):
+
+    @classmethod
+    def _get_network_roles(cls, node):
+        """Returns network roles for the specified node based
+        on the node's assigned roles.
+        """
+        roles = {}
+        template = node.network_template
+        for node_role in node.all_roles:
+            role_templates = template['templates_for_node_role'][node_role]
+            for role_template in role_templates:
+                for role, ep in (template['templates'][role_template]
+                                 ['roles'].items()):
+                    roles[role] = ep
+
+        return roles
+
+    @classmethod
+    def _get_netgroup_mapping_by_role(cls, node):
+        output = []
+        endpoints = set()
+        template = node.network_template
+        mappings = template['network_assignments']
+        for role in node.all_roles:
+            role_templates = template['templates_for_node_role'][role]
+            for role_template in role_templates:
+                endpoints.update(template['templates'][role_template]
+                                 ['endpoints'])
+
+        for netgroup, endpoint in mappings.items():
+            if endpoint['ep'] in endpoints:
+                output.append((netgroup, endpoint['ep']))
+
+        return output
+
+    @classmethod
+    def generate_transformations(cls, node, *args):
+        """Overrides default transformation generation.
+        Transformations are taken verbatim from each role template's
+        transformations section.
+        """
+        txs = []
+        role_templates = OrderedDict()
+        template = node.network_template
+
+        roles = sorted(node.all_roles)
+
+        # We need a unique, ordered list of all role templates that
+        # apply to this node. The keys of an OrderedDict act as an
+        # ordered set. The order of transformations is important which
+        # is why we can't just use a set. The list needs to be unique
+        # because duplicated transformations will break deployment.
+        for role in roles:
+            for t in template['templates_for_node_role'][role]:
+                role_templates[t] = True
+
+        for t in role_templates:
+            txs.extend(template['templates'][t]['transformations'])
+
+        return txs
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+
+        roles = cls._get_network_roles(node)
+        # Create a data structure and fill it with static values.
+        attrs = {
+            'version': '1.1',
+            'provider': 'lnx',
+            'interfaces': {},  # It's a list of physical interfaces.
+            'endpoints': {},
+            'roles': roles,
+        }
+
+        nm = Cluster.get_network_manager(node.cluster)
+
+        netgroups = {}
+        nets_by_ifaces = defaultdict(list)
+        netgroup_mapping = cls._get_netgroup_mapping_by_role(node)
+        for ngname, brname in netgroup_mapping:
+            # Here we get a dict with network description for this particular
+            # node with its assigned IPs and device names for each network.
+            netgroup = nm.get_node_network_by_netname(node, ngname)
+            ip_addr = netgroup.get('ip')
+            if ip_addr:
+                attrs['endpoints'][brname] = {'IP': [ip_addr]}
+            else:
+                attrs['endpoints'][brname] = {'IP': 'none'}
+
+            netgroups[ngname] = netgroup
+            nets_by_ifaces[netgroup['dev']].append({
+                'br_name': brname,
+                'vlan_id': netgroup['vlan']
+            })
+
+        # TODO(rmoe): fix gateway selection
+        if 'public/vip' in roles:
+            public_ep = roles['public/vip']
+            public_net = None
+
+            for network_group, endpoint in netgroup_mapping:
+                if endpoint == public_ep:
+                    public_net = network_group
+                    break
+
+            attrs['endpoints'][public_ep]['gateway'] = \
+                netgroups[public_net]['gateway']
+
+            # This can go away when we allow separate public and floating nets
+            floating_ep = roles['neutron/floating']
+            attrs['endpoints'][floating_ep] = {'IP': 'none'}
+        else:
+            admin_ep = roles['admin/pxe']
+            attrs['endpoints'][admin_ep]['gateway'] = settings.MASTER_IP
+
+        # Fill up interfaces.
+        for iface in node.nic_interfaces:
+            if iface.bond:
+                attrs['interfaces'][iface.name] = {}
+            else:
+                attrs['interfaces'][iface.name] = \
+                    nm.get_iface_properties(iface)
+
+        attrs['transformations'] = cls.generate_transformations(node)
+
+        if NodeGroupCollection.get_by_cluster_id(
+                node.cluster.id).count() > 1:
+            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups)
+
+        attrs = cls.generate_driver_information(node, attrs, nm)
+
+        return attrs
+
+    @classmethod
+    def _get_endpoint_to_ip_mapping(cls, node):
+        nm = Cluster.get_network_manager(node.cluster)
+
+        mapping = dict()
+        net_to_ep = cls._get_netgroup_mapping_by_role(node)
+        for network, ep in net_to_ep:
+            netgroup = nm.get_node_network_by_netname(node, network)
+            if netgroup.get('ip'):
+                mapping[ep] = netgroup['ip'].split('/')[0]
+
+        return mapping
+
+    @classmethod
+    def generate_network_metadata(cls, cluster):
+        metadata = super(NeutronNetworkTemplateSerializer70,
+                         cls).generate_network_metadata(cluster)
+        for node_data in metadata['nodes'].values():
+            node = Node.get_by_uid(node_data['uid'])
+            network_roles = cls._get_network_roles(node)
+            ip_per_ep = cls._get_endpoint_to_ip_mapping(node)
+            node_data['network_roles'] = {}
+            for role, ep in network_roles.items():
+                node_data['network_roles'][role] = ip_per_ep.get(ep)
+        return metadata

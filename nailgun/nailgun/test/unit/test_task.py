@@ -295,6 +295,39 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             if net['name'] == name:
                 return net
 
+    def test_network_template_validation(self):
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+
+        self.assertNotRaises(
+            errors.NetworktemplateMissingRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+        ceph_node = self.env.create_node(roles=['ceph-osd'],
+                                         cluster_id=self.cluster.id)
+        self.assertRaises(
+            errors.NetworkTemplateMissingRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+        objects.Node.delete(ceph_node)
+        del (net_template['adv_net_template']['default']
+             ['network_scheme']['common']['roles']['murano/api'])
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+
+        self.assertRaisesRegexp(
+            errors.NetworkTemplateMissingNetRoles,
+            "Network roles murano/api are missing",
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
     def test_check_public_networks(self):
         cluster = self.env.clusters[0]
         self.env.create_nodes(

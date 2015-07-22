@@ -74,6 +74,8 @@ default_messages = {
     "CanNotDetermineEndPointIP": "Cannot determine end point IP",
     "CanNotFindNetworkForNode": "Cannot find network for node",
     "NetworkRoleConflict": "Cannot override existing network role",
+    "NetworkTemplateMissingRoles": "Roles are missing from network template",
+    "NetworkTemplateMissingNetRoles": "Network roles are missing",
 
     # RPC errors
     "CannotFindTask": "Cannot find task",

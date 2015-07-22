@@ -974,6 +974,30 @@ class Cluster(NailgunObject):
         return [x[0] for x in db().query(models.Node.id).filter(
             models.Node.cluster_id == instance.id).all()]
 
+    @classmethod
+    def get_assigned_roles(cls, instance):
+        """Get list of all roles currently assigned to nodes
+        in the specified cluster
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :returns: List of node roles currently assigned
+        """
+        pending_roles = db().query(
+            sa.func.unnest(models.Node.pending_roles)
+        ).filter_by(
+            cluster_id=instance.id
+        ).distinct().all()
+        pending_roles = [pr[0] for pr in pending_roles]
+
+        roles = db().query(
+            sa.func.unnest(models.Node.roles)
+        ).filter_by(
+            cluster_id=instance.id
+        ).distinct().all()
+        roles = [r[0] for r in roles]
+
+        return set(pending_roles + roles)
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

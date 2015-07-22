@@ -148,3 +148,37 @@ class TestCluster(BaseIntegrationTest):
 
         self.check_no_primary_node(
             cluster, ('controller', 'compute', 'fake_role'))
+
+    def test_get_assigned_roles(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'pending_roles': ['controller']},
+                {'pending_roles': ['ceph-osd', 'compute']},
+                {'roles': ['compute']},
+                {'roles': ['cinder']},
+            ]
+        )
+
+        self.env.create(
+            nodes_kwargs=[
+                {'pending_roles': ['controller']},
+                {'pending_roles': ['controller']},
+                {'pending_roles': ['ceph-osd', 'compute']},
+                {'pending_roles': ['compute']},
+                {'pending_roles': ['cinder']},
+            ]
+        )
+
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['ceph-osd', 'compute']},
+                {'roles': ['cinder']},
+            ]
+        )
+
+        expected_roles = set(['controller', 'compute', 'cinder', 'ceph-osd'])
+        for cluster in self.env.clusters:
+            self.assertEqual(expected_roles,
+                             objects.Cluster.get_assigned_roles(cluster))

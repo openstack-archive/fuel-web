@@ -20,8 +20,7 @@ import six
 
 from nailgun.extensions import BaseExtension
 from nailgun.logger import logger
-from nailgun.objects import Node
-from nailgun.objects import Notification
+from nailgun import objects
 
 from .handlers.disks import NodeDefaultsDisksHandler
 from .handlers.disks import NodeDisksHandler
@@ -70,13 +69,13 @@ class VolumeManagerExtension(BaseExtension):
             logger.exception(exc)
             msg = "Failed to generate volumes for node '{0}': '{1}'".format(
                 node.human_readable_name, six.text_type(exc))
-            Notification.create({
+            objects.Notification.create({
                 'topic': 'error',
                 'message': msg,
                 'node_id': node.id})
 
         if node.cluster_id:
-            Node.add_pending_change(node, 'disks')
+            objects.Node.add_pending_change(node, 'disks')
 
     @classmethod
     def on_node_create(cls, node):

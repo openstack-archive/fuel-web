@@ -15,7 +15,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 
 from nailgun.logger import logger
-from nailgun.objects import MasterNodeSettings
+from nailgun import objects
 
 
 class MasterNodeSettingsValidator(BasicValidator):
@@ -30,6 +30,6 @@ class MasterNodeSettingsValidator(BasicValidator):
                 "It will be ignored",
             )
 
-        cls.validate_schema(data, schema=MasterNodeSettings.schema)
+        cls.validate_schema(data, schema=objects.MasterNodeSettings.schema)
 
         return data

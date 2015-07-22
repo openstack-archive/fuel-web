@@ -20,7 +20,7 @@ import six
 import yaml
 
 from nailgun.db import db
-from nailgun.objects import Plugin
+from nailgun import objects
 from nailgun.plugins import adapters
 from nailgun.settings import settings
 from nailgun.test import base
@@ -38,7 +38,7 @@ class TestPluginBase(base.BaseTestCase):
         super(TestPluginBase, self).setUp()
         self.plugin_metadata = self.env.get_default_plugin_metadata(
             package_version=self.package_version)
-        self.plugin = Plugin.create(self.plugin_metadata)
+        self.plugin = objects.Plugin.create(self.plugin_metadata)
         self.env.create(
             cluster_kwargs={'mode': 'multinode'},
             release_kwargs={
@@ -250,11 +250,12 @@ class TestClusterCompatiblityValidation(base.BaseTestCase):
 
     def setUp(self):
         super(TestClusterCompatiblityValidation, self).setUp()
-        self.plugin = Plugin.create(self.env.get_default_plugin_metadata(
-            releases=[{
-                'version': '2014.2-6.0',
-                'os': 'ubuntu',
-                'mode': ['ha']}]))
+        self.plugin = \
+            objects.Plugin.create(self.env.get_default_plugin_metadata(
+                releases=[{
+                    'version': '2014.2-6.0',
+                    'os': 'ubuntu',
+                    'mode': ['ha']}]))
         self.plugin_adapter = adapters.PluginAdapterV1(self.plugin)
 
     def cluster_mock(self, os, mode, version):

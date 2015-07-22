@@ -20,9 +20,7 @@ from nailgun.test.base import BaseTestCase
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import cluster as cluster_model
 from nailgun.db.sqlalchemy.models import plugins
-from nailgun.objects import Cluster
-from nailgun.objects import ReleaseCollection
-from nailgun.objects import VmwareAttributes
+from nailgun import objects
 from nailgun.settings import settings
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
@@ -38,11 +36,12 @@ class TestInstallationInfo(BaseTestCase):
     def test_get_attributes_centos(self):
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        release = objects.ReleaseCollection.filter_by(
+            None, operating_system='CentOS')
         cluster_data = self.env.create_cluster(
             release_id=release[0].id
         )
-        cluster = Cluster.get_by_uid(cluster_data['id'])
+        cluster = objects.Cluster.get_by_uid(cluster_data['id'])
         editable = cluster.attributes.editable
         attr_key_list = [a[1] for a in info.attributes_white_list]
         attrs_dict = info.get_attributes(editable, info.attributes_white_list)
@@ -54,11 +53,12 @@ class TestInstallationInfo(BaseTestCase):
     def test_get_attributes_ubuntu(self):
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='Ubuntu')
+        release = objects.ReleaseCollection.filter_by(
+            None, operating_system='Ubuntu')
         cluster_data = self.env.create_cluster(
             release_id=release[0].id
         )
-        cluster = Cluster.get_by_uid(cluster_data['id'])
+        cluster = objects.Cluster.get_by_uid(cluster_data['id'])
         editable = cluster.attributes.editable
         attr_key_list = [a[1] for a in info.attributes_white_list]
         attrs_dict = info.get_attributes(editable, info.attributes_white_list)
@@ -90,7 +90,8 @@ class TestInstallationInfo(BaseTestCase):
     def test_clusters_info_no_vmware_attributes_exception(self):
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        release = objects.ReleaseCollection.filter_by(
+            None, operating_system='CentOS')
         nodes_params = [
             {'roles': ['compute']},
             {'roles': ['compute']},
@@ -105,14 +106,15 @@ class TestInstallationInfo(BaseTestCase):
         )
         self.env.create_node({'status': consts.NODE_STATUSES.discover})
         cluster = self.env.clusters[0]
-        VmwareAttributes.delete(cluster.vmware_attributes)
+        objects.VmwareAttributes.delete(cluster.vmware_attributes)
         self.env.db.flush()
         self.assertNotRaises(AttributeError, info.get_clusters_info)
 
     def test_clusters_info(self):
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        release = objects.ReleaseCollection.filter_by(
+            None, operating_system='CentOS')
         nodes_params = [
             {'roles': ['compute']},
             {'roles': ['compute']},

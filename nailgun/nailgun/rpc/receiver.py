@@ -932,7 +932,7 @@ class NailgunReceiver(object):
                 jsonutils.dumps(kwargs))
         )
         task_uuid = kwargs.get('task_uuid')
-        task = objects.task.Task.get_by_uuid(uuid=task_uuid)
+        task = objects.Task.get_by_uuid(uuid=task_uuid)
         if kwargs.get('status'):
             task.status = kwargs['status']
         task.progress = kwargs.get('progress', 0)

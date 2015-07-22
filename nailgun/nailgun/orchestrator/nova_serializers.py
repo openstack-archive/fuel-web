@@ -20,8 +20,7 @@ from collections import defaultdict
 from netaddr import IPNetwork
 
 from nailgun import consts
-from nailgun.objects import Cluster
-from nailgun.objects import Node
+from nailgun import objects
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 
 
@@ -83,7 +82,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """Assign fixed_interfaces and vlan_interface.
         They should be equal.
         """
-        net_manager = Cluster.get_network_manager(node.cluster)
+        net_manager = objects.Cluster.get_network_manager(node.cluster)
         fixed_interface = net_manager._get_interface_by_network_name(
             node.id, 'fixed')
 
@@ -256,7 +255,7 @@ class NovaNetworkDeploymentSerializer61(NovaNetworkDeploymentSerializer):
             ('fixed', '')  # will be determined in code below
         ]
 
-        nm = Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(node.cluster)
 
         # populate IP address information to endpoints
         netgroups = {}
@@ -362,11 +361,11 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
     @classmethod
     def generate_network_metadata(cls, cluster):
         nodes = dict()
-        nm = Cluster.get_network_manager(cluster)
+        nm = objects.Cluster.get_network_manager(cluster)
 
-        for n in Cluster.get_nodes_not_for_deletion(cluster):
-            name = Node.get_slave_name(n)
-            node_roles = Node.all_roles(n)
+        for n in objects.Cluster.get_nodes_not_for_deletion(cluster):
+            name = objects.Node.get_slave_name(n)
+            node_roles = objects.Node.all_roles(n)
 
             ip_by_net = {
                 'fuelweb_admin': None,

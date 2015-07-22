@@ -14,11 +14,13 @@
 
 import collections
 import glob
+import importlib
 import os
 import re
 import shutil
 import string
 import six
+import types
 import yaml
 
 from copy import deepcopy
@@ -217,7 +219,50 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
+
 def join_range(r):
     """Converts (1, 2) -> "1:2"
     """
     return ":".join(map(str, r)) if r else None
+
+
+class ImportMapper(types.ModuleType):
+    """Object Mapper is used to map object names to namespaces where
+    they can be imported from. Implements Service Locator pattern.
+
+    :param base_namespace: a namespace which the object substitutes.
+    :type base_namespace: string
+    :param mapping: a mapping between object's name and module where it
+        exactly imported from. If there's no defined mapping for object it
+        will be imported directly from base namespace.
+    :type mapping: dict
+    """
+
+    def __init__(self, base_namespace, mapping):
+        self._base_namespace = base_namespace.strip('.')
+        super(ImportMapper, self).__init__(self._base_namespace)
+        self._mapping = dict(
+            [(k.strip('.'), v.strip('.')) for k, v in six.iteritems(mapping)])
+        self._cache = dict()
+
+    def _import_from_base_namespace(self, object_name):
+        full_path = '.'.join([self._base_namespace, object_name])
+        return importlib.import_module(full_path)
+
+    def _import_and_cache(self, object_name):
+        try:
+            module_namespace = self._mapping.get(object_name)
+            module = importlib.import_module(module_namespace)
+            self._cache[object_name] = getattr(module, object_name)
+        except (AttributeError, ImportError):
+            raise AttributeError(
+                "'module' object has no attribute '{0}'".format(object_name))
+
+    def __getattr__(self, object_name):
+        if object_name not in self._mapping:
+            return self._import_from_base_namespace(object_name)
+
+        if object_name not in self._cache:
+            self._import_and_cache(object_name)
+
+        return self._cache[object_name]

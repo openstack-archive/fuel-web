@@ -17,8 +17,7 @@ from six.moves import map
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects.plugin import Plugin
-from nailgun.objects.plugin import PluginCollection
+from nailgun import objects
 from nailgun.plugins.adapters import wrap_plugin
 
 
@@ -47,7 +46,7 @@ class PluginManager(object):
         if not plugin_id:
             return
 
-        plugin = Plugin.get_by_uid(plugin_id)
+        plugin = objects.Plugin.get_by_uid(plugin_id)
         if not plugin:
             logger.warning('Plugin with id "%s" is not found, skip it',
                            plugin_id)
@@ -67,7 +66,7 @@ class PluginManager(object):
     @classmethod
     def get_plugin_attributes(cls, cluster):
         plugin_attributes = {}
-        for plugin_db in PluginCollection.all_newest():
+        for plugin_db in objects.PluginCollection.all_newest():
             plugin_adapter = wrap_plugin(plugin_db)
             attributes = plugin_adapter.get_plugin_attributes(cluster)
             plugin_attributes.update(attributes)
@@ -213,9 +212,9 @@ class PluginManager(object):
         ids all newest plugins will be synced
         """
         if plugin_ids:
-            plugins = PluginCollection.get_by_uids(plugin_ids)
+            plugins = objects.PluginCollection.get_by_uids(plugin_ids)
         else:
-            plugins = PluginCollection.all()
+            plugins = objects.PluginCollection.all()
 
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)

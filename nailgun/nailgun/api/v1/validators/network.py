@@ -17,6 +17,9 @@ import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
+from nailgun.api.v1.validators.json_schema.network_template import \
+    NETWORK_TEMPLATE
+
 from nailgun import consts
 
 from nailgun import objects
@@ -416,3 +419,12 @@ class NetworkGroupValidator(BasicValidator):
             # It cannot be deleted.
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be deleted")
+
+
+class NetworkTemplateValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data, instance=None):
+        parsed = super(NetworkTemplateValidator, cls).validate(data)
+        cls.validate_schema(parsed, NETWORK_TEMPLATE)
+        return parsed

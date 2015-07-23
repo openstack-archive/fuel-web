@@ -12,36 +12,47 @@
     <meta http-equiv="expires" content="0" />
     <meta http-equiv="pragma" content="no-cache" />
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="/static/styles/layout.css">
     <script src="/static/vendor/bower/requirejs/require.js"></script>
     <script type="text/javascript">
-      // checks code taken from https://github.com/Modernizr/Modernizr
-      var hasCookies = (function() {
-        try {
-          document.cookie = 'cookietest=1';
-          var ret = document.cookie.indexOf('cookietest=') != -1;
-          document.cookie = 'cookietest=1; expires=Thu, 01-Jan-1970 00:00:01 GMT';
-          return ret;
-        } catch (e) {
-          return false;
+      (function() {
+        'use strict';
+        var loadingError;
+        document.addEventListener('DOMContentLoaded', function() {
+          var container = document.getElementById('main-container');
+          container.style.display = 'block';
+          if (loadingError) container.textContent = loadingError;
+        });
+
+        // checks code taken from https://github.com/Modernizr/Modernizr
+        var hasCookies = (function() {
+          try {
+            document.cookie = 'cookietest=1';
+            var ret = document.cookie.indexOf('cookietest=') != -1;
+            document.cookie = 'cookietest=1; expires=Thu, 01-Jan-1970 00:00:01 GMT';
+            return ret;
+          } catch (e) {
+            return false;
+          }
+        }());
+
+        var hasStorage = (function() {
+          try {
+            localStorage.setItem('storagetest', 'storagetest');
+            localStorage.removeItem('storagetest');
+            return true;
+          } catch (e) {
+            return false;
+          }
+        }());
+
+        if (hasCookies && hasStorage) {
+          requirejs.config({baseUrl: '/static', urlArgs: '_=__CACHE_BUST__'});
+          requirejs(['main']);
+        } else {
+          loadingError = 'Fuel UI requires Cookies and LocalStorage to work.';
         }
       }());
-
-      var hasStorage = (function() {
-        try {
-          localStorage.setItem('storagetest', 'storagetest');
-          localStorage.removeItem('storagetest');
-          return true;
-        } catch (e) {
-          return false;
-        }
-      }());
-
-      if (hasCookies && hasStorage) {
-        requirejs.config({baseUrl: '/static', urlArgs: '_=__CACHE_BUST__'});
-        requirejs(['main']);
-      } else {
-        document.write('Fuel UI requires Cookies and LocalStorage to work.');
-      }
     </script>
   </head>
   <body>
@@ -49,8 +60,6 @@
       <div class="loading"></div>
     </div>
     <div id="modal-container"></div>
-    <noscript>
-      Fuel UI requires JavaScript to work.
-    </noscript>
+    <noscript>Fuel UI requires JavaScript to work.</noscript>
   </body>
 </html>

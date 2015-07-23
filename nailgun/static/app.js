@@ -168,10 +168,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 return $.Deferred().resolve();
             }, this)).then(_.bind(function() {
                 return this.settings.fetch();
-            }, this)).always(_.bind(function() {
-                this.renderLayout();
+            }, this)).always(function() {
                 Backbone.history.start();
-            }, this));
+            });
         },
         renderLayout: function() {
             var wrappedRootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
@@ -180,6 +179,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         },
         loadPage: function(Page, options) {
             return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
+                if (!this.rootComponent) this.renderLayout();
                 this.setPage(Page, pageOptions);
             }, this));
         },

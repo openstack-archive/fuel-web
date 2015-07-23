@@ -28,7 +28,7 @@ import logging
 
 from alembic import context
 from alembic import op
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models.fields import JSON

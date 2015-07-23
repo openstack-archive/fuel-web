@@ -15,7 +15,7 @@
 #    under the License.
 
 from mock import patch
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.test.base import BaseAuthenticationIntegrationTest
 from nailgun.utils import reverse

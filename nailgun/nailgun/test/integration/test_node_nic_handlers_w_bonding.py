@@ -15,7 +15,7 @@
 #    under the License.
 
 import mock
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.consts import BOND_MODES
 from nailgun.consts import BOND_XMIT_HASH_POLICY

@@ -30,7 +30,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
 
 from alembic import op
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.extensions.consts import extensions_migration_buffer_table_name

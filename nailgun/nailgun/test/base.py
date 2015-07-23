@@ -32,7 +32,7 @@ from itertools import izip
 from netaddr import IPNetwork
 from random import randint
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 import sqlalchemy as sa
 import web

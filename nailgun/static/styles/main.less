@@ -2536,6 +2536,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       @wizard-body-padding: 15px;
       height: @wizard-body-height;
       padding: @wizard-body-padding;
+      padding-top: @wizard-body-padding - 5px;
       .wizard-steps-box {
         height: @wizard-body-height - @wizard-body-padding * 2;
         overflow: auto;
@@ -2543,6 +2544,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
           margin-right: 0;
         }
         .wizard-steps-nav {
+          margin-top: 5px;
           padding-left: 0;
           li {
             cursor: pointer;
@@ -2554,6 +2556,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
               }
             }
           }
+        }
+        .pane-content {
+          margin-top: 5px;
         }
       }
     }

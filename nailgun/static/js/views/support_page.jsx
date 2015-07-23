@@ -128,23 +128,5 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var CapacityAudit = React.createClass({
-        render: function() {
-            return (
-                <SupportPageElement
-                    className='img-audit-logs'
-                    title={i18n('support_page.capacity_audit')}
-                    text={i18n('support_page.capacity_audit_text')}
-                >
-                    <p>
-                        <a className='btn' href='#capacity'>
-                            {i18n('support_page.view_capacity_audit')}
-                        </a>
-                    </p>
-                </SupportPageElement>
-            );
-        }
-    });
-
     return SupportPage;
 });

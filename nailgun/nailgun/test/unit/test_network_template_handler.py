@@ -36,7 +36,9 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_network_template_upload(self):
         cluster = self.env.create_cluster(api=False)
-        template = {'template': 'test'}
+        template = self.env.read_fixtures(['network_template'])[0]
+        template.pop('pk')  # PK is not needed
+
         resp = self.app.put(
             reverse(
                 'TemplateNetworkConfigurationHandler',
@@ -49,7 +51,23 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.get_template(cluster.id)
         self.assertEqual(200, resp.status_code)
-        self.assertEqual('test', resp.json_body.get('template'))
+        self.assertEqual(template, resp.json_body)
+
+    def test_wrong_network_template_upload_failed(self):
+        cluster = self.env.create_cluster(api=False)
+        template = self.env.read_fixtures(['network_template'])[0]
+        template['adv_net_template']['default'] = {}
+
+        resp = self.app.put(
+            reverse(
+                'TemplateNetworkConfigurationHandler',
+                kwargs={'cluster_id': cluster.id},
+            ),
+            jsonutils.dumps(template),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
 
     def test_template_not_set(self):
         resp = self.get_template(1, expect_errors=True)
@@ -57,7 +75,9 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_delete_template(self):
         cluster = self.env.create_cluster(api=False)
-        template = {'template': 'test'}
+        template = self.env.read_fixtures(['network_template'])[0]
+        template.pop('pk')  # PK is not needed
+
         resp = self.app.put(
             reverse(
                 'TemplateNetworkConfigurationHandler',

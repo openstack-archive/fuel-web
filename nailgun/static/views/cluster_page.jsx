@@ -275,7 +275,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         render: function() {
             var cluster = this.props.cluster;
             return (
-                <div className='col-xs-9'>
+                <div className='col-xs-12'>
                     <div className='page-title'>
                         <h1 className='title'>
                             {cluster.get('name')}

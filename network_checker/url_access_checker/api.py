@@ -20,16 +20,18 @@ import requests
 import url_access_checker.errors as errors
 
 
-def check_urls(urls):
-    responses = map(_get_response_tuple, urls)
+def check_urls(urls, proxies=None):
+    responses = map(lambda u: _get_response_tuple(u, proxies=proxies), urls)
     failed_responses = filter(lambda x: x[0], responses)
 
     if failed_responses:
         raise errors.UrlNotAvailable(json.dumps(
             {'failed_urls': map(lambda r: r[1], failed_responses)}))
+    else:
+        return True
 
 
-def _get_response_tuple(url):
+def _get_response_tuple(url, proxies=None):
     """Return a tuple which contains a result of url test
 
     Arguments:
@@ -40,11 +42,16 @@ def _get_response_tuple(url):
         result[1] -- unchange url argument
     """
     try:
-        response = requests.get(url)
+        # requests seems to correctly handle various corner cases:
+        # proxies=None or proxies={} mean 'use the default' rather than
+        # "don't use proxy". To force a direct connection one should pass
+        # proxies={'http': None}.
+        response = requests.get(url, proxies=proxies)
         return (response.status_code != 200, url)
     except (requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
             requests.exceptions.HTTPError,
+            requests.exceptions.ProxyError,
             ValueError,
             socket.timeout):
         return (True, url)

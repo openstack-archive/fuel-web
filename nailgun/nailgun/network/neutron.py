@@ -69,48 +69,41 @@ class NeutronManager(NetworkManager):
 class NeutronManager70(NeutronManager):
 
     @classmethod
-    def _get_role_endpoint(cls, role_id, network_scheme):
-        for scheme in six.itervalues(network_scheme):
-            for role, endpoint in six.iteritems(scheme['roles']):
-                if role == role_id:
-                    return endpoint
+    def build_role_to_network_group_mapping(cls, cluster, node_group_name):
+        template = cluster.network_config.configuration_template
+        if template is None:
+            return {}
+
+        node_group = template['adv_net_template'][node_group_name]
+        endpoint_to_net_group = {}
+        for net_group, value in six.itervalues(
+                node_group['network_assignments']):
+            endpoint_to_net_group[value['ep']] = net_group
+
+        result = {}
+        for scheme in six.itervalues(node_group['network_scheme']):
+            for role, endpoint in six.iteritems(scheme):
+                if endpoint in endpoint_to_net_group:
+                    result[role] = endpoint_to_net_group[endpoint]
+
+        return result
 
     @classmethod
-    def get_network_group_for_role(cls, cluster, node_group_name,
-                                   network_role):
+    def get_network_group_for_role(cls, network_role, net_group_mapping):
         """Returns network group to which network role is associated.
         If networking template is set first lookup happens in the
         template. Otherwise the default network group from
         the network role is returned.
 
-        :param cluster: Cluster instance
-        :param node_group_name: Node group name
-        :type node_group_name: str
         :param network_role: Network role dict
         :type network_role: dict
+        :param net_group_mapping: Network role to network group mapping
+        :type  net_group_mapping: dict
         :return: Network group name
         :rtype: str
         """
-        default_net_group = network_role['default_mapping']
-        template = cluster.network_config.configuration_template
-        if template is None:
-            return default_net_group
-
-        net_template = template['adv_net_template']
-        node_group = net_template[node_group_name]
-        network_scheme = node_group['network_scheme']
-
-        role_endpoint = cls._get_role_endpoint(
-            network_role['id'], network_scheme)
-        if role_endpoint is None:
-            return default_net_group
-
-        net_assignments = node_group['network_assignments']
-        for net_group, value in six.iteritems(net_assignments):
-            if value['ep'] == role_endpoint:
-                return net_group
-
-        return default_net_group
+        return net_group_mapping.get(
+            network_role['id'], network_role['default_mapping'])
 
     @classmethod
     def find_network_role_by_id(cls, cluster, role_id):
@@ -133,8 +126,10 @@ class NeutronManager70(NeutronManager):
         net_role = cls.find_network_role_by_id(cluster_db, 'public/vip')
         if net_role:
             node_group = objects.Cluster.get_controllers_node_group(cluster_db)
+            net_group_mapping = cls.build_role_to_network_group_mapping(
+                cluster_db, node_group.name)
             net_group = cls.get_network_group_for_role(
-                cluster_db, node_group.name, net_role)
+                net_role, net_group_mapping)
             return cls.assign_vip(cluster_db, net_group, vip_type='public')
         else:
             raise errors.CanNotDetermineEndPointIP(
@@ -144,11 +139,12 @@ class NeutronManager70(NeutronManager):
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
         net_roles = objects.Cluster.get_network_roles(cluster)
+        node_group = objects.Cluster.get_controllers_node_group(cluster)
+        net_group_mapping = cls.build_role_to_network_group_mapping(
+            cluster, node_group.name)
         for role in net_roles:
             properties = role.get('properties', {})
-            node_group = objects.Cluster.get_controllers_node_group(cluster)
-            net_group = cls.get_network_group_for_role(
-                cluster, node_group.name, role)
+            net_group = cls.get_network_group_for_role(role, net_group_mapping)
             for vip_info in properties.get('vip', ()):
                 vip_name = vip_info['name']
                 vip_addr = cls.assign_vip(

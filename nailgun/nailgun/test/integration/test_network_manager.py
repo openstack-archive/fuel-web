@@ -548,28 +548,30 @@ class TestNeutronManager70(BaseIntegrationTest):
         objects.Cluster.set_network_template(self.cluster, net_template)
 
         node_group = objects.Cluster.get_controllers_node_group(self.cluster)
+        net_group_mapping = \
+            self.net_manager.build_role_to_network_group_mapping(
+                self.cluster, node_group.name)
 
         self.assertEqual(
             self.net_manager.get_network_group_for_role(
-                self.cluster, node_group.name,
-                self._get_network_role_metadata(id='public/vip')),
+                self._get_network_role_metadata(id='public/vip'),
+                net_group_mapping),
             'public')
         self.assertEqual(
             self.net_manager.get_network_group_for_role(
-                self.cluster, node_group.name,
-                self._get_network_role_metadata(id='keystone/api')),
+                self._get_network_role_metadata(id='keystone/api'),
+                net_group_mapping),
             'management')
         self.assertEqual(
             self.net_manager.get_network_group_for_role(
-                self.cluster, node_group.name,
-                self._get_network_role_metadata(id='management')),
+                self._get_network_role_metadata(id='management'),
+                net_group_mapping),
             'management')
         self.assertEqual(
             self.net_manager.get_network_group_for_role(
-                self.cluster, node_group.name,
                 self._get_network_role_metadata(
                     id='role_not_in_template',
-                    default_mapping='default_net_group')),
+                    default_mapping='default_net_group'), net_group_mapping),
             'default_net_group')
 
     def test_get_endpoint_ip(self):

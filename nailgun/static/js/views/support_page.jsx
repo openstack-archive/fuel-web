@@ -90,25 +90,6 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var DocumentationLink = React.createClass({
-        render: function() {
-            var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
-            return (
-                <SupportPageElement
-                    className='img-documentation-link'
-                    title={i18n(ns + 'title')}
-                    text={i18n(ns + 'text')}
-                >
-                    <p>
-                        <a className='btn' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
-                            {i18n('support_page.documentation_link')}
-                        </a>
-                    </p>
-                </SupportPageElement>
-            );
-        }
-    });
-
     var RegistrationInfo = React.createClass({
         mixins: [
             statisticsMixin,
@@ -191,82 +172,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             );
         }
     });
-
-    var SupportContacts = React.createClass({
-        render: function() {
-            return (
-                <SupportPageElement
-                    className='img-contact-support'
-                    title={i18n('support_page.contact_support')}
-                    text={i18n('support_page.contact_text')}
-                >
-                    <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
-                    <p>
-                        <a className='btn' href='http://support.mirantis.com/requests/new' target='_blank'>
-                            {i18n('support_page.contact_support')}
-                        </a>
-                    </p>
-                </SupportPageElement>
-            );
-        }
-    });
-
-    var DiagnosticSnapshot = React.createClass({
-        mixins: [
-            componentMixins.backboneMixin('task'),
-            componentMixins.pollingMixin(2)
-        ],
-        getInitialState: function() {
-            return {generating: this.isDumpTaskRunning()};
-        },
-        shouldDataBeFetched: function() {
-            return this.isDumpTaskRunning();
-        },
-        fetchData: function() {
-            return this.props.task.fetch().done(_.bind(function() {
-                if (!this.isDumpTaskRunning()) this.setState({generating: false});
-            }, this));
-        },
-        isDumpTaskRunning: function() {
-            return this.props.task && this.props.task.match({status: 'running'});
-        },
-        downloadLogs: function() {
-            this.setState({generating: true});
-            (new models.LogsPackage()).save({}, {method: 'PUT'}).always(_.bind(this.props.tasks.fetch, this.props.tasks));
-        },
-        componentDidUpdate: function() {
-            this.startPolling();
-        },
-        render: function() {
-            var task = this.props.task,
-                generating = this.state.generating;
-            return (
-                <SupportPageElement
-                    className='img-download-logs'
-                    title={i18n('support_page.download_diagnostic_snapshot_text')}
-                    text={i18n('support_page.log_text')}
-                >
-                    <p className='snapshot'>
-                        <button className='btn' disabled={generating} onClick={this.downloadLogs}>
-                            {generating ? i18n('support_page.gen_logs_snapshot_text') : i18n('support_page.gen_diagnostic_snapshot_text')}
-                        </button>
-                        {!generating && task &&
-                            <span className={task.get('status')}>
-                                {task.match({status: 'ready'}) &&
-                                    <a href={task.get('message')} target='_blank'>
-                                        <i className='icon-install'></i>
-                                        <span>{i18n('support_page.diagnostic_snapshot')}</span>
-                                    </a>
-                                }
-                                {task.match({status: 'error'}) && task.get('message')}
-                            </span>
-                        }
-                    </p>
-                </SupportPageElement>
-            );
-        }
-    });
-
+    
     var CapacityAudit = React.createClass({
         render: function() {
             return (

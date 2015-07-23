@@ -32,6 +32,7 @@ from nailgun.objects.serializers.network_configuration \
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
 
+from nailgun.api.v1.validators.network import NetworkTemplateValidator
 from nailgun.api.v1.validators.network \
     import NeutronNetworkConfigurationValidator
 from nailgun.api.v1.validators.network \
@@ -198,6 +199,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 class TemplateNetworkConfigurationHandler(ProviderHandler):
     """Neutron Network configuration handler
     """
+    validator = NetworkTemplateValidator
 
     @content
     def GET(self, cluster_id):
@@ -216,7 +218,7 @@ class TemplateNetworkConfigurationHandler(ProviderHandler):
                * 403 (change of configuration is forbidden)
                * 404 (cluster not found in db)
         """
-        template = jsonutils.loads(web.data())
+        template = self.checked_data()
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_if_network_configuration_locked(cluster)

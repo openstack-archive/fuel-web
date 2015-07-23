@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun import consts
 
 from nailgun import objects
@@ -22,7 +25,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
-import six
 
 
 class NetworkConfigurationValidator(BasicValidator):
@@ -377,3 +379,40 @@ class NetAssignmentValidator(BasicValidator):
                     "bond".format(node['id'], iface['id']),
                     log_message=True
                 )
+
+
+class NetworkGroupValidator(BasicValidator):
+
+    single_schema = ng_scheme.single_scheme
+
+    @classmethod
+    def validate(cls, data):
+        d = cls.validate_json(data)
+        node_group = objects.NodeGroup.get_by_uid(d.get('group_id'))
+
+        if not node_group:
+            raise errors.InvalidData(
+                "Node group with ID {0} does not exist".format(
+                    d.get('group_id'))
+            )
+
+        if objects.NetworkGroup.get_from_node_group_by_name(
+                node_group.id, d.get('name')):
+            raise errors.AlreadyExists(
+                "Network with name {0} already exists "
+                "in node group {1}".format(d['name'], node_group.name)
+            )
+
+        return d
+
+    @classmethod
+    def validate_update(cls, data, **kwargs):
+        return cls.validate(data)
+
+    @classmethod
+    def validate_delete(cls, data, instance, force=False):
+        if not instance.group_id:
+            # Only default Admin-pxe network doesn't have group_id.
+            # It cannot be deleted.
+            raise errors.InvalidData(
+                "Default Admin-pxe network cannot be deleted")

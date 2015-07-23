@@ -99,9 +99,11 @@ def upgrade():
     set_deployable_false_for_old_releases()
     upgrade_node_labels()
     extend_segmentation_type()
+    network_groups_name_upgrade()
 
 
 def downgrade():
+    network_groups_name_downgrade()
     downgrade_node_labels()
     extensions_field_downgrade()
     downgrade_cluster_ui_settings()
@@ -129,6 +131,29 @@ def downgrade():
     op.drop_constraint('nodes_nodegroups_fk', 'nodes', type_='foreignkey')
     op.drop_constraint('network_groups_nodegroups_fk', 'network_groups',
                        type_='foreignkey')
+
+
+def network_groups_name_upgrade():
+    op.alter_column('network_groups',
+                    'name',
+                    type_=sa.String(length=50),
+                    existing_type=sa.Enum(
+                        'fuelweb_admin', 'storage',
+                        'management', 'public',
+                        'fixed', 'private',
+                        name='network_group_name'))
+    drop_enum('network_group_name')
+
+
+def network_groups_name_downgrade():
+    network_group_name = sa.Enum('fuelweb_admin', 'storage',
+                                 'management', 'public',
+                                 'fixed', 'private',
+                                 name='network_group_name')
+    network_group_name.create(op.get_bind(), checkfirst=False)
+    op.execute('ALTER TABLE network_groups ALTER COLUMN name '
+               'TYPE network_group_name '
+               'USING name::text::network_group_name')
 
 
 def extend_node_model_upgrade():

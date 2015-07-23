@@ -15,13 +15,11 @@
 #    under the License.
 
 from sqlalchemy import Column
-from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
-from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 
@@ -51,8 +49,7 @@ class NetworkGroup(Base):
     __tablename__ = 'network_groups'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Enum(*consts.NETWORKS, name='network_group_name'),
-                  nullable=False)
+    name = Column(String(50), nullable=False)
     # can be nullable only for fuelweb admin net
     release = Column(Integer, ForeignKey('releases.id'))
     # can be nullable only for fuelweb admin net

@@ -125,6 +125,7 @@ class ProvisioningSerializer(object):
                 ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
                 'master_ip': settings.MASTER_IP,
                 'timezone': settings.TIMEZONE,
+                'labels': node.labels,
             }}
 
         provision_data = cluster_attrs.get('provision')

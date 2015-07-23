@@ -22,7 +22,6 @@ from itertools import groupby
 import sqlalchemy as sa
 from sqlalchemy.orm import joinedload
 
-import math
 import six
 
 from nailgun import consts
@@ -30,8 +29,10 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
+from nailgun.logger import logger
 from nailgun import objects
 from nailgun import utils
+from nailgun.utils.ceph import get_pool_pg_count
 
 from nailgun.orchestrator.base_serializers import GraphBasedSerializer
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
@@ -170,12 +171,24 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
                 for part in disk.get('volumes', []):
                     if part.get('name') == 'ceph' and part.get('size', 0) > 0:
                         osd_num += 1
-        if osd_num > 0:
-            repl = int(attrs['storage']['osd_pool_size'])
-            pg_num = 2 ** int(math.ceil(math.log(osd_num * 100.0 / repl, 2)))
-        else:
-            pg_num = 128
-        attrs['storage']['pg_num'] = pg_num
+
+        stor_attrs = attrs['storage']
+
+        pg_counts = get_pool_pg_count(
+            osd_num=osd_num,
+            pool_sz=int(stor_attrs['osd_pool_size']),
+            ceph_version='firefly',
+            volumes_ceph=stor_attrs['volumes_ceph'],
+            objects_ceph=stor_attrs['objects_ceph'],
+            ephemeral_ceph=stor_attrs['ephemeral_ceph'],
+            images_ceph=stor_attrs['images_ceph'],
+            emulate_pre_7_0=False)
+
+        pg_str = ",".join(map("{0[0]}={0[1]}".format, pg_counts.items()))
+        logger.debug("{" + pg_str + "}")
+
+        stor_attrs['pg_num'] = pg_counts['default_pg_num']
+        stor_attrs['per_pool_pg_nums'] = pg_counts
 
     @classmethod
     def node_list(cls, nodes):

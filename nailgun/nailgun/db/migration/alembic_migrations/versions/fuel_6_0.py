@@ -27,7 +27,7 @@ down_revision = '52924111f7d8'
 import uuid
 
 from alembic import op
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 

@@ -18,7 +18,7 @@ import csv
 from datetime import datetime
 import os
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import pytz
 import six
 

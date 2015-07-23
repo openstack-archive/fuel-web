@@ -17,7 +17,7 @@
 from mock import patch
 
 from copy import deepcopy
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import six
 
 from nailgun import consts

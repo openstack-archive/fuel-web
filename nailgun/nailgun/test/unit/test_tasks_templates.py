@@ -19,7 +19,7 @@ import re
 import mock
 import requests
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 from six.moves import zip_longest
 
 from nailgun.test import base

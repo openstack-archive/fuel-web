@@ -71,9 +71,8 @@ class NeutronManager70(NeutronManager):
     @classmethod
     def _get_role_endpoint(cls, role_id, network_scheme):
         for scheme in six.itervalues(network_scheme):
-            for role, endpoint in six.iteritems(scheme['roles']):
-                if role == role_id:
-                    return endpoint
+            if role_id in scheme['roles']:
+                return scheme['roles'][role_id]
 
     @classmethod
     def get_network_group_for_role(cls, cluster, node_group_name,

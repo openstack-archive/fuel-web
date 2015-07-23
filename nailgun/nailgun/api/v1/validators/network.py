@@ -17,6 +17,9 @@ import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
+from nailgun.api.v1.validators.json_schema.network_template import \
+    NETWORK_TEMPLATE
+
 from nailgun import consts
 
 from nailgun import objects
@@ -416,3 +419,34 @@ class NetworkGroupValidator(BasicValidator):
             # It cannot be deleted.
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be deleted")
+
+
+class NetworkTemplateValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data, instance=None):
+        parsed = super(NetworkTemplateValidator, cls).validate(data)
+        cls.validate_schema(parsed, NETWORK_TEMPLATE)
+
+        # Ensure templates requested in templates_for_node_role are
+        # present in network_scheme
+        if not parsed['adv_net_template']:
+            raise errors.InvalidData("No node groups are defined")
+        for ng_name, node_group in six.iteritems(parsed['adv_net_template']):
+            defined_templates = set(node_group['network_scheme'].keys())
+            not_found = set()
+            for templates_by_role in six.itervalues(
+                    node_group['templates_for_node_role']):
+                for template in templates_by_role:
+                    if template not in defined_templates:
+                        not_found.add(template)
+            if not_found:
+                raise errors.InvalidData(
+                    "Requested templates {0} were not found for node "
+                    "group {1}".format(', '.join(not_found), ng_name))
+            if not defined_templates:
+                raise errors.InvalidData(
+                    "No templates are defined for node group {0}".format(
+                        ng_name))
+
+        return parsed

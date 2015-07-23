@@ -216,6 +216,15 @@
     cursor: pointer;
   }
 }
+.glyphicon-pushpin {
+  .icon-default-styles(-12px, -734px);
+}
+.glyphicon-time {
+  .icon-default-styles(-12px, -774px);
+}
+.glyphicon-tags {
+  .icon-default-styles(-52px, -734px);
+}
 
 
 // BASE SETTINGS
@@ -1885,12 +1894,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
             margin: 0;
             padding: 4px 0;
             display: block;
+            transition: all 0.3s ease-out;
             &.btn-link {
               font-size: @base-font-size - 2;
               text-decoration: none;
             }
           }
           &:hover {
+            transition: all 0.3s ease-out;
             /* toggle More Info label */
             p:not(.btn-link) {
               margin-top: -@node-hardware-height;
@@ -1936,7 +1947,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
         width: 150%;
         max-width: none;
         display: block;
-
+        font-family: @open-sans-font;
+        animation-name: bounceIn;
+        animation-duration: 0.2s;
+        animation-fill-mode: both;
+        animation-timing-function: linear;
         .arrow, .help-block {
           display: none;
         }
@@ -2423,6 +2438,17 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
   to {
     transform:rotate(360deg);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

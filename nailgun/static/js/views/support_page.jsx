@@ -90,89 +90,44 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var RegistrationInfo = React.createClass({
-        mixins: [
-            statisticsMixin,
-            componentMixins.backboneMixin('tracking', 'change invalid')
-        ],
+    var DocumentationLink = React.createClass({
         render: function() {
-            if (this.state.isConnected)
-                return (
-                    <SupportPageElement
-                        className='img-register-fuel'
-                        title={i18n('support_page.product_registered_title')}
-                        text={i18n('support_page.product_registered_content')}
-                    >
-                        <p className='registeredData enable-selection'>
-                            {_.map(['name', 'email', 'company'], function(value) {
-                                return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {this.props.tracking.get('statistics')[value].value}</span>;
-                            }, this)}
-                            <span><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.tracking.get('master_node_uid')}</span>
-                        </p>
-                        <p>
-                            <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
-                                {i18n('support_page.manage_account')}
-                            </a>
-                        </p>
-                    </SupportPageElement>
-                );
+            var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
             return (
                 <SupportPageElement
-                    className='img-register-fuel'
-                    title={i18n('support_page.register_fuel_title')}
-                    text={i18n('support_page.register_fuel_content')}
+                    className='img-documentation-link'
+                    title={i18n(ns + 'title')}
+                    text={i18n(ns + 'text')}
                 >
-                    <div>
-                        {this.renderRegistrationForm(this.props.tracking, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
-                        <p>
-                            <button className='btn registration-link' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
-                                {i18n('support_page.register_fuel_title')}
-                            </button>
-                        </p>
-                    </div>
-                </SupportPageElement>
-            );
-        }
-    });
-
-    var StatisticsSettings = React.createClass({
-        mixins: [
-            statisticsMixin,
-            componentMixins.backboneMixin('statistics')
-        ],
-        render: function() {
-            var statistics = this.props.statistics.get('statistics'),
-                sortedSettings = _.chain(_.keys(statistics))
-                    .without('metadata')
-                    .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
-                    .value(),
-                initialData = this.props.settings.get('statistics'),
-                hasChanges = _.any(this.props.statsCheckboxes, function(field) {
-                    return !_.isEqual(initialData[field].value, statistics[field].value);
-                });
-            return (
-                <SupportPageElement
-                    className='img-statistics'
-                    title={i18n('support_page.send_statistics_title')}
-                >
-                    {this.renderIntro()}
-                    <div className='statistics-settings'>
-                        {_.map(sortedSettings, this.renderInput, this)}
-                    </div>
                     <p>
-                        <button
-                            className='btn'
-                            disabled={this.state.actionInProgress || !hasChanges}
-                            onClick={this.prepareStatisticsToSave}
-                        >
-                            {i18n('support_page.save_changes')}
-                        </button>
+                        <a className='btn' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
+                            {i18n('support_page.documentation_link')}
+                        </a>
                     </p>
                 </SupportPageElement>
             );
         }
     });
-    
+
+    var SupportContacts = React.createClass({
+        render: function() {
+            return (
+                <SupportPageElement
+                    className='img-contact-support'
+                    title={i18n('support_page.contact_support')}
+                    text={i18n('support_page.contact_text')}
+                >
+                    <p>{i18n('support_page.irc_text')} <strong>邮箱</strong> on <a href='zehin@zehin.com.cn' target='_blank'>Email</a>. </p>
+                    <p>
+                        <a className='btn' href='http://www.zehin.com.cn' target='_blank'>
+                            {i18n('support_page.contact_support')}
+                        </a>
+                    </p>
+                </SupportPageElement>
+            );
+        }
+    });
+
     var CapacityAudit = React.createClass({
         render: function() {
             return (

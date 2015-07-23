@@ -187,6 +187,12 @@ class TestDeploymentAttributesSerialization70(
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
 
+    def test_node_labels(self):
+        for node in self.serialized_for_astute:
+
+            self.assertIn('labels', node)
+            self.assertEqual({}, node['labels'])
+
 
 class TestDeploymentAttributesSerializationSegmentationGre70(
     TestDeploymentAttributesSerialization70

@@ -74,6 +74,12 @@ class TestGetSerializerForCluster(BaseIntegrationTest):
 
         self.assertIs(serializer, ps.ProvisioningSerializer61)
 
+    def test_env_7_0(self):
+        cluster = self._get_cluster('2015.1.0-7.0')
+        serializer = ps.get_serializer_for_cluster(cluster)
+
+        self.assertIs(serializer, ps.ProvisioningSerializer70)
+
 
 class TestProvisioningSerializer(BaseIntegrationTest):
 
@@ -311,3 +317,21 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
         node_info = serialized_info['nodes'][0]
         self.assertIn('kernel_lt', node_info['ks_meta'])
         self.assertEqual(1, node_info['ks_meta']['kernel_lt'])
+
+
+class TestProvisioningSerializer70(BaseIntegrationTest):
+
+    serializer = ps.ProvisioningSerializer70
+
+    def test_node_labels_exist(self):
+        self.env.create()
+        self.cluster_db = self.env.clusters[0]
+        self.env.create_node(
+            api=False, cluster_id=self.cluster_db.id, pending_addition=True)
+        serialized_info = self.serializer.serialize(
+            self.cluster_db,
+            self.cluster_db.nodes)
+        node_info = serialized_info['nodes'][0]
+
+        self.assertIn('labels', node_info['ks_meta'])
+        self.assertEqual({}, node_info['ks_meta']['labels'])

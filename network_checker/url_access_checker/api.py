@@ -20,8 +20,8 @@ import requests
 import url_access_checker.errors as errors
 
 
-def check_urls(urls):
-    responses = map(_get_response_tuple, urls)
+def check_urls(urls, proxies=None):
+    responses = map(lambda u: _get_response_tuple(u, proxies=proxies), urls)
     failed_responses = filter(lambda x: x[0], responses)
 
     if failed_responses:
@@ -29,7 +29,7 @@ def check_urls(urls):
             {'failed_urls': map(lambda r: r[1], failed_responses)}))
 
 
-def _get_response_tuple(url):
+def _get_response_tuple(url, proxies=None):
     """Return a tuple which contains a result of url test
 
     Arguments:
@@ -40,11 +40,12 @@ def _get_response_tuple(url):
         result[1] -- unchange url argument
     """
     try:
-        response = requests.get(url)
+        response = requests.get(url, proxies=None)
         return (response.status_code != 200, url)
     except (requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
             requests.exceptions.HTTPError,
+            requests.exceptions.ProxyError,
             ValueError,
             socket.timeout):
         return (True, url)

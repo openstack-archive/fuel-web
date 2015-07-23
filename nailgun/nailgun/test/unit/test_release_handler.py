@@ -15,7 +15,7 @@
 #    under the License.
 
 import mock
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.settings import settings

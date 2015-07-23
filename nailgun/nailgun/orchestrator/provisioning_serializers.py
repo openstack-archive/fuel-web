@@ -311,6 +311,18 @@ class ProvisioningSerializer61(ProvisioningSerializer):
         return serialized_node
 
 
+class ProvisioningSerializer70(ProvisioningSerializer61):
+
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        serialized_node = super(ProvisioningSerializer70, cls).serialize_node(
+            cluster_attrs, node)
+
+        serialized_node['ks_meta']['labels'] = node.labels
+
+        return serialized_node
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -320,6 +332,7 @@ def get_serializer_for_cluster(cluster):
     serializers_map = {
         '5': ProvisioningSerializer,
         '6.0': ProvisioningSerializer,
+        '6.1': ProvisioningSerializer61,
     }
 
     for version, serializer in six.iteritems(serializers_map):
@@ -327,7 +340,7 @@ def get_serializer_for_cluster(cluster):
             return serializer
 
     # by default, we should return latest serializer
-    return ProvisioningSerializer61
+    return ProvisioningSerializer70
 
 
 def serialize(cluster, nodes, ignore_customized=False):

@@ -493,6 +493,13 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
         else:
             return NeutronNetworkDeploymentSerializer70
 
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer70, self).serialize_node(node, role)
+        serialized_node['labels'] = node.labels
+
+        return serialized_node
+
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.

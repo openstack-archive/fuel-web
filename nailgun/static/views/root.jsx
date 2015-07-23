@@ -55,7 +55,7 @@ define([
         },
         render: function() {
             var Page = this.state.Page;
-            if (!Page) return <div className='loading' />;
+            if (!Page) return null;
             return (
                 <div id='content-wrapper'>
                     <div className='clamp'>

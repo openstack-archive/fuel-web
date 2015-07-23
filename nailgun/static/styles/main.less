@@ -235,10 +235,6 @@ html, body {
   height: 100%;
 }
 
-body {
-  overflow-y: scroll;
-}
-
 b, strong {
   .font-semibold;
 }
@@ -287,30 +283,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 
 @common-icons-sprite: "../img/icons/icons-sprite.svg";
-
-.loading {
-  @loader-logo-size: 98px;
-  &:before {
-    content: "";
-    display: block;
-    width: @loader-logo-size;
-    height: @loader-logo-size;
-    overflow: hidden;
-    margin: 200px auto 0;
-    background: url(../img/loader-bg.svg);
-    animation: spin 6s linear infinite;
-  }
-  &:after {
-    content: "";
-    display: block;
-    width: @loader-logo-size;
-    height: @loader-logo-size;
-    margin: -124px auto 0;
-    position: relative;
-    z-index: 9999;
-    background: url(../img/loader-logo.svg);
-  }
-}
 
 .loading-ticket {
   display: inline-block;

@@ -29,6 +29,8 @@ define(
 function($, _, i18n, React, utils, models, Expression, componentMixins, controls, customControls) {
     'use strict';
 
+    var CSSTransitionGroup = React.addons.CSSTransitionGroup;
+
     var SettingsTab = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster', 'change:status'),
@@ -54,6 +56,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         getInitialState: function() {
             var settings = this.props.cluster.get('settings');
+            var activeGroupName = _.min(_.keys(settings.attributes), function(groupName) {
+                return settings.get(groupName + '.metadata.weight');
+            });
             return {
                 configModels: {
                     cluster: this.props.cluster,
@@ -65,7 +70,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 },
                 settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
                 initialAttributes: _.cloneDeep(settings.attributes),
-                actionInProgress: false
+                actionInProgress: false,
+                activeGroupName: activeGroupName
             };
         },
         componentDidMount: function() {
@@ -170,6 +176,13 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             settings.set(name, value);
             settings.isValid({models: this.state.configModels});
         },
+        checkRestrictions: function(action, path) {
+            var settings = this.props.cluster.get('settings');
+            return settings.checkRestrictions(this.state.configModels, action, path);
+        },
+        onSubtabClick: function(groupName) {
+            this.setState({activeGroupName: groupName});
+        },
         render: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
@@ -179,12 +192,33 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 hasChanges = this.hasChanges(),
-                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
+                activeGroupVisible = !this.checkRestrictions('hide', settings.makePath(this.state.activeGroupName, 'metadata')).result,
+                activeGroupName = this.state.activeGroupName;
+            if (!activeGroupVisible) {
+                // FIXME(vkramskikh): state is not updated. Probably we should store
+                // the whole restrictions processing result in state to avoid this
+                activeGroupName = _.min(_.keys(settings.attributes), function(groupName) {
+                    return settings.get(groupName + '.metadata.weight');
+                });
+            }
 
             return (
                 <div key={this.state.key} className='row'>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
-                    {_.map(sortedSettingGroups, function(groupName) {
+                    <SettingSubtabs
+                        settings={settings}
+                        groupNames={sortedSettingGroups}
+                        activeGroupName={activeGroupName}
+                        makePath={settings.makePath}
+                        configModels={this.state.configModels}
+                        onClick={this.onSubtabClick}
+                        checkRestrictions={this.checkRestrictions}
+                    />
+                    {_.compact(_.map(sortedSettingGroups, function(groupName) {
+                        if (groupName != activeGroupName) {
+                            return null;
+                        }
                         return <SettingGroup
                             key={groupName}
                             cluster={this.props.cluster}
@@ -198,8 +232,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                             locked={locked}
                             lockedCluster={lockedCluster}
                             configModels={this.state.configModels}
+                            checkRestrictions={this.checkRestrictions}
                         />;
-                    }, this)}
+                    }, this))}
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
@@ -220,19 +255,55 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         }
     });
 
+    var SettingSubtabs = React.createClass({
+        render: function() {
+            var errors = this.props.settings.validationError,
+                invalidSections = {};
+            _.forEach(errors, function(error, key) {
+                invalidSections[_.first(key.split('.'))] = true;
+            });
+            return (
+                <div className='col-xs-2'>
+                    <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
+                    {
+                        this.props.groupNames.map(function(groupName) {
+                            var group = this.props.settings.get(groupName),
+                                metadata = group.metadata;
+                            if (this.props.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) {
+                                return null;
+                            }
+                            var hasErrors = invalidSections[groupName];
+                            return (
+                                <li
+                                    key={groupName}
+                                    role='presentation'
+                                    className={utils.classNames({active: groupName == this.props.activeGroupName})}
+                                    onClick={_.partial(this.props.onClick, groupName)}
+                                >
+                                    <a className={'subtab-link-' + groupName}>
+                                        {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
+                                        {metadata.label}
+                                    </a>
+                                </li>
+                            );
+                        }, this)
+                    }
+                    </CSSTransitionGroup>
+                </div>
+            );
+        }
+    });
+
     var SettingGroup = React.createClass({
-        checkRestrictions: function(action, path) {
-            return this.props.settings.checkRestrictions(this.props.configModels, action, path);
-        },
         processRestrictions: function(groupName, settingName) {
             var result = false,
                 path = this.props.makePath(groupName, settingName),
                 messages = [];
 
-            var restrictionsCheck = this.checkRestrictions('disable', path),
+            var restrictionsCheck = this.props.checkRestrictions('disable', path),
                 dependentRoles = this.checkDependentRoles(groupName, settingName),
                 dependentSettings = this.checkDependentSettings(groupName, settingName),
-                messagesCheck = this.checkRestrictions('none', path);
+                messagesCheck = this.props.checkRestrictions('none', path);
 
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
             if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
@@ -300,11 +371,11 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             var dependentSettings = {};
             _.each(this.props.settings.attributes, function(group, groupName) {
                 // don't take into account hidden dependent settings
-                if (this.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) return;
+                if (this.props.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) return;
                 _.each(group, function(setting, settingName) {
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
                     var pathToCheck = this.props.makePath(groupName, settingName);
-                    if (!this.areCalсulationsPossible(setting) || pathToCheck == path || this.checkRestrictions('hide', pathToCheck).result) return;
+                    if (!this.areCalсulationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', pathToCheck).result) return;
                     var dependentRestrictions;
                     if (setting[this.props.getValueAttribute(settingName)] == true) {
                         dependentRestrictions = getDependentRestrictions(pathToCheck);
@@ -344,7 +415,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             });
         },
         render: function() {
-            if (this.checkRestrictions('hide', this.props.makePath(this.props.groupName, 'metadata')).result) return null;
+            if (this.props.checkRestrictions('hide', this.props.makePath(this.props.groupName, 'metadata')).result) return null;
             var group = this.props.settings.get(this.props.groupName),
                 metadata = group.metadata,
                 sortedSettings = _.chain(_.keys(group))
@@ -352,9 +423,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     .sortBy(function(settingName) {return group[settingName].weight;})
                     .value(),
                 processedGroupRestrictions = this.processRestrictions(this.props.groupName, 'metadata'),
-                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || (metadata.toggleable && processedGroupRestrictions.result);
+                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result;
             return (
-                <div className='col-xs-12 forms-box'>
+                <div className='col-xs-10 forms-box'>
+                    {processedGroupRestrictions.message && <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>}
                     <h3>
                         {metadata.toggleable &&
                             <controls.Input
@@ -367,7 +439,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 wrapperClassName='pull-left'
                             />
                         }
-                        {metadata.label || this.props.groupName}
+                        <span className={'subtab-group-' + this.props.groupName}>{metadata.label || this.props.groupName}</span>
                     </h3>
                     <div>
                         {_.map(sortedSettings, function(settingName) {
@@ -376,7 +448,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
 
                             var path = this.props.makePath(this.props.groupName, settingName);
 
-                            if (!this.checkRestrictions('hide', path).result) {
+                            if (!this.props.checkRestrictions('hide', path).result) {
                                 var error = (this.props.settings.validationError || {})[path],
                                     processedSettingRestrictions = this.processRestrictions(this.props.groupName, settingName),
                                     isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result;
@@ -399,8 +471,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     var values = _.chain(_.cloneDeep(setting.values))
                                         .map(function(value) {
                                             var valuePath = this.props.makePath(path, value.data),
-                                                processedValueRestrictions = this.checkRestrictions('disable', valuePath);
-                                            if (!this.checkRestrictions('hide', valuePath).result) {
+                                                processedValueRestrictions = this.props.checkRestrictions('disable', valuePath);
+                                            if (!this.props.checkRestrictions('hide', valuePath).result) {
                                                 value.disabled = isSettingDisabled || processedValueRestrictions.result;
                                                 value.defaultChecked = value.data == setting.value;
                                                 value.tooltipText = processedValueRestrictions.message;

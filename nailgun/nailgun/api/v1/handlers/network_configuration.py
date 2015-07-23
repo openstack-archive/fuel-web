@@ -36,6 +36,8 @@ from nailgun.api.v1.validators.network \
     import NeutronNetworkConfigurationValidator
 from nailgun.api.v1.validators.network \
     import NovaNetworkConfigurationValidator
+from nailgun.api.v1.validators.network \
+    import NetworkTemplateValidator
 
 from nailgun import consts
 from nailgun import objects
@@ -198,6 +200,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 class TemplateNetworkConfigurationHandler(ProviderHandler):
     """Neutron Network configuration handler
     """
+    validator = NetworkTemplateValidator
 
     @content
     def GET(self, cluster_id):
@@ -220,6 +223,7 @@ class TemplateNetworkConfigurationHandler(ProviderHandler):
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_if_network_configuration_locked(cluster)
+        self.validator.validate(template)
         objects.Cluster.set_network_template(cluster, template)
         raise self.http(200)
 

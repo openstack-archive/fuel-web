@@ -40,3 +40,29 @@ NETWORK = {
     },
     'required': ['name']
 }
+
+NETWORK_TEMPLATE = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'required': ['id', 'default_mapping', 'properties'],
+        'properties': {
+            'id': {'type': 'string'},
+            'default_mapping': {'type': 'string'},
+            'properties': {
+                'type': 'object',
+                'required': ['subnet', 'gateway', 'vip'],
+                'properties': {
+                    'subnet': {'type': 'boolean'},
+                    'gateway': {'type': 'boolean'},
+                    'vip': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'required': ['name'],
+                            'properties': {
+                                'name': {
+                                    'type': 'string'},
+                                'namespace': {
+                                    'type': 'string'}}}}}}}}
+}

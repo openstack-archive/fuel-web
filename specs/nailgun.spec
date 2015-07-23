@@ -13,7 +13,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Prefix: %{_prefix}
 BuildRequires:  python-setuptools
 BuildRequires:  git
-BuildRequires: npm
 BuildRequires: nodejs
 BuildArch: noarch
 Requires:    python-alembic >= 0.6.2

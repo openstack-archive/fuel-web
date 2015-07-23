@@ -41,7 +41,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
     ClusterPage = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5),
-            componentMixins.backboneMixin('cluster', 'change:is_customized change:release'),
+            componentMixins.backboneMixin('cluster', 'change:name change:is_customized change:release'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('nodes');}
             }),
@@ -241,8 +241,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
 
             return (
                 <div className='cluster-page' key={cluster.id}>
-                    <div className='row'>
-                        <ClusterInfo cluster={cluster} />
+                    <div className='page-title'>
+                        <h1 className='title'>
+                            {cluster.get('name')}
+                            <div className='title-node-count'>({i18n('common.node', {count: cluster.get('nodes').length})})</div>
+                        </h1>
                     </div>
                     <div className='tabs-box'>
                         <div className='tabs'>
@@ -262,25 +265,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     </div>
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
                         <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} {...this.props.tabData} />
-                    </div>
-                </div>
-            );
-        }
-    });
-
-    ClusterInfo = React.createClass({
-        mixins: [
-            componentMixins.backboneMixin('cluster', 'change:name change:status')
-        ],
-        render: function() {
-            var cluster = this.props.cluster;
-            return (
-                <div className='col-xs-9'>
-                    <div className='page-title'>
-                        <h1 className='title'>
-                            {cluster.get('name')}
-                            <div className='title-node-count'>({i18n('common.node', {count: cluster.get('nodes').length})})</div>
-                        </h1>
                     </div>
                 </div>
             );

@@ -493,9 +493,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     />;
                                 }
                                 return <controls.Input
-                                    {... _.pick(setting, 'type', 'label', 'description')}
+                                    {... _.pick(setting, 'type', 'label')}
                                     key={settingName}
                                     name={settingName}
+                                    description={setting.description && utils.urlify(_.escape(setting.description))}
                                     children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
                                     defaultValue={setting.value}
                                     defaultChecked={_.isBoolean(setting.value) ? setting.value : false}

@@ -604,17 +604,24 @@ class VolumeManager(object):
         for d in sorted(node.disks, key=lambda i: i['name']):
             boot_is_raid = True if disks_count > 1 else False
 
-            existing_disk = filter(
-                lambda disk: d['disk'] == disk['id'],
-                only_disks(self.volumes))
+            existing_disk = None
+            if d.get('extra'):
+                existing_disk = filter(
+                    lambda disk: set(d['extra']) == set(disk.get('extra', [])),
+                    only_disks(self.volumes))
+            if not existing_disk:
+                existing_disk = filter(
+                    lambda disk: d['disk'] == disk['id'],
+                    only_disks(self.volumes))
 
+            disk_id = existing_disk[0]['id'] if existing_disk else d["disk"]
             disk_volumes = existing_disk[0].get(
                 'volumes', []) if existing_disk else []
 
             disk = Disk(
                 disk_volumes,
                 self.call_generator,
-                d["disk"],
+                disk_id,
                 d["name"],
                 byte_to_megabyte(d["size"]),
                 boot_is_raid=boot_is_raid,

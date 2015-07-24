@@ -125,6 +125,56 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         self.assertEqual(disks, updated_disks)
 
+    def test_volumes_manager_disk_w_extra(self):
+        disks = [
+            {
+                "model": "TOSHIBA MK1002TS",
+                "name": "sda",
+                "disk": "sda",
+                "extra": [
+                    "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                    "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001",
+                ],
+                "size": 1000204886016
+            },
+            {
+                "model": "TOSHIBA MK1002TS",
+                "name": "sdb",
+                "disk": "sdb",
+                "extra": [
+                    "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                    "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002",
+                ],
+                "size": 1000204886016
+            },
+        ]
+        self.env.create(
+            nodes_kwargs=[{
+                "roles": [],
+                "pending_roles": ['controller'],
+                "meta": {"disks": disks}
+            }]
+        )
+        node_db = self.env.nodes[0]
+
+        # simulate disk change
+        new_meta = deepcopy(node_db.meta)
+        new_meta['disks'][0]['disk'] = 'sdb'
+        new_meta['disks'][0]['name'] = 'sdb'
+        new_meta['disks'][1]['disk'] = 'sda'
+        new_meta['disks'][1]['name'] = 'sda'
+
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({
+                'mac': node_db.mac,
+                'meta': new_meta}),
+            headers=self.default_headers)
+
+        changed_disks = self.get(node_db.id)
+        self.assertEqual(changed_disks[0]['extra'], disks[1]['extra'])
+        self.assertEqual(changed_disks[1]['extra'], disks[0]['extra'])
+
     def test_default_attrs_after_creation(self):
         self.env.create_node(api=True)
         node_db = self.env.nodes[0]

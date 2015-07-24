@@ -60,7 +60,7 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         self.cluster = self.create_env('ha_compact')
 
         # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
-        objects.NodeCollection.prepare_for_deployment(
+        objects.NodeCollection.prepare_for_6_1_deployment(
             self.env.nodes, self.segmentation_type)
         self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
         serializer_type = get_serializer_for_cluster(self.cluster_db)
@@ -218,7 +218,7 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
         self.cluster = self.create_env('ha_compact')
 
         # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.env.nodes)
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
         serializer_type = get_serializer_for_cluster(cluster_db)
         self.serializer = serializer_type(AstuteGraph(cluster_db))
@@ -502,7 +502,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.cluster.nodes)
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
@@ -546,7 +546,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.cluster.nodes)
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
@@ -585,7 +585,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.cluster.nodes)
         with mock.patch('nailgun.plugins.adapters.glob.glob',
                         mock.Mock(return_value='path/to/test/repos')):
             pre_deployment = stages.pre_deployment_serialize(
@@ -620,7 +620,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.cluster.nodes)
         post_deployment = stages.post_deployment_serialize(
             graph, self.cluster, self.cluster.nodes)
 
@@ -646,7 +646,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.cluster.nodes)
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
@@ -730,7 +730,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
             pending_addition=True)
         self.db.flush()
 
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.cluster.nodes)
 
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
@@ -761,7 +761,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
             pending_addition=True)
         self.db.flush()
 
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.cluster.nodes)
 
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
@@ -790,7 +790,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             self.cluster,
             self.net_template
         )
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(self.env.nodes)
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
 
         serializer = get_serializer_for_cluster(self.cluster)

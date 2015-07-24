@@ -360,10 +360,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             {this.renderRoleList(roles)}
                                         </div>
                                     }
-                                    <div className='node-labels'>
-                                        <i className='glyphicon glyphicon-tags pull-left' />
-                                        {this.renderLabels()}
-                                    </div>
+                                    {!_.isEmpty(this.props.node.get('labels')) &&
+                                        <div className='node-labels'>
+                                            <i className='glyphicon glyphicon-tags pull-left' />
+                                            {this.renderLabels()}
+                                        </div>
+                                    }
                                     <div className={utils.classNames(statusClasses)}>
                                         <i className='glyphicon glyphicon-time' />
                                         {_.contains(['provisioning', 'deploying'], status) ?

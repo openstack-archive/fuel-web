@@ -41,6 +41,7 @@ from webtest import app
 import nailgun
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun.settings import settings
 
 from nailgun.db import db
@@ -1418,3 +1419,45 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
         self.master_node_settings.update(self.master_node_settings_template)
         MasterNodeSettings.create(self.master_node_settings)
         self.db.commit()
+
+
+class BaseValidatorTest(TestCase):
+
+    validator = None
+
+    def get_invalid_data_context(self, obj):
+        json_obj = jsonutils.dumps(obj)
+
+        with self.assertRaises(errors.InvalidData) as context:
+            self.validator.validate(json_obj)
+
+        return context
+
+    def assertRaisesAdditionalProperty(self, obj, key):
+        context = self.get_invalid_data_context(obj)
+
+        self.assertIn(
+            "Additional properties are not allowed (u'{0}' "
+            "was unexpected)".format(key),
+            context.exception.message)
+
+    def assertRaisesRequiredProperty(self, obj, key):
+        context = self.get_invalid_data_context(obj)
+
+        self.assertIn(
+            "Failed validating 'required' in schema",
+            context.exception.message)
+
+        self.assertIn(
+            "'{0}' is a required property".format(key),
+            context.exception.message)
+
+    def assertRaisesInvalidType(self, obj, value, expected_type):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "Failed validating 'type' in schema",
+            context.exception.message)
+
+        self.assertIn(
+            "{0} is not of type '{1}'".format(value, expected_type),
+            context.exception.message)

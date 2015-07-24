@@ -19,6 +19,7 @@ import six
 import yaml
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
@@ -34,6 +35,14 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
+from nailgun.test.integration.test_orchestrator_serializer import \
+    TestDeploymentHASerializer61
+from nailgun.test.integration.test_orchestrator_serializer import \
+    TestNovaOrchestratorHASerializer
+from nailgun.test.integration.test_orchestrator_serializer import \
+    TestNovaOrchestratorSerializer
+from nailgun.test.integration.test_orchestrator_serializer import \
+    TestSerializeInterfaceDriversData
 
 
 class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
@@ -59,9 +68,7 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         super(BaseTestDeploymentAttributesSerialization70, self).setUp()
         self.cluster = self.create_env('ha_compact')
 
-        # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
-        objects.NodeCollection.prepare_for_deployment(
-            self.env.nodes, self.segmentation_type)
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
         self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
         serializer_type = get_serializer_for_cluster(self.cluster_db)
         self.serializer = serializer_type(AstuteGraph(self.cluster_db))
@@ -1003,3 +1010,82 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                     node_attrs['network_roles'],
                     network_roles
                 )
+
+
+class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
+
+    def setUp(self):
+        super(TestCustomNetGroupIpAllocation, self).setUp()
+        self.cluster = self.create_env()
+
+    def create_env(self):
+        return self.env.create(
+            release_kwargs={'version': '2015.1.0-7.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'},
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+            ])
+
+    def _create_network_group(self, **kwargs):
+        ng = {
+            'release': self.cluster.release.id,
+            'name': 'test',
+            'vlan_start': 50,
+            'cidr': '172.16.122.0/24',
+            'gateway': '172.16.122.1',
+            'group_id': objects.Cluster.get_default_group(self.cluster).id,
+            'meta': {
+                'notation': 'ip_ranges'
+            }
+        }
+        ng.update(kwargs)
+
+        net_group = models.NetworkGroup(**ng)
+        ip_range = models.IPAddrRange(
+            first='172.16.122.2',
+            last='172.16.122.255'
+        )
+        ip_range.network_group = net_group
+
+        db().add(ip_range)
+        db().commit()
+
+    def test_ip_allocation(self):
+        self._create_network_group()
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+
+        ip_addrs = db().query(models.IPAddr).filter(
+            models.IPAddr.ip_addr.like('172.16.122.%')).all()
+        self.assertEqual(len(ip_addrs), 2)
+
+
+class TestSerializer70Mixin(object):
+
+    env_version = "2015.1.0-7.0"
+    prepare_for_deployment = \
+        objects.NodeCollection.prepare_for_deployment
+
+
+class TestNovaOrchestratorSerializer70(TestNovaOrchestratorSerializer,
+                                       TestSerializer70Mixin):
+    pass
+
+
+class TestNovaOrchestratorHASerializer70(TestNovaOrchestratorHASerializer,
+                                         TestSerializer70Mixin):
+
+    pass
+
+
+class TestSerializeInterfaceDriversData70(TestSerializeInterfaceDriversData,
+                                          TestSerializer70Mixin):
+    pass
+
+
+class TestDeploymentHASerializer70(TestDeploymentHASerializer61,
+                                   TestSerializer70Mixin):
+    pass

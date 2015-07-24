@@ -197,37 +197,59 @@
                         "model": "TOSHIBA MK1002TS",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdb",
                         "disk": "sdb",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdc",
                         "disk": "sdc",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00003",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00003"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdd",
                         "disk": "sdd",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00004",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00004"
+                        ]
                     },
                     {
                         "model": "Virtual Floppy0",
                         "name": "sde",
                         "disk": "sde",
-                        "size": 0
+                        "size": 0,
+                        "extra": [
+                            "disk/by-id/scsi-SATA_QEMU_FLOPPYDISK_QM00001"
+                        ]
                     },
                     {
                         "model": "Virtual HDisk0",
                         "name": "sdf",
                         "disk": "sdf",
-                        "size": 0
+                        "size": 0,
+                        "extra": [
+                            "disk/by-id/scsi-SATA_QEMU_HARDDISK_QM00001"
+                        ]
                     }
                 ],
                 "system": {
@@ -488,13 +510,21 @@
                         "model": "Silicon-Power16G",
                         "name": "sdb",
                         "disk": "sdb",
-                        "size": 15518924800
+                        "size": 15518924800,
+                        "extra": [
+                            "disk/by-id/scsi-SILICON_POWER_HDD16G",
+                            "disk/by-id/ata-SILICON_POWER_HDD16G"
+                        ]
                     },
                     {
                         "model": "WDC WD3200BPVT-7",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 320072933376
+                        "size": 320072933376,
+                        "extra": [
+                            "disk/by-id/scsi-WD3200BPVT-7",
+                            "disk/by-id/ata-WD3200BPVT-7"
+                        ]
                     }
                 ],
                 "system": {
@@ -640,13 +670,21 @@
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdb",
                         "disk": "sdb",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002"
+                        ]
                     }
                 ],
                 "system": {
@@ -771,13 +809,21 @@
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdb",
                         "disk": "sdb",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002"
+                        ]
                     }
                 ],
                 "system": {
@@ -903,13 +949,21 @@
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdb",
                         "disk": "sdb",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002"
+                        ]
                     }
                 ],
                 "system": {
@@ -1027,7 +1081,11 @@
                         "model": "VBOX HARDDISK",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 68719476736
+                        "size": 68719476736,
+                        "extra": [
+                            "disk/by-id/scsi-VBOX_HARDDISK_VB00002",
+                            "disk/by-id/ata-VBOX_HARDDISK_VB00002"
+                        ]
                     }
                 ],
                 "system": {
@@ -1142,7 +1200,11 @@
                         "model": "QEMU HARDDISK",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 68719476736
+                        "size": 68719476736,
+                        "extra": [
+                            "disk/by-id/scsi-SATA_QEMU_HARDDISK_QM00002",
+                            "disk/by-id/ata-QEMU_HARDDISK_V00002"
+                        ]
                     }
                 ],
                 "system": {
@@ -1312,37 +1374,59 @@
                         "model": "Virtual HDisk0",
                         "name": "sdf",
                         "disk": "sdf",
-                        "size": 0
+                        "size": 0,
+                        "extra": [
+                            "disk/by-id/scsi-VBOX_HARDDISK_VB00001"
+                        ]
                     },
                     {
                         "model": "Virtual Floppy0",
                         "name": "sde",
                         "disk": "sde",
-                        "size": 0
+                        "size": 0,
+                        "extra": [
+                            "disk/by-id/scsi-VBOX_FLOPPYDISK_VB00001"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdd",
                         "disk": "sdd",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdc",
                         "disk": "sdc",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sdb",
                         "disk": "sdb",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00003",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00003"
+                        ]
                     },
                     {
                         "model": "TOSHIBA MK1002TS",
                         "name": "sda",
                         "disk": "sda",
-                        "size": 1000204886016
+                        "size": 1000204886016,
+                        "extra": [
+                            "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00004",
+                            "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00004"
+                        ]
                     }
                 ],
                 "system": {

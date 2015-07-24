@@ -411,7 +411,7 @@
             use_gateway: false
             notation: "cidr"
             render_type: "cidr"
-            render_addr_mask: "private"
+            render_addr_mask: null
             map_priority: 2
             configurable: true
           - name: "private"
@@ -421,7 +421,7 @@
             use_gateway: false
             notation: "cidr"
             render_type: "cidr"
-            render_addr_mask: "private"
+            render_addr_mask: null
             map_priority: 2
             configurable: true
         config:

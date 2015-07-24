@@ -16,8 +16,8 @@
 from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.settings import Settings
 import logging
-import os
 import url_access_checker.api as urlck
+import url_access_checker.errors as url_errors
 import urwid
 import urwid.raw_display
 import urwid.web_display
@@ -206,32 +206,10 @@ class bootstrapimg(urwid.WidgetWrap):
                 self.defaults[fieldname]['value'] = newsettings[fieldname]
 
     def check_url(self, url, http_proxy):
-        available = True
-        # XXX: check_urls does not accept proxy settings as an argument,
-        # pass them via the environment. Be careful to restore the previous
-        # value of the environment variable (including null)
-        old_http_proxy = os.environ.get('HTTP_PROXY')
-        if http_proxy:
-            os.environ['HTTP_PROXY'] = http_proxy
-        else:
-            try:
-                del os.environ['HTTP_PROXY']
-            except KeyError:
-                pass
         try:
-            urlck.check_urls([url])
-        except Exception:
-            log.debug("can't download {0}, "
-                      "network problem or a wrong URL", url)
-            available = False
-        if old_http_proxy:
-            os.environ['HTTP_PROXY'] = old_http_proxy
-        else:
-            try:
-                del os.environ['HTTP_PROXY']
-            except KeyError:
-                pass
-        return available
+            return urlck.check_urls([url], proxies={'http': http_proxy})
+        except url_errors.UrlNotAvailable:
+            return False
 
     def checkDistroRepo(self, base_url, http_proxy):
         release_url = '{base_url}/dists/{distro_release}/Release'.format(

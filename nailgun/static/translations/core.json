@@ -466,7 +466,9 @@
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",
                         "edit_name": "Edit Name",
-                        "more_info": "More Info"
+                        "more_info": "More Info",
+                        "view_labels": "View labels",
+                        "view_details": "View details"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",

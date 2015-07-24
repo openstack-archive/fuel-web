@@ -360,10 +360,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             {this.renderRoleList(roles)}
                                         </div>
                                     }
-                                    <div className='node-labels'>
-                                        <i className='glyphicon glyphicon-tags pull-left' />
-                                        {this.renderLabels()}
-                                    </div>
+                                    {!_.isEmpty(this.props.node.get('labels')) &&
+                                        <div className='node-labels'>
+                                            <i className='glyphicon glyphicon-tags pull-left' />
+                                            {this.renderLabels()}
+                                        </div>
+                                    }
                                     <div className={utils.classNames(statusClasses)}>
                                         <i className='glyphicon glyphicon-time' />
                                         {_.contains(['provisioning', 'deploying'], status) ?
@@ -417,7 +419,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         </div>
                         <div className='node-labels'>
                             {!_.isEmpty(node.get('labels')) &&
-                                <button className='btn btn-link' onClick={this.toggleLabelsPopover}>
+                                <button
+                                    className='btn btn-link'
+                                    onClick={this.toggleLabelsPopover}
+                                    title={i18n(ns + 'view_labels')}
+                                >
                                     <i className='glyphicon glyphicon-tag-alt' />
                                     {_.keys(node.get('labels')).length}
                                 </button>
@@ -452,7 +458,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             }
                         </div>
                         {this.renderNodeHardwareSummary()}
-                        <div className='node-settings' onClick={this.showNodeDetails} />
+                        <div className='node-settings' onClick={this.showNodeDetails} title={i18n(ns + 'view_details')} />
                     </label>
                 </div>
             );

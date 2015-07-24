@@ -5,9 +5,9 @@
     state: "available"
     modes_metadata:
       ha_compact:
-        description: "This configuration Deploys OpenStack ready for high availability (HA). Controller services are prepared for HA by setting up a base MySQL/Galera, RabbitMQ and HAProxy so that additional controllers can be deployed NOW, or scaled out LATER. 3 or more controllers are required for a true HA environment."
+        description: "This configuration Deploys OakCloud ready for high availability (HA). Controller services are prepared for HA by setting up a base MySQL/Galera, RabbitMQ and HAProxy so that additional controllers can be deployed NOW, or scaled out LATER. 3 or more controllers are required for a true HA environment."
       multinode:
-        description: "In this configuration the OpenStack controller is deployed separately from the compute and cinder nodes. This mode assumes the presence of 1 controller node and 1 or more compute/cinder nodes. You can add more nodes to scale your cloud later."
+        description: "In this configuration the OakCloud controller is deployed separately from the compute and cinder nodes. This mode assumes the presence of 1 controller node and 1 or more compute/cinder nodes. You can add more nodes to scale your cloud later."
     roles:
       - controller
       - compute
@@ -19,7 +19,7 @@
     roles_metadata:
       controller:
         name: "Controller"
-        description: "The Controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
+        description: "The Controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OakCloud dashboard) and Nova-Scheduler are installed on the controller as well."
         conflicts:
           - compute
         update_required:
@@ -73,7 +73,7 @@
           - controller
       mongo:
         name: "Telemetry - MongoDB"
-        description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
+        description: "A feature-complete and recommended database for storage of metering data from OakCloud Telemetry (Ceilometer)."
         conflicts:
           - compute
           - ceph-osd
@@ -559,7 +559,7 @@
             weight: 30
           debug:
             value: false
-            label: "OpenStack debug logging"
+            label: "OakCloud debug logging"
             description: "Debug logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
@@ -593,10 +593,10 @@
             values:
               - data: "kvm"
                 label: "KVM"
-                description: "Choose this type of hypervisor if you run OpenStack on hardware"
+                description: "Choose this type of hypervisor if you run OakCloud on hardware"
               - data: "qemu"
                 label: "QEMU"
-                description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+                description: "Choose this type of hypervisor if you run OakCloud on virtual hosts."
             label: "Hypervisor type"
             weight: 30
             type: "radio"
@@ -1176,7 +1176,7 @@
     version: "2014.2.2-6.1"
     can_update_from_versions: []
     operating_system: "CentOS"
-    description: "This option will install the OpenStack Juno packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    description: "This option will install the OakCloud v1.1 packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OakCloud deployment."
     attributes_metadata:
       editable:
         kernel_params:
@@ -1207,8 +1207,8 @@
             type: "custom_repo_configuration"
             extra_priority: null
             description: |
-              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-package-updates --help" on the Fuel master node.
-              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+              To create a local repository mirror on the OakCloud master node, please follow the instructions provided by running "fuel-package-updates --help" on the OakCloud master node.
+              Please make sure your OakCloud master node has Internet access to the repository before attempting to create a mirror.
               For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-6.1/reference-architecture.html#fuel-rep-mirror).
             value:
               - type: "rpm"
@@ -1248,7 +1248,7 @@
     version: "2014.2.2-6.1"
     can_update_from_versions: []
     operating_system: "Ubuntu"
-    description: "This option will install the OpenStack Juno packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    description: "This option will install the OakCloud v1.1 packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OakCloud deployment."
     attributes_metadata:
       editable:
         kernel_params:
@@ -1264,8 +1264,8 @@
             extra_priority: null
             description: |
               Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
-              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
-              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+              To create a local repository mirror on the OakCloud master node, please follow the instructions provided by running "fuel-createmirror --help" on the OakCloud master node.
+              Please make sure your OakCloud master node has Internet access to the repository before attempting to create a mirror.
               For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-6.1/operations.html#external-ubuntu-ops).
             value:
               - type: "deb"

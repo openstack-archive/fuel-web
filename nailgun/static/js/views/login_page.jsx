@@ -39,10 +39,8 @@ function($, _, i18n, React) {
                         </div>
                     </div>
                     <div className='login-copyrights'>
-                        {_.contains(app.version.get('feature_groups'), 'mirantis') &&
-                            <p className='text-center'>{i18n('common.copyright')}</p>
-                        }
-                        <p className='text-center'>{i18n('common.version')}: {app.version.get('release')}</p>
+                        <p className='text-center'>{i18n('common.copyright')}</p>
+                        <p className='text-center'>Version: 1.1</p>
                     </div>
                 </div>
             );

@@ -865,16 +865,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
 // PAGE ELEMENTS
 
 .page-title {
-  min-height: 57px;
-  margin-top: 10px;
+  margin: 10px 0 14px;
   .title {
     margin: 0;
     padding: 0;
     color: @white;
     font-size: @base-font-size + 12;
     display: block;
-    height: 32px;
-    overflow: hidden;
     .font-light;
     .text-shadow;
   }
@@ -3671,11 +3668,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
     .cluster-info-value {
       &.name {
-        a, .glyphicon {
+        a {
+          display: inline-block;
+          max-width: 220px;
+          overflow: hidden;
           cursor: pointer;
         }
         .glyphicon {
           margin-left: @dashboard-offset;
+          cursor: pointer;
         }
       }
     }

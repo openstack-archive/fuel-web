@@ -73,7 +73,8 @@ function($, _, React, models, NodeListScreen) {
                 statusesToFilter={[
                     'discover',
                     'error',
-                    'offline'
+                    'offline',
+                    'removing'
                 ]}
                 defaultFilters={['status']}
             />;

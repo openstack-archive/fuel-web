@@ -542,9 +542,11 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     # Only assign IPs for private (GRE) network in 6.1+
     if any([env_version.startswith(v) for v in ['5.0', '5.1', '6.0']]):
         objects.NodeCollection.prepare_for_lt_6_1_deployment(cluster.nodes)
-    else:
+    elif env_version.startswith('6.1'):
         nst = cluster.network_config.get('segmentation_type')
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes, nst)
+        objects.NodeCollection.prepare_for_6_1_deployment(cluster.nodes, nst)
+    else:
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
 
     serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 

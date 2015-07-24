@@ -27,6 +27,8 @@ from nailgun.test.integration.test_orchestrator_serializer \
 
 class TestMellanox(OrchestratorSerializerTestBase):
 
+    env_version = '1111-6.0'
+
     def setUp(self):
         super(TestMellanox, self).setUp()
         self.iser_interface_name = 'eth_iser0'
@@ -36,6 +38,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
     def create_env(self, mode, mellanox=False, iser=False, iser_vlan=None):
         # Create env
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
@@ -71,7 +74,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         cluster_db.attributes.editable = editable_attrs
         self.db.commit()
         cluster_db = objects.Cluster.get_by_uid(self.cluster_id)
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def test_serialize_mellanox_plugin_enabled(self):

@@ -926,7 +926,7 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_admin_ips(instances)
 
     @classmethod
-    def prepare_for_deployment(cls, instances, nst=None):
+    def prepare_for_6_1_deployment(cls, instances, nst=None):
         """Prepare environment for deployment,
         assign management, public, storage, private ips
         """
@@ -941,6 +941,28 @@ class NodeCollection(NailgunCollection):
                        consts.NEUTRON_SEGMENT_TYPES.tun):
                 netmanager.assign_ips(instances, 'private')
             netmanager.assign_admin_ips(instances)
+
+    @classmethod
+    def prepare_for_deployment(cls, instances):
+        """Prepare environment for deployment. Assign IPs for all
+        networks.
+        """
+        if not instances:
+            raise ValueError('Instances parameter value should not be empty')
+
+        cluster = instances[0].cluster
+        netmanager = Cluster.get_network_manager(cluster)
+
+        instance_ids = set(n.id for n in instances)
+        for node_group in cluster.node_groups:
+            nodes = [n for n in node_group.nodes if n.id in instance_ids]
+            if nodes:
+                for network in node_group.networks:
+                    if (network.name != consts.NETWORKS.fuelweb_admin
+                            and network.meta.get('notation')):
+                        netmanager.assign_ips(nodes, network.name)
+
+        netmanager.assign_admin_ips(instances)
 
     @classmethod
     def prepare_for_provisioning(cls, instances):

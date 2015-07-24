@@ -224,7 +224,7 @@ class TestTaskManagers(BaseIntegrationTest):
             {"pending_addition": True, 'roles': ['compute']}])
         cluster_db = self.env.clusters[0]
         # Generate ips, fqdns
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(cluster_db.nodes)
         # First node with status ready
         # should not be readeployed
         self.env.nodes[0].status = 'ready'

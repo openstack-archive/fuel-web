@@ -66,6 +66,10 @@ from nailgun.utils import reverse
 class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
     """Class containts helpers."""
 
+    env_version = '1111-6.0'
+    prepare_for_deployment = \
+        objects.NodeCollection.prepare_for_lt_6_1_deployment
+
     def setUp(self):
         super(OrchestratorSerializerTestBase, self).setUp()
         self.cluster_mock = mock.MagicMock(pending_release_id=None)
@@ -102,7 +106,7 @@ class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
         return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def serialize(self, cluster):
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+        self.prepare_for_deployment(cluster.nodes)
         return self.serializer.serialize(cluster, cluster.nodes)
 
     def _make_data_copy(self, data_to_copy):
@@ -149,7 +153,9 @@ class TestReplacedDeploymentInfoSerialization(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestReplacedDeploymentInfoSerialization, self).setUp()
-        self.cluster = self.env.create_cluster(api=False)
+        self.cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={'api': False})
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def test_replaced_tasks_is_not_preserved(self):
@@ -177,12 +183,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster = self.create_env('ha_compact')
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
-    def create_env(self, mode, network_manager='FlatDHCPManager',
-                   env_version=None):
-        release_kwargs = {}
-        if env_version:
-            release_kwargs['version'] = env_version
-
+    def create_env(self, mode, network_manager='FlatDHCPManager'):
         node_args = [
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
@@ -192,14 +193,14 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
              'pending_addition': True}]
 
         cluster = self.env.create(
-            release_kwargs=release_kwargs,
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
                 'net_manager': network_manager},
             nodes_kwargs=node_args)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.prepare_for_deployment(cluster_db.nodes)
         self.db.flush()
         return cluster_db
 
@@ -227,7 +228,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
 
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        self.prepare_for_deployment(self.cluster.nodes)
         self.db.flush()
 
         node_db = self.db.query(Node).get(node['id'])
@@ -249,7 +250,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
 
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        self.prepare_for_deployment(self.cluster.nodes)
         self.db.flush()
 
         node_db = self.db.query(Node).get(node['id'])
@@ -320,8 +321,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                                  ref_node['internal_address'])
 
     def test_flatdhcp_manager(self):
-        cluster = self.create_env('ha_compact')
-        facts = self.serializer.serialize(cluster, cluster.nodes)
+        facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
         for fact in facts:
             self.assertEqual(
                 fact['novanetwork_parameters']['network_manager'],
@@ -332,14 +332,13 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                 fact['novanetwork_parameters']['network_size'], 65536)
 
     def test_vlan_manager(self):
-        cluster = self.create_env('ha_compact')
         data = {'networking_parameters': {'net_manager': 'VlanManager'}}
         url = reverse('NovaNetworkConfigurationHandler',
-                      kwargs={'cluster_id': cluster.id})
+                      kwargs={'cluster_id': self.cluster.id})
         self.app.put(url, jsonutils.dumps(data),
                      headers=self.default_headers,
                      expect_errors=False)
-        facts = self.serializer.serialize(cluster, cluster.nodes)
+        facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
 
         for fact in facts:
             self.assertEqual(fact['vlan_interface'], 'eth0')
@@ -473,7 +472,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
             cluster_id=cluster['id'])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(cluster_db.nodes)
         objects.Cluster.set_primary_roles(cluster_db, cluster_db.nodes)
         self.db.flush()
         return cluster_db
@@ -733,8 +732,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             cluster_id=cluster['id'])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        objects.NodeCollection.prepare_for_6_1_deployment(
+            cluster_db.nodes, segment_type)
         objects.Cluster.set_primary_roles(cluster_db, cluster_db.nodes)
         self.db.flush()
         return cluster_db
@@ -1186,7 +1185,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes, 'gre')
+        objects.NodeCollection.prepare_for_6_1_deployment(cluster.nodes, 'gre')
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -1214,6 +1213,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
+    env_version = '1111-5.0'
+
     def setUp(self):
         super(TestNovaOrchestratorHASerializer, self).setUp()
         self.cluster = self.create_env('ha_compact')
@@ -1221,6 +1222,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def create_env(self, mode):
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
             },
@@ -1234,7 +1236,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -1375,6 +1377,8 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
 class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
 
+    env_version = '1111-5.1'
+
     @property
     def serializer(self):
         self.cluster_mock.release.environment_version = '5.1'
@@ -1442,6 +1446,8 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
 
 
 class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
+
+    env_version = '1111-5.0'
 
     @property
     def serializer(self):
@@ -1513,9 +1519,10 @@ class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
 # TODO(awoodward): multinode deprecation: probably has duplicates
 class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
+    new_env_release_version = '1111-6.0'
+
     def setUp(self):
         super(TestNeutronOrchestratorSerializer, self).setUp()
-        self.new_env_release_version = None
         self.cluster = self.create_env('ha_compact')
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
@@ -1523,6 +1530,10 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         release_kwargs = {}
         if self.new_env_release_version:
             release_kwargs['version'] = self.new_env_release_version
+            # unique name is required as some tests create releases with
+            # the same version
+            release_kwargs['name'] = \
+                self.new_env_release_version + segment_type
         cluster = self.env.create(
             release_kwargs=release_kwargs,
             cluster_kwargs={
@@ -1538,8 +1549,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                  'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        self.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def serialize_env_w_version(self, version):
@@ -1648,7 +1658,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_serialize_node(self):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        self.prepare_for_deployment(self.cluster.nodes)
 
         node_db = self.db.query(Node).get(node['id'])
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
@@ -1670,7 +1680,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 self.db.delete(ip)
             self.db.flush()
 
-            objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+            self.prepare_for_deployment(self.cluster.nodes)
             node_list = self.serializer.get_common_attrs(self.cluster)['nodes']
 
             roles_w_public_count = 0
@@ -1756,7 +1766,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         for assign in assign_public_options:
             self.set_assign_public_to_all_nodes(self.cluster, assign)
 
-            objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+            self.prepare_for_deployment(self.cluster.nodes)
             serialized_nodes = self.serializer.serialize(self.cluster,
                                                          self.cluster.nodes)
             need_public_nodes_count = set()
@@ -1842,6 +1852,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'private' in (fact['network_scheme']['roles']), False)
 
     def test_tun_segmentation(self):
+        self.new_env_release_version = '2015.1.0-7.0'
+        self.prepare_for_deployment = \
+            objects.NodeCollection.prepare_for_deployment
         cluster = self.create_env('ha_compact', 'tun')
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
@@ -1854,16 +1867,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'private', fact['network_scheme']['roles'])
 
     def test_gw_added_but_default_gw_is_ex_or_admin(self):
-        self.new_env_release_version = '2014.2.-6.0'
-        cluster = self.create_env('ha_compact', 'gre')
-
+        cluster = self.cluster
         networks = objects.Cluster.get_default_group(cluster).networks
         for net in networks:
             if net.name in ('storage', 'management'):
                 net.gateway = str(IPNetwork(net["cidr"]).cidr[1])
         self.db.flush()
 
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+        self.prepare_for_deployment(cluster.nodes)
         serializer = get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
         facts = serializer.serialize(cluster, cluster.nodes)
 
@@ -1936,6 +1947,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
             ]
         }
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': segment_type,
@@ -1948,8 +1960,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        self.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def test_vlan_splinters_disabled(self):
@@ -2123,6 +2134,8 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
 
 class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
+    env_version = '1111-5.0'
+
     def setUp(self):
         super(TestNeutronOrchestratorHASerializer, self).setUp()
         self.cluster = self.create_env('ha_compact')
@@ -2130,6 +2143,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def create_env(self, mode):
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
@@ -2146,7 +2160,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -2186,10 +2200,14 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
 class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
 
+    def create_release(self):
+        self.release_id = self.env.create_release(version=self.env_version).id
+
     def create_env(self, nodes_count=2, nic_count=3, segment_type='vlan'):
         cluster = self.env.create_cluster(
             net_provider='neutron',
-            net_segment_type=segment_type)
+            net_segment_type=segment_type,
+            release_id=self.release_id)
         self.env.create_nodes_w_interfaces_count(
             nodes_count=1,
             if_count=nic_count,
@@ -2244,6 +2262,7 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
                 self.check_add_bond_msg_non_lacp(bonds[0], mode)
 
     def test_bonds_serialization(self):
+        self.create_release()
         for mode in consts.BOND_MODES:
             self.check_bond_with_mode(mode)
 
@@ -2253,6 +2272,7 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
     def setUp(self):
         super(TestCephOsdImageOrchestratorSerialize, self).setUp()
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': 'multinode'},
             nodes_kwargs=[
@@ -2279,6 +2299,7 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
 
     def create_env(self, nodes, osd_pool_size='2'):
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': 'multinode'},
             nodes_kwargs=nodes)
@@ -2323,8 +2344,11 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
 
 class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
 
+    env_version = '1111-5.0'
+
     def create_env(self):
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': 'ha_compact',
                 'network_manager': 'FlatDHCPManager'
@@ -2336,7 +2360,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
             ]
         )
         cluster = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+        self.prepare_for_deployment(cluster.nodes)
         return cluster
 
     @property
@@ -2364,6 +2388,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def create_env(self, mode, segment_type='gre'):
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
@@ -2383,8 +2408,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         self.db.commit()
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        self.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def test_serialize_node(self):
@@ -2410,9 +2434,12 @@ class BaseDeploymentSerializer(base.BaseIntegrationTest):
     node_name = 'node name'
     # Needs to be set in childs
     serializer = None
+    env_version = '2014.2-6.1'
+    prepare_for_deployment = objects.NodeCollection.prepare_for_6_1_deployment
 
     def create_env(self, mode):
         return self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
@@ -2556,7 +2583,7 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
     def setUp(self):
         super(TestDeploymentMultinodeSerializer61, self).setUp()
         self.cluster = self.create_env('multinode')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        self.prepare_for_deployment(self.env.nodes)
         self.serializer = DeploymentMultinodeSerializer61(self.cluster)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
@@ -2578,7 +2605,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
     def setUp(self):
         super(TestDeploymentAttributesSerialization61, self).setUp()
         self.cluster = self.create_env('ha_compact')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
+        self.prepare_for_deployment(self.env.nodes, 'gre')
         self.serializer = DeploymentHASerializer61(self.cluster)
 
     @mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
@@ -2625,7 +2652,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
     def setUp(self):
         super(TestDeploymentHASerializer61, self).setUp()
         self.cluster = self.create_env('ha_compact')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
+        self.prepare_for_deployment(self.env.nodes, 'gre')
         self.serializer = DeploymentHASerializer61(self.cluster)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
@@ -2696,6 +2723,9 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
 
 class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
+    prepare_for_deployment = objects.NodeCollection.prepare_for_6_1_deployment
+    env_version = '2014.2-6.1'
+
     def setUp(self):
         super(TestSerializeInterfaceDriversData, self).setUp()
 
@@ -2713,6 +2743,7 @@ class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
             ]
         }
         cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': segment_type
@@ -2725,7 +2756,7 @@ class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
         self.serializer = DeploymentHASerializer61(cluster)
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def test_interface_driver_bus_info(self):
@@ -2788,10 +2819,12 @@ class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
 class TestDeploymentHASerializer50(BaseDeploymentSerializer):
 
+    env_version = '1111-5.0'
+
     def setUp(self):
         super(TestDeploymentHASerializer50, self).setUp()
         self.cluster = self.create_env('ha_compact')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        objects.NodeCollection.prepare_for_lt_6_1_deployment(self.env.nodes)
         self.serializer = DeploymentHASerializer50(self.cluster)
 
     def test_glance_properties(self):
@@ -2800,10 +2833,12 @@ class TestDeploymentHASerializer50(BaseDeploymentSerializer):
 
 class TestDeploymentMultinodeSerializer50(BaseDeploymentSerializer):
 
+    env_version = '1111-5.0'
+
     def setUp(self):
         super(TestDeploymentMultinodeSerializer50, self).setUp()
         self.cluster = self.create_env('multinode')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        objects.NodeCollection.prepare_for_lt_6_1_deployment(self.env.nodes)
         self.serializer = DeploymentMultinodeSerializer50(self.cluster)
 
     def test_glance_properties(self):

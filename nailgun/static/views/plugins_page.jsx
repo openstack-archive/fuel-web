@@ -83,17 +83,12 @@ function(_, i18n, React, models, utils) {
             );
         },
         render: function() {
-            var links = {
-                mirantis: {
-                    catalog: 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/',
-                    documentation: 'https://docs.mirantis.com/openstack/fuel/fuel-master/plugin-dev.html'
-                },
-                experimental: {
-                    catalog: 'https://www.fuel-infra.org/plugins/catalog.html',
-                    documentation: 'https://docs.mirantis.com/openstack/fuel/fuel-master/plugin-dev.html'
-                }
-            };
-            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
+            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+                links = {
+                    catalog: isMirantisIso ? 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' : 'https://www.fuel-infra.org/plugins/catalog.html',
+                    driverlog: 'http://stackalytics.com/driverlog/?project_id=openstack%2Ffuel&vendor=&release_id=',
+                    documentation: utils.composeDocumentationLink('plugin-dev.html')
+                };
             return (
                 <div className='plugins-page'>
                     <div className='page-title'>
@@ -109,8 +104,9 @@ function(_, i18n, React, models, utils) {
                                         {i18n('plugins_page.no_plugins')}
                                         <span> {i18n('plugins_page.more_info')}:</span>
                                         <ul>
-                                            <li><a href={links[isMirantisIso ? 'mirantis' : 'experimental'].catalog} target='_blank'>{i18n('plugins_page.plugins_catalog')}</a></li>
-                                            <li><a href={links[isMirantisIso ? 'mirantis' : 'experimental'].documentation} target='_blank'>{i18n('plugins_page.plugins_documentation')}</a></li>
+                                            {_.map(links, function(link, name) {
+                                                return <li><a href={link} target='_blank'>{i18n('plugins_page.plugins_' + name)}</a></li>;
+                                            })}
                                         </ul>
                                     </div>
                                 }

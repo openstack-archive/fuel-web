@@ -267,6 +267,7 @@
                 "centos": "CentOS",
                 "more_info": "For more information please visit",
                 "plugins_catalog": "Plugins Catalog",
+                "plugins_driverlog": "DriverLog",
                 "plugins_documentation": "Plugins Documentation",
                 "no_plugins": "There are no plugins installed."
             },

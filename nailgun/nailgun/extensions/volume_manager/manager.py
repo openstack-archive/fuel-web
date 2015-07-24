@@ -604,17 +604,15 @@ class VolumeManager(object):
         for d in sorted(node.disks, key=lambda i: i['name']):
             boot_is_raid = True if disks_count > 1 else False
 
-            existing_disk = filter(
-                lambda disk: d['disk'] == disk['id'],
-                only_disks(self.volumes))
-
+            existing_disk = self.find_existing_disk(d, self.volumes)
+            disk_id = existing_disk[0]['id'] if existing_disk else d["disk"]
             disk_volumes = existing_disk[0].get(
                 'volumes', []) if existing_disk else []
 
             disk = Disk(
                 disk_volumes,
                 self.call_generator,
-                d["disk"],
+                disk_id,
                 d["name"],
                 byte_to_megabyte(d["size"]),
                 boot_is_raid=boot_is_raid,
@@ -627,6 +625,29 @@ class VolumeManager(object):
         self.__logger('Initialized with node: %s' % node.full_name)
         self.__logger('Initialized with volumes: %s' % self.volumes)
         self.__logger('Initialized with disks: %s' % self.disks)
+
+    def find_existing_disk(self, disk_info, volumes):
+        """Find existing disk among volume data if possible.
+
+        It tries to find a volume which has the same set of 'extra' dev links
+        as disk has. Comparing disks by set of 'extra' dev links such as
+        'by-id' is way more reliable than just by 'by-path' links which may
+        vary from one system to another.
+
+        If existing disk isn't found by a set of 'extra' links, then disk will
+        be guessed by 'by-path' link as a fallback.
+        """
+        existing_disk = None
+        if disk_info.get('extra'):
+            existing_disk = filter(
+                lambda disk: set(disk_info['extra']) == set(disk.get('extra',
+                                                                     [])),
+                only_disks(volumes))
+        if not existing_disk:
+            existing_disk = filter(
+                lambda disk: disk_info['disk'] == disk['id'],
+                only_disks(volumes))
+        return existing_disk
 
     def set_volume_size(self, disk_id, volume_name, size):
         """Set size of volume."""

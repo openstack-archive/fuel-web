@@ -27,7 +27,9 @@ from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
 from nailgun.extensions.volume_manager.manager import get_node_spaces
 from nailgun.extensions.volume_manager.manager import only_disks
 from nailgun.extensions.volume_manager.manager import only_vg
+from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import BaseTestCase
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
 
@@ -124,6 +126,56 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         updated_disks = self.put(node_db.id, disks)
 
         self.assertEqual(disks, updated_disks)
+
+    def test_volumes_manager_disk_w_extra(self):
+        disks = [
+            {
+                "model": "TOSHIBA MK1002TS",
+                "name": "sda",
+                "disk": "sda",
+                "extra": [
+                    "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                    "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001",
+                ],
+                "size": 1000204886016
+            },
+            {
+                "model": "TOSHIBA MK1002TS",
+                "name": "sdb",
+                "disk": "sdb",
+                "extra": [
+                    "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                    "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002",
+                ],
+                "size": 1000204886016
+            },
+        ]
+        self.env.create(
+            nodes_kwargs=[{
+                "roles": [],
+                "pending_roles": ['controller'],
+                "meta": {"disks": disks}
+            }]
+        )
+        node_db = self.env.nodes[0]
+
+        # simulate disk change
+        new_meta = deepcopy(node_db.meta)
+        new_meta['disks'][0]['disk'] = 'sdb'
+        new_meta['disks'][0]['name'] = 'sdb'
+        new_meta['disks'][1]['disk'] = 'sda'
+        new_meta['disks'][1]['name'] = 'sda'
+
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({
+                'mac': node_db.mac,
+                'meta': new_meta}),
+            headers=self.default_headers)
+
+        changed_disks = self.get(node_db.id)
+        self.assertEqual(changed_disks[0]['extra'], disks[1]['extra'])
+        self.assertEqual(changed_disks[1]['extra'], disks[0]['extra'])
 
     def test_default_attrs_after_creation(self):
         self.env.create_node(api=True)
@@ -463,6 +515,46 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
         node_db = self.create_node('ceph-osd')
         response = self.get(node_db.id)
         self.check_volumes(response, ['os', 'ceph', 'cephjournal'])
+
+
+@patch.object(VolumeManager, '__init__', return_value=None)
+@patch('nailgun.extensions.volume_manager.manager.only_disks')
+class TestVolumeManagerDisks(BaseTestCase):
+    def test_find_existing_disk_no_extra(self, mock_only_disks, mock_init):
+        # disk and volumes doesn't have extra links
+        mock_only_disks.return_value = [
+            {'id': 'not_expected_disk'},
+            {'id': 'expected_disk'},
+        ]
+        disk_info = {'disk': 'expected_disk'}
+        actual_disk = VolumeManager('').find_existing_disk(disk_info, None)
+        self.assertEqual('expected_disk', actual_disk[0]['id'])
+
+    def test_find_existing_disk_extra_matches(self, mock_only_disks,
+                                              mock_init):
+        # disk matches by extra links
+        mock_only_disks.return_value = [
+            {'extra': ['by-id/link3', 'by-id/link4'],
+             'id': 'not_expected_disk'},
+            {'extra': ['by-id/link1', 'by-id/link2'], 'id': 'expected_disk'},
+        ]
+        disk_info = {'disk': 'expected_disk',
+                     'extra': ['by-id/link1', 'by-id/link2']}
+        actual_disk = VolumeManager('').find_existing_disk(disk_info, None)
+        self.assertEqual('expected_disk', actual_disk[0]['id'])
+
+    def test_find_existing_disk_extra_doesnt_match(self, mock_only_disks,
+                                                   mock_init):
+        # disk doesn't match by extra links, so switching to fallback
+        mock_only_disks.return_value = [
+            {'extra': ['by-id/link3', 'by-id/link4'],
+             'id': 'not_expected_disk'},
+            {'extra': ['by-id/link1'], 'id': 'expected_disk'},
+        ]
+        disk_info = {'disk': 'expected_disk',
+                     'extra': ['by-id/link1', 'by-id/link2']}
+        actual_disk = VolumeManager('').find_existing_disk(disk_info, None)
+        self.assertEqual('expected_disk', actual_disk[0]['id'])
 
 
 class TestVolumeManager(BaseIntegrationTest):

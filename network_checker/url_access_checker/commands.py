@@ -31,6 +31,8 @@ class CheckUrls(command.Command):
         parser = super(CheckUrls, self).get_parser(prog_name)
         parser.add_argument('urls', type=str, nargs='+',
                             help='List of urls to check')
+        parser.add_argument('--timeout', type=int, default=60,
+                            help='Max time to wait for response, Default: 60')
         return parser
 
     def take_action(self, parsed_args):

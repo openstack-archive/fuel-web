@@ -460,6 +460,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     </div>
                                 </div>
                             </div>
+                            {checkedBonds.length > 1 &&
+                                <div className='alert alert-warning'>{i18n(ns + 'several_bonds_warning')}</div>
+                            }
                             {invalidSpeedsForBonding &&
                                 <div className='alert alert-warning'>{i18n(ns + 'bond_speed_warning')}</div>
                             }

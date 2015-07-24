@@ -344,6 +344,7 @@
                         "bond_button": "Bond Interfaces",
                         "unbond_button": "Unbond Interfaces",
                         "bond_speed_warning": "Bonding interfaces of different speeds is not recommended",
+                        "several_bonds_warning": "Bonds cannot be bonded together",
                         "speed": "Speed",
                         "bonding_mode": "Mode",
                         "bonding_modes": {

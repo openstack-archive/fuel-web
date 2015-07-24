@@ -33,6 +33,8 @@ function usage {
   echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
   echo "  -w, --webui                 Run all UI tests"
   echo "  -W, --no-webui              Don't run all UI tests"
+  echo "  -e, --extensions            Run EXTENSIONS unit/integration tests"
+  echo "  -E, --no-extensions         Don't run EXTENSIONS unit/integration tests"
   echo "      --ui-lint               Run UI linting tasks"
   echo "      --no-ui-lint            Don't run UI linting tasks"
   echo "      --ui-unit               Run UI unit tests"
@@ -62,6 +64,8 @@ function process_options {
       -P|--no-flake8) no_flake8_checks=1;;
       -w|--webui) ui_lint_checks=1; ui_unit_tests=1; ui_func_tests=1;;
       -W|--no-webui) no_ui_lint_checks=1; no_ui_unit_tests=1; no_ui_func_tests=1;;
+      -e|--extensions) extensions_tests=1;;
+      -E|--no-extensions) no_extensions_tests=1;;
       --ui-lint) ui_lint_checks=1;;
       --no-ui-lint) no_ui_lint_checks=1;;
       --ui-unit) ui_unit_tests=1;;
@@ -94,6 +98,7 @@ testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 NAILGUN_XUNIT=${NAILGUN_XUNIT:-"$ROOT/nailgun.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
+EXTENSIONS_XUNIT=${EXTENSIONS_XUNIT:-"$ROOT/extensions.xml"}
 UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
 NAILGUN_PORT=${NAILGUN_PORT:-8003}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
@@ -121,6 +126,8 @@ ui_unit_tests=0
 no_ui_unit_tests=0
 ui_func_tests=0
 no_ui_func_tests=0
+extensions_tests=0
+no_extensions_tests=0
 certain_tests=0
 ui_func_selenium_tests=0
 
@@ -154,15 +161,18 @@ function run_tests {
       $ui_func_selenium_tests -eq 0 && \
       $upgrade_system -eq 0 && \
       $shotgun_tests -eq 0 && \
+      $extensions_tests -eq 0 && \
       $flake8_checks -eq 0 ]]; then
 
-    if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
-    if [ $no_ui_lint_checks -ne 1 ]; then ui_lint_checks=1; fi
-    if [ $no_ui_unit_tests -ne 1 ];  then ui_unit_tests=1;  fi
-    if [ $no_ui_func_tests -ne 1 ];  then ui_func_tests=1;  fi
-    if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
-    if [ $no_shotgun_tests -ne 1 ];  then shotgun_tests=1;  fi
-    if [ $no_flake8_checks -ne 1 ];  then flake8_checks=1;  fi
+    if [ $no_nailgun_tests -ne 1 ];    then nailgun_tests=1;  fi
+    if [ $no_ui_lint_checks -ne 1 ];   then ui_lint_checks=1; fi
+    if [ $no_ui_unit_tests -ne 1 ];    then ui_unit_tests=1;  fi
+    if [ $no_ui_func_tests -ne 1 ];    then ui_func_tests=1;  fi
+    if [ $no_upgrade_system -ne 1 ];   then upgrade_system=1; fi
+    if [ $no_shotgun_tests -ne 1 ];    then shotgun_tests=1;  fi
+    if [ $no_flake8_checks -ne 1 ];    then flake8_checks=1;  fi
+    if [ $no_extensions_tests -ne 1 ]; then extensions_tests=1; fi
+
   fi
 
   # Run all enabled tests
@@ -204,6 +214,11 @@ function run_tests {
   if [ $shotgun_tests -eq 1 ]; then
     echo "Starting Shotgun tests..."
     run_shotgun_tests || errors+=" shotgun_tests"
+  fi
+
+  if [ $extensions_tests -eq 1 ]; then
+    echo "Starting Extensions tests..."
+    run_extensions_tests || errors+=" extensions_tests"
   fi
 
   # print failed tests
@@ -439,6 +454,21 @@ function run_flake8_subproject {
   popd >> /dev/null
   return $result
 }
+
+
+# Run tests for Nailgun extensions
+function run_extensions_tests {
+  local EXTENSIONS_PATH="$ROOT/nailgun/nailgun/extensions/"
+  local NAILGUN_PATH="$ROOT/nailgun/"
+  local result=0
+
+  pushd "${NAILGUN_PATH}" >> /dev/null
+  tox -epy26 -- -vv "${EXTENSIONS_PATH}" --junit-xml $EXTENSIONS_XUNIT || result=1
+  popd >> /dev/null
+
+  return $result
+}
+
 
 # Check python code with flake8 and pep8.
 #

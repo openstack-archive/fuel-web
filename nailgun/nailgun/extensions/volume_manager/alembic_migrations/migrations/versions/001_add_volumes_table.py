@@ -24,22 +24,37 @@ Create Date: 2015-06-19 16:16:44.513714
 revision = '086cde3de7cf'
 down_revision = None
 
+import logging
+
 from alembic import context
 from alembic import op
 from oslo.serialization import jsonutils
-
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
+from nailgun.extensions.utils import is_buffer_table_exist
 
-
+logger = logging.getLogger('alembic.migration')
 config = context.config
 table_prefix = config.get_main_option('table_prefix')
 table_volumes_name = '{0}node_volumes'.format(table_prefix)
 
 
 def migrate_data_from_core(connection):
+    if not is_buffer_table_exist(connection):
+        # NOTE(eli): if there is no buffer table it means that there
+        # is no core database we should not run data migrations includes
+        # this case because extension might be installed and used
+        # separately from Nailgun core and its database
+        logger.warn(
+            "Cannot find buffer table '{0}'. "
+            "Don't run data migrations from buffer table, "
+            "because extension might be installed and used "
+            "separately from Nailgun core and its database".format(
+                extensions_migration_buffer_table_name))
+        return
+
     ext_name = 'volume_manager'
 
     select_query = sa.sql.text(

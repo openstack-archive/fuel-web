@@ -33,7 +33,7 @@ class TestTaskHelpers(BaseTestCase):
             nodes_kwargs=nodes)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_6_1_deployment(cluster_db.nodes)
         self.db.flush()
         return cluster_db
 

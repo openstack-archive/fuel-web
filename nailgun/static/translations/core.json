@@ -1353,7 +1353,7 @@
                     "network": {
                         "title": "网络",
                         "release_alert": "__releaseName__不支持Neutron",
-                        "nova_network": "Nova-Network",
+                        "nova_network": "(DEPRECATED) Legacy Networking (nova-network)",
                         "neutr_gre": "Neutron GRE",
                         "neutr_vlan": "Neutron VLAN"
                     },
@@ -2587,7 +2587,7 @@
                     "network": {
                         "title": "네트워크",
                         "alert": "Neutron와 __releaseName__에서는 지원되지 않습니다.",
-                        "nova_network": "Nova-Network",
+                        "nova_network": "(DEPRECATED) Legacy Networking (nova-network)",
                         "neutr_gre": "GRE를 사용하는 Neutron",
                         "neutr_vlan": "VLAN을 사용하는 Neutron"
                     },

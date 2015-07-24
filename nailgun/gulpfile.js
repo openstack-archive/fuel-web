@@ -87,7 +87,7 @@ var buildResultFilter = filter([
     'main.js.map',
     'vendor/bower/requirejs/require.js',
     'vendor/bower/requirejs/require.js.map',
-    'styles/main.css',
+    'styles/*.css',
     'favicon.ico',
     'img/**',
     '**/*.+(ttf|eot|svg|woff|woff2)',
@@ -212,7 +212,11 @@ var jsFiles = [
     'static/tests/**/*.js',
     '!static/tests/bower/**/*.js'
 ];
-var styleFiles = 'static/**/*.less';
+var styleFiles = [
+    'static/**/*.less',
+    'static/**/*.css',
+    '!static/vendor/**'
+];
 
 gulp.task('jscs:fix', function() {
     return gulp.src(jsFiles, {base: '.'})

@@ -73,6 +73,9 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                         loading: false,
                         screenData: data || {}
                     });
+                }, this))
+                .fail(_.bind(function() {
+                    app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
                 }, this));
         },
         getScreen: function(props) {
@@ -100,7 +103,7 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                     this.setState(_.extend(newState, {loading: true}));
                     this.loadScreenData(screen, screenOptions);
                 } else {
-                    this.setState(newState);
+                    this.setState(_.extend(newState, {loading: false}));
                 }
             }
         },

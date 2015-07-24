@@ -719,14 +719,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var ns = 'cluster_page.nodes_tab.node_management_panel.';
 
-            var sampleNode, disksConflict, interfaceConflict;
-            if (this.props.mode == 'list') {
-                sampleNode = this.props.nodes.at(0);
-                disksConflict = this.props.nodes.any(function(node) {
-                    var roleConflict = _.difference(_.union(sampleNode.get('roles'), sampleNode.get('pending_roles')), _.union(node.get('roles'), node.get('pending_roles'))).length;
-                    return roleConflict || !_.isEqual(sampleNode.resource('disks'), node.resource('disks'));
-                });
-                interfaceConflict = _.uniq(this.props.nodes.map(function(node) {return node.resource('interfaces');})).length > 1;
+            var disksConflict, interfaceConflict;
+            if (this.props.mode == 'list' && this.props.nodes.length) {
+                disksConflict = !this.props.nodes.isDisksConfigurationAvailable();
+                interfaceConflict = !this.props.nodes.isInterfacesConfigurationAvailable();
             }
 
             var managementButtonClasses = _.bind(function(isActive, className) {

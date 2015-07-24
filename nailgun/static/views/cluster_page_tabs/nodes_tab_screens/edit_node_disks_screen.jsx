@@ -40,13 +40,9 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                 var cluster = options.cluster,
                     nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);}),
                     nodes = new models.Nodes(cluster.get('nodes').getByIds(nodeIds));
-                if (nodes.length != nodeIds.length) {
-                    utils.showErrorDialog({
-                        title: i18n('cluster_page.nodes_tab.node_loading_error.title'),
-                        message: i18n('cluster_page.nodes_tab.node_loading_error.load_error')
-                    });
-                    ComponentMixins.nodeConfigurationScreenMixin.goToNodeList(cluster);
-                    return;
+
+                if (nodes.length != nodeIds.length || !nodes.isDisksConfigurationAvailable()) {
+                    return $.Deferred().reject();
                 }
 
                 var volumes = new models.Volumes();

@@ -438,6 +438,19 @@ define([
         },
         getLabelValues: function(label) {
             return this.invoke('getLabel', label);
+        },
+        isInterfacesConfigurationAvailable: function() {
+            if (!this.length) return false;
+            return _.uniq(this.invoke('resource', 'interfaces')).length == 1;
+        },
+        isDisksConfigurationAvailable: function() {
+            if (!this.length) return false;
+            var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles')),
+                disks = this.at(0).resource('disks');
+            return !this.any(function(node) {
+                var roleConflict = _.difference(roles, _.union(node.get('roles'), node.get('pending_roles'))).length;
+                return roleConflict || !_.isEqual(disks, node.resource('disks'));
+            });
         }
     });
 

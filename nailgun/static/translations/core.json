@@ -334,10 +334,6 @@
                         "disks": "Configure Disks",
                         "interfaces": "Configure Interfaces"
                     },
-                    "node_loading_error": {
-                        "title": "Error loading nodes",
-                        "load_error": "Some nodes failed to load"
-                    },
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
@@ -1751,10 +1747,6 @@
                             "title": "インターフェース設定エラー",
                             "saving_warning": "変更を適用できませんでした",
                             "load_defaults_warning": "デフォルト設定を読み込めませんでした"
-                        },
-                        "node_loading_error": {
-                            "title": "ノード読み出しエラー",
-                            "load_error": "一部のノードのロードに失敗しました"
                         },
                         "validation": {
                             "too_many_untagged_networks": "タグなしのネットワークは同じインタフェースに割り当てることはできません",

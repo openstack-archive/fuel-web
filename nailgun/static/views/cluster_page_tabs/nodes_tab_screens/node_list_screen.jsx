@@ -763,9 +763,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 <div className='btn-group' data-toggle='buttons'>
                                     {_.map(this.props.cluster.viewModes(), function(mode) {
                                         return (
-                                            <controls.Tooltip text={i18n(ns + mode + '_mode_tooltip')}>
+                                            <controls.Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                                                 <label
-                                                    key={mode + '-view'}
                                                     className={utils.classNames(managementButtonClasses(mode == this.props.viewMode, mode))}
                                                     onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
                                                 >
@@ -782,9 +781,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 </div>
                             </div>
                             {this.props.mode != 'edit' && [
-                                <controls.Tooltip text={i18n(ns + 'labels_tooltip')}>
+                                <controls.Tooltip key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
                                     <button
-                                        key='labels-btn'
                                         disabled={!this.props.nodes.length}
                                         onClick={this.props.nodes.length && this.toggleLabelsPanel}
                                         className={utils.classNames(managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels'))}
@@ -792,9 +790,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         <i className='glyphicon glyphicon-tag' />
                                     </button>
                                 </controls.Tooltip>,
-                                <controls.Tooltip text={i18n(ns + 'sort_tooltip')}>
+                                <controls.Tooltip key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
                                     <button
-                                        key='sorters-btn'
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleSorters}
                                         className={utils.classNames(managementButtonClasses(this.state.areSortersVisible))}
@@ -802,9 +799,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         <i className='glyphicon glyphicon-sort' />
                                     </button>
                                 </controls.Tooltip>,
-                                <controls.Tooltip text={i18n(ns + 'filter_tooltip')}>
+                                <controls.Tooltip key='filters-btn' text={i18n(ns + 'filter_tooltip')}>
                                     <button
-                                        key='filters-btn'
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleFilters}
                                         className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible))}
@@ -813,9 +809,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </button>
                                 </controls.Tooltip>,
                                 !this.state.activeSearch && (
-                                    <controls.Tooltip text={i18n(ns + 'search_tooltip')}>
+                                    <controls.Tooltip key='search-btn' text={i18n(ns + 'search_tooltip')}>
                                         <button
-                                            key='search-btn'
                                             disabled={!this.props.screenNodes.length}
                                             onClick={this.activateSearch}
                                             className={utils.classNames(managementButtonClasses(false, 'btn-search'))}

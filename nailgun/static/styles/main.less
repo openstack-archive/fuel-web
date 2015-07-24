@@ -1892,7 +1892,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
     /* override node styles for compact panel */
     .compact-node {
       @compact-node-indent: 5px;
-
       width: 20%;
       float: left;
       position: relative;
@@ -2092,29 +2091,29 @@ button, .btn:not(.btn-link) {.font-semibold;}
         }
 
         .node-stats {
-          @node-icon-width: 28px;
+          @node-icon-width: 20px;
           .font-semibold;
           .glyphicon {
-            float: left;
             width: @node-icon-width;
-            color: @gray;
             top: 4px;
-            left: 2px;
+            left: 0px;
             + div {
-              margin-left: @node-icon-width;
+              display: inline-block;
             }
           }
           .role-list {
-            font-size: @base-font-size - 2;
-            margin-bottom: @compact-node-indent;
+            font-size: @base-font-size - 4;
+            margin-bottom: @compact-node-indent * 2;
+            margin-left: 24px;
+            .text-emboss;
             ul {
               margin: 0;
-              margin-left: @node-icon-width;
             }
           }
           .node-status {
             text-transform: uppercase;
-            font-size: @base-font-size - 2;
+            font-size: @base-font-size - 4;
+            margin-left: 24px;
             span {
               padding-right: @compact-node-indent;
             }
@@ -2171,11 +2170,10 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .font-semibold;
       ul {
         padding: 0;
-        display: inline;
+        display: inline-block;
         li {
           display: inline-block;
-          float: left;
-          margin-right: 5px;
+          margin-right: 4px;
           &:after {
             content: "·";
             margin-left: 3px;
@@ -2190,8 +2188,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
     .node-labels {
       text-align: left;
+      margin-left: 24px;
       ul {
-        padding-left: 28px;
+        padding: 0px;
+        margin-bottom: 5px;
+        display: inline-block;
       }
       .glyphicon {
         font-size: @base-font-size - 2;
@@ -2209,6 +2210,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         margin: 0 3px 2px 0;
         white-space: normal;
         text-align: left;
+        word-break: break-all;
       }
     }
   }

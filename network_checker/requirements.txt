@@ -6,3 +6,4 @@ stevedore
 daemonize
 pyyaml
 requests
+netifaces

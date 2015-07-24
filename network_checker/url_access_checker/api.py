@@ -46,7 +46,10 @@ def _get_response_tuple(url, proxies=None):
         # proxies=None or proxies={} mean 'use the default' rather than
         # "don't use proxy". To force a direct connection one should pass
         # proxies={'http': None}.
-        response = requests.get(url, proxies=proxies)
+        # timeout=60 sets max request time of 60 seconds to prevent this
+        # process from hanging as the default timeout is None which can lead to
+        # bad things
+        response = requests.get(url, proxies=proxies, timeout=60)
         return (response.status_code != 200, url)
     except (requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,

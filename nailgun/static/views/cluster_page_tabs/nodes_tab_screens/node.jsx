@@ -205,7 +205,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         renderLogsLink: function(iconRepresentation) {
             return (
-                <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} href={this.getNodeLogsLink()}>
+                <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} title={i18n('cluster_page.nodes_tab.node.view_logs')} href={this.getNodeLogsLink()}>
                     {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
                 </a>
             );
@@ -379,13 +379,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 {this.renderStatusLabel(status)}
                                                 {status == 'offline' && this.renderRemoveButton()}
                                                 {!!node.get('cluster') &&
-                                                    (node.hasChanges() ?
-                                                        <button className='btn btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
-                                                            {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                                        </button>
-                                                    :
-                                                        this.renderLogsLink()
-                                                    )
+                                                    [
+                                                        this.renderLogsLink(),
+                                                        node.hasChanges() &&
+                                                            <button className='btn btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
+                                                                {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                                            </button>
+                                                    ]
                                                 }
                                             </div>
                                         }
@@ -432,15 +432,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         </div>
                         <div className='node-action'>
                             {!!node.get('cluster') &&
-                                ((this.props.locked || !node.hasChanges()) ?
-                                    this.renderLogsLink(true)
-                                :
-                                    <div
-                                        className='icon'
-                                        title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                        onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
-                                    />
-                                )
+                                [
+                                    this.renderLogsLink(true),
+                                    node.hasChanges() && !this.props.locked &&
+                                        <div
+                                            className='icon'
+                                            title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                            onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
+                                        />
+                                ]
                             }
                         </div>
                         <div className={utils.classNames(statusClasses)}>

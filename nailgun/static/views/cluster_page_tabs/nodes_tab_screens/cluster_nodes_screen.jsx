@@ -62,9 +62,9 @@ function(React, NodeListScreen) {
                     'provisioned',
                     'provisioning',
                     'deploying',
-                    'removing',
                     'error',
-                    'offline'
+                    'offline',
+                    'removing'
                 ]}
                 defaultFilters={['roles', 'status']}
             />;

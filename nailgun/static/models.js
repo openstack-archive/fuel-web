@@ -385,7 +385,9 @@ define([
             });
         },
         isSelectable: function() {
-            return true;
+            // forbid removing node from adding to environments
+            // and useless management of roles, disks, interfaces, etc.
+            return this.get('status') != 'removing';
         },
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));

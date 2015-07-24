@@ -423,7 +423,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     .sortBy(function(settingName) {return group[settingName].weight;})
                     .value(),
                 processedGroupRestrictions = this.processRestrictions(this.props.groupName, 'metadata'),
-                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result;
+                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
+                showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable;
             return (
                 <div className='col-xs-10 forms-box'>
                     {processedGroupRestrictions.message && <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>}
@@ -434,7 +435,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 name='metadata'
                                 defaultChecked={metadata.enabled}
                                 disabled={isGroupDisabled}
-                                tooltipText={processedGroupRestrictions.message}
+                                tooltipText={showSettingGroupWarning && processedGroupRestrictions.message}
                                 onChange={this.props.onChange}
                                 wrapperClassName='pull-left'
                             />
@@ -451,7 +452,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                             if (!this.props.checkRestrictions('hide', path).result) {
                                 var error = (this.props.settings.validationError || {})[path],
                                     processedSettingRestrictions = this.processRestrictions(this.props.groupName, settingName),
-                                    isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result;
+                                    isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result,
+                                    showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled);
 
                                 // support of custom controls
                                 var CustomControl = customControls[setting.type];
@@ -475,7 +477,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                             if (!this.props.checkRestrictions('hide', valuePath).result) {
                                                 value.disabled = isSettingDisabled || processedValueRestrictions.result;
                                                 value.defaultChecked = value.data == setting.value;
-                                                value.tooltipText = processedValueRestrictions.message;
+                                                value.tooltipText = showSettingWarning && processedValueRestrictions.message;
                                                 return value;
                                             }
                                         }, this)
@@ -487,7 +489,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         label={setting.label}
                                         values={values}
                                         error={error}
-                                        tooltipText={processedSettingRestrictions.message}
+                                        tooltipText={showSettingWarning && processedSettingRestrictions.message}
                                     />;
                                 }
                                 return <controls.Input
@@ -500,7 +502,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     toggleable={setting.type == 'password'}
                                     error={error}
                                     disabled={isSettingDisabled}
-                                    tooltipText={processedSettingRestrictions.message}
+                                    tooltipText={showSettingWarning && processedSettingRestrictions.message}
                                     onChange={this.props.onChange}
                                 />;
                             }

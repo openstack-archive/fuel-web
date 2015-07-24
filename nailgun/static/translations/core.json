@@ -870,8 +870,8 @@
                 },
                 "delete_nodes": {
                     "title": "Delete Nodes",
-                    "message": "Are you sure you want to delete the selected node?",
-                    "message_plural": "Are you sure you want to delete the selected nodes?"
+                    "message": "Are you sure you want to delete the selected node from the environment? The node will return to the pool of unallocated nodes.",
+                    "message_plural": "Are you sure you want to delete the selected nodes from the environment? The nodes will return to the pool of unallocated nodes."
                 },
                 "discard_changes": {
                     "title": "Discard Changes",

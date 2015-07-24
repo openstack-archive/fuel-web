@@ -133,6 +133,23 @@
   word-break: break-word; /* non standard for webkit */
 }
 
+.node-progress() {
+  .progress {
+    position: relative;
+    background-color: @base-node-color - 70%;
+    .progress-bar-title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: @white;
+      margin-top: 2px;
+      text-transform: uppercase;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
 // ICONS
 
 .icon-default-styles(@top, @left) {
@@ -1657,9 +1674,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
     border: 1px solid @gray + 80%;
     border-radius: @node-border-radius;
     padding: @node-indent;
-    padding-bottom: 0;
+    padding-bottom: 10px;
     margin-bottom: @node-indent;
     box-sizing: border-box;
+
+    > .row:not(.node-group-header) {
+      margin-left: 0;
+      margin-right: 0;
+    }
 
     h4 {
       margin: 0 0 @node-indent 0;
@@ -1667,7 +1689,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
     .node {
       height: @node-height;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       overflow: visible;
       padding: 2px 2px 0;
       font-size: @base-font-size - 2;
@@ -1759,7 +1781,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
         .node-action {
           width: @node-button-size * 2;
-          margin-top: 6px;
+          margin-top: 9px;
           .icon {
             display: inline-block;
             height: @node-button-size;
@@ -1794,9 +1816,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
             margin-left: 5px;
             padding: 0 5px;
           }
-          .progress-bar {
-            min-width: 32px;
-          }
+          .node-progress;
         }
 
         .node-hardware {
@@ -1869,7 +1889,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       float: left;
       position: relative;
       padding: 0;
-      padding-right: @compact-node-indent;
+      padding-right: @compact-node-indent + 3;
 
       .unavailable .node-box {
         cursor: default;
@@ -2007,6 +2027,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
               padding-bottom: 0;
             }
           }
+          .node-progress;
+          .progress {margin: 8px 0 !important;}
         }
 
         .node-name {
@@ -2187,7 +2209,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
   &.compact .nodes-group {
     > .row:not(.node-group-header) {
-      margin-right: -20px;
+      margin-right: -8px;
     }
   }
 }

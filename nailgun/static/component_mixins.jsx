@@ -84,9 +84,8 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             }
         },
         nodeConfigurationScreenMixin: {
-            goToNodeList: function(cluster) {
-                if (!cluster) cluster = this.props.cluster;
-                app.navigate('#cluster/' + cluster.id + '/nodes', {trigger: true, replace: true});
+            goToNodeList: function() {
+                app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
             },
             isLockedScreen: function() {
                 var nodesAvailableForChanges = this.props.nodes.any(function(node) {

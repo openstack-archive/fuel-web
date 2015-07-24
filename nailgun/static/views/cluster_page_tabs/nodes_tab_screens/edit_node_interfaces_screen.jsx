@@ -44,21 +44,14 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             fetchData: function(options) {
                 var cluster = options.cluster,
                     nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);}),
-                    nodeLoadingErrorNS = 'cluster_page.nodes_tab.node_loading_error.',
-                    nodes,
-                    networkConfiguration,
-                    networksMetadata = new models.ReleaseNetworkProperties();
+                    nodes = new models.Nodes(cluster.get('nodes').getByIds(nodeIds));
 
-                networkConfiguration = cluster.get('networkConfiguration');
-                nodes = new models.Nodes(cluster.get('nodes').getByIds(nodeIds));
-                if (nodes.length != nodeIds.length) {
-                    utils.showErrorDialog({
-                        title: i18n(nodeLoadingErrorNS + 'title'),
-                        message: i18n(nodeLoadingErrorNS + 'load_error')
-                    });
-                    ComponentMixins.nodeConfigurationScreenMixin.goToNodeList(cluster);
-                    return;
+                if (nodes.length != nodeIds.length || !nodes.isInterfacesConfigurationAvailable()) {
+                    return $.Deferred().reject();
                 }
+
+                var networkConfiguration = cluster.get('networkConfiguration'),
+                    networksMetadata = new models.ReleaseNetworkProperties();
 
                 return $.when.apply($, nodes.map(function(node) {
                     node.interfaces = new models.Interfaces();
@@ -131,13 +124,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 this.setState({actionInProgress: false});
             }, this)).fail(_.bind(function(response) {
                 var errorNS = ns + 'configuration_error.';
-
                 utils.showErrorDialog({
                     title: i18n(errorNS + 'title'),
                     message: i18n(errorNS + 'load_defaults_warning'),
                     response: response
                 });
-                this.goToNodeList();
             }, this));
         },
         revertChanges: function() {

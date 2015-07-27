@@ -45,7 +45,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 renderOn: 'update change'
             }),
             componentMixins.backboneMixin('cluster', 'change'),
-            componentMixins.pollingMixin(20)
+            componentMixins.pollingMixin(20, true)
         ],
         fetchData: function() {
             return this.props.cluster.get('nodes').fetch();
@@ -361,7 +361,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     vcenter.setModels(this.getConfigModels()).parseRestrictions();
                     return !vcenter.isValid() && {
                         blocker: [
-                            (<span>{i18n('vmware.has_errors') + ' '}
+                            (<span key='vcenter'>{i18n('vmware.has_errors') + ' '}
                                 <a href={'/#cluster/' + cluster.id + '/vmware'}>
                                     {i18n('vmware.tab_name')}
                                 </a>
@@ -376,7 +376,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
                 return areSettingsInvalid &&
                     {blocker: [
-                        (<span>
+                        (<span key='invalid_settings'>
                             {i18n(this.ns + 'invalid_settings')}
                             {' ' + i18n(this.ns + 'get_more_info') + ' '}
                             <a href={'#cluster/' + cluster.id + '/settings'}>
@@ -409,7 +409,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         function(role) {
                             var name = role.get('name'),
                                 recommendation = limitRecommendations[name];
-
                             return recommendation && !recommendation.valid && recommendation.message;
                         }, this))
                 };

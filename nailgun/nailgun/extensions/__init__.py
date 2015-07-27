@@ -18,6 +18,8 @@ from nailgun.extensions.base import BaseExtension
 from nailgun.extensions.base import get_extension
 from nailgun.extensions.base import get_all_extensions
 from nailgun.extensions.base import node_extension_call
+from nailgun.extensions.base import fire_callback_on_node_deletion
+from nailgun.extensions.base import fire_callback_on_node_collection_deletion
 from nailgun.extensions.base import fire_callback_on_node_create
 from nailgun.extensions.base import fire_callback_on_node_update
 from nailgun.extensions.base import fire_callback_on_node_reset

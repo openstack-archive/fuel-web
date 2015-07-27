@@ -37,7 +37,9 @@ from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.extensions import fire_callback_on_node_collection_deletion
 from nailgun.extensions import fire_callback_on_node_create
+from nailgun.extensions import fire_callback_on_node_deletion
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.logger import logger
@@ -102,6 +104,11 @@ class Node(NailgunObject):
             "agent_checksum": {"type": "string"}
         }
     }
+
+    @classmethod
+    def delete(cls, instance):
+        fire_callback_on_node_deletion(instance)
+        super(Node, cls).delete(instance)
 
     @classmethod
     def get_by_mac_or_uid(cls, mac=None, node_uid=None):
@@ -976,3 +983,9 @@ class NodeCollection(NailgunCollection):
     def reset_network_template(cls, instances):
         for instance in instances:
             instance.network_template = None
+
+    @classmethod
+    def delete_by_ids(cls, ids):
+        fire_callback_on_node_collection_deletion(ids)
+        db.query(cls.single.model).filter(
+            cls.single.model.id.in_(ids)).delete('fetch')

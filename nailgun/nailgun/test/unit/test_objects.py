@@ -146,6 +146,32 @@ class TestObjects(BaseIntegrationTest):
 
 class TestNodeObject(BaseIntegrationTest):
 
+    @mock.patch('nailgun.objects.node.fire_callback_on_node_deletion')
+    def test_delete(self, callback_mock):
+        cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}])
+        node_db = cluster.nodes[0]
+        self.assertEqual(len(cluster.nodes), 1)
+        objects.Node.delete(node_db)
+        callback_mock.assert_called_once_with(node_db)
+        self.db.refresh(cluster)
+        self.assertEqual(len(cluster.nodes), 0)
+
+    @mock.patch(
+        'nailgun.objects.node.'
+        'fire_callback_on_node_collection_deletion')
+    def test_delete_by_ids(self, callback_mock):
+        cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}] * 3)
+        ids = sorted([n.id for n in cluster.nodes])
+        self.assertEqual(len(ids), 3)
+        objects.NodeCollection.delete_by_ids(ids)
+        callback_mock.assert_called_once_with(ids)
+        self.db.refresh(cluster)
+        self.assertEqual(len(cluster.nodes), 0)
+
     def test_adding_to_cluster_kernel_params_centos(self):
         self.env.create(
             release_kwargs={
@@ -831,6 +857,17 @@ class TestClusterObject(BaseTestCase):
         }
         network_role.update(kwargs)
         return network_role
+
+    @mock.patch(
+        'nailgun.objects.cluster.'
+        'fire_callback_on_node_collection_deletion')
+    def test_delete(self, callback_mock):
+        cluster = self.env.clusters[0]
+        ids = [node.id for node in cluster.nodes]
+        objects.Cluster.delete(cluster)
+        callback_mock.assert_called_once_with(ids)
+        self.assertEqual(self.db.query(objects.Node.model).count(), 0)
+        self.assertEqual(self.db.query(objects.Cluster.model).count(), 0)
 
     def test_all_controllers(self):
         self.assertEqual(len(objects.Cluster.get_nodes_by_role(

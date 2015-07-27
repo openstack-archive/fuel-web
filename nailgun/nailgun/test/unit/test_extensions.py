@@ -18,7 +18,9 @@ import mock
 
 from nailgun.errors import errors
 from nailgun.extensions import BaseExtension
+from nailgun.extensions import fire_callback_on_node_collection_deletion
 from nailgun.extensions import fire_callback_on_node_create
+from nailgun.extensions import fire_callback_on_node_deletion
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.extensions import get_extension
@@ -161,3 +163,21 @@ class TestExtensionUtils(BaseTestCase):
 
         for ext in get_m.return_value:
             ext.on_node_reset.assert_called_once_with(node)
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_node_deletion(self, get_m):
+        node = mock.MagicMock()
+        fire_callback_on_node_deletion(node)
+
+        for ext in get_m.return_value:
+            ext.on_node_deletion.assert_called_once_with(node)
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_node_collection_deletion(self, get_m):
+        node_ids = [1, 2, 3, 4]
+        fire_callback_on_node_collection_deletion(node_ids)
+
+        for ext in get_m.return_value:
+            ext.on_node_collection_deletion.assert_called_once_with(node_ids)

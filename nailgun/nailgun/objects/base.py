@@ -195,9 +195,15 @@ class NailgunCollection(object):
 
         :returns: iterable (SQLAlchemy query)
         """
-        return db().query(
-            cls.single.model
-        )
+        return db().query(cls.single.model)
+
+    @classmethod
+    def all_ids(cls):
+        """Get all ids of the object (model)
+
+        :returns: iterable (SQLAlchemy query)
+        """
+        return db().query(cls.single.model.id)
 
     @classmethod
     def _query_order_by(cls, query, order_by):

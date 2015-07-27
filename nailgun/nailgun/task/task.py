@@ -356,18 +356,21 @@ class DeletionTask(object):
 
         :param List nodes_to_delete: List of nodes as returned by
             :meth:`DeletionTask.format_node_to_delete`
-        :returns: Remaining (non-undeployed) nodes to delete.
+        :returns: Remaining (deployed) nodes to delete.
         """
 
         node_names_dict = dict(
             (node['id'], node['slave_name']) for node in nodes_to_delete)
 
-        objects.NodeCollection \
-            .filter_by_list(None, 'id', six.iterkeys(node_names_dict)) \
-            .filter(
-                objects.Node.model.status == consts.NODE_STATUSES.discover
-            ) \
-            .delete(synchronize_session=False)
+        node_ids = [n['id'] for n in nodes_to_delete]
+
+        q_ids = objects.NodeCollection.filter_by_id_list(
+            objects.NodeCollection.all_ids(), node_ids)
+        q_discovery = objects.NodeCollection.filter_by(
+            q_ids, status=consts.NODE_STATUSES.discover)
+        discovery_nodes_ids = [_id for (_id,) in q_discovery]
+
+        objects.NodeCollection.delete_by_ids(discovery_nodes_ids)
         db.commit()
 
         remaining_nodes_db = db().query(

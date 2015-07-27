@@ -29,7 +29,6 @@ define(
     'use strict';
 
     var Field = React.createClass({
-        mixins: [controls.tooltipMixin],
         onChange: function(name, value) {
             var currentValue = this.props.model.get(name);
             if (currentValue.current) {
@@ -87,14 +86,17 @@ define(
     });
 
     var GenericSection = React.createClass({
-        mixins: [controls.tooltipMixin],
         render: function() {
             if (!this.props.model) return null;
             return (
                 <div className='col-xs-12 forms-box'>
                     <h3>
                         {this.props.title}
-                        {this.renderTooltipIcon()}
+                        {this.props.tooltipText &&
+                            <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                                <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
+                            </controls.Tooltip>
+                        }
                     </h3>
                     <FieldGroup model={this.props.model} disabled={this.props.disabled}/>
                 </div>
@@ -214,14 +216,17 @@ define(
     });
 
     var AvailabilityZones = React.createClass({
-        mixins: [controls.tooltipMixin],
         render: function() {
             if (!this.props.collection) return null;
             return (
                 <div className='col-xs-12 forms-box'>
                     <h3>
                         {i18n('vmware.availability_zones')}
-                        {this.renderTooltipIcon()}
+                        {this.props.tooltipText &&
+                            <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                                <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
+                            </controls.Tooltip>
+                        }
                     </h3>
                     {this.props.collection.map(function(model) {
                         return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled} cluster={this.props.cluster}/>;

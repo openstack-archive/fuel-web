@@ -248,9 +248,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 delimited = task.escape('message').split('\n\n'),
                 summary = delimited.shift(),
                 details = delimited.join('\n\n'),
+                warning = task.match({name: 'reset_environment'}) || task.match({name: 'stop_deployment'}),
                 classes = {
                     alert: true,
-                    'alert-warning': false,
+                    'alert-warning': warning,
                     'alert-danger': error,
                     'alert-success': !error
                 };

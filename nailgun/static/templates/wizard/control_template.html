@@ -5,8 +5,8 @@
       <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
     </div>
   </div>
-  <div class="parameter-name <%- descriptionClasses %>" data-i18n="<%- label %>"></div>
+  <div class="parameter-name <%- descriptionClasses %>"><%- i18n(label) %></div>
 </label>
 <% if (hasDescription) { %>
-    <div class="modal-parameter-description col-xs-offset-1" data-i18n="<%- description %>"></div>
+    <div class="modal-parameter-description col-xs-offset-1"><%- i18n(description) %></div>
 <% } %>

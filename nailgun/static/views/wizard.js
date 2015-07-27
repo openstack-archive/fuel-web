@@ -365,7 +365,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                 panesTitles: this.panesConstructors.map(function(Constructor) {return Constructor.prototype.title;}),
                 currentStep: this.panesModel.get('activePaneIndex'),
                 maxAvailableStep: this.panesModel.get('maxAvailablePaneIndex')
-            })).i18n();
+            }));
             if (!this.modalBound) {
                 this.$el.on('hidden.bs.modal', _.bind(this.tearDown, this));
                 this.$el.on('shown.bs.modal', _.bind(function() {
@@ -628,7 +628,6 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
         render: function(options) {
             this.$el.html(this.template(options));
             this.renderCustomElements();
-            this.$el.i18n();
             this.handleWarnings();
             this.addPasswordToggle();
 
@@ -758,7 +757,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             this.$('.mode-form-group').append(this.renderControls({
                 labelClasses: 'setting',
                 descriptionClasses: 'col-xs-offset-3'
-            })).i18n();
+            }));
             this.updateModeDescription();
         }
     });
@@ -777,7 +776,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             this.$('.form-group').append(this.renderControls({
                 hasDescription: true,
                 descriptionClasses: 'col-xs-0'
-            })).i18n();
+            }));
         }
     });
 
@@ -814,7 +813,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                 hasDescription: true,
                 additionalAttribute: 'services',
                 descriptionClasses: 'col-xs-offset-1'
-            })).i18n();
+            }));
         }
     });
 

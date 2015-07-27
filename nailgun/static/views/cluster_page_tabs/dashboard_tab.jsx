@@ -259,11 +259,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 delimited = task.escape('message').split('\n\n'),
                 summary = delimited.shift(),
                 details = delimited.join('\n\n'),
+                warning = _.contains(['reset_environment', 'stop_deployment'], task.get('name')),
                 classes = {
                     alert: true,
-                    'alert-warning': false,
-                    'alert-danger': error,
-                    'alert-success': !error
+                    'alert-warning': warning,
+                    'alert-danger': !warning && error,
+                    'alert-success': !warning && !error
                 };
 
             return (

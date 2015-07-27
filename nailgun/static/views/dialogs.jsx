@@ -2,6 +2,7 @@
  * Copyright 2014 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
  * a copy of the License at
  *
@@ -211,15 +212,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         getDefaultProps: function() {return {title: i18n('dialog.display_changes.title')};},
         ns: 'dialog.display_changes.',
         deployCluster: function() {
-            this.setState({actionInProgress: true});
-            dispatcher.trigger('deploymentTasksUpdated');
-            var task = new models.Task();
-            task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
+            var networkVerificationRunningTask = this.props.cluster.task({
+                group: 'network',
+                status: 'running'
+            });
+            if (networkVerificationRunningTask) {
+                this.showError(false, i18n('dialog.display_changes.warnings.verification_in_progress'));
+            } else {
+                this.setState({actionInProgress: true});
+                dispatcher.trigger('deploymentTasksUpdated');
+                var task = new models.Task();
+                task.save({}, {
+                    url: _.result(this.props.cluster, 'url') + '/changes',
+                    type: 'PUT'
+                })
                 .done(function() {
                     this.close();
                     dispatcher.trigger('deploymentTaskStarted');
                 }.bind(this))
                 .fail(this.showError);
+            }
         },
         renderBody: function() {
             var cluster = this.props.cluster;

@@ -1758,6 +1758,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
         .node-action {
           width: @node-button-size * 2;
           margin-top: 6px;
+          > span {
+            display: inline-block;
+          }
           .icon {
             display: inline-block;
             height: @node-button-size;
@@ -3825,17 +3828,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .delete-environment {
       .delete-environment-btn {
         margin-right: 5px;
-      }
-    }
-  }
-  .tooltip-wrapper {
-    display: inline;
-    .glyphicon {
-      margin-left: @dashboard-offset / 2;
-      cursor: pointer;
-      .icon-default-styles(-13px, -612px);
-      &:hover {
-        .icon-default-styles(-53px, -612px);
       }
     }
   }

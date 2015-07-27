@@ -45,7 +45,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 renderOn: 'update change'
             }),
             componentMixins.backboneMixin('cluster', 'change'),
-            componentMixins.pollingMixin(20)
+            componentMixins.pollingMixin(20, true)
         ],
         fetchData: function() {
             return this.props.cluster.get('nodes').fetch();

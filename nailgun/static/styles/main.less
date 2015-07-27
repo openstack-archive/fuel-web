@@ -3641,17 +3641,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
   @dashboard-offset: 10px;
   .btn-add-nodes {
     float: left;
-    margin-top: @dashboard-offset;
     margin-bottom: @dashboard-offset;
     .glyphicon {
       margin-right: @dashboard-offset;
     }
   }
-  .informational-block {
-    margin-bottom: @dashboard-offset;
-  }
   .documentation {
-    margin: @dashboard-offset 0 @dashboard-offset 0;
+    margin: 0 0 @dashboard-offset 0;
     .documentation-link {
       margin-bottom: 5px;
       .glyphicon {
@@ -3736,7 +3732,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
     .validation-result ul {
-      margin: @dashboard-offset 0 0;
+      margin: 0;
       padding-left: 15px;
       &.danger {
         li {
@@ -3782,7 +3778,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
         .font-semibold;
         font-size: @base-font-size - 1;
         color: @red;
-        margin-top: @dashboard-offset;
       }
       h4 {
         margin: 0 0 @dashboard-offset 0;
@@ -3818,7 +3813,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
   .dashboard-actions-wrapper {
-    margin: @dashboard-offset 0 @dashboard-offset 0;
+    margin: 0 0 @dashboard-offset 0;
     .reset-environment {
       margin-right: 87px;
       .reset-environment-btn {
@@ -3835,11 +3830,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     display: inline;
     .glyphicon {
       margin-left: @dashboard-offset / 2;
-      cursor: pointer;
       .icon-default-styles(-13px, -612px);
-      &:hover {
-        .icon-default-styles(-53px, -612px);
-      }
     }
   }
   .plugin-entry {

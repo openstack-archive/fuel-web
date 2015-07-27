@@ -15,6 +15,8 @@
 import six
 from six.moves import map
 
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import Plugin
@@ -54,15 +56,7 @@ class PluginManager(object):
             return
 
         enabled = metadata.get('enabled', False)
-
-        # Value is true and plugin is not enabled for this cluster
-        # that means plugin was enabled on this request
-        if enabled and cluster not in plugin.clusters:
-            plugin.clusters.append(cluster)
-        # Value is false and plugin is enabled for this cluster
-        # that means plugin was disabled on this request
-        elif not enabled and cluster in plugin.clusters:
-            plugin.clusters.remove(cluster)
+        Plugin.set_enabled(plugin, cluster, enabled)
 
     @classmethod
     def get_plugin_attributes(cls, cluster):
@@ -76,7 +70,7 @@ class PluginManager(object):
     @classmethod
     def get_cluster_plugins_with_tasks(cls, cluster):
         cluster_plugins = []
-        for plugin_db in cluster.plugins:
+        for plugin_db in cls.get_enabled_plugins(cluster):
             plugin_adapter = wrap_plugin(plugin_db)
             plugin_adapter.set_cluster_tasks()
             cluster_plugins.append(plugin_adapter)
@@ -89,7 +83,7 @@ class PluginManager(object):
 
         plugin_roles = []
         conflict_roles = {}
-        for plugin in cluster.plugins:
+        for plugin in cls.get_enabled_plugins(cluster):
             for role in plugin.network_roles_metadata:
                 role_id = role['id']
                 if role_id in known_roles:
@@ -109,9 +103,10 @@ class PluginManager(object):
     @classmethod
     def get_plugins_deployment_tasks(cls, cluster):
         deployment_tasks = []
-
         processed_tasks = {}
-        for plugin_adapter in map(wrap_plugin, cluster.plugins):
+
+        enabled_plugins = cls.get_enabled_plugins(cluster)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
             depl_tasks = plugin_adapter.deployment_tasks
 
             for t in depl_tasks:
@@ -137,7 +132,7 @@ class PluginManager(object):
         result = {}
         core_roles = set(cluster.release.roles_metadata)
 
-        for plugin_db in cluster.plugins:
+        for plugin_db in cls.get_enabled_plugins(cluster):
             plugin_roles = wrap_plugin(plugin_db).normalized_roles_metadata
 
             # we should check all possible cases of roles intersection
@@ -180,7 +175,8 @@ class PluginManager(object):
         release_volumes_ids = [v['id'] for v in release_volumes]
         processed_volumes = {}
 
-        for plugin_adapter in map(wrap_plugin, cluster.plugins):
+        enabled_plugins = cls.get_enabled_plugins(cluster)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
             metadata = plugin_adapter.volumes_metadata
 
             for volume in metadata.get('volumes', []):
@@ -220,3 +216,27 @@ class PluginManager(object):
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
             plugin_adapter.sync_metadata_to_db()
+
+    @classmethod
+    def get_compatible_plugins(cls, instance):
+        """Returns a list of latest plugins that are compatible with
+        a given cluster.
+
+        :param instance: a cluster instance
+        :returns: a list of plugin instances
+        """
+        return filter(
+            lambda p: wrap_plugin(p).validate_cluster_compatibility(instance),
+            PluginCollection.all_newest())
+
+    @classmethod
+    def get_enabled_plugins(cls, instance):
+        """Returns a list of plugins enabled for a given cluster.
+
+        :param instance: a cluster instance
+        :returns: a list of plugin instances
+        """
+        return db().query(models.Plugin)\
+            .join(models.ClusterPlugins)\
+            .filter(models.ClusterPlugins.cluster_id == instance.id)\
+            .filter(True == models.ClusterPlugins.enabled).all()

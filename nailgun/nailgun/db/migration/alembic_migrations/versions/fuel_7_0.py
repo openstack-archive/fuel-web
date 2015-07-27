@@ -100,9 +100,11 @@ def upgrade():
     upgrade_node_labels()
     extend_segmentation_type()
     network_groups_name_upgrade()
+    plugins_clusters_upgrade()
 
 
 def downgrade():
+    plugins_clusters_downgrade()
     network_groups_name_downgrade()
     downgrade_node_labels()
     extensions_field_downgrade()
@@ -218,8 +220,9 @@ def configurable_hostnames_downgrade():
 def extend_ip_addrs_model_upgrade():
     op.alter_column('ip_addrs', 'vip_type',
                     type_=sa.String(length=50),
-                    existing_type=sa.Enum('haproxy', 'vrouter',
-                    name='network_vip_types'))
+                    existing_type=sa.Enum(
+                        'haproxy', 'vrouter',
+                        name='network_vip_types'))
     drop_enum('network_vip_types')
 
 
@@ -756,3 +759,59 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def plugins_clusters_upgrade():
+    connection = op.get_bind()
+
+    op.add_column(
+        'cluster_plugins',
+        sa.Column(
+            'enabled',
+            sa.Boolean,
+            nullable=False,
+            server_default='false'
+        )
+    )
+
+    plugins = sa.text('''SELECT id, name FROM plugins''')
+    plugins = dict(
+        (id_, name) for id_, name in connection.execute(plugins))
+
+    # iterate over all editable cluster attributes, and ensures there's
+    # an entry in 'cluster_plugins' table with proper 'enabled' value
+    for cluster_id, editable in connection.execute(
+            sa.text('''SELECT cluster_id, editable FROM attributes''')):
+
+        editable = jsonutils.loads(editable)
+
+        # ensure connection between cluster and plugins
+        for plugin_id, plugin_name in six.iteritems(plugins):
+            if plugin_name in editable:
+                enabled = editable[plugin_name]['metadata']['enabled']
+
+                # enabled=True - we do have connection, so just update it
+                # enabled=False - create new connection
+                if enabled:
+                    connection.execute(
+                        sa.text('''
+                            UPDATE cluster_plugins
+                                SET enabled = true
+                                WHERE plugin_id = :plugin_id
+                        '''),
+                        plugin_id=plugin_id)
+                else:
+                    connection.execute(
+                        sa.text('''
+                            INSERT INTO cluster_plugins
+                                (plugin_id, cluster_id, enabled)
+                            VALUES
+                                (:plugin_id, :cluster_id, :enabled)
+                        '''),
+                        plugin_id=plugin_id,
+                        cluster_id=cluster_id,
+                        enabled=False)
+
+
+def plugins_clusters_downgrade():
+    op.drop_column('cluster_plugins', 'enabled')

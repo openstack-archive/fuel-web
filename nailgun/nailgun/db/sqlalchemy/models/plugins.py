@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -32,6 +33,8 @@ class ClusterPlugins(Base):
     plugin_id = Column(Integer, ForeignKey('plugins.id', ondelete='CASCADE'),
                        nullable=False)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    enabled = Column(Boolean, default=False, nullable=False,
+                     server_default='false')
 
 
 class Plugin(Base):

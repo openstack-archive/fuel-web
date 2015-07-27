@@ -235,6 +235,10 @@ class Cluster(NailgunObject):
             db().delete(new_cluster)
             raise errors.CannotCreate(exc.message)
 
+        # populate cluster with compatible plugins
+        new_cluster.plugins.extend(
+            PluginManager.get_compatible_plugins(new_cluster))
+
         db().flush()
 
         return new_cluster

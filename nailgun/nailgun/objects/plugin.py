@@ -18,20 +18,48 @@ from distutils.version import LooseVersion
 from itertools import groupby
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import plugins as plugin_db_model
+from nailgun.db.sqlalchemy import models
 from nailgun.objects import base
 from nailgun.objects.serializers import plugin
 
 
 class Plugin(base.NailgunObject):
 
-    model = plugin_db_model.Plugin
+    model = models.Plugin
     serializer = plugin.PluginSerializer
+
+    @classmethod
+    def create(cls, data):
+        # FIXME(ikalnitsky): resolve these circular dependencies :(
+        from nailgun.plugins.adapters import wrap_plugin
+
+        plugin = super(Plugin, cls).create(data)
+
+        # populate all compatible clusters with this plugin
+        plugin_adapter = wrap_plugin(plugin)
+        for cluster in db.query(models.Cluster):
+            if plugin_adapter.validate_cluster_compatibility(cluster):
+                plugin.clusters.append(cluster)
+
+        db().flush()
+        return plugin
 
     @classmethod
     def get_by_name_version(cls, name, version):
         return db().query(cls.model).\
             filter_by(name=name, version=version).first()
+
+    @classmethod
+    def set_enabled(cls, plugin, cluster, enabled):
+        """Enables/disabled a given plugin for a given cluster.
+
+        :param plugin: a plugin instance
+        :param cluster: a cluster instance
+        :param enabled: If True - enables it; otherwise - disables
+        """
+        db().query(models.ClusterPlugins).\
+            filter_by(plugin_id=plugin.id, cluster_id=cluster.id).\
+            update({'enabled': enabled}, synchronize_session='fetch')
 
 
 class PluginCollection(base.NailgunCollection):

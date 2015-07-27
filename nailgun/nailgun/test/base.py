@@ -413,6 +413,7 @@ class EnvironmentManager(object):
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
+            Plugin.set_enabled(plugin, cluster, True)
 
         return plugin
 

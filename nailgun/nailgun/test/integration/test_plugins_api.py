@@ -20,6 +20,7 @@ import yaml
 
 from nailgun import objects
 from nailgun.plugins import adapters
+from nailgun.plugins.manager import PluginManager
 from nailgun.test import base
 
 
@@ -165,13 +166,13 @@ class TestPluginsApi(BasePluginTest):
         resp = self.create_plugin()
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
         cluster = self.create_cluster()
-        self.assertEqual(plugin.clusters, [])
+        self.assertEqual(PluginManager.get_enabled_plugins(cluster), [])
         resp = self.enable_plugin(cluster, plugin.name)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(cluster, plugin.clusters)
+        self.assertIn(plugin, PluginManager.get_enabled_plugins(cluster))
         resp = self.disable_plugin(cluster, plugin.name)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(plugin.clusters, [])
+        self.assertEqual(PluginManager.get_enabled_plugins(cluster), [])
 
     def test_delete_plugin(self):
         resp = self.create_plugin()
@@ -222,14 +223,18 @@ class TestPluginsApi(BasePluginTest):
         create_with_version('5.0.0')
 
         self.enable_plugin(cluster, 'multiversion_plugin')
-        self.assertEqual(len(cluster.plugins), 1)
-        enabled_plugin = cluster.plugins[0]
+        self.assertEqual(len(cluster.plugins), 2)
+        self.assertEqual(
+            len(PluginManager.get_compatible_plugins(cluster)), 1)
+
+        enabled_plugin = PluginManager.get_enabled_plugins(cluster)[0]
         # Should be enabled the newest plugin,
         # at the moment of environment creation
         self.assertEqual(enabled_plugin.version, '2.0.0')
 
         self.disable_plugin(cluster, 'multiversion_plugin')
-        self.assertEqual(len(cluster.plugins), 0)
+        self.assertEqual(
+            len(PluginManager.get_enabled_plugins(cluster)), 0)
 
     def test_sync_all_plugins(self):
         self._create_new_and_old_version_plugins_for_sync()

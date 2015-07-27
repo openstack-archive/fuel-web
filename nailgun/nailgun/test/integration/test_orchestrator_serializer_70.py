@@ -449,12 +449,9 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         return self.env.clusters[0]
 
     def prepare_plugins_for_cluster(self, cluster, plugins_kw_list):
-        plugins = [
-            self._create_plugin(**kw)
-            for kw in plugins_kw_list
-        ]
-        cluster.plugins.extend(plugins)
-        self.db.flush()
+        for kw in plugins_kw_list:
+            plugin = self._create_plugin(**kw)
+            objects.Plugin.set_enabled(plugin, cluster, True)
 
     def _create_plugin(self, **plugin_kwargs):
         plugin_kwargs.update(
@@ -471,10 +468,8 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                 ],
             }
         )
-        plugin_data = self.env.get_default_plugin_metadata(
-            **plugin_kwargs
-        )
 
+        plugin_data = self.env.get_default_plugin_metadata(**plugin_kwargs)
         return objects.Plugin.create(plugin_data)
 
     def _check_pre_deployment_tasks(self, serialized, task_type):
@@ -784,12 +779,23 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
     def _get_serializer(self, cluster):
         return get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
 
-    def test_tasks_were_serialized(self):
-        plugin_data = self.env.get_default_plugin_metadata()
-        plugin_data['roles_metadata'] = self.ROLES
-        plugin_data['deployment_tasks'] = self.DEPLOYMENT_TASKS
+    def _create_plugin(self, **kwargs):
+        plugin_data = self.env.get_default_plugin_metadata(releases=[{
+            'repository_path': 'repositories/ubuntu',
+            'version': self.cluster.release.version,
+            'os': self.cluster.release.operating_system.lower(),
+            'mode': [self.cluster.mode],
+        }])
+        plugin_data.update(**kwargs)
+
         plugin = objects.Plugin.create(plugin_data)
-        self.cluster.plugins.append(plugin)
+        objects.Plugin.set_enabled(plugin, self.cluster, True)
+        return plugin
+
+    def test_tasks_were_serialized(self):
+        self._create_plugin(
+            roles_metadata=self.ROLES,
+            deployment_tasks=self.DEPLOYMENT_TASKS)
 
         self.env.create_node(
             api=True,
@@ -816,11 +822,9 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
         }])
 
     def test_tasks_were_not_serialized(self):
-        plugin_data = self.env.get_default_plugin_metadata()
-        plugin_data['roles_metadata'] = {}
-        plugin_data['deployment_tasks'] = self.DEPLOYMENT_TASKS
-        plugin = objects.Plugin.create(plugin_data)
-        self.cluster.plugins.append(plugin)
+        self._create_plugin(
+            roles_metadata={},
+            deployment_tasks=self.DEPLOYMENT_TASKS)
 
         self.env.create_node(
             api=True,

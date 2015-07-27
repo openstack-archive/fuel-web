@@ -28,6 +28,7 @@ from sqlalchemy import or_
 from nailgun import consts
 from nailgun import notifier
 from nailgun import objects
+from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 
 from nailgun.consts import TASK_STATUSES
@@ -509,7 +510,8 @@ class NailgunReceiver(object):
             message = "{0} Access Zabbix dashboard at {1}".format(
                 message, zabbix_url)
 
-        plugins_msg = cls._make_plugins_success_message(task.cluster.plugins)
+        plugins_msg = cls._make_plugins_success_message(
+            PluginManager.get_enabled_plugins(task.cluster))
         if plugins_msg:
             message = '{0}\n\n{1}'.format(message, plugins_msg)
 

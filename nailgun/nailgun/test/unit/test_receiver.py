@@ -43,6 +43,7 @@ class TestNailgunReceiver(base.BaseTestCase):
 
             self.plugin = Plugin.create(meta)
             self.cluster.plugins.append(self.plugin)
+            Plugin.set_enabled(self.plugin, self.cluster, True)
 
         self.task = self.env.create_task(
             name=consts.TASK_NAMES.deployment,

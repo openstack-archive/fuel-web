@@ -879,7 +879,14 @@ class TestClusterObject(BaseTestCase):
         cluster = self.env.create_cluster(api=False)
 
         for kw in plugins_kw_list:
-            cluster.plugins.append(objects.Plugin.create(kw))
+            kw.update({'releases': [{
+                'version': cluster.release.version,
+                'os': cluster.release.operating_system.lower(),
+                'mode': [cluster.mode],
+            }]})
+
+            plugin = objects.Plugin.create(kw)
+            objects.Plugin.set_enabled(plugin, cluster, True)
 
         return cluster
 
@@ -1077,10 +1084,12 @@ class TestClusterObjectGetRoles(BaseTestCase):
         plugin = objects.Plugin.create(self.env.get_default_plugin_metadata(
             name=uuid.uuid4().get_hex(),
             roles_metadata=roles_metadata,
-        ))
-        self.cluster.plugins.append(plugin)
-        self.db.flush()
-
+            releases=[{
+                'version': self.cluster.release.version,
+                'os': self.cluster.release.operating_system.lower(),
+                'mode': [self.cluster.mode],
+            }]))
+        objects.Plugin.set_enabled(plugin, self.cluster, True)
         return plugin
 
     def test_no_plugins_no_additional_roles(self):

@@ -271,7 +271,8 @@ class TestInstallationInfo(BaseTestCase):
 
         cluster_plugin_kwargs = {
             "cluster_id": cluster.id,
-            "plugin_id": plugin_obj.id
+            "plugin_id": plugin_obj.id,
+            "enabled": True,
         }
         cluster_plugin = plugins.ClusterPlugins(**cluster_plugin_kwargs)
 

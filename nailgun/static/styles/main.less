@@ -348,6 +348,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
   height: 0;
 }
 
+// TOOLTIPS
+
+.tooltip-inner {
+  max-width: 300px;
+}
+
 // ALERTS
 
 .alert {
@@ -3828,17 +3834,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
   }
-  .tooltip-wrapper {
-    display: inline;
-    .glyphicon {
-      margin-left: @dashboard-offset / 2;
-      cursor: pointer;
-      .icon-default-styles(-13px, -612px);
-      &:hover {
-        .icon-default-styles(-53px, -612px);
-      }
-    }
-  }
   .plugin-entry {
     margin-bottom: 15px;
     &.horizon {
@@ -3852,9 +3847,4 @@ button, .btn:not(.btn-link) {.font-semibold;}
       margin: 0;
     }
   }
-}
-
-.tooltip-inner {
-  max-width: none;
-  min-width: 300px;
 }

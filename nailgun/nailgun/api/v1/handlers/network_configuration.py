@@ -181,6 +181,9 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                         cluster_id=cluster_id
                     )
 
+                self.validator.validate_hv_settings(jsonutils.dumps(data),
+                                                    cluster_id=cluster_id)
+
                 objects.Cluster.get_network_manager(
                     cluster
                 ).update(cluster, data)

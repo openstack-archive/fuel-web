@@ -95,6 +95,10 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
                         )
         return d
 
+    @classmethod
+    def validate_hv_settings(cls, data, **kwargs):
+        pass
+
 
 class NetAssignmentValidator(BasicValidator):
     @classmethod

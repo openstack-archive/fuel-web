@@ -166,12 +166,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 />
             );
             return (
-                <p
-                    title={i18n('cluster_page.nodes_tab.node.edit_name')}
-                    onClick={!this.state.actionInProgress && this.startNodeRenaming}
-                >
-                    {this.props.node.get('name') || this.props.node.get('mac')}
-                </p>
+                <controls.Tooltip text={i18n('cluster_page.nodes_tab.node.edit_name')}>
+                    <p onClick={!this.state.actionInProgress && this.startNodeRenaming}>
+                        {this.props.node.get('name') || this.props.node.get('mac')}
+                    </p>
+                </controls.Tooltip>
             );
         },
         renderStatusLabel: function(status) {
@@ -205,9 +204,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         renderLogsLink: function(iconRepresentation) {
             return (
-                <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} title={i18n('cluster_page.nodes_tab.node.view_logs')} href={this.getNodeLogsLink()}>
-                    {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
-                </a>
+                <controls.Tooltip text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
+                    <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} href={this.getNodeLogsLink()}>
+                        {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
+                    </a>
+                </controls.Tooltip>
             );
         },
         renderNodeCheckbox: function() {
@@ -435,11 +436,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 [
                                     this.renderLogsLink(true),
                                     node.hasChanges() && !this.props.locked &&
-                                        <div
-                                            className='icon'
-                                            title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                            onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
-                                        />
+                                        <controls.Tooltip text={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}>
+                                            <div
+                                                className='icon'
+                                                onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
+                                            />
+                                        </controls.Tooltip>
                                 ]
                             }
                         </div>

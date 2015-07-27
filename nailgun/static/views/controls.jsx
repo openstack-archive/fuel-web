@@ -26,32 +26,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
 
     var controls = {};
 
-    var tooltipMixin = controls.tooltipMixin = {
-        componentDidMount: function() {
-            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip();
-        },
-        componentDidUpdate: function() {
-            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip('destroy').tooltip();
-        },
-        componentWillUnmount: function() {
-            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip('destroy');
-        },
-        renderTooltipIcon: function() {
-            return this.props.tooltipText ? (
-                <i
-                    key='tooltip'
-                    ref='tooltip'
-                    className='glyphicon glyphicon-warning-sign tooltip-icon'
-                    data-toggle='tooltip'
-                    data-placement='right'
-                    title={this.props.tooltipText}
-                />
-            ) : null;
-        }
-    };
-
     controls.Input = React.createClass({
-        mixins: [tooltipMixin],
         propTypes: {
             type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
             name: React.PropTypes.node,
@@ -196,7 +171,11 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                 <label key='label' htmlFor={this.props.id}>
                     {children}
                     {this.props.label}
-                    {this.renderTooltipIcon()}
+                    {this.props.tooltipText &&
+                        <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                            <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
+                        </controls.Tooltip>
+                    }
                 </label>
             );
         },
@@ -239,7 +218,6 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
     });
 
     controls.RadioGroup = React.createClass({
-        mixins: [tooltipMixin],
         propTypes: {
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
@@ -252,7 +230,11 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                     {this.props.label &&
                         <h4>
                             {this.props.label}
-                            {this.renderTooltipIcon()}
+                            {this.props.tooltipText &&
+                                <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                                    <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
+                                </controls.Tooltip>
+                            }
                         </h4>
                     }
                     {_.map(this.props.values, function(value) {
@@ -332,6 +314,39 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                     <div className='popover-content'>{this.props.children}</div>
                 </div>
             );
+        }
+    });
+
+    controls.Tooltip = React.createClass({
+        propTypes: {
+            container: React.PropTypes.node,
+            placement: React.PropTypes.node,
+            text: React.PropTypes.node
+        },
+        getDefaultProps: function() {
+            return {placement: 'top', container: 'body'};
+        },
+        componentDidMount: function() {
+            if (this.props.text) this.addTooltip();
+        },
+        componentDidUpdate: function() {
+            if (this.props.text) this.addTooltip(); else this.removeTooltip();
+        },
+        componentWillUnmount: function() {
+            this.removeTooltip();
+        },
+        addTooltip: function() {
+            $(this.refs.tooltip.getDOMNode()).tooltip({
+                container: this.props.container,
+                placement: this.props.placement,
+                title: this.props.text
+            });
+        },
+        removeTooltip: function() {
+            $(this.refs.tooltip.getDOMNode()).tooltip('destroy');
+        },
+        render: function() {
+            return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});
         }
     });
 

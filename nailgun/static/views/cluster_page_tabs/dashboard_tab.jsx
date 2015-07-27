@@ -45,15 +45,17 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 renderOn: 'update change'
             }),
             componentMixins.backboneMixin('cluster', 'change'),
-            componentMixins.pollingMixin(20, true)
+            componentMixins.pollingMixin(20, true),
+            componentMixins.dispatcherMixin('updatePageLayout')
         ],
         fetchData: function() {
-            return this.props.cluster.get('nodes').fetch();
+            return $.when(this.props.cluster.fetch(), this.props.cluster.get('nodes').fetch());
         },
         getInitialState: function() {
             return {
                 actionInProgress: false,
-                hasDeployBlockers: false
+                hasDeployBlockers: false,
+                isRenaming: false
             };
         },
         getTitle: function() {
@@ -80,6 +82,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 </div>
             );
         },
+        onTabContentClick: function(e) {
+            // @FIXME: maybe more specific check is required here
+            if (e.target.nodeName.toLowerCase() != 'input') {
+                this.setState({isRenaming: false});
+            }
+        },
         render: function() {
             var cluster = this.props.cluster,
                 release = cluster.get('release'),
@@ -97,7 +105,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 resetDeploymentTask = cluster.task({name: 'reset_environment'});
 
             return (
-                <div>
+                <div onClick={this.onTabContentClick}>
                     {failedDeploymentTask && !!title &&
                         <div className='row'>
                             {this.renderTitle(title)}
@@ -124,7 +132,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {!!title && !failedDeploymentTask && hasNodes &&
                                 this.renderTitle(title)
                             }
-                            {(((isNew && !failedDeploymentTask) || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
+                            {((isNew || !failedDeploymentTask || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
                                 <DeployReadinessBlock
                                     cluster={cluster}
                                     deploymentErrorTask={failedDeploymentTask}
@@ -143,6 +151,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     <ClusterInfo
                         cluster={cluster}
                         isNew={isNew}
+                        parent={this}
                     />
                     <DocumentationLinks />
                 </div>
@@ -463,9 +472,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         render: function() {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
-                    !!this.state.alerts.blocker.length,
                 hasNodes = !!nodes.length,
+                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
+                    !!this.state.alerts.blocker.length || !hasNodes,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
@@ -590,9 +599,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     });
 
     var ClusterInfo = React.createClass({
-        getInitialState: function() {
-            return {isRenaming: false};
-        },
         getClusterValue: function(fieldName) {
             var cluster = this.props.cluster,
                 release = cluster.get('release'),
@@ -763,11 +769,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 </div>
             );
         },
-        startClusterRenaming: function() {
-            this.setState({isRenaming: true});
+        startClusterRenaming: function(e) {
+            e.stopPropagation();
+            this.props.parent.setState({isRenaming: true});
         },
         endClusterRenaming: function() {
-            this.setState({isRenaming: false});
+            this.props.parent.setState({isRenaming: false});
         },
         render: function() {
             var cluster = this.props.cluster,
@@ -775,7 +782,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 task = cluster.task({group: 'deployment', status: 'running'}),
                 runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'});
             return (
-                <div className='cluster-information'>
+                <div className='cluster-information' >
                     <div className='row'>
                         <div className='col-xs-6'>
                             <div className='row'>
@@ -786,10 +793,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     </div>
                                 </div>
                                 <div className='col-xs-6'>
-                                    {this.state.isRenaming ?
+                                    {this.props.parent.state.isRenaming ?
                                         <RenameEnvironmentAction
                                             cluster={cluster}
-                                            startRenaming={this.startClusterRenaming}
                                             endRenaming={this.endClusterRenaming}
                                         />
                                     :
@@ -864,12 +870,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 });
                             }
                         }, this))
-                        .done(function() {
-                            dispatcher.trigger('updatePageLayout');
-                        })
-                        .always(_.bind(function() {
+                        .done(_.bind(function() {
                             this.props.endRenaming();
-                            this.setState({disabled: false});
+                            dispatcher.trigger('updatePageLayout');
                         }, this));
                 } else {
                     if (cluster.validationError) {

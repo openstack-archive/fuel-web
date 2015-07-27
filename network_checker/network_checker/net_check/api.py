@@ -536,8 +536,10 @@ class Listener(Actor):
             filename = '{0}_{1}'.format('vlan', filename)
         pcap_file = os.path.join(self.config['pcap_dir'], filename)
 
+        # -n needs to be passed to tcpdump so it won't hang if dns is
+        # unavailable and cause it to hang. See LP#1466020
         return subprocess.Popen(
-            ['tcpdump', '-i', iface, '-w', pcap_file, filter_string],
+            ['tcpdump', '-i', iface, '-w', pcap_file, '-n', filter_string],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
 

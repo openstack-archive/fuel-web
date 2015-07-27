@@ -437,8 +437,8 @@
                             "title": "Node Management Error",
                             "saving_warning": "Unable to apply changes",
                             "labels_warning": "Unable to apply labels",
-                            "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
-                            "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                            "disks_configuration_warning": "Selected nodes have different disk capacities.",
+                            "interfaces_configuration_warning": "Selected nodes have different number of network interfaces."
                         },
                         "labels_error": {
                             "label_already_exists": "Label already exists",
@@ -856,8 +856,10 @@
                     "fqdn_label": "FQDN",
                     "hostname_label": "Hostname",
                     "ssh_console": "SSH console",
-                    "network_configuration_button": "Configure Interfaces",
-                    "disk_configuration_button": "Configure Disks",
+                    "network_configuration": "Interface Configuration",
+                    "disk_configuration": "Disk Configuration",
+                    "network_configuration_action": "Configure Interfaces",
+                    "disk_configuration_action": "Configure Disks",
                     "default_dialog_title": "Node Information",
                     "close_button": "Close",
                     "total": "total",

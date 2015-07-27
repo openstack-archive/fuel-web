@@ -602,7 +602,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         goToConfigurationScreen: function(action, conflict) {
             if (conflict) {
                 var ns = 'cluster_page.nodes_tab.node_management_panel.node_management_error.';
-                utils.showErrorDialog({title: i18n(ns + 'title'), message: i18n(ns + action + '_configuration_warning')});
+                utils.showErrorDialog({
+                    title: i18n(ns + 'title'),
+                    message: <div><i className='glyphicon glyphicon-danger-sign' /> {i18n(ns + action + '_configuration_warning')}</div>
+                });
                 return;
             }
             this.changeScreen(action, true);
@@ -748,6 +751,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             this.props.selectedNodeLabels.sort(utils.natsort);
 
+            var isConfigurable = !_.isEmpty(_.compact(this.props.nodes.invoke('isNodeConfigurationPossible'))),
+                diskConfigButtonText = i18n('dialog.show_node.disk_configuration' + (isConfigurable ? '_action' : '')),
+                networkConfigButtonText = i18n('dialog.show_node.network_configuration' + (isConfigurable ? '_action' : ''));
+
             return (
                 <div className='row'>
                     <div className='sticker node-management-panel'>
@@ -853,8 +860,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             disabled={!this.props.nodes.length}
                                             onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                                         >
-                                            {disksConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
-                                            {i18n('dialog.show_node.disk_configuration_button')}
+                                            {disksConflict && <i className='glyphicon glyphicon-danger-sign' />}
+                                            {diskConfigButtonText}
                                         </button>
                                         {!this.props.nodes.any({status: 'error'}) &&
                                             <button
@@ -862,8 +869,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 disabled={!this.props.nodes.length}
                                                 onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                             >
-                                                {interfaceConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
-                                                {i18n('dialog.show_node.network_configuration_button')}
+                                                {interfaceConflict && <i className='glyphicon glyphicon-danger-sign' />}
+                                                {networkConfigButtonText}
                                             </button>
                                         }
                                     </div>,

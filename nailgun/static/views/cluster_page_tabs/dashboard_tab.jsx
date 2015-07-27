@@ -107,19 +107,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         <DeploymentResult cluster={cluster} />
                     }
                     {isOperational && !runningDeploymentTask &&
-                        <div className='row'>
-                            <div className='col-xs-12 plugin-entry horizon'>
-                                <div className='title'>{i18n(namespace + 'horizon')}</div>
-                                <div className='description'>{i18n(namespace + 'horizon_description')}</div>
-                                <a
-                                    className='btn btn-success'
-                                    target='_blank'
-                                    href={'http://' + cluster.get('networkConfiguration').get('public_vip')}
-                                >
-                                    {i18n(namespace + 'go_to_horizon')}
-                                </a>
-                            </div>
-                        </div>
+                        <HorizonBlock cluster={cluster} />
                     }
                     {release.get('state') == 'unavailable' &&
                         <div className='alert global-alert alert-warning'>
@@ -157,6 +145,28 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         isNew={isNew}
                     />
                     <DocumentationLinks />
+                </div>
+            );
+        }
+    });
+
+    var HorizonBlock = React.createClass({
+        render: function() {
+            var cluster = this.props.cluster,
+                horizonLinkProtocol = cluster.get('public_ssl.horizon.value') ? 'https://' : 'http://';
+            return (
+                <div className='row'>
+                    <div className='col-xs-12 plugin-entry horizon'>
+                        <div className='title'>{i18n(namespace + 'horizon')}</div>
+                        <div className='description'>{i18n(namespace + 'horizon_description')}</div>
+                        <a
+                            className='btn btn-success'
+                            target='_blank'
+                            href={horizonLinkProtocol + cluster.get('networkConfiguration').get('public_vip')}
+                        >
+                            {i18n(namespace + 'go_to_horizon')}
+                        </a>
+                    </div>
                 </div>
             );
         }

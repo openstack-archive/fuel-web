@@ -195,9 +195,7 @@ class NailgunCollection(object):
 
         :returns: iterable (SQLAlchemy query)
         """
-        return db().query(
-            cls.single.model
-        )
+        return db().query(cls.single.model)
 
     @classmethod
     def _query_order_by(cls, query, order_by):

@@ -89,3 +89,13 @@ class VolumeManagerExtension(BaseExtension):
     @classmethod
     def on_node_reset(cls, node):
         cls.set_default_node_volumes(node)
+
+    @classmethod
+    def on_node_delete(cls, node):
+        from .objects.volumes import VolumeObject
+        VolumeObject.delete_by_node_ids([node.id])
+
+    @classmethod
+    def on_node_collection_delete(cls, node_ids):
+        from .objects.volumes import VolumeObject
+        VolumeObject.delete_by_node_ids(node_ids)

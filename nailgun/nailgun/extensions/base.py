@@ -89,6 +89,16 @@ def fire_callback_on_node_reset(node):
         extension.on_node_reset(node)
 
 
+def fire_callback_on_node_delete(node):
+    for extension in get_all_extensions():
+        extension.on_node_delete(node)
+
+
+def fire_callback_on_node_collection_delete(node_ids):
+    for extension in get_all_extensions():
+        extension.on_node_collection_delete(node_ids)
+
+
 @six.add_metaclass(abc.ABCMeta)
 class BaseExtension(object):
 
@@ -151,4 +161,14 @@ class BaseExtension(object):
     @classmethod
     def on_node_reset(cls, node):
         """Callback which gets executed when node is reseted
+        """
+
+    @classmethod
+    def on_node_delete(cls, node):
+        """Callback which gets executed when node is deleted
+        """
+
+    @classmethod
+    def on_node_collection_delete(cls, node_ids):
+        """Callback which gets executed when node collection is deleted
         """

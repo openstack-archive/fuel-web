@@ -443,7 +443,7 @@ _wizard_meta = {
                 },
                 {
                     "data": "neutron-gre",
-                    "label": "dialog.create_cluster_wizard.network.neutr_gre",
+                    "label": "dialog.create_cluster_wizard.network.neutron_gre",
                     "restrictions": [
                         {
                             "Compute.hypervisor == 'vcenter'": "dialog."
@@ -461,7 +461,7 @@ _wizard_meta = {
                 },
                 {
                     "data": "neutron-vlan",
-                    "label": "dialog.create_cluster_wizard.network.neutr_vlan",
+                    "label": "dialog.create_cluster_wizard.network.neutron_vlan",
                     "restrictions": [
                         {
                             "Compute.hypervisor == 'vcenter'": "dialog."
@@ -479,7 +479,7 @@ _wizard_meta = {
                 },
                 {
                     "data": "neutron-nsx",
-                    "label": "dialog.create_cluster_wizard.network.neutr_nsx",
+                    "label": "dialog.create_cluster_wizard.network.neutron_nsx",
                     "restrictions": [
                         {
                             "Compute.hypervisor == 'vcenter'": "dialog."

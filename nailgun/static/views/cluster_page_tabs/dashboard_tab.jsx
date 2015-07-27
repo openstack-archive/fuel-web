@@ -48,12 +48,13 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             componentMixins.pollingMixin(20, true)
         ],
         fetchData: function() {
-            return this.props.cluster.get('nodes').fetch();
+            return $.when(this.props.cluster.fetch(), this.props.cluster.get('nodes').fetch());
         },
         getInitialState: function() {
             return {
                 actionInProgress: false,
-                hasDeployBlockers: false
+                hasDeployBlockers: false,
+                isRenaming: false
             };
         },
         getTitle: function() {
@@ -80,6 +81,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 </div>
             );
         },
+        onTabContentClick: function(e) {
+            // @FIXME: maybe more specific check is required here
+            if (e.target.nodeName.toLowerCase() != 'input') {
+                this.setState({isRenaming: false});
+            }
+        },
         render: function() {
             var cluster = this.props.cluster,
                 release = cluster.get('release'),
@@ -97,7 +104,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 resetDeploymentTask = cluster.task({name: 'reset_environment'});
 
             return (
-                <div>
+                <div onClick={this.onTabContentClick}>
                     {failedDeploymentTask && !!title &&
                         <div className='row'>
                             {this.renderTitle(title)}
@@ -124,7 +131,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {!!title && !failedDeploymentTask && hasNodes &&
                                 this.renderTitle(title)
                             }
-                            {(((isNew && !failedDeploymentTask) || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
+                            {((isNew || !failedDeploymentTask || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
                                 <DeployReadinessBlock
                                     cluster={cluster}
                                     deploymentErrorTask={failedDeploymentTask}
@@ -143,6 +150,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     <ClusterInfo
                         cluster={cluster}
                         isNew={isNew}
+                        parent={this}
                     />
                     <DocumentationLinks />
                 </div>
@@ -155,7 +163,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             var cluster = this.props.cluster,
                 horizonLinkProtocol = cluster.get('public_ssl.horizon.value') ? 'https://' : 'http://';
             return (
-                <div className='row'>
+                <div className='row plugins-block'>
                     <div className='col-xs-12 plugin-entry horizon'>
                         <div className='title'>{i18n(namespace + 'horizon')}</div>
                         <div className='description'>{i18n(namespace + 'horizon_description')}</div>
@@ -179,38 +187,35 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         render: function() {
             var task = this.props.task,
                 taskName = task.get('name'),
-                isInfiniteTask = task.isInfinite(),
                 taskProgress = task.get('progress'),
                 stoppableTask = task.isStoppableTask();
             return (
-                <div className='col-xs-12 deploy-block'>
-                    <div className={'deploy-process ' + this.props.taskName}>
-                        <div>
-                            <span>
-                                <strong>
-                                    {i18n(namespace + 'current_task') + ' '}
-                                </strong>
-                                {i18n('cluster_page.' + taskName) + '...'}
-                            </span>
-                        </div>
-                        <div className='progress'>
-                            <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
-                                {taskProgress + '%'}
+                <div className='col-xs-12'>
+                    <div className='deploy-block'>
+                        <div className={'deploy-process ' + this.props.taskName}>
+                            <div>
+                                <span>
+                                    <strong>
+                                        {i18n(namespace + 'current_task') + ' '}
+                                    </strong>
+                                    {i18n('cluster_page.' + taskName) + '...'}
+                                </span>
                             </div>
-                        </div>
-                        {stoppableTask &&
+                            <div className='progress'>
+                                <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
+                                    {taskProgress + '%'}
+                                </div>
+                            </div>
                             <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
                                 <button
                                     className='btn btn-danger btn-xs pull-right stop-deployment-btn'
                                     onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                    disabled={!stoppableTask}
                                 >
                                     {i18n(namespace + 'stop')}
                                 </button>
                             </controls.Tooltip>
-                        }
-                        {!isInfiniteTask &&
-                            <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
-                        }
+                        </div>
                     </div>
                 </div>
             );
@@ -289,7 +294,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 <div className='documentation-link'>
                     <span>
                         <i className='glyphicon glyphicon-list-alt' />
-                        <a href={utils.composeDocumentationLink(link)} target='_blank'>
+                        <a href={link} target='_blank'>
                             {i18n(namespace + labelKey)}
                         </a>
                     </span>
@@ -464,9 +469,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         render: function() {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
-                    !!this.state.alerts.blocker.length,
                 hasNodes = !!nodes.length,
+                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
+                    !!this.state.alerts.blocker.length || !hasNodes,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
@@ -591,9 +596,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     });
 
     var ClusterInfo = React.createClass({
-        getInitialState: function() {
-            return {isRenaming: false};
-        },
         getClusterValue: function(fieldName) {
             var cluster = this.props.cluster,
                 release = cluster.get('release'),
@@ -764,11 +766,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 </div>
             );
         },
-        startClusterRenaming: function() {
-            this.setState({isRenaming: true});
+        startClusterRenaming: function(e) {
+            e.stopPropagation();
+            this.props.parent.setState({isRenaming: true});
         },
         endClusterRenaming: function() {
-            this.setState({isRenaming: false});
+            this.props.parent.setState({isRenaming: false});
         },
         render: function() {
             var cluster = this.props.cluster,
@@ -776,7 +779,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 task = cluster.task({group: 'deployment', status: 'running'}),
                 runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'});
             return (
-                <div className='cluster-information'>
+                <div className='cluster-information' >
                     <div className='row'>
                         <div className='col-xs-6'>
                             <div className='row'>
@@ -787,10 +790,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     </div>
                                 </div>
                                 <div className='col-xs-6'>
-                                    {this.state.isRenaming ?
+                                    {this.props.parent.state.isRenaming ?
                                         <RenameEnvironmentAction
                                             cluster={cluster}
-                                            startRenaming={this.startClusterRenaming}
                                             endRenaming={this.endClusterRenaming}
                                         />
                                     :
@@ -804,7 +806,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                                 {this.renderClusterInfoFields()}
                                 {!isNew &&
-                                    <div className='col-xs-12'>
+                                    <div className='col-xs-12 go-to-healthcheck'>
                                         {i18n(namespace + 'healthcheck')}
                                         <a href={'#cluster/' + cluster.id + '/healthcheck'}>
                                             {i18n(namespace + 'healthcheck_tab')}
@@ -853,7 +855,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             if (name != cluster.get('name')) {
                 var deferred = cluster.save({name: name}, {patch: true, wait: true});
                 if (deferred) {
-                    this.setState({disabled: true});
                     deferred
                         .fail(_.bind(function(response) {
                             if (response.status == 409) {
@@ -870,7 +871,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         })
                         .always(_.bind(function() {
                             this.props.endRenaming();
-                            this.setState({disabled: false});
                         }, this));
                 } else {
                     if (cluster.validationError) {
@@ -884,7 +884,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         getInitialState: function() {
             return {
                 name: this.props.cluster.get('name'),
-                disabled: false,
                 error: ''
             };
         },
@@ -913,7 +912,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 <div className='rename-block'>
                     <div className='action-body' onKeyDown={this.handleKeyDown}>
                         <input type='text'
-                            disabled={this.state.disabled}
                             className={utils.classNames({'form-control': true, error: this.state.error})}
                             maxLength='50'
                             valueLink={valueLink}

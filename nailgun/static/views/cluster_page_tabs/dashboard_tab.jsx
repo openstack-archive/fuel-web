@@ -199,13 +199,14 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             </div>
                         </div>
                         {stoppableTask &&
-                            <button
-                                className='btn btn-danger btn-xs pull-right stop-deployment-btn'
-                                title={i18n('cluster_page.stop_deployment_button')}
-                                onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
-                            >
-                                {i18n(namespace + 'stop')}
-                            </button>
+                            <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
+                                <button
+                                    className='btn btn-danger btn-xs pull-right stop-deployment-btn'
+                                    onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                >
+                                    {i18n(namespace + 'stop')}
+                                </button>
+                            </controls.Tooltip>
                         }
                         {!isInfiniteTask &&
                             <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
@@ -956,23 +957,13 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     >
                         {i18n(namespace + 'reset_environment')}
                     </button>
-                    <ActionsTooltip
+                    <controls.Tooltip
                         key='reset-tooltip'
-                        name='reset'
-                        className='reset'
-                        tooltipText={!isLocked ? i18n(namespace + 'reset_environment_warning') : i18n(namespace + this.getDescriptionKey())}
-                    />
-                </div>
-            );
-        }
-    });
-
-    var ActionsTooltip = React.createClass({
-        mixins: [controls.tooltipMixin],
-        render: function() {
-            return (
-                <div className='tooltip-wrapper'>
-                    {this.renderTooltipIcon()}
+                        placement='right'
+                        text={!isLocked ? i18n(namespace + 'reset_environment_warning') : i18n(namespace + this.getDescriptionKey())}
+                    >
+                        <i className='glyphicon glyphicon-info-sign' />
+                    </controls.Tooltip>
                 </div>
             );
         }
@@ -993,12 +984,13 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     >
                         {i18n(namespace + 'delete_environment')}
                     </button>
-                    <ActionsTooltip
-                        key='delete-popover'
-                        name='delete'
-                        className='delete'
-                        tooltipText={i18n(namespace + 'alert_delete')}
-                    />
+                    <controls.Tooltip
+                        key='delete-tooltip'
+                        placement='right'
+                        text={i18n(namespace + 'alert_delete')}
+                    >
+                        <i className='glyphicon glyphicon-info-sign' />
+                    </controls.Tooltip>
                 </div>
             );
         }

@@ -18,7 +18,7 @@ from copy import deepcopy
 from mock import patch
 import string
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.errors import errors
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension

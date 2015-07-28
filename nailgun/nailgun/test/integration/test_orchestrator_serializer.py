@@ -25,7 +25,7 @@ import mock
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import yaml
 
 from nailgun import consts

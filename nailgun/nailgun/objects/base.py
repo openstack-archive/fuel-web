@@ -23,7 +23,7 @@ import collections
 from itertools import ifilter
 import operator
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload

@@ -22,7 +22,7 @@ import os
 import six
 import traceback
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 from sqlalchemy import or_
 
 from nailgun import consts

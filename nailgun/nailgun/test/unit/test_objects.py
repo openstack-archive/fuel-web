@@ -25,7 +25,7 @@ import re
 import uuid
 
 import jsonschema
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 import six
 from six.moves import range
 

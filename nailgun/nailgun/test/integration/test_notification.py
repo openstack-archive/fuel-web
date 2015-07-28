@@ -16,7 +16,7 @@
 
 import uuid
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task

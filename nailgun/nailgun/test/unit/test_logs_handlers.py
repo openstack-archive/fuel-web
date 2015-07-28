@@ -22,7 +22,7 @@ import time
 
 import mock
 
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 import nailgun
 from nailgun.api.v1.handlers.logs import read_backwards

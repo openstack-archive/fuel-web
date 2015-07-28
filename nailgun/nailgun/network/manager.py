@@ -655,7 +655,7 @@ class NetworkManager(object):
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node)
         if ip_addr:
-            ip_addr = "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
+            ip_addr = cls.get_ip_w_cidr_prefix_len(ip_addr, net)
 
         return {
             'name': net.name,
@@ -680,12 +680,11 @@ class NetworkManager(object):
 
     @classmethod
     def _get_network_data_with_ip(cls, node_db, interface, net, ip):
-        prefix = str(IPNetwork(net.cidr).prefixlen)
         return {
             'name': net.name,
             'cidr': net.cidr,
             'vlan': cls.get_network_vlan(net, node_db.cluster),
-            'ip': ip.ip_addr + '/' + prefix,
+            'ip': cls.get_ip_w_cidr_prefix_len(ip.ip_addr, net),
             'netmask': str(IPNetwork(net.cidr).netmask),
             'brd': str(IPNetwork(net.cidr).broadcast),
             'gateway': net.gateway,
@@ -1373,3 +1372,9 @@ class NetworkManager(object):
             return []
         return [consts.BOND_MODES.lacp_balance_tcp,
                 consts.BOND_MODES.l_802_3ad]
+
+    @classmethod
+    def get_ip_w_cidr_prefix_len(cls, ip, network_group):
+        """Returns IP with address space prefix, e.g. "10.20.0.1/24"
+        """
+        return "{0}/{1}".format(ip, IPNetwork(network_group.cidr).prefixlen)

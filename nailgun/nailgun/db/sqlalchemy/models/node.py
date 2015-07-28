@@ -30,7 +30,6 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.dialects import postgresql as psql
 
 from nailgun import consts
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
@@ -232,10 +231,6 @@ class Node(Base):
         will be introduced in 5.0 release
         """
         self.name = u'Untitled ({0})'.format(self.mac[-5:])
-
-    @classmethod
-    def delete_by_ids(cls, ids):
-        db.query(Node).filter(Node.id.in_(ids)).delete('fetch')
 
 
 class NodeAttributes(Base):

@@ -73,3 +73,13 @@ class VolumeObject(object):
         :returns: NodeVolumes model
         """
         return db().query(NodeVolumes).filter_by(node_id=node_id).first()
+
+    @classmethod
+    def delete_by_node_ids(cls, node_ids):
+        """Deletes volumes by node id
+
+        :param list node_ids: list of node ids
+        """
+        db().query(NodeVolumes).filter(
+            NodeVolumes.node_id.in_(node_ids)).delete(
+                synchronize_session=False)

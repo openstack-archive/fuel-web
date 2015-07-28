@@ -111,7 +111,7 @@ class NailgunReceiver(object):
                 None, nodes_to_delete_ids):
             logs_utils.delete_node_logs(node)
 
-        Node.delete_by_ids(nodes_to_delete_ids)
+        objects.NodeCollection.delete_by_ids(nodes_to_delete_ids)
 
         for node in error_nodes:
             node_db = objects.Node.get_by_uid(node['uid'])
@@ -177,7 +177,7 @@ class NailgunReceiver(object):
             map(db().delete, ips)
             db().flush()
 
-            db().delete(cluster)
+            objects.Cluster.delete(cluster)
             db().flush()
 
             notifier.notify(

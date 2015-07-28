@@ -30,6 +30,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -236,6 +237,14 @@ class Cluster(NailgunObject):
         db().flush()
 
         return new_cluster
+
+    @classmethod
+    def delete(cls, instance):
+        node_ids = [
+            _id for (_id,) in
+            db().query(models.Node.id).filter_by(cluster_id=instance.id)]
+        fire_callback_on_node_collection_delete(node_ids)
+        super(Cluster, cls).delete(instance)
 
     @classmethod
     def get_default_kernel_params(cls, instance):

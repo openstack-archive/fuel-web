@@ -23,3 +23,4 @@ from nailgun.extensions.base import fire_callback_on_node_collection_delete
 from nailgun.extensions.base import fire_callback_on_node_create
 from nailgun.extensions.base import fire_callback_on_node_update
 from nailgun.extensions.base import fire_callback_on_node_reset
+from nailgun.extensions.base import fire_callback_on_cluster_delete

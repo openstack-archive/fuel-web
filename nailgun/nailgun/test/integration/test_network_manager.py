@@ -25,6 +25,7 @@ from netaddr import IPRange
 from sqlalchemy import not_
 
 import nailgun
+from nailgun.errors import errors
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -346,6 +347,79 @@ class TestNetworkManager(BaseIntegrationTest):
             self.assertEqual(len(admin_ips), 1)
             self.assertEqual(admin_ips[0].ip_addr, ip)
 
+    def _create_ip_addrs_by_rules(self, cluster, rules):
+        created_ips = []
+        for net_group in cluster.network_groups:
+            if net_group.name not in rules:
+                continue
+            vips_by_types = rules[net_group.name]
+            for vip_type, ip_addr in vips_by_types.items():
+                ip = IPAddr(
+                    network=net_group.id,
+                    ip_addr=ip_addr,
+                    vip_type=vip_type,
+                )
+                self.db.add(ip)
+                created_ips.append(ip)
+        if created_ips:
+            self.db.flush()
+        return created_ips
+
+    def test_get_assigned_vips(self):
+        vips_to_create = {
+            'management': {
+                'haproxy': '192.168.0.1',
+                'vrouter': '192.168.0.2',
+            },
+            'public': {
+                'haproxy': '172.16.0.2',
+                'vrouter': '172.16.0.3',
+            },
+        }
+        cluster = self.env.create_cluster(api=False)
+        self._create_ip_addrs_by_rules(cluster, vips_to_create)
+        vips = self.env.network_manager.get_assigned_vips(cluster)
+        self.assertEqual(vips_to_create, vips)
+
+    def test_assign_given_vips_for_net_groups(self):
+        vips_to_create = {
+            'management': {
+                'haproxy': '192.168.0.1',
+            },
+            'public': {
+                'haproxy': '172.16.0.2',
+            },
+        }
+        vips_to_assign = {
+            'management': {
+                'haproxy': '192.168.0.1',
+                'vrouter': '192.168.0.2',
+            },
+            'public': {
+                'haproxy': '172.16.0.4',
+                'vrouter': '172.16.0.5',
+            },
+        }
+        cluster = self.env.create_cluster(api=False)
+        self._create_ip_addrs_by_rules(cluster, vips_to_create)
+        self.env.network_manager.assign_given_vips_for_net_groups(
+            cluster, vips_to_assign)
+        vips = self.env.network_manager.get_assigned_vips(cluster)
+        self.assertEqual(vips_to_assign, vips)
+
+    def test_assign_given_vips_for_net_groups_assign_error(self):
+        vips_to_assign = {
+            'management': {
+                'haproxy': '10.10.0.1',
+            },
+        }
+        expected_msg_regexp = '^Cannot assign VIP with the address "10.10.0.1"'
+        cluster = self.env.create_cluster(api=False)
+        with self.assertRaisesRegexp(errors.AssignIPError,
+                                     expected_msg_regexp):
+            self.env.network_manager.assign_given_vips_for_net_groups(
+                cluster, vips_to_assign)
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_admin_ip_cobbler(self, mocked_rpc):
@@ -401,6 +475,40 @@ class TestNetworkManager(BaseIntegrationTest):
             ),
             itertools.product((0, 1), ('eth0',))
         )
+
+    def test_get_admin_network_group(self):
+        self.env.create_cluster(api=False)
+        admin_ng = self.env.network_manager.get_admin_network_group()
+        expected_ng = self.db.query(NetworkGroup).filter_by(
+            name="fuelweb_admin",
+            group_id=None,
+        ).first()
+        self.assertIsNotNone(expected_ng)
+        self.assertEqual(expected_ng, admin_ng)
+
+    def test_get_admin_network_group_by_node_id(self):
+        self.env.create_cluster(api=False)
+        node = self.env.create_node()
+        admin_ng = self.env.network_manager.get_admin_network_group(
+            node_id=node.id)
+        expected_ng = self.db.query(NetworkGroup).filter_by(
+            name="fuelweb_admin",
+            group_id=None,
+        ).first()
+        self.assertIsNotNone(expected_ng)
+        self.assertEqual(expected_ng, admin_ng)
+
+    def test_get_admin_network_group_by_node_group_id(self):
+        cluster = self.env.create_cluster(api=False)
+        default_group = objects.Cluster.get_default_group(cluster)
+        admin_ng = self.env.network_manager.get_admin_network_group(
+            node_group_id=default_group.id)
+        expected_ng = self.db.query(NetworkGroup).filter_by(
+            name="fuelweb_admin",
+            group_id=None,
+        ).first()
+        self.assertIsNotNone(expected_ng)
+        self.assertEqual(expected_ng, admin_ng)
 
 
 class TestNovaNetworkManager(BaseIntegrationTest):

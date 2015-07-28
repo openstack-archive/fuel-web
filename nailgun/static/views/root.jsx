@@ -27,7 +27,8 @@ define([
     var RootComponent = React.createClass({
         mixins: [
             componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle'),
-            componentMixins.dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning')
+            componentMixins.dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning'),
+            componentMixins.dispatcherMixin('hideDefaultPasswordWarning', 'hideDefaultPasswordWarning')
         ],
         showDefaultPasswordWarning: function() {
             this.setState({showDefaultPasswordWarning: true});

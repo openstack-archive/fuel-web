@@ -1010,10 +1010,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         changePassword: function() {
             if (this.isPasswordChangeAvailable()) {
+                var keystoneClient = app.keystoneClient;
                 this.setState({actionInProgress: true});
-                app.keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
+                keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
                     .done(_.bind(function() {
-                        app.user.set({token: app.keystoneClient.token});
+                        dispatcher.trigger(this.state.newPassword == keystoneClient.DEFAULT_PASSWORD ? 'showDefaultPasswordWarning' : 'hideDefaultPasswordWarning');
+                        app.user.set({token: keystoneClient.token});
                         this.close();
                     }, this))
                     .fail(_.bind(function() {

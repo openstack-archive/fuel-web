@@ -24,6 +24,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
     }
 
     _.extend(KeystoneClient.prototype, {
+        DEFAULT_PASSWORD: 'admin',
         authenticate: function(username, password, options) {
             options = options || {};
             if (this.tokenUpdateRequest) {

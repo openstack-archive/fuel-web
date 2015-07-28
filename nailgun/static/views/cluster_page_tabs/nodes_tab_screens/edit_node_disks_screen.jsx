@@ -89,6 +89,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         },
         applyChanges: function() {
             this.setState({actionInProgress: true});
+            var initialNodesState = _.cloneDeep(this.props.nodes.at(0).disks.toJSON());
             return $.when.apply($, this.props.nodes.map(function(node) {
                     node.disks.each(function(disk, index) {
                         disk.set({volumes: new models.Volumes(this.props.disks.at(index).get('volumes').toJSON())});
@@ -96,6 +97,11 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                     return Backbone.sync('update', node.disks, {url: _.result(node, 'url') + '/disks'});
                 }, this))
                 .fail(_.bind(function(response) {
+                    this.props.nodes.map(function(node) {
+                        node.disks.each(function(disk, index) {
+                            disk.set({volumes: new models.Volumes(initialNodesState[index].volumes)});
+                        }, this);
+                    }, this);
                     var ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
                     utils.showErrorDialog({
                         title: i18n(ns + 'title'),

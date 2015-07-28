@@ -16,6 +16,7 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -55,8 +56,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.get_template(1, expect_errors=True)
         self.assertEqual(404, resp.status_code)
 
-    def test_delete_template(self):
-        cluster = self.env.create_cluster(api=False)
+    def check_put_delete_template(self, cluster, failed=False):
         template = {'template': 'test'}
         resp = self.app.put(
             reverse(
@@ -64,18 +64,38 @@ class TestHandlers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster.id},
             ),
             jsonutils.dumps(template),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=failed
         )
-        self.assertEquals(200, resp.status_code)
+        if not failed:
+            self.assertEqual(resp.status_code, 200)
+        else:
+            self.assertGreaterEqual(resp.status_code, 400)
 
         resp = self.app.delete(
             reverse(
                 'TemplateNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster.id},
             ),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=failed
         )
-        self.assertEquals(204, resp.status_code)
+        if not failed:
+            resp = self.get_template(cluster.id)
+            self.assertEquals(None, resp.json_body)
+        else:
+            self.assertGreaterEqual(resp.status_code, 400)
 
-        resp = self.get_template(cluster.id)
-        self.assertEquals(None, resp.json_body)
+    def test_put_delete_template(self):
+        cluster = self.env.create_cluster(api=False)
+        self.check_put_delete_template(cluster)
+
+    def test_put_delete_template_after_deployment(self):
+        allowed = [consts.CLUSTER_STATUSES.new,
+                   consts.CLUSTER_STATUSES.stopped,
+                   consts.CLUSTER_STATUSES.operational,
+                   consts.CLUSTER_STATUSES.error]
+        for status in consts.CLUSTER_STATUSES:
+            cluster = self.env.create_cluster(
+                api=False, status=status)
+            self.check_put_delete_template(cluster, status not in allowed)

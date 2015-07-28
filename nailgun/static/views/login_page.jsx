@@ -66,7 +66,7 @@ function($, _, i18n, React, dispatcher) {
                         token: keystoneClient.token
                     });
 
-                    if (password == 'admin') {
+                    if (password == keystoneClient.DEFAULT_PASSWORD) {
                         dispatcher.trigger('showDefaultPasswordWarning');
                     }
 

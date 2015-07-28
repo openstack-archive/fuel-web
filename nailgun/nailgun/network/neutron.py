@@ -16,8 +16,12 @@
 
 import six
 
+from netaddr import IPNetwork
+
 from nailgun import consts
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.errors import errors
 from nailgun import objects
@@ -206,3 +210,35 @@ class NeutronManager70(NeutronManager):
             }
 
         return vips
+
+    @classmethod
+    def get_node_networks_ips(cls, node):
+        """Returns node's IP and gateway's IP for each network of
+        particular node.
+        """
+        if not node.group_id:
+            return {}
+
+        ngs = db().query(NetworkGroup, IPAddr).\
+            filter(NetworkGroup.group_id == node.group_id). \
+            filter(IPAddr.network == NetworkGroup.id). \
+            filter(IPAddr.node == node.id). \
+            all()
+        if not ngs:
+            return {}
+
+        networks = {}
+        for ng, ip in ngs:
+            prefix = str(IPNetwork(ng.cidr).prefixlen)
+            networks[ng.name] = {
+                'ip': ip.ip_addr + '/' + prefix,
+                'gateway': ng.gateway
+            }
+        admin_ng = cls.get_admin_network_group(node.id)
+        if admin_ng:
+            prefix = str(IPNetwork(admin_ng.cidr).prefixlen)
+            networks[admin_ng.name] = {
+                'ip': cls.get_admin_ip_for_node(node.id) + '/' + prefix,
+                'gateway': admin_ng.gateway
+            }
+        return networks

@@ -1043,24 +1043,14 @@ class NeutronNetworkTemplateSerializer70(
 
         nm = Cluster.get_network_manager(node.cluster)
 
-        netgroups = {}
-        nets_by_ifaces = defaultdict(list)
+        netgroups = nm.get_node_networks_ips(node)
         netgroup_mapping = cls._get_netgroup_mapping_by_role(node)
         for ngname, brname in netgroup_mapping:
-            # Here we get a dict with network description for this particular
-            # node with its assigned IPs and device names for each network.
-            netgroup = nm.get_network_by_netname(ngname, networks)
-            ip_addr = netgroup.get('ip')
+            ip_addr = netgroups.get(ngname, {}).get('ip')
             if ip_addr:
                 attrs['endpoints'][brname] = {'IP': [ip_addr]}
             else:
                 attrs['endpoints'][brname] = {'IP': 'none'}
-
-            netgroups[ngname] = netgroup
-            nets_by_ifaces[netgroup['dev']].append({
-                'br_name': brname,
-                'vlan_id': netgroup['vlan']
-            })
 
         # TODO(rmoe): fix gateway selection
         if 'public/vip' in roles:
@@ -1080,7 +1070,8 @@ class NeutronNetworkTemplateSerializer70(
             attrs['endpoints'][floating_ep] = {'IP': 'none'}
         else:
             admin_ep = roles['admin/pxe']
-            attrs['endpoints'][admin_ep]['gateway'] = settings.MASTER_IP
+            attrs['endpoints'][admin_ep]['gateway'] = \
+                nm.get_default_gateway(node.id)
 
         # Fill up interfaces.
         for iface in node.nic_interfaces:
@@ -1104,11 +1095,12 @@ class NeutronNetworkTemplateSerializer70(
     @classmethod
     def _get_endpoint_to_ip_mapping(cls, node, networks):
         nm = Cluster.get_network_manager(node.cluster)
+        net_to_ips = nm.get_node_networks_ips(node)
 
         mapping = dict()
         net_to_ep = cls._get_netgroup_mapping_by_role(node)
-        for netname, ep in net_to_ep:
-            netgroup = nm.get_network_by_netname(netname, networks)
+        for network, ep in net_to_ep:
+            netgroup = net_to_ips.get(network, {})
             if netgroup.get('ip'):
                 mapping[ep] = netgroup['ip'].split('/')[0]
 

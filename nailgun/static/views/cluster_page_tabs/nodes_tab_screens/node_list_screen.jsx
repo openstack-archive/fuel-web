@@ -763,56 +763,66 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 <div className='btn-group' data-toggle='buttons'>
                                     {_.map(this.props.cluster.viewModes(), function(mode) {
                                         return (
-                                            <label
-                                                key={mode + '-view'}
-                                                className={utils.classNames(managementButtonClasses(mode == this.props.viewMode, mode))}
-                                                onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
-                                            >
-                                                <input type='radio' name='view_mode' value={mode} />
-                                                <i className={utils.classNames({
-                                                    glyphicon: true,
-                                                    'glyphicon-th-list': mode == 'standard',
-                                                    'glyphicon-th': mode == 'compact'
-                                                })} />
-                                            </label>
+                                            <controls.Tooltip text={i18n(ns + mode + '_mode_tooltip')}>
+                                                <label
+                                                    key={mode + '-view'}
+                                                    className={utils.classNames(managementButtonClasses(mode == this.props.viewMode, mode))}
+                                                    onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
+                                                >
+                                                    <input type='radio' name='view_mode' value={mode} />
+                                                    <i className={utils.classNames({
+                                                        glyphicon: true,
+                                                        'glyphicon-th-list': mode == 'standard',
+                                                        'glyphicon-th': mode == 'compact'
+                                                    })} />
+                                                </label>
+                                            </controls.Tooltip>
                                         );
                                     }, this)}
                                 </div>
                             </div>
                             {this.props.mode != 'edit' && [
-                                <button
-                                    key='labels-btn'
-                                    disabled={!this.props.nodes.length}
-                                    onClick={this.props.nodes.length && this.toggleLabelsPanel}
-                                    className={utils.classNames(managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels'))}
-                                >
-                                    <i className='glyphicon glyphicon-tag' />
-                                </button>,
-                                <button
-                                    key='sorters-btn'
-                                    disabled={!this.props.screenNodes.length}
-                                    onClick={this.toggleSorters}
-                                    className={utils.classNames(managementButtonClasses(this.state.areSortersVisible))}
-                                >
-                                    <i className='glyphicon glyphicon-sort' />
-                                </button>,
-                                <button
-                                    key='filters-btn'
-                                    disabled={!this.props.screenNodes.length}
-                                    onClick={this.toggleFilters}
-                                    className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible))}
-                                >
-                                    <i className='glyphicon glyphicon-filter' />
-                                </button>,
-                                !this.state.activeSearch && (
+                                <controls.Tooltip text={i18n(ns + 'labels_tooltip')}>
                                     <button
-                                        key='search-btn'
-                                        disabled={!this.props.screenNodes.length}
-                                        onClick={this.activateSearch}
-                                        className={utils.classNames(managementButtonClasses(false, 'btn-search'))}
+                                        key='labels-btn'
+                                        disabled={!this.props.nodes.length}
+                                        onClick={this.props.nodes.length && this.toggleLabelsPanel}
+                                        className={utils.classNames(managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels'))}
                                     >
-                                        <i className='glyphicon glyphicon-search' />
+                                        <i className='glyphicon glyphicon-tag' />
                                     </button>
+                                </controls.Tooltip>,
+                                <controls.Tooltip text={i18n(ns + 'sort_tooltip')}>
+                                    <button
+                                        key='sorters-btn'
+                                        disabled={!this.props.screenNodes.length}
+                                        onClick={this.toggleSorters}
+                                        className={utils.classNames(managementButtonClasses(this.state.areSortersVisible))}
+                                    >
+                                        <i className='glyphicon glyphicon-sort' />
+                                    </button>
+                                </controls.Tooltip>,
+                                <controls.Tooltip text={i18n(ns + 'filter_tooltip')}>
+                                    <button
+                                        key='filters-btn'
+                                        disabled={!this.props.screenNodes.length}
+                                        onClick={this.toggleFilters}
+                                        className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible))}
+                                    >
+                                        <i className='glyphicon glyphicon-filter' />
+                                    </button>
+                                </controls.Tooltip>,
+                                !this.state.activeSearch && (
+                                    <controls.Tooltip text={i18n(ns + 'search_tooltip')}>
+                                        <button
+                                            key='search-btn'
+                                            disabled={!this.props.screenNodes.length}
+                                            onClick={this.activateSearch}
+                                            className={utils.classNames(managementButtonClasses(false, 'btn-search'))}
+                                        >
+                                            <i className='glyphicon glyphicon-search' />
+                                        </button>
+                                    </controls.Tooltip>
                                 ),
                                 this.state.activeSearch && (
                                     <div className='search pull-left' key='search'>

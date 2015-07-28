@@ -64,11 +64,14 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         getInitialState: function() {
             return {actionInProgress: false};
         },
+        componentWillMount: function() {
+            this.setState({initialNodesState: this.updateInitialData()});
+        },
+        updateInitialData: function() {
+            return _.cloneDeep(this.props.nodes.at(0).disks.toJSON());
+        },
         hasChanges: function() {
-            var volumes = _.pluck(this.props.disks.toJSON(), 'volumes');
-            return this.props.nodes.any(function(node) {
-                return !_.isEqual(volumes, _.pluck(node.disks.toJSON(), 'volumes'));
-            });
+            return !_.isEqual(_.pluck(this.props.disks.toJSON(), 'volumes'), _.pluck(this.state.initialNodesState, 'volumes'));
         },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
@@ -85,7 +88,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                 }, this));
         },
         revertChanges: function() {
-            this.props.disks.reset(_.cloneDeep(this.props.nodes.at(0).disks.toJSON()), {parse: true});
+            this.props.disks.reset(_.cloneDeep(this.state.initialNodesState), {parse: true});
         },
         applyChanges: function() {
             this.setState({actionInProgress: true});
@@ -94,6 +97,9 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                         disk.set({volumes: new models.Volumes(this.props.disks.at(index).get('volumes').toJSON())});
                     }, this);
                     return Backbone.sync('update', node.disks, {url: _.result(node, 'url') + '/disks'});
+                }, this))
+                .done(_.bind(function() {
+                    this.setState({initialNodesState: this.updateInitialData()});
                 }, this))
                 .fail(_.bind(function(response) {
                     var ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';

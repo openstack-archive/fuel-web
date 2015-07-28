@@ -94,7 +94,7 @@ casper.then(function() {
     this.loadPage('#cluster/1/dashboard').waitForSelector('.dashboard-tab > *');
     this.then(function() {
         this.test.assertSelectorAppears('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
-        this.test.assertSelectorAppears('.alert-success', 'Success stopping deployment alert message appears');
+        this.test.assertSelectorAppears('.alert-warning', 'Success stopping deployment alert message appears');
     });
     this.loadPage('#cluster/1/dashboard').waitForSelector('.dashboard-tab > *');
     this.then(function() {
@@ -182,7 +182,7 @@ casper.then(function() {
     casper.loadPage('#cluster/1/dashboard').waitForSelector('.dashboard-tab > *');
     this.then(function() {
         this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
-        this.test.assertExists('.alert-success', 'Success reset message appears');
+        this.test.assertExists('.alert-warning', 'Success reset message appears');
     });
 
     casper.loadPage('#cluster/1/nodes').waitForSelector('.nodes-tab > *');

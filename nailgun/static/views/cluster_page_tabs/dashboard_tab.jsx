@@ -614,7 +614,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     if (cluster.get('net_provider') == 'nova_network') {
                         return i18n(namespace + 'nova_with') + ' ' + networkManager + ' ' + i18n(namespace + 'manager');
                     }
-                    return i18n(namespace + 'neutron_with') + ' ' + networkingParam.get('segmentation_type').toUpperCase();
+                    return (i18n('common.network.neutron_' + networkingParam.get('segmentation_type')));
                 case 'storage_backends':
                     var volumesLVM = settings.get('storage').volumes_lvm,
                         volumesCeph = settings.get('storage').volumes_ceph;

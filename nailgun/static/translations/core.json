@@ -45,6 +45,11 @@
                     "min": "At least __limitValue__ __roleName__ nodes are required (__count__ selected currently).",
                     "max": "At most __limitValue__ __roleName__ nodes are allowed.",
                     "recommended": "It is recommended to have at least __limitValue__ of __roleName__ nodes (__count__ selected currently)."
+                },
+                "network": {
+                  "neutron_gre": "Neutron with GRE segmentation",
+                  "neutron_vlan": "Neutron with VLAN segmentation",
+                  "neutron_tun": "Neutron with tunneling segmentation"
                 }
             },
             "controls": {
@@ -583,7 +588,6 @@
                     "vlan_manager": "VLAN Manager",
                     "verify_networks_button": "Verify Networks",
                     "network_verification": "Network verification",
-                    "neutron_segmentation": "Neutron with __segment_type__ segmentation",
                     "untagged": "untagged",
                     "range_start": "Start",
                     "range_end": "End",
@@ -764,12 +768,10 @@
                         "nove_network_vcenter_alert": "Legacy Networking (nova-network) requires __Compute.vcenter__ to be a selected compute option.",
                         "nova_network": "(DEPRECATED) Legacy Networking (nova-network)",
                         "nova_network_description": "This option is only available if you use VMware vCenter. Note that OpenStack is moving to deprecate nova-network in upcoming releases.",
-                        "neutr_gre": "Neutron with GRE segmentation",
-                        "neutr_gre_description": "The networking equipment must support GRE segmentation. This option supports up to 65535 networks.",
-                        "neutr_vlan": "Neutron with VLAN segmentation (default)",
-                        "neutr_vlan_description": "The networking equipment must be configured for VLAN segmentation. This option supports up to 4095 networks.",
-                        "neutr_tun": "Neutron with tunneling segmentation",
-                        "neutr_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE via Fuel CLI).The networking equipment must support VXLAN segmentation. This option supports millions of tenant data networks."
+                        "neutron_gre_description": "The networking equipment must support GRE segmentation. This option supports up to 65535 networks.",
+                        "neutron_vlan": "Neutron with VLAN segmentation (default)",
+                        "neutron_vlan_description": "The networking equipment must be configured for VLAN segmentation. This option supports up to 4095 networks.",
+                        "neutron_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE via Fuel CLI).The networking equipment must support VXLAN segmentation. This option supports millions of tenant data networks."
                     },
                     "storage": {
                         "title": "Storage Backends",
@@ -1261,7 +1263,6 @@
                     "flatdhcp_manager": "FlatDHCP管理",
                     "vlan_manager": "VLAN管理",
                     "verify_networks_button": "验证网络",
-                    "neutron_segmentation": "Neutron和__segment_type__段",
                     "untagged": "未标记",
                     "range_start": "开始",
                     "range_end": "结束",
@@ -1352,9 +1353,7 @@
                     },
                     "network": {
                         "title": "网络",
-                        "release_alert": "__releaseName__不支持Neutron",
-                        "neutr_gre": "Neutron GRE",
-                        "neutr_vlan": "Neutron VLAN"
+                        "release_alert": "__releaseName__不支持Neutron"
                     },
                     "storage": {
                         "title": "后端存储",
@@ -1493,6 +1492,10 @@
                     "min": "少なくとも __limitValue__ つの __roleName__ ノードが必要です (現在 __count__ つが選択されています)。",
                     "max": "最大で __limitValue__ つの __roleName__ ノードが許可されます。",
                     "recommended": "__roleName__ は少なくとも __limitValue__ つのノードで構成することをお勧めします(現在 __count__ つが選択されています)。"
+                },
+                "network": {
+                  "neutron_gre": "Neutron(GREセグメンテーション)",
+                  "neutron_vlan": "Neutron(VLANセグメンテーション)-デフォルト"
                 }
             },
             "node_details": {
@@ -1869,7 +1872,6 @@
                     "vlan_manager": "VLAN Manager",
                     "verify_networks_button": "ネットワークの確認",
                     "network_verification": "ネットワークを検証",
-                    "neutron_segmentation": "__segment_type__ セグメンテーションとのNeutron",
                     "untagged": "タグなし",
                     "range_start": "開始",
                     "range_end": "終了",
@@ -2047,10 +2049,8 @@
                         "hypervisor_alert": "VLANまたはGREセグメンテーションとNeutronはコンピュートオプションとして __Compute.vcenter__ では使用できません。",
                         "nova_network": "(非推奨)レガシーネットワーキング(nova-network)",
                         "nova_network_description": "VMware vCenterを使用するか、パブリックとフローティングIPのアドレスが異なるサブネットが必要な場合は、このオプションを選択してください。 OpenStackでは、今後のリリースでnova-networkが非推奨になることに注意してください。",
-                        "neutr_gre": "Neutron(GREセグメンテーション)",
-                        "neutr_gre_description": "ネットワーク機器がGREセグメンテーションをサポートしている必要があります。このオプションは、65535までのネットワークをサポートします。",
-                        "neutr_vlan": "Neutron(VLANセグメンテーション)-デフォルト",
-                        "neutr_vlan_description": "ネットワーク機器がVLANセグメンテーション用に設定されている必要があります。このオプションは、4095までのネットワークをサポートします。"
+                        "neutron_gre_description": "ネットワーク機器がGREセグメンテーションをサポートしている必要があります。このオプションは、65535までのネットワークをサポートします。",
+                        "neutron_vlan_description": "ネットワーク機器がVLANセグメンテーション用に設定されている必要があります。このオプションは、4095までのネットワークをサポートします。"
                     },
                     "storage": {
                         "title": "ストレージバックエンド",
@@ -2234,7 +2234,11 @@
                 "success": "성공",
                 "error": "오류",
                 "see_logs": "로그를 참조하십시오",
-                "copyright": "저작권 © 2013-2014 Mirantis. 판권소유"
+                "copyright": "저작권 © 2013-2014 Mirantis. 판권소유",
+                "network": {
+                  "neutron_gre": "GRE를 사용하는 Neutron",
+                  "neutron_vlan": "VLAN을 사용하는 Neutron"
+                }
             },
             "node_details": {
                 "cpu": "CPU",
@@ -2449,7 +2453,6 @@
                     "vlan_manager": "VLAN Manager",
                     "verify_networks_button": "네트워크를 검증",
                     "network_verification": "네트워크 검증",
-                    "neutron_segmentation": "__segment_type__세분화 Neutron",
                     "untagged": "태그없이",
                     "range_start": "시작",
                     "range_end": "끝",
@@ -2581,9 +2584,7 @@
                     },
                     "network": {
                         "title": "네트워크",
-                        "alert": "Neutron와 __releaseName__에서는 지원되지 않습니다.",
-                        "neutr_gre": "GRE를 사용하는 Neutron",
-                        "neutr_vlan": "VLAN을 사용하는 Neutron"
+                        "alert": "Neutron와 __releaseName__에서는 지원되지 않습니다."
                     },
                     "storage": {
                         "title": "저장소 백엔드",

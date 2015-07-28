@@ -873,6 +873,20 @@ class TestClusterObject(BaseTestCase):
         self.assertEqual(len(objects.Cluster.get_nodes_by_role(
             self.env.clusters[0], 'controller')), 2)
 
+    def test_put_delete_template_after_deployment(self):
+        allowed = [consts.CLUSTER_STATUSES.new,
+                   consts.CLUSTER_STATUSES.stopped,
+                   consts.CLUSTER_STATUSES.operational,
+                   consts.CLUSTER_STATUSES.error]
+        for status in consts.CLUSTER_STATUSES:
+            self.env.clusters[0].status = status
+            self.db.flush()
+            self.assertEqual(
+                objects.Cluster.is_template_modification_locked(
+                    self.env.clusters[0]),
+                status not in allowed
+            )
+
     def test_get_group_id(self):
         controllers = objects.Cluster.get_nodes_by_role(
             self.env.clusters[0], 'controller')

@@ -1022,6 +1022,17 @@ class Cluster(NailgunObject):
 
         return set(pending_roles + roles)
 
+    @classmethod
+    def is_template_modification_locked(cls, instance):
+        """Checks whether network template can be modified or
+        deleted with current status of cluster.
+        """
+        allowed = [consts.CLUSTER_STATUSES.new,
+                   consts.CLUSTER_STATUSES.stopped,
+                   consts.CLUSTER_STATUSES.operational,
+                   consts.CLUSTER_STATUSES.error]
+        return instance.status not in allowed
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

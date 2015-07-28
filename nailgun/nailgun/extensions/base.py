@@ -99,6 +99,11 @@ def fire_callback_on_node_collection_delete(node_ids):
         extension.on_node_collection_delete(node_ids)
 
 
+def fire_callback_on_cluster_delete(cluster):
+    for extension in get_all_extensions():
+        extension.on_cluster_delete(cluster)
+
+
 @six.add_metaclass(abc.ABCMeta)
 class BaseExtension(object):
 
@@ -171,4 +176,9 @@ class BaseExtension(object):
     @classmethod
     def on_node_collection_delete(cls, node_ids):
         """Callback which gets executed when node collection is deleted
+        """
+
+    @classmethod
+    def on_cluster_delete(cls, cluster):
+        """Callback which gets executed when cluster is deleted
         """

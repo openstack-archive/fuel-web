@@ -25,6 +25,7 @@ from netaddr import IPRange
 from sqlalchemy import not_
 
 import nailgun
+from nailgun.errors import errors
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -39,7 +40,27 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
 
-class TestNetworkManager(BaseIntegrationTest):
+class BaseNetworkManagerTest(BaseIntegrationTest):
+    def _create_ip_addrs_by_rules(self, cluster, rules):
+        created_ips = []
+        for net_group in cluster.network_groups:
+            if net_group.name not in rules:
+                continue
+            vips_by_types = rules[net_group.name]
+            for vip_type, ip_addr in vips_by_types.items():
+                ip = IPAddr(
+                    network=net_group.id,
+                    ip_addr=ip_addr,
+                    vip_type=vip_type,
+                )
+                self.db.add(ip)
+                created_ips.append(ip)
+        if created_ips:
+            self.db.flush()
+        return created_ips
+
+
+class TestNetworkManager(BaseNetworkManagerTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -346,6 +367,71 @@ class TestNetworkManager(BaseIntegrationTest):
             self.assertEqual(len(admin_ips), 1)
             self.assertEqual(admin_ips[0].ip_addr, ip)
 
+    def test_get_assigned_vips(self):
+        vips_to_create = {
+            'management': {
+                'haproxy': '192.168.0.1',
+                'vrouter': '192.168.0.2',
+            },
+            'public': {
+                'haproxy': '172.16.0.2',
+                'vrouter': '172.16.0.3',
+            },
+        }
+        cluster = self.env.create_cluster(api=False)
+        self._create_ip_addrs_by_rules(cluster, vips_to_create)
+        vips = self.env.network_manager.get_assigned_vips(cluster)
+        self.assertEqual(vips_to_create, vips)
+
+    def test_assign_given_vips_for_net_groups(self):
+        vips_to_create = {
+            'management': {
+                'haproxy': '192.168.0.1',
+            },
+            'public': {
+                'haproxy': '172.16.0.2',
+            },
+        }
+        vips_to_assign = {
+            'management': {
+                'haproxy': '192.168.0.1',
+                'vrouter': '192.168.0.2',
+            },
+            'public': {
+                'haproxy': '172.16.0.4',
+                'vrouter': '172.16.0.5',
+            },
+        }
+        cluster = self.env.create_cluster(api=False)
+        self._create_ip_addrs_by_rules(cluster, vips_to_create)
+        self.env.network_manager.assign_given_vips_for_net_groups(
+            cluster, vips_to_assign)
+        vips = self.env.network_manager.get_assigned_vips(cluster)
+        self.assertEqual(vips_to_assign, vips)
+
+    def test_assign_given_vips_for_net_groups_idempotent(self):
+        cluster = self.env.create_cluster(api=False)
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
+        expected_vips = self.env.network_manager.get_assigned_vips(cluster)
+        self.env.network_manager.assign_given_vips_for_net_groups(
+            cluster, expected_vips)
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
+        vips = self.env.network_manager.get_assigned_vips(cluster)
+        self.assertEqual(expected_vips, vips)
+
+    def test_assign_given_vips_for_net_groups_assign_error(self):
+        vips_to_assign = {
+            'management': {
+                'haproxy': '10.10.0.1',
+            },
+        }
+        expected_msg_regexp = '^Cannot assign VIP with the address "10.10.0.1"'
+        cluster = self.env.create_cluster(api=False)
+        with self.assertRaisesRegexp(errors.AssignIPError,
+                                     expected_msg_regexp):
+            self.env.network_manager.assign_given_vips_for_net_groups(
+                cluster, vips_to_assign)
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_admin_ip_cobbler(self, mocked_rpc):
@@ -511,7 +597,7 @@ class TestNeutronManager(BaseIntegrationTest):
         self.check_networks_assignment(self.env.nodes[0])
 
 
-class TestNeutronManager70(BaseIntegrationTest):
+class TestNeutronManager70(BaseNetworkManagerTest):
 
     def setUp(self):
         super(TestNeutronManager70, self).setUp()
@@ -614,3 +700,43 @@ class TestNeutronManager70(BaseIntegrationTest):
             self.assertEqual(assigned_vips[name]['node_roles'],
                              ['controller',
                               'primary-controller'])
+
+    def test_get_assigned_vips(self):
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
+        vips = self.net_manager.get_assigned_vips(self.cluster)
+        expected_vips = {
+            'management': {
+                'vrouter': '192.168.0.1',
+                'management': '192.168.0.2',
+            },
+            'public': {
+                'vrouter_pub': '172.16.0.2',
+                'public': '172.16.0.3',
+            },
+        }
+        self.assertEqual(expected_vips, vips)
+
+    def test_assign_given_vips_for_net_groups(self):
+        vips_to_create = {
+            'management': {
+                'vrouter': '192.168.0.1',
+            },
+            'public': {
+                'vrouter_pub': '172.16.0.2',
+            },
+        }
+        vips_to_assign = {
+            'management': {
+                'vrouter': '192.168.0.2',
+                'management': '192.168.0.3',
+            },
+            'public': {
+                'vrouter_pub': '172.16.0.4',
+                'public': '172.16.0.5',
+            },
+        }
+        self._create_ip_addrs_by_rules(self.cluster, vips_to_create)
+        self.net_manager.assign_given_vips_for_net_groups(
+            self.cluster, vips_to_assign)
+        vips = self.net_manager.get_assigned_vips(self.cluster)
+        self.assertEqual(vips_to_assign, vips)

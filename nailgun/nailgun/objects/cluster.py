@@ -30,6 +30,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
@@ -244,6 +245,7 @@ class Cluster(NailgunObject):
             _id for (_id,) in
             db().query(models.Node.id).filter_by(cluster_id=instance.id)]
         fire_callback_on_node_collection_delete(node_ids)
+        fire_callback_on_cluster_delete(instance)
         super(Cluster, cls).delete(instance)
 
     @classmethod
@@ -874,6 +876,26 @@ class Cluster(NailgunObject):
             )
 
         return None
+
+    @classmethod
+    def get_create_data(cls, instance):
+        """Return common parameters cluster was created with.
+
+        This method is compatible with :func:`create` and used to create
+        a new cluster with the same settings including the network
+        configuration.
+
+        :returns: a dict of key-value pairs as a cluster create data
+        """
+        data = {
+            "name": instance.name,
+            "mode": instance.mode,
+            "net_provider": instance.net_provider,
+            "release_id": instance.release.id,
+        }
+        data.update(cls.get_network_manager(instance).
+                    get_network_config_create_data(instance))
+        return data
 
     @classmethod
     def get_vmware_attributes(cls, instance):

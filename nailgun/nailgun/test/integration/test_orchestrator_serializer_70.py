@@ -18,12 +18,15 @@ import mock
 import six
 import yaml
 
+from oslo_serialization import jsonutils
+
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import stages
 from nailgun.test import base
+from nailgun.utils import reverse
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
@@ -835,6 +838,8 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
 
 class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
+    env_version = '2015.1.0-7.0'
+
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
         self.cluster = self.create_env('ha_compact')
@@ -853,7 +858,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
     def create_env(self, mode):
         return self.env.create(
-            release_kwargs={'version': '11111-7.0'},
+            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'api': False,
                 'mode': mode,
@@ -1086,3 +1091,80 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         # serializer should not fail if we delete one of default network
         # what is not used in template
         net_serializer.generate_network_metadata(self.cluster)
+
+    def test_network_not_mapped_to_nics_w_template(self):
+        # delete and restore management network to break the default
+        # networks to interfaces mapping
+        resp = self.app.get(
+            reverse('NetworkGroupCollectionHandler',
+                    kwargs=self.env.clusters[0]),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+        management = None
+        for ng in jsonutils.loads(resp.body):
+            if ng['name'] == 'management':
+                management = ng
+                break
+        self.app.delete(
+            reverse(
+                'NetworkGroupHandler',
+                kwargs={'obj_id': management.pop('id')}
+            ),
+            headers=self.default_headers
+        )
+        self.app.post(
+            reverse('NetworkGroupCollectionHandler'),
+            jsonutils.dumps(management),
+            headers=self.default_headers,
+            expect_errors=False,
+        )
+        resp = self.app.get(
+            reverse('NetworkGroupCollectionHandler',
+                    kwargs=self.env.clusters[0]),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+        # management network is not mapped to any interfaces in DB now
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+
+        serializer = get_serializer_for_cluster(cluster_db)
+        self.serialized_for_astute = serializer(
+            AstuteGraph(cluster_db)).serialize(cluster_db, cluster_db.nodes)
+
+        network_roles = [
+            'management',
+            'swift/api',
+            'neutron/api',
+            'sahara/api',
+            'ceilometer/api',
+            'cinder/api',
+            'keystone/api',
+            'glance/api',
+            'heat/api',
+            'nova/api',
+            'murano/api',
+            'horizon',
+            'mgmt/api',
+            'mgmt/memcache',
+            'mgmt/database',
+            'mgmt/messaging',
+            'neutron/mesh',
+            'mgmt/vip',
+            'mgmt/corosync',
+            'mongo/db',
+            'nova/migration'
+        ]
+        for node_data in self.serialized_for_astute:
+            for n in node_data['nodes']:
+                self.assertTrue(
+                    set(['storage_address', 'internal_address',
+                         'storage_netmask', 'internal_netmask']) <=
+                    set(n.keys()))
+            nodes = node_data['network_metadata']['nodes']
+            for node_name, node_attrs in nodes.items():
+                # IPs must be serialized for these roles which are tied to
+                # management network
+                for role in network_roles:
+                    self.assertIsNotNone(node_attrs['network_roles'][role])

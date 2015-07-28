@@ -139,6 +139,8 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
         $.ajaxSetup({cache: false});
 
+        this.mountNode = $('#main-container');
+
         this.router = new Router();
         this.keystoneClient = new KeystoneClient('/keystone', {
             cacheTokenFor: 10 * 60 * 1000,
@@ -168,12 +170,23 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 return $.Deferred().resolve();
             }, this)).then(_.bind(function() {
                 return this.settings.fetch();
-            }, this)).always(function() {
+            }, this)).then(null, _.bind(function() {
+                if (this.version.get('auth_required') && !this.user.get('authenticated')) {
+                    return $.Deferred().resolve();
+                } else {
+                    utils.showErrorDialog({
+                        message: i18n('common.loading_error'),
+                        keyboard: false,
+                        backdrop: false
+                    });
+                    this.mountNode.remove();
+                }
+            }, this)).done(function() {
                 Backbone.history.start();
             });
         },
         renderLayout: function() {
-            var wrappedRootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
+            var wrappedRootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), this.mountNode);
             // RootComponent is wrapped with React-DnD, extracting link to it using ref
             this.rootComponent = wrappedRootComponent.refs.child;
         },

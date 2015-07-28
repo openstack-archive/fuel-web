@@ -195,9 +195,18 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         self.raise_task(task)
 
 
-class TemplateNetworkConfigurationHandler(ProviderHandler):
+class TemplateNetworkConfigurationHandler(BaseHandler):
     """Neutron Network configuration handler
     """
+
+    def check_if_template_modification_locked(self, cluster):
+        allowed = [consts.CLUSTER_STATUSES.new,
+                   consts.CLUSTER_STATUSES.stopped,
+                   consts.CLUSTER_STATUSES.operational,
+                   consts.CLUSTER_STATUSES.error]
+        if cluster.status not in allowed:
+            raise self.http(403, "Network template cannot be changed "
+                                 "during deployment and after upgrade.")
 
     @content
     def GET(self, cluster_id):
@@ -219,7 +228,7 @@ class TemplateNetworkConfigurationHandler(ProviderHandler):
         template = jsonutils.loads(web.data())
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_if_network_configuration_locked(cluster)
+        self.check_if_template_modification_locked(cluster)
         objects.Cluster.set_network_template(cluster, template)
         raise self.http(200)
 
@@ -230,7 +239,7 @@ class TemplateNetworkConfigurationHandler(ProviderHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_if_network_configuration_locked(cluster)
+        self.check_if_template_modification_locked(cluster)
         objects.Cluster.set_network_template(cluster, None)
         raise self.http(204)
 

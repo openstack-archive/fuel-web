@@ -385,10 +385,13 @@ class NetworkManager(object):
             assigned_vips_by_type = assigned_vips.get(net_group.name, {})
             for vip_type, ip_addr in six.iteritems(vips[net_group.name]):
                 if not cls.check_ip_belongs_to_net(ip_addr, net_group):
+                    ranges = [[rng.first, rng.last]
+                              for rng in net_group.ip_ranges]
                     raise errors.AssignIPError(
                         "Cannot assign VIP with the address \"{0}\" because "
-                        "it does not belong to the network \"{1}\""
-                        .format(ip_addr, net_group.name))
+                        "it does not belong to the network \"{1}\" with ranges"
+                        " {2} of the cluster \"{3}\"."
+                        .format(ip_addr, net_group.name, ranges, cluster.id))
                 if vip_type in assigned_vips_by_type:
                     assigned_vip = assigned_vips_by_type[vip_type]
                     assigned_vip.ip_addr = ip_addr

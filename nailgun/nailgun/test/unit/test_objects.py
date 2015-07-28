@@ -510,6 +510,38 @@ class TestNodeObject(BaseIntegrationTest):
             self.assertEqual(node.ip_addrs, [])
             self.assertEqual(node.pending_roles, prev_roles)
 
+    @mock.patch("nailgun.objects.cluster.fire_callback_on_cluster_delete")
+    def test_delete_cluster(self, mock_fire_on_delete):
+        cluster = self.env.create_cluster(api=False)
+        objects.Cluster.delete(cluster)
+        mock_fire_on_delete.assert_called_once_with(cluster)
+
+    def _assert_cluster_create_data(self, network_data):
+        release = self.env.create_release(api=False)
+        expected_data = {
+            "name": "cluster-0",
+            "mode": consts.CLUSTER_MODES.ha_compact,
+            "release_id": release.id,
+        }
+        expected_data.update(network_data)
+        cluster = self.env.create_cluster(api=False, **expected_data)
+        create_data = objects.Cluster.get_create_data(cluster)
+        self.assertEqual(expected_data, create_data)
+
+    def test_cluster_get_create_data_neutron(self):
+        network_data = {
+            "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron,
+            "net_segment_type": consts.NEUTRON_SEGMENT_TYPES.vlan,
+            "net_l23_provider": consts.NEUTRON_L23_PROVIDERS.ovs,
+        }
+        self._assert_cluster_create_data(network_data)
+
+    def test_cluster_get_create_data_nova(self):
+        network_data = {
+            "net_provider": consts.CLUSTER_NET_PROVIDERS.nova_network,
+        }
+        self._assert_cluster_create_data(network_data)
+
 
 class TestTaskObject(BaseIntegrationTest):
 

@@ -16,6 +16,7 @@
 
 from oslo.serialization import jsonutils
 
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -55,8 +56,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.get_template(1, expect_errors=True)
         self.assertEqual(404, resp.status_code)
 
-    def test_delete_template(self):
-        cluster = self.env.create_cluster(api=False)
+    def check_put_delete_template(self, cluster):
         template = {'template': 'test'}
         resp = self.app.put(
             reverse(
@@ -79,3 +79,12 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.get_template(cluster.id)
         self.assertEquals(None, resp.json_body)
+
+    def test_put_delete_template(self):
+        cluster = self.env.create_cluster(api=False)
+        self.check_put_delete_template(cluster)
+
+    def test_put_delete_template_after_deployment(self):
+        cluster = self.env.create_cluster(
+            api=False, status=consts.CLUSTER_STATUSES.operational)
+        self.check_put_delete_template(cluster)

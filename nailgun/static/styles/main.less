@@ -1096,19 +1096,29 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
       &.active {
         & > a {
-          background-color: @blue + 50%;
-          color: @black;
+          background-color: @navbar-color-active;
+          color: @white;
+          font-weight: 600;
+          &:hover {
+            background-color: @navbar-color-active;
+          }
         }
       }
       & > a {
         padding-left: 25px;
+        line-height: 1.2;
+        color: @navbar-color-active;
+        font-weight: 600;
+        &:hover {
+          color: @white;
+          background-color: @base-light-color;
+        }
       }
     }
     .subtab-icon {
       position: absolute;
       left: 5px;
-      top: 50%;
-      margin-top: -8px;
+      top: 10px;
       z-index: 1;
       width: 15px;
       height: 15px;
@@ -2550,7 +2560,23 @@ button, .btn:not(.btn-link) {.font-semibold;}
           .wizard-step {
             &.available {
               a {
-                color: @green;
+                color: @base-text-color;
+                font-weight: 600;
+                &:hover {
+                  color: @white;
+                  background-color: @base-light-color;
+                }
+              }
+            }
+            &.active {
+              font-weight: 600;
+              a {
+                background-color: @navbar-color;
+                color: @white;
+              }
+              &.disabled {
+                font-weight: 100;
+                color: @base-light-color;
               }
             }
           }

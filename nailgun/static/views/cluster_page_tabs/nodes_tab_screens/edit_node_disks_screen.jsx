@@ -122,26 +122,41 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             }
             return result;
         },
-        getVolumesInfo: function(disk) {
-            var volumes = {},
-                unallocatedWidth = 100;
-            disk.get('volumes').each(function(volume) {
-                var size = volume.get('size') || 0,
-                    width = this.getVolumeWidth(disk, size),
-                    name = volume.get('name');
-                unallocatedWidth -= width;
-                volumes[name] = {
-                    size: size,
-                    width: width,
-                    max: volume.getMaxSize(),
-                    min: volume.getMinimalSize(this.props.volumes.findWhere({name: name}).get('min_size'))
+        getVolumesInfo: function() {
+            var volumesInfo = {},
+                isOsAllocated = false;
+
+            this.props.disks.map(function(disk) {
+                var volumes = {},
+                    unallocatedWidth = 100;
+                disk.get('volumes').each(function(volume) {
+                    var size = volume.get('size') || 0,
+                        width = this.getVolumeWidth(disk, size),
+                        name = volume.get('name');
+                    unallocatedWidth -= width;
+                    volumes[name] = {
+                        size: size,
+                        width: width,
+                        max: volume.getMaxSize(),
+                        min: volume.getMinimalSize(this.props.volumes.findWhere({name: name}).get('min_size'))
+                    };
+                    // Base system should be allocated on one disk only
+                    if (name == 'os') {
+                        if (isOsAllocated) {
+                            volumes[name].max = 0;
+                        } else {
+                            isOsAllocated = true;
+                        }
+                    }
+                }, this);
+                volumes.unallocated = {
+                    size: disk.getUnallocatedSpace(),
+                    width: unallocatedWidth
                 };
+                volumesInfo[disk.id] = volumes;
             }, this);
-            volumes.unallocated = {
-                size: disk.getUnallocatedSpace(),
-                width: unallocatedWidth
-            };
-            return volumes;
+
+            return volumesInfo;
         },
         getVolumeWidth: function(disk, size) {
             return disk.get('size') ? utils.floor(size / disk.get('size') * 100, 2) : 0;
@@ -151,7 +166,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                 isScreenLocked = this.isLockedScreen(),
                 loadDefaultsDisabled = !!this.state.actionInProgress || isScreenLocked,
                 revertChangesDisabled = !!this.state.actionInProgress || !hasChanges,
-                applyDisabled = !!this.state.actionInProgress || !hasChanges;
+                applyDisabled = !!this.state.actionInProgress || !hasChanges,
+                volumesInfo = this.getVolumesInfo();
             return (
                 <div className='edit-node-disks-screen'>
                     <div className='row'>
@@ -165,7 +181,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                     key={index}
                                     disabled={isScreenLocked || this.state.actionInProgress}
                                     volumes={this.props.volumes}
-                                    volumesInfo={this.getVolumesInfo(disk)}
+                                    volumesInfo={volumesInfo[disk.id]}
                                     diskMetaData={this.getDiskMetaData(disk)}
                                 />);
                             }, this)}

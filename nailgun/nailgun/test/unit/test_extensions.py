@@ -18,6 +18,7 @@ import mock
 
 from nailgun.errors import errors
 from nailgun.extensions import BaseExtension
+from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_node_create
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
@@ -161,3 +162,12 @@ class TestExtensionUtils(BaseTestCase):
 
         for ext in get_m.return_value:
             ext.on_node_reset.assert_called_once_with(node)
+
+    @mock.patch('nailgun.extensions.base.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_cluster_deletion(self, get_m):
+        cluster = mock.MagicMock()
+        fire_callback_on_cluster_delete(cluster)
+
+        for ext in get_m.return_value:
+            ext.on_cluster_delete.assert_called_once_with(cluster)

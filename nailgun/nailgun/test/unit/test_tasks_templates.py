@@ -218,7 +218,6 @@ class TestMakeTask(base.BaseTestCase):
 class TestMakeUbuntuPreferencesTask(base.BaseTestCase):
 
     _fake_debian_release = '''
-      Origin: TestOrigin
       Label: TestLabel
       Archive: test-archive
       Codename: testcodename
@@ -250,7 +249,6 @@ class TestMakeUbuntuPreferencesTask(base.BaseTestCase):
                 'a=test-archive',
                 'l=TestLabel',
                 'n=testcodename',
-                'o=TestOrigin',
             ]
             if section:
                 expected_conditions.append('c={0}'.format(section))

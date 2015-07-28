@@ -98,7 +98,6 @@ def get_apt_preferences_line(deb_release):
         'Suite': 'a',       # suite is a synonym for archive
         'Codename': 'n',
         'Version': 'v',
-        'Origin': 'o',
         'Label': 'l',
     }
 

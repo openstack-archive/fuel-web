@@ -322,7 +322,6 @@ class TestParseDebianReleaseFile(base.BaseUnitTest):
 class TestGetAptPreferencesLine(base.BaseUnitTest):
 
     _deb_release = {
-        'Origin': 'TestOrigin',
         'Label': 'TestLabel',
         'Archive': 'test-archive',
         'Version': '42.42',
@@ -336,7 +335,6 @@ class TestGetAptPreferencesLine(base.BaseUnitTest):
     def test_all_rules(self):
         pin = get_apt_preferences_line(self._deb_release)
         self.assertItemsEqual(pin.split(','), [
-            'o=TestOrigin',
             'l=TestLabel',
             'a=test-archive',
             'v=42.42',
@@ -352,7 +350,6 @@ class TestGetAptPreferencesLine(base.BaseUnitTest):
 
         pin = get_apt_preferences_line(deb_release)
         self.assertItemsEqual(pin.split(','), [
-            'o=TestOrigin',
             'a=test-archive',
         ])
 

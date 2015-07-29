@@ -28,11 +28,10 @@ class GraphTasksValidator(BasicValidator):
     def validate_update(cls, data, instance):
         parsed = cls.validate(data)
         cls.validate_schema(parsed, tasks.TASKS_SCHEMA)
-        graph = deployment_graph.DeploymentGraph()
-        graph.add_tasks(parsed)
-        if not graph.is_acyclic():
-            raise errors.InvalidData(
-                "Tasks can not be processed because it contains cycles in it.")
+        graph_validator = deployment_graph.DeploymentGraphValidator(
+            parsed)
+        graph_validator.check()
+
         return parsed
 
 

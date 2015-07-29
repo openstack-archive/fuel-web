@@ -27,6 +27,7 @@ from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 
 from nailgun import objects
@@ -358,7 +359,9 @@ class TaskDeployGraph(BaseHandler):
             logger.debug('Types to remove %s', remove)
 
         visualization = graph_visualization.GraphVisualization(graph)
-        dotgraph = visualization.get_dotgraph(tasks=tasks,
-                                              parents_for=parents_for,
-                                              remove=remove)
-        return dotgraph.to_string()
+        try:
+            dotgraph = visualization.get_dotgraph(
+                tasks=tasks, parents_for=parents_for, remove=remove)
+            return dotgraph.to_string()
+        except errors.ObjectNotFound as exc:
+            raise self.http(404, exc.message)

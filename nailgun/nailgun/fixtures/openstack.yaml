@@ -1376,9 +1376,6 @@
                     type: "select"
                     label: "Target node"
                     description: "Target node for nova-compute service"
-                    regex:
-                      source: *non_empty_string
-                      error: "Empty target node"
           -
             name: "network"
             type: "object"

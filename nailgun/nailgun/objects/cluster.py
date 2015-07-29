@@ -242,7 +242,9 @@ class Cluster(NailgunObject):
     def delete(cls, instance):
         node_ids = [
             _id for (_id,) in
-            db().query(models.Node.id).filter_by(cluster_id=instance.id)]
+            db().query(models.Node.id).
+            filter_by(cluster_id=instance.id).
+            order_by(models.Node.id)]
         fire_callback_on_node_collection_delete(node_ids)
         super(Cluster, cls).delete(instance)
 

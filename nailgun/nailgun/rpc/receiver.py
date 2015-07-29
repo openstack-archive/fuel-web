@@ -28,7 +28,6 @@ from sqlalchemy import or_
 from nailgun import consts
 from nailgun import notifier
 from nailgun import objects
-from nailgun.rpc import utils
 from nailgun.settings import settings
 
 from nailgun.consts import TASK_STATUSES
@@ -485,87 +484,22 @@ class NailgunReceiver(object):
             return
 
         task_name = task.name.title()
-        if task.cluster.mode in ('singlenode', 'multinode'):
-            # determining horizon url - it's an IP
-            # of a first cluster controller
-            controller = db().query(Node).filter_by(
-                cluster_id=task.cluster_id
-            ).filter(
-                Node.roles.any('controller')
-            ).first()
-
-            if controller:
-                logger.debug(
-                    u"Controller is found, node_id=%s, "
-                    "getting it's IP addresses",
-                    controller.id
-                )
-                public_net = filter(
-                    lambda n: n['name'] == 'public' and 'ip' in n,
-                    objects.Cluster.get_network_manager(
-                        controller.cluster
-                    ).get_node_networks(controller)
-                )
-                if public_net:
-                    horizon_ip = public_net[0]['ip'].split('/')[0]
-                    protocol = utils.get_protocol_for_horizon(task.cluster)
-                    message = (
-                        u"{task} of environment '{name}' is done. "
-                        "Access the OpenStack dashboard (Horizon) at "
-                        "{proto}://{horizon_address}/ or via internal "
-                        "network at http://{controller_address}/"
-                    ).format(
-                        task=task_name,
-                        name=task.cluster.name,
-                        proto=protocol,
-                        horizon_address=horizon_ip,
-                        controller_address=controller.ip
-                    )
-                else:
-                    message = u"{0} of environment '{1}' is done".format(
-                        task_name,
-                        task.cluster.name
-                    )
-                    logger.warning(
-                        u"Public ip for controller node "
-                        "not found in '{0}'".format(task.cluster.name)
-                    )
-            else:
-                message = u"{0} of environment '{1}' is done".format(
-                    task_name,
-                    task.cluster.name
-                )
-                logger.warning(u"Controller node not found in '{0}'".format(
-                    task.cluster.name
-                ))
-        elif task.cluster.is_ha_mode:
-            # determining horizon url in HA mode - it's vip
-            # from a public network saved in task cache
-            try:
-                message = (
-                    u"{0} of environment '{1}' is done. "
-                    "Access the OpenStack dashboard (Horizon) at {2}"
-                ).format(
-                    task_name,
-                    task.cluster.name,
-                    objects.Cluster.get_network_manager(
-                        task.cluster
-                    ).get_horizon_url(task.cluster.id)
-                )
-            except Exception as exc:
-                logger.error(": ".join([
-                    str(exc),
-                    traceback.format_exc()
-                ]))
-                message = u"{0} of environment '{1}' is done".format(
-                    task_name,
-                    task.cluster.name
-                )
-                logger.warning(
-                    u"Cannot find virtual IP for '{0}'".format(
-                        task.cluster.name
-                    )
-                )
+        try:
+            message = (
+                u"{0} of environment '{1}' is done. "
+            ).format(
+                task_name,
+                task.cluster.name,
+            )
+        except Exception as exc:
+            logger.error(": ".join([
+                str(exc),
+                traceback.format_exc()
+            ]))
+            message = u"{0} of environment '{1}' is done".format(
+                task_name,
+                task.cluster.name
+            )
 
         zabbix_url = objects.Cluster.get_network_manager(
             task.cluster

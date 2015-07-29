@@ -53,9 +53,8 @@ class TestNailgunReceiver(base.BaseTestCase):
         NailgunReceiver._success_action(self.task, 'ready', 100)
         self.assertRegexpMatches(
             self.task.message,
-            "Deployment of environment '[^\s]+' is done. Access the OpenStack "
-            "dashboard \(Horizon\) at [^\s]+\n"
-            "\n"
+            "Deployment of environment '[^\s]+' is done. "
+            "\n\n"
             "Plugin name\d is deployed. description\d\n"
             "Plugin name\d is deployed. description\d")
 

@@ -103,11 +103,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {this.renderTitle(title)}
                         </div>
                     }
-                    {(failedDeploymentTask || isOperational || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask) &&
-                        <DeploymentResult cluster={cluster} />
-                    }
-                    {isOperational && !runningDeploymentTask &&
-                        <HorizonBlock cluster={cluster} />
+                    {!runningDeploymentTask &&
+                        [
+                            (failedDeploymentTask || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask || isOperational) &&
+                                <DeploymentResult cluster={cluster} />,
+                            isOperational && <HorizonBlock cluster={cluster} />
+                        ]
                     }
                     {release.get('state') == 'unavailable' &&
                         <div className='alert global-alert alert-warning'>
@@ -255,6 +256,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             if (task) task.destroy();
         },
         render: function() {
+            debugger;
             var task = this.props.cluster.task({group: 'deployment', status: ['ready', 'error']});
             if (!task) return null;
             var error = task.match({status: 'error'}),

@@ -20,6 +20,7 @@ from itertools import groupby
 import mock
 import yaml
 
+from nailgun.errors import errors
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import graph_configuration
 from nailgun.test import base
@@ -699,3 +700,62 @@ class TestIncludeSkipped(base.BaseTestCase):
         self.assertItemsEqual(
             subgraph.nodes(),
             [t['id'] for t in self.tasks])
+
+
+class TestDeploymentGraphValidator(base.BaseTestCase):
+
+    def test_validation_pass_with_existing_dependencies(self):
+        yaml_tasks = """
+        - id: deploy_end
+          type: stage
+        - id: pre_deployment_start
+          type: stage
+        - id: test-controller
+          type: group
+          role: [test-controller]
+          requires: [pre_deployment_start]
+          required_for: [deploy_end]
+          parameters:
+            strategy:
+              type: parallel
+              amount: 2
+          """
+        tasks = yaml.load(yaml_tasks)
+        graph_validator = deployment_graph.DeploymentGraphValidator(tasks)
+        graph_validator.check()
+
+    def test_validation_failed_with_not_existing_dependencies(self):
+        yaml_tasks = """
+        - id: test-controller
+          type: group
+          role: [test-controlle]
+          required_for: [non_existing_stage]
+          parameters:
+            strategy:
+              type: one_by_one
+          """
+        tasks = yaml.load(yaml_tasks)
+        graph_validator = deployment_graph.DeploymentGraphValidator(tasks)
+
+        with self.assertRaisesRegexp(
+                errors.InvalidData,
+                "Task 'non_existing_stage' can't be in requires|required_for|"
+                "groups|tasks for \['test-controller'\] because doesn't "
+                "exists in graph"):
+            graph_validator.check()
+
+    def test_validation_failed_with_cycling_dependencies(self):
+        yaml_tasks = """
+        - id: test-controller-1
+          type: role
+          requires: [test-controller-2]
+        - id: test-controller-2
+          type: role
+          requires: [test-controller-1]
+        """
+        tasks = yaml.load(yaml_tasks)
+        graph_validator = deployment_graph.DeploymentGraphValidator(tasks)
+        with self.assertRaisesRegexp(
+                errors.InvalidData,
+                "Tasks can not be processed because it contains cycles in it"):
+            graph_validator.check()

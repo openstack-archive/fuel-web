@@ -116,6 +116,16 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
+    def test_node_hostname_gets_updated_after_provisioning_starts(self):
+        node = self.env.create_node(api=False,
+                                    status=consts.NODE_STATUSES.provisioning)
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
+            jsonutils.dumps({'hostname': 'new-name'}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 403)
+
     def test_node_hostname_gets_updated_duplicate(self):
         node = self.env.create_node(api=False)
 

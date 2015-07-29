@@ -265,8 +265,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     'alert-warning': warning,
                     'alert-danger': !warning && error,
                     'alert-success': !warning && !error
-                };
+                },
+                isEmpty = _.isEmpty(summary);
 
+            if (isEmpty) return null;
             return (
                 <div className={utils.classNames(classes)}>
                     <button className='close' onClick={this.dismissTaskResult}>&times;</button>

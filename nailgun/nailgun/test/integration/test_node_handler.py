@@ -91,14 +91,14 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             jsonutils.dumps({'hostname': 'new-name'}),
             headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(200, resp.status_code)
         self.db.refresh(node)
         # lets put the same hostname again
         resp = self.app.put(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             jsonutils.dumps({'hostname': 'new-name'}),
             headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(200, resp.status_code)
         self.db.refresh(node)
 
         nodes = self.db.query(Node).filter(
@@ -114,7 +114,20 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps({'hostname': '!#invalid_%&name'}),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(400, resp.status_code)
+
+    def test_node_hostname_gets_updated_after_provisioning_starts(self):
+        node = self.env.create_node(api=False,
+                                    status=consts.NODE_STATUSES.provisioning)
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
+            jsonutils.dumps({'hostname': 'new-name'}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(403, resp.status_code)
+        self.assertEqual(
+            'Node hostname may be changed only before provisioning.',
+            resp.json_body['message'])
 
     def test_node_hostname_gets_updated_duplicate(self):
         node = self.env.create_node(api=False)
@@ -123,7 +136,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             jsonutils.dumps({'hostname': 'new-name'}),
             headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(200, resp.status_code)
         self.db.refresh(node)
 
         node_2 = self.env.create_node(api=False)
@@ -133,7 +146,7 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps({'hostname': 'new-name'}),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(409, resp.status_code)
 
     def test_node_valid_status_gets_updated(self):
         node = self.env.create_node(api=False)

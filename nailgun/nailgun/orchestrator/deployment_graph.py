@@ -21,6 +21,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 import networkx as nx
+import six
 
 from nailgun import consts
 from nailgun.errors import errors
@@ -74,6 +75,11 @@ class DeploymentGraph(nx.DiGraph):
         super(DeploymentGraph, self).add_node(n, **attr)
 
     def add_edge(self, u, v, **attr):
+        print '==========================='
+        if u == 'deploy_end':
+            print 'requires ' + v
+        if v == 'deploy_end':
+            print 'required_for ' + u
         if u not in self.succ:
             self.succ[u] = self.adjlist_dict_factory()
             self.pred[u] = self.adjlist_dict_factory()
@@ -89,6 +95,10 @@ class DeploymentGraph(nx.DiGraph):
             self.add_task(task)
 
     def add_task(self, task):
+        if not task.get('id'):
+            raise errors.InvalidData(
+                "Task {0} doesn't have 'id' attribute".format(task))
+
         self.add_node(task['id'], **task)
 
         # standart direct and backward dependencies, should be used for
@@ -133,8 +143,20 @@ class DeploymentGraph(nx.DiGraph):
         return result
 
     def get_groups_subgraph(self):
-        roles = [t['id'] for t in self.node.values()
-                 if t['type'] == consts.ORCHESTRATOR_TASK_TYPES.group]
+        roles = []
+        for k, v in six.iteritems(self.node):
+            if k == 'deploy_start':
+                print 'START'
+                print v
+                print self['deploy_start']
+            if k == 'deploy_end':
+                print 'END'
+                print v
+                print self['deploy_end']
+            #self._check_if_task_exists(k, v)
+            if v.get('type', None) == consts.ORCHESTRATOR_TASK_TYPES.group:
+                roles.append(v.get('id'))
+
         return self.subgraph(roles)
 
     def get_tasks(self, group_name):
@@ -172,9 +194,11 @@ class DeploymentGraph(nx.DiGraph):
         if not task_ids:
             return
 
-        for task in self.node.values():
-            if task['id'] not in task_ids:
-                self.make_skipped_task(task)
+        for k, v in six.iteritems(self.node):
+            self._check_if_task_exists(k, v)
+
+            if v.get('id') not in task_ids:
+                self.make_skipped_task(v)
 
     def find_subgraph(self, start=None, end=None):
         """Find subgraph by provided start and end endpoints
@@ -201,6 +225,17 @@ class DeploymentGraph(nx.DiGraph):
                 working_graph.reverse(), end))
 
         return working_graph
+
+    def _check_if_task_exists(self, node_key, node_value):
+        if not node_value.get('id'):
+            print self['deploy_end']
+            print self['deploy_start']
+            neighbors = self.neighbors(node_key)
+            print neighbors
+            raise errors.ObjectNotFound(
+                "Task '{task_id}' can't be in requires|required_for|groups|tasks"
+                " for {tasks} because doesn't exists in graph".format(
+                    task_id=node_key, tasks=neighbors))
 
 
 class AstuteGraph(object):

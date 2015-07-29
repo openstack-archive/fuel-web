@@ -21,6 +21,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 import networkx as nx
+import six
 
 from nailgun import consts
 from nailgun.errors import errors
@@ -428,3 +429,38 @@ class AstuteGraph(object):
 
         priority.one_by_one(serialized)
         return serialized
+
+
+class DeploymentGraphValidator(object):
+
+    def __init__(self, tasks):
+        self.graph = DeploymentGraph()
+        self.graph.add_tasks(tasks)
+
+    def check(self):
+        if not self.graph.is_acyclic():
+            raise errors.InvalidData(
+                "Tasks can not be processed because it contains cycles in it.")
+
+        non_existing_tasks = []
+        invalid_tasks = []
+
+        for node_key, node_value in six.iteritems(self.graph.node):
+            if not node_value.get('id'):
+                successors = self.graph.successors(node_key)
+                predecessors = self.graph.predecessors(node_key)
+
+                neighbors = successors + predecessors
+
+                non_existing_tasks.append(node_key)
+                invalid_tasks.extend(neighbors)
+
+        if non_existing_tasks:
+            raise errors.InvalidData(
+                "Tasks '{non_existing_tasks}' can't be in requires"
+                "|required_for|groups|tasks for [{invalid_tasks}]"
+                " because they don't exist in the graph".format(
+                    non_existing_tasks=', '.join(
+                        str(x) for x in sorted(non_existing_tasks)),
+                    invalid_tasks=', '.join(
+                        str(x) for x in sorted(set(invalid_tasks)))))

@@ -505,7 +505,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .navigation-box {
   width: 100%;
-  background-color: @white;
 }
 
 .navbar {
@@ -519,9 +518,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .navbar-default {
   background-color: transparent;
   border-color: transparent;
+  @navbar-height: 34px;
   .navbar-nav {
     margin: 0;
     margin-top: 18px;
+    height: @navbar-height;
+    overflow: hidden;
     li {
       display: inline-block;
       width: auto;
@@ -532,7 +534,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         color: @navbar-color;
         padding-top: 7px;
         padding-bottom: 0px;
-        height: 34px;
+        height: @navbar-height;
         margin-left: 4px;
         -webkit-font-smoothing: antialiased;
         &:hover {

@@ -185,6 +185,22 @@ class NodeValidator(BasicValidator):
                 )
 
     @classmethod
+    def validate_hostanme(cls, hostname, instance):
+        if hostname == instance.hostname:
+            return
+
+        if instance.status is not consts.NODE_STATUSES.discover:
+            raise errors.NotAllowed(
+                "Node hostname may be changed only before provisioning."
+            )
+        if objects.Node.get_by_hostname(
+                hostname,
+                instance.cluster_id):
+            raise errors.AlreadyExists(
+                "Duplicate hostname '{0}'.".format(hostname)
+            )
+
+    @classmethod
     def validate_update(cls, data, instance=None):
         if isinstance(data, (str, unicode)):
             d = cls.validate_json(data)
@@ -224,13 +240,7 @@ class NodeValidator(BasicValidator):
                     mac=d.get("mac"),
                     node_uid=d.get("id")
                 )
-            if d["hostname"] != node.hostname and \
-                    objects.Node.get_by_hostname(
-                        d["hostname"],
-                        node.cluster_id):
-                raise errors.AlreadyExists(
-                    "Duplicate hostname '{0}'.".format(d["hostname"])
-                )
+            cls.validate_hostanme(d["hostname"], node)
 
         if "roles" in d:
             if instance:

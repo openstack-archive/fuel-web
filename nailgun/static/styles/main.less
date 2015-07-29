@@ -63,6 +63,15 @@
 @alert-warning-bg: #f2e0b9;
 @alert-danger-bg:  #e8c6c6;
 
+// Disk colors
+@disk-orange: #c1684a;
+@disk-blue:   #1c7695;
+@disk-green:  #43968a;
+@disk-red:    #C46054;
+@disk-violet: #9a4aae;
+@disk-yellow: #F2CA5B;
+@disk-cyan:   #359CBF;
+
 @link-color: saturate(lighten(@base-dark-color, 20%), 30%);
 @link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
 @navbar-color: saturate(lighten(@base-dark-color, 20%), 15%);
@@ -74,6 +83,9 @@
 @tab-color: desaturate(lighten(@base-dark-color, 55%), 20%);
 @tab-color-hover: desaturate(lighten(@base-dark-color, 50%), 20%);
 @tab-color-active: @white;
+
+@range-color: @tab-color - 50%;
+@slider-color: @tab-color + 20%;
 
 // Fonts and Weight
 @import "../vendor/bower/open-sans-fontface/open-sans.css";
@@ -487,6 +499,46 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .custom-tumbler input[type=radio]:checked + span {
   background: url("../img/ui/radio_checkbox.svg") no-repeat -22px -22px;
+}
+
+// CUSTOM RANGE INPUT
+
+input[type=range] {
+  &,
+  &:focus,
+  &:active,
+  &::-moz-focus-inner,
+  &:-moz-focusring {
+    border: 0 !important;
+    outline: none !important;
+  }
+  &::-ms-track {
+    border: inherit;
+    color: transparent;
+    background: transparent;
+    outline: none;
+  }
+  &::-ms-fill-lower,
+  &::-ms-fill-upper {
+    background: transparent;
+    outline: none;
+  }
+  &::-ms-tooltip {
+    display: none;
+  }
+  &:disabled {
+    opacity: 0.4;
+  }
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+  width: 100%;
+  height: 6px;
+  margin: 0;
+  border: none;
+  border-radius: 3px;
+  background: @range-color;
+  box-shadow: inset 0 1px 0 0 @range-color - 10%, inset 0 -1px 0 0 @range-color + 10%;
+  outline: none;
 }
 
 // NAVIGATION
@@ -2946,7 +2998,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 // Disks styles
 .disk-box {
-  @colors: green, blue, orange, gray, pure-red, black, red;
+  margin-bottom: 20px;
+  @colors: disk-green, disk-blue, disk-orange, disk-yellow, disk-violet, disk-cyan, disk-red;
   .generate-colors(length(@colors));
   .generate-colors(@n, @i: 1) when (@i =< @n) {
     .volume-type-@{i} {
@@ -2956,6 +3009,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .generate-colors(@n, (@i + 1));
   }
 
+  h4 {
+    font-size: @base-font-size + 1;
+    margin: 0;
+    padding: 0 0 5px;
+    .font-semibold;
+  }
+
   label {.font-semibold;}
 
   .disk-visual {
@@ -2963,6 +3023,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     @disk-visual-block-padding: 4px;
     height: @disk-visual-block-height;
     color: @white;
+    cursor: pointer;
     .text-shadow;
     .font-semibold;
     div {
@@ -2976,28 +3037,44 @@ button, .btn:not(.btn-link) {.font-semibold;}
           height: @disk-visual-block-height / 2 - @disk-visual-block-padding;
         }
       }
+      .volume-group-size {
+        font-size: @base-font-size - 2;
+        .font-normal;
+      }
       .close-btn {
         position: absolute;
         z-index: 1000;
-        top: 0;
+        top: -4px;
         right: @disk-visual-block-padding;
         cursor: pointer;
         font-size: @base-font-size + 2px;
         .font-bold;
       }
       &[data-volume=unallocated] {
-        background: linear-gradient(to bottom, #aaa 0%, #ddd 100%);
+        background-color: @tab-color - 45%;
       }
     }
   }
   .disk-details {
-    background: @gray + 95%;
-    border: 1px solid @gray + 20%;
+    background: @tab-color;
+    h5 {
+      font-size: @base-font-size + 1;
+      .font-semibold;
+    }
     .disk-info-box {
       .form-group {
         margin-bottom: 0;
-        label {text-transform: capitalize;}
-        p {padding: 0;}
+        label {
+          text-transform: capitalize;
+          font-size: @base-font-size - 1;
+        }
+        p {
+          padding: 0;
+        }
+        .form-control-static {
+          min-height: 28px;
+          font-size: @base-font-size - 1;
+        }
       }
     }
     .disk-utility-box {
@@ -3010,32 +3087,50 @@ button, .btn:not(.btn-link) {.font-semibold;}
         }
         .volume-group-input {
           padding-right: @disk-form-margin;
+          input {
+            width: 116%;
+          }
         }
-        .volume-group-range, .volume-group-input {
-          label, .help-block {display: none;}
+        .volume-group-range,
+        .volume-group-input {
+          label,
+          .help-block {
+            display: none;
+          }
+          input[type=range] {
+            -moz-transform: translateY(-1000em);
+            &::-moz-range-track, &::-moz-range-thumb {
+              -moz-transform: translateY(1000em);
+            }
+          }
         }
         .volume-group-label {
           margin: 0;
           padding-top: @disk-form-margin;
+          span {
+            margin-right: 10px;
+            font-size: @base-font-size - 1;
+          }
         }
         .volume-group-size-label {
           padding: @disk-form-margin;
           text-align: right;
+          font-size: @base-font-size - 1;
         }
         input[type=range] {
-          /*fix for FF unable to apply focus style bug */
-          border: 1px solid transparent;
-          margin-top: @disk-form-margin;
-          &:focus {outline: none;}
-          &:focus::-webkit-slider-runnable-track {background: transparent;}
-          &:disabled {opacity: 0.4;}
+          margin-top: @disk-form-margin * 2 + 2;
         }
         input[type=number] {
           position: relative;
           top: -2px;
         }
       }
-      .volume-group {margin-bottom: @disk-form-margin;}
+      .volume-group {
+        margin-bottom: @disk-form-margin;
+        label {
+          padding-left: 0;
+        }
+      }
       .volume-group-notice {
         font-size: @base-font-size - 2px;
         color: @blue;

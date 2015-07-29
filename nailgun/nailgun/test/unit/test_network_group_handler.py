@@ -33,9 +33,9 @@ class TestHandlers(BaseIntegrationTest):
             "name": "external",
             "vlan_start": 50,
             "cidr": "10.3.0.0/24",
-            "gateway": "10.3.0.3",
+            "gateway": "10.3.0.1",
             "group_id": objects.Cluster.get_default_group(self.cluster).id,
-            "meta": {}
+            "meta": {"notation": "cidr"}
         }
 
         ng.update(kwargs)
@@ -49,9 +49,35 @@ class TestHandlers(BaseIntegrationTest):
 
         return resp
 
-    def test_create_network_group(self):
-        resp = self._create_network_group(name='test')
+    def test_create_network_group_w_cidr(self):
+        resp = self._create_network_group()
         self.assertEqual(201, resp.status_code)
+        ng_data = jsonutils.loads(resp.body)
+        ng = objects.NetworkGroup.get_by_uid(ng_data['id'])
+        self.assertEqual(len(ng.ip_ranges), 1)
+        self.assertEqual(ng.ip_ranges[0].first, "10.3.0.2")
+        self.assertEqual(ng.ip_ranges[0].last, "10.3.0.254")
+
+    def test_create_network_group_w_ip_range(self):
+        resp = self._create_network_group(
+            meta={
+                "notation": "ip_ranges",
+                "ip_range": ["10.3.0.33", "10.3.0.158"]
+            }
+        )
+        self.assertEqual(201, resp.status_code)
+        ng_data = jsonutils.loads(resp.body)
+        ng = objects.NetworkGroup.get_by_uid(ng_data['id'])
+        self.assertEqual(len(ng.ip_ranges), 1)
+        self.assertEqual(ng.ip_ranges[0].first, "10.3.0.33")
+        self.assertEqual(ng.ip_ranges[0].last, "10.3.0.158")
+
+    def test_create_network_group_wo_notation(self):
+        resp = self._create_network_group(meta={"notation": None})
+        self.assertEqual(201, resp.status_code)
+        ng_data = jsonutils.loads(resp.body)
+        ng = objects.NetworkGroup.get_by_uid(ng_data['id'])
+        self.assertEqual(len(ng.ip_ranges), 0)
 
     def test_get_network_group(self):
         resp = self._create_network_group(name='test')

@@ -103,7 +103,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {this.renderTitle(title)}
                         </div>
                     }
-                    {(failedDeploymentTask || isOperational || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask) &&
+                    {(failedDeploymentTask || isOperational || stopDeploymentTask ||
+                        hasOfflineNodes || resetDeploymentTask) && !runningDeploymentTask &&
                         <DeploymentResult cluster={cluster} />
                     }
                     {isOperational && !runningDeploymentTask &&

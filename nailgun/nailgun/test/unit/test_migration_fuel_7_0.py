@@ -149,7 +149,7 @@ def prepare():
             'is_deployable': True
         }])
 
-    db.execute(
+    result = db.execute(
         meta.tables['clusters'].insert(),
         [{
             'name': 'test_env',
@@ -160,6 +160,7 @@ def prepare():
             'grouping': 'roles',
             'fuel_version': '6.1',
         }])
+    clusterid = result.inserted_primary_key[0]
 
     result = db.execute(
         meta.tables['networking_configs'].insert(),
@@ -187,7 +188,7 @@ def prepare():
         [
             {
                 'uuid': 'one',
-                'cluster_id': None,
+                'cluster_id': clusterid,
                 'group_id': None,
                 'status': 'ready',
                 'meta': '{}',
@@ -204,7 +205,7 @@ def prepare():
         [
             {
                 'uuid': 'two',
-                'cluster_id': None,
+                'cluster_id': clusterid,
                 'group_id': None,
                 'status': 'discover',
                 'meta': '{}',

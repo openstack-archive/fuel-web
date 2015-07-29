@@ -582,14 +582,15 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                 }, this);
             }, this);
             if (messages.length) {
-                var translationParams = this.buildTranslationParams();
-                _.each(_.compact(_.uniq(messages)), function(message) {
-                    this.showWarning(i18n(message, translationParams));
-                }, this);
+                this.showWarnings(_.compact(_.uniq(messages)));
             }
         },
-        showWarning: function(message) {
-            this.$('.form-horizontal').before(_.template(warningTemplate)({message: message}));
+        showWarnings: function(messages) {
+            var translationParams = this.buildTranslationParams();
+            var translatedMessages = _.map(messages, function(message) {
+                return i18n(message, translationParams);
+            }, this);
+            this.$('.form-horizontal').before(_.template(warningTemplate)({messages: translatedMessages}));
         },
         renderCustomElements: function() {
             this.$('.form-group').append(this.renderControls({}));

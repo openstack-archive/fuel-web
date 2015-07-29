@@ -182,13 +182,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </span>
             );
         },
-        renderNodeProgress: function(showPercentage) {
+        renderNodeProgress: function(status) {
             var nodeProgress = this.props.node.get('progress');
             return (
                 <div className='progress'>
-                    <div className='progress-bar' role='progressbar' style={{width: _.max([nodeProgress, 3]) + '%'}}>
-                        {showPercentage && (nodeProgress + '%')}
-                    </div>
+                    {status &&
+                        <div className='progress-bar-title'>
+                            {this.renderStatusLabel(status)}
+                            {': ' + nodeProgress + '%'}
+                        </div>
+                    }
+                    <div className='progress-bar' role='progressbar' style={{width: _.max([nodeProgress, 3]) + '%'}}></div>
                 </div>
             );
         },
@@ -204,7 +208,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         renderLogsLink: function(iconRepresentation) {
             return (
-                <controls.Tooltip text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
+                <controls.Tooltip key='logs' text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
                     <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} href={this.getNodeLogsLink()}>
                         {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
                     </a>
@@ -373,7 +377,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             <div>
                                                 {this.renderStatusLabel(status)}
                                                 {this.renderLogsLink()}
-                                                {this.renderNodeProgress(true)}
+                                                {this.renderNodeProgress(status)}
                                             </div>
                                         :
                                             <div>
@@ -383,7 +387,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     [
                                                         this.renderLogsLink(),
                                                         node.hasChanges() &&
-                                                            <button className='btn btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
+                                                            <button className='btn btn-discard' key='btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
                                                                 {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
                                                             </button>
                                                     ]
@@ -436,7 +440,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 [
                                     this.renderLogsLink(true),
                                     node.hasChanges() && !this.props.locked &&
-                                        <controls.Tooltip text={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}>
+                                        <controls.Tooltip key={'pending_addition_' + node.id} text={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}>
                                             <div
                                                 className='icon'
                                                 onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
@@ -447,7 +451,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         </div>
                         <div className={utils.classNames(statusClasses)}>
                             {_.contains(['provisioning', 'deploying'], status) ?
-                                this.renderNodeProgress(true)
+                                this.renderNodeProgress(status)
                             :
                                 <div>
                                     {this.renderStatusLabel(status)}

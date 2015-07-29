@@ -16,6 +16,8 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import tasks
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Release
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
@@ -26,13 +28,21 @@ class GraphTasksValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance):
+        deployment_tasks = []
         parsed = cls.validate(data)
         cls.validate_schema(parsed, tasks.TASKS_SCHEMA)
-        graph = deployment_graph.DeploymentGraph()
-        graph.add_tasks(parsed)
-        if not graph.is_acyclic():
-            raise errors.InvalidData(
-                "Tasks can not be processed because it contains cycles in it.")
+        # Get proper deployment tasks for instance
+        if isinstance(instance, Release):
+            deployment_tasks = objects.Release.get_deployment_tasks(
+                instance)
+        elif isinstance(instance, Cluster):
+            deployment_tasks = objects.Cluster.get_deployment_tasks(
+                instance)
+
+        graph_validator = deployment_graph.DeploymentGraphValidator(
+            deployment_tasks + parsed)
+        graph_validator.check()
+
         return parsed
 
 

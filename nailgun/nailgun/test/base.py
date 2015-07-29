@@ -608,9 +608,9 @@ class EnvironmentManager(object):
             {
                 'id': 'role-name',
                 'type': 'group',
-                'role': '[role-name]',
-                'requires': '[controller]',
-                'required_for': '[deploy_end]',
+                'role': ['role-name'],
+                'requires': ['controller'],
+                'required_for': ['deploy_end'],
                 'parameters': {
                     'strategy': {
                         'type': 'parallel'

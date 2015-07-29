@@ -15,6 +15,7 @@
 
 from mock import patch
 from oslo_serialization import jsonutils
+import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
@@ -390,3 +391,85 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             errors.NetworkCheckError,
             CheckBeforeDeploymentTask._check_public_network,
             self.task)
+
+    def test_check_deployment_graph_for_correctness(self):
+        # Default deployment graph not raises exception
+        self.assertNotRaises(
+            errors.InvalidData,
+            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness,
+            self.task)
+        self.assertNotRaises(
+            errors.ObjectNotFound,
+            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness,
+            self.task)
+
+        # New deployment tasks with correct dependencies
+        correct_yaml_tasks = """
+        - id: test-controller
+          type: group
+          role: [test-controller]
+          requires: [primary-controller]
+          required_for: [deploy_end]
+          parameters:
+            strategy:
+              type: parallel
+              amount: 2
+        """
+        tasks = yaml.load(correct_yaml_tasks)
+        deployment_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
+        deployment_tasks.extend(tasks)
+        objects.Cluster.update(
+            self.cluster,
+            {'deployment_tasks': deployment_tasks})
+        self.assertNotRaises(
+            errors.InvalidData,
+            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness,
+            self.task)
+        self.assertNotRaises(
+            errors.ObjectNotFound,
+            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness,
+            self.task)
+
+        # New deployment tasks with incorrect data
+        incorrect_dependencies_yaml_tasks = """
+        - id: test-controller
+          type: group
+          role: [primary-controller]
+          required_for: [deploy]
+          parameters:
+            strategy:
+              type: one_by_one
+        """
+        tasks = yaml.load(incorrect_dependencies_yaml_tasks)
+        deployment_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
+        deployment_tasks.extend(tasks)
+        objects.Cluster.update(
+            self.cluster,
+            {'deployment_tasks': deployment_tasks})
+        with self.assertRaisesRegexp(
+                errors.ObjectNotFound,
+                "Task 'deploy' can't be in requires|required_for|groups|tasks "
+                "for \['test-controller'\] because doesn't exists in graph"):
+            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness(
+                self.task)
+
+        # New deployment tasks with cycles
+        incorrect_cycle_yaml_tasks = """
+        - id: test-controller-1
+          type: role
+          requires: [test-controller-2]
+        - id: test-controller-2
+          type: role
+          requires: [test-controller-1]
+        """
+        tasks = yaml.load(incorrect_cycle_yaml_tasks)
+        deployment_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
+        deployment_tasks.extend(tasks)
+        objects.Cluster.update(
+            self.cluster,
+            {'deployment_tasks': deployment_tasks})
+        with self.assertRaisesRegexp(
+                errors.InvalidData,
+                "Tasks can not be processed because it contains cycles in it"):
+            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness(
+                self.task)

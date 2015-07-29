@@ -20,6 +20,7 @@ from itertools import groupby
 import mock
 import yaml
 
+from nailgun.errors import errors
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import graph_configuration
 from nailgun.test import base
@@ -115,6 +116,17 @@ SUBTASKS = """
   requires: [setup_anything]
 """
 
+TASKS_WITH_NOT_EXISTS_DEPENDENCIES = """
+- id: test_task_1
+  type: group
+  role: [test_task_1]
+  required_for: [some_not_exists_task_1]
+  requires: [some_not_exists_task_2]
+  parameters:
+    strategy:
+        type: parallel
+"""
+
 
 class TestGraphDependencies(base.BaseTestCase):
 
@@ -146,6 +158,17 @@ class TestGraphDependencies(base.BaseTestCase):
         self.assertItemsEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
+
+    def test_raise_exception_if_dependencies_not_described(self):
+        graph = deployment_graph.DeploymentGraph()
+        tasks = yaml.load(TASKS_WITH_NOT_EXISTS_DEPENDENCIES)
+        graph.add_tasks(tasks)
+        with self.assertRaisesRegexp(
+                errors.ObjectNotFound,
+                "Task 'some_not_exists_task_1' can't be in "
+                "requires|required_for|groups|tasks for "
+                "['test_task_1'] because doesn't exists in graph"):
+            graph.get_groups_subgraph()
 
 
 class TestAddDependenciesToNodes(base.BaseTestCase):
@@ -273,6 +296,18 @@ class TestTasksRemoval(base.BaseTestCase):
         self.assertEqual(len(tasks), 2)
         self.assertItemsEqual(
             [t['id'] for t in tasks], ['setup_network', 'install_controller'])
+
+    def test_raise_exception_if_tasks_not_described(self):
+        cluster = mock.Mock()
+        cluster.deployment_tasks = yaml.load(
+            TASKS + TASKS_WITH_NOT_EXISTS_DEPENDENCIES)
+        astute = deployment_graph.AstuteGraph(cluster)
+        with self.assertRaisesRegexp(
+                errors.ObjectNotFound,
+                "Task 'some_not_exists_task_1' can't be in "
+                "requires|required_for|groups|tasks for "
+                "['test_task_1'] because doesn't exists in graph"):
+            astute.only_tasks(['test_task_1'])
 
 
 class GroupsTraversalTest(base.BaseTestCase):

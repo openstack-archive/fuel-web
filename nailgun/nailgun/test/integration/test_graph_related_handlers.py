@@ -34,18 +34,11 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def get_correct_tasks(self):
         yaml_tasks = """
-        - id: primary-controller
+        - id: test-controller
           type: group
-          role: [primary-controller]
-          required_for: [deploy]
-          parameters:
-            strategy:
-              type: one_by_one
-        - id: controller
-          type: group
-          role: [primary-controller]
+          role: [test-controller]
           requires: [primary-controller]
-          required_for: [deploy]
+          required_for: [deploy_end]
           parameters:
             strategy:
               type: parallel
@@ -55,8 +48,8 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def get_corrupted_tasks(self):
         yaml_tasks = """
-        - id: primary-controller
-          required_for: [deploy]
+        - id: test-controller
+          required_for: [deploy_end]
           parameters:
             strategy:
               type: one_by_one
@@ -65,12 +58,24 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def get_tasks_with_cycles(self):
         yaml_tasks = """
-        - id: primary-controller
+        - id: test-controller-1
           type: role
-          requires: [controller]
-        - id: controller
+          requires: [test-controller-2]
+        - id: test-controller-2
           type: role
-          requires: [primary-controller]
+          requires: [test-controller-1]
+        """
+        return yaml.load(yaml_tasks)
+
+    def get_tasks_with_incorrect_dependencies(self):
+        yaml_tasks = """
+        - id: test-controller
+          type: group
+          role: [primary-controller]
+          required_for: [deploy]
+          parameters:
+            strategy:
+              type: one_by_one
         """
         return yaml.load(yaml_tasks)
 
@@ -120,6 +125,22 @@ class TestReleaseGraphHandler(BaseGraphTasksTests):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
+
+    def test_upload_tasks_with_incorrect_dependencies(self):
+        tasks = self.get_tasks_with_incorrect_dependencies()
+        resp = self.app.put(
+            reverse('ReleaseDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.release_id}),
+            params=jsonutils.dumps(tasks),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(
+            "Task 'deploy' can't be in requires|required_for|groups|tasks "
+            "for [u'test-controller'] because doesn't exists in graph",
+            resp.json_body['message'])
 
     def test_post_tasks(self):
         resp = self.app.post(
@@ -193,6 +214,21 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
+
+    def test_upload_tasks_with_incorrect_dependencies(self):
+        tasks = self.get_tasks_with_incorrect_dependencies()
+        resp = self.app.put(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            params=jsonutils.dumps(tasks),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(
+            "Task 'deploy' can't be in requires|required_for|groups|tasks "
+            "for [u'test-controller'] because doesn't exists in graph",
+            resp.json_body['message'])
 
     def test_post_tasks(self):
         resp = self.app.post(

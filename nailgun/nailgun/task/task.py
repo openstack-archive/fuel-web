@@ -803,6 +803,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
         cls._validate_network_template(task)
+        cls._check_deployment_graph_for_correctness(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)
@@ -1046,6 +1047,16 @@ class CheckBeforeDeploymentTask(object):
             error_msg = ('Network roles {0} are missing from network '
                          'configuration template').format(error_roles)
             raise errors.NetworkTemplateMissingNetRoles(error_msg)
+
+    @classmethod
+    def _check_deployment_graph_for_correctness(self, task):
+        """Check that deployment graph hasn't not existing dependencies(
+        such as requires|required_for|tasks|groups)
+        """
+        deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+        graph_validator = deployment_graph.DeploymentGraphValidator(
+            deployment_tasks)
+        graph_validator.check()
 
 
 class DumpTask(object):

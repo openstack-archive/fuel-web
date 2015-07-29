@@ -2916,6 +2916,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 // Disks styles
 .disk-box {
+  margin-bottom: 20px;
   @colors: green, blue, orange, gray, pure-red, black, red;
   .generate-colors(length(@colors));
   .generate-colors(@n, @i: 1) when (@i =< @n) {
@@ -2925,6 +2926,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
     .generate-colors(@n, (@i + 1));
   }
+  
+  h4 {
+    font-size: @base-font-size + 1;
+    margin: 0;
+    padding: 0 0 5px;
+    font-weight: 600;
+  }
 
   label {.font-semibold;}
 
@@ -2933,6 +2941,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     @disk-visual-block-padding: 4px;
     height: @disk-visual-block-height;
     color: @white;
+    cursor: pointer;
     .text-shadow;
     .font-semibold;
     div {
@@ -2946,28 +2955,45 @@ button, .btn:not(.btn-link) {.font-semibold;}
           height: @disk-visual-block-height / 2 - @disk-visual-block-padding;
         }
       }
+      .volume-group-size {
+        font-size: @base-font-size - 2;
+        font-weight: 400;
+      }
       .close-btn {
         position: absolute;
         z-index: 1000;
-        top: 0;
+        top: -4px;
         right: @disk-visual-block-padding;
         cursor: pointer;
         font-size: @base-font-size + 2px;
         .font-bold;
       }
       &[data-volume=unallocated] {
-        background: linear-gradient(to bottom, #aaa 0%, #ddd 100%);
+        background-color: @tab-color - 45%;
+        //background: linear-gradient(to bottom, #aaa 0%, #ddd 100%);
       }
     }
   }
   .disk-details {
-    background: @gray + 95%;
-    border: 1px solid @gray + 20%;
+    background: @tab-color;
+    h5 {
+      font-size: @base-font-size + 1;
+      font-weight: 600;
+    }
     .disk-info-box {
       .form-group {
         margin-bottom: 0;
-        label {text-transform: capitalize;}
-        p {padding: 0;}
+        label {
+          text-transform: capitalize;
+          font-size: @base-font-size - 1;
+        }
+        p {
+          padding: 0;
+        }
+        .form-control-static {
+          min-height: 28px;
+          font-size: @base-font-size - 1;
+        }
       }
     }
     .disk-utility-box {
@@ -2980,6 +3006,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
         }
         .volume-group-input {
           padding-right: @disk-form-margin;
+          input {
+            width: 116%;
+          }
         }
         .volume-group-range, .volume-group-input {
           label, .help-block {display: none;}
@@ -2987,10 +3016,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
         .volume-group-label {
           margin: 0;
           padding-top: @disk-form-margin;
+          span {
+            margin-right: 10px;
+            font-size: @base-font-size - 1;
+          }
         }
         .volume-group-size-label {
           padding: @disk-form-margin;
           text-align: right;
+          font-size: @base-font-size - 1;
         }
         input[type=range] {
           /*fix for FF unable to apply focus style bug */
@@ -3005,7 +3039,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
           top: -2px;
         }
       }
-      .volume-group {margin-bottom: @disk-form-margin;}
+      .volume-group {
+        margin-bottom: @disk-form-margin;
+        label {
+          padding-left: 0;
+        }
+      }
       .volume-group-notice {
         font-size: @base-font-size - 2px;
         color: @blue;

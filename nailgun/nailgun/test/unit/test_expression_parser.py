@@ -32,6 +32,8 @@ class TestExpressionParser(BaseTestCase):
         }
         hypervisor = models['settings']['common']['libvirt_type']['value']
 
+        # if you change/add test cases, please also modify
+        # static/tests/unit/expression.js
         test_cases = (
             # test scalars
             ('true', True),
@@ -77,21 +79,26 @@ class TestExpressionParser(BaseTestCase):
                 '!= "{0}")'.format(hypervisor), True),
             # test nonexistent keys
             ('cluster:nonexistentkey', TypeError),
+            ('cluster:nonexistentkey == null', True, False),
             # test evaluation flow
-            ('cluster:mode != "ha_compact" and cluster:nonexistentkey == 1',
+            ('cluster:mode != "ha_compact" and cluster:nonexistentkey == null',
                 False),
-            ('cluster:mode == "ha_compact" and cluster:nonexistentkey == 1',
+            ('cluster:mode == "ha_compact" and cluster:nonexistentkey == null',
                 TypeError),
+            ('cluster:mode == "ha_compact" and cluster:nonexistentkey == null',
+                True, False),
         )
 
-        def evaluate_expression(expression, models):
-            return Expression(expression, models).evaluate()
+        def evaluate_expression(expression, models, strict):
+            return Expression(expression, models, strict).evaluate()
 
         for test_case in test_cases:
-            expression, result = test_case
+            expression = test_case[0]
+            result = test_case[1]
+            strict = test_case[2] if len(test_case) > 2 else True
             if inspect.isclass(result) and issubclass(result, Exception):
                 self.assertRaises(result, evaluate_expression,
-                                  expression, models)
+                                  expression, models, strict)
             else:
-                self.assertEqual(evaluate_expression(expression, models),
-                                 result)
+                self.assertEqual(evaluate_expression(expression, models,
+                                                     strict), result)

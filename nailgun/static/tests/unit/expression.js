@@ -9,6 +9,7 @@ define([
     'use strict';
 
     registerSuite({
+        name: 'Expression',
         'Expression parser test': function() {
             var hypervisor = 'kvm';
             var testModels = {
@@ -16,6 +17,9 @@ define([
                 settings: new models.Settings({common: {libvirt_type: {value: hypervisor}}}),
                 release: new models.Release({roles: ['controller', 'compute']})
             };
+
+            // if you change/add test cases, please also modify
+            // nailgun/test/unit/test_expression_parser.py
             var testCases = [
                 // test scalars
                 ['true', true],
@@ -58,25 +62,26 @@ define([
                 ['cluster:mode == "ha_compact" and not (settings:common.libvirt_type.value != "' + hypervisor + '")', true],
                 // test nonexistent keys
                 ['cluster:nonexistentkey', Error],
+                ['cluster:nonexistentkey == null', true, false],
                 // test evaluation flow
-                ['cluster:mode != "ha_compact" and cluster:nonexistentkey == 1', false],
-                ['cluster:mode == "ha_compact" and cluster:nonexistentkey == 1', Error]
+                ['cluster:mode != "ha_compact" and cluster:nonexistentkey == null', false],
+                ['cluster:mode == "ha_compact" and cluster:nonexistentkey == null', Error],
+                ['cluster:mode == "ha_compact" and cluster:nonexistentkey == null', true, false]
             ];
 
-            function evaluate(expression) {
-                var result = Expression(expression, testModels).evaluate();
+            function evaluate(expression, options) {
+                var result = Expression(expression, testModels, options).evaluate();
                 return result instanceof expressionObjects.ModelPath ? result.get() : result;
             }
 
-            _.each(testCases, function(testCase) {
-                var expression = testCase[0];
-                var result = testCase[1];
+            _.each(testCases, _.spread(function(expression, result, strict) {
+                var options = {strict: strict};
                 if (result === Error) {
-                    assert.throws(evaluate.bind(null, expression), Error, '', expression + ' throws an error');
+                    assert.throws(_.partial(evaluate, expression, options), Error, '', expression + ' throws an error');
                 } else {
-                    assert.strictEqual(evaluate(expression), result, expression + ' evaluates correctly');
+                    assert.strictEqual(evaluate(expression, options), result, expression + ' evaluates correctly');
                 }
-            });
+            }));
         }
     });
 });

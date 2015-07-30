@@ -107,9 +107,9 @@ define([
             var restrictions = (this.expandedRestrictions || {})[path];
             if (action) restrictions = _.where(restrictions, {action: action});
             var satisfiedRestrictions = _.filter(restrictions, function(restriction) {
-                return new Expression(restriction.condition, models).evaluate();
+                return new Expression(restriction.condition, models, restriction).evaluate();
             });
-            return {result: !!satisfiedRestrictions.length, message: _.compact(_.pluck(satisfiedRestrictions, 'message')).join(' ')};
+            return {result: !!satisfiedRestrictions.length, message: _.compact(_.pluck(satisfiedRestrictions, 'message')).join('; ')};
         },
         expandLimits: function(limits) {
             this.expandedLimits = this.expandedLimits || {};

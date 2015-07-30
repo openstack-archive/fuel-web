@@ -220,7 +220,7 @@ class RsyncPuppet(GenericRolesHook):
 
 class GenerateKeys(GenericRolesHook):
 
-    identity = 'generate_keys'
+    identity = 'copy_keys_ceph'
 
     def serialize(self):
         uids = self.get_uids()
@@ -240,6 +240,16 @@ class CopyKeys(GenericRolesHook):
         uids = self.get_uids()
         yield templates.make_generic_task(
             uids, self.task)
+
+
+class GenerateCephKeys(GenerateKeys):
+
+    identity = 'generate_keys_ceph'
+
+
+class CopyCephKeys(CopyKeys):
+
+    identity = 'copy_keys_ceph'
 
 
 class GenerateHaproxyKeys(GenericRolesHook):
@@ -349,7 +359,8 @@ class TaskSerializers(object):
 
     stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, RestartRadosGW,
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
-                         GenerateHaproxyKeys, CopyHaproxyKeys]
+                         GenerateHaproxyKeys, CopyHaproxyKeys,
+                         GenerateCephKeys, CopyCephKeys]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

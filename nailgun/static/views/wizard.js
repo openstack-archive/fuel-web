@@ -337,7 +337,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                             }, this))
                             .done(_.bind(function() {
                                 this.close();
-                                app.navigate('#cluster/' + this.cluster.id + '/dashboard', {trigger: true});
+                                app.navigate('#cluster/' + this.cluster.id, {trigger: true});
                             }, this))
                             .fail(_.bind(function() {
                                 this.close();

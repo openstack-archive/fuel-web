@@ -107,8 +107,14 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         welcome: function() {
             app.loadPage(WelcomePage);
         },
-        showCluster: function() {
-            app.loadPage(ClusterPage, arguments).fail(this.default);
+        showCluster: function(clusterId, tab) {
+            var tabOptions = _.drop(arguments, 2);
+            var tabs = _.pluck(ClusterPage.getTabs(), 'url');
+            if (!tab || !_.contains(tabs, tab)) {
+                app.navigate('cluster/' + clusterId + '/' + tabs[0], {trigger: true, replace: true});
+            } else {
+                app.loadPage(ClusterPage, [clusterId, tab].concat(tabOptions)).fail(this.default);
+            }
         },
         listClusters: function() {
             app.loadPage(ClustersPage);

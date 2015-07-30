@@ -61,7 +61,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     breadcrumbs = [
                         ['home', '#'],
                         ['environments', '#clusters'],
-                        [cluster.get('name'), '#cluster/' + cluster.get('id') + '/', {skipTranslation: true}],
+                        [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}],
                         [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, {active: !addScreenBreadcrumb}]
                     ];
                 if (addScreenBreadcrumb) {
@@ -86,7 +86,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             fetchData: function(id, activeTab) {
                 var cluster, promise, currentClusterId;
                 var tab = _.find(this.getTabs(), {url: activeTab}).tab,
-                    tabOptions = _.toArray(arguments).slice(2);
+                    tabOptions = _.drop(arguments, 2);
                 try {
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}

@@ -107,8 +107,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         welcome: function() {
             app.loadPage(WelcomePage);
         },
-        showCluster: function() {
-            app.loadPage(ClusterPage, arguments).fail(this.default);
+        showCluster: function(clusterId, tab, opt1, opt2, opt3) {
+            if (!tab) tab = ClusterPage.getTabs()[0].url;
+            app.loadPage(ClusterPage, [clusterId, tab, opt1, opt2, opt3]).fail(this.default);
         },
         listClusters: function() {
             app.loadPage(ClustersPage);

@@ -109,12 +109,15 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_node_hostname_gets_updated_invalid(self):
         node = self.env.create_node(api=False)
+        invalid_name = '!#invalid_@name$'
         resp = self.app.put(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
-            jsonutils.dumps({'hostname': '!#invalid_%&name'}),
+            jsonutils.dumps({'hostname': invalid_name}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json_body['message'], "Invalid hostname: '{0}'"
+                         .format(invalid_name))
 
     def test_node_hostname_gets_updated_after_provisioning_starts(self):
         node = self.env.create_node(api=False,

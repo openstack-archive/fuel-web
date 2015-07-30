@@ -338,6 +338,70 @@ class NetworkManager(object):
         return result
 
     @classmethod
+    def _get_assigned_vips_for_net_groups(cls, cluster):
+        node_group_id = objects.Cluster.get_controllers_group_id(cluster)
+        cluster_vips = db.query(IPAddr).join(IPAddr.network_data).filter(
+            IPAddr.node.is_(None) &
+            IPAddr.vip_type.isnot(None) &
+            (NetworkGroup.group_id == node_group_id)
+        )
+        return cluster_vips
+
+    @classmethod
+    def get_assigned_vips(cls, cluster):
+        """Return assigned VIPs mapped to names of network groups.
+
+        :param cluster: Is an instance of :class:`objects.Cluster`.
+        :returns: A dict of VIPs mapped to names of network groups and
+                  they are grouped by the type.
+        """
+        cluster_vips = cls._get_assigned_vips_for_net_groups(cluster)
+        vips = defaultdict(dict)
+        for vip in cluster_vips:
+            vips[vip.network_data.name][vip.vip_type] = vip.ip_addr
+        return vips
+
+    @classmethod
+    def assign_given_vips_for_net_groups(cls, cluster, vips):
+        """Assign given VIP addresses for network groups.
+
+        This method is the opposite of the :func:`get_assigned_vips_ips`
+        and compatible with results it returns. The method primarily
+        used for the upgrading procedure of clusters to copy VIPs from
+        one cluster to the other.
+
+        :param cluster: Is an instance of :class:`objects.Cluster`.
+        :param vips: A dict of VIPs mapped to names of network groups
+                     that are grouped by the type.
+        :raises: errors.AssignIPError
+        """
+        cluster_vips = cls._get_assigned_vips_for_net_groups(cluster)
+        assigned_vips = defaultdict(dict)
+        for vip in cluster_vips:
+            assigned_vips[vip.network_data.name][vip.vip_type] = vip
+        for net_group in cluster.network_groups:
+            if net_group.name not in vips:
+                continue
+            assigned_vips_by_type = assigned_vips.get(net_group.name, {})
+            for vip_type, ip_addr in six.iteritems(vips[net_group.name]):
+                if not cls.check_ip_belongs_to_net(ip_addr, net_group):
+                    raise errors.AssignIPError(
+                        "Cannot assign VIP with the address \"{0}\" because "
+                        "it does not belong to the network \"{1}\""
+                        .format(ip_addr, net_group.name))
+                if vip_type in assigned_vips_by_type:
+                    assigned_vip = assigned_vips_by_type[vip_type]
+                    assigned_vip.ip_addr = ip_addr
+                else:
+                    vip = IPAddr(
+                        network=net_group.id,
+                        ip_addr=ip_addr,
+                        vip_type=vip_type,
+                    )
+                    db().add(vip)
+        db().flush()
+
+    @classmethod
     def assign_vips_for_net_groups_for_api(cls, cluster):
         return cls.assign_vips_for_net_groups(cluster)
 
@@ -1200,6 +1264,14 @@ class NetworkManager(object):
                                       data.get('net_l23_provider'))
         elif cluster.net_provider == 'nova_network':
             cls.create_nova_network_config(cluster)
+
+    @classmethod
+    def get_network_config_create_data(cls, cluster):
+        data = {}
+        if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
+            data['net_l23_provider'] = cluster.network_config.net_l23_provider
+            data['net_segment_type'] = cluster.network_config.segmentation_type
+        return data
 
     @classmethod
     def get_default_gateway(cls, node_id):

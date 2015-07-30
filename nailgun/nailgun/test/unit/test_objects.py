@@ -536,6 +536,32 @@ class TestNodeObject(BaseIntegrationTest):
             self.assertEqual(node.ip_addrs, [])
             self.assertEqual(node.pending_roles, prev_roles)
 
+    def _assert_cluster_create_data(self, network_data):
+        release = self.env.create_release(api=False)
+        expected_data = {
+            "name": "cluster-0",
+            "mode": consts.CLUSTER_MODES.ha_compact,
+            "release_id": release.id,
+        }
+        expected_data.update(network_data)
+        cluster = self.env.create_cluster(api=False, **expected_data)
+        create_data = objects.Cluster.get_create_data(cluster)
+        self.assertEqual(expected_data, create_data)
+
+    def test_cluster_get_create_data_neutron(self):
+        network_data = {
+            "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron,
+            "net_segment_type": consts.NEUTRON_SEGMENT_TYPES.vlan,
+            "net_l23_provider": consts.NEUTRON_L23_PROVIDERS.ovs,
+        }
+        self._assert_cluster_create_data(network_data)
+
+    def test_cluster_get_create_data_nova(self):
+        network_data = {
+            "net_provider": consts.CLUSTER_NET_PROVIDERS.nova_network,
+        }
+        self._assert_cluster_create_data(network_data)
+
 
 class TestTaskObject(BaseIntegrationTest):
 
@@ -858,14 +884,16 @@ class TestClusterObject(BaseTestCase):
         network_role.update(kwargs)
         return network_role
 
+    @mock.patch('nailgun.objects.cluster.fire_callback_on_cluster_delete')
     @mock.patch(
         'nailgun.objects.cluster.'
         'fire_callback_on_node_collection_delete')
-    def test_delete(self, callback_mock):
+    def test_delete(self, mock_node_coll_delete_cb, mock_cluster_delete_cb):
         cluster = self.env.clusters[0]
         ids = [node.id for node in cluster.nodes]
         objects.Cluster.delete(cluster)
-        callback_mock.assert_called_once_with(ids)
+        mock_node_coll_delete_cb.assert_called_once_with(ids)
+        mock_cluster_delete_cb.assert_called_once_with(cluster)
         self.assertEqual(self.db.query(objects.Node.model).count(), 0)
         self.assertEqual(self.db.query(objects.Cluster.model).count(), 0)
 

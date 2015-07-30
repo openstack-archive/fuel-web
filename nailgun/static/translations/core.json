@@ -840,8 +840,7 @@
                     },
                     "warnings": {
                         "no_deployment": "Environment configuration is invalid. Deployment cannot be started. Please check warnings below.",
-                        "connectivity_alert": "By default, packages and package updates will be fetched from repositories. Please make sure your Fuel node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment.",
-                        "verification_in_progress": "Deployment is unavailable during network verification is in progress. Please wait until it finishes."
+                        "connectivity_alert": "By default, packages and package updates will be fetched from repositories. Please make sure your Fuel node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment."
                     },
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",

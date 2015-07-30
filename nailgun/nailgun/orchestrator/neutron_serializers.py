@@ -1115,17 +1115,17 @@ class NeutronNetworkTemplateSerializer70(
         return mapping
 
     @classmethod
-    def generate_network_metadata(cls, cluster):
-        metadata = super(NeutronNetworkTemplateSerializer70,
-                         cls).generate_network_metadata(cluster)
+    def get_network_role_mapping_to_ip(cls, node):
+        """Returns network roles mapping to IP addresses for templates.
 
-        nm = Cluster.get_network_manager(cluster)
-        for node_data in six.itervalues(metadata['nodes']):
-            node = Node.get_by_uid(node_data['uid'])
-            networks = nm.get_node_networks(node)
-            network_roles = cls._get_network_roles(node)
-            ip_per_ep = cls._get_endpoint_to_ip_mapping(node, networks)
-            node_data['network_roles'] = {}
-            for role, ep in six.iteritems(network_roles):
-                node_data['network_roles'][role] = ip_per_ep.get(ep)
-        return metadata
+        :param node: instance of db.sqlalchemy.models.node.Node
+        :return: dict of network roles mapping
+        """
+        nm = Cluster.get_network_manager(node.cluster)
+        networks = nm.get_node_networks(node)
+        network_roles = cls._get_network_roles(node)
+        ip_per_ep = cls._get_endpoint_to_ip_mapping(node, networks)
+        roles = {}
+        for role, ep in network_roles.items():
+            roles[role] = ip_per_ep.get(ep)
+        return roles

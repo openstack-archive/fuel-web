@@ -331,3 +331,39 @@ class NetAssignmentValidator(BasicValidator):
                     "bond".format(node['id'], iface['id']),
                     log_message=True
                 )
+
+
+class NICsNamesValidator(BasicValidator):
+    required_fields = ('id', 'name')
+
+    @classmethod
+    def validate_nics_names(cls, webdata):
+        data = cls.validate_json(webdata)
+        if not isinstance(data, list):
+            raise errors.InvalidData(
+                "Expected a list of interface names and ids",
+                log_message=True
+            )
+        seen_ids = []
+        for index, nic in enumerate(data):
+            if not isinstance(nic, dict):
+                raise errors.InvalidData(
+                    ("Each list item should be a JSON object"
+                     "with the following required keys: {0}"
+                     .format(cls.required_fields)), log_message=True
+                )
+            for field in cls.required_fields:
+                value = nic.get(field, None)
+                if value is None:
+                    raise errors.InvalidData(
+                        "Non-empty '{0}' is expected in NIC {1}"
+                        .format(field, index), log_message=True
+                    )
+                if field == 'id':
+                    if value in seen_ids:
+                        raise errors.InvalidData(
+                            "Duplicate interface id {0} found"
+                            .format(value), log_message=True
+                        )
+                    seen_ids.append(value)
+        return data

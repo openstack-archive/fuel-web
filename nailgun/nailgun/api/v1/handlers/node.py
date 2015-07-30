@@ -27,6 +27,7 @@ from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.network import NetAssignmentValidator
+from nailgun.api.v1.validators.network import NICsNamesValidator
 from nailgun.api.v1.validators.node import NodeValidator
 
 from nailgun import consts
@@ -38,6 +39,8 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
+
+from nailgun.errors import errors
 
 from nailgun.task.manager import NodeDeletionTaskManager
 
@@ -303,6 +306,150 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
             nodes = objects.NodeCollection.all()
 
         return filter(lambda x: x is not None, map(self.get_default, nodes))
+
+
+class BaseNICsNamesHandler(BaseHandler):
+    """Base interface names handler. Not for direct use."""
+
+    fields = ('id', 'node_id', 'name', 'mac', 'max_speed',
+              'current_speed', 'ip_addr', 'netmask', 'bus_info')
+    validator = NICsNamesValidator
+
+    def _validate_node_params(self, params):
+        if params.cluster_id and params.node_id:
+            raise self.http(
+                400, "Both cluster_id and node_id must not "
+                     "be specified simultaneously")
+
+    def _validate_nic_params(self, params):
+        if params.mac and params.bus_info:
+            raise self.http(
+                400, "Both mac and bus_info must not "
+                     "be specified simultaneously")
+
+    def _check_nics_ids(self, data):
+        # Check that NIC IDs specified in the data exist
+        session = db()
+        for nic in data:
+            db_nic = session.query(NodeNICInterface).get(nic['id'])
+            if db_nic is None:
+                raise self.http(
+                    404, ("Could not find interface with id {0}"
+                          .format(nic['id']))
+                )
+
+
+class NodeNICsNamesHandler(BaseNICsNamesHandler):
+    """Node interface names handler."""
+
+    def _check_nics_ownership(self, data, node_id):
+        # Check if NIC IDs specified in the data really belong to
+        # the node for which this API is called - so that it's
+        # not possible to rename interfaces on other nodes
+        session = db()
+        for nic in data:
+            db_nic = session.query(NodeNICInterface).get(nic['id'])
+            if db_nic.node_id != node_id:
+                raise self.http(
+                    409, ("Interface with id {0} does not belong to node {1}"
+                          .format(nic['id'], node_id))
+                )
+
+    @content
+    def GET(self, node_id):
+        """:returns Collection of JSONized NodeNICInterface objects
+
+        :http: * 200 (OK)
+               * 400 (wrong filters specified)
+               * 404 (node not found)
+        """
+        params = web.input(mac=None, bus_info=None)
+        self._validate_nic_params(params)
+        self.get_object_or_404(objects.Node, node_id)
+        query = {'node_id': node_id}
+        if params.mac:
+            query['mac'] = params.mac
+        if params.bus_info:
+            query['bus_info'] = params.bus_info
+        result = db().query(NodeNICInterface).filter_by(**query)
+        return map(self.render, result)
+
+    @content
+    def PUT(self, node_id):
+        """:returns Collection of JSONized NodeNICInterface objects that were
+                    updated
+
+        :http: * 200 (OK)
+               * 400 (incorrect data format)
+               * 404 (node not found, interface not found)
+               * 409 (interface does not belong to node,
+                      interface name already used on node)
+        """
+        self.get_object_or_404(objects.Node, node_id)
+        data = self.checked_data(self.validator.validate_nics_names)
+        self._check_nics_ids(data)
+        self._check_nics_ownership(data, node_id)
+        try:
+            result = (objects.Cluster.get_network_manager()
+                      .rename_interfaces(data))
+        except errors.InterfaceNameAlreadyUsed as err:
+            raise self.http(
+                409, ("Failed to update interface names configuration: {0}"
+                      .format(err))
+            )
+        return map(self.render, result)
+
+
+class NodeCollectionNICsNamesHandler(BaseNICsNamesHandler):
+    """Node collection interface names handler."""
+
+    @content
+    def GET(self):
+        """:returns Collection of JSONized NodeNICInterface objects
+
+        :http: * 200 (OK)
+               * 400 (wrong filters specified)
+        """
+        params = web.input(cluster_id=None, node_id=[],
+                           mac=None, bus_info=None)
+        self._validate_node_params(params)
+        self._validate_nic_params(params)
+        query = {}
+        if params.mac:
+            query['mac'] = params.mac
+        if params.bus_info:
+            query['bus_info'] = params.bus_info
+        result = db().query(NodeNICInterface).filter_by(**query)
+        if params.node_id:
+            result = result.filter(
+                NodeNICInterface.node_id.in_(params.node_id))
+        if params.cluster_id:
+            result = result.join(Node).filter(
+                Node.cluster_id == params.cluster_id)
+
+        return map(self.render, result)
+
+    @content
+    def PUT(self):
+        """:returns Collection of JSONized NodeNICInterface objects that were
+                    updated
+
+        :http: * 200 (OK)
+               * 400 (incorrect data format)
+               * 404 (interface not found)
+               * 409 (interface name already used on node)
+        """
+        data = self.checked_data(self.validator.validate_nics_names)
+        self._check_nics_ids(data)
+        try:
+            result = (objects.Cluster.get_network_manager()
+                      .rename_interfaces(data))
+        except errors.InterfaceNameAlreadyUsed as err:
+            raise self.http(
+                409, ("Failed to update interface names configuration: {0}"
+                      .format(err))
+            )
+        return map(self.render, result)
 
 
 class NodesAllocationStatsHandler(BaseHandler):

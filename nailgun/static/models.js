@@ -274,15 +274,22 @@ define([
         constructorName: 'Roles',
         comparator: 'weight',
         model: models.Role,
-        processConflicts: function() {
+        initialize: function() {
+            this.processConflictsAndRestrictions();
+            this.on('update', this.processConflictsAndRestrictions, this);
+        },
+        processConflictsAndRestrictions: function() {
             this.each(function(role) {
+                role.expandRestrictions(role.get('restrictions'));
+                role.expandLimits(role.get('limits'));
+
                 var roleConflicts = role.get('conflicts'),
                     roleName = role.get('name');
 
                 if (roleConflicts == '*') {
                     role.conflicts = _.map(this.reject({name: roleName}), function(role) {
-                            return role.get('name');
-                        });
+                        return role.get('name');
+                    });
                 } else {
                     role.conflicts = _.chain(role.conflicts)
                         .union(roleConflicts)
@@ -293,7 +300,7 @@ define([
 
                 _.each(role.conflicts, function(conflictRoleName) {
                     var conflictingRole = this.findWhere({name: conflictRoleName});
-                    conflictingRole.conflicts = _.uniq(_.union(conflictingRole.conflicts || [], [roleName]));
+                    if (conflictingRole) conflictingRole.conflicts = _.uniq(_.union(conflictingRole.conflicts || [], [roleName]));
                 }, this);
             }, this);
         }

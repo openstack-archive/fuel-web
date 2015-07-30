@@ -12,6 +12,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import re
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.graph import TaskDeploymentValidator
@@ -186,8 +187,17 @@ class NodeValidator(BasicValidator):
 
     @classmethod
     def validate_hostname(cls, hostname, instance):
+
+        pattern = '^({label}\.)*{label}$'.format(
+            label='[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?')
+
         if hostname == instance.hostname:
             return
+
+        if not re.match(pattern, hostname):
+            raise errors.InvalidData(
+                "Invalid hostname: '{0}'".format(hostname)
+            )
 
         if instance.status != consts.NODE_STATUSES.discover:
             raise errors.NotAllowed(

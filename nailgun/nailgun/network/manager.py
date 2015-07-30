@@ -25,6 +25,7 @@ from netaddr import IPRange
 
 import six
 
+from sqlalchemy import exc as sa_exc
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
@@ -1426,6 +1427,22 @@ class NetworkManager(object):
         """Returns IP with address space prefix, e.g. "10.20.0.1/24"
         """
         return "{0}/{1}".format(ip, IPNetwork(network_group.cidr).prefixlen)
+
+    @classmethod
+    def rename_interfaces(cls, interface_names_config):
+        session = db()
+        updated_nics = []
+        for nic in interface_names_config:
+            db_nic = session.query(NodeNICInterface).get(nic['id'])
+            if db_nic.name != nic['name']:
+                db_nic.name = nic['name']
+                updated_nics.append(db_nic)
+        try:
+            session.commit()
+        except sa_exc.IntegrityError as exc:
+            session.rollback()
+            raise errors.InterfaceNameAlreadyUsed(str(exc))
+        return updated_nics
 
 
 class AllocateVIPs70Mixin(object):

@@ -294,6 +294,49 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             "{CLUSTER_ID} -o 'mongodb' -s 'neutron nova ceph mysql' -p "
             "/etc/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
 
+    def test_copy_keys_ceph(self):
+        task_config = {
+            'id': 'copy_keys_ceph',
+            'type': 'copy_files',
+            'role': '*',
+            'parameters': {
+                'files': [{
+                    'src': '/var/lib/fuel/keys/{CLUSTER_ID}/ceph/ceph.pub',
+                    'dst': '/var/lib/astute/ceph/ceph.pub'}],
+                'permissions': '0600',
+                'dir_permissions': '0700'}}
+        task = tasks_serializer.CopyCephKeys(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'copy_files')
+        files = []
+        files.append({
+            'src': '/var/lib/fuel/keys/{CLUSTER_ID}/ceph/ceph.pub'.
+            format(CLUSTER_ID=self.cluster.id),
+            'dst': '/var/lib/astute/ceph/ceph.pub'})
+        self.assertItemsEqual(
+            files, serialized['parameters']['files'])
+
+    def test_generate_keys_ceph(self):
+        task_config = {
+            'id': 'generate_keys',
+            'type': 'shell',
+            'role': 'master',
+            'parameters': {
+                'cmd': ("sh /etc/puppet/modules/osnailyfacter/modular/astute/"
+                        "generate_keys.sh -i {CLUSTER_ID} -s 'ceph' -p /var/"
+                        "lib/fuel/keys/"),
+                'timeout': 180}}
+        task = tasks_serializer.GenerateCephKeys(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'shell')
+        self.assertEqual(
+            serialized['parameters']['cmd'],
+            "sh /etc/puppet/modules/osnailyfacter/modular/astute/"
+            "generate_keys.sh -i {CLUSTER_ID} -s 'ceph' -p /var/"
+            "lib/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
+
     def test_generate_haproxy_keys(self):
         cmd_template = "sh /etc/puppet/modules/osnailyfacter/modular/" \
                        "astute/generate_haproxy_keys.sh -i {CLUSTER_ID} " \

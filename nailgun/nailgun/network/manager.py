@@ -1200,3 +1200,28 @@ class NetworkManager(object):
             if network_group in assigned_networks:
                 return iface
         return None
+
+    @classmethod
+    def rename_interfaces(cls, interface_names_config):
+        session = db()
+        updated_nics = []
+        for nic in interface_names_config:
+            db_nic = session.query(NodeNICInterface).get(nic['id'])
+            if db_nic.name != nic['name']:
+                # Check that no other interface on the same node
+                # uses the same name
+                for namesake_nic in session.query(NodeNICInterface).filter_by(
+                    name=nic['name'], node_id=db_nic.node_id):
+                    if namesake_nic.id != db_nic.id:
+                        session.rollback()
+                        raise errors.InterfaceNameAlreadyUsed(
+                            u"Cannot rename interface with id {0}, "
+                            u"name '{1}' is already used on node {2} "
+                            u"by interface with id {3}".format(
+                                nic['id'], nic['name'],
+                                db_nic.node_id, namesake_nic.id)
+                        )
+                db_nic.name = nic['name']
+                session.flush()
+                updated_nics.append(db_nic)
+        return updated_nics

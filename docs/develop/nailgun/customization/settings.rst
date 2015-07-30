@@ -44,7 +44,8 @@ structure includes the following attributes::
 * *label* is a setting title that is displayed on UI
 * *weight* defines the order in which this setting is displayed in its group.
   This attribute is desirable
-* *type* defines the type of UI control to use for the setting. The following types are supported:
+* *type* defines the type of UI control to use for the setting.
+  The following types are supported:
 
   * *text* - single line input
   * *password* - password input
@@ -71,8 +72,8 @@ Restrictions
 ------------
 
 Restrictions define when settings and setting groups should be available.
-Each restriction is defined as a *condition* with optional *action* and
-*message*::
+Each restriction is defined as a *condition* with optional *action*, *message*
+and *strict*::
 
     restrictions:
       - condition: "settings:common.libvirt_type.value != 'kvm'"
@@ -89,6 +90,17 @@ Each restriction is defined as a *condition* with optional *action* and
 
 * *message* is a message that is shown if *condition* is satisfied. This field
   is optional.
+
+* *strict* is a boolean flag which specifies how to handle non-existent keys
+  in expressions. If it is set to true (default value), exception is thrown in
+  case of non-existent key. Otherwise values of such keys have null value.
+  Setting this flag to false is useful for conditions which rely on settings
+  provided by plugins::
+
+    restrictions:
+      - condition: "settings:other_plugin != null and settings:other_plugin.metadata.enabled == true"
+        strict: false
+        message: "Other plugin must be installed and enabled"
 
 There are also short forms of restrictions::
 

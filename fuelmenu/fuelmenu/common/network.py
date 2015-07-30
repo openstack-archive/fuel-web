@@ -83,7 +83,7 @@ def netmaskToCidr(netmask):
 def duplicateIPExists(ip, iface):
     noout = open('/dev/null', 'w')
     no_dupes = subprocess.call(["arping", "-D", "-c3", "-w1", "-I", iface,
-                               "-s", ip, ip], stdout=noout, stderr=noout)
+                               ip], stdout=noout, stderr=noout)
     return (no_dupes != 0)
 
 

@@ -74,6 +74,7 @@ default_messages = {
     "CanNotFindInterface": "Cannot find interface",
     "CanNotDetermineEndPointIP": "Cannot determine end point IP",
     "CanNotFindNetworkForNode": "Cannot find network for node",
+    "InterfaceNameAlreadyUsed": "Interface name is already used",
 
     # RPC errors
     "CannotFindTask": "Cannot find task",

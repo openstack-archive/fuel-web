@@ -334,7 +334,8 @@ class EnvironmentManager(object):
             if_list = [
                 {
                     "name": "eth{0}".format(i),
-                    "mac": self.generate_random_mac()
+                    "mac": self.generate_random_mac(),
+                    "bus_info": self.generate_random_bus_info()
                 }
                 for i in range(if_count)]
             self.set_interfaces_in_meta(meta, if_list)
@@ -398,6 +399,16 @@ class EnvironmentManager(object):
     def generate_random_mac(self):
         mac = [randint(0x00, 0x7f) for _ in xrange(6)]
         return ':'.join(map(lambda x: "%02x" % x, mac)).lower()
+
+    def generate_random_bus_info(self):
+        bus_info = ("%(reserved)02x%(bus_number)02x:%(device_number)02x:"
+                    "%(function_number)02x.%(register_number)x" %
+                    dict(reserved=0x00,
+                         bus_number=randint(0x00, 0xFF),
+                         device_number=randint(0x00, 0x1F),
+                         function_number=randint(0x00, 0x07),
+                         register_number=0x00))
+        return bus_info
 
     def generate_interfaces_in_meta(self, amount):
         nics = []

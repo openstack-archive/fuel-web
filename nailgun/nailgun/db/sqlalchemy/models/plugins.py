@@ -35,6 +35,11 @@ class ClusterPlugins(Base):
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     enabled = Column(Boolean, default=False, nullable=False,
                      server_default='false')
+    # Initially, 'attributes' is a copy of 'Plugin.attributes_metadata'.
+    # We need this column in order to store in there modified (by user)
+    # version of attributes, because we don't want to store them in cluster
+    # attributes with no chance to remove.
+    attributes = Column(JSON, server_default='{}', nullable=False)
 
 
 class Plugin(Base):

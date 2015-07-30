@@ -235,12 +235,9 @@ class Cluster(NailgunObject):
             db().delete(new_cluster)
             raise errors.CannotCreate(exc.message)
 
-        # populate cluster with compatible plugins
-        new_cluster.plugins.extend(
-            PluginManager.get_compatible_plugins(new_cluster))
+        cls.add_compatible_plugins(new_cluster)
 
         db().flush()
-
         return new_cluster
 
     @classmethod
@@ -304,10 +301,6 @@ class Cluster(NailgunObject):
             'cluster': instance,
             'settings': settings,
         })
-        # when attributes created we need to understand whether should plugin
-        # be applied for created cluster
-        plugin_attrs = PluginManager.get_plugin_attributes(instance)
-        editable = dict(plugin_attrs, **editable)
         return editable
 
     @classmethod
@@ -317,9 +310,13 @@ class Cluster(NailgunObject):
         :param instance: Cluster instance
         :returns: Attributes instance
         """
-        return db().query(models.Attributes).filter(
+        attrs = db().query(models.Attributes).filter(
             models.Attributes.cluster_id == instance.id
         ).first()
+
+        # let's merge plugins attributes into editable ones
+        attrs.editable.update(PluginManager.get_plugin_attributes(instance))
+        return attrs
 
     @classmethod
     def update_attributes(cls, instance, data):
@@ -1063,6 +1060,21 @@ class Cluster(NailgunObject):
                    consts.CLUSTER_STATUSES.operational,
                    consts.CLUSTER_STATUSES.error]
         return instance.status not in allowed
+
+    @classmethod
+    def add_compatible_plugins(cls, instance):
+        """Populates 'cluster_plugins' table with compatible plugins.
+        """
+        # FIXME(ikalnitsky): resolve these circular dependencies :(
+        from nailgun.plugins.adapters import wrap_plugin
+
+        for plugin in PluginManager.get_compatible_plugins(instance):
+            cluster_plugin = models.ClusterPlugins(
+                cluster_id=instance.id,
+                plugin_id=plugin.id,
+                enabled=False,
+                attributes=wrap_plugin(plugin).get_plugin_attributes(instance))
+            db().add(cluster_plugin)
 
 
 class ClusterCollection(NailgunCollection):

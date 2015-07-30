@@ -90,7 +90,8 @@ class BasePluginTest(base.BaseIntegrationTest):
         return resp
 
     def modify_plugin(self, cluster, plugin_name, enabled):
-        editable_attrs = cluster.attributes.editable
+        editable_attrs = \
+            objects.Cluster.get_editable_attributes(cluster)['editable']
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
         resp = self.app.put(
             base.reverse('ClusterAttributesHandler',
@@ -219,10 +220,11 @@ class TestPluginsApi(BasePluginTest):
             create_with_version(version)
 
         cluster = self.create_cluster()
+        self.enable_plugin(cluster, 'multiversion_plugin')
+
         # Create new plugin after environment is created
         create_with_version('5.0.0')
 
-        self.enable_plugin(cluster, 'multiversion_plugin')
         self.assertEqual(len(cluster.plugins), 2)
         self.assertEqual(
             len(PluginManager.get_compatible_plugins(cluster)), 1)

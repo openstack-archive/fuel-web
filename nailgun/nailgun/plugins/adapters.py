@@ -107,13 +107,14 @@ class PluginAdapterBase(object):
             model and stored in editable field
         """
         config = {}
+
+        # TODO(ikalnitsky): remove this
         if os.path.exists(self.config_file):
             config = self._load_config(self.config_file)
-        if self.validate_cluster_compatibility(cluster):
-            attrs = config.get("attributes", {})
-            self.update_metadata(attrs)
-            return {self.plugin.name: attrs}
-        return {}
+
+        attrs = config.get("attributes", {})
+        self.update_metadata(attrs)
+        return {self.plugin.name: attrs}
 
     def validate_cluster_compatibility(self, cluster):
         """Validates if plugin is compatible with cluster.

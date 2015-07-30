@@ -39,7 +39,12 @@ class Plugin(base.NailgunObject):
         plugin_adapter = wrap_plugin(plugin)
         for cluster in db.query(models.Cluster):
             if plugin_adapter.validate_cluster_compatibility(cluster):
-                plugin.clusters.append(cluster)
+                cluster_plugin = models.ClusterPlugins(
+                    cluster_id=cluster.id,
+                    plugin_id=plugin.id,
+                    enabled=False,
+                    attributes=plugin_adapter.get_plugin_attributes(cluster))
+                db().add(cluster_plugin)
 
         db().flush()
         return plugin

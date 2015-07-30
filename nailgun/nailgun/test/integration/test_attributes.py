@@ -698,3 +698,36 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
             "Cluster doesn't support vmware configuration",
             resp.json_body["message"]
         )
+
+
+class TestAttributesWithPlugins(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestAttributesWithPlugins, self).setUp()
+
+        self.env.create(
+            release_kwargs={
+                'version': '2015.1.0-7.0',
+            },
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
+            })
+        self.cluster = self.env.clusters[0]
+
+    def _get_serializer(self, cluster):
+        return get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
+
+    def _create_plugin(self, **kwargs):
+        plugin_data = self.env.get_default_plugin_metadata(releases=[{
+            'repository_path': 'repositories/ubuntu',
+            'version': self.cluster.release.version,
+            'os': self.cluster.release.operating_system.lower(),
+            'mode': [self.cluster.mode],
+        }])
+        plugin_data.update(**kwargs)
+
+        plugin = objects.Plugin.create(plugin_data)
+        objects.Plugin.set_enabled(plugin, self.cluster, True)
+        return plugin

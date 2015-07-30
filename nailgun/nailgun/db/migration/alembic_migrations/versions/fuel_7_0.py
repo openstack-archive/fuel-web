@@ -774,6 +774,16 @@ def plugins_clusters_upgrade():
         )
     )
 
+    op.add_column(
+        'cluster_plugins',
+        sa.Column(
+            'attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
     plugins = sa.text('''SELECT id, name FROM plugins''')
     plugins = dict(
         (id_, name) for id_, name in connection.execute(plugins))

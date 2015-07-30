@@ -60,12 +60,20 @@ class PluginManager(object):
 
     @classmethod
     def get_plugin_attributes(cls, cluster):
-        plugin_attributes = {}
-        for plugin_db in PluginCollection.all_newest():
-            plugin_adapter = wrap_plugin(plugin_db)
-            attributes = plugin_adapter.get_plugin_attributes(cluster)
-            plugin_attributes.update(attributes)
-        return plugin_attributes
+        """We need to return either enabled or latest compatible plugin
+           attributes.
+        """
+        # plugins = PluginCollection.all_newest()
+
+        attributes = db().query(models.ClusterPlugins.attributes)\
+            .join(models.Plugin)\
+            .filter(models.ClusterPlugins.cluster_id == cluster.id)\
+            .order_by(models.ClusterPlugins.enabled)
+
+        result = {}
+        for (attr, ) in attributes:
+            result.update(attr)
+        return result
 
     @classmethod
     def get_cluster_plugins_with_tasks(cls, cluster):

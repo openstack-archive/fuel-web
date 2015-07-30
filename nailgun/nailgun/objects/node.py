@@ -681,7 +681,7 @@ class Node(NailgunObject):
         :param cluster_id: Cluster ID
         :returns: None
         """
-        if not instance.cluster:
+        if instance is None or not instance.cluster:
             from nailgun.network.manager import NetworkManager
             return NetworkManager
         else:

@@ -24,6 +24,7 @@ from netaddr import IPRange
 from sqlalchemy import not_
 
 import nailgun
+from nailgun.errors import errors
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -400,6 +401,48 @@ class TestNetworkManager(BaseIntegrationTest):
             itertools.product((0, 1), ('eth0',))
         )
 
+    def _get_env_nics(self):
+        result = {}
+        for node in self.env.nodes:
+            for nic in node.nic_interfaces:
+                result[nic.id] = nic.name
+        return result
+
+    def test_rename_interfaces_success(self):
+        self.env.create_nodes_w_interfaces_count(nodes_count=3, if_count=3)
+        # Get current NIC ids and names
+        nics_before_rename = self._get_env_nics()
+        # Rename random NIC
+        nic_id, old_nic_name = nics_before_rename.popitem()
+        new_nic_name = "renamed-{0}".format(old_nic_name)
+        data = [{'id': nic_id, 'name': new_nic_name}]
+        self.env.network_manager.rename_interfaces(data)
+        # Check that that NIC was renamed successfully
+        # and other NICs were left intact
+        nics_after_rename = self._get_env_nics()
+        self.assertEqual(nics_after_rename.pop(nic_id), new_nic_name)
+        self.assertEqual(nics_after_rename, nics_before_rename)
+
+    def test_rename_interfaces_failure(self):
+        nodes_count = 3
+        self.env.create_nodes_w_interfaces_count(nodes_count, if_count=3)
+        # Get current NIC ids and names
+        nics_before_rename = self._get_env_nics()
+        # Try to rename all interfaces, but specify
+        # duplicate names for one of the nodes
+        data = []
+        for i, node in enumerate(self.env.nodes, start=1):
+            for nic in node.nic_interfaces:
+                if i == nodes_count:
+                    new_nic_name = "same_name"
+                else:
+                    new_nic_name = "renamed-{0}".format(nic.name)
+                data.append({'id': nic.id, 'name': new_nic_name})
+        self.assertRaises(errors.InterfaceNameAlreadyUsed,
+                          self.env.network_manager.rename_interfaces,
+                          data)
+        nics_after_rename = self._get_env_nics()
+        self.assertEqual(nics_before_rename, nics_after_rename)
 
 class TestNovaNetworkManager(BaseIntegrationTest):
 

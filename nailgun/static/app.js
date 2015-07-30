@@ -52,7 +52,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             logout: 'logout',
             welcome: 'welcome',
             clusters: 'listClusters',
-            'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
+            'cluster/:id(/)(:tab)(/)(:opt1)(/)(:opt2)': 'showCluster',
             releases: 'listReleases',
             plugins: 'listPlugins',
             notifications: 'showNotifications',
@@ -108,6 +108,8 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             app.loadPage(WelcomePage);
         },
         showCluster: function() {
+            var activeTab = arguments[1];
+            if (!activeTab) arguments[1] = ClusterPage.getTabs()[0].url;
             app.loadPage(ClusterPage, arguments).fail(this.default);
         },
         listClusters: function() {

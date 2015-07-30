@@ -1736,9 +1736,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
         border-color: @node-border-color-pending_addition;
       }
       &.offline {
-        background-color: @node-color-offline;
-        border-color: @node-border-color-offline;
-        opacity: .7;
+        background-color: @node-color-offline + 10%;
+        border-color: @node-border-color-offline + 10%;
+        .node-name, .node-status, .node-settings {opacity: .7;}
       }
       &.selected {
         background-color: @node-color-selected;
@@ -1835,6 +1835,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
           .node-remove-button {
             font-size: @base-font-size - 2;
             margin-left: 5px;
+            margin-bottom: 3px;
             padding: 0 5px;
           }
           .node-progress;
@@ -1879,7 +1880,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
             .arrow {
               left: 22px;
             }
+            .popover-content {padding-right: 8px;}
             ul {
+              width: 100%;
               padding: 0;
               margin: 0;
             }

@@ -845,7 +845,7 @@ class NeutronNetworkDeploymentSerializer70(
         mapping = dict()
         for net in cls.get_default_network_to_endpoint_mapping(node):
             netgroup = nm.get_node_network_by_netname(node, net)
-            if netgroup.get('ip'):
+            if netgroup and netgroup.get('ip'):
                 mapping[net] = netgroup['ip'].split('/')[0]
 
         return mapping

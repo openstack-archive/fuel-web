@@ -61,7 +61,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     breadcrumbs = [
                         ['home', '#'],
                         ['environments', '#clusters'],
-                        [cluster.get('name'), '#cluster/' + cluster.get('id') + '/', {skipTranslation: true}],
+                        [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}],
                         [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, {active: !addScreenBreadcrumb}]
                     ];
                 if (addScreenBreadcrumb) {

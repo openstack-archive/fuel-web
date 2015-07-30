@@ -665,8 +665,8 @@ class NetworkManager(object):
     @classmethod
     def get_node_network_by_netname(cls, node, netname):
         networks = cls.get_node_networks(node)
-        return filter(
-            lambda n: n['name'] == netname, networks)[0]
+        return next(six.moves.filter(lambda n: n['name'] == netname, networks),
+                    None)
 
     @classmethod
     def get_network_vlan(cls, net_db, cl_db):

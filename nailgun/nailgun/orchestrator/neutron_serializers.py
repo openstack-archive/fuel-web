@@ -845,7 +845,7 @@ class NeutronNetworkDeploymentSerializer70(
         mapping = dict()
         for net in cls.get_default_network_to_endpoint_mapping(node):
             netgroup = nm.get_node_network_by_netname(node, net)
-            if netgroup.get('ip'):
+            if netgroup and netgroup.get('ip'):
                 mapping[net] = netgroup['ip'].split('/')[0]
 
         return mapping
@@ -1120,3 +1120,28 @@ class NeutronNetworkTemplateSerializer70(
             for role, ep in network_roles.items():
                 node_data['network_roles'][role] = ip_per_ep.get(ep)
         return metadata
+
+    @classmethod
+    def generate_network_metadata(cls, cluster):
+        nodes = dict()
+        nm = Cluster.get_network_manager(cluster)
+        for node in Cluster.get_nodes_not_for_deletion(cluster):
+            name = Node.get_slave_name(node)
+            node_roles = Node.all_roles(node)
+            nodes[name] = {
+                "uid": node.uid,
+                "fqdn": node.fqdn,
+                "name": name,
+                "user_node_name": node.name,
+                "swift_zone": node.uid,
+                "node_roles": node_roles,
+            }
+            network_roles = cls._get_network_roles(node)
+            ip_per_ep = cls._get_endpoint_to_ip_mapping(node)
+            nodes[name]['network_roles'] = {}
+            for role, ep in network_roles.items():
+                nodes[name]['network_roles'][role] = ip_per_ep.get(ep)
+        return dict(
+            nodes=nodes,
+            vips=nm.assign_vips_for_net_groups(cluster)
+        )

@@ -1110,13 +1110,25 @@ class NeutronNetworkTemplateSerializer70(
 
     @classmethod
     def generate_network_metadata(cls, cluster):
-        metadata = super(NeutronNetworkTemplateSerializer70,
-                         cls).generate_network_metadata(cluster)
-        for node_data in metadata['nodes'].values():
-            node = Node.get_by_uid(node_data['uid'])
+        nodes = dict()
+        nm = Cluster.get_network_manager(cluster)
+        for node in Cluster.get_nodes_not_for_deletion(cluster):
+            name = Node.get_slave_name(node)
+            node_roles = Node.all_roles(node)
+            nodes[name] = {
+                "uid": node.uid,
+                "fqdn": node.fqdn,
+                "name": name,
+                "user_node_name": node.name,
+                "swift_zone": node.uid,
+                "node_roles": node_roles,
+            }
             network_roles = cls._get_network_roles(node)
             ip_per_ep = cls._get_endpoint_to_ip_mapping(node)
-            node_data['network_roles'] = {}
+            nodes[name]['network_roles'] = {}
             for role, ep in network_roles.items():
-                node_data['network_roles'][role] = ip_per_ep.get(ep)
-        return metadata
+                nodes[name]['network_roles'][role] = ip_per_ep.get(ep)
+        return dict(
+            nodes=nodes,
+            vips=nm.assign_vips_for_net_groups(cluster)
+        )

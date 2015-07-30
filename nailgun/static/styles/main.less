@@ -3717,19 +3717,22 @@ button, .btn:not(.btn-link) {.font-semibold;}
   @deploy-border: #d3d3d3;
   @dashboard-gray: rgb(153, 153, 153);
   @dashboard-offset: 10px;
+  .plugins-block {
+    margin-bottom: 10px;
+  }
+  ul {
+    li {
+      list-style-type: none;
+    }
+  }
   .btn-add-nodes {
     float: left;
-    margin-top: @dashboard-offset;
-    margin-bottom: @dashboard-offset;
     .glyphicon {
       margin-right: @dashboard-offset;
     }
   }
-  .informational-block {
-    margin-bottom: @dashboard-offset;
-  }
   .documentation {
-    margin: @dashboard-offset 0 @dashboard-offset 0;
+    margin: 0 0 @dashboard-offset 0;
     .documentation-link {
       margin-bottom: 5px;
       .glyphicon {
@@ -3742,6 +3745,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
     width: @page-width;
     margin: 0px 0px @dashboard-offset -@dashboard-offset * 2;
     padding: @dashboard-offset @dashboard-offset * 2;
+    .go-to-healthcheck {
+      margin-bottom: @dashboard-offset;
+    }
     .cluster-info-title {
       .font-semibold;
     }
@@ -3759,10 +3765,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
           max-width: 220px;
           overflow: hidden;
           cursor: pointer;
+          min-height: 20px;
         }
         .glyphicon {
           margin-left: @dashboard-offset;
           cursor: pointer;
+          vertical-align: top;
         }
       }
     }
@@ -3809,12 +3817,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
   .deploy-block {
-    padding: 15px 15px 0 15px;
+    padding: 15px;
     border: 1px solid @deploy-border;
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
     .validation-result ul {
-      margin: @dashboard-offset 0 0;
+      margin: 0;
       padding-left: 15px;
       &.danger {
         li {
@@ -3834,7 +3842,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
     .changes-list {
-      margin-bottom: @dashboard-offset * 2;
+      margin-bottom: @dashboard-offset;
       a {cursor: pointer;}
       .changes-header {
         .font-bold;
@@ -3843,7 +3851,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         margin: 0 0 @dashboard-offset 0;
         padding: 0;
       }
-      ol {
+      ul {
         padding: 0 0 0 16px;
         color: @gray;
       }
@@ -3856,11 +3864,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
     .deploy-readiness {
+      .informational-block {
+        margin-bottom: 10px;
+      }
       .invalid-deploy.instruction {
         .font-semibold;
         font-size: @base-font-size - 1;
         color: @red;
-        margin-top: @dashboard-offset;
       }
       h4 {
         margin: 0 0 @dashboard-offset 0;
@@ -3892,11 +3902,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
       height: auto;
       .progress {
         width: 92%;
+        margin-bottom: @dashboard-offset;
       }
     }
   }
   .dashboard-actions-wrapper {
-    margin: @dashboard-offset 0 @dashboard-offset 0;
+    margin: 0 0 @dashboard-offset 0;
     .reset-environment {
       margin-right: 87px;
       .reset-environment-btn {
@@ -3907,6 +3918,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .delete-environment-btn {
         margin-right: 5px;
       }
+    }
+    .glyphicon-info-sign {
+      vertical-align: sub;
     }
   }
   .plugin-entry {

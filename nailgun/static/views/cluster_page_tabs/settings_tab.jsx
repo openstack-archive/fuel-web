@@ -76,6 +76,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         componentDidMount: function() {
             this.getHiddenSettings();
+            this.loadDefaultsDisabled = !this.checkDefaultSettings();
             this.props.cluster.get('settings').isValid({models: this.state.configModels});
         },
         componentWillUnmount: function() {
@@ -136,27 +137,45 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 settings.set(key, value, {silent: true});
             });
         },
-        loadDefaults: function() {
-            var settings = this.props.cluster.get('settings'),
-                deferred = settings.fetch({url: _.result(settings, 'url') + '/defaults'});
+        checkDefaultSettings: function() {
+            var settings = new models.Settings(_.cloneDeep(this.props.cluster.get('settings').attributes));
+            settings.url = _.result(this.props.cluster, 'url') + '/attributes';
+            var deferred = settings.fetch({url: _.result(settings, 'url') + '/defaults'});
             if (deferred) {
-                this.setState({actionInProgress: true});
                 deferred
                     .always(_.bind(function() {
-                        this.setHiddenSettings();
-                        settings.isValid({models: this.state.configModels});
-                        this.setState({
-                            actionInProgress: false,
-                            key: _.now()
-                        });
+                        this.defaultSettings = settings.attributes;
+                        this.forceUpdate();
+                        return settings.isValid({models: this.state.configModels});
                     }, this))
                     .fail(function(response) {
-                        utils.showErrorDialog({
-                            title: i18n('cluster_page.settings_tab.settings_error.title'),
-                            message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning'),
-                            response: response
-                        });
+                        this.loadDefaultsResponse = response;
+                        return false;
                     });
+            }
+        },
+        loadDefaults: function() {
+            this.setState({
+                actionInProgress: true,
+                key: _.now()
+            });
+
+            var areSettingsValid = this.checkDefaultSettings();
+
+            this.setState({
+                actionInProgress: false,
+                key: _.now()
+            });
+
+            if (areSettingsValid) {
+                this.props.cluster.get('settings').set(this.defaultSettings);
+                this.setHiddenSettings();
+            } else {
+                utils.showErrorDialog({
+                    title: i18n('cluster_page.settings_tab.settings_error.title'),
+                    message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning'),
+                    response: this.loadDefaultsResponse
+                });
             }
         },
         revertChanges: function() {
@@ -202,7 +221,6 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     return settings.get(groupName + '.metadata.weight');
                 });
             }
-
             return (
                 <div key={this.state.key} className='row'>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
@@ -238,7 +256,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
-                                <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
+                                <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster || this.loadDefaultsDisabled}>
                                     {i18n('common.load_defaults_button')}
                                 </button>
                                 <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>

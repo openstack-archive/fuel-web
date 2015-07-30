@@ -351,7 +351,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 var role = roles.findWhere({name: roleName});
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
                     var condition = restriction.condition;
-                    if (_.contains(condition, 'settings:' + path) && !(new Expression(condition, this.props.configModels).evaluate())) {
+                    if (_.contains(condition, 'settings:' + path) && !(new Expression(condition, this.props.configModels, restriction).evaluate())) {
                         return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], condition);
                     }
                     return false;

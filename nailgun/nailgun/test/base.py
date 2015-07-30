@@ -324,19 +324,23 @@ class EnvironmentManager(object):
         return [self.create_node(*args, **kwargs) for _ in xrange(count)]
 
     def create_nodes_w_interfaces_count(self,
-                                        nodes_count, if_count=2, **kwargs):
+                                        nodes_count, if_count=2,
+                                        add_bus_info=False, **kwargs):
         """Create nodes_count nodes with if_count interfaces each.
         Default random MAC is generated for each interface.
         """
         nodes = []
         for i in range(nodes_count):
             meta = self.default_metadata()
-            if_list = [
-                {
+            if_list = []
+            for i in range(if_count):
+                if_data = {
                     "name": "eth{0}".format(i),
                     "mac": self.generate_random_mac()
                 }
-                for i in range(if_count)]
+                if add_bus_info:
+                    if_data["bus_info"] = self.generate_random_bus_info()
+                if_list.append(if_data)
             self.set_interfaces_in_meta(meta, if_list)
             nodes.append(self.create_node(meta=meta, **kwargs))
         return nodes
@@ -398,6 +402,16 @@ class EnvironmentManager(object):
     def generate_random_mac(self):
         mac = [randint(0x00, 0x7f) for _ in xrange(6)]
         return ':'.join(map(lambda x: "%02x" % x, mac)).lower()
+
+    def generate_random_bus_info(self):
+        bus_info = ("%(reserved)02x%(bus_number)02x:%(device_number)02x:"
+                    "%(function_number)02x.%(register_number)x" %
+                    dict(reserved=0x00,
+                         bus_number=randint(0x00, 0xFF),
+                         device_number=randint(0x00, 0x1F),
+                         function_number=randint(0x00, 0x07),
+                         register_number=0x00))
+        return bus_info
 
     def generate_interfaces_in_meta(self, amount):
         nics = []

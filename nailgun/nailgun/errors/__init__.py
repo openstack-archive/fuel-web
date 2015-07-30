@@ -76,6 +76,7 @@ default_messages = {
     "NetworkRoleConflict": "Cannot override existing network role",
     "NetworkTemplateMissingRoles": "Roles are missing from network template",
     "NetworkTemplateMissingNetRoles": "Network roles are missing",
+    "InterfaceNameAlreadyUsed": "Interface name is already used",
 
     # RPC errors
     "CannotFindTask": "Cannot find task",

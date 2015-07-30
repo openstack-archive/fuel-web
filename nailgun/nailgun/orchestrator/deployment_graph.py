@@ -137,12 +137,20 @@ class DeploymentGraph(nx.DiGraph):
                  if t['type'] == consts.ORCHESTRATOR_TASK_TYPES.group]
         return self.subgraph(roles)
 
-    def get_tasks(self, group_name):
-        tasks = []
-        for task in self.predecessors(group_name):
-            if self.node[task]['type'] not in consts.INTERNAL_TASKS:
-                tasks.append(task)
-        return self.subgraph(tasks)
+    def get_group_tasks(self, group_name):
+        rst = []
+
+        for task in nx.topological_sort(self):
+
+            if group_name not in self.node[task].get('groups', ()):
+                continue
+            elif (self.node[task]['type'] in consts.INTERNAL_TASKS):
+                logger.debug(
+                    'Task %s will be skipped for %s', task, group_name)
+                continue
+
+            rst.append(self.node[task])
+        return rst
 
     @property
     def topology(self):
@@ -338,6 +346,8 @@ class AstuteGraph(object):
         for task in tasks:
 
             if task['type'] in consts.INTERNAL_TASKS:
+                logger.debug(
+                    'Task {0} is not going to be executed.'.format(task))
                 continue
 
             serializer = self.serializers.get_stage_serializer(task)(
@@ -354,13 +364,11 @@ class AstuteGraph(object):
 
         :param nodes: list of node db objects
         """
-        # FIXME(dshulyak) remove this conditions
-        # they are required to merge patches in library and nailgun
-        # smoothly, there is small window when iso on library CI is outdated
         if 'deploy_end' in self.graph:
             subgraph = self.graph.find_subgraph(start='deploy_end')
         else:
-            subgraph = self.graph.get_tasks(consts.STAGES.post_deployment)
+            errors.NotEnoughInformation(
+                '*deploy_end* stage must be provided')
         return self.stage_tasks_serialize(subgraph.topology, nodes)
 
     def pre_tasks_serialize(self, nodes):
@@ -368,13 +376,11 @@ class AstuteGraph(object):
 
         :param nodes: list of node db objects
         """
-        # FIXME(dshulyak) remove this conditions
-        # they are required to merge patches in library and nailgun
-        # smoothly, there is small window when iso on library CI is outdated
         if 'deploy_start' in self.graph:
             subgraph = self.graph.find_subgraph(end='deploy_start')
         else:
-            subgraph = self.graph.get_tasks(consts.STAGES.pre_deployment)
+            raise errors.NotEnoughInformation(
+                '*deploy_start* stage must be provided')
         return self.stage_tasks_serialize(subgraph.topology, nodes)
 
     def deploy_task_serialize(self, node):
@@ -382,11 +388,12 @@ class AstuteGraph(object):
 
         :param node: dict with serialized node
         """
-        tasks = self.graph.get_tasks(node['role']).topology
+
         serialized = []
         priority = ps.PriorityStrategy()
 
-        for task in tasks:
+        for task in self.graph.get_group_tasks(node['role']):
+
             serializer = self.serializers.get_deploy_serializer(task)(
                 task, self.cluster, node)
 

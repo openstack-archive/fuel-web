@@ -20,8 +20,16 @@ import requests
 import url_access_checker.errors as errors
 
 
-def check_urls(urls, proxies=None):
-    responses = map(lambda u: _get_response_tuple(u, proxies=proxies), urls)
+def check_urls(urls, proxies=None, timeout=60):
+    """Checks a set of urls to see if they are up and returning 200
+
+    Arguments:
+    url -- a string containing url for testing
+    proxies -- proxy servers to use for the request
+    timeout -- the max time to wait for a response, default 60 seconds
+    """
+    responses = map(lambda u: _get_response_tuple(
+        u, proxies=proxies, timeout=timeout), urls)
     failed_responses = filter(lambda x: x[0], responses)
 
     if failed_responses:
@@ -31,11 +39,13 @@ def check_urls(urls, proxies=None):
         return True
 
 
-def _get_response_tuple(url, proxies=None):
+def _get_response_tuple(url, proxies=None, timeout=60):
     """Return a tuple which contains a result of url test
 
     Arguments:
     url -- a string containing url for testing
+    proxies -- proxy servers to use for the request
+    timeout -- the max time to wait for a response, default 60 seconds
 
     Result tuple content:
         result[0] -- boolean value, True if the url is deemed failed
@@ -46,7 +56,11 @@ def _get_response_tuple(url, proxies=None):
         # proxies=None or proxies={} mean 'use the default' rather than
         # "don't use proxy". To force a direct connection one should pass
         # proxies={'http': None}.
-        response = requests.get(url, proxies=proxies)
+        # Setting the timeout for requests.get(...) sets max request time. We
+        # want to set a value to prevent this process from hanging as the
+        # default timeout is None which can lead to bad things when processes
+        # never exit. LP#1478138
+        response = requests.get(url, proxies=proxies, timeout=timeout)
         return (response.status_code != 200, url)
     except (requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,

@@ -325,9 +325,11 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             </div>;
         },
         renderNodeSelect: function() {
-            var nodeOptions = this.props.cluster.get('nodes').map(function(node) {
+            var sortedNodes = this.props.cluster.get('nodes').models.sort(_.partialRight(utils.compare, {attr: 'name'})),
+                nodeOptions = sortedNodes.map(function(node) {
                     return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
-                }, this);
+                });
+
             return <div className='col-md-2 col-sm-3'>
                 <controls.Input
                     type='select'

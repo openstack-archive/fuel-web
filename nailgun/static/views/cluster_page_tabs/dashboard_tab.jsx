@@ -124,7 +124,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {!!title && !failedDeploymentTask && hasNodes &&
                                 this.renderTitle(title)
                             }
-                            {(((isNew && !failedDeploymentTask) || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
+                            {((isNew || !failedDeploymentTask || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
                                 <DeployReadinessBlock
                                     cluster={cluster}
                                     deploymentErrorTask={failedDeploymentTask}
@@ -464,9 +464,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         render: function() {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
-                    !!this.state.alerts.blocker.length,
                 hasNodes = !!nodes.length,
+                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
+                    !!this.state.alerts.blocker.length || !hasNodes,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
@@ -798,7 +798,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             <a>
                                                 {cluster.get('name')}
                                             </a>
-                                            <i className='glyphicon glyphicon-pencil-alt'></i>
+                                            <i className='glyphicon glyphicon-pencil'></i>
                                         </div>
                                     }
                                 </div>
@@ -865,12 +865,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 });
                             }
                         }, this))
-                        .done(function() {
+                        .done(_.bind(function() {
                             dispatcher.trigger('updatePageLayout');
-                        })
+                        }, this))
                         .always(_.bind(function() {
-                            this.props.endRenaming();
                             this.setState({disabled: false});
+                            this.props.endRenaming();
                         }, this));
                 } else {
                     if (cluster.validationError) {

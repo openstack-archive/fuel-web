@@ -210,7 +210,7 @@ define([
         validateIPrange: function(startIP, endIP) {
             return utils.ipIntRepresentation(startIP) - utils.ipIntRepresentation(endIP) <= 0;
         },
-        validateIpRanges: function(ranges, cidr) {
+        validateIpRanges: function(ranges, cidr, disallowSingleAddress) {
             var ipRangesErrors = [];
             if (_.filter(ranges, function(range) {return _.compact(range).length;}).length) {
                 _.each(ranges, function(range, i) {
@@ -222,6 +222,8 @@ define([
                             error.end = i18n('cluster_page.network_tab.validation.invalid_ip_end');
                         } else if (!utils.validateIPrange(range[0], range[1])) {
                             error.start = i18n('cluster_page.network_tab.validation.invalid_ip_range');
+                        } else if (disallowSingleAddress && range[0] == range[1]) {
+                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_range_equal');
                         }
                         if (error.start || error.end) {
                             ipRangesErrors.push(error);

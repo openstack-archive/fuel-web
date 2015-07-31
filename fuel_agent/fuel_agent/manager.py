@@ -421,7 +421,7 @@ class Manager(object):
             # pattern is aa:bb:cc:dd:ee:ff_eth0,aa:bb:cc:dd:ee:ff_eth1
             for mapping in self.driver.configdrive_scheme.\
                     common.udevrules.split(','):
-                mac_addr, nic_name = mapping.split('_')
+                mac_addr, nic_name = mapping.split('_', 1)
                 f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", '
                         'ATTR{address}=="%s", ATTR{type}=="1", KERNEL=="eth*",'
                         ' NAME="%s"\n' % (mac_addr, nic_name))

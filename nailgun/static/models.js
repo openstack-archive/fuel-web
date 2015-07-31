@@ -918,7 +918,13 @@ define([
             }
             var networkWithFloatingRange = attrs.networks.filter(function(network) {return network.get('meta').floating_range_var;})[0];
             if (networkWithFloatingRange && !_.has(networksErrors[networkWithFloatingRange.id], 'cidr')) {
-                var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'));
+                var floatingIPRanges = attrs.networking_parameters.get('floating_ranges');
+                var floatingRangesErrors = utils.validateIpRanges(floatingIPRanges, networkWithFloatingRange.get('cidr'));
+                _.map(floatingIPRanges, function(range, index) {
+                    if (range[0] == range[1]) {
+                        floatingRangesErrors.push({index: index, end: i18n('cluster_page.network_tab.validation.end_equal_start')});
+                    }
+                });
                 if (floatingRangesErrors.length) {
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
                 }

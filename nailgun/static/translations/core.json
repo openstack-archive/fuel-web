@@ -660,7 +660,8 @@
                         "vlan_intersection": "There is an intersection with the VLAN ID of other networks. Please set another ID range",
                         "invalid_mac": "Invalid MAC address",
                         "ip_start_is_out_of_ip_range": "The IP start is outside of the IP range",
-                        "ip_end_is_out_of_ip_range": "The IP end is outside of the IP range"
+                        "ip_end_is_out_of_ip_range": "The IP end is outside of the IP range",
+                        "end_equal_start": "The IP range end is equal to IP range end"
                     }
                 },
                 "logs_tab": {

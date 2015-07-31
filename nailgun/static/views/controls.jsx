@@ -252,10 +252,27 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
     });
 
     controls.ProgressBar = React.createClass({
+        propTypes: {
+            wrapperClassName: React.PropTypes.node,
+            progress: React.PropTypes.oneOfType([React.PropTypes.oneOf([null]), React.PropTypes.number])
+        },
+        getDefaultProps: function() {
+            return {progress: null};
+        },
         render: function() {
+            var wrapperClasses = {
+                progress: true
+            };
+            wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
             return (
-                <div className='progress'>
-                    <div className='progress-bar progress-bar-striped active' style={{width: '100%'}}></div>
+                <div className={utils.classNames(wrapperClasses)}>
+                    {_.isNull(this.props.progress) ?
+                        <div className='progress-bar progress-bar-striped active' role='progressbar' style={{width: '100%'}}></div>
+                    :
+                        <div className='progress-bar' role='progressbar' style={{width: _.max([this.props.progress, 3]) + '%'}}>
+                            {this.props.progress + '%'}
+                        </div>
+                    }
                 </div>
             );
         }

@@ -3903,8 +3903,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .deploy-process {
       height: auto;
       .progress {
-        width: 92%;
-        margin-bottom:0;
+        margin-bottom: @dashboard-offset;
+        width: 100%;
+        &.countable {
+          width: 92%;
+        }
       }
     }
   }

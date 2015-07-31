@@ -190,6 +190,12 @@ class AttributesValidator(BasicValidator):
         attrs = d
         if cluster is not None:
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
+            if attrs['editable']['common']['use_vcenter']['value'] and \
+                    cluster['net_provider'] != 'nova_network':
+                        raise errors.InvalidData(
+                            u'Cannot use Neutron, if vCenter is enabled',
+                            log_message=True)
+
             # NOTE(agordeev): disable classic provisioning for 7.0 or higher
             if StrictVersion(cluster.release.environment_version) >= \
                     StrictVersion(consts.FUEL_IMAGE_BASED_ONLY):

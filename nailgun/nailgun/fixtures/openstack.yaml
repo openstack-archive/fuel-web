@@ -801,6 +801,8 @@
             value: false
             weight: 30
             type: "hidden"
+            restrictions:
+              - condition: "cluster:net_provider == 'nova_network'"
           libvirt_type:
             value: "qemu"
             values:

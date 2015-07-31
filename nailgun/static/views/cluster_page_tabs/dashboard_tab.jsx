@@ -289,7 +289,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 <div className='documentation-link'>
                     <span>
                         <i className='glyphicon glyphicon-list-alt' />
-                        <a href={utils.composeDocumentationLink(link)} target='_blank'>
+                        <a href={link} target='_blank'>
                             {i18n(namespace + labelKey)}
                         </a>
                     </span>

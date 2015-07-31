@@ -186,7 +186,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     <div className='col-xs-12'>
                         <div className='deploy-block'>
                             <div className={'deploy-process ' + this.props.taskName}>
-                                <div>
+                                <div className='task-title'>
                                     <span>
                                         <strong>
                                             {i18n(namespace + 'current_task') + ' '}
@@ -194,11 +194,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         {i18n('cluster_page.' + taskName) + '...'}
                                     </span>
                                 </div>
-                                <div className='progress'>
-                                    <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
-                                        {taskProgress + '%'}
-                                    </div>
-                                </div>
+                                <controls.ProgressBar
+                                    progress={!isInfiniteTask && taskProgress}
+                                    wrapperClassName={isInfiniteTask ? '' : 'has-progress'}
+                                />
                                 {stoppableTask &&
                                     <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
                                         <button
@@ -208,9 +207,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             {i18n(namespace + 'stop')}
                                         </button>
                                     </controls.Tooltip>
-                                }
-                                {!isInfiniteTask &&
-                                    <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
                                 }
                             </div>
                         </div>

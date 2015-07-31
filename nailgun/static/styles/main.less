@@ -3915,7 +3915,7 @@ input[type=range] {
     }
   }
   .deploy-block {
-    padding: 15px;
+    padding: @dashboard-offset / 2 @dashboard-offset * 2;
     border: 1px solid @deploy-border;
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
@@ -3997,9 +3997,15 @@ input[type=range] {
     }
     .deploy-process {
       height: auto;
+      .task-title {
+        margin-bottom: @dashboard-offset;
+      }
       .progress {
-        width: 92%;
-        margin-bottom:0;
+        margin-bottom: @dashboard-offset;
+        width: 100%;
+        &.has-progress {
+          width: 95%;
+        }
       }
     }
   }

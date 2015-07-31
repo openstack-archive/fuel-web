@@ -663,8 +663,7 @@ class NetworkManager(object):
         }
 
     @classmethod
-    def get_node_network_by_netname(cls, node, netname):
-        networks = cls.get_node_networks(node)
+    def get_network_by_netname(cls, netname, networks):
         return filter(
             lambda n: n['name'] == netname, networks)[0]
 
@@ -1066,9 +1065,8 @@ class NetworkManager(object):
         zabbix_node = ZabbixManager.get_zabbix_node(cluster)
         if zabbix_node is None:
             return None
-        ip_cidr = cls.get_node_network_by_netname(
-            zabbix_node, 'public'
-        )['ip']
+        ip_cidr = cls.get_network_by_netname(
+            'public', cls.get_node_networks(zabbix_node))['ip']
         ip = ip_cidr.split('/')[0]
         return 'http://{0}/zabbix'.format(ip)
 
@@ -1281,9 +1279,10 @@ class NetworkManager(object):
             or settings.MASTER_IP
 
     @classmethod
-    def get_networks_not_on_node(cls, node):
+    def get_networks_not_on_node(cls, node, networks=None):
+        networks = networks or cls.get_node_networks(node)
         node_net = [(n['name'], n['cidr'])
-                for n in cls.get_node_networks(node) if n.get('cidr')]
+                for n in networks if n.get('cidr')]
         all_nets = [(n.name, n.cidr)
                 for n in node.cluster.network_groups if n.cidr]
 

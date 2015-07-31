@@ -17,11 +17,17 @@
     <script type="text/javascript">
       (function() {
         'use strict';
-        var loadingError;
+        var mainContainer, loadingErrors = [];
+
+        function showError(error) {
+          if (error) loadingErrors.push(error);
+          if (mainContainer && loadingErrors.length) mainContainer.textContent = loadingErrors.join('; ');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-          var container = document.getElementById('main-container');
-          container.style.display = 'block';
-          if (loadingError) container.textContent = loadingError;
+          mainContainer = document.getElementById('main-container');
+          mainContainer.style.display = 'block';
+          showError();
         });
 
         // checks code taken from https://github.com/Modernizr/Modernizr
@@ -48,9 +54,10 @@
 
         if (hasCookies && hasStorage) {
           requirejs.config({baseUrl: '/static', urlArgs: '_=__CACHE_BUST__'});
+          requirejs.onError = showError;
           requirejs(['main']);
         } else {
-          loadingError = 'Fuel UI requires Cookies and LocalStorage to work.';
+          showError('Fuel UI requires Cookies and LocalStorage to work');
         }
       }());
     </script>
@@ -60,6 +67,6 @@
       <div class="loading"></div>
     </div>
     <div id="modal-container"></div>
-    <noscript>Fuel UI requires JavaScript to work.</noscript>
+    <noscript>Fuel UI requires JavaScript to work</noscript>
   </body>
 </html>

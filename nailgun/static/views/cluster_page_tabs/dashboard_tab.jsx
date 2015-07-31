@@ -124,7 +124,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {!!title && !failedDeploymentTask && hasNodes &&
                                 this.renderTitle(title)
                             }
-                            {(((isNew && !failedDeploymentTask) || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
+                            {!runningDeploymentTask  &&
                                 <DeployReadinessBlock
                                     cluster={cluster}
                                     deploymentErrorTask={failedDeploymentTask}
@@ -466,6 +466,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 nodes = cluster.get('nodes'),
                 hasNodes = !!nodes.length,
                 isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
+                    (!nodes.hasChanges() && !cluster.needsRedeployment()) ||
                     !!this.state.alerts.blocker.length || !hasNodes,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');

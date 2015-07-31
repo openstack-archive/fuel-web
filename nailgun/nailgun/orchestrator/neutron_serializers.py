@@ -58,7 +58,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """Serialize node, then it will be
         merged with common attributes
         """
-        node_attrs = {'network_scheme': cls.generate_network_scheme(node)}
+        nm = Cluster.get_network_manager(cluster)
+        networks = nm.get_node_networks(node)
+        node_attrs = {
+            'network_scheme': cls.generate_network_scheme(node, networks),
+        }
         node_attrs = cls.mellanox_settings(node_attrs, node)
         return node_attrs
 
@@ -121,15 +125,17 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """
         # Set a new unique name for iSER virtual port
         iser_new_name = 'eth_iser0'
+        networks = nm.get_node_networks(node)
 
         # Add iSER extra params to astute.yaml
         node_attrs['neutron_mellanox']['storage_parent'] = \
-            nm.get_node_network_by_netname(node, 'storage')['dev']
+            nm.get_node_network_by_netname(node, 'storage', networks)['dev']
         node_attrs['neutron_mellanox']['iser_interface_name'] = iser_new_name
 
         # Get VLAN if exists
         storage_vlan = \
-            nm.get_node_network_by_netname(node, 'storage').get('vlan')
+            nm.get_node_network_by_netname(node, 'storage', networks)\
+            .get('vlan')
 
         if storage_vlan:
             vlan_name = "vlan{0}".format(storage_vlan)
@@ -184,7 +190,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         return attrs
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
 
         # Create a data structure and fill it with static values.
 
@@ -288,7 +294,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
-            netgroup = nm.get_node_network_by_netname(node, ngname)
+            netgroup = nm.get_node_network_by_netname(node, ngname, networks)
             if netgroup.get('ip'):
                 attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
@@ -301,7 +307,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
-            netgroup = nm.get_node_network_by_netname(node, ngname)
+            netgroup = nm.get_node_network_by_netname(node, ngname, networks)
             if not netgroup['vlan']:
                 # Untagged network.
                 attrs['transformations'].append({
@@ -515,9 +521,9 @@ class NeutronNetworkDeploymentSerializer60(
 ):
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
         attrs = super(NeutronNetworkDeploymentSerializer60, cls). \
-            generate_network_scheme(node)
+            generate_network_scheme(node, networks)
 
         for item in attrs.get('transformations', ()):
             if 'tags' in item:
@@ -527,7 +533,7 @@ class NeutronNetworkDeploymentSerializer60(
         # This is used during deployment to configure routes to all other
         # networks in the environment.
         nm = Cluster.get_network_manager(node.cluster)
-        other_nets = nm.get_networks_not_on_node(node)
+        other_nets = nm.get_networks_not_on_node(node, networks)
 
         netgroup_mapping = [
             ('storage', 'br-storage'),
@@ -566,8 +572,9 @@ class NeutronNetworkDeploymentSerializer61(
             return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
 
     @classmethod
-    def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups):
-        other_nets = nm.get_networks_not_on_node(node)
+    def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups,
+                        networks):
+        other_nets = nm.get_networks_not_on_node(node, networks)
 
         for ngname, brname in netgroup_mapping:
             netgroup = netgroups[ngname]
@@ -662,7 +669,7 @@ class NeutronNetworkDeploymentSerializer61(
         return transformations
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
 
         # Create a data structure and fill it with static values.
         attrs = {
@@ -707,7 +714,7 @@ class NeutronNetworkDeploymentSerializer61(
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
-            netgroup = nm.get_node_network_by_netname(node, ngname)
+            netgroup = nm.get_node_network_by_netname(node, ngname, networks)
             if netgroup.get('ip'):
                 attrs['endpoints'][brname] = {'IP': [netgroup['ip']]}
             netgroups[ngname] = netgroup
@@ -739,7 +746,8 @@ class NeutronNetworkDeploymentSerializer61(
             attrs['endpoints']['br-prv'] = {'IP': 'none'}
             attrs['roles']['neutron/private'] = 'br-prv'
 
-            netgroup = nm.get_node_network_by_netname(node, 'private')
+            netgroup = nm.get_node_network_by_netname(
+                node, 'private', networks)
             # create br-aux if there is no untagged network (endpoint) on the
             # same interface.
             if netgroup['dev'] in nets_by_ifaces:
@@ -757,14 +765,15 @@ class NeutronNetworkDeploymentSerializer61(
 
         if NodeGroupCollection.get_by_cluster_id(
                 node.cluster.id).count() > 1:
-            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups)
+            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups,
+                                networks)
 
-        attrs = cls.generate_driver_information(node, attrs, nm)
+        attrs = cls.generate_driver_information(node, attrs, nm, networks)
 
         return attrs
 
     @classmethod
-    def generate_driver_information(cls, node, network_scheme, nm):
+    def generate_driver_information(cls, node, network_scheme, nm, networks):
 
         network_mapping = network_scheme.get('roles', {})
         endpoints = network_scheme.get('endpoints', {})
@@ -791,7 +800,7 @@ class NeutronNetworkDeploymentSerializer61(
                 continue
             if 'vendor_specific' not in endpoints[brname]:
                 endpoints[brname]['vendor_specific'] = {}
-            netgroup = nm.get_node_network_by_netname(node, ngname)
+            netgroup = nm.get_node_network_by_netname(node, ngname, networks)
             ep_dict = endpoints[brname]['vendor_specific']
             ep_dict['phy_interfaces'] = \
                 cls.get_phy_interfaces(bonds_map, netgroup)
@@ -801,7 +810,8 @@ class NeutronNetworkDeploymentSerializer61(
         if node.cluster.network_config.segmentation_type == \
                 consts.NEUTRON_SEGMENT_TYPES.vlan:
             private_ep = endpoints[network_mapping['neutron/private']]
-            netgroup = nm.get_node_network_by_netname(node, 'private')
+            netgroup = nm.get_node_network_by_netname(
+                node, 'private', networks)
             phys = cls.get_phy_interfaces(bonds_map, netgroup)
             if 'vendor_specific' not in private_ep:
                 private_ep['vendor_specific'] = {}
@@ -843,8 +853,9 @@ class NeutronNetworkDeploymentSerializer70(
         nm = Cluster.get_network_manager(node.cluster)
 
         mapping = dict()
+        networks = nm.get_node_networks(node)
         for net in cls.get_default_network_to_endpoint_mapping(node):
-            netgroup = nm.get_node_network_by_netname(node, net)
+            netgroup = nm.get_node_network_by_netname(node, net, networks)
             if netgroup.get('ip'):
                 mapping[net] = netgroup['ip'].split('/')[0]
 
@@ -887,9 +898,9 @@ class NeutronNetworkDeploymentSerializer70(
         return roles
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
         attrs = super(NeutronNetworkDeploymentSerializer70,
-                      cls).generate_network_scheme(node)
+                      cls).generate_network_scheme(node, networks)
 
         mapping = cls.get_network_role_mapping_to_interfaces(node)
 
@@ -909,7 +920,7 @@ class NeutronNetworkDeploymentSerializer70(
         return attrs
 
     @classmethod
-    def generate_driver_information(cls, node, network_scheme, nm):
+    def generate_driver_information(cls, node, network_scheme, nm, networks):
         # Add interfaces drivers data
         for iface in node.nic_interfaces:
             if iface.driver or iface.bus_info:
@@ -949,12 +960,9 @@ class NeutronNetworkDeploymentSerializer70(
         )
 
     @classmethod
-    def network_provider_node_attrs(cls, cluster, node):
-        """Serialize node, then it will be
-        merged with common attributes
-        """
+    def get_common_attrs(cls, cluster, attrs):
         node_attrs = super(NeutronNetworkDeploymentSerializer70,
-                           cls).network_provider_node_attrs(cluster, node)
+                           cls).get_common_attrs(cluster, attrs)
         node_attrs['network_metadata'] = cls.generate_network_metadata(cluster)
         return node_attrs
 
@@ -1024,7 +1032,7 @@ class NeutronNetworkTemplateSerializer70(
         return txs
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
 
         roles = cls._get_network_roles(node)
         # Create a data structure and fill it with static values.
@@ -1041,10 +1049,11 @@ class NeutronNetworkTemplateSerializer70(
         netgroups = {}
         nets_by_ifaces = defaultdict(list)
         netgroup_mapping = cls._get_netgroup_mapping_by_role(node)
+        networks = nm.get_node_networks(node)
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
-            netgroup = nm.get_node_network_by_netname(node, ngname)
+            netgroup = nm.get_node_network_by_netname(node, ngname, networks)
             ip_addr = netgroup.get('ip')
             if ip_addr:
                 attrs['endpoints'][brname] = {'IP': [ip_addr]}
@@ -1089,9 +1098,10 @@ class NeutronNetworkTemplateSerializer70(
 
         if NodeGroupCollection.get_by_cluster_id(
                 node.cluster.id).count() > 1:
-            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups)
+            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups,
+                                networks)
 
-        attrs = cls.generate_driver_information(node, attrs, nm)
+        attrs = cls.generate_driver_information(node, attrs, nm, networks)
 
         return attrs
 

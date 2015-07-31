@@ -162,7 +162,8 @@ class NovaNetworkDeploymentSerializer61(NovaNetworkDeploymentSerializer):
 
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
-        return {'network_scheme': cls.generate_network_scheme(node)}
+        # TODO(ikalnitsky): to pass networks
+        return {'network_scheme': cls.generate_network_scheme(node, None)}
 
     @classmethod
     def subiface_name(cls, iface_name, net_descr):
@@ -230,7 +231,7 @@ class NovaNetworkDeploymentSerializer61(NovaNetworkDeploymentSerializer):
         return transformations
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
 
         # create network scheme structure and fill it with static values
         attrs = {
@@ -319,9 +320,9 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
         return node_attrs
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
         attrs = super(NovaNetworkDeploymentSerializer70,
-                      cls).generate_network_scheme(node)
+                      cls).generate_network_scheme(node, networks)
 
         attrs['roles']['mgmt/corosync'] = 'br-mgmt'
         attrs['roles']['mgmt/database'] = 'br-mgmt'

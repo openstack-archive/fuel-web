@@ -613,3 +613,45 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "and doesn't contain node's pxe interface 'eth0'".format(
                 self.env.nodes[0]["id"])
         )
+
+    def test_nics_bond_change_offloading_modes(self):
+        self.get_node_nics_info()
+        self.nics_bond_create(self.put_single)
+        resp = self.app.get(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0]["id"]}),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        body = resp.json_body
+        bonds = filter(
+            lambda iface: iface["type"] == NETWORK_INTERFACE_TYPES.bond,
+            body)
+        self.assertEqual(1, len(bonds))
+
+        bond_offloading_modes = bonds[0]['offloading_modes']
+        self.assertEqual(len(bond_offloading_modes), 1)
+        slaves = bonds[0]['slaves']
+
+        self.assertEqual(2, len(slaves))
+
+        self.assertIsNone(bond_offloading_modes[0]['state'])
+        bond_offloading_modes[0]['state'] = True
+        self.assertTrue(bond_offloading_modes[0]['state'])
+
+        resp = self.env.node_nics_put(
+            self.env.nodes[0]["id"],
+            body)
+
+        body = resp.json_body
+        bonds = filter(
+            lambda iface: iface["type"] == NETWORK_INTERFACE_TYPES.bond,
+            body)
+        self.assertEqual(1, len(bonds))
+
+        bond_offloading_modes = bonds[0]['offloading_modes']
+        self.assertEqual(len(bond_offloading_modes), 1)
+        slaves = bonds[0]['slaves']
+
+        self.assertEqual(2, len(slaves))
+        self.assertTrue(bond_offloading_modes[0]['state'])

@@ -782,6 +782,9 @@ class NetworkManager(object):
                         node_id=node_db.id
                     ).first()
                 )
+
+            bond_db.offloading_modes = bond.get('offloading_modes', {})
+
             db().commit()
 
         return node_db.id

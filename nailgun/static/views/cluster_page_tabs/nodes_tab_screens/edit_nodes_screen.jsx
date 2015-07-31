@@ -29,11 +29,14 @@ function($, _, React, models, utils, NodeListScreen) {
         statics: {
             fetchData: function(options) {
                 var cluster = options.cluster,
-                    serializedIds = options.screenOptions[0],
-                    ids = serializedIds ? utils.deserializeTabOptions(serializedIds).nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [],
-                    nodes = new models.Nodes(cluster.get('nodes').getByIds(ids).map(function(node) {
-                        return _.cloneDeep(node.attributes);
-                    }));
+                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
+                    ids = nodeIds ? nodeIds.split(',').map(function(id) {return parseInt(id, 10);}) : [],
+                    nodes = new models.Nodes(cluster.get('nodes').getByIds(ids));
+
+                if (!nodes.length) {
+                    return $.Deferred().reject();
+                }
+  
                 nodes.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: cluster.id}}, options));
                 };

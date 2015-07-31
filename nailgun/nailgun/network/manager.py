@@ -51,16 +51,18 @@ from nailgun.settings import settings
 class NetworkManager(object):
 
     @classmethod
-    def update_range_mask_from_cidr(cls, network_group, cidr):
+    def update_range_mask_from_cidr(cls, network_group, cidr,
+                                    use_gateway=False):
         """Update network ranges for cidr
         """
         db().query(IPAddrRange).filter_by(
             network_group_id=network_group.id).delete()
 
+        first_idx = 2 if use_gateway else 1
         new_cidr = IPNetwork(cidr)
         ip_range = IPAddrRange(
             network_group_id=network_group.id,
-            first=str(new_cidr[2]),
+            first=str(new_cidr[first_idx]),
             last=str(new_cidr[-2]))
 
         db().add(ip_range)
@@ -385,10 +387,14 @@ class NetworkManager(object):
             assigned_vips_by_type = assigned_vips.get(net_group.name, {})
             for vip_type, ip_addr in six.iteritems(vips[net_group.name]):
                 if not cls.check_ip_belongs_to_net(ip_addr, net_group):
+                    ranges = [(rng.first, rng.last)
+                              for rng in net_group.ip_ranges]
                     raise errors.AssignIPError(
                         "Cannot assign VIP with the address \"{0}\" because "
-                        "it does not belong to the network \"{1}\""
-                        .format(ip_addr, net_group.name))
+                        "it does not belong to the network {1} - \"{2}\" with "
+                        "ranges {3} of the cluster \"{4}\"."
+                        .format(ip_addr, net_group.id, net_group.name, ranges,
+                                cluster.id))
                 if vip_type in assigned_vips_by_type:
                     assigned_vip = assigned_vips_by_type[vip_type]
                     assigned_vip.ip_addr = ip_addr
@@ -1220,18 +1226,25 @@ class NetworkManager(object):
 
                 ng_db = db().query(NetworkGroup).get(ng['id'])
 
-                for key, value in ng.iteritems():
-                    if key == "ip_ranges":
-                        cls._set_ip_ranges(ng['id'], value)
+                # NOTE: Skip the ip_ranges key because it is intersect
+                #       with the NetworkGroup.ip_ranges attribute that
+                #       is a relation.
+                for key, value in six.iteritems(ng):
+                    if key not in ("ip_ranges", "meta"):
+                        setattr(ng_db, key, value)
+
+                notation = ng_db.meta.get("notation")
+                if notation == "ip_ranges" and ng.get("ip_ranges"):
+                    cls._set_ip_ranges(ng['id'], ng["ip_ranges"])
+                elif notation == "cidr" and ng.get("cidr"):
+                    if ng.get("use_gateway") or ng_db.gateway is not None:
+                        use_gateway = True
                     else:
-                        if key == 'cidr' and \
-                                ng_db.meta.get("notation") == "cidr":
-                            cls.update_range_mask_from_cidr(ng_db, value)
+                        use_gateway = False
+                    cls.update_range_mask_from_cidr(ng_db, ng["cidr"],
+                                                    use_gateway=use_gateway)
 
-                        if key != 'meta':
-                            setattr(ng_db, key, value)
-
-                if ng_db.meta.get("notation"):
+                if notation:
                     cls.cleanup_network_group(ng_db)
                 objects.Cluster.add_pending_changes(cluster, 'networks')
 

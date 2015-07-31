@@ -67,6 +67,7 @@
                         "storage": "br-storage",
                         "swift/replication": "br-storage",
                         "cinder/iscsi": "br-storage",
+                        "ceph/public": "br-storage",
                         "ceph/replication": "br-storage"
                     }
                 },
@@ -108,7 +109,6 @@
                         "swift/api": "br-mgmt",
                         "heat/api": "br-mgmt",
                         "cinder/api": "br-mgmt",
-                        "mgmt/api": "br-mgmt",
                         "murano/api": "br-mgmt",
                         "nova/api": "br-mgmt",
                         "horizon": "br-mgmt",
@@ -187,7 +187,6 @@
                         "ex": "br-ex",
                         "ceph/radosgw": "br-ex",
                         "swift/public": "br-ex",
-                        "ceph/public": "br-ex",
                         "public/vip": "br-ex",
                         "neutron/floating": "br-floating"
                     }

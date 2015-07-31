@@ -195,23 +195,25 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </span>
                             </div>
                             <div className='progress'>
+                            {!isInfiniteTask ?
                                 <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
                                     {taskProgress + '%'}
                                 </div>
-                            </div>
-                            {stoppableTask &&
-                                <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
-                                    <button
-                                        className='btn btn-danger btn-xs pull-right stop-deployment-btn'
-                                        onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
-                                    >
-                                        {i18n(namespace + 'stop')}
-                                    </button>
-                                </controls.Tooltip>
+                            :
+                                <div className='infinite'>
+                                    <controls.ProgressBar />
+                                </div>
                             }
-                            {!isInfiniteTask &&
-                                <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
-                            }
+                        </div>
+                            <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
+                                <button
+                                    disabled={!stoppableTask}
+                                    className='btn btn-danger btn-xs pull-right stop-deployment-btn'
+                                    onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                >
+                                    {i18n(namespace + 'stop')}
+                                </button>
+                            </controls.Tooltip>
                         </div>
                     </div>
                 </div>

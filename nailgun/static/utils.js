@@ -207,21 +207,25 @@ define([
         validateIP: function(ip) {
             return !_.isString(ip) || !ip.match(utils.regexes.ip);
         },
-        validateIPrange: function(startIP, endIP) {
-            return utils.ipIntRepresentation(startIP) - utils.ipIntRepresentation(endIP) <= 0;
+        validateIPrange: function(startIP, endIP, strictComparison) {
+            var ipRangesVolume = utils.ipIntRepresentation(startIP) - utils.ipIntRepresentation(endIP);
+            return strictComparison ? ipRangesVolume < 0 : ipRangesVolume <= 0;
         },
-        validateIpRanges: function(ranges, cidr) {
+        validateIpRanges: function(ranges, cidr, strictComparison) {
             var ipRangesErrors = [];
             if (_.filter(ranges, function(range) {return _.compact(range).length;}).length) {
                 _.each(ranges, function(range, i) {
                     if (range[0] || range[1]) {
-                        var error = {index: i};
+                        var error = {index: i},
+                            namespace = 'cluster_page.network_tab.validation.';
                         if (utils.validateIP(range[0]) || !utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
-                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_start');
+                            error.start = i18n(namespace + 'invalid_ip_start');
                         } else if (utils.validateIP(range[1]) || !utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
-                            error.end = i18n('cluster_page.network_tab.validation.invalid_ip_end');
-                        } else if (!utils.validateIPrange(range[0], range[1])) {
-                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_range');
+                            error.end = i18n(namespace + 'invalid_ip_end');
+                        } else if (!utils.validateIPrange(range[0], range[1], strictComparison)) {
+                            error.start = strictComparison ?
+                                i18n(namespace + 'invalid_ip_range_equal') :
+                                i18n(namespace + 'invalid_ip_range');
                         }
                         if (error.start || error.end) {
                             ipRangesErrors.push(error);

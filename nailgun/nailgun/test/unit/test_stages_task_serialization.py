@@ -342,8 +342,8 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
           required_for: [pre_deployment]
           requires: [upload_core_repos]
           parameters:
-            src: /etc/puppet/{OPENSTACK_VERSION}/
-            dst: /etc/puppet
+            src: /etc/puppet/{OPENSTACK_VERSION}/modules/
+            dst: /etc/puppet/modules/
             timeout: 180
 
         - id: copy_keys

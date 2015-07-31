@@ -293,8 +293,9 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
             'public': None
         }
         node = self.env.nodes[0]
+        networks = nm.get_node_networks(node)
         for net in ip_by_net:
-            netgroup = nm.get_node_network_by_netname(node, net)
+            netgroup = nm.get_network_by_netname(net, networks)
             if netgroup.get('ip'):
                 ip_by_net[net] = netgroup['ip'].split('/')[0]
         for node_data in self.serialized_for_astute:
@@ -946,8 +947,9 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                      'swift_zone', 'node_roles', 'network_roles']
                 )
                 node = objects.Node.get_by_uid(node_attrs['uid'])
+                networks = nm.get_node_networks(node)
                 for net in ip_by_net:
-                    netgroup = nm.get_node_network_by_netname(node, net)
+                    netgroup = nm.get_network_by_netname(net, networks)
                     if netgroup.get('ip'):
                         ip_by_net[net] = netgroup['ip'].split('/')[0]
                 self.assertEqual(objects.Node.get_slave_name(node), node_name)

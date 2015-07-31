@@ -173,8 +173,9 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets,
                                           expect_errors=True)
-        self.assertEqual(200, resp.status_code)
-        task = resp.json_body
+
+        self.assertEqual(400, resp.status_code)
+        task = jsonutils.loads(resp.json_body['message'])
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
@@ -311,8 +312,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
-        task = resp.json_body
+        self.assertEqual(400, resp.status_code)
+        task = jsonutils.loads(resp.json_body['message'])
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
@@ -344,8 +345,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
-        task = resp.json_body
+        self.assertEqual(400, resp.status_code)
+        task = jsonutils.loads(resp.json_body['message'])
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
@@ -359,8 +360,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
-        task = resp.json_body
+        self.assertEqual(400, resp.status_code)
+        task = jsonutils.loads(resp.json_body['message'])
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
@@ -472,10 +473,9 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         nets = resp.json_body
         resp = self.env.nova_networks_put(self.cluster['id'], nets,
                                           expect_errors=True)
-        self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
+        self.assertEqual(400, resp.status_code)
+        task = jsonutils.loads(resp.json_body['message'])
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
-        self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'check_networks')
         self.assertIn("Address space intersection between networks:\n"
                       "admin (PXE), management.",

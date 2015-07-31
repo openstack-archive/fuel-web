@@ -65,7 +65,21 @@ class ProviderHandler(BaseHandler):
                                  "after, or in deploy.")
 
 
-class NovaNetworkConfigurationHandler(ProviderHandler):
+class NetworkConfigurationHandler(ProviderHandler):
+
+    def raise_task(self, task):
+        if task.status == consts.TASK_STATUSES.ready:
+            status = 200
+        elif task.status == consts.TASK_STATUSES.error:
+            status = 400
+        else:
+            status = 202
+
+        logger.critical(objects.Task.to_json(task))
+        raise self.http(status, objects.Task.to_json(task))
+
+
+class NovaNetworkConfigurationHandler(NetworkConfigurationHandler):
     """Network configuration handler
     """
 
@@ -91,7 +105,6 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
-        # TODO(pkaminski): this seems to be synchronous, no task needed here
         data = jsonutils.loads(web.data())
         if data.get("networks"):
             data["networks"] = [
@@ -133,7 +146,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         self.raise_task(task)
 
 
-class NeutronNetworkConfigurationHandler(ProviderHandler):
+class NeutronNetworkConfigurationHandler(NetworkConfigurationHandler):
     """Neutron Network configuration handler
     """
 
@@ -159,7 +172,6 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
-        # TODO(pkaminski): this seems to be synchronous, no task needed here
         data = jsonutils.loads(web.data())
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
@@ -196,7 +208,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         self.raise_task(task)
 
 
-class TemplateNetworkConfigurationHandler(BaseHandler):
+class TemplateNetworkConfigurationHandler(NetworkConfigurationHandler):
     """Neutron Network configuration handler
     """
     validator = NetworkTemplateValidator

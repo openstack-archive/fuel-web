@@ -777,12 +777,11 @@ class CheckNetworksTaskManager(TaskManager):
         )
         db().add(task)
         db().commit()
-        self._call_silently(
-            task,
-            tasks.CheckNetworksTask,
-            data,
-            check_admin_untagged
-        )
+
+        try:
+            tasks.CheckNetworksTask.execute(task, data, check_admin_untagged)
+        except errors.NetworkCheckError as e:
+            logger.error(e)
 
         task = objects.Task.get_by_uid(
             task.id,

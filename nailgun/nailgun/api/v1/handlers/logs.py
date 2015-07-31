@@ -321,7 +321,7 @@ class LogEntryCollectionHandler(BaseHandler):
             if node.status == consts.NODE_STATUSES.discover:
                 ndir = node.ip
             else:
-                ndir = node.fqdn
+                ndir = objects.Node.get_node_fqdn(node)
 
             remote_log_dir = os.path.join(log_config['base'], ndir)
             if not os.path.exists(remote_log_dir):
@@ -456,7 +456,7 @@ class LogSourceByNodeCollectionHandler(BaseHandler):
                 if node.status == consts.NODE_STATUSES.discover:
                     ndir = node.ip
                 else:
-                    ndir = node.fqdn
+                    ndir = objects.Node.get_node_fqdn(node)
                 return os.path.join(x['base'], ndir, x['path'])
 
         f = lambda x: (

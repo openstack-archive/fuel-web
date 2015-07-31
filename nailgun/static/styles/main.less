@@ -1072,6 +1072,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
       display: inline-block;
       width: 140px;
       height: 22px;
+      .infinite {
+        .progress {
+          width: 100%;
+        }
+      }
     }
     .deploy-percents {
       display: block;
@@ -3904,7 +3909,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       height: auto;
       .progress {
         width: 92%;
-        margin-bottom:0;
+        margin-bottom: @dashboard-offset;
       }
     }
   }

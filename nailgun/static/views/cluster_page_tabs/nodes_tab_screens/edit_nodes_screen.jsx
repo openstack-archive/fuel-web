@@ -29,8 +29,8 @@ function($, _, React, models, utils, NodeListScreen) {
         statics: {
             fetchData: function(options) {
                 var cluster = options.cluster,
-                    serializedIds = options.screenOptions[0],
-                    ids = serializedIds ? utils.deserializeTabOptions(serializedIds).nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [],
+                    serializedIds = utils.deserializeTabOptions(options.screenOptions[0]),
+                    ids = serializedIds.nodes ? serializedIds.nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [],
                     nodes = new models.Nodes(cluster.get('nodes').getByIds(ids).map(function(node) {
                         return _.cloneDeep(node.attributes);
                     }));
@@ -44,6 +44,9 @@ function($, _, React, models, utils, NodeListScreen) {
                     return {nodes: nodes};
                 });
             }
+        },
+        componentWillMount: function() {
+            if (!this.props.nodes.length) app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
         },
         hasChanges: function() {
             return _.result(this.refs.screen, 'hasChanges');

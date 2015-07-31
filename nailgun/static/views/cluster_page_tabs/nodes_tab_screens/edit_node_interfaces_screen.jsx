@@ -43,17 +43,16 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         statics: {
             fetchData: function(options) {
                 var cluster = options.cluster,
-                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);}),
-                    nodes = new models.Nodes(cluster.get('nodes').getByIds(nodeIds));
+                    nodesList = ComponentMixins.nodeConfigurationScreenMixin.getNodesList(options);
 
-                if (nodes.length != nodeIds.length || !nodes.isInterfacesConfigurationAvailable()) {
+                if (!nodesList.nodes.length || nodesList.nodes.length != nodesList.ids.length || !nodesList.nodes.isInterfacesConfigurationAvailable()) {
                     return $.Deferred().reject();
                 }
 
                 var networkConfiguration = cluster.get('networkConfiguration'),
                     networksMetadata = new models.ReleaseNetworkProperties();
 
-                return $.when.apply($, nodes.map(function(node) {
+                return $.when.apply($, nodesList.nodes.map(function(node) {
                     node.interfaces = new models.Interfaces();
                     return node.interfaces.fetch({
                         url: _.result(node, 'url') + '/interfaces',
@@ -66,10 +65,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     })]))
                     .then(_.bind(function() {
                         var interfaces = new models.Interfaces();
-                        interfaces.set(_.cloneDeep(nodes.at(0).interfaces.toJSON()), {parse: true});
+                        interfaces.set(_.cloneDeep(nodesList.nodes.at(0).interfaces.toJSON()), {parse: true});
                         return {
                             interfaces: interfaces,
-                            nodes: nodes,
+                            nodes: nodesList.nodes,
                             bondingConfig: networksMetadata.get('bonding'),
                             configModels: {
                                 version: app.version,

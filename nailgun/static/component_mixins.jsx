@@ -84,6 +84,16 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             }
         },
         nodeConfigurationScreenMixin: {
+            getNodesList: function(options) {
+                var utils = require('utils'),
+                    models = require('models'),
+                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
+                    ids = nodeIds ? nodeIds.split(',').map(function(id) {return parseInt(id, 10);}) : [];
+                return {
+                    nodes: new models.Nodes(options.cluster.get('nodes').getByIds(ids)),
+                    ids: ids
+                };
+            },
             goToNodeList: function() {
                 app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
             },

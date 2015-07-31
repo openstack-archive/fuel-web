@@ -37,25 +37,23 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         ],
         statics: {
             fetchData: function(options) {
-                var cluster = options.cluster,
-                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);}),
-                    nodes = new models.Nodes(cluster.get('nodes').getByIds(nodeIds));
+                var nodesList = ComponentMixins.nodeConfigurationScreenMixin.getNodesList(options);
 
-                if (nodes.length != nodeIds.length || !nodes.isDisksConfigurationAvailable()) {
+                if (!nodesList.nodes.length || nodesList.nodes.length != nodesList.ids.length || !nodesList.nodes.isDisksConfigurationAvailable()) {
                     return $.Deferred().reject();
                 }
 
                 var volumes = new models.Volumes();
-                volumes.url = _.result(nodes.at(0), 'url') + '/volumes';
-                return $.when.apply($, nodes.map(function(node) {
+                volumes.url = _.result(nodesList.nodes.at(0), 'url') + '/volumes';
+                return $.when.apply($, nodesList.nodes.map(function(node) {
                         node.disks = new models.Disks();
                         return node.disks.fetch({url: _.result(node, 'url') + '/disks'});
                     }, this).concat(volumes.fetch()))
                     .then(function() {
-                        var disks = new models.Disks(_.cloneDeep(nodes.at(0).disks.toJSON()), {parse: true});
+                        var disks = new models.Disks(_.cloneDeep(nodesList.nodes.at(0).disks.toJSON()), {parse: true});
                         return {
                             disks: disks,
-                            nodes: nodes,
+                            nodes: nodesList.nodes,
                             volumes: volumes
                         };
                     });

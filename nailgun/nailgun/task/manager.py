@@ -276,15 +276,12 @@ class ApplyChangesTaskManager(TaskManager):
 
         if nodes_to_provision:
             objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
-            # updating nodes
-            nodes_to_provision = objects.NodeCollection.lock_nodes(
-                nodes_to_provision
-            )
-            objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_provision)
-            logger.debug("There are nodes to provision: %s",
-                         " ".join([n.fqdn for n in nodes_to_provision]))
 
-            # For more accurate progress calulation
+            logger.debug("There are nodes to provision: %s",
+                         " ".join([objects.Node.get_node_fqdn(n)
+                                   for n in nodes_to_provision]))
+
+            # For more accurate progress calculation
             task_weight = 0.4
             task_provision = supertask.create_subtask(
                 consts.TASK_NAMES.provision,
@@ -316,12 +313,10 @@ class ApplyChangesTaskManager(TaskManager):
 
         if nodes_to_deploy:
             objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
-            # locking nodes before updating
-            objects.NodeCollection.lock_nodes(nodes_to_deploy)
-            # updating nodes
-            objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deploy)
+
             logger.debug("There are nodes to deploy: %s",
-                         " ".join([n.fqdn for n in nodes_to_deploy]))
+                         " ".join([objects.Node.get_node_fqdn(n)
+                                   for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(
                 name=consts.TASK_NAMES.deployment)
 
@@ -487,11 +482,10 @@ class ProvisioningTaskManager(TaskManager):
             nodes_ids,
             order_by='id'
         )
-        objects.NodeCollection.lock_for_update(nodes).all()
 
-        objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_provision)
         logger.debug('Nodes to provision: {0}'.format(
-            ' '.join([n.fqdn for n in nodes_to_provision])))
+            ' '.join([objects.Node.get_node_fqdn(n)
+                      for n in nodes_to_provision])))
 
         task_provision = Task(name=consts.TASK_NAMES.provision,
                               cluster=self.cluster)
@@ -530,12 +524,9 @@ class DeploymentTaskManager(TaskManager):
     def execute(self, nodes_to_deployment, deployment_tasks=None):
         deployment_tasks = deployment_tasks or []
 
-        # locking nodes for update
-        objects.NodeCollection.lock_nodes(nodes_to_deployment)
-        objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deployment)
-
         logger.debug('Nodes to deploy: {0}'.format(
-            ' '.join([n.fqdn for n in nodes_to_deployment])))
+            ' '.join([objects.Node.get_node_fqdn(n)
+                      for n in nodes_to_deployment])))
         task_deployment = Task(
             name=consts.TASK_NAMES.deployment, cluster=self.cluster)
         db().add(task_deployment)
@@ -728,9 +719,9 @@ class UpdateEnvironmentTaskManager(TaskManager):
             )
 
         nodes_to_change = TaskHelper.nodes_to_upgrade(self.cluster)
-        objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_change)
         logger.debug('Nodes to update: {0}'.format(
-            ' '.join([n.fqdn for n in nodes_to_change])))
+            ' '.join([objects.Node.get_node_fqdn(n)
+                      for n in nodes_to_change])))
         task_update = Task(name=consts.TASK_NAMES.update, cluster=self.cluster)
         db().add(task_update)
         self.cluster.status = 'update'
@@ -1122,11 +1113,9 @@ class NodeDeletionTaskManager(TaskManager):
             self.cluster, nodes_to_delete, nodes_to_deploy)
 
         if nodes_to_deploy:
-            objects.NodeCollection.lock_nodes(nodes_to_deploy)
-            # updating nodes
-            objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deploy)
             logger.debug("There are nodes to deploy: %s",
-                         " ".join([n.fqdn for n in nodes_to_deploy]))
+                         " ".join([objects.Node.get_node_fqdn(n)
+                                   for n in nodes_to_deploy]))
             task_deployment = task.create_subtask(
                 consts.TASK_NAMES.deployment)
 

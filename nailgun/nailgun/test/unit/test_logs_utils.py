@@ -52,12 +52,16 @@ class TestNodeLogsUtils(BaseTestCase):
         self.assertEqual(
             "{prefix}/{node_ip}".format(prefix=prefix, node_ip=node.ip),
             log_paths['old'])
+        fqdn = objects.Node.get_node_fqdn(node)
         self.assertEqual(
-            "{prefix}/{node_fqdn}".format(prefix=prefix, node_fqdn=node.fqdn),
+            "{prefix}/{node_fqdn}".format(
+                prefix=prefix,
+                node_fqdn=fqdn),
             log_paths['new'])
         self.assertEqual(
-            "{prefix}/{node_fqdn}.bak".format(prefix=prefix,
-                                              node_fqdn=node.fqdn),
+            "{prefix}/{node_fqdn}.bak".format(
+                prefix=prefix,
+                node_fqdn=fqdn),
             log_paths['bak'])
 
     def test_delete_node_logs(self):

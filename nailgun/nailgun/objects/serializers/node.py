@@ -34,7 +34,6 @@ class NodeSerializer(BasicSerializer):
         'pending_roles',
         'status',
         'mac',
-        'fqdn',
         'hostname',
         'ip',
         'manufacturer',
@@ -49,6 +48,13 @@ class NodeSerializer(BasicSerializer):
         'network_data',
         'group_id'
     )
+
+    @classmethod
+    def serialize(cls, instance, fields=None):
+        from nailgun.objects import Node
+        data_dict = super(NodeSerializer, cls).serialize(instance, fields)
+        data_dict['fqdn'] = Node.get_node_fqdn(instance)
+        return data_dict
 
 
 class NodeInterfacesSerializer(BasicSerializer):

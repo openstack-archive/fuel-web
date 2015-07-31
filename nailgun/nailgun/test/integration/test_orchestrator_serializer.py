@@ -239,7 +239,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(serialized_data['status'], node_db.status)
         self.assertEqual(serialized_data['online'], node_db.online)
         self.assertEqual(serialized_data['fqdn'],
-                         'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+                         '%s.%s' % (node_db.hostname, settings.DNS_DOMAIN))
         self.assertEqual(
             serialized_data['glance'],
             {'image_cache_max_size': manager.calc_glance_cache_size(
@@ -272,9 +272,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertEqual(node['internal_netmask'], '255.255.255.0')
             self.assertEqual(node['storage_netmask'], '255.255.255.0')
             self.assertEqual(node['uid'], str(node_db.id))
-            self.assertEqual(node['name'], 'node-%d' % node_db.id)
-            self.assertEqual(node['fqdn'], 'node-%d.%s' %
-                             (node_db.id, settings.DNS_DOMAIN))
+            self.assertEqual(node['name'], '%s' % node_db.hostname)
+            self.assertEqual(node['fqdn'], '%s.%s' %
+                             (node_db.hostname, settings.DNS_DOMAIN))
 
         # Check uncommon attrs
         # Convert ids to int to have correct order in the set
@@ -1658,7 +1658,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(serialized_data['status'], node_db.status)
         self.assertEqual(serialized_data['online'], node_db.online)
         self.assertEqual(serialized_data['fqdn'],
-                         'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+                         '%s.%s' % (node_db.hostname, settings.DNS_DOMAIN))
 
     def test_node_list(self):
         assign_public_options = (False, True)
@@ -1690,10 +1690,10 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 self.assertEqual(node['internal_netmask'], '255.255.255.0')
                 self.assertEqual(node['storage_netmask'], '255.255.255.0')
                 self.assertEqual(node['uid'], str(node_db.id))
-                self.assertEqual(node['name'], 'node-%d' % node_db.id)
+                self.assertEqual(node['name'], '%s' % node_db.hostname)
                 self.assertEqual(
                     node['fqdn'],
-                    'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+                    '%s.%s' % (node_db.hostname, settings.DNS_DOMAIN))
 
             # We have 6 roles on 4 nodes summarily.
             # Only 1 node w 2 roles (controller+cinder) will have public

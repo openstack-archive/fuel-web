@@ -781,13 +781,19 @@ class CheckNetworksTask(object):
 
     @classmethod
     def execute(cls, task, data, check_admin_untagged=False):
-
-        checker = NetworkCheck(task, data)
-        checker.check_configuration()
-        if check_admin_untagged:
-            warn_msgs = checker.check_interface_mapping()
-            if warn_msgs:
-                task.result = {"warning": warn_msgs}
+        try:
+            checker = NetworkCheck(task.cluster, data)
+            checker.check_configuration()
+            if check_admin_untagged:
+                warn_msgs = checker.check_interface_mapping()
+                if warn_msgs:
+                    task.result = {"warning": warn_msgs}
+        except errors.NetworkCheckError as e:
+            TaskHelper.expose_network_check_error_messages(
+                task,
+                e.message['result'],
+                e.message['message']
+            )
         db().commit()
 
 

@@ -16,6 +16,7 @@
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from oslo.serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
@@ -64,8 +65,8 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_nova_networks_w_error(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets,
                                           expect_errors=True)
-        self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
+        self.assertEqual(resp.status_code, 400)
+        task = jsonutils.loads(resp.json_body['message'])
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], consts.TASK_NAMES.check_networks)
@@ -84,8 +85,8 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_neutron_networks_w_error(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets,
                                              expect_errors=True)
-        self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
+        self.assertEqual(resp.status_code, 400)
+        task = jsonutils.loads(resp.json_body['message'])
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], consts.TASK_NAMES.check_networks)

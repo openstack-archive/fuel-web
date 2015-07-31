@@ -194,11 +194,11 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     {i18n('cluster_page.' + taskName) + '...'}
                                 </span>
                             </div>
-                            <div className='progress'>
-                                <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
-                                    {taskProgress + '%'}
-                                </div>
-                            </div>
+                            <controls.ProgressBar
+                                isInfinite={isInfiniteTask}
+                                progress={taskProgress}
+                                wrapperClassName={isInfiniteTask ? 'infinite' : 'normal'}
+                            />
                             {stoppableTask &&
                                 <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
                                     <button
@@ -208,9 +208,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         {i18n(namespace + 'stop')}
                                     </button>
                                 </controls.Tooltip>
-                            }
-                            {!isInfiniteTask &&
-                                <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
                             }
                         </div>
                     </div>

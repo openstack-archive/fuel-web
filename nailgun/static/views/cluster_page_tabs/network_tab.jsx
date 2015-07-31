@@ -137,7 +137,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         componentDidUpdate: function() {
             // this glitch is needed to fix
             // when pressing '+' or '-' buttons button remains focused
-            if (this.props.extendable && this.state.elementToFocus && (this.getModel().get(this.props.name).length > 1)) {
+            if (this.props.extendable && this.state.elementToFocus && this.getModel().get(this.props.name).length) {
                 $(this.refs[this.state.elementToFocus].getInputDOMNode()).focus();
                 this.setState({elementToFocus: null});
             }
@@ -173,7 +173,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         addRange: function(attribute, rowIndex) {
             var newValue = _.clone(this.getModel().get(attribute));
-            newValue.push(['', '']);
+            newValue.splice(rowIndex + 1, 0, ['', '']);
             this.setValue(attribute, newValue);
             this.setState({
                 elementToFocus: 'start' + (rowIndex + 1)
@@ -381,7 +381,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         componentDidUpdate: function() {
             // this glitch is needed to fix
             // when pressing '+' or '-' buttons button remains focused
-            if (this.state.elementToFocus && (this.getModel().get(this.props.name).length > 1)) {
+            if (this.state.elementToFocus && this.getModel().get(this.props.name).length) {
                 $(this.refs[this.state.elementToFocus].getInputDOMNode()).focus();
                 this.setState({elementToFocus: null});
             }
@@ -394,10 +394,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         addValue: function(attribute, index) {
             var newValue = _.clone(this.getModel().get(attribute));
-            newValue.push('');
+            newValue.splice(index + 1, 0, '');
             this.setValue(attribute, newValue);
             this.setState({
-                elementToFocus: 'input' + (index + 1)
+                elementToFocus: 'row' + (index + 1)
             });
         },
         removeValue: function(attribute, index) {
@@ -405,7 +405,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             newValue.splice(index, 1);
             this.setValue(attribute, newValue);
             this.setState({
-                elementToFocus: 'input' + _.min([newValue.length - 1, index])
+                elementToFocus: 'row' + _.min([newValue.length - 1, index])
             });
         },
         renderControls: function(attributeName, index, length) {
@@ -458,7 +458,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                         error={(inputError || verificationError) && ''}
                                         value={value}
                                         onChange={_.partialRight(this.onChange, index)}
-                                        ref={'input' + index}
+                                        ref={'row' + index}
                                         placeholder={inputError ? '' : this.props.placeholder}
                                         extraContent={this.renderControls(attributeName, index, values.length)}
                                     />

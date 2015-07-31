@@ -86,7 +86,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 nodes = cluster.get('nodes'),
                 clusterStatus = cluster.get('status'),
                 hasNodes = !!nodes.length,
-                hasChanges = nodes.hasChanges(),
                 isNew = clusterStatus == 'new',
                 isOperational = clusterStatus == 'operational',
                 title = this.getTitle(),
@@ -94,7 +93,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 failedDeploymentTask = cluster.task({group: 'deployment', status: 'error'}),
                 stopDeploymentTask = cluster.task({name: 'stop_deployment'}),
                 hasOfflineNodes = nodes.any({online: false}),
-                resetDeploymentTask = cluster.task({name: 'reset_environment'});
+                resetDeploymentTask = cluster.task({name: 'reset_environment'}),
+                isDeploymentPossible = cluster.isDeploymentPossible();
 
             return (
                 <div>
@@ -119,26 +119,22 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {i18n('cluster_page.cluster_was_modified_from_cli')}
                         </div>
                     }
-                    {(!failedDeploymentTask && isNew || hasChanges) &&
+                    {(isDeploymentPossible || !hasNodes) &&
                         <div className='row'>
                             {!!title && !failedDeploymentTask && hasNodes &&
                                 this.renderTitle(title)
                             }
-                            {(((isNew && !failedDeploymentTask) || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
-                                <DeployReadinessBlock
-                                    cluster={cluster}
-                                    deploymentErrorTask={failedDeploymentTask}
-                                />
-                            }
+                            <DeployReadinessBlock
+                                cluster={cluster}
+                                deploymentErrorTask={failedDeploymentTask}
+                            />
                         </div>
                     }
                     {runningDeploymentTask &&
-                        <div className='row'>
-                            <DeploymentInProgressControl
-                                cluster={cluster}
-                                task={runningDeploymentTask}
-                            />
-                        </div>
+                        <DeploymentInProgressControl
+                            cluster={cluster}
+                            task={runningDeploymentTask}
+                        />
                     }
                     <ClusterInfo
                         cluster={cluster}
@@ -183,35 +179,37 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 taskProgress = task.get('progress'),
                 stoppableTask = task.isStoppableTask();
             return (
-                <div className='col-xs-12'>
-                    <div className='deploy-block'>
-                        <div className={'deploy-process ' + this.props.taskName}>
-                            <div>
-                                <span>
-                                    <strong>
-                                        {i18n(namespace + 'current_task') + ' '}
-                                    </strong>
-                                    {i18n('cluster_page.' + taskName) + '...'}
-                                </span>
-                            </div>
-                            <div className='progress'>
-                                <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
-                                    {taskProgress + '%'}
+                <div className='row'>
+                    <div className='col-xs-12'>
+                        <div className='deploy-block'>
+                            <div className={'deploy-process ' + this.props.taskName}>
+                                <div>
+                                    <span>
+                                        <strong>
+                                            {i18n(namespace + 'current_task') + ' '}
+                                        </strong>
+                                        {i18n('cluster_page.' + taskName) + '...'}
+                                    </span>
                                 </div>
+                                <div className='progress'>
+                                    <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
+                                        {taskProgress + '%'}
+                                    </div>
+                                </div>
+                                {stoppableTask &&
+                                    <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
+                                        <button
+                                            className='btn btn-danger btn-xs pull-right stop-deployment-btn'
+                                            onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                        >
+                                            {i18n(namespace + 'stop')}
+                                        </button>
+                                    </controls.Tooltip>
+                                }
+                                {!isInfiniteTask &&
+                                    <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
+                                }
                             </div>
-                            {stoppableTask &&
-                                <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
-                                    <button
-                                        className='btn btn-danger btn-xs pull-right stop-deployment-btn'
-                                        onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
-                                    >
-                                        {i18n(namespace + 'stop')}
-                                    </button>
-                                </controls.Tooltip>
-                            }
-                            {!isInfiniteTask &&
-                                <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
-                            }
                         </div>
                     </div>
                 </div>
@@ -467,8 +465,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 hasNodes = !!nodes.length,
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
-                    !!this.state.alerts.blocker.length || !hasNodes,
+                isDeploymentPossible = cluster.isDeploymentPossible() ||
+                    !this.state.alerts.blocker.length,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
@@ -486,7 +484,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
                                         {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
                                     </ul>
-                                    {!isDeploymentImpossible &&
+                                    {isDeploymentPossible &&
                                         isVMsProvisioningAvailable ?
                                             <button
                                                 key='provision-vms'
@@ -500,7 +498,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             <button
                                                 key='deploy-changes'
                                                 className='btn btn-primary deploy-btn'
-                                                disabled={isDeploymentImpossible}
+                                                disabled={!isDeploymentPossible}
                                                 onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
                                             >
                                                 <div className='deploy-icon'></div>
@@ -518,7 +516,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                             }
                             <div className='col-xs-12 deploy-readiness'>
-                                {isDeploymentImpossible &&
+                                {!isDeploymentPossible &&
                                     <div className='informational-block'>
                                         {!!this.props.deploymentErrorTask &&
                                             <controls.InstructionElement

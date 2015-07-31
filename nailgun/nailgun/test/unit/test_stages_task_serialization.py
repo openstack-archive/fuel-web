@@ -121,8 +121,8 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         task_config = {'id': 'rsync_mos_puppet',
                        'type': 'sync',
                        'role': '*',
-                       'parameters': {'src': '/etc/puppet/{OPENSTACK_VERSION}',
-                                      'dst': '/etc/puppet'}}
+                       'parameters': {'src': '/etc/puppet/{OPENSTACK_VERSION}/modules/',
+                                      'dst': '/etc/puppet/modules/'}}
         task = tasks_serializer.RsyncPuppet(
             task_config, self.cluster, self.nodes)
         serialized = next(task.serialize())
@@ -385,8 +385,8 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
           required_for: [pre_deployment]
           requires: [upload_core_repos]
           parameters:
-            src: /etc/puppet/{OPENSTACK_VERSION}/
-            dst: /etc/puppet
+            src: /etc/puppet/{OPENSTACK_VERSION}/modules/
+            dst: /etc/puppet/modules/
             timeout: 180
 
         - id: copy_keys

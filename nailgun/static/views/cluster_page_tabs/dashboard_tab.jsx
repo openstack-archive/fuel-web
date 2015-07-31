@@ -124,7 +124,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {!!title && !failedDeploymentTask && hasNodes &&
                                 this.renderTitle(title)
                             }
-                            {(((isNew && !failedDeploymentTask) || cluster.get('status') == 'stopped' || hasChanges) && !runningDeploymentTask) &&
+                            {((isNew || cluster.get('status') == 'stopped' || hasChanges || (failedDeploymentTask && hasChanges)) && !runningDeploymentTask) &&
                                 <DeployReadinessBlock
                                     cluster={cluster}
                                     deploymentErrorTask={failedDeploymentTask}

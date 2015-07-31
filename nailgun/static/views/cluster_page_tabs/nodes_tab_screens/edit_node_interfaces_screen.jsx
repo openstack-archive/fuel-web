@@ -43,10 +43,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         statics: {
             fetchData: function(options) {
                 var cluster = options.cluster,
-                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);}),
-                    nodes = new models.Nodes(cluster.get('nodes').getByIds(nodeIds));
+                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
+                    ids = nodeIds ? nodeIds.split(',').map(function(id) {return parseInt(id, 10);}) : [],
+                    nodes = new models.Nodes(cluster.get('nodes').getByIds(ids));
 
-                if (nodes.length != nodeIds.length || !nodes.isInterfacesConfigurationAvailable()) {
+                if (nodes.length != ids.length || !nodes.isInterfacesConfigurationAvailable()) {
                     return $.Deferred().reject();
                 }
 

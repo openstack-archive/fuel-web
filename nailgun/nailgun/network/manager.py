@@ -600,9 +600,29 @@ class NetworkManager(object):
 
     @classmethod
     def get_node_network_by_netname(cls, node, netname):
-        networks = cls.get_node_networks(node)
-        return filter(
-            lambda n: n['name'] == netname, networks)[0]
+        #networks_wo_admin = cls._get_networks_except_admin(node.networks)
+        network = next(
+            (net for net in node.networks if net.name == netname),
+            None
+        )
+        network_data = {}
+        if network:
+            iface = next(
+                (i for i in node.interfaces
+                 if network in i.assigned_networks_list),
+                None
+            )
+            ip_addr = next(
+                (ip for ip in node.ip_addrs if ip.network == network.id),
+                None
+            )
+            if ip_addr:
+                network_data = cls._get_network_data_with_ip(node, iface,
+                                                             network, ip_addr)
+            else:
+                network_data = cls._get_network_data_wo_ip(node, iface, network)
+
+        return network_data
 
     @classmethod
     def get_network_vlan(cls, net_db, cl_db):

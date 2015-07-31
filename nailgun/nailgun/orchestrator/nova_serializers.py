@@ -162,7 +162,9 @@ class NovaNetworkDeploymentSerializer61(NovaNetworkDeploymentSerializer):
 
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
-        return {'network_scheme': cls.generate_network_scheme(node)}
+        nm = Cluster.get_network_manager(cluster)
+        networks = nm.get_node_networks(node)
+        return {'network_scheme': cls.generate_network_scheme(node, networks)}
 
     @classmethod
     def subiface_name(cls, iface_name, net_descr):
@@ -230,7 +232,7 @@ class NovaNetworkDeploymentSerializer61(NovaNetworkDeploymentSerializer):
         return transformations
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
 
         # create network scheme structure and fill it with static values
         attrs = {
@@ -263,7 +265,7 @@ class NovaNetworkDeploymentSerializer61(NovaNetworkDeploymentSerializer):
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
-            netgroup = nm.get_node_network_by_netname(node, ngname)
+            netgroup = nm.get_network_by_netname(ngname, networks)
             if ngname == 'fixed':
                 vlan_id = None
                 if node.cluster.network_config.net_manager == \
@@ -319,9 +321,9 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
         return node_attrs
 
     @classmethod
-    def generate_network_scheme(cls, node):
+    def generate_network_scheme(cls, node, networks):
         attrs = super(NovaNetworkDeploymentSerializer70,
-                      cls).generate_network_scheme(node)
+                      cls).generate_network_scheme(node, networks)
 
         attrs['roles']['mgmt/corosync'] = 'br-mgmt'
         attrs['roles']['mgmt/database'] = 'br-mgmt'
@@ -372,8 +374,9 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
                 'management': None,
                 'public': None
             }
+            networks = nm.get_node_networks(n)
             for net in ip_by_net:
-                netgroup = nm.get_node_network_by_netname(n, net)
+                netgroup = nm.get_network_by_netname(net, networks)
                 if netgroup.get('ip'):
                     ip_by_net[net] = netgroup['ip'].split('/')[0]
 

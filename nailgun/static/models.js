@@ -361,6 +361,12 @@ define([
         },
         isAvailableForSettingsChanges: function() {
             return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
+        },
+        isDeploymentPossible: function() {
+            var nodes = this.get('nodes');
+            return this.get('release').get('state') != 'unavailable' ||
+                (nodes.hasChanges() && this.needsRedeployment()) ||
+                !!nodes.length;
         }
     });
 

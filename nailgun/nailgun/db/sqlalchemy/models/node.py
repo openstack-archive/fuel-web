@@ -37,7 +37,6 @@ from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.logger import logger
-from nailgun.settings import settings
 
 
 class NodeGroup(Base):
@@ -114,16 +113,6 @@ class Node(Base):
                               nullable=True)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
-
-    @property
-    def fqdn(self):
-        return u"{instance_name}.{dns_domain}" \
-            .format(instance_name=self.hostname,
-                    dns_domain=settings.DNS_DOMAIN)
-
-    @fqdn.setter
-    def fqdn(self, value):
-        pass
 
     @property
     def interfaces(self):

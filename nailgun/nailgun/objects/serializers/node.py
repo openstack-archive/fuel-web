@@ -17,6 +17,7 @@
 from distutils.version import StrictVersion
 
 from nailgun import consts
+from nailgun import objects
 
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.settings import settings
@@ -49,6 +50,12 @@ class NodeSerializer(BasicSerializer):
         'network_data',
         'group_id'
     )
+
+    @classmethod
+    def serialize(cls, instance, fields=None):
+        data_dict = super(NodeSerializer, cls).serialize(instance, fields)
+        data_dict['fqdn'] = objects.Node.get_node_fqdn(instance)
+        return data_dict
 
 
 class NodeInterfacesSerializer(BasicSerializer):

@@ -155,7 +155,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             var cluster = this.props.cluster,
                 horizonLinkProtocol = cluster.get('public_ssl.horizon.value') ? 'https://' : 'http://';
             return (
-                <div className='row'>
+                <div className='row plugins-block'>
                     <div className='col-xs-12 plugin-entry horizon'>
                         <div className='title'>{i18n(namespace + 'horizon')}</div>
                         <div className='description'>{i18n(namespace + 'horizon_description')}</div>
@@ -183,34 +183,36 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 taskProgress = task.get('progress'),
                 stoppableTask = task.isStoppableTask();
             return (
-                <div className='col-xs-12 deploy-block'>
-                    <div className={'deploy-process ' + this.props.taskName}>
-                        <div>
-                            <span>
-                                <strong>
-                                    {i18n(namespace + 'current_task') + ' '}
-                                </strong>
-                                {i18n('cluster_page.' + taskName) + '...'}
-                            </span>
-                        </div>
-                        <div className='progress'>
-                            <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
-                                {taskProgress + '%'}
+                <div className='col-xs-12'>
+                    <div className='deploy-block'>
+                        <div className={'deploy-process ' + this.props.taskName}>
+                            <div>
+                                <span>
+                                    <strong>
+                                        {i18n(namespace + 'current_task') + ' '}
+                                    </strong>
+                                    {i18n('cluster_page.' + taskName) + '...'}
+                                </span>
                             </div>
+                            <div className='progress'>
+                                <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
+                                    {taskProgress + '%'}
+                                </div>
+                            </div>
+                            {stoppableTask &&
+                                <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
+                                    <button
+                                        className='btn btn-danger btn-xs pull-right stop-deployment-btn'
+                                        onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                    >
+                                        {i18n(namespace + 'stop')}
+                                    </button>
+                                </controls.Tooltip>
+                            }
+                            {!isInfiniteTask &&
+                                <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
+                            }
                         </div>
-                        {stoppableTask &&
-                            <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
-                                <button
-                                    className='btn btn-danger btn-xs pull-right stop-deployment-btn'
-                                    onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
-                                >
-                                    {i18n(namespace + 'stop')}
-                                </button>
-                            </controls.Tooltip>
-                        }
-                        {!isInfiniteTask &&
-                            <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
-                        }
                     </div>
                 </div>
             );
@@ -804,7 +806,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                                 {this.renderClusterInfoFields()}
                                 {!isNew &&
-                                    <div className='col-xs-12'>
+                                    <div className='col-xs-12 go-to-healthcheck'>
                                         {i18n(namespace + 'healthcheck')}
                                         <a href={'#cluster/' + cluster.id + '/healthcheck'}>
                                             {i18n(namespace + 'healthcheck_tab')}

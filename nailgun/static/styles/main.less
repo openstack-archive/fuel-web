@@ -3813,7 +3813,7 @@ input[type=range] {
     margin-bottom: @dashboard-offset;
   }
   .plugins-block {
-    margin-bottom: 10px;
+    margin-bottom: @dashboard-offset;
   }
   ul {
     li {
@@ -3822,6 +3822,7 @@ input[type=range] {
   }
   .btn-add-nodes {
     float: left;
+    margin-bottom: @dashboard-offset;
     .glyphicon {
       margin-right: @dashboard-offset;
     }
@@ -3829,9 +3830,9 @@ input[type=range] {
   .documentation {
     margin: 0 0 @dashboard-offset 0;
     .documentation-link {
-      margin-bottom: 5px;
+      margin-bottom: @dashboard-offset / 2;
       .glyphicon {
-        margin-right: 5px;
+        margin-right: @dashboard-offset / 2;
       }
     }
   }
@@ -3860,7 +3861,7 @@ input[type=range] {
           max-width: 220px;
           overflow: hidden;
           cursor: pointer;
-          min-height: 20px;
+          min-height: @dashboard-offset * 2;
         }
         .glyphicon {
           margin-left: @dashboard-offset;
@@ -3912,7 +3913,7 @@ input[type=range] {
     }
   }
   .deploy-block {
-    padding: 15px;
+    padding: @dashboard-offset / 2 @dashboard-offset * 2;
     border: 1px solid @deploy-border;
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
@@ -3937,7 +3938,7 @@ input[type=range] {
       }
     }
     .changes-list {
-      margin-bottom: @dashboard-offset;
+      padding: @dashboard-offset @dashboard-offset 0 @dashboard-offset;
       a {cursor: pointer;}
       .changes-header {
         .font-bold;
@@ -3951,7 +3952,7 @@ input[type=range] {
         color: @gray;
       }
       .changes-item {
-        margin-bottom: 5px;
+        margin-bottom: @dashboard-offset / 2;
       }
       .deploy-btn {
         margin-right: @dashboard-offset * 2;
@@ -3959,13 +3960,15 @@ input[type=range] {
       }
     }
     .deploy-readiness {
+      padding: @dashboard-offset 0 0 @dashboard-offset;
       .informational-block {
-        margin-bottom: 10px;
+        margin-bottom: @dashboard-offset;
       }
       .invalid-deploy.instruction {
         .font-semibold;
         font-size: @base-font-size - 1;
         color: @red;
+        margin-bottom: @dashboard-offset;
       }
       h4 {
         margin: 0 0 @dashboard-offset 0;
@@ -3990,13 +3993,20 @@ input[type=range] {
       }
       .warnings-block {
         font-size: @base-font-size - 1;
+        margin-bottom: @dashboard-offset;
       }
     }
     .deploy-process {
       height: auto;
+      .task-title {
+        margin-bottom: @dashboard-offset + 2;
+      }
       .progress {
-        width: 92%;
-        margin-bottom:0;
+        margin-bottom: @dashboard-offset;
+        width: 100%;
+        &.has-progress {
+          width: 95%;
+        }
       }
     }
   }
@@ -4010,7 +4020,7 @@ input[type=range] {
     }
     .delete-environment {
       .delete-environment-btn {
-        margin-right: 5px;
+        margin-right: @dashboard-offset / 2;
       }
     }
     .glyphicon-info-sign {
@@ -4018,7 +4028,7 @@ input[type=range] {
     }
   }
   .plugin-entry {
-    margin-bottom: 15px;
+    margin-bottom: @dashboard-offset * 1.5;
     &.horizon {
       .description {
         margin-right: @dashboard-offset;

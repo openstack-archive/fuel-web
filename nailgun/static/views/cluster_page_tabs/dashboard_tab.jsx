@@ -186,7 +186,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     <div className='col-xs-12'>
                         <div className='deploy-block'>
                             <div className={'deploy-process ' + this.props.taskName}>
-                                <div>
+                                <div className='task-title'>
                                     <span>
                                         <strong>
                                             {i18n(namespace + 'current_task') + ' '}
@@ -194,11 +194,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         {i18n('cluster_page.' + taskName) + '...'}
                                     </span>
                                 </div>
-                                <div className='progress'>
-                                    <div className='progress-bar' role='progressbar' style={{width: _.max([taskProgress, 3]) + '%'}}>
-                                        {taskProgress + '%'}
-                                    </div>
-                                </div>
+                                <controls.ProgressBar
+                                    progress={!isInfiniteTask && taskProgress}
+                                    wrapperClassName={isInfiniteTask ? '' : 'has-progress'}
+                                />
                                 {stoppableTask &&
                                     <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
                                         <button
@@ -208,9 +207,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             {i18n(namespace + 'stop')}
                                         </button>
                                     </controls.Tooltip>
-                                }
-                                {!isInfiniteTask &&
-                                    <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
                                 }
                             </div>
                         </div>
@@ -470,7 +466,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 hasNodes = !!nodes.length,
-                isDeploymentPossible = cluster.isDeploymentPossible() ||
+                isDeploymentPossible = cluster.isDeploymentPossible() &&
                     !this.state.alerts.blocker.length,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
@@ -490,7 +486,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
                                     </ul>
                                     {isDeploymentPossible &&
-                                        isVMsProvisioningAvailable ?
+                                        (isVMsProvisioningAvailable ?
                                             <button
                                                 key='provision-vms'
                                                 className='btn btn-primary deploy-btn'
@@ -508,6 +504,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 <div className='deploy-icon'></div>
                                                 {i18n('cluster_page.deploy_changes')}
                                             </button>
+                                        )
                                     }
                                     {nodes.hasChanges() &&
                                         <a
@@ -523,7 +520,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 {!isDeploymentPossible &&
                                     <div className='informational-block'>
                                         {!!this.props.deploymentErrorTask &&
-                                            <controls.InstructionElement
+                                            <InstructionElement
                                                 description='unsuccessful_deploy'
                                                 explanation='for_more_information_roles'
                                                 link='operations.html#troubleshooting'
@@ -1007,7 +1004,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 classes = {
                     instruction: true
                 };
-            classes[this.props.wrapperClass] = true;
+            classes[this.props.wrapperClass] = !!this.props.wrapperClass;
             return (
                 <div className={utils.classNames(classes)}>
                     {i18n(namespace + this.props.description) + ' '}

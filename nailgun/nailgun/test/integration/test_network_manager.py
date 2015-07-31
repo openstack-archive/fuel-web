@@ -25,8 +25,10 @@ from netaddr import IPRange
 from sqlalchemy import not_
 
 import nailgun
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.objects.serializers import network_configuration
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
@@ -431,6 +433,74 @@ class TestNetworkManager(BaseNetworkManagerTest):
                                      expected_msg_regexp):
             self.env.network_manager.assign_given_vips_for_net_groups(
                 cluster, vips_to_assign)
+
+    def test_upgrade_range_mask_from_cidr(self):
+        cluster = self.env.create_cluster(api=False)
+        ng = cluster.network_groups[0]
+        self.env.network_manager.update_range_mask_from_cidr(
+            ng, "192.168.10.0/24")
+        ip_range = ng.ip_ranges[0]
+        self.assertEqual("192.168.10.1", ip_range.first)
+        self.assertEqual("192.168.10.254", ip_range.last)
+
+    def test_upgrade_range_mask_from_cidr_use_gateway(self):
+        cluster = self.env.create_cluster(api=False)
+        ng = cluster.network_groups[0]
+        self.env.network_manager.update_range_mask_from_cidr(
+            ng, "192.168.10.0/24",
+            use_gateway=True)
+        ip_range = ng.ip_ranges[0]
+        self.assertEqual("192.168.10.2", ip_range.first)
+        self.assertEqual("192.168.10.254", ip_range.last)
+
+    def test_update_networks_idempotent(self):
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+        )
+        get_network_config = network_configuration.\
+            NeutronNetworkConfigurationSerializer.serialize_for_cluster
+        nets = get_network_config(cluster)
+        self.env.network_manager.update_networks(cluster, nets)
+        updated_nets = get_network_config(cluster)
+        self.assertEqual(nets, updated_nets)
+
+    def test_update_networks(self):
+        def get_net_by_name(networks, name):
+            for net in networks:
+                if net["meta"]["name"] == name:
+                    return net
+            raise Exception("Network with name {0} not found".format(name))
+
+        updates = {
+            "public": {
+                "cidr": "172.16.42.0/24",
+                "gateway": "172.16.42.1",
+                "ip_ranges": [["172.16.42.2", "172.16.42.126"]],
+            },
+            "management": {
+                'cidr': u'192.10.2.0/24',
+                'ip_ranges': [[u'192.10.2.1', u'192.10.2.254']],
+            },
+        }
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+        )
+        get_network_config = network_configuration.\
+            NeutronNetworkConfigurationSerializer.serialize_for_cluster
+        nets = get_network_config(cluster)
+        for net_name, net_changes in updates.items():
+            ng = get_net_by_name(nets["networks"], net_name)
+            ng.update(net_changes)
+        self.env.network_manager.update_networks(cluster, nets)
+        updated_nets = get_network_config(cluster)
+        for net_name in updates.keys():
+            expected_ng = get_net_by_name(nets["networks"], net_name)
+            updated_ng = get_net_by_name(updated_nets["networks"], net_name)
+            self.assertEqual(expected_ng, updated_ng)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

@@ -51,7 +51,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             ]
         )
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        checker = NetworkCheck(FakeTask(cluster_db), {})
+        checker = NetworkCheck(cluster_db, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': consts.NETWORKS.storage,
@@ -83,7 +83,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             ]
         )
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        checker = NetworkCheck(FakeTask(cluster_db), {})
+        checker = NetworkCheck(cluster_db, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': 'fake1',
@@ -103,7 +103,7 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_network_address_spaces_intersection(self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': 'fake1',
@@ -116,7 +116,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaises(errors.NetworkCheckError,
                           checker.check_network_address_spaces_intersection)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
 
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
@@ -130,7 +130,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.check_network_address_spaces_intersection)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
 
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
@@ -146,7 +146,7 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_public_floating_ranges_intersection(self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': 'public',
@@ -158,7 +158,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaises(errors.NetworkCheckError,
                           checker.check_public_floating_ranges_intersection)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': 'public',
@@ -168,7 +168,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.network_config['floating_ranges'] = ['192.168.2.0/24']
         self.assertRaises(errors.NetworkCheckError,
                           checker.check_public_floating_ranges_intersection)
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': 'public',
@@ -182,7 +182,7 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_vlan_ids_range_and_intersection_failed(self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': 'fixed',
@@ -203,7 +203,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             (['2.3.4.5', '2.3.4.99', '2.3.4.99'], False),
             (['2.3.4.5', '2.3.4.99', '2.3.4.199'], True),
         ]
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         for dns_setup, must_pass in dns_lists:
             checker.network_config['dns_nameservers'] = dns_setup
 
@@ -216,7 +216,7 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_calculated_network_cidr(self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.99.0/16',
                              'name': 'storage',
@@ -228,7 +228,7 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_vlan_ids_range_and_intersection(self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'name': 'fixed',
@@ -242,21 +242,21 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_networks_amount(self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.network_config['net_manager'] = 'FlatDHCPManager'
         checker.network_config['fixed_networks_amount'] = 2
 
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.check_networks_amount)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.network_config['net_manager'] = 'FlatDHCPManager'
         checker.network_config['fixed_networks_amount'] = 1
 
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.check_networks_amount)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.network_config['fixed_network_size'] = 100
         checker.network_config['fixed_networks_amount'] = 3
         checker.network_config['fixed_networks_cidr'] = '192.168.10.1/24'
@@ -264,7 +264,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.check_networks_amount)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.network_config['fixed_network_size'] = 10
         checker.network_config['fixed_networks_amount'] = 1
         checker.network_config['fixed_networks_cidr'] = '192.168.10.1/24'
@@ -275,7 +275,7 @@ class TestNetworkCheck(BaseIntegrationTest):
     @patch.object(helpers, 'db')
     def test_neutron_check_l3_addresses_not_match_subnet_and_broadcast(
             self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.network_config['floating_ranges'] = [('192.168.0.1',
                                                       '192.168.0.255')]
         checker.network_config['internal_cidr'] = '192.168.0.0/24'
@@ -290,25 +290,24 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertEqual(len(checker.err_msgs), 2)
 
     def test_check_network_classes_exclude_loopback(self):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'cidr': '192.168.0.0/24'}]
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.check_network_classes_exclude_loopback)
 
     @patch.object(helpers, 'db')
     def test_check_network_classes_exclude_loopback_fail(self, mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         networks = ['224.0.0.0/3', '127.0.0.0/8']
         for network in networks:
             checker.networks = [{'id': 1, 'cidr': network, 'name': 'fake'}]
             self.assertRaises(errors.NetworkCheckError,
                               checker.check_network_classes_exclude_loopback)
-        self.assertEqual(mocked_db.call_count, 4)
 
     @patch.object(helpers, 'db')
     def test_check_network_addresses_not_match_subnet_and_broadcast(self,
                                                                     mocked_db):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'gateway': '192.168.0.1',
@@ -318,7 +317,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             errors.NetworkCheckError,
             checker.check_network_addresses_not_match_subnet_and_broadcast)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'gateway': '192.168.0.0',
@@ -328,7 +327,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             errors.NetworkCheckError,
             checker.check_network_addresses_not_match_subnet_and_broadcast)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'ip_ranges': ['192.168.0.1', '192.168.0.100'],
@@ -339,7 +338,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             errors.NetworkCheckError,
             checker.check_network_addresses_not_match_subnet_and_broadcast)
 
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'ip_ranges': ['192.168.1.1', '192.168.1.100'],
@@ -358,7 +357,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         )
         cluster_db = self.db.query(Cluster).get(cluster['id'])
 
-        checker = NetworkCheck(FakeTask(cluster_db), {})
+        checker = NetworkCheck(cluster_db, {})
         checker.check_bond_slaves_speeds()
 
         self.assertEqual(checker.err_msgs, [])
@@ -379,7 +378,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertEqual(len(checker.err_msgs), 2)
 
     def test_check_configuration_neutron(self):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.net_provider = 'neutron'
         checker.neutron_check_network_address_spaces_intersection = MagicMock()
         checker.neutron_check_segmentation_ids = MagicMock()
@@ -419,7 +418,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             mocked.assert_any_call()
 
     def test_check_configuration_nova_network(self):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.net_provider = 'nova-network'
         checker.neutron_check_network_address_spaces_intersection = MagicMock()
         checker.neutron_check_segmentation_ids = MagicMock()
@@ -461,7 +460,7 @@ class TestNetworkCheck(BaseIntegrationTest):
     @patch.object(NetworkCheck, 'check_untagged_intersection')
     @patch.object(NetworkCheck, 'check_bond_slaves_speeds')
     def test_check_interface_mapping(self, mock_untagged, mock_bond):
-        checker = NetworkCheck(self.task, {})
+        checker = NetworkCheck(self.task.cluster, {})
         checker.check_interface_mapping()
         mock_untagged.assert_called_with()
         mock_bond.assert_called_with()

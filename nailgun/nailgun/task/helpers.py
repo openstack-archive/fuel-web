@@ -273,10 +273,14 @@ class TaskHelper(object):
     @staticmethod
     def expose_network_check_error_messages(task, result, err_messages):
         if err_messages:
+            full_err_msg = u"\n".join(err_messages)
+
             task.result = result
+            task.status = consts.TASK_STATUSES.error
+            task.message = full_err_msg
+            task.progress = 100
             db().add(task)
             db().commit()
-            full_err_msg = u"\n".join(err_messages)
             raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod

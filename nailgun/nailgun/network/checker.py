@@ -33,16 +33,14 @@ from nailgun.objects.serializers.network_configuration \
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.task.helpers import TaskHelper
 
 
 class NetworkCheck(object):
 
-    def __init__(self, task, data):
+    def __init__(self, cluster, data):
         """Collect Network Groups data
         """
-        self.cluster = task.cluster
-        self.task = task
+        self.cluster = cluster
         self.data = data
         self.net_man = objects.Cluster.get_network_manager(self.cluster)
         self.net_provider = self.cluster.net_provider
@@ -70,8 +68,11 @@ class NetworkCheck(object):
                             net.update(name='admin (PXE)')
                         break
                 else:
-                    raise errors.NetworkCheckError(
-                        u"Invalid network ID: {0}".format(data_net['id']))
+                    raise errors.NetworkCheckError({
+                        'message': [
+                            "Invalid network ID: {0}".format(data_net['id'])],
+                        'result': [{"ids": [], "errors": []}]
+                    })
         # get common networking parameters
         serializer = {'neutron': NeutronNetworkConfigurationSerializer,
                       'nova_network': NovaNetworkConfigurationSerializer}
@@ -83,10 +84,11 @@ class NetworkCheck(object):
         self.err_msgs = []
 
     def expose_error_messages(self):
-        TaskHelper.expose_network_check_error_messages(
-            self.task,
-            self.result,
-            self.err_msgs)
+        if self.err_msgs:
+            raise errors.NetworkCheckError({
+                'result': self.result,
+                'message': self.err_msgs
+            })
 
     def check_untagged_intersection(self):
         """check if there are untagged networks on the same interface
@@ -328,7 +330,7 @@ class NetworkCheck(object):
             lambda n: (n["vlan_start"] is not None), self.networks))
 
         if tagged_nets:
-            if self.task.cluster.network_config.segmentation_type == 'vlan':
+            if self.cluster.network_config.segmentation_type == 'vlan':
                 # check networks tags not in Neutron L2 private VLAN ID range
                 vrange = self.network_config['vlan_range']
                 net_intersect = [name for name, vlan in tagged_nets.iteritems()
@@ -341,7 +343,10 @@ class NetworkCheck(object):
                               u"Networks VLAN tags must not intersect " \
                               u"with Neutron L2 VLAN ID range.". \
                         format(nets_with_errors)
-                    raise errors.NetworkCheckError(err_msg)
+                    raise errors.NetworkCheckError({
+                        'message': [err_msg],
+                        'result': [{"ids": [], "errors": []}]
+                    })
 
             # check networks VLAN IDs should not intersect
             net_intersect = [name for name, vlan in tagged_nets.iteritems()
@@ -350,7 +355,10 @@ class NetworkCheck(object):
                 err_msg = u"{0} networks use the same VLAN tags. " \
                           u"You should assign different VLAN tag " \
                           u"to every network.".format(", ".join(net_intersect))
-                raise errors.NetworkCheckError(err_msg)
+                raise errors.NetworkCheckError({
+                    'message': [err_msg],
+                    'result': [{"ids": [], "errors": []}]
+                })
 
     def neutron_check_network_address_spaces_intersection(self):
         """Check intersection between address spaces of all networks

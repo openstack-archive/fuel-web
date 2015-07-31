@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.serialization import jsonutils
+
 from nailgun.logger import logger
 
 
@@ -33,7 +35,11 @@ class NailgunException(Exception):
         super(NailgunException, self).__init__()
 
     def __str__(self):
+        if type(self.message) is dict:
+            return jsonutils.dumps(self.message)
         return self.message
 
     def __unicode__(self):
+        if type(self.message) is dict:
+            return jsonutils.dumps(self.message)
         return self.message

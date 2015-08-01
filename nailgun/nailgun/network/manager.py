@@ -1278,7 +1278,13 @@ class NetworkManager(object):
                     if key not in ("ip_ranges", "meta"):
                         setattr(ng_db, key, value)
 
-                notation = ng_db.meta.get("notation")
+                # If 'notation' is present in 'network_group.meta'
+                # save it in the model
+                notation = ng['meta'].get('notation')
+                if notation:
+                    ng_db.meta['notation'] = notation
+
+                notation = notation or ng_db.meta.get("notation")
                 if notation == "ip_ranges" and ng.get("ip_ranges"):
                     cls._set_ip_ranges(ng['id'], ng["ip_ranges"])
                 elif notation == "cidr" and ng.get("cidr"):

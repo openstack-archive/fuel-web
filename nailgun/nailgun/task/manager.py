@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from distutils.version import StrictVersion
 import traceback
 
@@ -748,6 +749,9 @@ class UpdateEnvironmentTaskManager(TaskManager):
 class CheckNetworksTaskManager(TaskManager):
 
     def execute(self, data, check_admin_untagged=False):
+        # Make a copy of original 'data' due to being changed by
+        # '_call_silently' method
+        _data = copy.deepcopy(data)
         locked_tasks = objects.TaskCollection.filter_by(
             None,
             cluster_id=self.cluster.id,
@@ -771,7 +775,7 @@ class CheckNetworksTaskManager(TaskManager):
         self._call_silently(
             task,
             tasks.CheckNetworksTask,
-            data,
+            _data,
             check_admin_untagged
         )
 
@@ -782,8 +786,9 @@ class CheckNetworksTaskManager(TaskManager):
         )
         if task.status == consts.TASK_STATUSES.running:
             # update task status with given data
-            data = {'status': consts.TASK_STATUSES.ready, 'progress': 100}
-            objects.Task.update(task, data)
+            objects.Task.update(
+                task,
+                {'status': consts.TASK_STATUSES.ready, 'progress': 100})
         db().commit()
         return task
 

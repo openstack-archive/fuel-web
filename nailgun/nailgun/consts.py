@@ -346,3 +346,8 @@ PROTOCOL = Enum(
     'http',
     'https',
 )
+
+NETWORK_NOTATION = Enum(
+    "ip_ranges",
+    "cidr",
+)

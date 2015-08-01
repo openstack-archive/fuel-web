@@ -19,7 +19,7 @@ from nailgun.test.base import BaseValidatorTest
 
 
 class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
-    validator = NetworkTemplateValidator
+    validator = NetworkTemplateValidator.validate
 
     def setUp(self):
         super(BaseValidatorTest, self).setUp()
@@ -50,10 +50,10 @@ class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
         }
 
 
-class NetworkTemplateValidatorTest(BaseNetworkTemplateValidatorTest):
+class TestNetworkTemplateValidator(BaseNetworkTemplateValidatorTest):
     def test_ok(self):
         dumped = jsonutils.dumps(self.nt)
-        self.validator.validate(dumped)
+        self.validator(dumped)
 
     def test_no_key_adv_net_template(self):
         context = self.get_invalid_data_context({"adv_net_template": {}})
@@ -72,21 +72,13 @@ class NetworkTemplateValidatorTest(BaseNetworkTemplateValidatorTest):
     def test_templates_not_found(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'] = {}
         context = self.get_invalid_data_context(self.nt)
-        self.assertIn(
+        self.assertEqual(
             context.exception.message,
-            ["Requested templates public, common were "
-             "not found for node group node_group_1",
-             "Requested templates common, public were "
-             "not found for node group node_group_1"])
+            "Requested templates public, common were "
+            "not found for node group node_group_1")
 
 
-class NetworkTemplateValidatorProtocolTest(BaseNetworkTemplateValidatorTest):
-    """JSON-schema validation policy:
-       1) All required properties are present;
-       2) No additional properties allowed;
-       3) Object has correct type.
-    """
-
+class TestNetworkTemplateValidatorProtocol(BaseNetworkTemplateValidatorTest):
     def test_network_scheme_required_property_transformations(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'][
             'public'].pop('transformations')
@@ -110,39 +102,39 @@ class NetworkTemplateValidatorProtocolTest(BaseNetworkTemplateValidatorTest):
     def test_network_scheme_transformations_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'][
             'public'].update({'transformations': {}})
-        self.assertRaisesInvalidType(self.nt, {}, 'array')
+        self.assertRaisesInvalidType(self.nt, "{}", "'array'")
 
     def test_network_scheme_endpoints_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'][
             'public'].update({'endpoints': {}})
-        self.assertRaisesInvalidType(self.nt, {}, 'array')
+        self.assertRaisesInvalidType(self.nt, "{}", "'array'")
 
     def test_network_scheme_roles_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'][
-            'public'].update({'roles': 1})
-        self.assertRaisesInvalidType(self.nt, 1, 'object')
+            'public']['roles'] = 1
+        self.assertRaisesInvalidType(self.nt, 1, "'object'")
 
     def test_network_scheme_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'] = 1
-        self.assertRaisesInvalidType(self.nt, 1, 'object')
+        self.assertRaisesInvalidType(self.nt, 1, "'object'")
 
     def test_nic_mapping_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['nic_mapping'] = 1
-        self.assertRaisesInvalidType(self.nt, 1, 'object')
+        self.assertRaisesInvalidType(self.nt, 1, "'object'")
 
     def test_templates_list_invalid_type(self):
         self.nt['adv_net_template']['node_group_1'][
             'templates_for_node_role'] = 1
-        self.assertRaisesInvalidType(self.nt, 1, 'object')
+        self.assertRaisesInvalidType(self.nt, 1, "'object'")
 
     def test_templates_list_invalid_type_in_values(self):
         self.nt['adv_net_template']['node_group_1'][
             'templates_for_node_role'] = {"anything": [1]}
-        self.assertRaisesInvalidType(self.nt, 1, 'string')
+        self.assertRaisesInvalidType(self.nt, 1, "'string'")
 
     def test_network_assignments_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['network_assignments'] = 1
-        self.assertRaisesInvalidType(self.nt, 1, 'object')
+        self.assertRaisesInvalidType(self.nt, 1, "'object'")
 
     def test_network_assignments_required_property_ep(self):
         self.nt['adv_net_template']['node_group_1']['network_assignments'][
@@ -177,9 +169,9 @@ class NetworkTemplateValidatorProtocolTest(BaseNetworkTemplateValidatorTest):
 
     def test_node_group_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['network_assignments'] = 1
-        self.assertRaisesInvalidType(self.nt, 1, 'object')
+        self.assertRaisesInvalidType(self.nt, 1, "'object'")
 
     def test_node_group_invalid_type_templates_for_node_role(self):
         self.nt['adv_net_template']['node_group_1'][
             'templates_for_node_role'] = 1
-        self.assertRaisesInvalidType(self.nt, 1, 'object')
+        self.assertRaisesInvalidType(self.nt, 1, "'object'")

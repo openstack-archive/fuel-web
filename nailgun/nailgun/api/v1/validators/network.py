@@ -15,6 +15,8 @@
 
 import six
 
+import netaddr
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun.api.v1.validators.json_schema.network_template import \
@@ -26,11 +28,62 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 
 
 class NetworkConfigurationValidator(BasicValidator):
+
+    allowed_notations = ['null', 'cidr', 'ip_ranges']
+
+    @staticmethod
+    def _validate_net_id(network):
+        network_id = network.get('id')
+        if not network_id:
+            raise errors.InvalidData(
+                "No 'id' param is present for '{0}' network".format(network),
+                log_message=True)
+        return network_id
+
+    @staticmethod
+    def _validate_ip_ranges(ip_ranges, network_id, ng_db):
+        if not ip_ranges and not ng_db.ip_ranges:
+            raise errors.InvalidData(
+                "No IP range was specified for network "
+                "{0}".format(network_id))
+        try:
+            if not len(ip_ranges) > 0 and isinstance(ip_ranges, list):
+                raise TypeError()
+            for ip_range in ip_ranges:
+                netaddr.IPAddress(ip_range[0])
+                netaddr.IPAddress(ip_range[1])
+        except (netaddr.AddrFormatError, IndexError, TypeError):
+            raise errors.InvalidData(
+                "Invalid IP ranges '{0}' were specified for network "
+                "{1}".format(ip_ranges, network_id))
+
+    @classmethod
+    def _validate_notation(cls, notation, network_id):
+            if notation and notation not in cls.allowed_notations:
+                raise errors.InvalidData(
+                    "Invalid notation '{0}' was specified for network "
+                    "{1}".format(notation, network_id))
+
+    @staticmethod
+    def _validate_cidr(cidr, network_id, ng_db):
+        # 'cidr' must be present either in request or in DB
+        if not cidr or not ng_db.cidr:
+            raise errors.InvalidData(
+                "No CIDR was specified for network "
+                "{0}".format(network_id))
+
+        try:
+            netaddr.IPNetwork(cidr)
+        except netaddr.AddrFormatError:
+            raise errors.InvalidData(
+                "Invalid CIDR '{0}' was specified for network "
+                "{1}".format(cidr, network_id))
 
     @classmethod
     def validate_networks_update(cls, data):
@@ -38,21 +91,31 @@ class NetworkConfigurationValidator(BasicValidator):
         if not d:
             raise errors.InvalidData(
                 "No valid data received",
-                log_message=True
-            )
+                log_message=True)
 
         networks = d.get('networks')
         if not isinstance(networks, list):
             raise errors.InvalidData(
                 "'networks' is expected to be an array",
-                log_message=True
-            )
-        for i in networks:
-            if 'id' not in i:
-                raise errors.InvalidData(
-                    "No 'id' param presents for '{0}' network".format(i),
-                    log_message=True
-                )
+                log_message=True)
+
+        for network in d.get('networks'):
+            network_id = cls._validate_net_id(network)
+
+            # Prohibit creation of network group if it's already in DB
+            ng_db = db().query(NetworkGroup).get(network_id)
+            if not ng_db:
+                continue
+
+            cidr = network.get('cidr')
+            ip_ranges = network.get("ip_ranges")
+            notation = network.get('meta', {}).get('notation', {})
+
+            cls._validate_notation(notation, network_id)
+            cls._validate_cidr(cidr, network_id, ng_db)
+            if notation == 'ip_ranges':
+                cls._validate_ip_ranges(ip_ranges, network_id, ng_db)
+
         return d
 
 

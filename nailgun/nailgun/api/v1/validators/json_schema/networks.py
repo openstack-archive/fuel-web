@@ -37,6 +37,5 @@ NETWORK = {
         'floating_range_var': {'type': 'string'},
         'ext_net_data': {'type': 'array'},
         'vips': VIPS,
-    },
-    'required': ['name']
+    }
 }

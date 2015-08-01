@@ -24,7 +24,6 @@ VIPS = {
 NETWORK = {
     'type': 'object',
     'properties': {
-        'name': {'type': 'string'},
         'cidr': base_types.NET_ADDRESS,
         'gateway': base_types.IP_ADDRESS,
         'ip_range': {'type': 'array'},

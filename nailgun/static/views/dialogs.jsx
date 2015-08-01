@@ -92,7 +92,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
             return (
-                <div className={utils.classNames(classes)} tabIndex="-1" onClick={this.closeOnLinkClick} onKeyDown={this.closeOnEscapeKey}>
+                <div className={utils.classNames(classes)} tabIndex='-1' onClick={this.closeOnLinkClick} onKeyDown={this.closeOnEscapeKey}>
                     <div className='modal-dialog'>
                         <div className='modal-content'>
                             <div className='modal-header'>

@@ -323,7 +323,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 message: messages.join(' ')
             };
         },
-        areCalсulationsPossible: function(setting) {
+        areCalculationsPossible: function(setting) {
             return _.contains(['checkbox', 'radio'], setting.type);
         },
         getValuesToCheck: function(setting, valueAttribute) {
@@ -342,7 +342,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             if (!this.props.allocatedRoles.length) return [];
             var path = this.props.makePath(groupName, settingName),
                 setting = this.props.settings.get(path);
-            if (!this.areCalсulationsPossible(setting)) return [];
+            if (!this.areCalculationsPossible(setting)) return [];
             var valueAttribute = this.props.getValueAttribute(settingName),
                 valuesToCheck = this.getValuesToCheck(setting, valueAttribute),
                 pathToCheck = this.props.makePath(path, valueAttribute),
@@ -360,7 +360,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         checkDependentSettings: function(groupName, settingName) {
             var path = this.props.makePath(groupName, settingName),
                 currentSetting = this.props.settings.get(path);
-            if (!this.areCalсulationsPossible(currentSetting)) return [];
+            if (!this.areCalculationsPossible(currentSetting)) return [];
             var dependentRestrictions = {};
             var addDependentRestrictions = _.bind(function(pathToCheck, label) {
                 var result = _.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
@@ -377,7 +377,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 _.each(group, function(setting, settingName) {
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
                     var pathToCheck = this.props.makePath(groupName, settingName);
-                    if (!this.areCalсulationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', pathToCheck).result) return;
+                    if (!this.areCalculationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', pathToCheck).result) return;
                     if (setting[this.props.getValueAttribute(settingName)] == true) {
                         addDependentRestrictions(pathToCheck, setting.label);
                     } else {

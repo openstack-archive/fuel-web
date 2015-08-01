@@ -622,8 +622,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 var data = {id: node.id, pending_roles: node.get('pending_roles')};
                 if (node.get('pending_roles').length) {
                     if (this.props.mode == 'add') return _.extend(data, {cluster_id: this.props.cluster.id, pending_addition: true});
-                } else {
-                    if (node.get('pending_addition')) return _.extend(data, {cluster_id: null, pending_addition: false});
+                } else if (node.get('pending_addition')) {
+                    return _.extend(data, {cluster_id: null, pending_addition: false});
                 }
                 return data;
             }, this));

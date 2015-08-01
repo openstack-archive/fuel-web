@@ -1177,7 +1177,6 @@ class NetworkManager(object):
                 last=r[1],
                 network_group_id=network_group_id)
             db().add(new_ip_range)
-        db().commit()
 
     @classmethod
     def create_admin_network_group(cls, cluster_id, group_id):
@@ -1277,6 +1276,14 @@ class NetworkManager(object):
                 for key, value in six.iteritems(ng):
                     if key not in ("ip_ranges", "meta"):
                         setattr(ng_db, key, value)
+
+                # If 'notation' is present in 'network_group.meta'
+                # save it in the model
+                notation = ng.get('meta', {}).get('notation')
+                if notation:
+                    _meta = ng_db.meta
+                    _meta['notation'] = notation
+                    ng_db.meta = _meta
 
                 notation = ng_db.meta.get("notation")
                 if notation == "ip_ranges" and ng.get("ip_ranges"):

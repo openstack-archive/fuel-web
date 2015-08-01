@@ -389,6 +389,38 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                          self.cluster.network_groups)[0]
         self.assertEqual(publ_ng.cidr, '199.61.0.0/24')
 
+    def test_set_ip_range(self):
+        ng_names = (consts.NETWORKS.management,
+                    consts.NETWORKS.storage,
+                    consts.NETWORKS.private)
+        for idx, ng_name in enumerate(ng_names):
+            data = self.env.neutron_networks_get(self.cluster.id).json_body
+            ng_data = filter(lambda ng: ng['name'] == ng_name,
+                             data['networks'])[0]
+
+            net_template = '99.61.{0}'.format(idx)
+            ng_data['cidr'] = net_template + '.0/24'
+            ng_data['gateway'] = net_template + '.1'
+            ng_data['meta']['notation'] = 'ip_ranges'
+            ng_data['ip_ranges'] = [
+                [net_template + '.11', net_template + '.33'],
+                [net_template + '.55', net_template + '.99']]
+
+            resp = self.env.neutron_networks_put(self.cluster.id, data)
+            self.assertEqual(200, resp.status_code)
+            task = resp.json_body
+            self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
+
+            self.db.refresh(self.cluster)
+            ng_db = filter(lambda ng: ng.name == ng_name,
+                           self.cluster.network_groups)[0]
+            self.assertEqual(ng_db.cidr, net_template + '.0/24')
+            self.assertEqual(ng_db.meta['notation'], 'ip_ranges')
+            self.assertEqual(ng_db.ip_ranges[0].first, net_template + '.11')
+            self.assertEqual(ng_db.ip_ranges[0].last, net_template + '.33')
+            self.assertEqual(ng_db.ip_ranges[1].first, net_template + '.55')
+            self.assertEqual(ng_db.ip_ranges[1].last, net_template + '.99')
+
     def test_admin_public_untagged_others_tagged(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body

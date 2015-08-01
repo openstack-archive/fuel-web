@@ -159,14 +159,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
 
             if (this.props.autoIncreaseWith) {
                 valuesToSet = newValue;
-            } else {
+            } else if (_.contains(name, 'range-start')) {
                 // if first range field
-                if (_.contains(name, 'range-start')) {
-                    valuesToModify[0] = newValue;
-                    // if end field
-                } else if (_.contains(name, 'range-end')) {
-                    valuesToModify[1] = newValue;
-                }
+                valuesToModify[0] = newValue;
+            } else if (_.contains(name, 'range-end')) {
+                // if end field
+                valuesToModify[1] = newValue;
             }
 
             this.setValue(attribute, valuesToSet, {isInteger: this.props.integerValue});

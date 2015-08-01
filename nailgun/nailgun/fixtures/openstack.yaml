@@ -320,7 +320,7 @@
             ip_range: ["172.16.0.2", "172.16.0.127"]
             vlan_start: null
             use_gateway: true
-            notation: "ip_ranges"
+            notation: "cidr"
             render_type: null
             render_addr_mask: "public"
             map_priority: 1
@@ -368,7 +368,7 @@
             ip_range: ["172.16.0.2", "172.16.0.126"]
             vlan_start: null
             use_gateway: true
-            notation: "ip_ranges"
+            notation: "cidr"
             render_type: null
             render_addr_mask: "public"
             map_priority: 1

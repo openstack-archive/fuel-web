@@ -15,6 +15,8 @@
 
 import six
 
+import netaddr
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun.api.v1.validators.json_schema.network_template import \
@@ -26,6 +28,7 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 
@@ -47,12 +50,52 @@ class NetworkConfigurationValidator(BasicValidator):
                 "'networks' is expected to be an array",
                 log_message=True
             )
-        for i in networks:
-            if 'id' not in i:
+
+        ng_ids = []
+        for ng in networks:
+            if 'id' not in ng:
                 raise errors.InvalidData(
-                    "No 'id' param presents for '{0}' network".format(i),
+                    "No 'id' param presents for '{0}' network".format(ng),
                     log_message=True
                 )
+            ng_ids.append(ng['id'])
+
+        ngs_db = db().query(NetworkGroup).filter(
+            NetworkGroup.id.in_(ng_ids))
+        ng_db_by_id = dict((ng.id, ng) for ng in ngs_db)
+
+        for ng in networks:
+            if ng['id'] not in ng_db_by_id:
+                continue
+            ng_db = ng_db_by_id[ng['id']]
+            if 'notation' in ng.get('meta', {}):
+                notation = ng['meta']['notation']
+            else:
+                notation = ng_db.meta.get('notation')
+            if notation == 'cidr' and ('cidr' in ng or not ng_db.cidr):
+                try:
+                    netaddr.IPNetwork(ng.get('cidr'))
+                except netaddr.AddrFormatError:
+                    raise errors.InvalidData(
+                        "Invalid CIDR '{0}' was specified for network "
+                        "{1}".format(ng.get('cidr'), ng['id']))
+            elif notation == 'ip_ranges' and \
+                    ('ip_ranges' in ng or not ng_db.ip_ranges):
+                try:
+                    if not ng.get('ip_ranges'):
+                        raise TypeError()
+                    for ip_range in ng.get('ip_ranges'):
+                        netaddr.IPAddress(ip_range[0])
+                        netaddr.IPAddress(ip_range[1])
+                except (netaddr.AddrFormatError, IndexError, TypeError):
+                    raise errors.InvalidData(
+                        "Invalid IP ranges '{0}' were specified for network "
+                        "{1}".format(ng.get('ip_ranges'), ng['id']))
+            elif notation is not None:
+                raise errors.InvalidData(
+                    "Invalid notation '{0}' was specified for network "
+                    "{1}".format(notation, ng['id']))
+
         return d
 
 

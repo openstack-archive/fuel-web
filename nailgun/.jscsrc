@@ -37,6 +37,5 @@
     "disallowYodaConditions": true,
     "disallowNewlineBeforeBlockStatements": true,
     "validateLineBreaks": "LF",
-    "validateParameterSeparator": ", ",
-    "validateQuoteMarks": {"mark": "'", "escape": true}
+    "validateParameterSeparator": ", "
 }

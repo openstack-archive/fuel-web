@@ -19,41 +19,69 @@ from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun.api.v1.validators.json_schema.network_template import \
     NETWORK_TEMPLATE
-
+from nailgun.api.v1.validators.json_schema import networks as network_schema
 from nailgun import consts
-
-from nailgun import objects
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
+from nailgun import objects
 
 
 class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_update(cls, data):
-        d = cls.validate_json(data)
-        if not d:
-            raise errors.InvalidData(
-                "No valid data received",
-                log_message=True
-            )
+        valid_data = cls.validate_json(data)
+        cls.validate_schema(valid_data, network_schema.NETWORKS)
 
-        networks = d.get('networks')
-        if not isinstance(networks, list):
+        missing_network_ids, ngs_db = list(), list()
+        for network_id in [net['id'] for net in valid_data.get('networks')]:
+            ng_db = db().query(NetworkGroup).get(network_id)
+            if not ng_db:
+                missing_network_ids.append(network_id)
+            else:
+                ngs_db.append(ng_db)
+
+        if missing_network_ids:
             raise errors.InvalidData(
-                "'networks' is expected to be an array",
-                log_message=True
-            )
-        for i in networks:
-            if 'id' not in i:
-                raise errors.InvalidData(
-                    "No 'id' param presents for '{0}' network".format(i),
-                    log_message=True
-                )
-        return d
+                "Networks with ID's {0} are not present "
+                "in the database".format(missing_network_ids))
+
+        ng_db_by_id = dict((ng.id, ng) for ng in ngs_db)
+        for network in valid_data.get('networks'):
+
+            network_id = network['id']
+            cidr = network.get('cidr')
+            ip_ranges = network.get('ip_ranges')
+            notation = network.get('meta', {}).get('notation')
+
+            # If ranges are empty or not set and notation is not set, no
+            # validation is needed
+            if ip_ranges in [None, []] and cidr in [None, ''] and notation is \
+                    None:
+                continue
+
+            # 'notation' is always taken either from request or from DB
+            if 'notation' not in network.get('meta', {}):
+                notation = ng_db_by_id[network_id].meta.get('notation')
+
+            # Depending on notation required parameters must be either in
+            # the request or DB
+            if notation == 'ip_ranges':
+                if ip_ranges is None and not ng_db.meta.get('ip_ranges'):
+                    raise errors.InvalidData(
+                        "No IP ranges were specified for network "
+                        "{0}".format(network_id))
+
+            elif notation in ['cidr', 'ip_ranges']:
+                if cidr is None and not ng_db.meta.get('cidr'):
+                    raise errors.InvalidData(
+                        "No CIDR was specified for network "
+                        "{0}".format(network_id))
+
+        return valid_data
 
 
 class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
@@ -386,7 +414,7 @@ class NetAssignmentValidator(BasicValidator):
 
 class NetworkGroupValidator(BasicValidator):
 
-    single_schema = ng_scheme.single_scheme
+    single_schema = ng_scheme.NETWORK_GROUP
 
     @classmethod
     def validate(cls, data):

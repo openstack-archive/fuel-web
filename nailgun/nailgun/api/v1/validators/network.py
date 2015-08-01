@@ -15,6 +15,8 @@
 
 import six
 
+import netaddr
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun.api.v1.validators.json_schema.network_template import \
@@ -26,11 +28,14 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 
 
 class NetworkConfigurationValidator(BasicValidator):
+
+    allowed_notations = ['null', 'cidr', 'ip_ranges']
 
     @classmethod
     def validate_networks_update(cls, data):
@@ -47,12 +52,50 @@ class NetworkConfigurationValidator(BasicValidator):
                 "'networks' is expected to be an array",
                 log_message=True
             )
-        for i in networks:
-            if 'id' not in i:
+
+        for ng in networks:
+            # 'id' must be defined for each network
+            _id = ng.get('id')
+            if not _id:
                 raise errors.InvalidData(
-                    "No 'id' param presents for '{0}' network".format(i),
-                    log_message=True
-                )
+                    "No 'id' param is present for '{0}' network".format(ng),
+                    log_message=True)
+
+            # Prohibit creation of network group if it's already in DB
+            ng_db = db().query(NetworkGroup).get(_id)
+            if not ng_db:
+                continue
+
+            # Fetch fields which are going to be validated
+            cidr = ng.get('cidr')
+            ip_ranges = ng.get("ip_ranges")
+            notation = ng.get('meta', {}).get('notation', {})
+
+            if notation and notation not in cls.allowed_notations:
+                raise errors.InvalidData(
+                    "Invalid notation '{0}' was specified for network "
+                    "{1}".format(notation, _id))
+
+            if cidr:
+                try:
+                    netaddr.IPNetwork(cidr)
+                except netaddr.AddrFormatError:
+                    raise errors.InvalidData(
+                        "Invalid CIDR '{0}' was specified for network "
+                        "{1}".format(cidr, _id))
+
+            if ip_ranges:
+                try:
+                    if not len(ip_ranges) > 0 and isinstance(ip_ranges, list):
+                        raise TypeError()
+                    for ip_range in ip_ranges:
+                        netaddr.IPAddress(ip_range[0])
+                        netaddr.IPAddress(ip_range[1])
+                except (netaddr.AddrFormatError, IndexError, TypeError):
+                    raise errors.InvalidData(
+                        "Invalid IP ranges '{0}' were specified for network "
+                        "{1}".format(ip_ranges, _id))
+
         return d
 
 

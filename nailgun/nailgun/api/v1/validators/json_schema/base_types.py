@@ -20,8 +20,8 @@ NULL = {
     'type': 'null'
 }
 
-BOOLEAN = {
-    'type': 'boolean'
+NULLABLE_BOOLEAN = {
+    'type': ['boolean', 'null']
 }
 
 NULLABLE_STRING = {

@@ -19,7 +19,7 @@ from nailgun.test.base import BaseValidatorTest
 
 
 class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
-    validator = NetworkTemplateValidator
+    validator = NetworkTemplateValidator.validate
 
     def setUp(self):
         super(BaseValidatorTest, self).setUp()
@@ -50,10 +50,10 @@ class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
         }
 
 
-class NetworkTemplateValidatorTest(BaseNetworkTemplateValidatorTest):
+class TestNetworkTemplateValidator(BaseNetworkTemplateValidatorTest):
     def test_ok(self):
         dumped = jsonutils.dumps(self.nt)
-        self.validator.validate(dumped)
+        self.validator(dumped)
 
     def test_no_key_adv_net_template(self):
         context = self.get_invalid_data_context({"adv_net_template": {}})
@@ -80,13 +80,7 @@ class NetworkTemplateValidatorTest(BaseNetworkTemplateValidatorTest):
              "not found for node group node_group_1"])
 
 
-class NetworkTemplateValidatorProtocolTest(BaseNetworkTemplateValidatorTest):
-    """JSON-schema validation policy:
-       1) All required properties are present;
-       2) No additional properties allowed;
-       3) Object has correct type.
-    """
-
+class TestNetworkTemplateValidatorProtocol(BaseNetworkTemplateValidatorTest):
     def test_network_scheme_required_property_transformations(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'][
             'public'].pop('transformations')
@@ -119,7 +113,7 @@ class NetworkTemplateValidatorProtocolTest(BaseNetworkTemplateValidatorTest):
 
     def test_network_scheme_roles_invalid_type(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'][
-            'public'].update({'roles': 1})
+            'public']['roles'] = 1
         self.assertRaisesInvalidType(self.nt, 1, 'object')
 
     def test_network_scheme_invalid_type(self):

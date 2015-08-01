@@ -1434,14 +1434,18 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
 
 
 class BaseValidatorTest(TestCase):
-
+    """JSON-schema validation policy:
+       1) All required properties are present;
+       2) No additional properties allowed;
+       3) Object has correct type.
+    """
     validator = None
 
     def get_invalid_data_context(self, obj):
         json_obj = jsonutils.dumps(obj)
 
         with self.assertRaises(errors.InvalidData) as context:
-            self.validator.validate(json_obj)
+            self.validator(json_obj)
 
         return context
 
@@ -1464,12 +1468,57 @@ class BaseValidatorTest(TestCase):
             "'{0}' is a required property".format(key),
             context.exception.message)
 
-    def assertRaisesInvalidType(self, obj, value, expected_type):
+    def assertRaisesInvalidType(self, obj, value, expected_value):
         context = self.get_invalid_data_context(obj)
         self.assertIn(
             "Failed validating 'type' in schema",
             context.exception.message)
-
         self.assertIn(
-            "{0} is not of type '{1}'".format(value, expected_type),
+            "{0} is not of type {1}".format(value, expected_value),
+            context.exception.message)
+
+    def assertRaisesInvalidAnyOf(self, obj, expected_value):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "Failed validating 'anyOf' in schema",
+            context.exception.message)
+
+        err_msg = "{0} is not valid under any of the given schemas"
+        self.assertIn(
+            err_msg.format(expected_value), context.exception.message)
+
+    def assertRaisesInvalidEnum(self, obj, value, expected_value):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "Failed validating 'enum' in schema",
+            context.exception.message)
+        self.assertIn(
+            "{0} is not one of {1}".format(value, expected_value),
+            context.exception.message)
+
+    def assertRaisesTooLong(self, obj, stringified_values):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "{0} is too long".format(stringified_values),
+            context.exception.message)
+
+    def assertRaisesTooShort(self, obj, stringified_values):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "{0} is too short".format(stringified_values),
+            context.exception.message)
+
+    def assertRaisesNonUnique(self, obj, stringified_values):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "{0} has non-unique elements".format(stringified_values),
+            context.exception.message)
+
+    def assertRaisesNotMatchPattern(self, obj, stringified_values):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "Failed validating 'pattern' in schema",
+            context.exception.message)
+        self.assertIn(
+            "{0} does not match".format(stringified_values),
             context.exception.message)

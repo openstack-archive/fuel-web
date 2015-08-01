@@ -14,29 +14,57 @@
 
 from nailgun.api.v1.validators.json_schema import base_types
 
-
-VIPS = {
-    'type': 'array',
-    'uniqueItems': True,
-    'items': {'type': 'string', "pattern": "^[a-zA-Z_]+$"},
+NETWORK = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "cidr": base_types.NULLABLE_NET_ADDRESS,
+        "gateway": base_types.NULLABLE_IP_ADDRESS,
+        "ip_range": {"type": "array"},
+        "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
+        "use_gateway": {"type": "boolean"},
+        "notation": base_types.NULLABLE_STRING,
+        "render_type": base_types.NULLABLE_STRING,
+        "render_addr_mask": base_types.NULLABLE_STRING,
+        "unmovable": base_types.NULLABLE_BOOLEAN,
+        "map_priority": {"type": "integer"},
+        "configurable": {"type": "boolean"},
+        "floating_range_var": {"type": "string"},
+        "ext_net_data": {"type": "array"},
+        "vips": {
+            "type": "array",
+            "uniqueItems": True,
+            "items": {"type": "string", "pattern": "^[a-zA-Z_]+$"}
+        }
+    },
+    "additionalProperties": False
 }
 
-NETWORK = {
-    'type': 'object',
-    'properties': {
-        'name': {'type': 'string'},
-        'cidr': base_types.NET_ADDRESS,
-        'gateway': base_types.IP_ADDRESS,
-        'ip_range': {'type': 'array'},
-        'vlan_start': {'type': ['null', 'number']},
-        'use_gateway': {'type': 'boolean'},
-        'notation': {'type': ['string', 'null']},
-        'render_type': {'type': ['null', 'string']},
-        'map_priority': {'type': 'number'},
-        'configurable': {'type': 'boolean'},
-        'floating_range_var': {'type': 'string'},
-        'ext_net_data': {'type': 'array'},
-        'vips': VIPS,
+NETWORKS = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "networks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "group_id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "gateway": base_types.NULLABLE_IP_ADDRESS,
+                    "cidr": base_types.NULLABLE_NET_ADDRESS,
+                    "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
+                    "ip_ranges": {"type": "array"},
+                    "meta": NETWORK
+                },
+                "required": ["id"],
+                "additionalProperties": False
+            }
+        }
     },
-    'required': ['name']
+    "required": [
+        "networks"
+    ],
 }

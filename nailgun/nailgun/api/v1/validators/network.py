@@ -15,8 +15,11 @@
 
 import six
 
+import netaddr
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
+from nailgun.api.v1.validators.json_schema import networks as network_schema
 from nailgun.api.v1.validators.json_schema.network_template import \
     NETWORK_TEMPLATE
 
@@ -26,33 +29,93 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 
 
 class NetworkConfigurationValidator(BasicValidator):
 
+    allowed_notations = [None, 'cidr', 'ip_ranges']
+
+    @staticmethod
+    def _validate_ip_ranges(ip_ranges, network_id):
+        try:
+            if not len(ip_ranges) > 0 and isinstance(ip_ranges, list):
+                raise TypeError()
+            for ip_range in ip_ranges:
+                netaddr.IPAddress(ip_range[0])
+                netaddr.IPAddress(ip_range[1])
+        except (netaddr.AddrFormatError, IndexError, TypeError):
+            raise errors.InvalidData(
+                "Invalid IP ranges '{0}' were specified for network "
+                "{1}".format(ip_ranges, network_id))
+
+    @classmethod
+    def _validate_notation(cls, notation, network_id):
+            if notation and notation not in cls.allowed_notations:
+                raise errors.InvalidData(
+                    "Invalid notation '{0}' was specified for network "
+                    "{1}".format(notation, network_id))
+
+    @staticmethod
+    def _validate_cidr(cidr, network_id):
+        try:
+            netaddr.IPNetwork(cidr)
+        except (netaddr.AddrFormatError, TypeError):
+            raise errors.InvalidData(
+                "Invalid CIDR '{0}' was specified for network "
+                "{1}".format(cidr, network_id))
+
     @classmethod
     def validate_networks_update(cls, data):
         d = cls.validate_json(data)
-        if not d:
-            raise errors.InvalidData(
-                "No valid data received",
-                log_message=True
-            )
+        cls.validate_schema(d, network_schema.NETWORKS)
 
-        networks = d.get('networks')
-        if not isinstance(networks, list):
-            raise errors.InvalidData(
-                "'networks' is expected to be an array",
-                log_message=True
-            )
-        for i in networks:
-            if 'id' not in i:
-                raise errors.InvalidData(
-                    "No 'id' param presents for '{0}' network".format(i),
-                    log_message=True
-                )
+        for network in d.get('networks'):
+
+            network_id = network['id']
+            # Prohibit creation of network group if it's not in DB
+            ng_db = db().query(NetworkGroup).get(network_id)
+            if not ng_db:
+                continue
+
+            cidr = network.get('cidr')
+            ip_ranges = network.get('ip_ranges')
+            notation = network.get('meta', {}).get('notation')
+
+            # If ranges are empty or not set and notation is not set, no
+            # validation is needed
+            if ip_ranges in [None, []] and cidr in [None, ''] and notation is None:
+                continue
+
+            # 'notation' is always taken either from request or from DB
+            if 'notation' in network.get('meta', {}):
+                cls._validate_notation(notation, network_id)
+            else:
+                notation = ng_db.meta.get('notation')
+
+            if 'cidr' in network:
+                cls._validate_cidr(cidr, network_id)
+
+            if 'ip_ranges' in network:
+                cls._validate_ip_ranges(ip_ranges, network_id)
+
+            # Depending on notation required parameters must be either in
+            # the request or DB
+            # if notation in ['cidr', 'ip_ranges']:
+            if notation == 'ip_ranges':
+                if ip_ranges is None and not ng_db.meta.get('ip_ranges'):
+                    raise errors.InvalidData(
+                        "No IP ranges were specified for network "
+                        "{0}".format(network_id))
+
+            elif notation == 'cidr':
+                if cidr is None and not ng_db.meta.get('cidr'):
+                    raise errors.InvalidData(
+                        "No CIDR was specified for network "
+                        "{0}".format(network_id))
+
         return d
 
 

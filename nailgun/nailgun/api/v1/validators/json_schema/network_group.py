@@ -13,7 +13,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.json_schema import base_types
-
+from nailgun.api.v1.validators.json_schema import networks
 
 single_scheme = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -28,6 +28,6 @@ single_scheme = {
         "cidr": base_types.NET_ADDRESS,
         "gateway": base_types.NULLABLE_IP_ADDRESS,
         "group_id": base_types.NULLABLE_ID,
-        "meta": {"type": "object"}
+        "meta": networks.NETWORK
     }
 }

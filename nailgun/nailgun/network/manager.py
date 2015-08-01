@@ -67,7 +67,7 @@ class NetworkManager(object):
             last=str(new_cidr[-2]))
 
         db().add(ip_range)
-        db().commit()
+        db().flush()
 
     @classmethod
     def get_admin_network_group_id(cls, node_id=None):
@@ -1179,7 +1179,6 @@ class NetworkManager(object):
                 last=r[1],
                 network_group_id=network_group_id)
             db().add(new_ip_range)
-        db().commit()
 
     @classmethod
     def create_admin_network_group(cls, cluster_id, group_id):
@@ -1273,23 +1272,33 @@ class NetworkManager(object):
 
                 ng_db = db().query(NetworkGroup).get(ng['id'])
 
-                # NOTE: Skip the ip_ranges key because it is intersect
+                # NOTE: Skip the ip_ranges key because it intersects
                 #       with the NetworkGroup.ip_ranges attribute that
-                #       is a relation.
+                #       is a relation. Skip meta as only certain fields
+                #       can be changed there.
                 for key, value in six.iteritems(ng):
                     if key not in ("ip_ranges", "meta"):
                         setattr(ng_db, key, value)
 
-                notation = ng_db.meta.get("notation")
-                if notation == "ip_ranges" and ng.get("ip_ranges"):
-                    cls._set_ip_ranges(ng['id'], ng["ip_ranges"])
-                elif notation == "cidr" and ng.get("cidr"):
-                    if ng_db.gateway is not None:
-                        use_gateway = True
-                    else:
-                        use_gateway = False
-                    cls.update_range_mask_from_cidr(ng_db, ng["cidr"],
-                                                    use_gateway=use_gateway)
+                # If 'notation' is present in 'network_group.meta'
+                # save it in the model.
+                if 'notation' in ng.get('meta', {}):
+                    notation = ng['meta']['notation']
+                    _meta = dict(ng_db.meta)
+                    _meta['notation'] = notation
+                    ng_db.meta = _meta
+                else:
+                    notation = ng_db.meta.get("notation")
+
+                if notation == "ip_ranges":
+                    ip_ranges = ng.get("ip_ranges") or \
+                                [(r.first, r.last) for r in ng_db.ip_ranges]
+                    cls._set_ip_ranges(ng['id'], ip_ranges)
+                elif notation == "cidr":
+                    use_gateway = ng_db.gateway is not None
+                    cidr = ng["cidr"] or ng_db.cidr
+                    cls.update_range_mask_from_cidr(
+                        ng_db, cidr, use_gateway=use_gateway)
 
                 if notation:
                     cls.cleanup_network_group(ng_db)

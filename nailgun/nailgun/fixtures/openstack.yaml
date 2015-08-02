@@ -330,7 +330,8 @@
             cidr: "192.168.0.0/24"
             vlan_start: 101
             use_gateway: false
-            notation: "cidr"
+            ip_range: ["192.168.0.2", "192.168.0.254"]
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "internal"
             map_priority: 2
@@ -340,7 +341,8 @@
             cidr: "192.168.1.0/24"
             vlan_start: 102
             use_gateway: false
-            notation: "cidr"
+            ip_range: ["192.168.1.1", "192.168.1.254"]
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "storage"
             map_priority: 2
@@ -379,7 +381,8 @@
             cidr: "192.168.0.0/24"
             vlan_start: 101
             use_gateway: false
-            notation: "cidr"
+            ip_range: ["192.168.0.2", "192.168.0.254"]
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "internal"
             map_priority: 2
@@ -389,7 +392,8 @@
             cidr: "192.168.1.0/24"
             vlan_start: 102
             use_gateway: false
-            notation: "cidr"
+            ip_range: ["192.168.1.2", "192.168.1.254"]
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "storage"
             map_priority: 2
@@ -409,7 +413,8 @@
             cidr: "192.168.2.0/24"
             vlan_start: 103
             use_gateway: false
-            notation: "cidr"
+            ip_range: ["192.168.2.1", "192.168.2.126"]
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: null
             map_priority: 2
@@ -419,7 +424,8 @@
             cidr: "192.168.2.0/24"
             vlan_start: 103
             use_gateway: false
-            notation: "cidr"
+            ip_range: ["192.168.2.130", "192.168.2.254"]
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: null
             map_priority: 2

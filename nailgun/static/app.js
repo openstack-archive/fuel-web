@@ -64,34 +64,40 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             _.bindAll(this);
         },
         // pre-route hook
-        before: function(currentUrl) {
+        before: function(currentRouteName) {
+            var currentUrl = Backbone.history.getHash();
             var preventRouting = false;
-            var specialRoutes = [
-                {url: 'login', condition: function() {
-                    var result = app.version.get('auth_required') && !app.user.get('authenticated');
-                    if (result) {
-                        var url = Backbone.history.getHash();
-                        if (url != 'login' && url != 'logout') app.router.returnUrl = url;
-                    }
-                    return result;
-                }},
-                {url: 'welcome', condition: function(previousUrl) {
-                    return previousUrl != 'logout' && !app.settings.get('statistics.user_choice_saved.value');
-                }}
-            ];
-            _.each(specialRoutes, function(route) {
-                if (route.condition(currentUrl)) {
-                    if (currentUrl != route.url) {
+            // remove trailing slash
+            if (_.endsWith(currentUrl, '/')) {
+                this.navigate(currentUrl.substr(0, currentUrl.length - 1), {trigger: true, replace: true});
+                preventRouting = true;
+            }
+            // handle special routes
+            if (!preventRouting) {
+                var specialRoutes = [
+                    {name: 'login', condition: function() {
+                        var result = app.version.get('auth_required') && !app.user.get('authenticated');
+                        if (result && currentUrl != 'login' && currentUrl != 'logout') app.router.returnUrl = currentUrl;
+                        return result;
+                    }},
+                    {name: 'welcome', condition: function(previousUrl) {
+                        return previousUrl != 'logout' && !app.settings.get('statistics.user_choice_saved.value');
+                    }}
+                ];
+                _.each(specialRoutes, function(route) {
+                    if (route.condition(currentRouteName)) {
+                        if (currentRouteName != route.name) {
+                            preventRouting = true;
+                            this.navigate(route.name, {trigger: true, replace: true});
+                        }
+                        return false;
+                    } else if (currentRouteName == route.name) {
                         preventRouting = true;
-                        this.navigate(route.url, {trigger: true, replace: true});
+                        this.navigate('', {trigger: true});
+                        return false;
                     }
-                    return false;
-                } else if (currentUrl == route.url) {
-                    preventRouting = true;
-                    this.navigate('', {trigger: true});
-                    return false;
-                }
-            }, this);
+                }, this);
+            }
             return !preventRouting;
         },
         // routes

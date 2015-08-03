@@ -598,3 +598,50 @@ def upgrade_cluster_attributes_6_0_to_6_1(connection):
             update_query,
             editable=jsonutils.dumps(attributes),
             attr_id=attr_id)
+
+
+def cleanup_conditions_neutron_mellanox(attrs):
+    """Remove '?' operator from condition in 'neutron_mellanox' group
+    """
+    values = attrs['neutron_mellanox']['plugin']['values']
+    for value in values:
+        if 'restrictions' in value:
+            value['restrictions'] = [ remove_question_operator(item)
+                for item in value['restrictions'] ]
+
+    return attrs
+
+
+def cleanup_conditions_nsx_plugin(attrs):
+    """Remove '?' operator from condition in 'neutron_mellanox' group
+    """
+    items = attrs['nsx_plugin']['metadata']['restrictions']
+    for item in items:
+        if 'condition' in item and isinstance(item['condition'], basestring):
+            item['condition'] = remove_question_operator(item['condition'])
+
+    return attrs
+
+
+def upgrade_cluster_conditions_6_1_to_7_0(attrs):
+    """Remove '?' operator from expressions
+    """
+    attrs = cleanup_conditions_neutron_mellanox(attrs)
+    attrs = cleanup_conditions_nsx_plugin(attrs)
+
+    return attrs
+
+
+def upgrade_cluster_attributes_6_1_to_7_0(connection):
+    select_query = text("""SELECT id, editable FROM attributes""")
+    update_query = text(
+        """UPDATE attributes SET editable = :editable WHERE id = :attr_id""")
+
+    for attr_id, editable in connection.execute(select_query):
+        attributes = jsonutils.loads(editable)
+        attributes = upgrade_cluster_conditions_6_1_to_7_0(attributes)
+
+        connection.execute(
+            update_query,
+            editable=jsonutils.dumps(attributes),
+            attr_id=attr_id)

@@ -37,6 +37,7 @@ from nailgun.extensions.consts import extensions_migration_buffer_table_name
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
 from nailgun.utils.migration import upgrade_release_set_deployable_false
+from nailgun.utils.migration import upgrade_cluster_attributes_6_1_to_7_0
 
 
 task_names_old = (
@@ -100,6 +101,7 @@ def upgrade():
     upgrade_node_labels()
     extend_segmentation_type()
     network_groups_name_upgrade()
+    upgrade_data()
 
 
 def downgrade():
@@ -748,3 +750,9 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def upgrade_data():
+    connection = op.get_bind()
+
+    upgrade_cluster_attributes_6_1_to_7_0(connection)

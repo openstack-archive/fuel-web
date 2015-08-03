@@ -103,11 +103,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             {this.renderTitle(title)}
                         </div>
                     }
-                    {(failedDeploymentTask || isOperational || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask) &&
-                        <DeploymentResult cluster={cluster} />
-                    }
-                    {isOperational && !runningDeploymentTask &&
-                        <HorizonBlock cluster={cluster} />
+                    {!runningDeploymentTask &&
+                        [
+                            (failedDeploymentTask || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask || isOperational) &&
+                                <DeploymentResult cluster={cluster} />,
+                            isOperational && <HorizonBlock cluster={cluster} />
+                        ]
                     }
                     {release.get('state') == 'unavailable' &&
                         <div className='alert global-alert alert-warning'>

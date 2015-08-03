@@ -268,6 +268,8 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'environment_version':
+                    n.cluster.release.environment_version,
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,
@@ -720,6 +722,8 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'environment_version':
+                    n.cluster.release.environment_version,
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,
@@ -1187,6 +1191,8 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'environment_version':
+                    n.cluster.release.environment_version,
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,

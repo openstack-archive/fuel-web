@@ -122,6 +122,13 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             kernal_params = self.attributes.get('kernel_params', {}) \
                 .get('kernel', {}).get('value')
 
+            cloud_init_templates = {}
+            for k in ('boothook', 'cloud_config', 'meta-data'):
+                cloud_init_templates[k] = '{0}_fuel_{1}_{2}.jinja2'.format(
+                    k, node_db.cluster.release.environment_version,
+                    node_db.cluster.release.operating_system.lower())
+            self.assertEqual(node['ks_meta']['cloud_init_templates'],
+                             cloud_init_templates)
             self.assertEqual(node['uid'], node_db.uid)
             self.assertEqual(node['power_address'], node_db.ip)
             self.assertEqual(node['name'], "node-{0}".format(node_db.id))

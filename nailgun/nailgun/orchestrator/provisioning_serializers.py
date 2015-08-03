@@ -83,6 +83,9 @@ class ProvisioningSerializer(object):
     @classmethod
     def serialize_node(cls, cluster_attrs, node):
         """Serialize a single node."""
+        cloud_init_templates_suffix = "{0}_{1}".format(
+            node.cluster.release.environment_version,
+            node.cluster.release.operating_system.lower())
         serialized_node = {
             'uid': node.uid,
             'power_address': node.ip,
@@ -108,6 +111,14 @@ class ProvisioningSerializer(object):
                     'ks_spaces': node_extension_call('get_node_volumes', node),
                     'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
+                'cloud_init_templates': {
+                    'boothook': 'boothook_fuel_{0}.jinja2'.format(
+                        cloud_init_templates_suffix),
+                    'cloud_config': 'cloud_config_fuel_{0}.jinja2'.format(
+                        cloud_init_templates_suffix),
+                    'meta-data': 'meta-data_fuel_{0}.jinja2'.format(
+                        cloud_init_templates_suffix),
+                },
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
                 'puppet_enable': 0,

@@ -41,6 +41,14 @@ class TestHandlers(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestHandlers, self).tearDown()
 
+    def _get_cloud_init_templates_serialized(self, node_obj):
+        cloud_init_templates = {}
+        for k in ('boothook', 'cloud_config', 'meta-data'):
+            cloud_init_templates[k] = '{0}_fuel_{1}_{2}.jinja2'.format(
+                k, node_obj.cluster.release.environment_version,
+                node_obj.cluster.release.operating_system.lower())
+        return cloud_init_templates
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
@@ -268,6 +276,8 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'cloud_init_templates':
+                    self._get_cloud_init_templates_serialized(n),
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,
@@ -721,6 +731,8 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'cloud_init_templates':
+                    self._get_cloud_init_templates_serialized(n),
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,
@@ -1189,6 +1201,8 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'cloud_init_templates':
+                    self._get_cloud_init_templates_serialized(n),
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,

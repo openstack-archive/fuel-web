@@ -108,6 +108,7 @@ class ProvisioningSerializer(object):
                     'ks_spaces': node_extension_call('get_node_volumes', node),
                     'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
+                'environment_version': node.cluster.release.environment_version,
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
                 'puppet_enable': 0,

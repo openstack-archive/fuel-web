@@ -26,6 +26,7 @@ blank = urwid.Divider()
 
 VERSION_YAML_FILE = '/etc/nailgun/version.yaml'
 FUEL_BOOTSTRAP_IMAGE_CONF = '/etc/fuel-bootstrap-image.conf'
+BOOTSTRAP_FLAVOR_KEY = 'BOOTSTRAP/flavor'
 
 
 class bootstrapimg(urwid.WidgetWrap):
@@ -38,10 +39,12 @@ class bootstrapimg(urwid.WidgetWrap):
         self.distro = 'ubuntu'
         self._distro_release = None
         self._mos_version = None
+        self._bootstrap_flavor = None
 
         #UI Text
         self.header_content = ["Bootstrap image configuration"]
         fields = (
+            'flavor',
             'MIRROR_DISTRO',
             'MIRROR_MOS',
             'HTTP_PROXY',
@@ -54,6 +57,11 @@ class bootstrapimg(urwid.WidgetWrap):
                 mos_version=self.mos_version,
                 distro_release=self.distro_release)
         self.defaults = {
+            BOOTSTRAP_FLAVOR_KEY: {
+                "label": "Flavor",
+                "tooltip": "",
+                "value": "radio",
+                "choices": ["CentOS", "Ubuntu"]},
             "BOOTSTRAP/MIRROR_DISTRO": {
                 "label": "Ubuntu mirror",
                 "tooltip": "Ubuntu APT repo URL",
@@ -97,7 +105,13 @@ class bootstrapimg(urwid.WidgetWrap):
     def responses(self):
         ret = dict()
         for index, fieldname in enumerate(self.fields):
-            if fieldname != 'blank':
+            if fieldname == 'blank':
+                pass
+            elif fieldname == BOOTSTRAP_FLAVOR_KEY:
+                rb_group = self.edits[index].rb_group
+                flavor = 'centos' if rb_group[0].state else 'ubuntu'
+                ret[fieldname] = flavor
+            else:
                 ret[fieldname] = self.edits[index].get_edit_text()
         return ret
 
@@ -152,6 +166,23 @@ class bootstrapimg(urwid.WidgetWrap):
     def cancel(self, button):
         ModuleHelper.cancel(self, button)
 
+    def _ui_set_bootstrap_flavor(self):
+        rb_index = self.fields.index(BOOTSTRAP_FLAVOR_KEY)
+        is_ubuntu = self._bootstrap_flavor is not None and \
+            'ubuntu' in self._bootstrap_flavor
+        try:
+            rb_group = self.edits[rb_index].rb_group
+            rb_group[0].set_state(not is_ubuntu)
+            rb_group[1].set_state(is_ubuntu)
+        except AttributeError:
+            # the UI hasn't been initalized yet
+            pass
+
+    def _set_bootstrap_flavor(self, flavor):
+        is_ubuntu = flavor is not None and 'ubuntu' in flavor.lower()
+        self._bootstrap_flavor = 'ubuntu' if is_ubuntu else 'centos'
+        self._ui_set_bootstrap_flavor()
+
     def load(self):
         #Read in yaml
         defaultsettings = Settings().read(self.parent.defaultsettingsfile)
@@ -160,14 +191,19 @@ class bootstrapimg(urwid.WidgetWrap):
 
         for setting in self.defaults:
             try:
-                if "/" in setting:
+                if BOOTSTRAP_FLAVOR_KEY == setting:
+                    section, key = BOOTSTRAP_FLAVOR_KEY.split('/')
+                    flavor = oldsettings[section][key]
+                    self._set_bootstrap_flavor(flavor)
+                elif "/" in setting:
                     part1, part2 = setting.split("/")
                     self.defaults[setting]["value"] = oldsettings[part1][part2]
                 else:
                     self.defaults[setting]["value"] = oldsettings[setting]
-            except Exception:
-                log.warning("No setting named %s found." % setting)
-                continue
+            except KeyError:
+                log.warning("no setting named {0} found.", setting)
+            except Exception as e:
+                log.warning("unexpected error: {0}", e.message)
         return oldsettings
 
     def save(self, responses):
@@ -238,5 +274,8 @@ class bootstrapimg(urwid.WidgetWrap):
         pass
 
     def screenUI(self):
-        return ModuleHelper.screenUI(self, self.header_content, self.fields,
-                                     self.defaults)
+        screen = ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                       self.defaults)
+        # set the radiobutton state (ModuleHelper handles only yes/no choice)
+        self._ui_set_bootstrap_flavor()
+        return screen

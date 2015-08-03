@@ -596,6 +596,40 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                           consts.ORCHESTRATOR_TASK_TYPES.upload_file):
             self._check_pre_deployment_tasks(pre_deployment, task_type)
 
+    def test_plugin_depl_task_for_master_not_in_pre_depl(self):
+        self.prepare_plugins_for_cluster(
+            self.cluster,
+            [
+                {
+                    'name': 'pre_depl_plugin_task',
+                    'deployment_tasks': [
+                        {
+                            'id': 'pre-depl-plugin-task',
+                            'type': 'puppet',
+                            'groups': ['master', 'primary-controller'],
+                            'requires': ['pre_deployment_start'],
+                            'required_for': ['pre_deployment_end'],
+                            'parameters': {
+                                'puppet_manifest': 'pre_depl_plugin_task',
+                                'puppet_modules': 'test',
+                                'timeout': 0,
+                            }
+                        },
+                    ],
+                },
+            ]
+        )
+
+        graph = AstuteGraph(self.cluster)
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        with mock.patch('nailgun.plugins.adapters.glob.glob',
+                        mock.Mock(return_value='path/to/test/repos')):
+            pre_deployment = stages.pre_deployment_serialize(
+                graph, self.cluster, self.cluster.nodes)
+
+        for st in pre_deployment:
+            self.assertNotIn('master', st['uids'])
+
     def test_plugin_depl_task_in_post_depl(self):
         self.prepare_plugins_for_cluster(
             self.cluster,

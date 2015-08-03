@@ -134,11 +134,17 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
         repo_tasks = []
         for plugin in plugins:
-            # TODO(aroma): remove this concatenation when unified way of
+            # TODO(aroma): remove concatenation of tasks when unified way of
             # processing will be introduced for deployment tasks and existing
             # plugin tasks
-            tasks_of_plugin = plugin.tasks + plugin.deployment_tasks
-            uids = get_uids_for_tasks(self.nodes, tasks_of_plugin)
+            tasks_to_process = plugin.tasks + plugin.deployment_tasks
+
+            # NOTE(aroma): create_repository should not be executed on
+            # master node so we filter it out from nodes list on which tasks
+            # are executed
+            uids = [uid for uid in
+                    get_uids_for_tasks(self.nodes, tasks_to_process)
+                    if uid != 'master']
 
             # If there are no nodes for tasks execution
             # or if there are no files in repository
@@ -181,13 +187,21 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
     def sync_scripts(self, plugins):
         tasks = []
         for plugin in plugins:
-            # TODO(aroma): remove this concatenation when unified way of
+            # TODO(aroma): remove concatenation of tasks when unified way of
             # processing will be introduced for deployment tasks and existing
             # plugin tasks
-            tasks_of_plugin = plugin.tasks + plugin.deployment_tasks
-            uids = get_uids_for_tasks(self.nodes, tasks_of_plugin)
+            tasks_to_process = plugin.tasks + plugin.deployment_tasks
+
+            # NOTE(aroma): create_repository should not be executed on
+            # master node so we filter it out from nodes list on which tasks
+            # are executed
+            uids = [uid for uid in
+                    get_uids_for_tasks(self.nodes, tasks_to_process)
+                    if uid != 'master']
+
             if not uids:
                 continue
+
             tasks.append(
                 self.serialize_task(
                     plugin,

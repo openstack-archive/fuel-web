@@ -122,6 +122,8 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             kernal_params = self.attributes.get('kernel_params', {}) \
                 .get('kernel', {}).get('value')
 
+            self.assertEqual(node['ks_meta']['environment_version'],
+                             node_db.cluster.release.environment_version)
             self.assertEqual(node['uid'], node_db.uid)
             self.assertEqual(node['power_address'], node_db.ip)
             self.assertEqual(node['name'], "node-{0}".format(node_db.id))

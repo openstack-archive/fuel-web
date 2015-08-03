@@ -81,6 +81,29 @@ class ProvisioningSerializer(object):
         return serialized_nodes
 
     @classmethod
+    def serialize_cloud_init_templates(cls, release):
+        """Serialize a dict of cloud-init templates.
+
+        It will serialize the names of cloud-init templates, thus allowing
+        nailgun to request particular version for every template to be
+        rendered during provisioning.
+        Eg.:
+        "cloud_init_templates": {
+            "boothook": "boothook_fuel_6.1_centos.jinja2",
+            "cloud_config": "cloud_config_fuel_6.1_centos.jinja2",
+            "meta_data": "meta_data_fuel_6.1_centos.jinja2",
+        }
+        """
+        cloud_init_templates = {}
+        for k in (consts.CLOUD_INIT_TEMPLATES.boothook,
+                  consts.CLOUD_INIT_TEMPLATES.cloud_config,
+                  consts.CLOUD_INIT_TEMPLATES.meta_data):
+            cloud_init_templates[k] = '{0}_fuel_{1}_{2}.jinja2'.format(
+                k, release.environment_version,
+                release.operating_system.lower())
+        return cloud_init_templates
+
+    @classmethod
     def serialize_node(cls, cluster_attrs, node):
         """Serialize a single node."""
         serialized_node = {
@@ -108,6 +131,8 @@ class ProvisioningSerializer(object):
                     'ks_spaces': node_extension_call('get_node_volumes', node),
                     'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
+                'cloud_init_templates':
+                cls.serialize_cloud_init_templates(node.cluster.release),
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
                 'puppet_enable': 0,

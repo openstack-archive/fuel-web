@@ -378,6 +378,37 @@ def prepare():
         ]
     )
 
+    mellanox_re = str("settings:common.libvirt_type.value != "
+                      "'kvm' or not (cluster:net_provider == 'neutron' and "
+                      "networking_parameters:segmentation_type? == 'vlan')")
+    nsx_re = str("cluster:net_provider != 'neutron' or "
+                 "networking_parameters:net_l23_provider? != 'nsx'")
+
+    editable = {
+        'neutron_mellanox': {
+            'plugin': {
+                'values': [{
+                    'restrictions': [mellanox_re]
+                }]
+            }
+        },
+        'nsx_plugin': {
+            'metadata': {
+                'restrictions': [{
+                    'action': 'hide',
+                    'condition': nsx_re
+                }]
+            }
+        }
+    }
+    db.execute(
+        meta.tables['attributes'].insert(),
+        [{
+            'cluster_id': None,
+            'editable': jsonutils.dumps(editable),
+            'generated': '{"cobbler": {"profile": "ubuntu_1404_x86_64"}}',
+        }])
+
     db.commit()
 
 
@@ -817,3 +848,22 @@ class TestStringNetworkGroupName(base.BaseAlembicMigrationTest):
                 [self.meta.tables['network_groups'].c.name])). \
             fetchall()
         self.assertIn(('custom_name',), names)
+
+
+class TestUpgradeClusterAttributes(base.BaseAlembicMigrationTest):
+
+    def test_cluster_attrs_conditions_fixed(self):
+        result = db.execute(
+            sa.select([self.meta.tables['attributes'].c.editable]))
+        editable = jsonutils.loads(result.fetchone()[0])
+        mellanox_section = editable['neutron_mellanox']['plugin']['values']
+        nsx_section = editable['nsx_plugin']['metadata']['restrictions']
+        self.assertEqual(
+            str(mellanox_section[0]['restrictions'][0]),
+            "settings:common.libvirt_type.value != \'kvm\' or not "
+            "(cluster:net_provider == \'neutron\' and "
+            "networking_parameters:segmentation_type == \'vlan\')")
+        self.assertEqual(
+            str(nsx_section[0]['condition']),
+            "cluster:net_provider != \'neutron\' or "
+            "networking_parameters:net_l23_provider != \'nsx\'")

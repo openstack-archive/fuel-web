@@ -43,7 +43,7 @@ def get_uids_for_tasks(nodes, tasks):
         if task_role == consts.ALL_ROLES:
             return get_uids_for_roles(nodes, consts.ALL_ROLES)
         elif task_role == consts.MASTER_ROLE:
-            return ['master']
+            return [consts.MASTER_ROLE]
         elif isinstance(task_role, list):
             roles.extend(task_role)
         # if task has 'skipped' status it is allowed that 'roles' and
@@ -70,7 +70,7 @@ def get_uids_for_roles(nodes, roles):
     if roles == consts.ALL_ROLES:
         uids.update([n.uid for n in nodes])
     elif roles == consts.MASTER_ROLE:
-        return ['master']
+        return [consts.MASTER_ROLE]
     elif isinstance(roles, list):
         for node in nodes:
             if set(roles) & set(objects.Node.all_roles(node)):

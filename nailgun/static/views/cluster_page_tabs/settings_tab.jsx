@@ -444,10 +444,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     </h3>
                     <div>
                         {_.map(sortedSettings, function(settingName) {
-                            var setting = group[settingName];
-                            if (setting.type == 'hidden') return null;
-
-                            var path = this.props.makePath(this.props.groupName, settingName);
+                            var setting = group[settingName],
+                                path = this.props.makePath(this.props.groupName, settingName);
 
                             if (!this.props.checkRestrictions('hide', path).result) {
                                 var error = (this.props.settings.validationError || {})[path],

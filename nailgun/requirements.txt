@@ -41,7 +41,7 @@ keystonemiddleware>=1.2.0,<2.0.0
 python-keystoneclient>=0.11,<=1.4.0
 python-novaclient>=2.17.0,<=2.24.1
 python-cinderclient>=1.0.7,<=1.2.1
-networkx>=1.8
+networkx>=1.8,<1.10
 pydot-ng>=1.0.0
 ordereddict>=1.1
 oslo.utils<1.5.0

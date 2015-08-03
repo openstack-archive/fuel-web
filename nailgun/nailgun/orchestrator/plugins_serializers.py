@@ -134,11 +134,17 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
         repo_tasks = []
         for plugin in plugins:
-            # TODO(aroma): remove this concatenation when unified way of
+            # TODO(aroma): remove concatenation of tasks when unified way of
             # processing will be introduced for deployment tasks and existing
             # plugin tasks
-            tasks_of_plugin = plugin.tasks + plugin.deployment_tasks
-            uids = get_uids_for_tasks(self.nodes, tasks_of_plugin)
+            # NOTE(aroma): create_repository should not be executed on
+            # master node so we perform filtration for summary set of tasks
+            # in order to remove those intended to be run on master node
+            tasks_to_process = (
+                t for t in plugin.tasks + plugin.deployment_tasks
+                if t.get('role', t.get('groups')) != consts.MASTER_ROLE
+            )
+            uids = get_uids_for_tasks(self.nodes, tasks_to_process)
 
             # If there are no nodes for tasks execution
             # or if there are no files in repository
@@ -181,13 +187,21 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
     def sync_scripts(self, plugins):
         tasks = []
         for plugin in plugins:
-            # TODO(aroma): remove this concatenation when unified way of
+            # TODO(aroma): remove concatenation of tasks when unified way of
             # processing will be introduced for deployment tasks and existing
             # plugin tasks
-            tasks_of_plugin = plugin.tasks + plugin.deployment_tasks
-            uids = get_uids_for_tasks(self.nodes, tasks_of_plugin)
+            # NOTE(aroma): create_repository should not be executed on
+            # master node so we perform filtration for summary set of tasks
+            # in order to remove those intended to be run on master node
+            tasks_to_process = (
+                t for t in plugin.tasks + plugin.deployment_tasks
+                if t.get('role', t.get('groups')) != consts.MASTER_ROLE
+            )
+            uids = get_uids_for_tasks(self.nodes, tasks_to_process)
+
             if not uids:
                 continue
+
             tasks.append(
                 self.serialize_task(
                     plugin,

@@ -329,11 +329,11 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         getValuesToCheck: function(setting, valueAttribute) {
             return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) : [!setting[valueAttribute]];
         },
-        checkValues: function(values, path, currentValue, condition) {
+        checkValues: function(values, path, currentValue, restriction) {
             var extraModels = {settings: this.props.settingsForChecks};
             var result = _.all(values, function(value) {
                 this.props.settingsForChecks.set(path, value);
-                return new Expression(condition, this.props.configModels).evaluate(extraModels);
+                return new Expression(restriction.condition, this.props.configModels, restriction).evaluate(extraModels);
             }, this);
             this.props.settingsForChecks.set(path, currentValue);
             return result;
@@ -350,9 +350,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return _.compact(this.props.allocatedRoles.map(function(roleName) {
                 var role = roles.findWhere({name: roleName});
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
-                    var condition = restriction.condition;
-                    if (_.contains(condition, 'settings:' + path) && !(new Expression(condition, this.props.configModels).evaluate())) {
-                        return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], condition);
+                    if (_.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.props.configModels, restriction).evaluate())) {
+                        return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], restriction);
                     }
                     return false;
                 }, this)) return role.get('label');
@@ -362,13 +361,16 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             var path = this.props.makePath(groupName, settingName),
                 currentSetting = this.props.settings.get(path);
             if (!this.areCalсulationsPossible(currentSetting)) return [];
-            var getDependentRestrictions = _.bind(function(pathToCheck) {
-                return _.pluck(_.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
+            var dependentRestrictions = {};
+            var addDependentRestrictions = _.bind(function(pathToCheck, label) {
+                var result = _.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
                     return restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path);
-                }), 'condition');
+                });
+                if (result.length) {
+                    dependentRestrictions[label] = result.concat(dependentRestrictions[label] || []);
+                }
             }, this);
-            // collect dependent settings
-            var dependentSettings = {};
+            // collect dependencies
             _.each(this.props.settings.attributes, function(group, groupName) {
                 // don't take into account hidden dependent settings
                 if (this.props.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) return;
@@ -376,31 +378,22 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
                     var pathToCheck = this.props.makePath(groupName, settingName);
                     if (!this.areCalсulationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', pathToCheck).result) return;
-                    var dependentRestrictions;
                     if (setting[this.props.getValueAttribute(settingName)] == true) {
-                        dependentRestrictions = getDependentRestrictions(pathToCheck);
-                        if (dependentRestrictions.length) {
-                            dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
-                        }
+                        addDependentRestrictions(pathToCheck, setting.label);
                     } else {
                         var activeOption = _.find(setting.values, {data: setting.value});
-                        if (activeOption) {
-                            dependentRestrictions = getDependentRestrictions(this.props.makePath(pathToCheck, activeOption.data));
-                            if (dependentRestrictions.length) {
-                                dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
-                            }
-                        }
+                        if (activeOption) addDependentRestrictions(this.props.makePath(pathToCheck, activeOption.data), setting.label);
                     }
                 }, this);
             }, this);
             // evaluate dependencies
-            if (!_.isEmpty(dependentSettings)) {
+            if (!_.isEmpty(dependentRestrictions)) {
                 var valueAttribute = this.props.getValueAttribute(settingName),
                     pathToCheck = this.props.makePath(path, valueAttribute),
                     valuesToCheck = this.getValuesToCheck(currentSetting, valueAttribute),
-                    checkValues = _.bind(this.checkValues, this, valuesToCheck, pathToCheck, currentSetting[valueAttribute]);
-                return _.compact(_.map(dependentSettings, function(conditions, label) {
-                    if (_.any(conditions, checkValues)) return label;
+                    checkValues = _.partial(this.checkValues, valuesToCheck, pathToCheck, currentSetting[valueAttribute]);
+                return _.compact(_.map(dependentRestrictions, function(restrictions, label) {
+                    if (_.any(restrictions, checkValues)) return label;
                 }));
             }
             return [];

@@ -770,7 +770,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         nm = objects.Cluster.get_network_manager(node.cluster)
         ep = scheme['endpoints']
         if is_public:
-            gw = nm.get_node_network_by_netname(node, 'public')['gateway']
+            gw = nm.get_network_by_netname(
+                'public', nm.get_node_networks(node))['gateway']
             self.assertEqual(ep['br-ex']['gateway'], gw)
         else:
             gw = nm.get_default_gateway(node.id)

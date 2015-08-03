@@ -13,8 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import print_function
+from __future__ import absolute_import
+
 from collections import namedtuple
 from copy import deepcopy
+from distutils.version import StrictVersion
 import functools
 import json
 import logging
@@ -42,6 +46,9 @@ from urllib2 import urlopen
 from urlparse import urlparse
 from xml.dom.minidom import parseString
 
+from fuel_package_updates import utils
+
+
 logger = logging.getLogger(__name__)
 
 distros_dict = {
@@ -50,6 +57,10 @@ distros_dict = {
     'centos_security': 'centos-security',
     'ubuntu_baseos': 'ubuntu-baseos',
 }
+
+# version of Fuel when we added remote repos
+FUEL_REMOTE_REPOS = '6.1'
+
 DISTROS = namedtuple('Distros', distros_dict.keys())(**distros_dict)
 
 KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
@@ -58,14 +69,12 @@ KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
 
 # TODO(mattymo): parse from Fuel API
 FUEL_VER = "6.1"
-OPENSTACK_RELEASE = "2014.2.2-6.1"
 UBUNTU_CODENAME = 'trusty'
 CENTOS_VERSION = 'centos-6'
 
 
 class Settings(object):
     supported_distros = DISTROS
-    supported_releases = (OPENSTACK_RELEASE, )
     updates_destinations = {
         DISTROS.centos: r'/var/www/nailgun/{0}/centos/updates',
         DISTROS.centos_security: r'/var/www/nailgun/{0}/centos/security',
@@ -212,6 +221,7 @@ class FuelWebClient(object):
 
     def environment(self):
         """Environment Model
+
         :rtype: EnvironmentModel
         """
         return self._environment
@@ -220,6 +230,7 @@ class FuelWebClient(object):
                              cluster_id,
                              settings=None):
         """Updates a cluster with new settings
+
         :param cluster_id:
         :param settings:
         """
@@ -241,6 +252,7 @@ class FuelWebClient(object):
                              release_id,
                              settings=None):
         """Updates a cluster with new settings
+
         :param cluster_id:
         :param settings:
         """
@@ -258,6 +270,18 @@ class FuelWebClient(object):
         logger.debug("Try to update release "
                      "with next attributes {0}".format(attributes))
         self.client.update_release_attributes(release_id, attributes)
+
+    def get_available_releases(self):
+        """Yields releases available for changing repositories
+
+        Filters out all releases from Fuel versions < 6.1
+        """
+
+        for release in self.client.get_releases():
+            rel_version = utils.extract_fuel_version(release['version'])
+            if (StrictVersion(rel_version) >=
+                    StrictVersion(FUEL_REMOTE_REPOS)):
+                yield release
 
 
 class NailgunClient(object):
@@ -342,6 +366,15 @@ def _wait_and_check_exit_code(cmd, child):
     exit_code = child.returncode
     logger.debug('Command "%s" was executed', cmd)
     return exit_code
+
+
+# NOTE(prmtl): when refactor of whole script will finally
+# happen we should have just one instance of FuelWebClient for
+# whole script and do not use methods like this one
+def get_available_releases(ip):
+    """Shortcut method to get releases available to repo update."""
+    fwc = FuelWebClient(ip)
+    return fwc.get_available_releases()
 
 
 def get_repository_packages(remote_repo_url, distro):
@@ -516,7 +549,7 @@ def update_env_conf(ip, distro, release, repos, env_id=None,
         fwc.update_cluster_repos(env_id, repos)
 
     if makedefault:
-        #ubuntu-baseos updates ubuntu release
+        # ubuntu-baseos updates ubuntu release
         if DISTROS.ubuntu in distro:
             distro = DISTROS.ubuntu
         release_id = fwc.client.get_release_id(distro, release)
@@ -555,7 +588,7 @@ def mirror_remote_repository(remote_repo_url, local_repo_path, exclude_dirs,
                                       ' repository failed!')
 
 
-def main():
+def main(argv=None):
     settings = Settings()
 
     sh = logging.StreamHandler()
@@ -578,7 +611,10 @@ def main():
                       dest='clear_upstream_repos',
                       help="Clears upstream repos if {0} distro is "
                       "chosen. By default just replacing their's URIs".format(
-                      DISTROS.ubuntu_baseos))
+                          DISTROS.ubuntu_baseos))
+    parser.add_option('--list-releases', dest='list_releases',
+                      default=None, action="store_true",
+                      help='List available releases.')
     parser.add_option('-r', '--release', dest='release', default=None,
                       help='Fuel release name (required)')
     parser.add_option("-u", "--url", dest="url", default="",
@@ -612,14 +648,29 @@ def main():
                       help="Fuel Master admin password (defaults to admin)."
                       " Alternatively, use env var KEYSTONE_PASSWORD).")
 
-    (options, args) = parser.parse_args()
+    if argv is None:
+        argv = sys.argv[1:]
+
+    (options, args) = parser.parse_args(argv)
 
     if options.verbose:
         logger.setLevel(logging.DEBUG)
 
+    if options.admin_pass:
+        KEYSTONE_CREDS['password'] = options.admin_pass
+
     if options.list_distros:
         logger.info("Available distributions:\n  {0}".format(
             "\n  ".join(settings.supported_distros)))
+        sys.exit(0)
+
+    supported_releases = [rel['version'] for rel in
+                          get_available_releases(options.ip)]
+
+    if options.list_releases:
+        print("Available releases:")
+        for release in supported_releases:
+            print(release)
         sys.exit(0)
 
     if options.distro not in settings.supported_distros:
@@ -628,11 +679,11 @@ def main():
             'following: "{1}". See help (--help) for details.'.format(
                 options.distro, ', '.join(settings.supported_distros)))
 
-    if options.release not in settings.supported_releases:
+    if options.release not in supported_releases:
         raise UpdatePackagesException(
             'Fuel release "{0}" is not supported. Please specify one of the '
             'following: "{1}". See help (--help) for details.'.format(
-                options.release, ', '.join(settings.supported_releases)))
+                options.release, ', '.join(supported_releases)))
 
     if not options.url and options.distro != DISTROS.ubuntu_baseos:
         options.url = settings.default_mirrors[options.distro]
@@ -689,8 +740,6 @@ def main():
     else:
         raise UpdatePackagesException('Unknown distro "{0}"'.format(
             options.distro))
-    if options.admin_pass:
-        KEYSTONE_CREDS['password'] = options.admin_pass
     if options.apply:
         update_env_conf(options.ip, options.distro, options.release, repos,
                         options.env, options.makedefault)

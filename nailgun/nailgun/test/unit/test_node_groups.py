@@ -102,7 +102,7 @@ class TestNodeGroups(BaseIntegrationTest):
         nets = db().query(NetworkGroup).filter_by(group_id=response['id'])
         self.assertEquals(nets.count(), 0)
 
-    def test_nodegroup_invalid_segmentation_type(self):
+    def test_nodegroup_non_GRE_segmentation_type(self):
         cluster = self.env.create_cluster(
             api=False,
             net_provider='neutron',
@@ -112,10 +112,16 @@ class TestNodeGroups(BaseIntegrationTest):
             reverse('NodeGroupCollectionHandler'),
             json.dumps({'cluster_id': cluster['id'], 'name': 'test_ng'}),
             headers=self.default_headers,
-            expect_errors=True
+            expect_errors=False
         )
+        self.assertEquals(resp.status_code, 201)
+        self.assertEquals(resp.json_body['cluster'], cluster['id'])
 
-        self.assertEquals(resp.status_code, 403)
+        self.assertEquals(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count(),
+            1
+        )
 
     def test_nodegroup_tun_segmentation_type(self):
         cluster = self.env.create_cluster(

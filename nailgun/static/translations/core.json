@@ -439,6 +439,7 @@
                             "not_assigned_label": "No label \"__label__\"",
                             "label_key": "Name",
                             "label_value": "Value",
+                            "empty_label_key": "Label name can not be empty",
                             "selected_nodes_amount": "__count__ selected node",
                             "selected_nodes_amount_plural": "__count__ selected nodes",
                             "bulk_label_action_start": "Here you can change labels of ",

@@ -1093,8 +1093,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
     NodeLabelsPanel = React.createClass({
         getInitialState: function() {
-            return {
-                labels: _.map(this.props.labels, function(label) {
+            var labels = _.map(this.props.labels, function(label) {
                     var labelValues = this.props.nodes.getLabelValues(label),
                         definedLabelValues = _.reject(labelValues, _.isUndefined);
                     return {
@@ -1104,9 +1103,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         indeterminate: labelValues.length != definedLabelValues.length,
                         error: null
                     };
-                }, this),
+                }, this);
+            return {
+                labels: _.clone(labels),
+                initialLabels: _.clone(labels),
                 actionInProgress: false
             };
+        },
+        hasChanges: function() {
+            return _.any(this.state.labels, function(labelData) {
+                var initialLabel = _.find(this.state.initialLabels, {key: labelData.key});
+                if (initialLabel) return !_.isEqual(labelData, initialLabel);
+                return labelData.checked;
+            }, this);
         },
         componentDidMount: function() {
             _.each(this.state.labels, function(labelData) {
@@ -1286,7 +1295,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <button
                                         className='btn btn-success'
                                         onClick={this.applyLabelChanges}
-                                        disabled={this.state.actionInProgress || _.reject(_.pluck(this.state.labels, 'error'), _.isNull).length}
+                                        disabled={this.state.actionInProgress || !this.hasChanges() || _.reject(_.pluck(this.state.labels, 'error'), _.isNull).length}
                                     >
                                         {i18n('common.apply_button')}
                                     </button>

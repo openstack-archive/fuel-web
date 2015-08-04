@@ -606,7 +606,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                         {
                             'id': 'pre-depl-plugin-task',
                             'type': 'puppet',
-                            'role': 'master',
+                            'role': consts.MASTER_ROLE,
                             'requires': ['pre_deployment_start'],
                             'required_for': ['pre_deployment_end'],
                             'parameters': {
@@ -623,7 +623,8 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                         {
                             'id': 'pre-depl-plugin-task-for-master-and-contr',
                             'type': 'puppet',
-                            'groups': ['master', 'primary-controller'],
+                            'groups': [consts.MASTER_ROLE,
+                                       'primary-controller'],
                             'requires': ['pre_deployment_start'],
                             'required_for': ['pre_deployment_end'],
                             'parameters': {
@@ -645,7 +646,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                 graph, self.cluster, self.cluster.nodes)
 
         for st in pre_deployment:
-            self.assertNotIn('master', st['uids'])
+            self.assertNotIn(consts.MASTER_ROLE, st['uids'])
 
     def test_plugin_depl_task_in_post_depl(self):
         self.prepare_plugins_for_cluster(

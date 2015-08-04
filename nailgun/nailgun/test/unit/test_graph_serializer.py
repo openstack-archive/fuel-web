@@ -141,8 +141,8 @@ class TestGraphDependencies(base.BaseTestCase):
 
     def test_subtasks_in_correct_order(self):
         self.graph.add_tasks(self.tasks + self.subtasks)
-        subtask_graph = self.graph.get_tasks('controller')
-        topology_by_id = [item['id'] for item in subtask_graph.topology]
+        subtasks = self.graph.get_group_tasks('controller')
+        topology_by_id = [item['id'] for item in subtasks]
         self.assertItemsEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
@@ -263,16 +263,16 @@ class TestTasksRemoval(base.BaseTestCase):
 
     def test_only_tasks(self):
         self.astute.only_tasks(['setup_network'])
-        tasks = self.astute.graph.get_tasks('controller')
+        tasks = self.astute.graph.get_group_tasks('controller')
         self.assertEqual(len(tasks), 1)
-        self.assertItemsEqual(tasks.node.keys(), ['setup_network'])
+        self.assertItemsEqual(tasks[0]['id'], 'setup_network')
 
     def test_full_graph_content(self):
         self.astute.only_tasks([])
-        tasks = self.astute.graph.get_tasks('controller')
+        tasks = self.astute.graph.get_group_tasks('controller')
         self.assertEqual(len(tasks), 2)
         self.assertItemsEqual(
-            tasks.node.keys(), ['setup_network', 'install_controller'])
+            [t['id'] for t in tasks], ['setup_network', 'install_controller'])
 
 
 class GroupsTraversalTest(base.BaseTestCase):
@@ -620,6 +620,15 @@ class TestFindGraph(base.BaseTestCase):
         self.assertItemsEqual(
             subgraph.nodes(),
             ['task_a', 'task_b', 'task_c', 'task_d'])
+
+    def test_preserve_ordering_when_task_skipped(self):
+        self.graph.only_tasks(['task_a', 'task_d'])
+        # we skipped both tasks that are predecessors for task_d
+        self.assertEqual(self.graph.node['task_b']['type'], 'skipped')
+        self.assertEqual(self.graph.node['task_c']['type'], 'skipped')
+        self.assertEqual(
+            [t['id'] for t in self.graph.get_group_tasks('group_b')],
+            ['task_a', 'task_d'])
 
 
 class TestOrdered(base.BaseTestCase):

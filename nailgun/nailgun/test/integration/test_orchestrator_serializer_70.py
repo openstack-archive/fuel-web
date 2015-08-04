@@ -59,7 +59,6 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         super(BaseTestDeploymentAttributesSerialization70, self).setUp()
         self.cluster = self.create_env('ha_compact')
 
-        # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
         objects.NodeCollection.prepare_for_deployment(
             self.env.nodes, self.segmentation_type)
         self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
@@ -81,6 +80,16 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                  'pending_addition': True},
                 {'roles': ['compute'],
                  'pending_addition': True}])
+
+    def check_vips_serialized(self, vips_data):
+        vips_names = ['vrouter', 'management', 'vrouter_pub', 'public']
+        self.assertItemsEqual(vips_data,
+                              vips_names)
+        for vip in vips_names:
+            self.assertItemsEqual(
+                vips_data[vip],
+                ['network_role', 'namespace', 'ipaddr', 'node_roles']
+            )
 
 
 class TestDeploymentAttributesSerialization70(
@@ -183,6 +192,7 @@ class TestDeploymentAttributesSerialization70(
                         [ip_by_net['private']] * len(self.private))
 
                 self.assertEqual(v['network_roles'], dict(network_roles))
+            self.check_vips_serialized(node_data['network_metadata']['vips'])
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
@@ -210,24 +220,13 @@ class TestDeploymentAttributesSerializationSegmentationTun70(
     segmentation_type = consts.NEUTRON_SEGMENT_TYPES.tun
 
 
-class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
-    @mock.patch.object(models.Release, 'environment_version',
-                       new_callable=mock.PropertyMock(return_value='7.0'))
-    def setUp(self, *args):
-        super(TestDeploymentSerializationForNovaNetwork70, self).setUp()
-        self.cluster = self.create_env('ha_compact')
-
-        # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
-        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        serializer_type = get_serializer_for_cluster(cluster_db)
-        self.serializer = serializer_type(AstuteGraph(cluster_db))
-        self.serialized_for_astute = self.serializer.serialize(
-            cluster_db, cluster_db.nodes)
-        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
+class TestDeploymentSerializationForNovaNetwork70(
+    BaseTestDeploymentAttributesSerialization70
+):
 
     def create_env(self, mode):
         return self.env.create(
+            release_kwargs={'version': '2015.1.0-7.0'},
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
@@ -355,6 +354,7 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                     node_attrs['network_roles'],
                     network_roles
                 )
+            self.check_vips_serialized(node_data['network_metadata']['vips'])
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()

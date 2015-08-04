@@ -1118,7 +1118,7 @@ class NeutronNetworkTemplateSerializer70(
     def generate_network_metadata(cls, cluster):
         metadata = super(NeutronNetworkTemplateSerializer70,
                          cls).generate_network_metadata(cluster)
-
+        # test change
         nm = Cluster.get_network_manager(cluster)
         for node_data in six.itervalues(metadata['nodes']):
             node = Node.get_by_uid(node_data['uid'])

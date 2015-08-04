@@ -103,6 +103,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.updateInitialRoles();
             this.props.nodes.on('update reset', this.updateInitialRoles, this);
 
+            this.changeSearch = _.debounce(this.changeSearch, 200, {leading: true});
+
             if (this.props.mode != 'list') {
                 // hack to prevent node roles update after node polling
                 this.props.nodes.on('change:pending_roles', this.checkRoleAssignment, this);
@@ -152,10 +154,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return !_.isEqual(node.get('pending_roles'), this.initialRoles[node.id]);
             }, this);
         },
-        changeSearch: _.debounce(function(value) {
+        changeSearch: function(value) {
             this.updateSearch(_.trim(value));
-        }, 200, {leading: true}),
+        },
         clearSearchField: function() {
+            this.changeSearch.cancel();
             this.updateSearch('');
         },
         updateSearch: function(value) {

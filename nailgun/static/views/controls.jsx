@@ -180,17 +180,8 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             );
         },
         renderDescription: function() {
-            return (
-                <span key='description' className='help-block'>
-                    {!_.isUndefined(this.props.error) && !_.isNull(this.props.error) ?
-                        this.props.error :
-                        this.props.description && this.props.description.split('\n').map(function(line, index) {
-                                return <p key={index}>{line}</p>;
-                            }
-                        )
-                    }
-                </span>
-            );
+            var text = !_.isUndefined(this.props.error) && !_.isNull(this.props.error) ? this.props.error : this.props.description || '';
+            return <span key='description' className='help-block'>{text}</span>;
         },
         renderWrapper: function(children) {
             var isCheckboxOrRadio = this.isCheckboxOrRadio(),

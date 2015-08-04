@@ -492,6 +492,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     name={settingName}
                                     description={settingDescription}
                                     children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
+                                    debounce={setting.type == 'text' || setting.type == 'password' || setting.type == 'textarea'}
                                     defaultValue={setting.value}
                                     defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
                                     toggleable={setting.type == 'password'}

@@ -1126,10 +1126,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeLabelKey: function(index, oldKey, newKey) {
             var labels = this.state.labels,
                 labelData = labels[index];
-            labelData.key = _.trim(newKey);
-            if (!labelData.indeterminate) labelData.checked = true;
-            labelData.error = this.validateLabelKey(labelData);
-            this.setState({labels: labels});
+            newKey = _.trim(newKey);
+            if (newKey != labelData.key) {
+                if (!labelData.indeterminate) labelData.checked = true;
+                labelData.error = this.validateLabelKey(labelData, newKey);
+                labelData.key = newKey;
+                this.setState({labels: labels});
+            }
         },
         changeLabelState: function(index, key, checked) {
             var labels = this.state.labels,
@@ -1147,9 +1150,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             labelData.error = this.validateLabelKey(labelData);
             this.setState({labels: labels});
         },
-        validateLabelKey: function(labelData) {
-            var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
-            return (labelData.checked || labelData.indeterminate) && !labelData.key && i18n(ns + 'empty_label_key') || null;
+        validateLabelKey: function(labelData, key) {
+            if (labelData.checked || labelData.indeterminate) {
+                var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
+                key = !_.isUndefined(key) ? key : labelData.key;
+                if (!key) return i18n(ns + 'empty_label_key');
+                if (_.find(this.state.labels, {key: key})) return i18n(ns + 'existing_label');
+            }
+            return null;
         },
         applyLabelChanges: function() {
             // TODO (jkirnosova): check there are changes in labels to save

@@ -1094,67 +1094,97 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     NodeLabelsPanel = React.createClass({
         getInitialState: function() {
             return {
-                newLabels: [],
-                labelsWithMultipleValues: _.filter(this.props.labels, function(label) {
-                    return _.uniq(_.reject(this.props.nodes.getLabelValues(label), _.isUndefined)).length > 1;
+                labels: _.map(this.props.labels, function(label) {
+                    var labelValues = this.props.nodes.getLabelValues(label),
+                        definedLabelValues = _.reject(labelValues, _.isUndefined);
+                    return {
+                        key: label,
+                        values: _.uniq(definedLabelValues),
+                        checked: labelValues.length == definedLabelValues.length,
+                        indeterminate: labelValues.length != definedLabelValues.length,
+                        error: null
+                    };
                 }, this),
                 actionInProgress: false
             };
         },
         componentDidMount: function() {
-            _.each(this.props.labels, function(label) {
-                var labelCheckbox = this.refs[label + '-checkbox'].getInputDOMNode();
-                labelCheckbox.indeterminate = _.any(this.props.nodes.getLabelValues(label), _.isUndefined);
+            _.each(this.state.labels, function(labelData) {
+                this.refs[labelData.key].getInputDOMNode().indeterminate = labelData.indeterminate;
             }, this);
         },
-        onChangeLabelWithMultipleValues: function(label) {
-            this.setState({
-                labelsWithMultipleValues: _.without(this.state.labelsWithMultipleValues, label)
+        addLabel: function() {
+            var labels = this.state.labels;
+            labels.push({
+                key: '',
+                values: [null],
+                checked: false,
+                error: null
             });
+            this.setState({labels: labels});
         },
-        addNewLabelPlaceholder: function() {
-            var newLabels = this.state.newLabels;
-            newLabels.push('');
-            this.setState({newLabels: newLabels});
+        changeLabelKey: function(index, oldKey, newKey) {
+            var labels = this.state.labels,
+                labelData = labels[index];
+            labelData.key = _.trim(newKey);
+            if (!labelData.indeterminate) labelData.checked = true;
+            labelData.error = this.validateLabelKey(labelData);
+            this.setState({labels: labels});
         },
-        addNewLabel: function(index, name, value) {
-            var newLabels = this.state.newLabels;
-            newLabels[index] = _.trim(value);
-            this.setState({newLabels: newLabels});
+        changeLabelState: function(index, key, checked) {
+            var labels = this.state.labels,
+                labelData = labels[index];
+            labelData.checked = checked;
+            labelData.indeterminate = false;
+            labelData.error = this.validateLabelKey(labelData);
+            this.setState({labels: labels});
         },
-        applyLabels: function() {
-            var labels = _.union(this.props.labels, _.compact(this.state.newLabels));
-
+        changeLabelValue: function(index, key, value) {
+            var labels = this.state.labels,
+                labelData = labels[index];
+            labelData.values = [_.trim(value) || null];
+            if (!labelData.indeterminate) labelData.checked = true;
+            labelData.error = this.validateLabelKey(labelData);
+            this.setState({labels: labels});
+        },
+        validateLabelKey: function(labelData) {
+            var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
+            return (labelData.checked || labelData.indeterminate) && !labelData.key && i18n(ns + 'empty_label_key') || null;
+        },
+        applyLabelChanges: function() {
             // TODO (jkirnosova): check there are changes in labels to save
-            if (labels.length) {
+            if (this.state.labels.length) {
                 this.setState({actionInProgress: true});
 
                 var nodes = new models.Nodes(
                     this.props.nodes.map(function(node) {
                         var nodeLabels = node.get('labels');
 
-                        _.each(labels, function(label) {
-                            var nodeHasLabel = !_.isUndefined(nodeLabels[label]),
-                                labelCheckbox = this.refs[label + '-checkbox'].getInputDOMNode(),
-                                labelNewName = _.trim(this.refs[label + '-name'].getInputDOMNode().value);
+                        _.each(this.state.labels, function(labelData, index) {
+                            var oldLabel = this.props.labels[index];
 
-                            // rename label
-                            if ((labelCheckbox.checked || labelCheckbox.indeterminate) && nodeHasLabel) {
-                                var labelValue = nodeLabels[label];
-                                delete nodeLabels[label];
-                                nodeLabels[labelNewName] = labelValue;
-                            }
-                            // add label with null (empty) value
-                            if (labelCheckbox.checked && !nodeHasLabel) {
-                                nodeLabels[labelNewName] = null;
-                            }
                             // delete label
-                            if (!labelCheckbox.checked && !labelCheckbox.indeterminate) {
-                                delete nodeLabels[label];
+                            if (!labelData.checked && !labelData.indeterminate) {
+                                delete nodeLabels[oldLabel];
                             }
-                            // change label value
-                            if (!_.isUndefined(nodeLabels[labelNewName]) && !_.contains(this.state.labelsWithMultipleValues, label)) {
-                                nodeLabels[labelNewName] = _.trim(this.refs[label + '-value'].getInputDOMNode().value) || null;
+
+                            if (!labelData.error) {
+                                var nodeHasLabel = !_.isUndefined(nodeLabels[oldLabel]),
+                                    label = labelData.key;
+                                // rename label
+                                if ((labelData.checked || labelData.indeterminate) && nodeHasLabel) {
+                                    var labelValue = nodeLabels[oldLabel];
+                                    delete nodeLabels[oldLabel];
+                                    nodeLabels[label] = labelValue;
+                                }
+                                // add label
+                                if (labelData.checked && !nodeHasLabel) {
+                                    nodeLabels[label] = labelData.values[0];
+                                }
+                                // change label value
+                                if (!_.isUndefined(nodeLabels[label]) && labelData.values.length == 1) {
+                                    nodeLabels[label] = labelData.values[0];
+                                }
                             }
                         }, this);
 
@@ -1196,86 +1226,51 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 {i18n(ns + 'bulk_label_action_end')}
                             </p>
 
-                            {_.map(this.props.labels, function(label, index) {
-                                var showControlLabels = index == 0,
-                                    labelValues = this.props.nodes.getLabelValues(label),
-                                    labelValueProps;
-
-                                if (_.contains(this.state.labelsWithMultipleValues, label)) {
-                                    labelValueProps = {
-                                        defaultValue: '',
+                            {_.map(this.state.labels, function(labelData, index) {
+                                var labelValueProps = labelData.values.length > 1 ? {
+                                        value: '',
                                         wrapperClassName: 'has-warning',
-                                        tooltipText: i18n(ns + 'label_value_warning'),
-                                        onChange: _.partial(this.onChangeLabelWithMultipleValues, label)
+                                        tooltipText: i18n(ns + 'label_value_warning')
+                                    } : {
+                                        value: labelData.values[0]
                                     };
-                                } else {
-                                    labelValueProps = {
-                                        defaultValue: _.reject(labelValues, _.isUndefined)[0]
-                                    };
-                                }
 
-                                return (
-                                    <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={label}>
-                                        <controls.Input
-                                            type='checkbox'
-                                            ref={label + '-checkbox'}
-                                            defaultChecked={!_.any(labelValues, _.isUndefined)}
-                                            wrapperClassName='pull-left'
-                                        />
-                                        <controls.Input
-                                            type='text'
-                                            ref={label + '-name'}
-                                            maxLength={100}
-                                            label={showControlLabels && i18n(ns + 'label_key')}
-                                            defaultValue={label}
-                                        />
-                                        <controls.Input {...labelValueProps}
-                                            type='text'
-                                            ref={label + '-value'}
-                                            maxLength={100}
-                                            label={showControlLabels && i18n(ns + 'label_value')}
-                                        />
-                                    </div>
-                                );
-                            }, this)}
-
-                            {_.map(this.state.newLabels, function(label, index) {
-                                var showControlLabels = !this.props.labels.length && index == 0;
-
+                                var showControlLabels = index == 0;
                                 return (
                                     <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={index}>
                                         <controls.Input
                                             type='checkbox'
-                                            ref={label + '-checkbox'}
-                                            defaultChecked={true}
+                                            ref={labelData.key}
+                                            checked={labelData.checked}
+                                            onChange={_.partial(this.changeLabelState, index)}
                                             wrapperClassName='pull-left'
                                         />
                                         <controls.Input
                                             type='text'
-                                            ref={label + '-name'}
                                             maxLength={100}
                                             label={showControlLabels && i18n(ns + 'label_key')}
-                                            defaultValue={label}
-                                            onChange={_.partial(this.addNewLabel, index)}
+                                            value={labelData.key}
+                                            onChange={_.partial(this.changeLabelKey, index)}
+                                            error={labelData.error}
                                         />
-                                        <controls.Input
+                                        <controls.Input {...labelValueProps}
                                             type='text'
-                                            ref={label + '-value'}
                                             maxLength={100}
                                             label={showControlLabels && i18n(ns + 'label_value')}
+                                            onChange={_.partial(this.changeLabelValue, index)}
                                         />
                                     </div>
                                 );
                             }, this)}
                             <button
                                 className='btn btn-default btn-add-label'
-                                onClick={this.addNewLabelPlaceholder}
+                                onClick={this.addLabel}
                                 disabled={this.state.actionInProgress}
                             >
                                 {i18n(ns + 'add_label')}
                             </button>
                         </div>
-                        {(!!this.props.labels.length || !!this.state.newLabels.length) &&
+                        {!!this.state.labels.length &&
                             <div className='control-buttons text-right'>
                                 <div className='btn-group' role='group'>
                                     <button
@@ -1287,8 +1282,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </button>
                                     <button
                                         className='btn btn-success'
-                                        onClick={this.applyLabels}
-                                        disabled={this.state.actionInProgress}
+                                        onClick={this.applyLabelChanges}
+                                        disabled={this.state.actionInProgress || _.reject(_.pluck(this.state.labels, 'error'), _.isNull).length}
                                     >
                                         {i18n('common.apply_button')}
                                     </button>

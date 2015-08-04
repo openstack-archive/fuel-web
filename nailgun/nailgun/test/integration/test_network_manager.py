@@ -25,6 +25,7 @@ from netaddr import IPRange
 from sqlalchemy import not_
 
 import nailgun
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 
@@ -36,6 +37,7 @@ from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
 from nailgun.network.nova_network import NovaNetworkManager
+from nailgun.network.nova_network import NovaNetworkManager70
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -603,14 +605,13 @@ class TestNeutronManager70(BaseNetworkManagerTest):
         super(TestNeutronManager70, self).setUp()
         self.cluster = self._create_env()
         self.net_manager = objects.Cluster.get_network_manager(self.cluster)
-        self.assertIs(self.net_manager, NeutronManager70)
 
     def _create_env(self):
         return self.env.create(
             release_kwargs={'version': '1111-7.0'},
             cluster_kwargs={
                 'api': False,
-                'net_provider': 'neutron'
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
             }
         )
 
@@ -628,6 +629,9 @@ class TestNeutronManager70(BaseNetworkManagerTest):
         }
         network_role.update(kwargs)
         return network_role
+
+    def test_get_network_manager(self):
+        self.assertIs(self.net_manager, NeutronManager70)
 
     def test_get_network_group_for_role(self):
         net_template = self.env.read_fixtures(['network_template'])[0]
@@ -740,3 +744,46 @@ class TestNeutronManager70(BaseNetworkManagerTest):
             self.cluster, vips_to_assign)
         vips = self.net_manager.get_assigned_vips(self.cluster)
         self.assertEqual(vips_to_assign, vips)
+
+
+class TestNovaNetworkManager70(TestNeutronManager70):
+
+    def _create_env(self):
+        return self.env.create(
+            release_kwargs={'version': '1111-7.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
+            }
+        )
+
+    def test_get_network_manager(self):
+        self.assertIs(self.net_manager, NovaNetworkManager70)
+
+    def test_get_network_group_for_role(self):
+        node_group = objects.Cluster.get_controllers_node_group(self.cluster)
+        net_group_mapping = \
+            self.net_manager.build_role_to_network_group_mapping(
+                self.cluster, node_group.name)
+
+        self.assertEqual(
+            self.net_manager.get_network_group_for_role(
+                self._get_network_role_metadata(id='public/vip'),
+                net_group_mapping),
+            'public')
+        self.assertEqual(
+            self.net_manager.get_network_group_for_role(
+                self._get_network_role_metadata(
+                    id='role_not_in_template',
+                    default_mapping='default_net_group'), net_group_mapping),
+            'default_net_group')
+
+    def test_get_endpoint_ip(self):
+        vip = '172.16.0.1'
+
+        with patch.object(NovaNetworkManager70, 'assign_vip',
+                          return_value=vip) as assign_vip_mock:
+            endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
+            assign_vip_mock.assert_called_once_with(
+                self.cluster, mock.ANY, vip_type='public')
+            self.assertEqual(endpoint_ip, vip)

@@ -300,6 +300,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                     <controls.Input {...props}
                                                         key={currentMinSize + currentMaxSize + this.state.key}
                                                         type='range'
+                                                        debounce
                                                         onInput={this.updateDisk}
                                                         defaultValue={value}
                                                     />

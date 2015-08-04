@@ -31,6 +31,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
+            debounce: React.PropTypes.bool,
             description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
             inputClassName: React.PropTypes.node,
@@ -114,18 +115,18 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             var classes = {'form-control': this.props.type != 'range'};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
-                    ref: 'input',
-                    key: 'input',
-                    type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
-                    className: utils.classNames(classes)
-                };
+                ref: 'input',
+                key: 'input',
+                type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
+                className: utils.classNames(classes)
+            };
             if (this.props.type == 'range') {
-                props.onInput = this.debouncedInput;
+                props.onInput = this.props.debounce ? this.debouncedInput : this.onInput;
             } else if (this.props.type == 'file') {
                 props.onChange = this.readFile;
             } else {
                 // debounced onChange callback is supported for uncontrolled inputs
-                props.onChange = (_.isUndefined(this.props.value) && _.isUndefined(this.props.checked)) ? this.debouncedChange : this.onChange;
+                props.onChange = this.props.debounce ? this.debouncedChange : this.onChange;
             }
             var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,

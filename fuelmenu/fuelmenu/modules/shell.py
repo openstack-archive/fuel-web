@@ -44,7 +44,10 @@ class shell():
         self.parent.mainloop.screen.stop()
         message = "Type exit to return to the main UI."
 
-        subprocess.call("clear ; echo '%s';echo;bash -i" % message, shell=True)
+        subprocess.call(
+            "screen bash -c 'clear; echo %s ; echo; bash -i'" % message,
+            shell=True
+        )
         self.parent.mainloop.screen.start()
 
     def refresh(self):

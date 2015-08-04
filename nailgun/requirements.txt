@@ -46,5 +46,5 @@ pydot-ng>=1.0.0
 ordereddict>=1.1
 oslo.utils<1.5.0
 # NOTE(akscram): Bug https://bugs.launchpad.net/fuel/+bug/1481212
-oslo.context>=0.2.0,<0.3.0
+# oslo.context>=0.2.0,<0.3.0
 stevedore<1.4.0

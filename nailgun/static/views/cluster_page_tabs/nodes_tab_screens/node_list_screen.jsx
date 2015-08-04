@@ -1126,9 +1126,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeLabelKey: function(index, oldKey, newKey) {
             var labels = this.state.labels,
                 labelData = labels[index];
-            labelData.key = _.trim(newKey);
-            labelData.error = this.validateLabelKey(newKey, labelData);
-            this.setState({labels: labels});
+            newKey = _.trim(newKey);
+            if (newKey != labelData.key) {
+                labelData.error = this.validateLabelKey(newKey, labelData);
+                labelData.key = newKey;
+                this.setState({labels: labels});
+            }
         },
         changeLabelState: function(index, key, checked) {
             var labels = this.state.labels,
@@ -1144,8 +1147,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.setState({labels: labels});
         },
         validateLabelKey: function(newKey, labelData) {
-            var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
-            return (labelData.checked || labelData.indeterminate) && !_.trim(newKey) && i18n(ns + 'empty_label_key') || null;
+            if (labelData.checked || labelData.indeterminate) {
+                var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
+                if (!newKey) return i18n(ns + 'empty_label_key');
+                if (_.find(this.state.labels, {key: newKey})) return i18n(ns + 'existing_label');
+            }
+            return null;
         },
         applyLabelChanges: function() {
             // TODO (jkirnosova): check there are changes in labels to save

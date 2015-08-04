@@ -1096,8 +1096,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
     NodeLabelsPanel = React.createClass({
         getInitialState: function() {
-            return {
-                labels: _.map(this.props.labels, function(label) {
+            var labels = _.map(this.props.labels, function(label) {
                     var labelValues = this.props.nodes.getLabelValues(label),
                         definedLabelValues = _.reject(labelValues, _.isUndefined);
                     return {
@@ -1107,9 +1106,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         indeterminate: labelValues.length != definedLabelValues.length,
                         error: null
                     };
-                }, this),
+                }, this);
+            return {
+                labels: _.clone(labels),
+                initialLabels: _.clone(labels),
                 actionInProgress: false
             };
+        },
+        hasChanges: function() {
+            return _.any(this.state.labels, function(labelData) {
+                var initialLabel = _.find(this.state.initialLabels, {key: labelData.key});
+                if (initialLabel) return !_.isEqual(labelData, initialLabel);
+                return labelData.checked;
+            }, this);
         },
         componentDidMount: function() {
             _.each(this.state.labels, function(labelData) {
@@ -1166,61 +1175,56 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return null;
         },
         applyLabelChanges: function() {
-            // TODO (jkirnosova): check there are changes in labels to save
-            if (this.state.labels.length) {
-                this.setState({actionInProgress: true});
+            this.setState({actionInProgress: true});
 
-                var nodes = new models.Nodes(
-                    this.props.nodes.map(function(node) {
-                        var nodeLabels = node.get('labels');
+            var nodes = new models.Nodes(
+                this.props.nodes.map(function(node) {
+                    var nodeLabels = node.get('labels');
 
-                        _.each(this.state.labels, function(labelData, index) {
-                            var oldLabel = this.props.labels[index];
+                    _.each(this.state.labels, function(labelData, index) {
+                        var oldLabel = this.props.labels[index];
 
-                            // delete label
-                            if (!labelData.checked && !labelData.indeterminate) {
-                                delete nodeLabels[oldLabel];
-                            }
+                        // delete label
+                        if (!labelData.checked && !labelData.indeterminate) {
+                            delete nodeLabels[oldLabel];
+                        }
 
-                            if (!labelData.error) {
-                                var nodeHasLabel = !_.isUndefined(nodeLabels[oldLabel]),
-                                    label = labelData.key;
-                                // rename label
-                                if ((labelData.checked || labelData.indeterminate) && nodeHasLabel) {
-                                    var labelValue = nodeLabels[oldLabel];
-                                    delete nodeLabels[oldLabel];
-                                    nodeLabels[label] = labelValue;
-                                }
-                                // add label
-                                if (labelData.checked && !nodeHasLabel) {
-                                    nodeLabels[label] = labelData.values[0];
-                                }
-                                // change label value
-                                if (!_.isUndefined(nodeLabels[label]) && labelData.values.length == 1) {
-                                    nodeLabels[label] = labelData.values[0];
-                                }
-                            }
-                        }, this);
+                        var nodeHasLabel = !_.isUndefined(nodeLabels[oldLabel]),
+                            label = labelData.key;
+                        // rename label
+                        if ((labelData.checked || labelData.indeterminate) && nodeHasLabel) {
+                            var labelValue = nodeLabels[oldLabel];
+                            delete nodeLabels[oldLabel];
+                            nodeLabels[label] = labelValue;
+                        }
+                        // add label
+                        if (labelData.checked && !nodeHasLabel) {
+                            nodeLabels[label] = labelData.values[0];
+                        }
+                        // change label value
+                        if (!_.isUndefined(nodeLabels[label]) && labelData.values.length == 1) {
+                            nodeLabels[label] = labelData.values[0];
+                        }
+                    }, this);
 
-                        return {id: node.id, labels: nodeLabels};
-                    }, this)
-                );
+                    return {id: node.id, labels: nodeLabels};
+                }, this)
+            );
 
-                Backbone.sync('update', nodes)
-                    .done(_.bind(function() {
-                        this.props.screenNodes.fetch().always(_.bind(function() {
-                            dispatcher.trigger('labelsConfigurationUpdated');
-                            this.props.screenNodes.trigger('change');
-                            this.props.toggleLabelsPanel();
-                        }, this));
-                    }, this))
-                    .fail(_.bind(function(response) {
-                        utils.showErrorDialog({
-                            message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.labels_warning'),
-                            response: response
-                        });
+            Backbone.sync('update', nodes)
+                .done(_.bind(function() {
+                    this.props.screenNodes.fetch().always(_.bind(function() {
+                        dispatcher.trigger('labelsConfigurationUpdated');
+                        this.props.screenNodes.trigger('change');
+                        this.props.toggleLabelsPanel();
                     }, this));
-            }
+                }, this))
+                .fail(function(response) {
+                    utils.showErrorDialog({
+                        message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.labels_warning'),
+                        response: response
+                    });
+                });
         },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
@@ -1299,7 +1303,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <button
                                         className='btn btn-success'
                                         onClick={this.applyLabelChanges}
-                                        disabled={this.state.actionInProgress || _.reject(_.pluck(this.state.labels, 'error'), _.isNull).length}
+                                        disabled={this.state.actionInProgress || !this.hasChanges() || _.reject(_.pluck(this.state.labels, 'error'), _.isNull).length}
                                     >
                                         {i18n('common.apply_button')}
                                     </button>

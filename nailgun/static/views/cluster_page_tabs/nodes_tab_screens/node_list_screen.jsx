@@ -1266,6 +1266,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             value={labelData.key}
                                             onChange={_.partial(this.changeLabelKey, index)}
                                             error={labelData.error}
+                                            autoFocus={index == this.state.labels.length - 1}
                                         />
                                         <controls.Input {...labelValueProps}
                                             type='text'

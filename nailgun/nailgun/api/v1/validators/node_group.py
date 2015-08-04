@@ -16,6 +16,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun import objects
 
 
@@ -28,10 +29,9 @@ class NodeGroupValidator(BasicValidator):
         if (cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network
                 or cluster.network_config.segmentation_type ==
                 consts.NEUTRON_SEGMENT_TYPES.vlan):
-            raise errors.NotAllowed(
-                "Node groups can only be created when using Neutron tunneling "
-                "segmentation type."
-            )
+            logger.warn('Node groups should be used for OpenStack '
+                        'environments that use an encapsulation protocol '
+                        'such as Neutron GRE.')
 
         return data
 

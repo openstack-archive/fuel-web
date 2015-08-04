@@ -313,7 +313,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                 <div className='col-xs-1 volume-group-size-label'>{i18n('common.size.mb')}</div>
                                             </div>
                                             {!!value && value == currentMinSize &&
-                                                <div className='volume-group-notice text-right'>{i18n(ns + 'minimum_reached')}</div>
+                                                <div className='volume-group-notice text-right text-warning'>{i18n(ns + 'minimum_reached')}</div>
                                             }
                                         </div>
                                     );

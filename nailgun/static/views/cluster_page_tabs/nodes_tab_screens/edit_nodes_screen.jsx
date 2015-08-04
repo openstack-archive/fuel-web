@@ -20,25 +20,27 @@ define(
     'react',
     'models',
     'utils',
+    'jsx!component_mixins',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function($, _, React, models, utils, NodeListScreen) {
+function($, _, React, models, utils, ComponentMixins, NodeListScreen) {
     'use strict';
 
     var EditNodesScreen = React.createClass({
         statics: {
             fetchData: function(options) {
                 var cluster = options.cluster,
-                    serializedIds = options.screenOptions[0],
-                    ids = serializedIds ? utils.deserializeTabOptions(serializedIds).nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [],
-                    nodes = new models.Nodes(cluster.get('nodes').getByIds(ids).map(function(node) {
-                        return _.cloneDeep(node.attributes);
-                    }));
+                    nodes = ComponentMixins.nodeConfigurationScreenMixin.getNodeList(options);
+
+                if (!nodes) {
+                    return $.Deferred().reject();
+                }
+
                 nodes.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: cluster.id}}, options));
                 };
                 nodes.parse = function() {
-                    return this.getByIds(ids);
+                    return this.getByIds(nodes.pluck('id'));
                 };
                 return $.when(options.cluster.get('roles').fetch(), cluster.get('settings').fetch({cache: true})).then(function() {
                     return {nodes: nodes};

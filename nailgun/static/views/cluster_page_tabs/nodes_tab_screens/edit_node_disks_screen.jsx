@@ -37,11 +37,9 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         ],
         statics: {
             fetchData: function(options) {
-                var cluster = options.cluster,
-                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);}),
-                    nodes = new models.Nodes(cluster.get('nodes').getByIds(nodeIds));
+                var nodes = ComponentMixins.nodeConfigurationScreenMixin.getNodeList(options);
 
-                if (nodes.length != nodeIds.length || !nodes.isDisksConfigurationAvailable()) {
+                if (!nodes || !nodes.isDisksConfigurationAvailable()) {
                     return $.Deferred().reject();
                 }
 

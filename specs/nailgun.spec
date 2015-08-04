@@ -226,6 +226,7 @@ Requires: python-netifaces
 Requires: python-urwid >= 1.1.0
 Requires: PyYAML
 Requires: python-ordereddict
+Requires: screen
 
 %description -n fuelmenu
 Summary: Console utility for pre-configuration of Fuel server

@@ -162,6 +162,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     inputClassName='form-control node-name-input'
                     disabled={this.state.actionInProgress}
                     onKeyDown={this.onNodeNameInputKeydown}
+                    maxLength='100'
                     autoFocus
                 />
             );

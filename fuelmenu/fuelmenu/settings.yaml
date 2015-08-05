@@ -21,4 +21,4 @@ BOOTSTRAP:
   MIRROR_MOS: "http://mirror.fuel-infra.org/mos-repos/7.0/cluster/base/trusty"
   HTTP_PROXY: ""
   EXTRA_APT_REPOS: ""
-  flavor: "centos"
+  flavor: "ubuntu"

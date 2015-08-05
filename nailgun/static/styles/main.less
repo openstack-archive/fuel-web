@@ -3806,6 +3806,9 @@ input[type=range] {
     width: 513px;
     margin-top: 10px;
   }
+  span {
+    color: @black;
+  }
 }
 
 .btn-link.glyphicon {
@@ -3928,6 +3931,9 @@ input[type=range] {
     border: 1px solid @deploy-border;
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
+    .redeployment-warning {
+      margin-bottom: @dashboard-offset;
+    }
     .validation-result ul {
       margin: 0;
       padding-left: 0;

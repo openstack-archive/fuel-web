@@ -547,6 +547,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 }
                                 {hasNodes &&
                                     [
+                                        cluster.needsRedeployment() &&
+                                            <div className='invalid'>
+                                                {i18n('dialog.display_changes.redeployment_needed')}
+                                            </div>,
                                         !_.isEmpty(this.state.alerts.blocker) &&
                                             [
                                                 <InstructionElement
@@ -555,7 +559,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                     explanation='for_more_information_roles'
                                                     link='user-guide.html#add-nodes-ug'
                                                     linkTitle='user_guide'
-                                                    wrapperClass='invalid-deploy'
+                                                    wrapperClass='invalid'
                                                 />,
                                                 <WarningsBlock
                                                     cluster={cluster}

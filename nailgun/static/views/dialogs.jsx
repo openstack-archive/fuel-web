@@ -225,14 +225,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var cluster = this.props.cluster;
             return (
                 <div className='display-changes-dialog'>
-                    {cluster.needsRedeployment() ?
-                        <div>
-                            <div className='text-danger'>
-                                <i className='glyphicon glyphicon-danger-sign' />
-                                <span>{i18n(this.ns + 'redeployment_needed')}</span>
-                            </div>
-                        </div>
-                    : _.contains(['new', 'stopped'], cluster.get('status')) &&
+                    {!cluster.needsRedeployment() && _.contains(['new', 'stopped'], cluster.get('status')) &&
                         <div>
                             <div className='text-warning'>
                                 <i className='glyphicon glyphicon-warning-sign' />

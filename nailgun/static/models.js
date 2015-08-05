@@ -923,7 +923,7 @@ define([
             }
             var networkWithFloatingRange = attrs.networks.filter(function(network) {return network.get('meta').floating_range_var;})[0];
             if (networkWithFloatingRange && !_.has(networksErrors[networkWithFloatingRange.id], 'cidr')) {
-                var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'));
+                var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'), true);
                 if (floatingRangesErrors.length) {
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
                 }

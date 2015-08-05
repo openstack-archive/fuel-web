@@ -646,6 +646,7 @@
                         "invalid_ip_start": "Invalid IP range start",
                         "invalid_ip_end": "Invalid IP range end",
                         "invalid_ip_range": "IP range start is greater than IP range end",
+                        "invalid_ip_range_equal": "IP range should contain more than 1 address",
                         "empty_ip_range": "Please specify at least one IP range",
                         "invalid_vlan": "Invalid VLAN ID",
                         "forbidden_vlan": "This VLAN ID is used by other networks. Please choose another ID",

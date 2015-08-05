@@ -105,31 +105,30 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
-        if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
+        if task.status == consts.TASK_STATUSES.error:
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(task.message)))
 
-                if 'dns_nameservers' in data:
-                    self.validator.validate_dns_servers_update(
-                        jsonutils.dumps(data)
-                    )
+        try:
+            if 'networks' in data:
+                self.validator.validate_networks_update(
+                    jsonutils.dumps(data)
+                )
 
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': consts.TASK_STATUSES.error,
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
+            if 'dns_nameservers' in data:
+                self.validator.validate_dns_servers_update(
+                    jsonutils.dumps(data)
+                )
 
-                logger.error(traceback.format_exc())
-
-        self.raise_task(task)
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
+        except Exception as exc:
+            logger.error(traceback.format_exc())
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(exc)))
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -150,6 +149,21 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
+    def _check_gateways(self, cluster, data):
+        gateless_nets = []
+        default_ng_id = objects.Cluster.get_default_group(cluster).id
+        for net in data['networks']:
+            if net['group_id'] != default_ng_id:
+                # This network belongs to a non-default node group,
+                # therefore a gateway must be specified for it
+                if not net.get('gateway'):
+                    gateless_nets.append(net['id'])
+        if len(gateless_nets) > 0:
+            raise errors.InvalidData(
+                "Gateway must be specified for networks {0}"
+                .format(gateless_nets))
+
+
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
@@ -168,31 +182,32 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
-        if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
+        if task.status == consts.TASK_STATUSES.error:
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(task.message)))
 
-                if 'networking_parameters' in data:
-                    self.validator.validate_neutron_params(
-                        jsonutils.dumps(data),
-                        cluster_id=cluster_id
-                    )
+        try:
+            if 'networks' in data:
+                self.validator.validate_networks_update(
+                    jsonutils.dumps(data)
+                )
+                self._check_gateways(cluster, data)
 
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': 'error',
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-                logger.error(traceback.format_exc())
+            if 'networking_parameters' in data:
+                self.validator.validate_neutron_params(
+                    jsonutils.dumps(data),
+                    cluster_id=cluster_id
+                )
 
-        self.raise_task(task)
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
+        except Exception as exc:
+            logger.error(traceback.format_exc())
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(exc)))
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):

@@ -105,31 +105,30 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
-        if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
+        if task.status == consts.TASK_STATUSES.error:
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(objects.Task.to_json(task))))
 
-                if 'dns_nameservers' in data:
-                    self.validator.validate_dns_servers_update(
-                        jsonutils.dumps(data)
-                    )
+        try:
+            if 'networks' in data:
+                self.validator.validate_networks_update(
+                    jsonutils.dumps(data)
+                )
 
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': consts.TASK_STATUSES.error,
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
+            if 'dns_nameservers' in data:
+                self.validator.validate_dns_servers_update(
+                    jsonutils.dumps(data)
+                )
 
-                logger.error(traceback.format_exc())
-
-        self.raise_task(task)
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
+        except Exception as exc:
+            logger.error(traceback.format_exc())
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(exc)))
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -168,31 +167,31 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
-        if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
+        if task.status == consts.TASK_STATUSES.error:
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(objects.Task.to_json(task))))
 
-                if 'networking_parameters' in data:
-                    self.validator.validate_neutron_params(
-                        jsonutils.dumps(data),
-                        cluster_id=cluster_id
-                    )
+        try:
+            if 'networks' in data:
+                self.validator.validate_networks_update(
+                    jsonutils.dumps(data)
+                )
 
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': 'error',
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-                logger.error(traceback.format_exc())
+            if 'networking_parameters' in data:
+                self.validator.validate_neutron_params(
+                    jsonutils.dumps(data),
+                    cluster_id=cluster_id
+                )
 
-        self.raise_task(task)
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
+        except Exception as exc:
+            logger.error(traceback.format_exc())
+            raise self.http(400,
+                            ("Network configuration update failed: {0}"
+                             .format(exc)))
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):

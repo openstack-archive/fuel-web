@@ -942,7 +942,7 @@ class NeutronNetworkDeploymentSerializer70(
 
             nodes[name] = {
                 "uid": node.uid,
-                "fqdn": node.fqdn,
+                "fqdn": Node.get_node_fqdn(node),
                 "name": name,
                 "user_node_name": node.name,
                 "swift_zone": node.uid,

@@ -1059,7 +1059,7 @@ class DumpTask(object):
         dump_conf = deepcopy(settings.DUMP)
         for node in nodes:
             host = {
-                'address': node.fqdn,
+                'address': objects.Node.get_node_fqdn(node),
                 'ssh-key': settings.SHOTGUN_SSH_KEY,
             }
 

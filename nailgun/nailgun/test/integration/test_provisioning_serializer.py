@@ -125,7 +125,8 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             self.assertEqual(node['uid'], node_db.uid)
             self.assertEqual(node['power_address'], node_db.ip)
             self.assertEqual(node['name'], "node-{0}".format(node_db.id))
-            self.assertEqual(node['hostname'], node_db.fqdn)
+            self.assertEqual(node['hostname'],
+                             objects.Node.get_node_fqdn(node_db))
             self.assertEqual(
                 node['power_pass'], settings.PATH_TO_BOOTSTRAP_SSH_KEY)
 
@@ -145,7 +146,8 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             self.assertEqual(
                 node['interfaces'][intr_name]['static'], '0')
             self.assertEqual(
-                node['interfaces'][intr_name]['dns_name'], node_db.fqdn)
+                node['interfaces'][intr_name]['dns_name'],
+                objects.Node.get_node_fqdn(node_db))
             # Check node interfaces extra section
             self.assertEqual(node['interfaces_extra'][intr_name], {
                 'peerdns': 'no',

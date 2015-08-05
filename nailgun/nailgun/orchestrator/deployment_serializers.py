@@ -194,7 +194,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     def serialize_node_for_node_list(cls, node, role):
         return {
             'uid': node.uid,
-            'fqdn': node.fqdn,
+            'fqdn': objects.Node.get_node_fqdn(node),
             'name': objects.Node.get_slave_name(node),
             'role': role}
 
@@ -231,7 +231,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         node_attrs = {
             # Yes, uid is really should be a string
             'uid': node.uid,
-            'fqdn': node.fqdn,
+            'fqdn': objects.Node.get_node_fqdn(node),
             'status': node.status,
             'role': role,
             'vms_conf': node.attributes.vms_conf,

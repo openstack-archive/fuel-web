@@ -156,7 +156,7 @@ class TestDeploymentAttributesSerialization70(
 
                 self.assertEqual(objects.Node.get_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
-                self.assertEqual(v['fqdn'], node.fqdn)
+                self.assertEqual(v['fqdn'], objects.Node.get_node_fqdn(node))
                 self.assertEqual(v['name'], k)
                 self.assertEqual(v['user_node_name'], node.name)
                 self.assertEqual(v['swift_zone'], node.uid)
@@ -310,7 +310,8 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                 )
                 self.assertEqual(objects.Node.get_slave_name(node), node_name)
                 self.assertEqual(node_attrs['uid'], node.uid)
-                self.assertEqual(node_attrs['fqdn'], node.fqdn)
+                self.assertEqual(node_attrs['fqdn'],
+                                 objects.Node.get_node_fqdn(node))
                 self.assertEqual(node_attrs['name'], node_name)
                 self.assertEqual(node_attrs['user_node_name'], node.name)
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
@@ -881,7 +882,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
     def test_multiple_node_roles_network_roles(self):
         expected_roles = {
             # controller node
-            self.cluster.nodes[0].fqdn: {
+            objects.Node.get_node_fqdn(self.cluster.nodes[0]): {
                 'management': 'br-mgmt',
                 'admin/pxe': 'br-fw-admin',
                 'swift/api': 'br-mgmt',
@@ -913,7 +914,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 'ceph/public': 'br-ex',
             },
             # compute/cinder node
-            self.cluster.nodes[1].fqdn: {
+            objects.Node.get_node_fqdn(self.cluster.nodes[1]): {
                 'management': 'br-mgmt',
                 'admin/pxe': 'br-fw-admin',
                 'swift/api': 'br-mgmt',
@@ -1005,7 +1006,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                         ip_by_net[net] = netgroup['ip'].split('/')[0]
                 self.assertEqual(objects.Node.get_slave_name(node), node_name)
                 self.assertEqual(node_attrs['uid'], node.uid)
-                self.assertEqual(node_attrs['fqdn'], node.fqdn)
+                self.assertEqual(node_attrs['fqdn'],
+                                 objects.Node.get_node_fqdn(node))
                 self.assertEqual(node_attrs['name'], node_name)
                 self.assertEqual(node_attrs['user_node_name'], node.name)
                 self.assertEqual(node_attrs['swift_zone'], node.uid)

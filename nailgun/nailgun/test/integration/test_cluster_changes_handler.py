@@ -262,7 +262,7 @@ class TestHandlers(BaseIntegrationTest):
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
                 'name': objects.Node.get_slave_name(n),
-                'hostname': n.fqdn,
+                'hostname': objects.Node.get_node_fqdn(n),
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
                 'netboot_enabled': '1',
@@ -325,7 +325,8 @@ class TestHandlers(BaseIntegrationTest):
                 }
 
                 if i.mac == objects.Node.get_admin_physical_iface(n).mac:
-                    pnd['interfaces'][i.name]['dns_name'] = n.fqdn
+                    pnd['interfaces'][i.name]['dns_name'] = \
+                        objects.Node.get_node_fqdn(n)
                     pnd['interfaces_extra'][i.name]['onboot'] = 'yes'
                     pnd['interfaces'][i.name]['ip_address'] = admin_ip
                     pnd['interfaces'][i.name]['netmask'] = str(
@@ -714,7 +715,7 @@ class TestHandlers(BaseIntegrationTest):
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
                 'name': objects.Node.get_slave_name(n),
-                'hostname': n.fqdn,
+                'hostname': objects.Node.get_node_fqdn(n),
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
                 'netboot_enabled': '1',
@@ -776,7 +777,8 @@ class TestHandlers(BaseIntegrationTest):
                 }
 
                 if i['mac'] == objects.Node.get_admin_physical_iface(n).mac:
-                    pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
+                    pnd['interfaces'][i['name']]['dns_name'] = \
+                        objects.Node.get_node_fqdn(n)
                     pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
                     pnd['interfaces'][i['name']]['ip_address'] = admin_ip
                     pnd['interfaces'][i['name']]['netmask'] = str(
@@ -1181,7 +1183,7 @@ class TestHandlers(BaseIntegrationTest):
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
                 'name': objects.Node.get_slave_name(n),
-                'hostname': n.fqdn,
+                'hostname': objects.Node.get_node_fqdn(n),
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
                 'netboot_enabled': '1',
@@ -1243,7 +1245,8 @@ class TestHandlers(BaseIntegrationTest):
                 }
 
                 if i['mac'] == objects.Node.get_admin_physical_iface(n).mac:
-                    pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
+                    pnd['interfaces'][i['name']]['dns_name'] = \
+                        objects.Node.get_node_fqdn(n)
                     pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
                     pnd['interfaces'][i['name']]['ip_address'] = admin_ip
                     pnd['interfaces'][i['name']]['netmask'] = str(

@@ -23,12 +23,14 @@ from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.settings import settings
 from nailgun.utils import remove_silently
 
 
 def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
-    logger.debug("Preparing syslog directories for node: %s", node.fqdn)
+    logger.debug("Preparing syslog directories for node: %s",
+                 objects.Node.get_node_fqdn(node))
     logger.debug("prepare_syslog_dir prefix=%s", prefix)
     log_paths = generate_log_paths_for_node(node, prefix)
     links = log_paths['links']
@@ -78,7 +80,7 @@ def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
                          "Trying to remove", l)
             shutil.rmtree(l)
         logger.debug("Creating symlink %s -> %s", l, new)
-        os.symlink(str(node.fqdn), l)
+        os.symlink(objects.Node.get_node_fqdn(node), l)
 
     os.system("/usr/bin/pkill -HUP rsyslog")
 
@@ -92,11 +94,12 @@ def generate_log_paths_for_node(node, prefix):
             .filter(Node.id == node.id)
             .filter(NetworkGroup.name == consts.NETWORKS.fuelweb_admin))
 
+    fqdn = objects.Node.get_node_fqdn(node)
     return {
         'links': links,
         'old': os.path.join(prefix, str(node.ip)),
-        'bak': os.path.join(prefix, "%s.bak" % str(node.fqdn)),
-        'new': os.path.join(prefix, str(node.fqdn)),
+        'bak': os.path.join(prefix, "%s.bak" % fqdn),
+        'new': os.path.join(prefix, fqdn),
     }
 
 

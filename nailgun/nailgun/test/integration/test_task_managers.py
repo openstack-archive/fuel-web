@@ -30,7 +30,6 @@ from nailgun.consts import ACTION_TYPES
 from nailgun.consts import NODE_STATUSES
 from nailgun.consts import TASK_NAMES
 from nailgun.consts import TASK_STATUSES
-from nailgun.settings import settings
 
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -223,7 +222,7 @@ class TestTaskManagers(BaseIntegrationTest):
             {"pending_addition": True},
             {"pending_addition": True, 'roles': ['compute']}])
         cluster_db = self.env.clusters[0]
-        # Generate ips, fqdns
+        # Generate ips
         objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         # First node with status ready
         # should not be readeployed
@@ -540,20 +539,6 @@ class TestTaskManagers(BaseIntegrationTest):
 
         tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
-
-    @fake_tasks()
-    def test_node_fqdn_is_assigned(self):
-        self.env.create(
-            nodes_kwargs=[
-                {"pending_addition": True},
-                {"pending_addition": True}
-            ]
-        )
-        self.env.launch_deployment()
-        self.env.refresh_nodes()
-        for node in self.env.nodes:
-            fqdn = "node-%s.%s" % (node.id, settings.DNS_DOMAIN)
-            self.assertEqual(fqdn, node.fqdn)
 
     @fake_tasks()
     def test_no_node_no_cry(self):

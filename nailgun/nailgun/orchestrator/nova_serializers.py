@@ -419,7 +419,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
 
             nodes[name] = {
                 "uid": n.uid,
-                "fqdn": n.fqdn,
+                "fqdn": Node.get_node_fqdn(n),
                 "name": name,
                 "user_node_name": n.name,
                 "swift_zone": n.uid,

@@ -1178,7 +1178,6 @@
             "online": true,
             "labels": {},
             "pending_addition": false,
-            "fqdn": "slave-15.domain.tld",
             "platform_name": "X9DRW",
             "mac": "00:25:90:6a:b1:84",
             "meta": {

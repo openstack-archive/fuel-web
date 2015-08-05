@@ -89,7 +89,7 @@ class ProvisioningSerializer(object):
             'name': objects.Node.get_slave_name(node),
             # right now it duplicates to avoid possible issues
             'slave_name': objects.Node.get_slave_name(node),
-            'hostname': node.fqdn,
+            'hostname': objects.Node.get_node_fqdn(node),
             'power_pass': cls.get_ssh_key_path(node),
 
             'profile': cluster_attrs['cobbler']['profile'],
@@ -202,7 +202,8 @@ class ProvisioningSerializer(object):
             # configuration yet.
             if interface.mac == objects.Node.\
                get_admin_physical_iface(node).mac:
-                interfaces[name]['dns_name'] = node.fqdn
+                interfaces[name]['dns_name'] = \
+                    objects.Node.get_node_fqdn(node)
                 interfaces[name]['netmask'] = admin_netmask
                 interfaces[name]['ip_address'] = admin_ip
                 interfaces_extra[name]['onboot'] = 'yes'

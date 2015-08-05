@@ -411,7 +411,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
 
             this.props.options.sort(function(option1, option2) {
-                return utils.natsort(option1.label, option2.label);
+                return utils.natsort(option1.label, option2.label, {insensitive: true});
             });
 
             var classNames = {'btn-group multiselect': true, open: this.state.isOpen};
@@ -752,7 +752,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }, this);
             }
 
-            this.props.selectedNodeLabels.sort(utils.natsort);
+            this.props.selectedNodeLabels.sort(_.partialRight(utils.natsort, {insensitive: true}));
 
             var isConfigurable = !_.isEmpty(_.compact(this.props.nodes.invoke('isNodeConfigurationPossible'))),
                 diskConfigButtonText = i18n('dialog.show_node.disk_configuration' + (isConfigurable ? '_action' : '')),
@@ -1506,7 +1506,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         var node1Label = node1.getLabel(sorterName),
                             node2Label = node2.getLabel(sorterName);
                         if (node1Label && node2Label) {
-                            result = utils.natsort(node1Label, node2Label);
+                            result = utils.natsort(node1Label, node2Label, {insensitive: true});
                         } else {
                             result = node1Label === node2Label ? 0 : _.isString(node1Label) ? -1 : _.isNull(node1Label) ? -1 : 1;
                         }

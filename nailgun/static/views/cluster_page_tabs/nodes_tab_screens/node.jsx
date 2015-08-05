@@ -260,7 +260,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (_.isEmpty(labels)) return null;
             return (
                 <ul>
-                    {_.map(_.keys(labels).sort(utils.natsort), function(key) {
+                    {_.map(_.keys(labels).sort(_.partialRight(utils.natsort, {insensitive: true})), function(key) {
                         var value = labels[key];
                         return (
                             <li key={key + value} className='label'>

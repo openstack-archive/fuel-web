@@ -483,6 +483,43 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         )
 
 
+class TestVerifyNovaFlatDHCP(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestVerifyNovaFlatDHCP, self).setUp()
+        nodes_kwargs = []
+        for role in ['controller', 'compute', 'cinder']:
+            nodes_kwargs.append(
+                {
+                    'roles': [role],
+                    'mac': self.env.generate_random_mac(),
+                    'api': True,
+                }
+            )
+
+        self.env.create(
+            cluster_kwargs={'net_provider': 'nova_network'},
+            nodes_kwargs=nodes_kwargs,
+        )
+        self.cluster = self.env.clusters[0]
+
+    @fake_tasks()
+    def test_flat_dhcp_verify(self):
+        nets = self.env.nova_networks_get(self.cluster.id).json_body
+        public = next(
+            (net for net in nets['networks']
+             if net['name'] == consts.NETWORKS.public))
+        ip_range = ['172.16.0.35', '172.16.0.38']
+        public['ip_ranges'] = [ip_range]
+        public['meta']['ip_range'] = ip_range
+        self.env.nova_networks_put(self.cluster.id, nets)
+
+        resp = self.env.launch_verify_networks(expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json_body['message'],
+                         'Not enough free IP addresses in pool')
+
+
 class TestVerifyNeutronVlan(BaseIntegrationTest):
 
     def setUp(self):

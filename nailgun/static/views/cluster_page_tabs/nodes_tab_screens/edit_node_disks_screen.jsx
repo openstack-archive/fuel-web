@@ -213,6 +213,9 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                 this.setState({key: _.now()});
             }
         },
+        onRangeInput: _.debounce(function(name) {
+            this.updateDisk(name, this.refs['range-' + name].getInputDOMNode().value);
+        }, 10, {leading: true}),
         render: function() {
             var disk = this.props.disk,
                 volumesInfo = this.props.volumesInfo,
@@ -284,11 +287,11 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                         disabled = this.props.disabled || currentMaxSize == currentMinSize;
 
                                     var props = {
-                                            name: volumeName,
-                                            min: currentMinSize,
-                                            max: currentMaxSize,
-                                            disabled: disabled
-                                        };
+                                        name: volumeName,
+                                        min: currentMinSize,
+                                        max: currentMaxSize,
+                                        disabled: disabled
+                                    };
                                     return (
                                         <div key={'edit_' + volumeName}>
                                             <div className='form-group volume-group row' data-volume={volumeName}>
@@ -300,7 +303,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                     <controls.Input {...props}
                                                         key={currentMinSize + currentMaxSize + this.state.key}
                                                         type='range'
-                                                        onInput={this.updateDisk}
+                                                        ref={'range-' + volumeName}
+                                                        onInput={_.partial(this.onRangeInput, volumeName)}
                                                         defaultValue={value}
                                                     />
                                                 </div>

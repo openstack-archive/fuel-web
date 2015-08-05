@@ -153,6 +153,7 @@ define([
                                     wrapperClassName='repo-name'
                                     onChange={this.changeRepos.bind(this, 'change_name')}
                                     label={index == 0 && i18n(ns + 'labels.name')}
+                                    debounce
                                 />
                                 <controls.Input
                                     {...props}
@@ -161,6 +162,7 @@ define([
                                     onChange={this.changeRepos.bind(this, null)}
                                     label={index == 0 && i18n(ns + 'labels.uri')}
                                     wrapperClassName='repo-uri'
+                                    debounce
                                 />
                                 <controls.Input
                                     {...props}
@@ -171,6 +173,7 @@ define([
                                     extraContent={index > 0 && this.renderDeleteButton(index)}
                                     label={index == 0 && i18n(ns + 'labels.priority')}
                                     placeholder={i18n(ns + 'placeholders.priority')}
+                                    debounce
                                 />
                             </div>
                         );

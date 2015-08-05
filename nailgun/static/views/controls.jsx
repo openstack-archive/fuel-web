@@ -31,6 +31,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
+            debounce: React.PropTypes.bool,
             description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
             inputClassName: React.PropTypes.node,
@@ -38,7 +39,6 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
             onChange: React.PropTypes.func,
-            onInput: React.PropTypes.func,
             extraContent: React.PropTypes.node
         },
         getInitialState: function() {
@@ -60,9 +60,6 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
         debouncedChange: _.debounce(function() {
             return this.onChange();
         }, 200, {leading: true}),
-        debouncedInput: _.debounce(function() {
-            return this.onInput();
-        }, 10, {leading: true}),
         pickFile: function() {
             if (!this.props.disabled) {
                 this.getInputDOMNode().click();
@@ -104,28 +101,19 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                 );
             }
         },
-        onInput: function() {
-            if (this.props.onInput) {
-                var input = this.getInputDOMNode();
-                return this.props.onInput(this.props.name, input.value);
-            }
-        },
         renderInput: function() {
             var classes = {'form-control': this.props.type != 'range'};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
-                    ref: 'input',
-                    key: 'input',
-                    type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
-                    className: utils.classNames(classes)
-                };
-            if (this.props.type == 'range') {
-                props.onInput = this.debouncedInput;
-            } else if (this.props.type == 'file') {
+                ref: 'input',
+                key: 'input',
+                type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
+                className: utils.classNames(classes)
+            };
+            if (this.props.type == 'file') {
                 props.onChange = this.readFile;
             } else {
-                // debounced onChange callback is supported for uncontrolled inputs
-                props.onChange = (_.isUndefined(this.props.value) && _.isUndefined(this.props.checked)) ? this.debouncedChange : this.onChange;
+                props.onChange = this.props.debounce ? this.debouncedChange : this.onChange;
             }
             var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,

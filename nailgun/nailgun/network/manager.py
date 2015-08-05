@@ -1158,7 +1158,8 @@ class NetworkManager(object):
         :type  cluster: instance
         :returns: None
         """
-        group_id = gid or objects.Cluster.get_default_group(cluster).id
+        default_gid = objects.Cluster.get_default_group(cluster).id
+        group_id = gid or default_gid
         networks_metadata = cluster.release.networks_metadata
         networks_list = networks_metadata[cluster.net_provider]["networks"]
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
@@ -1200,6 +1201,11 @@ class NetworkManager(object):
                         if net.get('use_gateway') else None
                     check_range_in_use_already(IPRange(new_ip_range.first,
                                                        new_ip_range.last))
+                # We are creating network groups for non-default node group,
+                # which means that we have to use gateway in these network
+                # groups. Update meta to reflect this.
+                if group_id != default_gid:
+                    net['use_gateway'] = True
 
             nw_group = NetworkGroup(
                 release=cluster.release.id,

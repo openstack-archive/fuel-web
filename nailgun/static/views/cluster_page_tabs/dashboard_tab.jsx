@@ -473,7 +473,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             return (
                 <div className='col-xs-12 deploy-readiness'>
                     <div className='deploy-block'>
-                        <div className='row'>
+                        <div className='row changes-content'>
                             {hasNodes &&
                                 <div className='col-xs-12 changes-list'>
                                     <h4>

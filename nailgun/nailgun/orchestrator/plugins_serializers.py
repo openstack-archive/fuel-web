@@ -129,26 +129,30 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         tasks.extend(self.deployment_tasks(plugins))
         return tasks
 
+    def _get_node_uids_for_plugin_tasks(self, plugin):
+        # TODO(aroma): remove concatenation of tasks when unified way of
+        # processing will be introduced for deployment tasks and existing
+        # plugin tasks
+        tasks_to_process = plugin.tasks + plugin.deployment_tasks
+
+        uids = get_uids_for_tasks(self.nodes, tasks_to_process)
+
+        # NOTE(aroma): pre-deployment tasks should not be executed on
+        # master node because in some cases it leads to errors due to
+        # commands need to be run are not compatible with master node
+        # OS (CentOS). E.g. of such situation - create repository
+        # executes `apt-get update` which fails on CentOS
+        if consts.MASTER_ROLE in uids:
+            uids.remove(consts.MASTER_ROLE)
+
+        return uids
+
     def create_repositories(self, plugins):
         operating_system = self.cluster.release.operating_system
 
         repo_tasks = []
         for plugin in plugins:
-            # TODO(aroma): remove concatenation of tasks when unified way of
-            # processing will be introduced for deployment tasks and existing
-            # plugin tasks
-            tasks_to_process = plugin.tasks + plugin.deployment_tasks
-
-            uids = get_uids_for_tasks(self.nodes, tasks_to_process)
-
-            # NOTE(aroma): create repository task should not be executed on
-            # master node because in some cases it leads to errors due to
-            # commands need to be run are not compatible with master node
-            # OS (CentOS). E.g. of such situation - release operation system
-            # for cluster is Ubuntu so command to be executed includes
-            # `apt-get update` which fails on CentOS
-            if consts.MASTER_ROLE in uids:
-                uids.remove(consts.MASTER_ROLE)
+            uids = self._get_node_uids_for_plugin_tasks(plugin)
 
             # If there are no nodes for tasks execution
             # or if there are no files in repository
@@ -191,24 +195,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
     def sync_scripts(self, plugins):
         tasks = []
         for plugin in plugins:
-            # TODO(aroma): remove concatenation of tasks when unified way of
-            # processing will be introduced for deployment tasks and existing
-            # plugin tasks
-            tasks_to_process = plugin.tasks + plugin.deployment_tasks
-
-            # NOTE(aroma): create_repository should not be executed on
-            # master node so we filter it out from nodes list on which tasks
-            # are executed
-            uids = get_uids_for_tasks(self.nodes, tasks_to_process)
-
-            # NOTE(aroma): create repository task should not be executed on
-            # master node because in some cases it leads to errors due to
-            # commands need to be run are not compatible with master node
-            # OS (CentOS). E.g. of such situation - release operation system
-            # for cluster is Ubuntu so command to be executed includes
-            # `apt-get update` which fails on CentOS
-            if consts.MASTER_ROLE in uids:
-                uids.remove(consts.MASTER_ROLE)
+            uids = self._get_node_uids_for_plugin_tasks(plugin)
 
             if not uids:
                 continue

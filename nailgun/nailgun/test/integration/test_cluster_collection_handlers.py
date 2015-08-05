@@ -125,7 +125,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_if_cluster_creates_correct_networks(self):
         release = Release()
-        release.version = "1.1.1"
+        release.version = "1111-6.0"
         release.name = u"release_name_" + str(release.version)
         release.description = u"release_desc" + str(release.version)
         release.operating_system = "CentOS"

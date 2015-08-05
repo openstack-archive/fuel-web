@@ -366,14 +366,17 @@ class Cluster(NailgunObject):
             from nailgun.network.manager import NetworkManager
             return NetworkManager
 
+        ver = instance.release.environment_version
         if instance.net_provider == 'neutron':
-            ver = instance.release.environment_version
-            if StrictVersion(ver) >= StrictVersion(consts.FUEL_NEUTRON_ONLY):
+            if StrictVersion(ver) >= StrictVersion('7.0'):
                 from nailgun.network.neutron import NeutronManager70
                 return NeutronManager70
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:
+            if StrictVersion(ver) >= StrictVersion('7.0'):
+                from nailgun.network.nova_network import NovaNetworkManager70
+                return NovaNetworkManager70
             from nailgun.network.nova_network import NovaNetworkManager
             return NovaNetworkManager
 

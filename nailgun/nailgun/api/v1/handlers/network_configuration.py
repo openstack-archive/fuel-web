@@ -280,6 +280,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
             task = task_manager.execute(data, vlan_ids)
         except errors.CantRemoveOldVerificationTask:
             raise self.http(400, "You cannot delete running task manually")
+        except errors.OutOfIPs as err:
+            raise self.http(400, err.message)
 
         self.raise_task(task)
 

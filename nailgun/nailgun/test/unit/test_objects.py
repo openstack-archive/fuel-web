@@ -172,6 +172,20 @@ class TestNodeObject(BaseIntegrationTest):
         self.db.refresh(cluster)
         self.assertEqual(len(cluster.nodes), 0)
 
+    def test_update_cluster_assignment(self):
+        cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}] * 3)
+        new_cluster = self.env.create_cluster(api=False)
+        new_group = objects.Cluster.get_default_group(new_cluster)
+        node = cluster.nodes[0]
+        roles = node.roles
+        objects.Node.update_cluster_assignment(node, new_cluster)
+        self.assertEqual(new_cluster.id, node.cluster_id)
+        self.assertEqual(new_group.id, node.group_id)
+        self.assertEqual([], node.roles)
+        self.assertItemsEqual(roles, node.pending_roles)
+
     def test_adding_to_cluster_kernel_params_centos(self):
         self.env.create(
             release_kwargs={

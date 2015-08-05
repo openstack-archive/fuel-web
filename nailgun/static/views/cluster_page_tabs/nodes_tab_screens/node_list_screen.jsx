@@ -631,7 +631,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 .done(_.bind(function() {
                     $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
                         this.changeScreen();
-                        dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                        if (this.props.mode == 'add') {
+                            dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                        }
                     }, this));
                 }, this))
                 .fail(_.bind(function(response) {

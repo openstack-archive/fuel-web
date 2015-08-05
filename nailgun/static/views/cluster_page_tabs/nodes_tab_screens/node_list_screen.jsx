@@ -1129,20 +1129,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeLabelKey: function(index, oldKey, newKey) {
             var labels = this.state.labels,
                 labelData = labels[index];
-            newKey = _.trim(newKey);
-            if (newKey != labelData.key) {
-                if (!labelData.indeterminate) labelData.checked = true;
-                labelData.error = this.validateLabelKey(labelData, newKey);
-                labelData.key = newKey;
-                this.setState({labels: labels});
-            }
+            labelData.key = _.trim(newKey);
+            if (!labelData.indeterminate) labelData.checked = true;
+            labelData.error = this.validateLabelKey(labelData, index);
+            this.setState({labels: labels});
         },
         changeLabelState: function(index, key, checked) {
             var labels = this.state.labels,
                 labelData = labels[index];
             labelData.checked = checked;
             labelData.indeterminate = false;
-            labelData.error = this.validateLabelKey(labelData);
+            labelData.error = this.validateLabelKey(labelData, index);
             this.setState({labels: labels});
         },
         changeLabelValue: function(index, key, value) {
@@ -1150,15 +1147,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 labelData = labels[index];
             labelData.values = [_.trim(value) || null];
             if (!labelData.indeterminate) labelData.checked = true;
-            labelData.error = this.validateLabelKey(labelData);
+            labelData.error = this.validateLabelKey(labelData, index);
             this.setState({labels: labels});
         },
-        validateLabelKey: function(labelData, key) {
+        validateLabelKey: function(labelData, labelIndex) {
             if (labelData.checked || labelData.indeterminate) {
                 var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
-                key = !_.isUndefined(key) ? key : labelData.key;
-                if (!key) return i18n(ns + 'empty_label_key');
-                if (_.find(this.state.labels, {key: key})) return i18n(ns + 'existing_label');
+                if (!labelData.key) {
+                    return i18n(ns + 'empty_label_key');
+                }
+                if (_.any(this.state.labels, function(data, index) {
+                    if (index == labelIndex) return false;
+                    return data.key == labelData.key && (data.checked || data.indeterminate);
+                })) {
+                    return i18n(ns + 'existing_label');
+                }
             }
             return null;
         },

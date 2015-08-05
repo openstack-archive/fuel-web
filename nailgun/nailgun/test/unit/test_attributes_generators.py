@@ -13,11 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+import base64
+import mock
 import string
+import struct
 
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import AttributesGenerator
+
+
+def fake_urandom(length):
+    return 'f' * length
 
 
 class TestAttributesGenerators(BaseTestCase):
@@ -33,3 +39,20 @@ class TestAttributesGenerators(BaseTestCase):
         hex_str = AttributesGenerator.hexstring(32)
         self.assertEqual(len(hex_str), 32)
         self.assertTrue(all(hex_str))
+
+    @mock.patch('nailgun.utils.os.urandom', side_effect=fake_urandom)
+    @mock.patch('nailgun.utils.time.time',
+                side_effect=lambda: 1437172408.238165)
+    def test_cephx_key_generator(self, m_time, m_urandom):
+        coded_key = AttributesGenerator.cephx_key()
+        uncoded_key = base64.b64decode(coded_key)
+        package = uncoded_key[:-16]
+        key = uncoded_key[-16:]
+
+        key_type, sec, usec, length = struct.unpack('<hiih', package)
+
+        self.assertEqual(key, 'f' * 16)
+        self.assertEqual(key_type, 1)
+        self.assertEqual(sec, 1437172408)
+        self.assertEqual(usec, 0)
+        self.assertEqual(length, 16)

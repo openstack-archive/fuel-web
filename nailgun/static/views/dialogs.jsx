@@ -882,10 +882,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.delete_nodes.title')};},
         renderBody: function() {
+            var ns = 'dialog.delete_nodes.',
+                newNodes = this.props.nodes.where({pending_addition: true}),
+                deployedNodes = this.props.nodes.where({status: 'ready'});
             return (
                 <div className='text-danger'>
                     {this.renderImportantLabel()}
-                    {i18n('dialog.delete_nodes.message', {count: this.props.nodes.length})}
+                    {i18n(ns + 'common_message', {count: this.props.nodes.length})}
+                    <br/>
+                    {!!newNodes.length && i18n(ns + 'new_nodes_message', {count: newNodes.length})}
+                    {' '}
+                    {!!deployedNodes.length && i18n(ns + 'deployed_nodes_message', {count: deployedNodes.length})}
                 </div>
             );
         },

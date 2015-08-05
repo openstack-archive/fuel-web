@@ -881,8 +881,12 @@
                 },
                 "delete_nodes": {
                     "title": "Delete Nodes",
-                    "message": "Are you sure you want to delete the selected node from the environment? The node will return to the pool of unallocated nodes.",
-                    "message_plural": "Are you sure you want to delete the selected nodes from the environment? The nodes will return to the pool of unallocated nodes."
+                    "common_message": "Are you sure you want to delete selected node from the environment?",
+                    "common_message_plural": "Are you sure you want to delete selected nodes from the environment?",
+                    "new_nodes_message": "Pending addition node will return to the pool of unallocated nodes.",
+                    "new_nodes_message_plural": "Pending addition nodes will return to the pool of unallocated nodes.",
+                    "deployed_nodes_message": "Deployed node will be marked as pending deletion and will be removed from the environment after redeployment.",
+                    "deployed_nodes_message_plural": "Deployed nodes will be marked as pending deletion and will be removed from the environment after redeployment."
                 },
                 "discard_changes": {
                     "title": "Discard Changes",

@@ -552,6 +552,14 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 }
                                 {hasNodes &&
                                     [
+                                        cluster.needsRedeployment() &&
+                                            (
+                                                <div className='instruction invalid-deploy redeployment-warning'>
+                                                    <div className='text-danger'>
+                                                        <span>{i18n('dialog.display_changes.redeployment_needed')}</span>
+                                                    </div>
+                                                </div>
+                                            ),
                                         !_.isEmpty(this.state.alerts.blocker) &&
                                             [
                                                 <InstructionElement

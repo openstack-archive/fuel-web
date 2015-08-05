@@ -44,8 +44,6 @@ var lintspaces = require('gulp-lintspaces');
 
 var jscs = require('gulp-jscs');
 var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
-var jshint = require('gulp-jshint');
-var jshintConfig = JSON.parse(fs.readFileSync('./.jshintrc'));
 
 var intermediate = require('gulp-intermediate');
 var rjs = require('requirejs');
@@ -229,14 +227,14 @@ gulp.task('jscs', function() {
         .pipe(jscs(jscsConfig));
 });
 
-gulp.task('jshint', function() {
+gulp.task('eslint', function() {
+    // FIXME(vkramskikh): move to top after fixing packaging issues
+    var eslint = require('gulp-eslint');
+    var eslintConfig = JSON.parse(fs.readFileSync('./.eslintrc'));
     return gulp.src(jsFiles)
-        .pipe(jsxFilter)
-        .pipe(react())
-        .pipe(jsxFilter.restore())
-        .pipe(jshint(jshintConfig))
-        .pipe(jshint.reporter('jshint-stylish'))
-        .pipe(jshint.reporter('fail'));
+        .pipe(eslint(eslintConfig))
+        .pipe(eslint.format())
+        .pipe(eslint.failAfterError());
 });
 
 var lintspacesConfig = {
@@ -267,7 +265,7 @@ gulp.task('lintspaces:styles', function() {
 
 gulp.task('lint', [
     'jscs',
-    'jshint',
+    'eslint',
     'lintspaces:js',
     'lintspaces:styles'
 ]);

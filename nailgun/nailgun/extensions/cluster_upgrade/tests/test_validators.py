@@ -1,0 +1,87 @@
+# -*- coding: utf-8 -*-
+
+#    Copyright 2015 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from oslo_serialization import jsonutils
+
+from nailgun import consts
+from nailgun.errors import errors
+
+from .. import validators
+from . import base as tests_base
+from ..objects import relations
+
+
+class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
+    validator = validators.ClusterUpgradeValidator
+
+    def test_validate_release_upgrade(self):
+        self.validator.validate_release_upgrade(self.release_61,
+                                                self.release_70)
+
+    def test_validate_release_upgrade_deprecated_release(self):
+        release_511 = self.env.create_release(
+            operating_system=consts.RELEASE_OS.ubuntu,
+            version="2014.1.3-5.1.1",
+            is_deployable=False,
+        )
+        msg = "^Upgrade to the given release \({0}\).*is deprecated and " \
+              "cannot be installed\.$".format(self.release_61.id)
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate_release_upgrade(release_511,
+                                                    self.release_61)
+
+    def test_validate_release_upgrade_to_older_release(self):
+        self.release_61.is_deployable = True
+        msg = "^Upgrade to the given release \({0}\).*release is equal or " \
+              "lower than the release of the original cluster\.$" \
+              .format(self.release_61.id)
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate_release_upgrade(self.release_70,
+                                                    self.release_61)
+
+    def test_validate_cluster_name(self):
+        self.validator.validate_cluster_name("cluster-42")
+
+    def test_validate_cluster_name_already_exists(self):
+        msg = "^Environment with this name '{0}' already exists\.$"\
+              .format(self.cluster_61.name)
+        with self.assertRaisesRegexp(errors.AlreadyExists, msg):
+            self.validator.validate_cluster_name(self.cluster_61.name)
+
+    def test_validate_cluster_status(self):
+        self.validator.validate_cluster_status(self.cluster_61)
+
+    def test_validate_cluster_status_invalid(self):
+        cluster_70 = self.env.create_cluster(
+            api=False,
+            release_id=self.release_70.id,
+        )
+        relations.UpgradeRelationObject.create_relation(self.cluster_61.id,
+                                                        cluster_70.id)
+        msg = "^Upgrade is not possible because of the original cluster " \
+              "\({0}\) is already involved in the upgrade routine\.$" \
+              .format(self.cluster_61.id)
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate_cluster_status(self.cluster_61)
+
+    def test_validate(self):
+        data = jsonutils.dumps(self.data)
+        self.validator.validate(data, self.cluster_61)
+
+    def test_validate_invalid_data(self):
+        data = "{}"
+        with self.assertRaises(errors.InvalidData):
+            self.validator.validate(data, self.cluster_61)

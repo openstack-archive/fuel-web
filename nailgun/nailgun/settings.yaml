@@ -865,7 +865,7 @@ DUMP:
         command: yum repolist
         to_file: centos_repo_list.txt
       - type: command
-        command: dpkg -l
+        command: dpkg -l|cat
         to_file: ubuntu_installed_debs.txt
       - type: command
         command: apt-cache policy

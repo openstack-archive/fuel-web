@@ -152,7 +152,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     var HorizonBlock = React.createClass({
         render: function() {
             var cluster = this.props.cluster,
-                horizonLinkProtocol = cluster.get('public_ssl.horizon.value') ? 'https://' : 'http://';
+                horizonLinkProtocol = cluster.get('settings').get('public_ssl.horizon.value') ? 'https://' : 'http://';
             return (
                 <div className='row plugins-block'>
                     <div className='col-xs-12 plugin-entry horizon'>

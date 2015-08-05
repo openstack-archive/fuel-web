@@ -3967,12 +3967,15 @@ input[type=range] {
     }
   }
   .deploy-block {
-    padding: 5px 20px;
+    padding: @dashboard-offset;
     border: 1px solid @deploy-border;
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
     .warning-redeployment {
       margin-bottom: @dashboard-offset;
+    }
+    .changes-content {
+      padding: 6px 0 0 10px;
     }
     .validation-result ul {
       margin: 0;
@@ -3995,7 +3998,6 @@ input[type=range] {
       }
     }
     .changes-list {
-      padding: @dashboard-offset @dashboard-offset 0 @dashboard-offset;
       a {cursor: pointer;}
       .changes-header {
         .font-bold;
@@ -4017,7 +4019,7 @@ input[type=range] {
       }
     }
     .deploy-readiness {
-      padding: @dashboard-offset 0 0 @dashboard-offset;
+      margin-top: @dashboard-offset;
       .informational-block {
         margin-bottom: @dashboard-offset;
       }
@@ -4044,6 +4046,7 @@ input[type=range] {
       }
       .btn-add-nodes {
         float: left;
+        margin-left: 2px;
       }
       li {
         margin-bottom: @dashboard-offset;
@@ -4055,11 +4058,12 @@ input[type=range] {
     }
     .deploy-process {
       height: auto;
+      padding: 6px 10px 4px 10px;
       .task-title {
         margin-bottom: @dashboard-offset + @dashboard-offset * 0.2;
       }
       .progress {
-        margin-bottom: @dashboard-offset;
+        margin-bottom: 0;
         width: 100%;
         &.has-progress {
           width: 95%;

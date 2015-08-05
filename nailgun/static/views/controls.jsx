@@ -231,10 +231,31 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
     });
 
     controls.ProgressBar = React.createClass({
+        propTypes: {
+            wrapperClassName: React.PropTypes.node,
+            progress: React.PropTypes.number
+        },
         render: function() {
+            var wrapperClasses = {
+                progress: true
+            };
+            wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
+
+            var isInfinite = !_.isNumber(this.props.progress);
+            var progressClasses = {
+                'progress-bar': true,
+                'progress-bar-striped active': isInfinite
+            };
+
             return (
-                <div className='progress'>
-                    <div className='progress-bar progress-bar-striped active' style={{width: '100%'}}></div>
+                <div className={utils.classNames(wrapperClasses)}>
+                    <div
+                        className={utils.classNames(progressClasses)}
+                        role='progressbar'
+                        style={{width: isInfinite ? '100%' : _.max([this.props.progress, 3]) + '%'}}
+                    >
+                        {!isInfinite && this.props.progress + '%'}
+                    </div>
                 </div>
             );
         }

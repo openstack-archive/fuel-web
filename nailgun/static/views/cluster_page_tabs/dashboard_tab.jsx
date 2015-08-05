@@ -111,12 +111,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         ]
                     }
                     {release.get('state') == 'unavailable' &&
-                        <div className='alert global-alert alert-warning'>
+                        <div className='alert alert-warning'>
                             {i18n('cluster_page.unavailable_release', {name: release.get('name')})}
                         </div>
                     }
                     {cluster.get('is_customized') &&
-                        <div className='alert global-alert alert-warning'>
+                        <div className='alert alert-warning'>
                             {i18n('cluster_page.cluster_was_modified_from_cli')}
                         </div>
                     }

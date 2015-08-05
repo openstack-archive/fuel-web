@@ -3929,6 +3929,9 @@ input[type=range] {
     border: 1px solid @deploy-border;
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
+    .warning-redeployment {
+      margin-bottom: @dashboard-offset;
+    }
     .validation-result ul {
       margin: 0;
       padding-left: 0;
@@ -3976,7 +3979,7 @@ input[type=range] {
       .informational-block {
         margin-bottom: @dashboard-offset;
       }
-      .invalid-deploy.instruction {
+      .invalid {
         .font-semibold;
         font-size: @base-font-size - 1;
         color: @red;

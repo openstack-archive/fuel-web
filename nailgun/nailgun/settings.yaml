@@ -812,6 +812,8 @@ DUMP:
         path: /var/lib/puppet/state/last_run_summary.yaml
       - type: file
         path: /etc/resolv.conf
+      - type: file
+        path: /etc/mcollective/server.cfg
       - type: dir
         path: /var/run/pcap_dir
       - type: file

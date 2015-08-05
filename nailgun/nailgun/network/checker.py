@@ -150,11 +150,12 @@ class NetworkCheck(object):
             addrs = [netaddr.IPNetwork(ngs[0]['cidr']).cidr,
                      netaddr.IPNetwork(ngs[1]['cidr']).cidr]
             if self.net_man.is_range_intersection(addrs[0], addrs[1]):
+                net_info = "{0}({1}), {2}({3})".format(
+                    ngs[0]['name'], ngs[0]['id'], ngs[1]['name'], ngs[1]['id']
+                )
                 self.err_msgs.append(
                     u"Address space intersection between "
-                    "networks:\n{0}.".format(
-                        ", ".join([ngs[0]['name'], ngs[1]['name']])
-                    )
+                    "networks: {0}".format(net_info)
                 )
                 self.result.append({
                     "ids": [int(ngs[0]["id"]), int(ngs[1]["id"])],
@@ -168,7 +169,8 @@ class NetworkCheck(object):
                     fixed_cidr, netaddr.IPNetwork(ng['cidr']).cidr):
                 self.err_msgs.append(
                     u"Address space intersection between "
-                    "networks:\nfixed, {0}.".format(ng['name'])
+                    "networks:\nfixed, {0}({1}).".format(
+                        ng['name'], ng['id'])
                 )
                 self.result.append({
                     "ids": [int(ng["id"])],
@@ -184,8 +186,9 @@ class NetworkCheck(object):
             if self.net_man.is_range_intersection(cidr, net_vs_range[1]):
                 self.err_msgs.append(
                     u"Address space intersection between floating range '{0}'"
-                    " and '{1}' network.".format(
-                        net_vs_range[1], net_vs_range[0]['name'])
+                    " and '{1}({2})' network.".format(
+                        net_vs_range[1], net_vs_range[0]['name'],
+                        net_vs_range[0]['id'])
                 )
                 self.result.append({
                     "ids": [int(net_vs_range[0]["id"])],
@@ -363,11 +366,12 @@ class NetworkCheck(object):
                 cidr1 = netaddr.IPNetwork(ngs[0]['cidr'])
                 cidr2 = netaddr.IPNetwork(ngs[1]['cidr'])
                 if self.net_man.is_cidr_intersection(cidr1, cidr2):
+                    net_info = "{0}({1}), {2}({3})".format(
+                        ngs[0]['name'], ngs[0]['id'],
+                        ngs[1]['name'], ngs[1]['id'])
                     self.err_msgs.append(
                         u"Address space intersection "
-                        u"between networks:\n{0}".format(
-                            ", ".join([ngs[0]['name'], ngs[1]['name']])
-                        )
+                        u"between networks: {0}".format(net_info)
                     )
                     self.result.append({
                         "ids": [int(ngs[0]["id"]), int(ngs[1]["id"])],

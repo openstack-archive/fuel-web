@@ -1058,3 +1058,30 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                     node_attrs['network_roles'],
                     network_roles
                 )
+
+    def test_delete_default_network_group(self):
+        net_name = "storage"
+        node_group = objects.Cluster.get_default_group(self.cluster)
+        # delete one of default network group
+        storage_net = objects.NetworkGroup.get_from_node_group_by_name(
+            node_group.id, net_name)
+        objects.NetworkGroup.delete(storage_net)
+        # download default template and fix it
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        template_meta = net_template["adv_net_template"]["default"]
+        # wide out network from template
+        del(template_meta["network_assignments"][net_name])
+        for k, v in template_meta["templates_for_node_role"].iteritems():
+            if net_name in v:
+                v.remove(net_name)
+        del(template_meta["network_scheme"][net_name])
+        # apply updated template to the cluster
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+        serializer = get_serializer_for_cluster(self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        # serializer should not fail if we delete one of default network
+        # what is not used in template
+        net_serializer.generate_network_metadata(self.cluster)

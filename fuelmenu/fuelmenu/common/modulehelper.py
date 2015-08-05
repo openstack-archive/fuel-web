@@ -186,7 +186,7 @@ class ModuleHelper(object):
                     for line in fh:
                         if re.match("^BOOTPROTO=", line):
                             modobj.netsettings[iface]['bootproto'] = \
-                                line.split('=').strip()
+                                line.split('=')[1].strip()
                             break
             except Exception:
                 #Check for dhclient process running for this interface

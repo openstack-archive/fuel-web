@@ -830,7 +830,7 @@ class EnvironmentManager(object):
                 "Nothing to update - try creating cluster"
             )
 
-    def launch_verify_networks(self, data=None):
+    def launch_verify_networks(self, data=None, expect_errors=False):
         if self.clusters:
             net_urls = {
                 "nova_network": {
@@ -861,10 +861,14 @@ class EnvironmentManager(object):
                     net_urls[provider]["verify"],
                     kwargs={'cluster_id': self.clusters[0].id}),
                 nets,
-                headers=self.default_headers
+                headers=self.default_headers,
+                expect_errors=expect_errors,
             )
-            task_uuid = resp.json_body['uuid']
-            return self.db.query(Task).filter_by(uuid=task_uuid).first()
+            if expect_errors:
+                return resp
+            else:
+                task_uuid = resp.json_body['uuid']
+                return self.db.query(Task).filter_by(uuid=task_uuid).first()
         else:
             raise NotImplementedError(
                 "Nothing to verify - try creating cluster"

@@ -220,6 +220,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             var disk = this.props.disk,
                 volumesInfo = this.props.volumesInfo,
                 diskMetaData = this.props.diskMetaData,
+                diskError = false,
                 sortOrder = ['name', 'model', 'size'],
                 ns = 'cluster_page.nodes_tab.configure_disks.';
             return (
@@ -283,15 +284,17 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                     var volumeName = volume.get('name'),
                                         value = volumesInfo[volumeName].size,
                                         currentMaxSize = volumesInfo[volumeName].max,
-                                        currentMinSize = _.max([volumesInfo[volumeName].min, 0]),
-                                        disabled = this.props.disabled || currentMaxSize == currentMinSize;
+                                        currentMinSize = _.max([volumesInfo[volumeName].min, 0]);
 
                                     var props = {
                                         name: volumeName,
                                         min: currentMinSize,
                                         max: currentMaxSize,
-                                        disabled: disabled
+                                        disabled: this.props.disabled || currentMaxSize <= currentMinSize
                                     };
+
+                                    diskError = diskError || currentMaxSize < currentMinSize;
+
                                     return (
                                         <div key={'edit_' + volumeName}>
                                             <div className='form-group volume-group row' data-volume={volumeName}>
@@ -317,11 +320,14 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                 <div className='col-xs-1 volume-group-size-label'>{i18n('common.size.mb')}</div>
                                             </div>
                                             {!!value && value == currentMinSize &&
-                                                <div className='volume-group-notice text-right'>{i18n(ns + 'minimum_reached')}</div>
+                                                <div className='volume-group-notice text-info'>{i18n(ns + 'minimum_reached')}</div>
                                             }
                                         </div>
                                     );
                                 }, this)}
+                                {diskError &&
+                                    <div className='volume-group-notice text-danger'>{i18n(ns + 'not_enough_space')}</div>
+                                }
                             </div>
                         </div>
                     </div>

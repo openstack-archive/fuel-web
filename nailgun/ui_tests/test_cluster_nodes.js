@@ -35,7 +35,7 @@ casper.then(function() {
     this.click('.node-name p');
     this.test.assertDoesntExist('.node-name input', 'Node can not be renamed from compact panel');
     this.click('.node');
-    this.test.assertExists('.node-buttons .glyphicon', 'Node can be checked in compact view');
+    this.test.assertExists('.node-checkbox .glyphicon', 'Node can be checked in compact view');
     this.click('.node-hardware p.btn');
     this.test.assertSelectorAppears('.node-popover', 'Node expanded view appears', 1000);
     this.then(function() {

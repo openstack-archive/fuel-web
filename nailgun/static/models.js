@@ -417,8 +417,11 @@ define([
         hasChanges: function() {
             return this.get('pending_addition') || this.get('pending_deletion');
         },
-        isNodeConfigurationPossible: function() {
+        areDisksConfigurable: function() {
             return this.get('pending_addition') || this.get('status') == 'error';
+        },
+        areInterfacesConfigurable: function() {
+            return this.get('pending_addition') && this.get('status') != 'error';
         },
         getRolesSummary: function(releaseRoles) {
             return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {
@@ -463,11 +466,7 @@ define([
         getLabelValues: function(label) {
             return this.invoke('getLabel', label);
         },
-        isInterfacesConfigurationAvailable: function() {
-            if (!this.length) return false;
-            return _.uniq(this.invoke('resource', 'interfaces')).length == 1;
-        },
-        isDisksConfigurationAvailable: function() {
+        areDisksConfigurable: function() {
             if (!this.length) return false;
             var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles')),
                 disks = this.at(0).resource('disks');
@@ -475,6 +474,10 @@ define([
                 var roleConflict = _.difference(roles, _.union(node.get('roles'), node.get('pending_roles'))).length;
                 return roleConflict || !_.isEqual(disks, node.resource('disks'));
             });
+        },
+        areInterfacesConfigurable: function() {
+            if (!this.length) return false;
+            return _.uniq(this.invoke('resource', 'interfaces')).length == 1;
         }
     });
 

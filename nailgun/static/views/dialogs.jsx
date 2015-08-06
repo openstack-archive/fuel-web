@@ -784,20 +784,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             );
         },
         renderFooter: function() {
-            var node = this.props.node,
-                isConfigurable = node.isNodeConfigurationPossible(),
-                diskConfigButtonText = i18n('dialog.show_node.disk_configuration' + (isConfigurable ? '_action' : '')),
-                networkConfigButtonText = i18n('dialog.show_node.network_configuration' + (isConfigurable ? '_action' : ''));
-
             return (
                 <div>
-                    {node.get('cluster') &&
+                    {this.props.node.get('cluster') &&
                         <div className='btn-group' role='group'>
                             <button className='btn btn-default btn-edit-disks' onClick={_.partial(this.goToConfigurationScreen, 'disks')}>
-                                {diskConfigButtonText}
+                                {i18n('dialog.show_node.disk_configuration' + (this.props.node.areDisksConfigurable() ? '_action' : ''))}
                             </button>
                             <button className='btn btn-default btn-edit-networks' onClick={_.partial(this.goToConfigurationScreen, 'interfaces')}>
-                                {networkConfigButtonText}
+                                {i18n('dialog.show_node.network_configuration' + (this.props.node.areInterfacesConfigurable() ? '_action' : ''))}
                             </button>
                         </div>
                     }

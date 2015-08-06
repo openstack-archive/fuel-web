@@ -1793,20 +1793,38 @@ input[type=range] {
       &.error {
         background-color: @node-color-error;
         border-color: @node-border-color-error;
+        &:hover {
+          background-color: @node-color-error + 5%;
+        }
       }
       &.pending_addition {
         background-color: @node-color-pending_addition;
         border-color: @node-border-color-pending_addition;
+        &:hover {
+          background-color: @node-color-pending_addition + 10%;
+        }
       }
       &.offline {
         background-color: @node-color-offline + 10%;
         border-color: @node-border-color-offline + 10%;
         .node-name, .node-status, .node-settings {opacity: .7;}
+        &:hover {
+          background-color: @node-color-offline + 20%;
+        }
       }
       &.selected {
         background-color: @node-color-selected;
         border-color: @node-border-color-selected;
         box-shadow: inset 0 0 0 0px #c3c5c7;
+        &.error {
+          border-color: @node-border-color-error;
+        }
+        &.pending_addition {
+          border-color: @node-border-color-pending_addition;
+        }
+        &:hover {
+          background-color: @node-color-selected + 10%;
+        }
       }
 
       .node-box {

@@ -253,7 +253,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         showDeleteNodesDialog: function() {
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
-            dialogs.DeleteNodesDialog.show({nodes: [this.props.node], cluster: this.props.cluster});
+            dialogs.DeleteNodesDialog.show({
+                nodes: new models.Nodes(this.props.node),
+                cluster: this.props.cluster
+            });
         },
         renderLabels: function() {
             var labels = this.props.node.get('labels');
@@ -320,7 +323,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 className='node-box-inner clearfix'
                                 onClick={isSelectable && _.partial(this.props.onNodeSelection, null, !this.props.checked)}
                             >
-                                <div className='node-buttons'>
+                                <div className='node-checkbox'>
                                     {this.props.checked && <i className='glyphicon glyphicon-ok' />}
                                 </div>
                                 <div className='node-name'>
@@ -383,16 +386,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         :
                                             <div>
                                                 {this.renderStatusLabel(status)}
-                                                {status == 'offline' && this.renderRemoveButton()}
-                                                {!!node.get('cluster') &&
-                                                    [
-                                                        this.renderLogsLink(),
-                                                        node.hasChanges() &&
-                                                            <button className='btn btn-discard' key='btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
-                                                                {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                                            </button>
-                                                    ]
-                                                }
+                                                <div className='node-buttons'>
+                                                    {status == 'offline' && this.renderRemoveButton()}
+                                                    {!!node.get('cluster') &&
+                                                        [
+                                                            this.renderLogsLink(),
+                                                            node.hasChanges() &&
+                                                                <button className='btn btn-discard' key='btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
+                                                                    {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                                                </button>
+                                                        ]
+                                                    }
+                                                </div>
                                             </div>
                                         }
                                     </div>

@@ -91,7 +91,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.endNodeRenaming();
             }
         },
-        discardNodeChanges: function() {
+        discardNodeChanges: function(e) {
+            e.preventDefault();
             if (this.state.actionInProgress) return;
             this.setState({actionInProgress: true});
             var node = new models.Node(this.props.node.attributes),
@@ -103,6 +104,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         if (!nodeWillBeRemoved) this.setState({actionInProgress: false});
                     }, this));
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                    this.props.onNodeSelection();
                 }, this))
                 .fail(function(response) {
                     utils.showErrorDialog({
@@ -251,12 +253,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </ul>
             );
         },
-        showDeleteNodesDialog: function() {
+        showDeleteNodesDialog: function(e) {
+            e.preventDefault();
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
             dialogs.DeleteNodesDialog.show({
                 nodes: new models.Nodes(this.props.node),
                 cluster: this.props.cluster
-            });
+            })
+            .done(this.props.onNodeSelection);
         },
         renderLabels: function() {
             var labels = this.props.node.get('labels');

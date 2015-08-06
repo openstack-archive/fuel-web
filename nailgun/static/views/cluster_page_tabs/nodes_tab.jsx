@@ -18,6 +18,7 @@ define(
     'jquery',
     'underscore',
     'react',
+    'jsx!component_mixins',
     'jsx!views/controls',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
@@ -25,19 +26,23 @@ define(
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, React, componentMixins, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
 
     var ReactTransitionGroup = React.addons.TransitionGroup;
 
     var NodesTab = React.createClass({
+        mixins: [
+            componentMixins.dispatcherMixin('removeDeletedNodeIds', 'removeDeletedNodeIds')
+        ],
         getInitialState: function() {
             var screen = this.getScreen();
             return {
                 loading: this.shouldScreenDataBeLoaded(screen),
                 screen: screen,
                 screenOptions: this.getScreenOptions(),
-                screenData: {}
+                screenData: {},
+                selectedNodeIds: {}
             };
         },
         hasChanges: function() {
@@ -107,6 +112,12 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                 }
             }
         },
+        changeSelectedNodeIds: function(ids) {
+            this.setState({selectedNodeIds: ids});
+        },
+        removeDeletedNodeIds: function() {
+            this.setState({selectedNodeIds: {}});
+        },
         render: function() {
             var Screen = this.getScreenConstructor(this.state.screen) || {};
             return (
@@ -124,6 +135,8 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                             ref='screen'
                             cluster={this.props.cluster}
                             screenOptions={this.state.screenOptions}
+                            selectedNodeIds={this.state.selectedNodeIds}
+                            changeSelectedNodeIds={this.changeSelectedNodeIds}
                         />
                     </ScreenTransitionWrapper>
                 </ReactTransitionGroup>

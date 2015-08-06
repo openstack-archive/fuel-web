@@ -913,7 +913,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     return this.props.cluster.fetchRelated('nodes');
                 }, this))
                 .done(_.bind(function() {
-                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated removeDeletedNodeIds');
                     this.close();
                 }, this))
                 .fail(_.bind(function(response) {

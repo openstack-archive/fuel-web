@@ -430,8 +430,6 @@
                         "search_placeholder": "Search by node name, MAC or IP address",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
-                        "more_than": "More than ",
-                        "less_than": "Less than ",
                         "selected_options": "__count__ selected",
                         "select_all": "Select All",
                         "labels": {

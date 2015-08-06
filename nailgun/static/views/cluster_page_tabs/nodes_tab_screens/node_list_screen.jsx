@@ -217,9 +217,56 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.updateFilters(filters);
             }
         },
+        getFilterOptions: function(filter) {
+            if (_.contains(this.props.screenNodesLabels, filter)) {
+                var values = _.uniq(_.reject(this.props.screenNodes.getLabelValues(filter), _.isUndefined));
+                return values.map(function(value) {
+                    return {
+                        name: value,
+                        label: _.isNull(value) ? i18n('common.not_specified') : value
+                    };
+                });
+            }
+
+            var options;
+            switch (filter) {
+                case 'status':
+                    var os = this.props.cluster.get('release').get('operating_system') || 'OS';
+                    options = this.props.statusesToFilter.map(function(status) {
+                        return {
+                            name: status,
+                            label: i18n('cluster_page.nodes_tab.node.status.' + status, {os: os})
+                        };
+                    });
+                    break;
+                case 'manufacturer':
+                    options = _.uniq(this.props.screenNodes.pluck('manufacturer')).map(function(manufacturer) {
+                        manufacturer = manufacturer || '';
+                        return {
+                            name: manufacturer.replace(/\s/g, '_'),
+                            label: manufacturer
+                        };
+                    });
+                    break;
+                case 'roles':
+                    options = this.props.cluster.get('roles').invoke('pick', 'name', 'label');
+                    break;
+            }
+            return options;
+        },
+        getFilterLimits: function(filter) {
+            var min = _.min(this.props.nodes.invoke('resource', filter)),
+                max = _.max(this.props.nodes.invoke('resource', filter));
+
+            if (filter == 'hdd' || filter == 'ram') {
+                return [Math.floor(min / Math.pow(1024, 3)), Math.ceil(max / Math.pow(1024, 3))];
+            }
+
+            return [min, max];
+        },
         addFilter: function(filterName) {
             var activeFilters = this.state.activeFilters;
-            activeFilters[filterName] = [];
+            activeFilters[filterName] = this.getFilterOptions(filterName) ? [] : this.getFilterLimits(filterName);
             this.updateFilters(activeFilters);
         },
         changeFilter: function(filterName, values) {
@@ -330,7 +377,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         {... _.pick(this.state, 'viewMode', 'search', 'activeSorters', 'activeFilters', 'isLabelsPanelOpen')}
                         {... _.pick(this.props, 'cluster', 'mode', 'sorters', 'defaultSorting', 'filters', 'statusesToFilter', 'defaultFilters')}
                         {... _.pick(this, 'addSorting', 'removeSorting', 'resetSorters', 'changeSortingOrder')}
-                        {... _.pick(this, 'addFilter', 'changeFilter', 'removeFilter', 'resetFilters')}
+                        {... _.pick(this, 'addFilter', 'changeFilter', 'removeFilter', 'resetFilters', 'getFilterOptions', 'getFilterLimits')}
                         {... _.pick(this, 'toggleLabelsPanel')}
                         {... _.pick(this, 'changeSearch', 'clearSearchField')}
                         {... _.pick(this, 'changeViewMode')}
@@ -467,13 +514,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             values: React.PropTypes.array,
             onChange: React.PropTypes.func,
             extraContent: React.PropTypes.node,
-            prefix: React.PropTypes.string
+            prefix: React.PropTypes.string,
+            min: React.PropTypes.number,
+            max: React.PropTypes.number
         },
         getInitialState: function() {
             return {isOpen: false};
         },
         getDefaultProps: function() {
-            return {values: []};
+            return {
+                values: [],
+                min: 0,
+                max: 0
+            };
         },
         toggle: function(visible) {
             this.setState({
@@ -481,65 +534,58 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             });
         },
         changeStartValue: function(name, value) {
-            value = Number(value);
-            if (!_.isNaN(value)) {
-                var values = this.props.values;
-                // 0 is minimum for start value
-                values[0] = value || 0;
-                this.props.onChange(values);
+            var values = this.props.values;
+            if (value == '') {
+                value = 0;
+            } else if (value < 0 || value < this.props.min) {
+                value = this.props.min;
+            } else if (value > values[1]) {
+                value = values[1];
             }
+            values[0] = Number(value);
+            this.props.onChange(values);
         },
         changeEndValue: function(name, value) {
-            value = Number(value);
-            if (!_.isNaN(value)) {
-                var values = this.props.values;
-                // set undefined value if user enters an epmty string
-                values[1] = value || undefined;
-                this.props.onChange(values);
+            var values = this.props.values;
+            if (value == '') {
+                value = 0;
+            } else if (value < 0 || value > this.props.max) {
+                value = this.props.max;
+            } else if (value < values[0]) {
+                value = values[0];
             }
+            values[1] = Number(value);
+            this.props.onChange(values);
         },
         render: function() {
-            var values = this.props.values;
+            var classNames = {'btn-group number-range': true, open: this.state.isOpen};
+            if (this.props.className) classNames[this.props.className] = true;
+
             var props = {
                     type: 'number',
                     inputClassName: 'pull-left',
-                    error: values[0] < 0 || values[1] < 0 || values[0] > values[1] || null,
-                    min: 0
+                    min: this.props.min,
+                    max: this.props.max,
+                    error: this.props.values[0] > this.props.values[1] || null
                 };
-            var ns = 'cluster_page.nodes_tab.node_management_panel.',
-                label = _.isEmpty(values) ?
-                    this.props.label
-                :
-                    this.props.label + ': ' + (
-                        !_.isUndefined(values[0]) && !_.isUndefined(values[1]) ?
-                            _.uniq(values).join(' - ')
-                        :
-                            !_.isUndefined(values[0]) ?
-                                    i18n(ns + 'more_than') + values[0]
-                                :
-                                    i18n(ns + 'less_than') + values[1] + ' ' + this.props.prefix
-                    );
-
-            var classNames = {'btn-group number-range': true, open: this.state.isOpen};
-            if (this.props.className) classNames[this.props.className] = true;
 
             return (
                 <div className={utils.classNames(classNames)}>
                     <button className='btn btn-default dropdown-toggle' onClick={this.toggle}>
-                        {label} <span className='caret'></span>
+                        {this.props.label + ': ' + _.uniq(this.props.values).join(' - ')} <span className='caret'></span>
                     </button>
                     {this.state.isOpen &&
                         <controls.Popover toggle={this.toggle}>
                             <div className='clearfix'>
                                 <controls.Input {...props}
                                     name={this.props.name + '-start'}
-                                    value={values[0]}
+                                    value={this.props.values[0]}
                                     onChange={this.changeStartValue}
                                 />
                                 <span className='pull-left'> &mdash; </span>
                                 <controls.Input {...props}
                                     name={this.props.name + '-end'}
-                                    value={values[1]}
+                                    value={this.props.values[1]}
                                     onChange={this.changeEndValue}
                                 />
                             </div>
@@ -558,43 +604,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 isSearchButtonVisible: !!this.props.search,
                 activeSearch: !!this.props.search
             };
-        },
-        getFilterOptions: function(filter) {
-            if (_.contains(this.props.screenNodesLabels, filter)) {
-                var values = _.uniq(_.reject(this.props.screenNodes.getLabelValues(filter), _.isUndefined));
-                return values.map(function(value) {
-                    return {
-                        name: value,
-                        label: _.isNull(value) ? i18n('common.not_specified') : value
-                    };
-                });
-            }
-
-            var options;
-            switch (filter) {
-                case 'status':
-                    var os = this.props.cluster.get('release').get('operating_system') || 'OS';
-                    options = this.props.statusesToFilter.map(function(status) {
-                        return {
-                            name: status,
-                            label: i18n('cluster_page.nodes_tab.node.status.' + status, {os: os})
-                        };
-                    });
-                    break;
-                case 'manufacturer':
-                    options = _.uniq(this.props.screenNodes.pluck('manufacturer')).map(function(manufacturer) {
-                        manufacturer = manufacturer || '';
-                        return {
-                            name: manufacturer.replace(/\s/g, '_'),
-                            label: manufacturer
-                        };
-                    });
-                    break;
-                case 'roles':
-                    options = this.props.cluster.get('roles').invoke('pick', 'name', 'label');
-                    break;
-            }
-            return options;
         },
         changeScreen: function(url, passNodeIds) {
             if (!url) this.props.revertChanges();
@@ -983,22 +992,23 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             }
                                         </div>
                                         {_.map(filtersToDisplay, function(values, filterName) {
-                                            var options = this.getFilterOptions(filterName),
-                                                Control = options ? MultiSelectControl : NumberRangeControl;
-                                            return (
-                                                <Control
-                                                    key={filterName}
-                                                    ref={filterName}
-                                                    name={filterName}
-                                                    className='filter-control'
-                                                    label={i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName})}
-                                                    options={options}
-                                                    values={values}
-                                                    extraContent={this.renderDeleteFilterButton(filterName)}
-                                                    onChange={_.partial(this.props.changeFilter, filterName)}
-                                                    prefix={i18n('cluster_page.nodes_tab.filters.prefixes.' + filterName, {defaultValue: ''})}
-                                                />
-                                            );
+                                            var props = {
+                                                key: filterName,
+                                                ref: filterName,
+                                                name: filterName,
+                                                values: values,
+                                                className: 'filter-control',
+                                                label: i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName}),
+                                                extraContent: this.renderDeleteFilterButton(filterName),
+                                                onChange: _.partial(this.props.changeFilter, filterName),
+                                                prefix: i18n('cluster_page.nodes_tab.filters.prefixes.' + filterName, {defaultValue: ''})
+                                            };
+
+                                            var options = this.props.getFilterOptions(filterName);
+                                            if (options) return <MultiSelectControl {...props} options={options} />;
+
+                                            var limits = this.props.getFilterLimits(filterName);
+                                            return <NumberRangeControl {...props} min={limits[0]} max={limits[1]} />;
                                         }, this)}
                                         {!!inactiveFilters.length &&
                                             <MultiSelectControl
@@ -1031,7 +1041,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         total: this.props.screenNodes.length
                                                     })}
                                                     {_.map(this.props.activeFilters, function(values, filterName) {
-                                                        var options = this.getFilterOptions(filterName);
+                                                        var options = this.props.getFilterOptions(filterName);
                                                         if (options && !options.length) return null;
                                                         return (
                                                             <div key={filterName}>
@@ -1042,10 +1052,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                                             return _.find(options, {name: value}).label;
                                                                         }).join(', ')
                                                                     :
-                                                                        !_.isUndefined(values[0]) && !_.isUndefined(values[1]) ?
-                                                                            _.uniq(values).join(' - ')
-                                                                        :
-                                                                            !_.isUndefined(values[0]) ? i18n(ns + 'more_than') + values[0] : i18n(ns + 'less_than') + values[1]
+                                                                        _.uniq(values).join(' - ')
                                                                     }
                                                                 </span>
                                                             </div>

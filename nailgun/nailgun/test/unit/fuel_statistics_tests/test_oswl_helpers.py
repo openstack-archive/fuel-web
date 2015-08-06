@@ -309,6 +309,38 @@ class TestOSWLHelpers(BaseTestCase):
 
         self.assertEqual(kc_v2_info, kc_v3_info)
 
+    def test_get_info_when_highlevel_attr_is_missing(self):
+        keystone_v2_component = {
+            "keystone": {
+                "users": [
+                    {
+                        "id": "test_user_id",
+                        "enabled": True,
+                    }
+                ],
+                "version": "v2.0"
+            },
+        }
+
+        expected = [
+            {
+                "id": "test_user_id",
+                "enabled_flag": True,
+            },
+        ]
+
+        client_provider_mock = self._prepare_client_provider_mock()
+        self._update_mock_with_complex_dict(client_provider_mock,
+                                            keystone_v2_component)
+        try:
+            kc_v2_info = helpers.get_info_from_os_resource_manager(
+                client_provider_mock, consts.OSWL_RESOURCE_TYPES.keystone_user
+            )
+        except KeyError:
+            raise AssertionError("KeyError must not be raised")
+
+        self.assertItemsEqual(expected, kc_v2_info)
+
     def test_additional_display_opts_supplied(self):
         expected_display_options = {"search_opts": {"all_tenants": 1}}
 

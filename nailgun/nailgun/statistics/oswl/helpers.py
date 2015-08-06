@@ -198,10 +198,21 @@ def _get_data_from_resource_manager(resource_manager, attrs_white_list_rules,
             inst.to_dict() if hasattr(inst, "to_dict") else inst.__dict__
 
         for rule in attrs_white_list_rules:
-            inst_details[rule.map_to_name] = utils.get_attr_value(
-                rule.path, rule.transform_func, obj_dict
-            )
-
+            try:
+                inst_details[rule.map_to_name] = utils.get_attr_value(
+                    rule.path, rule.transform_func, obj_dict
+                )
+            except KeyError:
+                # in case retrieved attribute is highlevel key
+                # and is not present in obj_dict KeyError occurs which
+                # cannot be handled by get_attr_value function due to
+                # its features so we must do it here in order
+                # to prevent from situation when whole set data is not
+                # collected for particular resource
+                logger.info("{0} cannot be collected for the statistic "
+                            "as attribute with path {1} is not present in the "
+                            "resource manager's data".format(rule.map_to_name,
+                                                             rule.path))
         data.append(inst_details)
 
     return data

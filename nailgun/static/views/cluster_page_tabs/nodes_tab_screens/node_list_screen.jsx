@@ -59,10 +59,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 activeSorters: this.props.mode == 'add' ? _.clone(this.props.defaultSorting) : uiSettings.sort,
                 activeFilters: this.props.mode == 'add' ? {} : uiSettings.filter,
                 viewMode: uiSettings.view_mode,
-                selectedNodeIds: this.props.nodes.reduce(function(result, node) {
-                    result[node.id] = this.props.mode == 'edit';
-                    return result;
-                }, {}, this),
                 selectedRoles: selectedRoles,
                 indeterminateRoles: this.props.nodes.length ? _.compact(roles.map(function(role) {
                     var roleName = role.get('name');
@@ -78,11 +74,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     default: settings
                 }
             };
-        },
-        selectNodes: function(ids, name, checked) {
-            var nodeSelection = this.state.selectedNodeIds;
-            _.each(ids, function(id) {nodeSelection[id] = checked;});
-            this.setState({selectedNodeIds: nodeSelection});
         },
         selectRoles: function(role, checked) {
             var selectedRoles = this.state.selectedRoles;
@@ -140,7 +131,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 // need to cache roles with limits in order to avoid calculating this twice on the RolePanel
                 processedRoleLimits: processedRoleLimits,
                 // real number of nodes to add used by Select All controls
-                maxNumberOfNodes: maxNumberOfNodes.length ? _.min(maxNumberOfNodes) - _.filter(this.state.selectedNodeIds).length : null
+                maxNumberOfNodes: maxNumberOfNodes.length ? _.min(maxNumberOfNodes) - _.size(this.props.selectedNodeIds) : null
             };
         },
         updateInitialRoles: function() {
@@ -298,10 +289,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         getNodesForLimitsCheck: function() {
             var selectedNodes = this.props.nodes.filter(function(node) {
-                    return this.state.selectedNodeIds[node.id];
+                    return this.props.selectedNodeIds[node.id];
                 }, this),
                 clusterNodes = this.props.cluster.get('nodes').filter(function(node) {
-                    return !_.contains(this.state.selectedNodeIds, node.id);
+                    return !_.contains(this.props.selectedNodeIds, node.id);
                 }, this);
             return new models.Nodes(_.union(selectedNodes, clusterNodes));
         },
@@ -324,7 +315,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             // labels to manage in labels panel
             var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
-                    return this.state.selectedNodeIds[node.id];
+                    return this.props.selectedNodeIds[node.id];
                 }, this)),
                 selectedNodeLabels = _.chain(selectedNodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
 
@@ -392,24 +383,25 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         hasChanges={this.hasChanges()}
                         locked={locked}
                         revertChanges={this.revertChanges}
+                        selectNodes={this.props.selectNodes}
                     />
                     {this.props.mode != 'list' &&
                         <RolePanel
-                            {... _.pick(this.state, 'selectedNodeIds', 'selectedRoles', 'indeterminateRoles', 'configModels')}
-                            {... _.pick(this.props, 'cluster', 'mode', 'nodes')}
+                            {... _.pick(this.state, 'selectedRoles', 'indeterminateRoles', 'configModels')}
+                            {... _.pick(this.props, 'cluster', 'mode', 'nodes', 'selectedNodeIds')}
                             {... _.pick(processedRoleData, 'processedRoleLimits')}
                             selectRoles={this.selectRoles}
                         />
                     }
                     <NodeList
-                        {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedNodeIds', 'selectedRoles')}
-                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter')}
+                        {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedRoles')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'selectedNodeIds')}
                         {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
                         screenNodesLabels={screenNodesLabels}
                         nodes={filteredNodes}
                         totalNodesLength={nodes.length}
                         locked={this.state.isLabelsPanelOpen}
-                        selectNodes={this.selectNodes}
+                        selectNodes={this.props.selectNodes}
                     />
                 </div>
             );
@@ -625,7 +617,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.changeScreen(action, true);
         },
         showDeleteNodesDialog: function() {
-            dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster});
+            dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster})
+                .done(_.partialRight(this.props.selectNodes, null, true, _.pluck(this.props.nodes.where({status: 'ready'}), 'id')));
         },
         hasChanges: function() {
             return this.props.hasChanges;
@@ -654,6 +647,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
                         if (this.props.mode == 'add') {
                             dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                            this.props.selectNodes();
                         }
                     }, this));
                 }, this))
@@ -1486,7 +1480,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     label={i18n('common.select_all')}
                     wrapperClassName='select-all pull-right'
-                    onChange={_.bind(this.props.selectNodes, this.props, _.pluck(this.props.nodes, 'id'))} />
+                    onChange={_.partialRight(this.props.selectNodes, _.pluck(this.props.nodes, 'id'))} />
             );
         }
     };
@@ -1681,7 +1675,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 node={node}
                                 checked={this.props.mode == 'edit' || this.props.selectedNodeIds[node.id]}
                                 locked={this.props.locked || _.contains(nodesWithRestrictionsIds, node.id)}
-                                onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}
+                                onNodeSelection={_.partialRight(this.props.selectNodes, [node.id])}
                             />;
                         }, this)}
                     </div>

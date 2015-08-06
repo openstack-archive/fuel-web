@@ -15,18 +15,18 @@
 **/
 define(
 [
+    'underscore',
     'react',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function(React, NodeListScreen) {
+function(_, React, NodeListScreen) {
     'use strict';
 
     var ClusterNodesScreen = React.createClass({
         render: function() {
-            return <NodeListScreen
+            return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
                 ref='screen'
                 mode='list'
-                cluster={this.props.cluster}
                 nodes={this.props.cluster.get('nodes')}
                 sorters={[
                     'roles',

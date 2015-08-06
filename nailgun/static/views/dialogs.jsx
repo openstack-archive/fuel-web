@@ -900,8 +900,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         deleteNodes: function() {
             this.setState({actionInProgress: true});
+            var preserveSelection = [];
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
                 if (node.get('pending_addition')) return {id: node.id, cluster_id: null, pending_addition: false, pending_roles: []};
+                if (node.get('status') == 'ready') preserveSelection.push(node.id);
                 return {id: node.id, pending_deletion: true};
             }));
             Backbone.sync('update', nodes)
@@ -910,6 +912,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 }, this))
                 .done(_.bind(function() {
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                    dispatcher.trigger('updateNodesSelection', _.pluck(this.props.nodes.where({pending_addition: false}), 'id'));
                     this.close();
                 }, this))
                 .fail(_.bind(function(response) {

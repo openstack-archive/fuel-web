@@ -340,7 +340,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             return (
                 <div className='footer'>
                     {_.contains(version.get('feature_groups'), 'mirantis') && [
-                        <a key='logo' className="mirantis-logo-white" href='http://www.mirantis.com/' target='_blank'></a>,
+                        <a key='logo' className='mirantis-logo-white' href='http://www.mirantis.com/' target='_blank'></a>,
                         <div key='copyright'>{i18n('common.copyright')}</div>
                     ]}
                     <div key='version'>{i18n('common.version')}: {version.get('release')}</div>

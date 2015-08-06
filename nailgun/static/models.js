@@ -755,11 +755,9 @@ define([
         model: models.Interface,
         generateBondName: function(base) {
             var index, proposedName;
-            for (index = 0; true; index += 1) {
+            for (index = 0;; index += 1) {
                 proposedName = base + index;
-                if (!this.where({name: proposedName}).length) {
-                    return proposedName;
-                }
+                if (!this.any({name: proposedName})) return proposedName;
             }
         },
         comparator: function(ifc1, ifc2) {

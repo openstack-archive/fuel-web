@@ -59,16 +59,16 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         getTitle: function() {
             var title = 'title_new',
                 cluster = this.props.cluster;
-            if (!!cluster.get('nodes').length) {
+            if (cluster.get('nodes').length) {
                 title = 'title_ready';
             }
             if (cluster.get('status') != 'new') {
                 title = null;
             }
-            if (!!cluster.task({group: 'deployment', status: 'running'})) {
+            if (cluster.task({group: 'deployment', status: 'running'})) {
                 title = 'deploy_progress';
             }
-            if (!!cluster.task({group: 'deployment', status: 'error'})) {
+            if (cluster.task({group: 'deployment', status: 'error'})) {
                 title = 'title_error';
             }
             return title;
@@ -875,10 +875,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             this.setState({disabled: false});
                             this.props.endRenaming();
                         }, this));
-                } else {
-                    if (cluster.validationError) {
-                        this.setState({error: cluster.validationError.name});
-                    }
+                } else if (cluster.validationError) {
+                    this.setState({error: cluster.validationError.name});
                 }
             } else {
                 this.props.endRenaming();

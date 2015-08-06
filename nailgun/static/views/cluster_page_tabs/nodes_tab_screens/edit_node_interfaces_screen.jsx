@@ -45,7 +45,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 var cluster = options.cluster,
                     nodes = ComponentMixins.nodeConfigurationScreenMixin.getNodeList(options);
 
-                if (!nodes || !nodes.isInterfacesConfigurationAvailable()) {
+                if (!nodes || !nodes.areInterfacesConfigurable()) {
                     return $.Deferred().reject();
                 }
 
@@ -112,8 +112,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             }, this));
         },
         hasChanges: function() {
-            return !_.isEqual(this.state.initialInterfaces, this.interfacesToJSON(this.props.interfaces)) ||
-                this.hasChangesInRemainingNodes();
+            return !this.isLocked() && (!_.isEqual(this.state.initialInterfaces, this.interfacesToJSON(this.props.interfaces)) ||
+                this.hasChangesInRemainingNodes());
         },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
@@ -200,12 +200,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 }).always(_.bind(function() {
                     this.setState({actionInProgress: false});
                 }, this));
-        },
-        isLocked: function() {
-            var hasLockedNodes = this.props.nodes.any(function(node) {
-                return !node.get('pending_addition') || _.contains(['ready', 'error'], node.get('status'));
-            });
-            return hasLockedNodes || this.isLockedScreen();
         },
         configurationTemplateExists: function() {
             return !_.isEmpty(this.props.cluster.get('networkConfiguration').get('networking_parameters').get('configuration_template'));
@@ -405,7 +399,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 hasErrors = _.chain(this.state.interfaceErrors).values().some().value(),
                 slaveInterfaceNames = _.pluck(_.flatten(_.filter(interfaces.pluck('slaves'))), 'name'),
                 returnEnabled = !this.state.actionInProgress,
-                loadDefaultsEnabled = !this.state.actionInProgress && !locked,
+                loadDefaultsEnabled = !this.state.actionInProgress,
                 revertChangesEnabled = !this.state.actionInProgress && hasChanges,
                 applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges,
                 invalidSpeedsForBonding = bondingPossible && this.validateSpeedsForBonding(checkedBonds.concat(checkedInterfaces)) || interfaces.any(function(ifc) {
@@ -438,7 +432,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             return (
                 <div className='row'>
                     <div className='title'>
-                        {i18n(ns + 'title', {count: nodes.length, name: nodeNames.join(', ')})}
+                        {i18n(ns + (locked ? 'read_only_' : '') + 'title', {count: nodes.length, name: nodeNames.join(', ')})}
                     </div>
                     {configurationTemplateExists &&
                         <div className='col-xs-12'>
@@ -494,17 +488,19 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
                                 </button>
                             </div>
-                            <div className='btn-group pull-right'>
-                                <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={!loadDefaultsEnabled}>
-                                    {i18n('common.load_defaults_button')}
-                                </button>
-                                <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>
-                                    {i18n('common.cancel_changes_button')}
-                                </button>
-                                <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!applyEnabled}>
-                                    {i18n('common.apply_button')}
-                                </button>
-                            </div>
+                            {!locked &&
+                                <div className='btn-group pull-right'>
+                                    <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={!loadDefaultsEnabled}>
+                                        {i18n('common.load_defaults_button')}
+                                    </button>
+                                    <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>
+                                        {i18n('common.cancel_changes_button')}
+                                    </button>
+                                    <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!applyEnabled}>
+                                        {i18n('common.apply_button')}
+                                    </button>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>

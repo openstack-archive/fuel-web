@@ -96,12 +96,8 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             goToNodeList: function() {
                 app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
             },
-            isLockedScreen: function() {
-                var nodesAvailableForChanges = this.props.nodes.any(function(node) {
-                    return node.get('pending_addition') || node.get('status') == 'error';
-                });
-                return !nodesAvailableForChanges ||
-                    this.props.cluster && !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
+            isLocked: function() {
+                return !!this.props.cluster.task({group: 'deployment', status: 'running'}) || !_.all(this.props.nodes.invoke('isConfigurable'));
             },
             showDiscardChangesDialog: function() {
                 var dialogs = require('jsx!views/dialogs');

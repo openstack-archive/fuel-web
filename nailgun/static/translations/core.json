@@ -343,6 +343,8 @@
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
+                        "read_only_title": "Interfaces configuration of __name__",
+                        "read_only_title_plural": "Interfaces configuration of __count__ nodes",
                         "vlan_id": "VLAN ID",
                         "vlan_id_plural": "VLAN IDs",
                         "mac": "MAC",
@@ -400,6 +402,8 @@
                     "configure_disks": {
                         "title": "Configure disks on __name__",
                         "title_plural": "Configure disks on __count__ nodes",
+                        "read_only_title": "Disks configuration of __name__",
+                        "read_only_title_plural": "Disks configuration of __count__ nodes",
                         "disk_information": "Disk Information",
                         "volume_groups": "Volume Groups",
                         "total_space": "Total Space",

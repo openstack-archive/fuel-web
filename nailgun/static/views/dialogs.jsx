@@ -932,6 +932,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 }, this))
                 .done(_.bind(function() {
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                    this.state.result.resolve();
                     this.close();
                 }, this))
                 .fail(_.bind(function(response) {

@@ -316,6 +316,11 @@ class NodeAttributes(Base):
 
 class NodeNICInterface(Base):
     __tablename__ = 'node_nic_interfaces'
+    __table_args__ = (
+        UniqueConstraint('node_id', 'name',
+                         deferrable=True, initially="DEFERRED",
+                         name="ensure_unique_node_nic_names"),
+    )
     id = Column(Integer, primary_key=True)
     node_id = Column(
         Integer,
@@ -356,6 +361,11 @@ class NodeNICInterface(Base):
 
 class NodeBondInterface(Base):
     __tablename__ = 'node_bond_interfaces'
+    __table_args__ = (
+        UniqueConstraint('node_id', 'name',
+                         deferrable=True, initially="DEFERRED",
+                         name="ensure_unique_node_bond_names"),
+    )
     id = Column(Integer, primary_key=True)
     node_id = Column(
         Integer,

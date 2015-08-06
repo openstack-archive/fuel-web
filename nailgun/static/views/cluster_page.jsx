@@ -50,7 +50,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
             componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),
             componentMixins.dispatcherMixin('deploymentTaskStarted', function() {this.refreshCluster().always(_.bind(this.startPolling, this))}),
-            componentMixins.dispatcherMixin('deploymentTaskFinished', function() {this.refreshCluster().always(_.bind(dispatcher.trigger, dispatcher, 'updateNotifications'))})
+            componentMixins.dispatcherMixin('deploymentTaskFinished', function() {this.refreshCluster().always(_.bind(dispatcher.trigger, dispatcher, 'updateNotifications'))}),
+            componentMixins.dispatcherMixin('updateNodesSelection', 'selectNodes')
         ],
         statics: {
             navbarActiveElement: 'clusters',
@@ -142,6 +143,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 });
             }
         },
+        getInitialState: function() {
+            return {
+                selectedNodeIds: {}
+            };
+        },
         removeFinishedNetworkTasks: function(callback) {
             var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
             if (callback) request.always(callback);
@@ -194,14 +200,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return !tabData.tab.isVisible || tabData.tab.isVisible(cluster);
             });
         },
+        selectNodes: function(ids, checked) {
+            if (ids && ids.length) {
+                var nodeSelection = this.state.selectedNodeIds;
+                _.each(ids, function(id) {nodeSelection[id] = checked || false;});
+                this.setState({selectedNodeIds: nodeSelection});
+            } else {
+                this.setState({selectedNodeIds: {}});
+            }
+        },
         render: function() {
             var cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
                 tabUrls = _.pluck(availableTabs, 'url'),
-                tab = _.find(availableTabs, {url: this.props.activeTab});
+                tab = _.find(availableTabs, {url: this.props.activeTab}),
+                tabData = this.props.tabData;
             if (!tab) return null;
             var Tab = tab.tab;
-
+            if (this.props.activeTab == 'nodes') {
+                tabData = _.extend(tabData || {}, {
+                    selectedNodeIds: this.state.selectedNodeIds,
+                    selectNodes: this.selectNodes
+                });
+            }
             return (
                 <div className='cluster-page' key={cluster.id}>
                     <div className='page-title'>
@@ -227,7 +248,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         </div>
                     </div>
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
-                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} {...this.props.tabData} />
+                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} {...tabData} />
                     </div>
                 </div>
             );

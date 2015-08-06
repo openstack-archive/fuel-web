@@ -118,6 +118,8 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                             ref='screen'
                             cluster={this.props.cluster}
                             screenOptions={this.state.screenOptions}
+                            selectedNodeIds={this.props.selectedNodeIds}
+                            selectNodes={this.props.selectNodes}
                         />
                     </ScreenTransitionWrapper>
                 </ReactTransitionGroup>

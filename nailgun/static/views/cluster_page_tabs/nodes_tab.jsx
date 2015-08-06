@@ -18,6 +18,7 @@ define(
     'jquery',
     'underscore',
     'react',
+    'jsx!component_mixins',
     'jsx!views/controls',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
@@ -25,7 +26,7 @@ define(
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, React, componentMixins, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
 
     var ReactTransitionGroup = React.addons.TransitionGroup;
@@ -37,7 +38,8 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                 loading: this.shouldScreenDataBeLoaded(screen),
                 screen: screen,
                 screenOptions: this.getScreenOptions(),
-                screenData: {}
+                screenData: {},
+                selectedNodeIds: {}
             };
         },
         hasChanges: function() {
@@ -124,6 +126,8 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                             ref='screen'
                             cluster={this.props.cluster}
                             screenOptions={this.state.screenOptions}
+                            selectedNodeIds={this.props.selectedNodeIds}
+                            selectNodes={this.props.selectNodes}
                         />
                     </ScreenTransitionWrapper>
                 </ReactTransitionGroup>

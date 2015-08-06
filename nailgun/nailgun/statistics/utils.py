@@ -81,7 +81,10 @@ def get_attr_value(path, func, attrs):
                     pass
             return result_list
         else:
-            attrs = attrs[p]
+            try:
+                attrs = attrs[p]
+            except (KeyError, TypeError):
+                pass
     if func is not None:
         attrs = func(attrs)
     return attrs

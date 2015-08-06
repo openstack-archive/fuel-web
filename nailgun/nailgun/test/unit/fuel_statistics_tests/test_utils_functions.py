@@ -86,6 +86,14 @@ class TestUtilsFunctions(BaseTestCase):
         }
         self.assertDictEqual(actual, expected)
 
+    def test_get_attr_value_silent_when_key_error(self):
+        attributes = {}
+
+        rule = utils.WhiteListRule(('x',), 'map_x', None),
+
+        self.assertNotRaises(KeyError, utils.get_attr_value, rule.path,
+                             rule.transform_func, attributes)
+
     def test_get_online_controller(self):
         node_name = "test"
         self.env.create(

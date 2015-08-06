@@ -910,6 +910,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 }, this))
                 .done(_.bind(function() {
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                    dispatcher.trigger('updateNodesSelection', this.props.nodes.map(function(node) {if (!node.get('pending_addition')) {return node.id}}), true);
                     this.close();
                 }, this))
                 .fail(_.bind(function(response) {

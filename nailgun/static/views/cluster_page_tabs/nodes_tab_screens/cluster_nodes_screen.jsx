@@ -67,6 +67,8 @@ function(React, NodeListScreen) {
                     'removing'
                 ]}
                 defaultFilters={['roles', 'status']}
+                selectedNodeIds={this.props.selectedNodeIds}
+                changeSelectedNodeIds={this.props.changeSelectedNodeIds}
             />;
         }
     });

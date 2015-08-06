@@ -37,7 +37,8 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                 loading: this.shouldScreenDataBeLoaded(screen),
                 screen: screen,
                 screenOptions: this.getScreenOptions(),
-                screenData: {}
+                screenData: {},
+                selectedNodeIds: {}
             };
         },
         hasChanges: function() {
@@ -107,6 +108,9 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                 }
             }
         },
+        changeSelectedNodeIds: function(ids) {
+            this.setState({selectedNodeIds: ids});
+        },
         render: function() {
             var Screen = this.getScreenConstructor(this.state.screen) || {};
             return (
@@ -124,6 +128,8 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                             ref='screen'
                             cluster={this.props.cluster}
                             screenOptions={this.state.screenOptions}
+                            selectedNodeIds={this.state.selectedNodeIds}
+                            changeSelectedNodeIds={this.changeSelectedNodeIds}
                         />
                     </ScreenTransitionWrapper>
                 </ReactTransitionGroup>

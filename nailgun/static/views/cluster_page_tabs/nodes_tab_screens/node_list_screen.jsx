@@ -727,10 +727,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var ns = 'cluster_page.nodes_tab.node_management_panel.';
 
-            var disksConflict, interfaceConflict;
+            var configurationAvailable = _.all(this.props.nodes.invoke('isConfigurable')),
+                disksConflict, interfaceConflict;
             if (this.props.mode == 'list' && this.props.nodes.length) {
-                disksConflict = !this.props.nodes.isDisksConfigurationAvailable();
-                interfaceConflict = !this.props.nodes.isInterfacesConfigurationAvailable();
+                disksConflict = !this.props.nodes.areDisksConfigurable();
+                interfaceConflict = !this.props.nodes.areInterfacesConfigurable();
             }
 
             var managementButtonClasses = _.bind(function(isActive, className) {
@@ -755,10 +756,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
 
             this.props.selectedNodeLabels.sort(_.partialRight(utils.natsort, {insensitive: true}));
-
-            var isConfigurable = !_.isEmpty(_.compact(this.props.nodes.invoke('isNodeConfigurationPossible'))),
-                diskConfigButtonText = i18n('dialog.show_node.disk_configuration' + (isConfigurable ? '_action' : '')),
-                networkConfigButtonText = i18n('dialog.show_node.network_configuration' + (isConfigurable ? '_action' : ''));
 
             return (
                 <div className='row'>
@@ -871,18 +868,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                                         >
                                             {disksConflict && <i className='glyphicon glyphicon-danger-sign' />}
-                                            {diskConfigButtonText}
+                                            {i18n('dialog.show_node.disk_configuration' + (configurationAvailable ? '_action' : ''))}
                                         </button>
-                                        {!this.props.nodes.any({status: 'error'}) &&
-                                            <button
-                                                className='btn btn-default btn-configure-interfaces'
-                                                disabled={!this.props.nodes.length}
-                                                onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
-                                            >
-                                                {interfaceConflict && <i className='glyphicon glyphicon-danger-sign' />}
-                                                {networkConfigButtonText}
-                                            </button>
-                                        }
+                                        <button
+                                            className='btn btn-default btn-configure-interfaces'
+                                            disabled={!this.props.nodes.length}
+                                            onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
+                                        >
+                                            {interfaceConflict && <i className='glyphicon glyphicon-danger-sign' />}
+                                            {i18n('dialog.show_node.network_configuration' + (configurationAvailable ? '_action' : ''))}
+                                        </button>
                                     </div>,
                                     <div className='btn-group' role='group' key='role-management-buttons'>
                                         {!this.props.locked && !!this.props.nodes.length && this.props.nodes.any({pending_deletion: false}) &&

@@ -39,7 +39,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             fetchData: function(options) {
                 var nodes = ComponentMixins.nodeConfigurationScreenMixin.getNodeList(options);
 
-                if (!nodes || !nodes.isDisksConfigurationAvailable()) {
+                if (!nodes || !nodes.areDisksConfigurable()) {
                     return $.Deferred().reject();
                 }
 
@@ -69,7 +69,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             this.setState({initialDisks: _.cloneDeep(this.props.nodes.at(0).disks.toJSON())});
         },
         hasChanges: function() {
-            return !_.isEqual(_.pluck(this.props.disks.toJSON(), 'volumes'), _.pluck(this.state.initialDisks, 'volumes'));
+            return !this.isLocked() && !_.isEqual(_.pluck(this.props.disks.toJSON(), 'volumes'), _.pluck(this.state.initialDisks, 'volumes'));
         },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
@@ -150,22 +150,22 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         },
         render: function() {
             var hasChanges = this.hasChanges(),
-                isScreenLocked = this.isLockedScreen(),
-                loadDefaultsDisabled = !!this.state.actionInProgress || isScreenLocked,
+                locked = this.isLocked(),
+                loadDefaultsDisabled = !!this.state.actionInProgress,
                 revertChangesDisabled = !!this.state.actionInProgress || !hasChanges,
                 applyDisabled = !!this.state.actionInProgress || !hasChanges;
             return (
                 <div className='edit-node-disks-screen'>
                     <div className='row'>
                         <div className='title'>
-                            {i18n('cluster_page.nodes_tab.configure_disks.title', {count: this.props.nodes.length, name: this.props.nodes.length && this.props.nodes.at(0).get('name')})}
+                            {i18n('cluster_page.nodes_tab.configure_disks.' + (locked ? 'read_only_' : '') + 'title', {count: this.props.nodes.length, name: this.props.nodes.length && this.props.nodes.at(0).get('name')})}
                         </div>
                         <div className='col-xs-12 node-disks'>
                             {this.props.disks.map(function(disk, index) {
                                 return (<NodeDisk
                                     disk={disk}
                                     key={index}
-                                    disabled={isScreenLocked || this.state.actionInProgress}
+                                    disabled={locked || this.state.actionInProgress}
                                     volumes={this.props.volumes}
                                     volumesInfo={this.getVolumesInfo(disk)}
                                     diskMetaData={this.getDiskMetaData(disk)}
@@ -177,11 +177,13 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                 <div className='btn-group'>
                                     <button onClick={this.returnToNodeList} className='btn btn-default btn-return'>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
                                 </div>
-                                <div className='btn-group pull-right'>
-                                    <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={loadDefaultsDisabled}>{i18n('common.load_defaults_button')}</button>
-                                    <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={revertChangesDisabled}>{i18n('common.cancel_changes_button')}</button>
-                                    <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={applyDisabled}>{i18n('common.apply_button')}</button>
-                                </div>
+                                {!locked &&
+                                    <div className='btn-group pull-right'>
+                                        <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={loadDefaultsDisabled}>{i18n('common.load_defaults_button')}</button>
+                                        <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={revertChangesDisabled}>{i18n('common.cancel_changes_button')}</button>
+                                        <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={applyDisabled}>{i18n('common.apply_button')}</button>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>

@@ -3161,17 +3161,16 @@ input[type=range] {
     margin-bottom: @base-ifc-indent * 2;
 
     .ifc-inner-container {
-      @ifc-container-dark-color: @gray + 20%;
-      @ifc-container-light-color: @gray + 95%;
+      @ifc-container-dark-color: @tab-color - 30%;
+      @ifc-container-light-color: @tab-color;
 
       background: @ifc-container-light-color;
-      border: 1px solid @ifc-container-dark-color;
+      border-radius: 4px;
       padding: 0;
-      margin: 0 0 @base-ifc-indent * 2;
+      margin: 0 0 @base-ifc-indent * 3;
 
       &.nodrag {
-        background-color: #f2dede;
-        border-color: @red;
+        background-color: @red + 150%;
       }
 
       &.over {
@@ -3215,14 +3214,15 @@ input[type=range] {
         }
         .ifc-connection {
           border-radius: @base-ifc-indent;
-          background: @gray + 40%;
+          background: @gray + 50%;
           padding: @base-ifc-indent;
           margin-right: @base-ifc-indent;
           text-align: center;
           .ifc-name {
-            .text-shadow;
+            .text-emboss;
             .font-semibold;
-            color: @ifc-container-light-color;
+            font-size: @base-font-size - 2px;
+            color: @base-text-color - 20%;
             line-height: 1;
           }
           .ifc-connection-status {
@@ -3332,16 +3332,14 @@ input[type=range] {
             height: @network-block-height;
             text-align: center;
             border-box: sizing;
-            background: linear-gradient(to bottom, #ddd 0%, #b4b4b4 100%);
+            background-color: @ifc-container-dark-color;
             margin-left: @base-ifc-indent;
             margin-bottom: @base-ifc-indent;
             padding: @base-ifc-indent * 2 @base-ifc-indent @base-ifc-indent;
             cursor: move;
-            box-shadow: inset 0 0 0 1px @white;
-            border: 1px solid @ifc-container-dark-color;
             .network-name {
               text-transform: capitalize;
-              .text-shadow;
+              .font-semibold;
             }
             .vlan-id {
               font-size: @base-font-size - 3px;
@@ -3349,9 +3347,11 @@ input[type=range] {
 
             &.disabled {
               cursor: not-allowed;
-              background: linear-gradient(to bottom, #eee 0%, #ddd 100%);
+              background: none;
+              border: 2px solid @ifc-container-dark-color;
               .network-name {
                 opacity: 0.7;
+                .text-emboss;
               }
             }
             &.dragging {

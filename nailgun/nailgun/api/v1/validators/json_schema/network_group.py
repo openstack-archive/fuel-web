@@ -24,7 +24,7 @@ single_scheme = {
         "id": {"type": "integer"},
         "name": {"type": "string"},
         "release": base_types.NULLABLE_ID,
-        "vlan_start": {"type": "number"},
+        "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
         "cidr": base_types.NET_ADDRESS,
         "gateway": base_types.NULLABLE_IP_ADDRESS,
         "group_id": base_types.NULLABLE_ID,

@@ -1181,6 +1181,30 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 for role in network_roles:
                     self.assertIsNotNone(node_attrs['network_roles'][role])
 
+    def test_floating_role_belongs_to_public_bridge(self):
+        # download default template and assign floating role to public bridge
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        schemes = net_template["adv_net_template"]["default"]["network_scheme"]
+        schemes["public"]["roles"]["neutron/floating"] = "br-ex"
+        # apply updated template to the cluster
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        serializer = get_serializer_for_cluster(self.cluster)
+        self.serialized_for_astute = serializer(
+            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        for node_data in self.serialized_for_astute:
+            node = objects.Node.get_by_uid(node_data['uid'])
+            # check nodes with assigned public ip
+            if objects.Node.should_have_public_with_ip(node):
+                nets = nm.get_node_networks(node)
+                ng = nm.get_network_by_netname('public', nets)
+                endpoints = node_data["network_scheme"]["endpoints"]
+                self.assertEqual(endpoints["br-ex"]["IP"], [ng.get('ip')])
+
 
 class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
 

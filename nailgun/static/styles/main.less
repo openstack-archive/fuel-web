@@ -47,9 +47,17 @@
 @red:        #c94b4b;
 @pure-red:   #ff0000;
 @green:      #54a854;
-@blue:       #4e85aa; //#688db4;
+@blue:       #4e85aa;
 @orange:     #bc6e12;
 @gray:       #8c8c8c;
+
+// Buttons Colors
+@btn-default: #d4d5d6;
+@btn-success: #48a565;
+@btn-primary: #3d7eaa;
+@btn-warning: #d3a541;
+@btn-danger:  #b85d51;
+@btn-info:    #7ab0cc;
 
 // Background colors
 @light-blue:       #eaf0f2;
@@ -129,8 +137,14 @@
 .text-emboss() {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
+.text-noemboss() {
+  text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+}
 .text-shadow() {
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+.text-noshadow() {
+  text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 .clearfix() {
   content: " ";
@@ -261,6 +275,10 @@ html, body {
   color: @white;
 }
 
+#main-container, #content-wrapper {
+  height: 100%;
+}
+
 b, strong {
   .font-semibold;
 }
@@ -282,31 +300,52 @@ h1, h2, h3, h4, h5, h6 {
 .text-warning {color: @orange;}
 .text-critical {color: @pure-red;}
 
+// BUTTONS
+
 button, .btn:not(.btn-link) {.font-semibold;}
 
-.btn-transparent {
-  border: none;
-  background-color: rgba(0, 0, 0, 0.0);
-  border-radius: 6px;
-  height: 38px;
-  padding: 0;
-  width: 38px;
-  margin-right: 10px;
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-  &:focus {
-    border: 0px;
-    outline: 0;
-    outline-color: @red;
-    outline-style: none;
-    text-decoration: none !important;
+.button-mixin(@color) {
+  &,
+  &:hover,
+  &:active,
+  &:focus,
+  &:disabled {
+    background-color: @color;
+    border-color: @color;
+    color: @white;
+    .text-shadow;
+    &:hover {
+      background-color: @color - 15%;
+      border-color: @color - 15%;
+      .text-noshadow;
+    }
+    &:disabled {
+      color: @white - 20%;
+      .text-noshadow;
+    }
+    &:active {
+      background-color: @color - 25%;
+      border-color: @color - 25%;
+    }
   }
 }
 
-#main-container, #content-wrapper {
-  height: 100%;
+.btn-success {
+  .button-mixin(@btn-success);
 }
+.btn-primary {
+  .button-mixin(@btn-primary);
+}
+.btn-warning {
+  .button-mixin(@btn-warning);
+}
+.btn-danger {
+  .button-mixin(@btn-danger);
+}
+.btn-info {
+  .button-mixin(@btn-info);
+}
+
 
 @common-icons-sprite: "../img/icons/icons-sprite.svg";
 

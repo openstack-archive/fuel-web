@@ -1067,7 +1067,8 @@ class NeutronNetworkTemplateSerializer70(
 
             # This can go away when we allow separate public and floating nets
             floating_ep = roles['neutron/floating']
-            attrs['endpoints'][floating_ep] = {'IP': 'none'}
+            if floating_ep not in attrs['endpoints']:
+                attrs['endpoints'][floating_ep] = {'IP': 'none'}
         else:
             admin_ep = roles['admin/pxe']
             attrs['endpoints'][admin_ep]['gateway'] = \

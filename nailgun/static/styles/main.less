@@ -2034,7 +2034,7 @@ input[type=range] {
           }
         }
 
-        .node-buttons {
+        .node-checkbox {
           float: left;
           height: 100%;
           width: 23px;
@@ -2224,17 +2224,20 @@ input[type=range] {
               display: inline-block;
               padding-top: 2px;
             }
-            .btn {
-              padding: 1px 5px 2px;
-              margin: 0 2px 2px;
-              margin-left: 0;
-              color: @white;
-              .font-bold;
-              .text-shadow;
-              font-size: @base-font-size - 4;
-              background: @blue;
-              line-height: 1.5;
-              text-transform: uppercase;
+            .node-buttons {
+              margin-top: @compact-node-indent;
+              .btn {
+                padding: 3px 5px;
+                margin: 0 2px 2px;
+                margin-left: 0;
+                color: @white;
+                .font-bold;
+                .text-shadow;
+                font-size: @base-font-size - 4;
+                background: @blue;
+                line-height: 1;
+                text-transform: uppercase;
+              }
             }
           }
           .progress {

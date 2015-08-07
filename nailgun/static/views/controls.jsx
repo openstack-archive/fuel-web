@@ -177,6 +177,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                     'form-group': !isCheckboxOrRadio,
                     'checkbox-group': isCheckboxOrRadio,
                     'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
+                    'is-empty': this.props.type == 'hidden' && !this.props.description && !this.props.label,
                     disabled: this.props.disabled
                 };
             classes[this.props.wrapperClassName] = this.props.wrapperClassName;

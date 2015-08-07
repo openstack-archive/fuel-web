@@ -1555,7 +1555,9 @@ input[type=range] {
     margin-bottom: @management-panel-indent * 3;
     overflow: hidden;
     .btn-group {
-      margin-left: @management-panel-indent;
+      button:first-child {
+        margin-left: @management-panel-indent;
+      }
       .glyphicon {
         margin-right: @management-panel-indent;
       }

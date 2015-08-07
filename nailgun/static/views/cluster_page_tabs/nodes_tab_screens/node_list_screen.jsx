@@ -240,7 +240,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     });
                     break;
                 case 'manufacturer':
-                    options = _.uniq(this.props.screenNodes.pluck('manufacturer')).map(function(manufacturer) {
+                    options = _.uniq(this.props.nodes.pluck('manufacturer')).map(function(manufacturer) {
                         manufacturer = manufacturer || '';
                         return {
                             name: manufacturer.replace(/\s/g, '_'),
@@ -421,18 +421,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             label: React.PropTypes.node.isRequired,
             dynamicValues: React.PropTypes.bool,
             onChange: React.PropTypes.func,
-            extraContent: React.PropTypes.node
-        },
-        getInitialState: function() {
-            return {isOpen: false};
+            extraContent: React.PropTypes.node,
+            toggle: React.PropTypes.func.isRequired,
+            isOpen: React.PropTypes.bool.isRequired
         },
         getDefaultProps: function() {
-            return {values: []};
-        },
-        toggle: function(visible) {
-            this.setState({
-                isOpen: _.isBoolean(visible) ? visible : !this.state.isOpen
-            });
+            return {
+                values: [],
+                isOpen: false
+            };
         },
         onChange: function(name, checked) {
             if (!this.props.dynamicValues) {
@@ -444,6 +441,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             } else {
                 this.props.onChange(checked && name);
             }
+        },
+        closeOnEscapeKey: function(e) {
+            if (e.key == 'Escape') this.props.toggle(false);
         },
         render: function() {
             var valuesAmount = this.props.values.length;
@@ -461,19 +461,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return utils.natsort(option1.label, option2.label, {insensitive: true});
             });
 
-            var classNames = {'btn-group multiselect': true, open: this.state.isOpen};
+            var classNames = {'btn-group multiselect': true, open: this.props.isOpen};
             if (this.props.className) classNames[this.props.className] = true;
 
             return (
-                <div className={utils.classNames(classNames)}>
+                <div className={utils.classNames(classNames)} tabIndex='-1' onKeyDown={this.closeOnEscapeKey}>
                     <button
-                        className={'btn dropdown-toggle ' + ((this.props.dynamicValues && !this.state.isOpen) ? 'btn-link' : 'btn-default')}
-                        onClick={this.toggle}
+                        className={'btn dropdown-toggle ' + ((this.props.dynamicValues && !this.props.isOpen) ? 'btn-link' : 'btn-default')}
+                        onClick={this.props.toggle}
                     >
                         {label} <span className='caret'></span>
                     </button>
-                    {this.state.isOpen &&
-                        <controls.Popover toggle={this.toggle}>
+                    {this.props.isOpen &&
+                        <controls.Popover toggle={this.props.toggle}>
                             {!this.props.dynamicValues && [
                                     <div key='all'>
                                         <controls.Input
@@ -516,22 +516,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             extraContent: React.PropTypes.node,
             prefix: React.PropTypes.string,
             min: React.PropTypes.number,
-            max: React.PropTypes.number
-        },
-        getInitialState: function() {
-            return {isOpen: false};
+            max: React.PropTypes.number,
+            toggle: React.PropTypes.func.isRequired,
+            isOpen: React.PropTypes.bool.isRequired
         },
         getDefaultProps: function() {
             return {
                 values: [],
+                isOpen: false,
                 min: 0,
                 max: 0
             };
-        },
-        toggle: function(visible) {
-            this.setState({
-                isOpen: _.isBoolean(visible) ? visible : !this.state.isOpen
-            });
         },
         changeStartValue: function(name, value) {
             var values = this.props.values;
@@ -557,8 +552,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             values[1] = Number(value);
             this.props.onChange(values);
         },
+        closeOnEscapeKey: function(e) {
+            if (e.key == 'Escape') this.props.toggle(this.props.name, false);
+        },
         render: function() {
-            var classNames = {'btn-group number-range': true, open: this.state.isOpen};
+            var classNames = {'btn-group number-range': true, open: this.props.isOpen};
             if (this.props.className) classNames[this.props.className] = true;
 
             var props = {
@@ -570,17 +568,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 };
 
             return (
-                <div className={utils.classNames(classNames)}>
-                    <button className='btn btn-default dropdown-toggle' onClick={this.toggle}>
+                <div className={utils.classNames(classNames)} tabIndex='-1' onKeyDown={this.closeOnEscapeKey}>
+                    <button className='btn btn-default dropdown-toggle' onClick={this.props.toggle}>
                         {this.props.label + ': ' + _.uniq(this.props.values).join(' - ')} <span className='caret'></span>
                     </button>
-                    {this.state.isOpen &&
-                        <controls.Popover toggle={this.toggle}>
+                    {this.props.isOpen &&
+                        <controls.Popover toggle={this.props.toggle}>
                             <div className='clearfix'>
                                 <controls.Input {...props}
                                     name={this.props.name + '-start'}
                                     value={this.props.values[0]}
                                     onChange={this.changeStartValue}
+                                    autoFocus
                                 />
                                 <span className='pull-left'> &mdash; </span>
                                 <controls.Input {...props}
@@ -602,7 +601,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return {
                 actionInProgress: false,
                 isSearchButtonVisible: !!this.props.search,
-                activeSearch: !!this.props.search
+                activeSearch: !!this.props.search,
+                openFilter: null,
+                openSorter: null
             };
         },
         changeScreen: function(url, passNodeIds) {
@@ -682,26 +683,53 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         removeSorting: function(sorter) {
             this.props.removeSorting(sorter);
-            this.setState({sortersKey: _.now()});
+            this.setState({
+                sortersKey: _.now(),
+                openSorter: null
+            });
         },
         resetSorters: function(e) {
             e.stopPropagation();
             this.props.resetSorters();
-            this.setState({sortersKey: _.now()});
+            this.setState({
+                sortersKey: _.now(),
+                openSorter: null
+            });
         },
-        removeFilter: function(name) {
-            this.props.removeFilter(name);
+        toggleFilter: function(filter, visible) {
+            visible = _.isBoolean(visible) ? visible : this.state.openFilter != filter;
+            this.setState({
+                openFilter: visible ? filter : this.state.openFilter == filter ? null : this.state.openFilter
+            });
+        },
+        toggleSorter: function(sorter, visible) {
+            visible = _.isBoolean(visible) ? visible : this.state.openSorter != sorter;
+            this.setState({
+                openSorter: visible ? sorter : this.state.openSorter == sorter ? null : this.state.openSorter
+            });
+        },
+        addFilter: function(filter) {
+            this.props.addFilter(filter);
+            this.toggleFilter(filter, true);
+        },
+        removeFilter: function(filter) {
+            this.props.removeFilter(filter);
             this.setState({filtersKey: _.now()});
+            this.toggleFilter(filter, false);
         },
         resetFilters: function(e) {
             e.stopPropagation();
             this.props.resetFilters();
-            this.setState({filtersKey: _.now()});
+            this.setState({
+                filtersKey: _.now(),
+                openFilter: null
+            });
         },
         toggleSorters: function() {
             this.setState({
                 newLabels: [],
                 areSortersVisible: !this.state.areSortersVisible,
+                openSorter: null,
                 areFiltersVisible: false
             });
             this.props.toggleLabelsPanel(false);
@@ -710,6 +738,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.setState({
                 newLabels: [],
                 areFiltersVisible: !this.state.areFiltersVisible,
+                openFilter: null,
                 areSortersVisible: false
             });
             this.props.toggleLabelsPanel(false);
@@ -970,6 +999,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 })}
                                                 onChange={this.props.addSorting}
                                                 dynamicValues={true}
+                                                isOpen= {this.state.openSorter == 'more'}
+                                                toggle={_.partial(this.toggleSorter, 'more')}
                                             />
                                         }
                                     </div>
@@ -996,7 +1027,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 label: i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName}),
                                                 extraContent: this.renderDeleteFilterButton(filterName),
                                                 onChange: _.partial(this.props.changeFilter, filterName),
-                                                prefix: i18n('cluster_page.nodes_tab.filters.prefixes.' + filterName, {defaultValue: ''})
+                                                prefix: i18n('cluster_page.nodes_tab.filters.prefixes.' + filterName, {defaultValue: ''}),
+                                                isOpen: this.state.openFilter == filterName,
+                                                toggle: _.partial(this.toggleFilter, filterName)
                                             };
 
                                             var options = this.props.getFilterOptions(filterName);
@@ -1015,8 +1048,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         label: i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName})
                                                     };
                                                 })}
-                                                onChange={this.props.addFilter}
+                                                onChange={this.addFilter}
                                                 dynamicValues={true}
+                                                isOpen={this.state.openFilter == 'more'}
+                                                toggle={_.partial(this.toggleFilter, 'more')}
                                             />
                                         }
                                     </div>

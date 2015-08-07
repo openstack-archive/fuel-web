@@ -33,6 +33,7 @@ from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
+from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.extensions.volume_manager.manager import VolumeManager
@@ -255,7 +256,8 @@ class NodeNICInterface(Base):
     bus_info = Column(Text)
     pxe = Column(Boolean, default=False, nullable=False)
 
-    offloading_modes = Column(JSON, default=[], nullable=False,
+    offloading_modes = Column(MutableList.as_mutable(JSON),
+                              default=[], nullable=False,
                               server_default='[]')
 
     @property
@@ -366,6 +368,7 @@ class NodeBondInterface(Base):
             NodeNICInterface.offloading_modes_as_flat_dict(new_modes)
         for interface in self.slaves:
             self._update_modes(interface.offloading_modes, new_modes_dict)
+            interface.offloading_modes.changed()
 
     def _update_modes(self, modes, update_dict):
         for mode in modes:

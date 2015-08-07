@@ -689,40 +689,41 @@ input[type=range] {
         background: url(@icon-sprite-img) no-repeat -@navbar-icon-size -@navbar-icon-size * @index;
       }
     }
+    .navbar-big-text-mixin() {
+      display: block;
+      text-align: center;
+      margin-left: 0;
+      margin-top: 7px;
+      font-family: @navbar-icon-font;
+      font-size: @base-font-size + 8;
+    }
+    .navbar-small-text-mixin(@margin-top: 1px) {
+      display: block;
+      text-align: center;
+      font-size: @base-font-size - 4;
+      .font-bold;
+      margin: @margin-top 0 0 0;
+    }
 
     &.language-icon {
       .navbar-icon-sprite-index(0);
       .language-text {
-        display: block;
-        text-align: center;
-        margin-left: 0;
-        margin-top: 7px;
-        font-family: @navbar-icon-font;
-        font-size: @base-font-size + 8;
+        .navbar-big-text-mixin;
       }
     }
 
     &.statistics-icon {
       .navbar-icon-sprite-index(1);
       .unallocated {
-        display: block;
-        text-align: center;
-        font-size: @base-font-size - 4;
-        .font-bold;
-        margin: 8px 0 0 0;
+        .navbar-small-text-mixin(8px);
       }
       .total {
-        display: block;
-        text-align: center;
-        .font-bold;
-        font-size: @base-font-size - 4;
-        margin: 1px 0 0 0;
+        .navbar-small-text-mixin;
       }
       &.no-unallocated {
         .navbar-icon-sprite-index(0);
         .total {
-          font-size: @base-font-size + 4;
-          margin-top: 10px;
+          .navbar-big-text-mixin;
         }
       }
     }

@@ -949,7 +949,7 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_admin_ips(instances)
 
     @classmethod
-    def prepare_for_deployment(cls, instances, nst=None):
+    def prepare_for_6_1_deployment(cls, instances, nst=None):
         """Prepare environment for deployment,
         assign management, public, storage, private ips
         """
@@ -964,6 +964,48 @@ class NodeCollection(NailgunCollection):
                        consts.NEUTRON_SEGMENT_TYPES.tun):
                 netmanager.assign_ips(instances, 'private')
             netmanager.assign_admin_ips(instances)
+
+    @classmethod
+    def prepare_for_deployment(cls, instances):
+        """Prepare environment for deployment. Assign IPs for all
+        networks.
+        """
+        if not instances:
+            logger.debug("prepare_for_deployment was called with no instances")
+            return
+
+        cluster = instances[0].cluster
+        netmanager = Cluster.get_network_manager(cluster)
+
+        nodes_by_id = dict((n.id, n) for n in instances)
+
+        query = (
+            db().query(
+                models.Node.id,
+                models.NetworkGroup.id,
+                models.NetworkGroup.name,
+                models.NetworkGroup.meta)
+            .join(models.NodeGroup.nodes)
+            .join(models.NodeGroup.networks)
+            .filter(models.NodeGroup.cluster_id == cluster.id,
+                    models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
+            .order_by(models.NetworkGroup.id)
+        )
+
+        # Group by NetworkGroup.id
+        for key, items in itertools.groupby(query, operator.itemgetter(1)):
+            items = list(items)
+            network_name = items[0][2]
+            network_metadata = items[0][3]
+
+            if not network_metadata.get('notation'):
+                continue
+
+            nodes = [nodes_by_id[item[0]] for item in items
+                     if item[0] in nodes_by_id]
+            netmanager.assign_ips(nodes, network_name)
+
+        netmanager.assign_admin_ips(instances)
 
     @classmethod
     def prepare_for_provisioning(cls, instances):

@@ -240,7 +240,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     });
                     break;
                 case 'manufacturer':
-                    options = _.uniq(this.props.screenNodes.pluck('manufacturer')).map(function(manufacturer) {
+                    options = _.uniq(this.props.nodes.pluck('manufacturer')).map(function(manufacturer) {
                         manufacturer = manufacturer || '';
                         return {
                             name: manufacturer.replace(/\s/g, '_'),
@@ -421,10 +421,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             label: React.PropTypes.node.isRequired,
             dynamicValues: React.PropTypes.bool,
             onChange: React.PropTypes.func,
-            extraContent: React.PropTypes.node
+            extraContent: React.PropTypes.node,
+            isOpen: React.PropTypes.bool
         },
         getInitialState: function() {
-            return {isOpen: false};
+            return {isOpen: this.props.isOpen};
         },
         getDefaultProps: function() {
             return {values: []};
@@ -443,6 +444,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.props.onChange(values);
             } else {
                 this.props.onChange(checked && name);
+                this.toggle();
             }
         },
         render: function() {
@@ -516,10 +518,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             extraContent: React.PropTypes.node,
             prefix: React.PropTypes.string,
             min: React.PropTypes.number,
-            max: React.PropTypes.number
+            max: React.PropTypes.number,
+            isOpen: React.PropTypes.bool
         },
         getInitialState: function() {
-            return {isOpen: false};
+            return {isOpen: this.props.isOpen};
         },
         getDefaultProps: function() {
             return {
@@ -677,6 +680,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.setState({activeSearch: false});
             }
         },
+        componentDidUpdate: function() {
+            if (this.state.openFilter) this.setState({openFilter: null});
+        },
         componentWillUnmount: function() {
             $('html').off('click.search');
         },
@@ -688,6 +694,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             e.stopPropagation();
             this.props.resetSorters();
             this.setState({sortersKey: _.now()});
+        },
+        addFilter: function(filter) {
+            this.props.addFilter(filter);
+            this.setState({openFilter: filter});
         },
         removeFilter: function(name) {
             this.props.removeFilter(name);
@@ -996,7 +1006,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 label: i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName}),
                                                 extraContent: this.renderDeleteFilterButton(filterName),
                                                 onChange: _.partial(this.props.changeFilter, filterName),
-                                                prefix: i18n('cluster_page.nodes_tab.filters.prefixes.' + filterName, {defaultValue: ''})
+                                                prefix: i18n('cluster_page.nodes_tab.filters.prefixes.' + filterName, {defaultValue: ''}),
+                                                isOpen: this.state.openFilter == filterName
                                             };
 
                                             var options = this.props.getFilterOptions(filterName);
@@ -1015,7 +1026,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         label: i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName})
                                                     };
                                                 })}
-                                                onChange={this.props.addFilter}
+                                                onChange={this.addFilter}
                                                 dynamicValues={true}
                                             />
                                         }

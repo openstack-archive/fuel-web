@@ -2957,16 +2957,12 @@ input[type=range] {
         padding: 8px;
       }
     }
-    @help-block-width: @page-width - @default-input-width - @default-label-width - 90px;
     .help-block {
-      max-width: @help-block-width;
+      max-width: @page-width - @default-input-width - @default-label-width - 280px;
       float: left;
       margin-left: 20px;
       padding-top: 9px;
       box-sizing: border-box;
-    }
-    .textarea + .help-block {
-      max-width: @help-block-width - @default-input-width;
     }
     &.has-error .help-block {
       .text-danger;

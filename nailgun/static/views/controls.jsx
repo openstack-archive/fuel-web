@@ -311,7 +311,9 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             return (
                 <div className={utils.classNames(classes)}>
                     <div className='arrow' />
-                    <div className='popover-content'>{this.props.children}</div>
+                    <div className='popover-content'>
+                        {this.props.children}
+                    </div>
                 </div>
             );
         }

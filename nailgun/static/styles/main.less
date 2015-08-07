@@ -33,6 +33,10 @@
 @node-color-pending_addition: @base-node-color;
 @node-border-color-pending_addition: @green - 20%;
 
+// Pending deletion node
+@node-color-pending_deletion: @base-node-color;
+@node-border-color-pending_deletion: @orange - 20%;
+
 // Node Offline
 @node-color-offline: @base-node-color;
 @node-border-color-offline: @base-node-border;
@@ -1804,6 +1808,10 @@ input[type=range] {
           background-color: @node-color-pending_addition + 10%;
         }
       }
+      &.pending_deletion {
+        background-color: @node-color-pending_deletion;
+        border-color: @node-border-color-pending_deletion;
+      }
       &.offline {
         background-color: @node-color-offline + 10%;
         border-color: @node-border-color-offline + 10%;
@@ -1821,6 +1829,9 @@ input[type=range] {
         }
         &.pending_addition {
           border-color: @node-border-color-pending_addition;
+        }
+        &.pending_deletion {
+          border-color: @node-border-color-pending_deletion;
         }
         &:hover {
           background-color: @node-color-selected + 10%;

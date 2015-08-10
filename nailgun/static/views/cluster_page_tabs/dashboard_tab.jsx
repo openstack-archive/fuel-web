@@ -525,12 +525,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 linkTitle='user_guide'
                                             />
                                         }
-                                        {this.state.hasErrors &&
-                                            <WarningsBlock
-                                                cluster={cluster}
-                                                alerts={_.pick(this.state.alerts, 'error')}
-                                            />
-                                        }
                                         {!hasNodes &&
                                             [
                                                 <h4>{i18n(namespace + 'new_environment_welcome')}</h4>,

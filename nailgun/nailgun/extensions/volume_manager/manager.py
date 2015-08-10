@@ -748,7 +748,7 @@ class VolumeManager(object):
         return result
 
     def _calc_root_size(self):
-        size = int(self.disks[0].size * 0.2)
+        size = int(self.disks[0].size * 0.2) if len(self.disks) else 0
         if size < gb_to_mb(15):
             size = gb_to_mb(15)
         elif size > gb_to_mb(50):

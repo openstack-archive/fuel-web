@@ -624,8 +624,8 @@ class TestFindGraph(base.BaseTestCase):
     def test_preserve_ordering_when_task_skipped(self):
         self.graph.only_tasks(['task_a', 'task_d'])
         # we skipped both tasks that are predecessors for task_d
-        self.assertEqual(self.graph.node['task_b']['type'], 'skipped')
-        self.assertEqual(self.graph.node['task_c']['type'], 'skipped')
+        self.assertTrue(self.graph.node['task_b']['skipped'])
+        self.assertTrue(self.graph.node['task_c']['skipped'])
         self.assertEqual(
             [t['id'] for t in self.graph.get_group_tasks('group_b')],
             ['task_a', 'task_d'])
@@ -658,3 +658,44 @@ class TestOrdered(base.BaseTestCase):
         self.assertEqual(
             [n['id'] for n in graph.topology],
             ['a', 'b', 'c', 'd', 'e', 'f'])
+
+
+class TestIncludeSkipped(base.BaseTestCase):
+
+    TASKS = """
+    - id: a
+      type: puppet
+    - id: b
+      requires: [a]
+      skipped: true
+      type: shell
+    - id: c
+      requires: [b]
+      type: puppet
+    """
+
+    def setUp(self):
+        super(TestIncludeSkipped, self).setUp()
+        self.tasks = yaml.load(self.TASKS)
+        self.graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
+
+    def test_filter_subgraph_will_not_return_skipped(self):
+
+        subgraph = self.graph.filter_subgraph(start='a', end='c')
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['a', 'c'])
+
+    def test_filter_subgraph_will_return_skipped_if_included(self):
+        subgraph = self.graph.filter_subgraph(
+            start='a', end='c', include=('b',))
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            [t['id'] for t in self.tasks])
+
+    def test_include_task_with_only_tasks_routine(self):
+        self.graph.only_tasks(['a', 'b', 'c'])
+        subgraph = self.graph.filter_subgraph(start='a', end='c')
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            [t['id'] for t in self.tasks])

@@ -528,7 +528,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         revertChanges: function() {
             this.loadInitialConfiguration();
             this.props.cluster.get('networkConfiguration').isValid();
-            this.setState({hideVerificationResult: false});
+            this.setState({hideVerificationResult: true});
         },
         loadInitialConfiguration: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');

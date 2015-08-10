@@ -658,3 +658,41 @@ class TestOrdered(base.BaseTestCase):
         self.assertEqual(
             [n['id'] for n in graph.topology],
             ['a', 'b', 'c', 'd', 'e', 'f'])
+
+
+class TestIncludeSkipped(base.BaseTestCase):
+
+    TASKS = """
+    - id: a
+    - id: b
+      requires: [a]
+      skipped: true
+    - id: c
+      requires: [b]
+    """
+
+    def setUp(self):
+        super(TestIncludeSkipped, self).setUp()
+        self.tasks = yaml.load(self.TASKS)
+        self.graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
+
+    def test_filter_subgraph_will_not_return_skipped(self):
+
+        subgraph = self.graph.filter_subgraph(start='a', end='c')
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['a', 'c'])
+
+    def test_filter_subgraph_will_return_skipped_if_included(self):
+        subgraph = self.graph.filter_subgraph(
+            start='a', end='c', include=('b',))
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            [t['id'] for t in self.tasks])
+
+    def test_include_task_with_only_tasks_routine(self):
+        self.graph.only_tasks(['a', 'b', 'c'])
+        subgraph = self.graph.filter_subgraph(start='a', end='c')
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            [t['id'] for t in self.tasks])

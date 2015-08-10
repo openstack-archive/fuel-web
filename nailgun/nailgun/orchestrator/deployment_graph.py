@@ -144,13 +144,27 @@ class DeploymentGraph(nx.DiGraph):
 
             if task not in predecessors:
                 continue
-            elif (self.node[task]['type'] in consts.INTERNAL_TASKS):
-                logger.debug(
-                    'Task %s will be skipped for %s', task, group_name)
+            elif self.exclude_task(task):
                 continue
 
             rst.append(self.node[task])
         return rst
+
+    def exclude_task(self, task):
+        """Stores all conditions when task should be excluded from
+        execution.
+        :param task: task name
+        """
+        if self.node[task]['type'] in consts.INTERNAL_TASKS:
+            logger.debug(
+                'Excluding task %s that is used'
+                ' for internal reasons.', task)
+            return True
+        elif self.node[task].get('skipped'):
+            logger.debug(
+                'Task %s will be skipped for %s', task)
+            return True
+        return False
 
     @property
     def topology(self):
@@ -162,7 +176,7 @@ class DeploymentGraph(nx.DiGraph):
         We can not just remove node because it also stores edges, that connects
         graph in correct order
 
-        :param task_id: id of the node in graph
+        :param task: dict with task data
         """
         if task['type'] in consts.INTERNAL_TASKS:
             logger.debug(
@@ -170,7 +184,7 @@ class DeploymentGraph(nx.DiGraph):
                 'Task: %s', task)
             return
 
-        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
+        task['skipped'] = True
 
     def only_tasks(self, task_ids):
         """Leave only tasks that are specified in request.
@@ -183,12 +197,15 @@ class DeploymentGraph(nx.DiGraph):
         for task in self.node.values():
             if task['id'] not in task_ids:
                 self.make_skipped_task(task)
+            else:
+                task['skipped'] = False
 
     def find_subgraph(self, start=None, end=None):
         """Find subgraph by provided start and end endpoints
 
-        :param end: string
-        :param start: string
+        :param end: task name
+        :param start: task name
+        :param include: iterable with task names
         :returns: DeploymentGraph instance (subgraph from original)
         """
         working_graph = self
@@ -209,6 +226,16 @@ class DeploymentGraph(nx.DiGraph):
                 working_graph.reverse(), end))
 
         return working_graph
+
+    def filter_subgraph(self, start=None, end=None, include=()):
+        """Exclude tasks that is not meant to be executed
+        :param include: container with task names
+        """
+        wgraph = self.find_subgraph(start=start, end=end)
+        for task in wgraph:
+            if self.exclude_task(task) and task not in include:
+                wgraph.remove_node(task)
+        return wgraph
 
 
 class AstuteGraph(object):
@@ -345,9 +372,7 @@ class AstuteGraph(object):
         serialized = []
         for task in tasks:
 
-            if task['type'] in consts.INTERNAL_TASKS:
-                logger.debug(
-                    'Task {0} is not going to be executed.'.format(task))
+            if self.graph.exclude_task(task['id']):
                 continue
 
             serializer = self.serializers.get_stage_serializer(task)(

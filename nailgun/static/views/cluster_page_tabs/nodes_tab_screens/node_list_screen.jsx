@@ -1112,17 +1112,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     };
                 }, this);
             return {
-                labels: _.clone(labels),
-                initialLabels: _.clone(labels),
+                labels: _.cloneDeep(labels),
+                initialLabels: _.cloneDeep(labels),
                 actionInProgress: false
             };
         },
         hasChanges: function() {
-            return _.any(this.state.labels, function(labelData) {
-                var initialLabel = _.find(this.state.initialLabels, {key: labelData.key});
-                if (initialLabel) return !_.isEqual(labelData, initialLabel);
-                return labelData.checked;
-            }, this);
+            return !_.isEqual(this.state.labels, this.state.initialLabels);
         },
         componentDidMount: function() {
             _.each(this.state.labels, function(labelData) {
@@ -1307,7 +1303,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <button
                                         className='btn btn-success'
                                         onClick={this.applyLabelChanges}
-                                        disabled={this.state.actionInProgress || !this.hasChanges() || _.reject(_.pluck(this.state.labels, 'error'), _.isNull).length}
+                                        disabled={this.state.actionInProgress || !this.hasChanges() || !_.all(_.pluck(this.state.labels, 'error'), _.isNull)}
                                     >
                                         {i18n('common.apply_button')}
                                     </button>

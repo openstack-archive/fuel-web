@@ -3965,7 +3965,8 @@ input[type=range] {
           max-width: 220px;
           overflow: hidden;
           cursor: pointer;
-          min-height: @dashboard-offset * 2;
+          text-overflow: ellipsis;
+          height: 14px;
         }
         .glyphicon {
           margin-left: 10px;
@@ -3981,29 +3982,32 @@ input[type=range] {
       text-align: left;
       input[type=text] {
         width: 240px;
-        height: 26px;
-        margin: -3px 0 0 -13px;
+        height: 30px;
+        margin: -9px 0 0 -13px;
         float: left;
       }
     }
     .capacity-block {
       margin-bottom: @dashboard-offset * 2;
-      .capacity-item {
-        cursor: default;
-        background-color: @white;
-        padding: 4px 10px;
-        &.cpu {
-          border: 1px solid @dashboard-gray;
-        }
-        &.hdd {
-          border-top: 1px solid @dashboard-gray;
-          border-bottom: 1px solid @dashboard-gray;
-        }
-        &.ram {
-          border: 1px solid @dashboard-gray;
-        }
-        .capacity-value {
-          .font-semibold;
+      .capacity-items {
+        margin-top: -9px;
+        .capacity-item {
+          cursor: default;
+          background-color: @white;
+          padding: 4px 10px;
+          &.cpu {
+            border: 1px solid @dashboard-gray;
+          }
+          &.hdd {
+            border-top: 1px solid @dashboard-gray;
+            border-bottom: 1px solid @dashboard-gray;
+          }
+          &.ram {
+            border: 1px solid @dashboard-gray;
+          }
+          .capacity-value {
+            .font-semibold;
+          }
         }
       }
     }

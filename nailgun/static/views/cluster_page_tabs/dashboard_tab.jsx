@@ -344,13 +344,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             };
         },
         getInitialState: function() {
-            var alerts = this.validate(this.props.cluster),
-                state = {
-                    alerts: alerts,
-                    hasErrors: !_.isEmpty(alerts.error),
-                    actionInProgress: false
-                };
-            return state;
+            return {actionInProgress: false};
         },
         validate: function(cluster) {
             return _.reduce(
@@ -464,8 +458,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 hasNodes = !!nodes.length,
-                isDeploymentPossible = cluster.isDeploymentPossible() &&
-                    !this.state.alerts.blocker.length,
+                alerts = this.validate(cluster),
+                isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
@@ -525,12 +519,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 linkTitle='user_guide'
                                             />
                                         }
-                                        {this.state.hasErrors &&
-                                            <WarningsBlock
-                                                cluster={cluster}
-                                                alerts={_.pick(this.state.alerts, 'error')}
-                                            />
-                                        }
                                         {!hasNodes &&
                                             [
                                                 <h4>{i18n(namespace + 'new_environment_welcome')}</h4>,
@@ -551,7 +539,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             <div className='invalid'>
                                                 {i18n('dialog.display_changes.redeployment_needed')}
                                             </div>,
-                                        !_.isEmpty(this.state.alerts.blocker) &&
+                                        !_.isEmpty(alerts.blocker) &&
                                             [
                                                 <InstructionElement
                                                     key='deployment_cannot_be_started'
@@ -563,21 +551,22 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 />,
                                                 <WarningsBlock
                                                     cluster={cluster}
-                                                    alerts={_.pick(this.state.alerts, 'blocker')}
+                                                    alerts={_.pick(alerts, 'blocker')}
                                                 />
                                             ],
-                                        (!_.isEmpty(this.state.alerts.error) || !_.isEmpty(this.state.alerts.warning)) &&
+                                        !_.isEmpty(alerts.error) &&
+                                            <WarningsBlock
+                                                key='error'
+                                                cluster={cluster}
+                                                alerts={_.pick(alerts, 'error')}
+                                            />,
+                                        !_.isEmpty(alerts.warning) &&
                                             [
                                                 <p>{i18n(namespace + 'note_recommendations')}</p>,
                                                 <WarningsBlock
-                                                    key='error'
-                                                    cluster={cluster}
-                                                    alerts={_.pick(this.state.alerts, 'error')}
-                                                />,
-                                                <WarningsBlock
                                                     key='warning'
                                                     cluster={cluster}
-                                                    alerts={_.pick(this.state.alerts, 'warning')}
+                                                    alerts={_.pick(alerts, 'warning')}
                                                 />
                                             ]
                                     ]

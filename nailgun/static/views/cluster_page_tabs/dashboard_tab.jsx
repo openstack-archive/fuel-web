@@ -483,8 +483,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
                                         {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
                                     </ul>
-                                    {isDeploymentPossible &&
-                                        (isVMsProvisioningAvailable ?
+                                    {isVMsProvisioningAvailable ?
+                                        (
                                             <button
                                                 key='provision-vms'
                                                 className='btn btn-primary deploy-btn'
@@ -493,16 +493,19 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 <div className='deploy-icon'></div>
                                                 {i18n('cluster_page.provision_vms')}
                                             </button>
-                                        :
-                                            <button
-                                                key='deploy-changes'
-                                                className='btn btn-primary deploy-btn'
-                                                onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
-                                            >
-                                                <div className='deploy-icon'></div>
-                                                {i18n('cluster_page.deploy_changes')}
-                                            </button>
                                         )
+                                    :
+                                        isDeploymentPossible &&
+                                            (
+                                                <button
+                                                    key='deploy-changes'
+                                                    className='btn btn-primary deploy-btn'
+                                                    onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
+                                                >
+                                                    <div className='deploy-icon'></div>
+                                                    {i18n('cluster_page.deploy_changes')}
+                                                </button>
+                                            )
                                     }
                                     {nodes.hasChanges() &&
                                         <a

@@ -231,3 +231,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(400, resp.status_code)
         self.assertRegexpMatches(resp.json_body["message"],
                                  'Node group with ID -1 does not exist')
+
+    def test_create_network_group_without_vlan(self):
+        resp = self._create_network_group(vlan=None)
+        self.assertEqual(201, resp.status_code)

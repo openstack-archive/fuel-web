@@ -183,6 +183,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             return (<div className={utils.classNames(classes)}>{children}</div>);
         },
         render: function() {
+            if (this.props.type == 'hidden' && !this.props.description && !this.props.label) return null;
             return this.renderWrapper(this.isCheckboxOrRadio() ?
                 [
                     this.renderLabel(this.renderInput()),

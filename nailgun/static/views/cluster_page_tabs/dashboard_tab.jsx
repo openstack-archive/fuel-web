@@ -347,7 +347,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             var alerts = this.validate(this.props.cluster),
                 state = {
                     alerts: alerts,
-                    hasErrors: !_.isEmpty(alerts.error),
                     actionInProgress: false
                 };
             return state;
@@ -528,12 +527,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 linkTitle='user_guide'
                                             />
                                         }
-                                        {this.state.hasErrors &&
-                                            <WarningsBlock
-                                                cluster={cluster}
-                                                alerts={_.pick(this.state.alerts, 'error')}
-                                            />
-                                        }
                                         {!hasNodes &&
                                             [
                                                 <h4>{i18n(namespace + 'new_environment_welcome')}</h4>,
@@ -569,14 +562,15 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                     alerts={_.pick(this.state.alerts, 'blocker')}
                                                 />
                                             ],
-                                        (!_.isEmpty(this.state.alerts.error) || !_.isEmpty(this.state.alerts.warning)) &&
+                                        !_.isEmpty(this.state.alerts.error) &&
+                                            <WarningsBlock
+                                                key='error'
+                                                cluster={cluster}
+                                                alerts={_.pick(this.state.alerts, 'error')}
+                                            />,
+                                        !_.isEmpty(this.state.alerts.warning) &&
                                             [
                                                 <p>{i18n(namespace + 'note_recommendations')}</p>,
-                                                <WarningsBlock
-                                                    key='error'
-                                                    cluster={cluster}
-                                                    alerts={_.pick(this.state.alerts, 'error')}
-                                                />,
                                                 <WarningsBlock
                                                     key='warning'
                                                     cluster={cluster}

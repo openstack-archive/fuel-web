@@ -77,3 +77,10 @@ class TestDeploymentGraphViualization(base.BaseUnitTest):
         dotgraph = self.get_dotgraph_with_tasks(tasks)
         six.assertRegex(self, dotgraph, '"task-A" .*color=yellowgreen.*;')
         six.assertRegex(self, dotgraph, '"task-A" .*style=filled.*;')
+
+    def test_skipped_metaparam(self):
+        tasks = [
+            {'id': 'task_a', 'skipped': True},
+        ]
+        dotgraph = self.get_dotgraph_with_tasks(tasks)
+        six.assertRegex(self, dotgraph, '"task_a" .*color=gray95.*;')

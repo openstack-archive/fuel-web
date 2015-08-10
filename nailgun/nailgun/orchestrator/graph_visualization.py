@@ -75,9 +75,12 @@ class GraphVisualization(object):
             if task_type in remove:
                 graph.remove_node(name)
                 continue
-            graph.node[name] = type_node_attrs_map.get(task_type,
-                                                       default_node_attrs)
-
+            if data.get('skipped'):
+                graph.node[name] = type_node_attrs_map[
+                    consts.ORCHESTRATOR_TASK_TYPES.skipped]
+            else:
+                graph.node[name] = type_node_attrs_map.get(
+                    task_type, default_node_attrs)
         return to_pydot(graph)
 
 

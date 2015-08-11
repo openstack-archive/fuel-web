@@ -380,7 +380,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         {_.contains(['provisioning', 'deploying'], status) ?
                                             <div>
                                                 {this.renderStatusLabel(status)}
-                                                {this.renderLogsLink()}
+                                                <div className='node-buttons'>
+                                                    {this.renderLogsLink()}
+                                                </div>
                                                 {this.renderNodeProgress(status)}
                                             </div>
                                         :

@@ -17,6 +17,7 @@
 import yaml
 
 from nailgun import objects
+from nailgun.plugins import adapters
 from nailgun.test import base
 
 
@@ -162,6 +163,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
         plugin = objects.Plugin.create(plugin_data)
         self.cluster.plugins.append(plugin)
         self.db.flush()
+        plugin_adapter = adapters.wrap_plugin(plugin)
 
         role = self.app.get(
             url=base.reverse(
@@ -173,8 +175,10 @@ class TestClusterRolesHandler(base.BaseTestCase):
         self.assertEqual(role['name'], 'test_role')
         self.assertDictEqual(
             role['meta'],
-            self.ROLES['test_role']
+            plugin_adapter.normalized_roles_metadata['test_role']
         )
         self.assertItemsEqual(
             role['volumes_roles_mapping'],
-            self.VOLUMES['volumes_roles_mapping']['test_role'])
+            plugin_adapter.volumes_metadata[
+                'volumes_roles_mapping']['test_role']
+        )

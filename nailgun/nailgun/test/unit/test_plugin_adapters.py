@@ -20,6 +20,8 @@ import six
 import yaml
 
 from nailgun.db import db
+from nailgun.errors import errors
+from nailgun.expression import Expression
 from nailgun.objects import Plugin
 from nailgun.plugins import adapters
 from nailgun.settings import settings
@@ -37,7 +39,26 @@ class TestPluginBase(base.BaseTestCase):
     def setUp(self):
         super(TestPluginBase, self).setUp()
         self.plugin_metadata = self.env.get_default_plugin_metadata(
-            package_version=self.package_version)
+            package_version=self.package_version,
+            roles_metadata={
+                'role_x': {
+                    'name': 'Role X',
+                    'description': 'Role X is ...',
+                },
+                'role_y': {
+                    'name': 'Role Y',
+                    'description': 'Role Y is ...',
+                    'restrictions': []
+                },
+                'role_z': {
+                    'name': 'Role Z',
+                    'description': 'Role Z is ...',
+                    'restrictions': [
+                        'settings:some.stuff.value == false'
+                    ]
+                }
+            }
+        )
         self.plugin = Plugin.create(self.plugin_metadata)
         self.env.create(
             cluster_kwargs={'mode': 'multinode'},
@@ -91,6 +112,20 @@ class TestPluginBase(base.BaseTestCase):
         self.cluster.release.version = '2014.2.2-6.0.1'
         release = self.plugin_adapter.get_release_info(self.cluster.release)
         self.assertEqual(release, self.plugin_metadata['releases'][0])
+
+    def test_plugin_role_restrictions_normalization(self):
+        # checking presence and syntax of generated restriction
+        for role, meta in six.iteritems(
+                self.plugin_adapter.normalized_roles_metadata):
+            for condition in meta['restrictions']:
+                self.assertNotRaises(
+                    errors.ParseError,
+                    lambda: Expression(
+                        condition,
+                        {'settings': self.cluster.attributes.editable},
+                        strict=False
+                    ).evaluate()
+                )
 
     def test_slaves_scripts_path(self):
         expected = settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(

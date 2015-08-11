@@ -1291,7 +1291,7 @@ class NetworkManager(object):
                     cls.update_range_mask_from_cidr(ng_db, ng["cidr"],
                                                     use_gateway=use_gateway)
 
-                if notation:
+                if notation and not cluster.is_locked:
                     cls.cleanup_network_group(ng_db)
                 objects.Cluster.add_pending_changes(cluster, 'networks')
 
@@ -1300,6 +1300,11 @@ class NetworkManager(object):
         cls.update_networks(cluster, network_configuration)
 
         if 'networking_parameters' in network_configuration:
+            if cluster.is_locked:
+                logger.warning("'network_parameters' are presented in update"
+                               " data but they are locked after deployment."
+                               " New values were ignored.")
+                return
             for key, value in network_configuration['networking_parameters'] \
                     .items():
                 setattr(cluster.network_config, key, value)
@@ -1426,6 +1431,12 @@ class NetworkManager(object):
         """Returns IP with address space prefix, e.g. "10.20.0.1/24"
         """
         return "{0}/{1}".format(ip, IPNetwork(network_group.cidr).prefixlen)
+
+    @classmethod
+    def get_assigned_ips_by_network_id(cls, network_id):
+        return [x[0] for x in
+                db().query(IPAddr.ip_addr).filter_by(
+                    network=network_id).all()]
 
 
 class AllocateVIPs70Mixin(object):

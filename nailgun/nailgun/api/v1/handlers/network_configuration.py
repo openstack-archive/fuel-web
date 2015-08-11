@@ -39,7 +39,10 @@ from nailgun.api.v1.validators.network \
     import NovaNetworkConfigurationValidator
 
 from nailgun import consts
+from nailgun import db
 from nailgun import objects
+
+from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -63,6 +66,55 @@ class ProviderHandler(BaseHandler):
         if cluster.is_locked:
             raise self.http(403, "Network configuration can't be changed "
                                  "after, or in deploy.")
+
+    def validate_networks_data(self, data, cluster):
+        try:
+            if 'networks' in data:
+                self.validator.validate_networks_update(
+                    jsonutils.dumps(data)
+                )
+                nm = objects.Cluster.get_network_manager(cluster)
+                # It's better to coerce everything to str than try to
+                # make int from unknown incoming data
+                cluster_ng_ids = [
+                    str(ng.id) for ng in cluster.network_groups
+                ] + [str(nm.get_admin_network_group_id())]
+                data_ids = [
+                    str(ng.get('id')) for ng in data['networks']
+                ]
+                missing_ids = set(data_ids).difference(cluster_ng_ids)
+                if missing_ids:
+                    raise errors.NetworkCheckError(
+                        u"Invalid network ID(s): {0}".format(
+                            ', '.join(missing_ids)
+                        )
+                    )
+                for data_net in data['networks']:
+                    if 'meta' in data_net:
+                        data_net.pop('meta')
+
+            self._additional_network_validation(data, cluster)
+        except Exception as exc:
+            self._raise_error_task(cluster, exc)
+
+    def _additional_network_validation(self, data, cluster):
+        pass
+
+    def _raise_error_task(self, cluster, exc):
+        # set task status to error and update its corresponding data
+        task = Task(
+            name=consts.TASK_NAMES.check_networks,
+            cluster=cluster,
+            status=consts.TASK_STATUSES.error,
+            progress=100,
+            message=six.text_type(exc)
+        )
+        db.db().add(task)
+        db.db().commit()
+
+        logger.error(traceback.format_exc())
+
+        self.raise_task(task)
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):
@@ -103,34 +155,23 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
 
         self.check_if_network_configuration_locked(cluster)
 
+        self.validate_networks_data(data, cluster)
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
         if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
-
-                if 'dns_nameservers' in data:
-                    self.validator.validate_dns_servers_update(
-                        jsonutils.dumps(data)
-                    )
-
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': consts.TASK_STATUSES.error,
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-
-                logger.error(traceback.format_exc())
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
 
         self.raise_task(task)
+
+    def _additional_network_validation(self, data, cluster):
+        if 'dns_nameservers' in data:
+            self.validator.validate_dns_servers_update(
+                jsonutils.dumps(data)
+            )
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -166,34 +207,24 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
         self.check_if_network_configuration_locked(cluster)
 
+        self.validate_networks_data(data, cluster)
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
         if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
-
-                if 'networking_parameters' in data:
-                    self.validator.validate_neutron_params(
-                        jsonutils.dumps(data),
-                        cluster_id=cluster_id
-                    )
-
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': 'error',
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-                logger.error(traceback.format_exc())
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
 
         self.raise_task(task)
+
+    def _additional_network_validation(self, data, cluster):
+        if 'networking_parameters' in data:
+            self.validator.validate_neutron_params(
+                jsonutils.dumps(data),
+                cluster_id=cluster.id
+            )
 
 
 class TemplateNetworkConfigurationHandler(BaseHandler):

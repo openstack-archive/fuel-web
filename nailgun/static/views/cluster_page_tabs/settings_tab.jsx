@@ -57,9 +57,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         getInitialState: function() {
             var settings = this.props.cluster.get('settings');
-            var activeGroupName = _.min(_.keys(settings.attributes), function(groupName) {
+            if (_.isNull(this.props.activeGroupName)) this.props.setActiveGroupName(_.min(_.keys(settings.attributes), function(groupName) {
                 return settings.get(groupName + '.metadata.weight');
-            });
+            }));
             return {
                 configModels: {
                     cluster: this.props.cluster,
@@ -72,7 +72,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
                 initialAttributes: _.cloneDeep(settings.attributes),
                 actionInProgress: false,
-                activeGroupName: activeGroupName
+                activeGroupName: this.props.activeGroupName
             };
         },
         componentDidMount: function() {
@@ -183,9 +183,6 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             var settings = this.props.cluster.get('settings');
             return settings.checkRestrictions(this.state.configModels, action, path);
         },
-        onSubtabClick: function(groupName) {
-            this.setState({activeGroupName: groupName});
-        },
         isSavingPossible: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
@@ -202,14 +199,13 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 hasChanges = this.hasChanges(),
                 allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
-                activeGroupVisible = !this.checkRestrictions('hide', settings.makePath(this.state.activeGroupName, 'metadata')).result,
-                activeGroupName = this.state.activeGroupName;
-            if (!activeGroupVisible) {
+                isActiveGroupVisible = !this.checkRestrictions('hide', settings.makePath(this.props.activeGroupName, 'metadata')).result;
+            if (!isActiveGroupVisible) {
                 // FIXME(vkramskikh): state is not updated. Probably we should store
                 // the whole restrictions processing result in state to avoid this
-                activeGroupName = _.min(_.keys(settings.attributes), function(groupName) {
+                this.props.setActiveGroupName(_.min(_.keys(settings.attributes), function(groupName) {
                     return settings.get(groupName + '.metadata.weight');
-                });
+                }));
             }
 
             return (
@@ -218,14 +214,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     <SettingSubtabs
                         settings={settings}
                         groupNames={sortedSettingGroups}
-                        activeGroupName={activeGroupName}
                         makePath={settings.makePath}
                         configModels={this.state.configModels}
-                        onClick={this.onSubtabClick}
+                        setActiveGroupName={this.props.setActiveGroupName}
+                        activeGroupName={this.props.activeGroupName}
                         checkRestrictions={this.checkRestrictions}
                     />
                     {_.compact(_.map(sortedSettingGroups, function(groupName) {
-                        if (groupName != activeGroupName) {
+                        if (groupName != this.props.activeGroupName) {
                             return null;
                         }
                         return <SettingGroup
@@ -265,6 +261,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
     });
 
     var SettingSubtabs = React.createClass({
+        selectGroup: function(groupName) {
+            this.props.setActiveGroupName(groupName);
+        },
         render: function() {
             var errors = this.props.settings.validationError,
                 invalidSections = {};
@@ -287,7 +286,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     key={groupName}
                                     role='presentation'
                                     className={utils.classNames({active: groupName == this.props.activeGroupName})}
-                                    onClick={_.partial(this.props.onClick, groupName)}
+                                    onClick={_.partial(this.selectGroup, groupName)}
                                 >
                                     <a className={'subtab-link-' + groupName}>
                                         {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}

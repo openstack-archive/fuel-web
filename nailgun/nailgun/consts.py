@@ -206,6 +206,7 @@ TASK_NAMES = Enum(
 
     'node_deletion',
     'cluster_deletion',
+    'remove_images',
     'check_before_deployment',
 
     # network

@@ -102,19 +102,37 @@ class TaskManager(object):
         return serializer[cluster.net_provider].serialize_for_cluster(cluster)
 
 
-class ApplyChangesTaskManager(TaskManager):
+class DeploymentCheckMixin(object):
+
+    # A list of tasks which we cannot run at the same cluster in parallel
+    deployment_tasks = (
+        consts.TASK_NAMES.deploy,
+        consts.TASK_NAMES.stop_deployment,
+        consts.TASK_NAMES.reset_environment,
+        # NOTE(eli): Node deletion may require nodes redeployment
+        # so it's required to preventing parallel deployment
+        consts.TASK_NAMES.node_deletion)
+
+    @classmethod
+    def check_no_running_deployment(cls, cluster):
+        tasks_q = objects.TaskCollection.get_by_name_and_cluster(
+            cluster, cls.deployment_tasks).filter_by(
+                status=consts.TASK_STATUSES.running)
+
+        tasks_exists = db.query(tasks_q.exists()).scalar()
+        if tasks_exists:
+            raise errors.DeploymentAlreadyStarted(
+                'Cannot perform the actions because there are '
+                'running tasks {0}'.format(tasks_q.all()))
+
+
+class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
     deployment_type = consts.TASK_NAMES.deploy
 
     def _lock_required_tasks(self):
-        names = (
-            consts.TASK_NAMES.deploy,
-            consts.TASK_NAMES.stop_deployment,
-            consts.TASK_NAMES.reset_environment
-        )
         return objects.TaskCollection.lock_cluster_tasks(
-            cluster_id=self.cluster.id, names=names
-        )
+            cluster_id=self.cluster.id, names=self.deployment_tasks)
 
     def _remove_obsolete_tasks(self):
         locked_tasks = self._lock_required_tasks()
@@ -130,11 +148,8 @@ class ApplyChangesTaskManager(TaskManager):
         )
 
         for task in current_tasks:
-            if task.status == consts.TASK_STATUSES.running:
-                db().commit()
-                raise errors.DeploymentAlreadyStarted()
-            elif task.status in (consts.TASK_STATUSES.ready,
-                                 consts.TASK_STATUSES.error):
+            if task.status in (consts.TASK_STATUSES.ready,
+                               consts.TASK_STATUSES.error):
                 db().delete(task)
         db().flush()
 
@@ -162,6 +177,7 @@ class ApplyChangesTaskManager(TaskManager):
             )
         )
 
+        self.check_no_running_deployment(self.cluster)
         self._remove_obsolete_tasks()
 
         supertask = Task(name=self.deployment_type, cluster=self.cluster)
@@ -1048,7 +1064,7 @@ class GenerateCapacityLogTaskManager(TaskManager):
         return task
 
 
-class NodeDeletionTaskManager(TaskManager):
+class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
 
     def verify_nodes_with_cluster(self, nodes):
         """Make sure that task.cluster is the same as all nodes' cluster
@@ -1073,10 +1089,10 @@ class NodeDeletionTaskManager(TaskManager):
             )
 
     def execute(self, nodes_to_delete, mclient_remove=True):
-        cluster_id = None
+        cluster = None
         if hasattr(self, 'cluster'):
-            cluster_id = self.cluster.id
-            objects.TaskCollection.lock_cluster_tasks(cluster_id)
+            cluster = self.cluster
+            objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
 
         logger.info("Trying to execute node deletion task with nodes %s",
                     ', '.join(str(node.id) for node in nodes_to_delete))
@@ -1084,7 +1100,7 @@ class NodeDeletionTaskManager(TaskManager):
         self.verify_nodes_with_cluster(nodes_to_delete)
         objects.NodeCollection.lock_nodes(nodes_to_delete)
 
-        if cluster_id is None:
+        if cluster is None:
             # DeletionTask operates on cluster's nodes.
             # Nodes that are not in cluster are simply deleted.
 
@@ -1100,12 +1116,15 @@ class NodeDeletionTaskManager(TaskManager):
 
             return task
 
+        self.check_no_running_deployment(self.cluster)
+
         task = Task(name=consts.TASK_NAMES.node_deletion,
                     cluster=self.cluster)
         db().add(task)
         for node in nodes_to_delete:
             objects.Node.update(node,
-                                {'status': consts.NODE_STATUSES.removing})
+                                {'status': consts.NODE_STATUSES.removing,
+                                 'pending_deletion': True})
         db().flush()
 
         nodes_to_deploy = []

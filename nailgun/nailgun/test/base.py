@@ -1089,6 +1089,14 @@ class BaseTestCase(TestCase):
         except exception:
             self.fail('Exception "{0}" raised.'.format(exception))
 
+    def assertRaisesWithMessage(self, exc, msg, func, *args, **kwargs):
+        try:
+            func(*args, **kwargs)
+            self.assertFail()
+        except Exception as inst:
+            self.assertIsInstance(inst, exc)
+            self.assertEqual(inst.message, msg)
+
     def datadiff(self, node1, node2, path=None, ignore_keys=[],
                  compare_sorted=False):
         if path is None:

@@ -50,7 +50,7 @@ class NetworkConfigurationValidator(BasicValidator):
         for i in networks:
             if 'id' not in i:
                 raise errors.InvalidData(
-                    "No 'id' param presents for '{0}' network".format(i),
+                    "No 'id' param present for '{0}' network".format(i),
                     log_message=True
                 )
         return d

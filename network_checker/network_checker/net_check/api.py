@@ -41,8 +41,7 @@ scapy_config.logLevel = 40
 scapy_config.use_pcap = True
 import scapy.all as scapy
 
-from scapy.utils import rdpcap
-
+from network_checker.net_check.pcap_reader import PcapWorker
 from network_checker.net_check.utils import signal_timeout
 
 
@@ -409,6 +408,7 @@ class Listener(Actor):
 
         self.neighbours = {}
         self._define_pcap_dir()
+        self.workers = []
 
     def addpid(self, piddir):
         pid = os.getpid()
@@ -442,6 +442,14 @@ class Listener(Actor):
                 listeners.append(self.get_probe_frames(iface, vlan=True))
                 sniffers.add(iface)
 
+                self.workers.append(
+                    PcapWorker(iface, self.pcap_filename(iface)))
+                self.workers.append(
+                    PcapWorker(iface, self.pcap_filename(iface, vlan=True)))
+
+        for worker in self.workers:
+            worker.run()
+
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((self.config.get('ready_address', 'locahost'),
@@ -470,7 +478,16 @@ class Listener(Actor):
         except KeyboardInterrupt:
             self.logger.debug("Interruption signal catched")
 
+        # pcap collecting can take a lot of time because of amount
+        # of dumped traffic, and we can not control growth of this traffic
+        # because it is based on the number of nodes, therefore we should
+        # provide a way to interrupt collecting procedure and return what is
+        # collected at certain point
         with signal_timeout(self.config['collect_timeout'], raise_exc=False):
+            for worker in self.workers:
+                worker.stop()
+                worker.join()
+
             for listener in listeners:
                 # terminate and flush pipes
                 listener.terminate()
@@ -482,7 +499,11 @@ class Listener(Actor):
                     self.logger.warning('Listener: %s', err)
 
             self.logger.debug('Start reading dumped information.')
-            self.read_packets()
+
+            for worker in self.workers:
+                for p in worker.get():
+                    self.fprn(p, worker.iface)
+
             self._log_ifaces("Interfaces just before ensuring interfaces down")
 
         for iface in self._iface_iterator():
@@ -494,21 +515,6 @@ class Listener(Actor):
             fo.write(json.dumps(self.neighbours))
         os.unlink(self.pidfile)
         self.logger.info("=== Listener Finished ===")
-
-    def read_packets(self):
-        for iface in self._iface_iterator():
-            filenames = ['{0}.pcap'.format(iface),
-                         'vlan_{0}.pcap'.format(iface)]
-            for filename in filenames:
-                self.read_pcap_file(iface, filename)
-
-    def read_pcap_file(self, iface, filename):
-        try:
-            pcap_file = os.path.join(self.config['pcap_dir'], filename)
-            for pkt in rdpcap(pcap_file):
-                self.fprn(pkt, iface)
-        except Exception:
-            self.logger.exception('Cant read pcap file %s', pcap_file)
 
     def fprn(self, p, iface):
 
@@ -528,18 +534,22 @@ class Listener(Actor):
         if riface not in self.neighbours[iface][vlan].setdefault(uid, []):
             self.neighbours[iface][vlan][uid].append(riface)
 
+    def pcap_filename(self, iface, vlan=False):
+        filename = '{0}.pcap'.format(iface)
+        if vlan:
+
+            filename = '{0}_{1}'.format('vlan', filename)
+        return os.path.join(self.config['pcap_dir'], filename)
+
     def get_probe_frames(self, iface, vlan=False):
         if iface not in self.neighbours:
             self.neighbours[iface] = {}
         filter_string = 'udp and dst port {0}'.format(self.config['dport'])
-        filename = '{0}.pcap'.format(iface)
         if vlan:
             filter_string = '{0} {1}'.format('vlan and', filter_string)
-            filename = '{0}_{1}'.format('vlan', filename)
-        pcap_file = os.path.join(self.config['pcap_dir'], filename)
-
         return subprocess.Popen(
-            ['tcpdump', '-i', iface, '-w', pcap_file, filter_string],
+            ['tcpdump', '-i', iface, '-w',
+             self.pcap_filename(iface, vlan), filter_string],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
 

@@ -842,6 +842,11 @@ class NeutronNetworkDeploymentSerializer70(
         if Node.should_have_public_with_ip(node):
             mapping[consts.NETWORKS.public] = 'br-ex'
 
+        # add non-default networks
+        nm = Cluster.get_network_manager(node.cluster)
+        for net in nm.get_node_networks(node):
+            if net['name'] not in list(consts.NETWORKS):
+                mapping[net['name']] = 'br-' + net['name'][0:12]
         return mapping
 
     @classmethod
@@ -895,13 +900,114 @@ class NeutronNetworkDeploymentSerializer70(
 
     @classmethod
     def generate_network_scheme(cls, node, networks):
-        attrs = super(NeutronNetworkDeploymentSerializer70,
-                      cls).generate_network_scheme(node, networks)
+        # Create a data structure and fill it with static values.
+        attrs = {
+            'version': '1.1',
+            'provider': 'lnx',
+            'interfaces': {},  # It's a list of physical interfaces.
+            'endpoints': {},
+            'roles': {
+                'management': 'br-mgmt',
+                'storage': 'br-storage',
+                'fw-admin': 'br-fw-admin',
+            },
+        }
+
+        is_public = Node.should_have_public(node)
+        if is_public:
+            attrs['endpoints']['br-ex'] = {'IP': 'none'}
+            attrs['endpoints']['br-floating'] = {'IP': 'none'}
+            attrs['roles']['ex'] = 'br-ex'
+            attrs['roles']['neutron/floating'] = 'br-floating'
+
+        nm = Cluster.get_network_manager(node.cluster)
+
+        # Populate IP and GW information to endpoints.
+        netgroup_mapping = [
+            ('storage', 'br-storage'),
+            ('management', 'br-mgmt'),
+            ('fuelweb_admin', 'br-fw-admin'),
+        ]
+        if is_public:
+            netgroup_mapping.append(('public', 'br-ex'))
+
+        # Add non-default networks
+        for net in nm.get_node_networks(node):
+            if net['name'] not in list(consts.NETWORKS):
+                br_name = 'br-' + net['name'][0:12]
+                netgroup_mapping.append((net['name'], br_name))
+                attrs['roles'][net['name']] = br_name
+
+        if node.cluster.network_config.segmentation_type in \
+                (consts.NEUTRON_SEGMENT_TYPES.gre,
+                 consts.NEUTRON_SEGMENT_TYPES.tun):
+            netgroup_mapping.append(('private', 'br-mesh'))
+            attrs['endpoints']['br-mesh'] = {}
+            attrs['roles']['neutron/mesh'] = 'br-mesh'
+
+        netgroups = {}
+        nets_by_ifaces = defaultdict(list)
+        for ngname, brname in netgroup_mapping:
+            # Here we get a dict with network description for this particular
+            # node with its assigned IPs and device names for each network.
+            netgroup = nm.get_network_by_netname(ngname, networks)
+            if netgroup.get('ip'):
+                attrs['endpoints'][brname] = {'IP': [netgroup['ip']]}
+            netgroups[ngname] = netgroup
+            nets_by_ifaces[netgroup['dev']].append({
+                'br_name': brname,
+                'vlan_id': netgroup['vlan']
+            })
+
+        # Add gateway.
+        if is_public and netgroups['public'].get('gateway'):
+            attrs['endpoints']['br-ex']['gateway'] = \
+                netgroups['public']['gateway']
+        else:
+            gw = nm.get_default_gateway(node.id)
+            attrs['endpoints']['br-fw-admin']['gateway'] = gw
+
+        # Fill up interfaces.
+        for iface in node.nic_interfaces:
+            if iface.bond:
+                attrs['interfaces'][iface.name] = {}
+            else:
+                attrs['interfaces'][iface.name] = \
+                    nm.get_iface_properties(iface)
+
+        # Dance around Neutron segmentation type.
+        prv_base_ep = None
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
+            attrs['endpoints']['br-prv'] = {'IP': 'none'}
+            attrs['roles']['neutron/private'] = 'br-prv'
+
+            netgroup = nm.get_network_by_netname('private', networks)
+            # create br-aux if there is no untagged network (endpoint) on the
+            # same interface.
+            if netgroup['dev'] in nets_by_ifaces:
+                for ep in nets_by_ifaces[netgroup['dev']]:
+                    if not ep['vlan_id']:
+                        prv_base_ep = ep['br_name']
+            if not prv_base_ep:
+                nets_by_ifaces[netgroup['dev']].append({
+                    'br_name': 'br-aux',
+                    'vlan_id': None
+                })
+
+        attrs['transformations'] = cls.generate_transformations(
+            node, nm, nets_by_ifaces, is_public, prv_base_ep)
+
+        if NodeGroupCollection.get_by_cluster_id(
+                node.cluster.id).count() > 1:
+            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups,
+                                networks)
+
+        attrs = cls.generate_driver_information(node, attrs, nm, networks)
 
         mapping = cls.get_network_role_mapping_to_interfaces(node)
 
-        old_mapping_6_1 = attrs['roles']
-        mapping.update(old_mapping_6_1)
+        mapping.update(attrs['roles'])
         attrs['roles'] = mapping
 
         if node.cluster.network_config.segmentation_type in \

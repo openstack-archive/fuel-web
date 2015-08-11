@@ -39,7 +39,10 @@ from nailgun.api.v1.validators.network \
     import NovaNetworkConfigurationValidator
 
 from nailgun import consts
+from nailgun import db
 from nailgun import objects
+
+from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -166,32 +169,37 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
         self.check_if_network_configuration_locked(cluster)
 
+        try:
+            if 'networks' in data:
+                self.validator.validate_networks_update(
+                    jsonutils.dumps(data)
+                )
+
+            if 'networking_parameters' in data:
+                self.validator.validate_neutron_params(
+                    jsonutils.dumps(data),
+                    cluster_id=cluster_id
+                )
+
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
+        except Exception as exc:
+            # set task status to error and update its corresponding data
+            task = Task(
+                name=consts.TASK_NAMES.check_networks,
+                cluster=cluster,
+                status=consts.TASK_STATUSES.error,
+                progress=100,
+                message=six.text_type(exc)
+            )
+            db.db().add(task)
+            db.db().commit()
+            logger.error(traceback.format_exc())
+            self.raise_task(task)
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
-
-        if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
-
-                if 'networking_parameters' in data:
-                    self.validator.validate_neutron_params(
-                        jsonutils.dumps(data),
-                        cluster_id=cluster_id
-                    )
-
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': 'error',
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-                logger.error(traceback.format_exc())
 
         self.raise_task(task)
 

@@ -43,6 +43,8 @@ import scapy.all as scapy
 
 from scapy.utils import rdpcap
 
+from network_checker.net_check.utils import signal_timeout
+
 
 class ActorFabric(object):
     @classmethod
@@ -74,7 +76,8 @@ class Actor(object):
             'cookie': "Nailgun:",
             'pcap_dir': "/var/run/pcap_dir/",
             'duration': 5,
-            'repeat': 1
+            'repeat': 1,
+            'collect_timeout': 300,
         }
         if config:
             self.config.update(config)
@@ -466,22 +469,21 @@ class Listener(Actor):
                 time.sleep(1)
         except KeyboardInterrupt:
             self.logger.debug("Interruption signal catched")
-        except SystemExit:
-            self.logger.debug("TERM signal catched")
 
-        for listener in listeners:
-            # terminate and flush pipes
-            listener.terminate()
-            out, err = listener.communicate()
+        with signal_timeout(self.config['collect_timeout'], raise_exc=False):
+            for listener in listeners:
+                # terminate and flush pipes
+                listener.terminate()
+                out, err = listener.communicate()
 
-            if err and listener.returncode:
-                self.logger.error('Listerner: %s', err)
-            elif err:
-                self.logger.warning('Listener: %s', err)
+                if err and listener.returncode:
+                    self.logger.error('Listerner: %s', err)
+                elif err:
+                    self.logger.warning('Listener: %s', err)
 
-        self.logger.debug('Start reading dumped information.')
-        self.read_packets()
-        self._log_ifaces("Interfaces just before ensuring interfaces down")
+            self.logger.debug('Start reading dumped information.')
+            self.read_packets()
+            self._log_ifaces("Interfaces just before ensuring interfaces down")
 
         for iface in self._iface_iterator():
             self._ensure_iface_down(iface)

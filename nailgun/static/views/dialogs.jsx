@@ -46,11 +46,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         statics: {
             show: function(options) {
-                return utils.universalMount(this, options, $('#modal-container'));
+                return utils.universalMount(this, options, $('#modal-container')).getResult();
             }
         },
         getInitialState: function() {
-            return {actionInProgress: false};
+            return {
+                actionInProgress: false,
+                result: $.Deferred()
+            };
+        },
+        getResult: function() {
+            return this.state.result;
         },
         componentDidMount: function() {
             Backbone.history.on('route', this.close, this);
@@ -63,15 +69,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 {background: true, backdrop: true}
             ));
         },
+        rejectResult: function() {
+            if (this.state.result.state() == 'pending') this.state.result.reject();
+        },
         componentWillUnmount: function() {
             Backbone.history.off(null, null, this);
             $(this.getDOMNode()).off('shown.bs.modal hidden.bs.modal');
+            this.rejectResult();
         },
         handleHidden: function() {
             React.unmountComponentAtNode(this.getDOMNode().parentNode);
         },
         close: function() {
             $(this.getDOMNode()).modal('hide');
+            this.rejectResult();
         },
         closeOnLinkClick: function(e) {
             // close dialogs on click of any internal link inside it
@@ -815,31 +826,42 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     dialogs.DiscardSettingsChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
-        proceed: function() {
-            this.close();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
+        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title')};},
+        proceedWith: function(method) {
+            this.setState({actionInProgress: true});
+            $.when(method ? method() : $.Deferred().resolve())
+                .done(this.state.result.resolve)
+                .always(this.close);
+        },
+        discard: function() {
+            this.proceedWith(this.props.revertChanges);
+        },
+        save: function() {
+            this.proceedWith(this.props.applyChanges);
         },
         renderBody: function() {
-            var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
             return (
                 <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
-                    {message}
+                    {this.props.reasonToStay || i18n('dialog.dismiss_settings.default_message')}
                 </div>
             );
         },
+        shouldStay: function() {
+            return this.state.actionInProgress || !!this.props.reasonToStay;
+        },
         renderFooter: function() {
             var buttons = [
-                <button key='stay' className='btn btn-default btn-stay' onClick={this.close}>
+                <button key='stay' className='btn btn-default' onClick={this.close}>
                     {i18n('dialog.dismiss_settings.stay_button')}
+                </button>,
+                <button key='leave' className='btn btn-danger proceed-btn' onClick={this.discard} disabled={this.shouldStay()}>
+                    {i18n('dialog.dismiss_settings.leave_button')}
+                </button>,
+                <button key='save' className='btn btn-success' onClick={this.save} disabled={this.shouldStay()}>
+                    {i18n('dialog.dismiss_settings.apply_and_proceed_button')}
                 </button>
             ];
-            if (!this.props.verification) buttons.push(
-                <button key='leave' className='btn btn-danger' onClick={this.proceed}>
-                    {i18n('dialog.dismiss_settings.leave_button')}
-                </button>
-            );
             return buttons;
         }
     });

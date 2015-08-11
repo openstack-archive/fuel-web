@@ -330,35 +330,23 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEqual(n.progress, 100)
 
     def test_deletion_empty_cluster_task_manager(self):
-        cluster = self.env.create_cluster(api=True)
-        resp = self.app.delete(
-            reverse(
-                'ClusterHandler',
-                kwargs={'obj_id': self.env.clusters[0].id}),
-            headers=self.default_headers
+        self.env.create_cluster(api=True)
+        self.check_cluster_deletion_task()
+
+    @fake_tasks()
+    def test_deletion_target_images_cluster_task_manager(self):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2025-7.0',
+            },
+            nodes_kwargs=[
+                {"status": "ready", "progress": 100},
+                {"roles": ["compute"], "status": "ready", "progress": 100},
+                {"roles": ["compute"], "pending_addition": True},
+            ],
         )
-        self.assertEqual(202, resp.status_code)
-
-        timer = time.time()
-        timeout = 15
-        clstr = self.db.query(models.Cluster).get(self.env.clusters[0].id)
-        while clstr:
-            time.sleep(1)
-            try:
-                self.db.refresh(clstr)
-            except Exception:
-                break
-            if time.time() - timer > timeout:
-                raise Exception("Cluster deletion seems to be hanged")
-
-        notification = self.db.query(models.Notification)\
-            .filter(models.Notification.topic == "done")\
-            .filter(models.Notification.message == "Environment '%s' and all "
-                    "its nodes are deleted" % cluster["name"]).first()
-        self.assertIsNotNone(notification)
-
-        tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.check_cluster_deletion_task()
 
     @fake_tasks()
     def test_deletion_cluster_task_manager(self):
@@ -369,6 +357,9 @@ class TestTaskManagers(BaseIntegrationTest):
                 {"roles": ["compute"], "pending_addition": True},
             ]
         )
+        self.check_cluster_deletion_task()
+
+    def check_cluster_deletion_task(self):
         cluster_id = self.env.clusters[0].id
         cluster_name = self.env.clusters[0].name
         resp = self.app.delete(
@@ -506,39 +497,9 @@ class TestTaskManagers(BaseIntegrationTest):
                 {"roles": ["compute"], "pending_addition": True}
             ] * 3
         )
-        cluster_id = self.env.clusters[0].id
-        cluster_name = self.env.clusters[0].name
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask)
-
-        resp = self.app.delete(
-            reverse(
-                'ClusterHandler',
-                kwargs={'obj_id': cluster_id}),
-            headers=self.default_headers
-        )
-        self.assertEqual(202, resp.status_code)
-
-        timer = time.time()
-        timeout = 15
-        clstr = self.db.query(models.Cluster).get(cluster_id)
-        while clstr:
-            time.sleep(1)
-            try:
-                self.db.refresh(clstr)
-            except Exception:
-                break
-            if time.time() - timer > timeout:
-                raise Exception("Cluster deletion seems to be hanged")
-
-        notification = self.db.query(models.Notification)\
-            .filter(models.Notification.topic == "done")\
-            .filter(models.Notification.message == "Environment '%s' and all "
-                    "its nodes are deleted" % cluster_name).first()
-        self.assertIsNotNone(notification)
-
-        tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.check_cluster_deletion_task()
 
     @fake_tasks()
     def test_no_node_no_cry(self):

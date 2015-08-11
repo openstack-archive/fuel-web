@@ -854,7 +854,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.NEUTRON_SEGMENT_TYPES.vlan)
         self.net_template = self.env.read_fixtures(['network_template'])[0]
 
         objects.Cluster.set_network_template(
@@ -868,14 +868,14 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         self.serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
 
-    def create_env(self, mode):
+    def create_env(self, segment_type):
         return self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'api': False,
-                'mode': mode,
-                'net_provider': 'neutron',
-                'net_segment_type': 'vlan'},
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': segment_type},
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_addition': True,
@@ -884,6 +884,12 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                  'pending_addition': True,
                  'name': self.node_name}
             ])
+
+    def check_node_ips_on_certain_networks(self, node, net_names):
+        ips = db().query(models.IPAddr).filter_by(node=node.id)
+        self.assertEqual(ips.count(), len(net_names))
+        for ip in ips:
+            self.assertIn(ip.network_data.name, net_names)
 
     def test_get_net_provider_serializer(self):
         serializer = get_serializer_for_cluster(self.cluster)
@@ -896,6 +902,54 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             self.net_template
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
         self.assertIs(net_serializer, NeutronNetworkTemplateSerializer70)
+
+    def test_ip_assignment_according_to_template(self):
+        self.env.create_node(
+            roles=['cinder'], cluster_id=self.cluster.id)
+        self.env.create_node(
+            roles=['cinder', 'controller'], cluster_id=self.cluster.id)
+        self.env.create_node(
+            roles=['compute'], cluster_id=self.cluster.id)
+
+        # according to the template different node roles have different sets of
+        # networks
+        node_roles_vs_net_names = [
+            (['controller'], ['public', 'management', 'fuelweb_admin']),
+            (['compute'], ['management', 'fuelweb_admin']),
+            (['cinder'], ['storage', 'management', 'fuelweb_admin']),
+            (['compute', 'cinder'],
+             ['storage', 'management', 'fuelweb_admin']),
+            (['controller', 'cinder'],
+             ['public', 'storage', 'management', 'fuelweb_admin'])]
+
+        template_meta = self.net_template["adv_net_template"]["default"]
+        # wipe out 'storage' template for 'compute' node role to make
+        # node roles more distinct
+        for k, v in six.iteritems(template_meta["templates_for_node_role"]):
+            if k == 'compute':
+                v.remove('storage')
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template
+        )
+        self.prepare_for_deployment(self.env.nodes)
+        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        self.serialized_for_astute = serializer(
+            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+
+        # 7 node roles on 5 nodes
+        self.assertEqual(len(self.serialized_for_astute), 7)
+        for node_data in self.serialized_for_astute:
+            node = objects.Node.get_by_uid(node_data['uid'])
+            for node_roles, net_names in node_roles_vs_net_names:
+                if node.all_roles == set(node_roles):
+                    self.check_node_ips_on_certain_networks(node, net_names)
+                    break
+            else:
+                self.fail("Unexpected combination of node roles")
 
     def test_multiple_node_roles_network_roles(self):
         expected_roles = {
@@ -1087,7 +1141,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         # download default template and fix it
         net_template = self.env.read_fixtures(['network_template'])[0]
         template_meta = net_template["adv_net_template"]["default"]
-        # wide out network from template
+        # wipe out network from template
         del(template_meta["network_assignments"][net_name])
         for k, v in template_meta["templates_for_node_role"].iteritems():
             if net_name in v:
@@ -1170,10 +1224,17 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         ]
         for node_data in self.serialized_for_astute:
             for n in node_data['nodes']:
-                self.assertTrue(
-                    set(['storage_address', 'internal_address',
-                         'storage_netmask', 'internal_netmask']) <=
-                    set(n.keys()))
+                n_db = objects.Node.get_by_uid(n['uid'])
+                if 'controller' in n_db.roles:
+                    self.assertTrue(
+                        set(['internal_address', 'public_address',
+                             'internal_netmask', 'public_netmask']) <=
+                        set(n.keys()))
+                else:
+                    self.assertTrue(
+                        set(['internal_address', 'storage_address',
+                             'internal_netmask', 'storage_netmask']) <=
+                        set(n.keys()))
             nodes = node_data['network_metadata']['nodes']
             for node_name, node_attrs in nodes.items():
                 # IPs must be serialized for these roles which are tied to

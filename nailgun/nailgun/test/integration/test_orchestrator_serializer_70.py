@@ -1170,10 +1170,17 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         ]
         for node_data in self.serialized_for_astute:
             for n in node_data['nodes']:
-                self.assertTrue(
-                    set(['storage_address', 'internal_address',
-                         'storage_netmask', 'internal_netmask']) <=
-                    set(n.keys()))
+                n_db = objects.Node.get_by_uid(n['uid'])
+                if 'controller' in n_db.roles:
+                    self.assertTrue(
+                        set(['internal_address', 'public_address',
+                             'internal_netmask', 'public_netmask']) <=
+                        set(n.keys()))
+                else:
+                    self.assertTrue(
+                        set(['internal_address', 'storage_address',
+                             'internal_netmask', 'storage_netmask']) <=
+                        set(n.keys()))
             nodes = node_data['network_metadata']['nodes']
             for node_name, node_attrs in nodes.items():
                 # IPs must be serialized for these roles which are tied to

@@ -95,9 +95,12 @@ class TestHostSystemUpgrader(BaseTestCase):
     @mock.patch('fuel_upgrade.engines.host_system.utils.remove_if_exists')
     def test_remove_repo_config_for_fuel_ge_61(self, remove_mock):
         self.upgrader.config.from_version = '6.1'
+        self.upgrader.config.new_version = '7.0'
         self.upgrader.remove_repo_config()
-        remove_mock.assert_called_once_with(
-            '/etc/yum.repos.d/9999_nailgun.repo')
+        self.assertEqual(remove_mock.call_args_list, [
+            mock.call('/etc/yum.repos.d/9999_nailgun.repo'),
+            mock.call('/etc/yum.repos.d/7.0_auxiliary.repo'),
+        ])
 
     @mock.patch('fuel_upgrade.engines.host_system.utils.copy')
     @mock.patch('fuel_upgrade.engines.host_system.glob.glob')

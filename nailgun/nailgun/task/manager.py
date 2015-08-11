@@ -1024,6 +1024,24 @@ class ClusterDeletionManager(TaskManager):
         task = Task(name=consts.TASK_NAMES.cluster_deletion,
                     cluster=self.cluster)
         db().add(task)
+
+        if self.cluster.release.operating_system == consts.RELEASE_OS.ubuntu:
+            task_remove_images = task.create_subtask(
+                consts.TASK_NAMES.remove_images)
+
+            remove_images_message = self._call_silently(
+                task_remove_images,
+                tasks.DeletionTargetImagesTask,
+                self.cluster.id,
+                method_name='message',
+            )
+            db().flush()
+
+            if task_remove_images.status == consts.TASK_STATUSES.error:
+                return task_remove_images
+
+            rpc.cast('naily', [remove_images_message])
+
         db().commit()
         self._call_silently(
             task,

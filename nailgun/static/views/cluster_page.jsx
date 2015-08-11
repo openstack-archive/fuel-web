@@ -223,6 +223,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return !tabData.tab.isVisible || tabData.tab.isVisible(cluster);
             });
         },
+        setClusterState: function(key, value) {
+            this.setState(_.set({}, key, value));
+            return value;
+        },
+        getClusterState: function(key) {
+            return _.get(this.state, key);
+        },
         render: function() {
             var cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
@@ -256,7 +263,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         </div>
                     </div>
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
-                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} {...this.props.tabData} />
+                        <Tab
+                            ref='tab'
+                            cluster={cluster}
+                            tabOptions={this.props.tabOptions}
+                            setClusterState={this.setClusterState}
+                            getClusterState={this.getClusterState}
+                            {...this.props.tabData} />
                     </div>
                 </div>
             );

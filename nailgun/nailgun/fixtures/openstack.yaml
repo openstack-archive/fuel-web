@@ -453,6 +453,7 @@
         controller:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "image"}
+          - {allocate_size: "min", id: "mysql"}
         compute:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}

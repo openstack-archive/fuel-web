@@ -608,7 +608,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             };
         },
         changeScreen: function(url, passNodeIds) {
-            if (!url) this.props.revertChanges();
             url = url ? '/' + url : '';
             if (passNodeIds) url += '/' + utils.serializeTabOptions({nodes: this.props.nodes.pluck('id')});
             app.navigate('#cluster/' + this.props.cluster.id + '/nodes' + url, {trigger: true});
@@ -899,7 +898,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <button
                                         className='btn btn-default'
                                         disabled={this.state.actionInProgress}
-                                        onClick={_.bind(this.changeScreen, this, '', false)}
+                                        onClick={_.bind(function() {
+                                            this.props.revertChanges();
+                                            this.changeScreen();
+                                        }, this)}
                                     >
                                         {i18n('common.cancel_button')}
                                     </button>

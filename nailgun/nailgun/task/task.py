@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+import os
 
 import netaddr
 import requests
@@ -42,6 +43,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
+from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
@@ -484,6 +486,41 @@ class DeletionTask(object):
         return settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
 
 
+class DeletionTargetImagesTask(object):
+
+    @classmethod
+    def message(cls, task, image_data):
+        files = []
+        for k, v in image_data.iteritems():
+            files.append(
+                os.path.join(
+                    settings.PROVISIONING_IMAGES_PATH,
+                    os.path.basename(
+                        six.moves.urllib.parse.urlsplit(v['uri']).path))
+            )
+        task_params = {
+            'parameters': {
+                'cmd': 'rm -f ' + ' '.join(files),
+                'timeout': consts.REMOVE_IMAGES_TIMEOUT,
+            }
+        }
+        rpc_message = make_astute_message(
+            task,
+            'execute_tasks',
+            'remove_cluster_resp',
+            {
+                'tasks': [tasks_templates.make_shell_task([consts.MASTER_ROLE],
+                                                          task_params),
+                          ]
+            }
+        )
+        return rpc_message
+
+    @classmethod
+    def execute(cls, task, image_data):
+        rpc.cast('naily', cls.message(task, image_data))
+
+
 class StopDeploymentTask(object):
 
     @classmethod
@@ -580,6 +617,17 @@ class ClusterDeletionTask(object):
             task,
             nodes=DeletionTask.get_task_nodes_for_cluster(task.cluster),
             respond_to='remove_cluster_resp')
+        attrs = objects.Attributes.merged_attrs_values(task.cluster.attributes)
+        if attrs.get('provision'):
+            if (task.cluster.release.operating_system ==
+                    consts.RELEASE_OS.ubuntu and
+                    attrs['provision']['method'] ==
+                    consts.PROVISION_METHODS.image):
+                logger.debug("Target images deletion task is running")
+                DeletionTargetImagesTask.execute(
+                    task, attrs['provision']['image_data'])
+        else:
+            logger.debug("Skipping target images deletion task")
 
 
 class BaseNetworkVerification(object):

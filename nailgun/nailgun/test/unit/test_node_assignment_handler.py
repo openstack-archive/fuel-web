@@ -224,8 +224,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertEquals(200, resp.status_code, resp.body)
 
     def test_add_node_with_cluster_network_template(self):
-        net_template = """
-            {
+        net_template = {
             "adv_net_template": {
                 "default": {
                     "network_assignments": {
@@ -281,9 +280,8 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                     }
                 }
             }
-            }
-        """
-        net_template = jsonutils.loads(net_template)
+        }
+
         cluster = self.env.create_cluster(api=False)
         cluster.network_config.configuration_template = net_template
 
@@ -313,9 +311,9 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertEquals('eth1', net_scheme['transformations'][1]['name'])
 
 
-class TestClusterStateUnassigment(BaseIntegrationTest):
+class TestClusterStateUnassignment(BaseIntegrationTest):
 
-    def test_delete_bond_and_networks_state_on_unassigmnet(self):
+    def test_delete_bond_and_networks_state_on_unassignment(self):
         """Test verifies that
         1. bond configuration will be deleted
         2. network unassigned from node interfaces

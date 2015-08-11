@@ -565,8 +565,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
                          '172.16.0.0/25')
 
     def test_network_checking_fails_on_network_vlan_match(self):
-        self.find_net_by_name('management')['vlan_start'] = '111'
-        self.find_net_by_name('storage')['vlan_start'] = '111'
+        self.find_net_by_name('management')['vlan_start'] = 111
+        self.find_net_by_name('storage')['vlan_start'] = 111
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(

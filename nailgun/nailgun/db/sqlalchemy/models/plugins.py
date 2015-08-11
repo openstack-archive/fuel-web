@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+import six
+
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -68,3 +71,18 @@ class Plugin(Base):
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")
+
+    @property
+    def normalized_roles_metadata(self):
+        """Adds a restriction for every role which blocks plugin disabling
+        if nodes with plugin-provided roles exist in the cluster
+        """
+        result = {}
+        for role, meta in six.iteritems(self.roles_metadata):
+            condition = "settings:{0}.metadata.enabled == false".format(
+                self.name)
+            meta = copy.copy(meta)
+            meta['restrictions'] = [condition] + meta.get('restrictions', [])
+            result[role] = meta
+
+        return result

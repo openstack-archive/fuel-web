@@ -13,6 +13,7 @@
 #    under the License.
 
 import abc
+import copy
 import glob
 import os
 
@@ -204,6 +205,21 @@ class PluginAdapterBase(object):
     @property
     def volumes_metadata(self):
         return self.plugin.volumes_metadata
+
+    @property
+    def normalized_roles_metadata(self):
+        """Adds a restriction for every role which blocks plugin disabling
+        if nodes with plugin-provided roles exist in the cluster
+        """
+        result = {}
+        for role, meta in six.iteritems(self.plugin.roles_metadata):
+            condition = "settings:{0}.metadata.enabled == false".format(
+                self.plugin.name)
+            meta = copy.copy(meta)
+            meta['restrictions'] = [condition] + meta.get('restrictions', [])
+            result[role] = meta
+
+        return result
 
     def get_release_info(self, release):
         """Returns plugin release information which corresponds to

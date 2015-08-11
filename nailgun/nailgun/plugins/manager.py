@@ -138,7 +138,7 @@ class PluginManager(object):
         core_roles = set(cluster.release.roles_metadata)
 
         for plugin_db in cluster.plugins:
-            plugin_roles = plugin_db.roles_metadata
+            plugin_roles = wrap_plugin(plugin_db).normalized_roles_metadata
 
             # we should check all possible cases of roles intersection
             # with core ones and those from other plugins

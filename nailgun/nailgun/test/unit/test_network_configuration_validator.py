@@ -132,8 +132,8 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1"]
         self.assertRaisesTooShort(self.nc, "[u'1.1.1.1']")
 
-        self.nc['networks'][0]['meta']['ip_range'] = [1, 1]
-        self.assertRaisesNonUnique(self.nc, "[1, 1]")
+        self.nc['networks'][0]['meta']['ip_range'] = ['1', '1']
+        self.assertRaisesNonUnique(self.nc, "[u'1', u'1']")
 
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1", "1.2.3.x"]
         self.assertRaisesInvalidAnyOf(self.nc, "u'1.2.3.x'")
@@ -195,8 +195,8 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
         self.nc['networks'][0]['meta']['vips'] = [1]
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
-        self.nc['networks'][0]['meta']['vips'] = [1, 1]
-        self.assertRaisesNonUnique(self.nc, "[1, 1]")
+        self.nc['networks'][0]['meta']['vips'] = ['a', 'a']
+        self.assertRaisesNonUnique(self.nc, "[u'a', u'a']")
 
         self.nc['networks'][0]['meta']['vips'] = ["a", "b", "c1"]
         self.assertRaisesNotMatchPattern(self.nc, "u'c1'")
@@ -231,6 +231,12 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
             self.validator.validate_networks_update(config)
         self.assertIn(message, context.exception.message)
 
+    def assertRaisesNetworkCheckError(self, message):
+        config = jsonutils.dumps(self.config)
+        with self.assertRaises(errors.NetworkCheckError) as context:
+            self.validator.validate_networks_update(config)
+        self.assertIn(message, context.exception.message)
+
     def test_validate_networks_not_in_db(self):
         mgmt = self.find_net_by_name('management')
         sto = self.find_net_by_name('storage')
@@ -241,9 +247,11 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         self.db.delete(prv_db)
         self.db.flush()
 
-        self.assertRaisesInvalidData(
-            "Networks with ID's [{0}, {1}] are not present "
-            "in the database".format(mgmt['id'], sto['id']))
+        self.assertRaisesNetworkCheckError(
+            'Invalid network ID(s): {0}, {1}'.format(
+                mgmt['id'], sto['id']
+            )
+        )
 
     def test_validate_network_no_ip_ranges(self):
         mgmt = self.find_net_by_name('management')

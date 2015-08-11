@@ -59,22 +59,21 @@ class NetworkCheck(object):
                 fields)
             self.networks.append(net)
         # merge with data['networks']
-        if 'networks' in data:
-            for data_net in data['networks']:
-                for net in self.networks:
-                    if data_net['id'] == net['id']:
-                        if data_net.get('meta'):
-                            data_net.pop('meta')
-                        net.update(data_net)
-                        if data_net.get('name') == 'fuelweb_admin':
-                            net.update(name='admin (PXE)')
-                        break
-                else:
-                    raise errors.NetworkCheckError(
-                        u"Invalid network ID: {0}".format(data_net['id']))
+        for data_net in data.get('networks', []):
+            for net in self.networks:
+                if data_net['id'] == net['id']:
+                    net.update(data_net)
+                    if data_net.get('name') == consts.NETWORKS.fuelweb_admin:
+                        net.update(name='admin (PXE)')
+                    if 'meta' in data_net:
+                        data_net.pop('meta')
+                    break
         # get common networking parameters
-        serializer = {'neutron': NeutronNetworkConfigurationSerializer,
-                      'nova_network': NovaNetworkConfigurationSerializer}
+        serializer = {
+            consts.CLUSTER_NET_PROVIDERS.neutron:
+                NeutronNetworkConfigurationSerializer,
+            consts.CLUSTER_NET_PROVIDERS.nova_network:
+                NovaNetworkConfigurationSerializer}
         self.network_config = serializer[self.net_provider].\
             serialize_network_params(self.cluster)
         self.network_config.update(data.get('networking_parameters', {}))
@@ -176,7 +175,8 @@ class NetworkCheck(object):
                 })
         # Check for intersection with floating ranges
         nets_w_cidr = [n for n in self.networks
-                       if n.get('cidr') and n['name'] != 'public']
+                       if n.get('cidr') and n['name'] !=
+                       consts.NETWORKS.public]
         fl_ranges = [netaddr.IPRange(v[0], v[1])
                      for v in self.network_config['floating_ranges']]
         for net_vs_range in product(nets_w_cidr, fl_ranges):
@@ -201,18 +201,18 @@ class NetworkCheck(object):
         (nova-net)
         """
         pub = [ng for ng in self.networks
-               if ng['name'] == 'public'][0]
+               if ng['name'] == consts.NETWORKS.public][0]
         # Check intersection of networks address spaces inside
         # Public and Floating network
         pub_ranges_err = False
         nets = {
-            'public': [netaddr.IPRange(v[0], v[1])
+            consts.NETWORKS.public: [netaddr.IPRange(v[0], v[1])
                        for v in pub['ip_ranges']],
             'floating': [netaddr.IPRange(v[0], v[1])
                          for v in self.network_config['floating_ranges']]
         }
         for name, ranges in nets.iteritems():
-            ids = [pub['id']] if name == 'public' else []
+            ids = [pub['id']] if name == consts.NETWORKS.public else []
             for npair in combinations(ranges, 2):
                 if self.net_man.is_range_intersection(npair[0], npair[1]):
                     self.err_msgs.append(
@@ -233,7 +233,7 @@ class NetworkCheck(object):
                                         "errors": ["gateway",
                                                    "ip_ranges"]})
                 # Check that public IP ranges are in public CIDR
-                if name == 'public':
+                if name == consts.NETWORKS.public:
                     if net not in netaddr.IPNetwork(pub['cidr']) \
                             and not pub_ranges_err:
                         pub_ranges_err = True
@@ -247,7 +247,8 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
         # Check intersection of public and floating ranges
-        for npair in combinations(nets['public'] + nets['floating'], 2):
+        for npair in combinations(
+                nets[consts.NETWORKS.public] + nets['floating'], 2):
             if self.net_man.is_range_intersection(npair[0], npair[1]):
                 self.err_msgs.append(
                     u"Address space intersection between range "
@@ -267,7 +268,7 @@ class NetworkCheck(object):
             for n in self.networks
             if n['vlan_start'] is not None)
         if self.network_config['fixed_networks_vlan_start']:
-            tagged_nets['fixed'] = [
+            tagged_nets[consts.NETWORKS.fixed] = [
                 self.network_config['fixed_networks_vlan_start'],
                 self.network_config['fixed_networks_amount'] - 1]
         for name, vlan_range in tagged_nets.iteritems():
@@ -328,7 +329,8 @@ class NetworkCheck(object):
             lambda n: (n["vlan_start"] is not None), self.networks))
 
         if tagged_nets:
-            if self.task.cluster.network_config.segmentation_type == 'vlan':
+            if self.task.cluster.network_config.segmentation_type == \
+                    consts.NEUTRON_SEGMENT_TYPES.vlan:
                 # check networks tags not in Neutron L2 private VLAN ID range
                 vrange = self.network_config['vlan_range']
                 net_intersect = [name for name, vlan in tagged_nets.iteritems()
@@ -376,7 +378,8 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
         # check Floating Start and Stop IPs belong to Public CIDR
-        public = filter(lambda ng: ng['name'] == 'public', self.networks)[0]
+        public = filter(lambda ng: ng['name'] == consts.NETWORKS.public,
+                        self.networks)[0]
         public_cidr = netaddr.IPNetwork(public['cidr']).cidr
         fl_range = self.network_config['floating_ranges'][0]
         fl_ip_range = netaddr.IPRange(fl_range[0], fl_range[1])
@@ -458,7 +461,8 @@ class NetworkCheck(object):
         ext_fl = self.network_config['floating_ranges'][0]
         ext_fl_r = netaddr.IPRange(ext_fl[0], ext_fl[1])
 
-        pub = filter(lambda n: n['name'] == 'public', self.networks)[0]
+        pub = filter(lambda n: n['name'] == consts.NETWORKS.public,
+                     self.networks)[0]
         pub_cidr = netaddr.IPNetwork(pub['cidr'])
         if pub_cidr.network in ext_fl_r or pub_cidr.broadcast in ext_fl_r:
             self.err_msgs.append(

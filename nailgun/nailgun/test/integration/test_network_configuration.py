@@ -178,7 +178,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
-            'Invalid network ID: 500'
+            'Invalid network ID(s): 500'
         )
 
     def test_admin_public_floating_untagged_others_tagged(self):
@@ -364,7 +364,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
-            'Invalid network ID: 500'
+            'Invalid network ID(s): 500'
         )
 
     def test_refresh_public_cidr_on_its_change(self):

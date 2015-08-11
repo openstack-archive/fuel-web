@@ -465,6 +465,15 @@ class NetworkManager(object):
         return False
 
     @classmethod
+    def check_ips_belongs_to_net(cls, ips, network):
+        addrs = map(IPAddress, ips)
+        for r in network.ip_ranges:
+            for ip_addr in addrs:
+                if ip_addr not in IPRange(r.first, r.last):
+                    return False
+        return True
+
+    @classmethod
     def is_ip_usable(cls, network_group, ip):
         return (ip != network_group.gateway
             and db().query(IPAddr).filter_by(ip_addr=ip).first() is None)
@@ -1291,7 +1300,7 @@ class NetworkManager(object):
                     cls.update_range_mask_from_cidr(ng_db, ng["cidr"],
                                                     use_gateway=use_gateway)
 
-                if notation:
+                if notation and cls.is_assigned_ips_out_of_ranges(ng_db):
                     cls.cleanup_network_group(ng_db)
                 objects.Cluster.add_pending_changes(cluster, 'networks')
 
@@ -1300,6 +1309,11 @@ class NetworkManager(object):
         cls.update_networks(cluster, network_configuration)
 
         if 'networking_parameters' in network_configuration:
+            if cluster.is_locked:
+                logger.warning("'network_parameters' are presented in update"
+                               " data but they are locked after deployment."
+                               " New values were ignored.")
+                return
             for key, value in network_configuration['networking_parameters'] \
                     .items():
                 setattr(cluster.network_config, key, value)
@@ -1426,6 +1440,17 @@ class NetworkManager(object):
         """Returns IP with address space prefix, e.g. "10.20.0.1/24"
         """
         return "{0}/{1}".format(ip, IPNetwork(network_group.cidr).prefixlen)
+
+    @classmethod
+    def is_assigned_ips_out_of_ranges(cls, instance):
+        ips = cls.get_assigned_ips(instance)
+        return not cls.check_ips_belongs_to_net(ips, instance)
+
+    @classmethod
+    def get_assigned_ips(cls, instance):
+        return [x[0] for x in
+                db().query(IPAddr.ip_addr).filter_by(
+                    network=instance.id).all()]
 
 
 class AllocateVIPs70Mixin(object):

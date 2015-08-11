@@ -627,6 +627,30 @@ LOGS:
     <<: *remote_openstack_log_format
     <<: *os_log_group
     path: "sahara-all.log"
+  - id: 'os/swift-account-server'
+    name: "swift-account-server"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "swift-account-server.log"
+  - id: 'os/swift-container-server'
+    name: "swift-container-server"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "swift-container-server.log"
+  - id: 'os/swift-object-server'
+    name: "swift-object-server"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "swift-object-server.log"
+  - id: 'os/swift-proxy-server'
+    name: "swift-proxy-server"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "swift-proxy-server.log"
 
 LOGS_TO_PACK_FOR_SUPPORT:
   logs: '/var/log'

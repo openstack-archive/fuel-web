@@ -15,6 +15,7 @@
 #    under the License.
 
 from sqlalchemy import Column
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
@@ -66,7 +67,7 @@ class NetworkGroup(Base):
         "Node",
         secondary=IPAddr.__table__,
         backref="networks")
-    meta = Column(JSON, default={})
+    meta = Column(MutableDict.as_mutable(JSON), default={})
 
 
 class NetworkNICAssignment(Base):

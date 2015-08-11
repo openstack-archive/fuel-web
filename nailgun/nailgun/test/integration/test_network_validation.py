@@ -381,12 +381,15 @@ class TestNovaHandlers(TestNetworkChecking):
             "with either subnet address or broadcast address of the network."
         )
 
-        self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.255',
+        self.nets['networking_parameters']['floating_ranges'] = [
+            ['172.16.0.128', '172.16.0.253']
+        ]
+        self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.254',
                                                          '172.16.0.255']]
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEqual(
             task['message'],
-            "public network IP range [172.16.0.255-172.16.0.255] intersect "
+            "public network IP range [172.16.0.254-172.16.0.255] intersect "
             "with either subnet address or broadcast address of the network."
         )
 
@@ -565,8 +568,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
                          '172.16.0.0/25')
 
     def test_network_checking_fails_on_network_vlan_match(self):
-        self.find_net_by_name('management')['vlan_start'] = '111'
-        self.find_net_by_name('storage')['vlan_start'] = '111'
+        self.find_net_by_name('management')['vlan_start'] = 111
+        self.find_net_by_name('storage')['vlan_start'] = 111
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
@@ -643,12 +646,15 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             "with either subnet address or broadcast address of the network."
         )
 
-        self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.255',
+        self.nets['networking_parameters']['floating_ranges'] = [
+            ['172.16.0.128', '172.16.0.253']
+        ]
+        self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.254',
                                                          '172.16.0.255']]
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEqual(
             task['message'],
-            "public network IP range [172.16.0.255-172.16.0.255] intersect "
+            "public network IP range [172.16.0.254-172.16.0.255] intersect "
             "with either subnet address or broadcast address of the network."
         )
 

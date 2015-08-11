@@ -930,6 +930,10 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 'fw-admin': 'br-fw-admin',
                 'ex': 'br-ex',
                 'ceph/public': 'br-ex',
+                'cinder/iscsi': 'br-storage',
+                'swift/replication': 'br-storage',
+                'ceph/replication': 'br-storage',
+                'storage': 'br-storage'
             },
             # compute/cinder node
             objects.Node.get_node_fqdn(self.cluster.nodes[1]): {
@@ -1030,8 +1034,10 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 self.assertEqual(node_attrs['user_node_name'], node.name)
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
                 network_roles = {
-                    'management': ip_by_net['management'],
+                    'fw-admin': ip_by_net['fuelweb_admin'],
                     'admin/pxe': ip_by_net['fuelweb_admin'],
+
+                    'management': ip_by_net['management'],
                     'swift/api': ip_by_net['management'],
                     'neutron/api': ip_by_net['management'],
                     'sahara/api': ip_by_net['management'],
@@ -1052,7 +1058,11 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                     'mgmt/corosync': ip_by_net['management'],
                     'mongo/db': ip_by_net['management'],
                     'nova/migration': ip_by_net['management'],
-                    'fw-admin': ip_by_net['fuelweb_admin']
+
+                    'cinder/iscsi': ip_by_net['storage'],
+                    'swift/replication': ip_by_net['storage'],
+                    'ceph/replication': ip_by_net['storage'],
+                    'storage': ip_by_net['storage'],
                 }
 
                 if node.all_roles == set(['controller']):
@@ -1066,11 +1076,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                     })
                 else:
                     network_roles.update({
-                        'cinder/iscsi': ip_by_net['storage'],
-                        'swift/replication': ip_by_net['storage'],
-                        'ceph/replication': ip_by_net['storage'],
-                        'storage': ip_by_net['storage'],
-                        'neutron/private': None
+                        'neutron/private': None,
                     })
                 self.assertEqual(
                     node_attrs['network_roles'],

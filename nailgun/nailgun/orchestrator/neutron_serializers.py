@@ -984,25 +984,6 @@ class NeutronNetworkTemplateSerializer70(
         return roles
 
     @classmethod
-    def _get_netgroup_mapping_by_role(cls, node):
-        output = []
-        endpoints = set()
-        template = node.network_template
-
-        for role in node.all_roles:
-            role_templates = template['templates_for_node_role'][role]
-            for role_template in role_templates:
-                endpoints.update(template['templates'][role_template]
-                                 ['endpoints'])
-
-        mappings = template['network_assignments']
-        for netgroup, endpoint in six.iteritems(mappings):
-            if endpoint['ep'] in endpoints:
-                output.append((netgroup, endpoint['ep']))
-
-        return output
-
-    @classmethod
     def generate_transformations(cls, node, *args):
         """Overrides default transformation generation.
         Transformations are taken verbatim from each role template's
@@ -1044,7 +1025,7 @@ class NeutronNetworkTemplateSerializer70(
         nm = Cluster.get_network_manager(node.cluster)
 
         netgroups = nm.get_node_ips(node)
-        netgroup_mapping = cls._get_netgroup_mapping_by_role(node)
+        netgroup_mapping = nm.get_network_mapping_by_node_roles(node)
         for ngname, brname in netgroup_mapping:
             ip_addr = netgroups.get(ngname, {}).get('ip')
             if ip_addr:
@@ -1094,12 +1075,12 @@ class NeutronNetworkTemplateSerializer70(
         return attrs
 
     @classmethod
-    def _get_endpoint_to_ip_mapping(cls, node, networks):
+    def _get_endpoint_to_ip_mapping(cls, node):
         nm = Cluster.get_network_manager(node.cluster)
         net_to_ips = nm.get_node_ips(node)
 
         mapping = dict()
-        net_to_ep = cls._get_netgroup_mapping_by_role(node)
+        net_to_ep = nm.get_network_mapping_by_node_roles(node)
         for network, ep in net_to_ep:
             netgroup = net_to_ips.get(network, {})
             if netgroup.get('ip'):
@@ -1114,10 +1095,8 @@ class NeutronNetworkTemplateSerializer70(
         :param node: instance of db.sqlalchemy.models.node.Node
         :return: dict of network roles mapping
         """
-        nm = Cluster.get_network_manager(node.cluster)
-        networks = nm.get_node_networks(node)
         network_roles = cls._get_network_roles(node)
-        ip_per_ep = cls._get_endpoint_to_ip_mapping(node, networks)
+        ip_per_ep = cls._get_endpoint_to_ip_mapping(node)
         roles = {}
         for role, ep in network_roles.items():
             roles[role] = ip_per_ep.get(ep)

@@ -175,6 +175,72 @@ class TestOpenStackUpgrader(BaseTestCase):
             self.assertEqual(len(self.upgrader._rollback_ids[type_]), 1)
 
     @mock.patch(
+        'fuel_upgrade.engines.openstack.glob.glob', return_value=['path'])
+    @mock.patch(
+        'fuel_upgrade.utils.iterfiles_filter',
+        return_value=['/fake/path/tasks.yaml'])
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.NailgunClient.put_deployment_tasks')
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.NailgunClient.create_notification')
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.NailgunClient.create_release')
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
+        return_value=[])
+    def test_install_releases_is_not_deployable(self, _, mock_cr, mock_cn,
+                                                mock_pd, mock_files, gl):
+        # use already parsed text, because mock_open returns input without any
+        # changes, but we expect yaml parsed json
+        releases_raw = ''' [
+            {
+                "pk": 1,
+                "fields": {
+                    "name": "releases name",
+                    "version": "2014.1",
+                    "operating_system": "CentOS",
+                }
+            }, {
+                "pk": 2,
+                "fields": {
+                    "name": "Undeployable releases name",
+                    "version": "2014.1",
+                    "operating_system": "CentOS",
+                    "is_deployable": False,
+                }
+            }
+        ]
+        '''
+
+        with mock.patch('fuel_upgrade.engines.openstack.io.open',
+                        self.mock_open(releases_raw)):
+            upgrader = OpenStackUpgrader(self.fake_config)
+
+        # test one release
+        release_response = [{'id': '1', 'version': '111'},
+                            {'id': '2', 'version': '222'}]
+        mock_cr.side_effect = release_response
+        mock_cn.return_value = {'id': '100'}
+
+        with mock.patch('fuel_upgrade.engines.openstack.utils.read_from_yaml',
+                        return_value=self.tasks):
+            upgrader.install_releases()
+
+        self.called_times(mock_files, 2)
+
+        self.called_times(mock_cr, 2)
+        # notification should be called only once
+        self.called_once(mock_cn)
+        msg = 'New release available: releases name (2014.1)'
+        mock_cn.assert_called_with({'topic': 'release', 'message': msg})
+
+        self.called_times(mock_pd, 2)
+
+        self.assertEqual(len(upgrader._rollback_ids['release']), 2)
+        # notification should be called only once
+        self.assertEqual(len(upgrader._rollback_ids['notification']), 1)
+
+    @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.put_deployment_tasks')
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_notification')

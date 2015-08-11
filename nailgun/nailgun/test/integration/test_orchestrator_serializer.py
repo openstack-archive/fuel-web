@@ -108,14 +108,6 @@ class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
         self.prepare_for_deployment(cluster.nodes)
         return self.serializer.serialize(cluster, cluster.nodes)
 
-    def _make_data_copy(self, data_to_copy):
-        '''Sqalchemy doesn't track change on composite attribute
-        so we need to create fresh copy of it which will take all
-        needed modifications and will be assigned as new value
-        for that attribute
-        '''
-        return copy.deepcopy(data_to_copy)
-
     def move_network(self, node_id, net_name, from_if, to_if):
         resp = self.app.get(
             reverse("NodeNICsHandler",
@@ -183,7 +175,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNovaOrchestratorSerializer, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode, network_manager='FlatDHCPManager'):
@@ -458,7 +450,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
     def create_env(self, manager, nodes_count=3, ctrl_count=1, nic_count=2):
         cluster = self.env.create(
             release_kwargs={'version': self.env_version},
-            cluster_kwargs={'mode': 'ha_compact'}
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact}
         )
 
         data = {'networking_parameters': {'net_manager': manager}}
@@ -723,7 +715,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
-                'mode': 'ha_compact',
+                'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': 'neutron',
                 'net_segment_type': segment_type}
         )
@@ -1226,7 +1218,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNovaOrchestratorHASerializer, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode):
@@ -1532,7 +1524,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNeutronOrchestratorSerializer, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode, segment_type='vlan'):
@@ -1563,7 +1555,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def serialize_env_w_version(self, version):
         self.new_env_release_version = version
-        cluster = self.create_env(mode='ha_compact')
+        cluster = self.create_env(mode=consts.CLUSTER_MODES.ha_compact)
         serializer = get_serializer_for_cluster(cluster)
         return serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -1828,7 +1820,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertEqual(len(need_public_nodes_count), 4 if assign else 1)
 
     def test_neutron_l3_gateway(self):
-        cluster = self.create_env('ha_compact', 'gre')
+        cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'gre')
         test_gateway = "192.168.111.255"
         public_ng = self.db.query(NetworkGroup).filter(
             NetworkGroup.name == 'public'
@@ -1849,7 +1841,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         )
 
     def test_gre_segmentation(self):
-        cluster = self.create_env('ha_compact', 'gre')
+        cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'gre')
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
@@ -1864,7 +1856,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.new_env_release_version = '2015.1.0-7.0'
         self.prepare_for_deployment = \
             objects.NodeCollection.prepare_for_deployment
-        cluster = self.create_env('ha_compact', 'tun')
+        cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'tun')
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
@@ -1977,7 +1969,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
     def test_vlan_splinters_disabled(self):
         cluster = self._create_cluster_for_vlan_splinters()
         cluster_id = cluster.id
-        editable_attrs = self._make_data_copy(cluster.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster.attributes.editable)
 
         # Remove 'vlan_splinters' attribute and check results.
 
@@ -1999,7 +1991,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
 
         # Set 'vlan_splinters' to 'some_text' and check results.
 
-        editable_attrs = self._make_data_copy(cluster.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster.attributes.editable)
         editable_attrs['vlan_splinters'] = {'vswitch': {'value': 'some_text'}}
         editable_attrs['vlan_splinters']['metadata'] = {'enabled': True}
         cluster.attributes.editable = editable_attrs
@@ -2043,7 +2035,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
     def test_kernel_lt_vlan_splinters(self):
         cluster = self._create_cluster_for_vlan_splinters()
         cluster_id = cluster.id
-        editable_attrs = self._make_data_copy(cluster.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster.attributes.editable)
 
         # value of kernel-ml should end up with vlan_splinters = off
         editable_attrs['vlan_splinters']['metadata']['enabled'] = True
@@ -2067,7 +2059,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
 
     def test_hard_vlan_splinters_in_gre(self):
         cluster = self._create_cluster_for_vlan_splinters('gre')
-        editable_attrs = self._make_data_copy(cluster.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster.attributes.editable)
 
         editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'hard'
@@ -2094,7 +2086,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
 
     def test_hard_vlan_splinters_in_vlan(self):
         cluster = self._create_cluster_for_vlan_splinters('vlan')
-        editable_attrs = self._make_data_copy(cluster.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster.attributes.editable)
 
         editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'hard'
@@ -2125,7 +2117,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
 
     def test_soft_vlan_splinters_in_vlan(self):
         cluster = self._create_cluster_for_vlan_splinters('vlan')
-        editable_attrs = self._make_data_copy(cluster.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster.attributes.editable)
 
         editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'soft'
@@ -2149,7 +2141,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNeutronOrchestratorHASerializer, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode):
@@ -2287,9 +2279,12 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
     def setUp(self):
         super(TestCephOsdImageOrchestratorSerialize, self).setUp()
         cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
+            release_kwargs={
+                'version': self.env_version,
+                'modes': [consts.CLUSTER_MODES.ha_compact,
+                          consts.CLUSTER_MODES.multinode]},
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode': consts.CLUSTER_MODES.multinode},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd']}])
         self.app.patch(
@@ -2316,9 +2311,12 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
 
     def create_env(self, nodes, osd_pool_size='2'):
         cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
+            release_kwargs={
+                'version': self.env_version,
+                'modes': [consts.CLUSTER_MODES.ha_compact,
+                          consts.CLUSTER_MODES.multinode]},
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode': consts.CLUSTER_MODES.multinode},
             nodes_kwargs=nodes)
         self.app.patch(
             reverse(
@@ -2367,7 +2365,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
         cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
-                'mode': 'ha_compact',
+                'mode': consts.CLUSTER_MODES.ha_compact,
                 'network_manager': 'FlatDHCPManager'
             },
             nodes_kwargs=[
@@ -2403,7 +2401,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNSXOrchestratorSerializer, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
 
     def create_env(self, mode, segment_type='gre'):
         cluster = self.env.create(
@@ -2420,7 +2418,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        editable_attrs = self._make_data_copy(cluster_db.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster_db.attributes.editable)
         nsx_attrs = editable_attrs.setdefault('nsx_plugin', {})
         nsx_attrs.setdefault('metadata', {})['enabled'] = True
         cluster_db.attributes.editable = editable_attrs
@@ -2457,8 +2455,17 @@ class BaseDeploymentSerializer(base.BaseIntegrationTest):
     prepare_for_deployment = objects.NodeCollection.prepare_for_6_1_deployment
 
     def create_env(self, mode):
+        if mode == consts.CLUSTER_MODES.multinode:
+            available_modes = [consts.CLUSTER_MODES.ha_compact,
+                               consts.CLUSTER_MODES.multinode]
+        else:
+            available_modes = [consts.CLUSTER_MODES.ha_compact, ]
+
         return self.env.create(
-            release_kwargs={'version': self.env_version},
+            release_kwargs={
+                'version': self.env_version,
+                'modes': available_modes,
+            },
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
@@ -2601,7 +2608,7 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentMultinodeSerializer61, self).setUp()
-        self.cluster = self.create_env('multinode')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.multinode)
         self.prepare_for_deployment(self.env.nodes)
         self.serializer = DeploymentMultinodeSerializer61(self.cluster)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
@@ -2623,7 +2630,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentAttributesSerialization61, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         self.prepare_for_deployment(self.env.nodes, 'gre')
         self.serializer = DeploymentHASerializer61(self.cluster)
 
@@ -2670,7 +2677,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentHASerializer61, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         self.prepare_for_deployment(self.env.nodes, 'gre')
         self.serializer = DeploymentHASerializer61(self.cluster)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
@@ -2842,7 +2849,7 @@ class TestDeploymentHASerializer50(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentHASerializer50, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         objects.NodeCollection.prepare_for_lt_6_1_deployment(self.env.nodes)
         self.serializer = DeploymentHASerializer50(self.cluster)
 
@@ -2856,7 +2863,7 @@ class TestDeploymentMultinodeSerializer50(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentMultinodeSerializer50, self).setUp()
-        self.cluster = self.create_env('multinode')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.multinode)
         objects.NodeCollection.prepare_for_lt_6_1_deployment(self.env.nodes)
         self.serializer = DeploymentMultinodeSerializer50(self.cluster)
 

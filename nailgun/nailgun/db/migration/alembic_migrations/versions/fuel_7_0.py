@@ -100,6 +100,7 @@ def upgrade():
     upgrade_node_labels()
     extend_segmentation_type()
     network_groups_name_upgrade()
+    remove_multinode_mode()
 
 
 def downgrade():
@@ -692,7 +693,15 @@ def upgrade_cluster_bond_settings():
     }
 
     for release_id, networks_db_meta in releases:
+        # NOTE(prmtl): Release.networks_metadata field is nullabe, so it is
+        # possible that it will be empty
+        if not networks_db_meta:
+            continue
+
         networks_meta = jsonutils.loads(networks_db_meta)
+        if 'bonding' not in networks_meta:
+            continue
+
         db_bond_meta = networks_meta['bonding']['properties']
         for bond_mode in new_bond_meta:
             if bond_mode in db_bond_meta:
@@ -748,3 +757,27 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def remove_multinode_mode():
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT id, modes FROM releases")
+    for release_id, modes_db in connection.execute(select_query):
+        # NOTE(prmtl): Release.modes can be nullable and empty
+        # let's catch this case
+        if not modes_db:
+            continue
+        modes = jsonutils.loads(modes_db)
+        try:
+            modes.remove('multinode')
+        except ValueError:
+            # do not fail when we do not have multinode in modes
+            pass
+
+        update_query = sa.text(
+            "UPDATE releases SET modes = :modes WHERE id = :id")
+        connection.execute(
+            update_query,
+            id=release_id,
+            modes=jsonutils.dumps(modes)
+        )

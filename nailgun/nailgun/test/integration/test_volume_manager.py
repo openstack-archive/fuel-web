@@ -17,6 +17,7 @@
 from mock import patch
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.test import base
@@ -67,7 +68,10 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
         """
         cluster = self.env.create(
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode': consts.CLUSTER_MODES.multinode},
+            release_kwargs={
+                'modes': [consts.CLUSTER_MODES.ha_compact,
+                          consts.CLUSTER_MODES.multinode]},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd']}])
         self.app.patch(
@@ -85,7 +89,10 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
     def test_glance_partition_without_ceph_osd(self):
         self.env.create(
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode': consts.CLUSTER_MODES.multinode},
+            release_kwargs={
+                'modes': [consts.CLUSTER_MODES.ha_compact,
+                          consts.CLUSTER_MODES.multinode]},
             nodes_kwargs=[
                 {'roles': ['controller']}])
         volumes = self.env.nodes[0].volume_manager.gen_volumes_info()

@@ -36,6 +36,10 @@ class ClusterValidator(BasicValidator):
     single_schema = cluster_schema.single_schema
     collection_schema = cluster_schema.collection_schema
 
+    _blocked_for_update = (
+        'net_provider',
+    )
+
     @classmethod
     def _can_update_release(cls, curr_release, pend_release):
         return any([
@@ -121,7 +125,7 @@ class ClusterValidator(BasicValidator):
                     log_message=True
                 )
 
-        for k in ("net_provider",):
+        for k in cls._blocked_for_update:
             if k in d and getattr(instance, k) != d[k]:
                 raise errors.InvalidData(
                     u"Changing '{0}' for environment is prohibited".format(k),
@@ -140,10 +144,11 @@ class ClusterValidator(BasicValidator):
     def _validate_mode(cls, data, release):
         mode = data.get("mode")
         if mode and mode not in release.modes:
+            modes_list = ', '.join(release.modes)
             raise errors.InvalidData(
                 "Cannot deploy in {0} mode in current release."
-                " Need to be one of {1}".format(
-                    mode, release.modes),
+                " Need to be one of: {1}".format(
+                    mode, modes_list),
                 log_message=True
             )
 

@@ -206,6 +206,7 @@ TASK_NAMES = Enum(
 
     'node_deletion',
     'cluster_deletion',
+    'remove_images',
     'check_before_deployment',
 
     # network
@@ -320,6 +321,8 @@ EXTENSION_NAME_MAX_SIZE = 64
 
 ALL_ROLES = '*'
 MASTER_ROLE = 'master'
+
+REMOVE_IMAGES_TIMEOUT = 60
 
 # version of Fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'

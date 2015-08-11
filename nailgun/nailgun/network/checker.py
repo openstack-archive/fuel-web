@@ -59,19 +59,15 @@ class NetworkCheck(object):
                 fields)
             self.networks.append(net)
         # merge with data['networks']
-        if 'networks' in data:
-            for data_net in data['networks']:
-                for net in self.networks:
-                    if data_net['id'] == net['id']:
-                        if data_net.get('meta'):
-                            data_net.pop('meta')
-                        net.update(data_net)
-                        if data_net.get('name') == 'fuelweb_admin':
-                            net.update(name='admin (PXE)')
-                        break
-                else:
-                    raise errors.NetworkCheckError(
-                        u"Invalid network ID: {0}".format(data_net['id']))
+        for data_net in data.get('networks', []):
+            for net in self.networks:
+                if data_net['id'] == net['id']:
+                    if 'meta' in data_net:
+                        data_net.pop('meta')
+                    net.update(data_net)
+                    if data_net.get('name') == 'fuelweb_admin':
+                        net.update(name='admin (PXE)')
+                    break
         # get common networking parameters
         serializer = {'neutron': NeutronNetworkConfigurationSerializer,
                       'nova_network': NovaNetworkConfigurationSerializer}

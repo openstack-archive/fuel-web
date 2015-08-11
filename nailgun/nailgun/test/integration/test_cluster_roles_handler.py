@@ -173,8 +173,9 @@ class TestClusterRolesHandler(base.BaseTestCase):
         self.assertEqual(role['name'], 'test_role')
         self.assertDictEqual(
             role['meta'],
-            self.ROLES['test_role']
+            plugin.normalized_roles_metadata['test_role']
         )
         self.assertItemsEqual(
             role['volumes_roles_mapping'],
-            self.VOLUMES['volumes_roles_mapping']['test_role'])
+            plugin.volumes_metadata['volumes_roles_mapping']['test_role']
+        )

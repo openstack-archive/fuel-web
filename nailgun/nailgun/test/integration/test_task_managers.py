@@ -859,3 +859,38 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertItemsEqual(expected_nodes_to_deploy,
                                       actual_nodes_to_deploy)
                 self.assertEqual(202, resp.status_code)
+
+    @mock.patch('nailgun.rpc.cast')
+    def test_delete_nodes_do_not_run_if_there_is_deletion_running(self, _):
+        self.env.create(
+            nodes_kwargs=[{'roles': ['controller']}] * 3)
+        self.task_manager = manager.NodeDeletionTaskManager(
+            cluster_id=self.env.clusters[0].id)
+
+        self.task_manager.execute(self.env.nodes)
+        self.assertRaisesRegexp(
+            errors.DeploymentAlreadyStarted,
+            'Cannot perform the actions because there are running tasks',
+            self.task_manager.execute,
+            self.env.nodes)
+
+    @mock.patch('nailgun.rpc.cast')
+    def test_delete_nodes_reelection_if_primary_for_deletion(self, _):
+        self.env.create(
+            nodes_kwargs=[{'roles': ['controller']}] * 3)
+        cluster = self.env.clusters[0]
+        task_manager = manager.NodeDeletionTaskManager(cluster_id=cluster.id)
+        objects.Cluster.set_primary_roles(cluster, self.env.nodes)
+        primary_node = filter(
+            lambda n: 'controller' in n.primary_roles,
+            self.env.nodes)[0]
+
+        task_manager.execute([primary_node])
+        self.env.refresh_nodes()
+
+        new_primary = filter(
+            lambda n: ('controller' in n.primary_roles and
+                       n.pending_deletion is False),
+            self.env.nodes)[0]
+
+        self.assertNotEqual(primary_node.id, new_primary.id)

@@ -307,11 +307,11 @@ class TaskCollection(NailgunCollection):
         return query.all()
 
     @classmethod
+    def get_by_name_and_cluster(cls, cluster, names):
+        return db().query(cls.single.model).filter_by(
+            cluster_id=cluster.id).filter(cls.single.model.name.in_(names))
+
+    @classmethod
     def delete_by_names(cls, cluster_id, names):
-        db().query(cls.single.model).filter_by(
-            cluster_id=cluster_id,
-        ).filter(
-            cls.single.model.name.in_(names)
-        ).delete(
-            synchronize_session='fetch'
-        )
+        cls.get_by_name_and_cluster(cluster_id, names).delete(
+            synchronize_session=False)

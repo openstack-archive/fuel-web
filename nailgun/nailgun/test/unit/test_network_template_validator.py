@@ -72,10 +72,12 @@ class NetworkTemplateValidatorTest(BaseNetworkTemplateValidatorTest):
     def test_templates_not_found(self):
         self.nt['adv_net_template']['node_group_1']['network_scheme'] = {}
         context = self.get_invalid_data_context(self.nt)
-        self.assertEqual(
+        self.assertIn(
             context.exception.message,
-            "Requested templates public, common were "
-            "not found for node group node_group_1")
+            ["Requested templates public, common were "
+             "not found for node group node_group_1",
+             "Requested templates common, public were "
+             "not found for node group node_group_1"])
 
 
 class NetworkTemplateValidatorProtocolTest(BaseNetworkTemplateValidatorTest):

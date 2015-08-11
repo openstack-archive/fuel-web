@@ -212,7 +212,7 @@ class NetworkManager(object):
             filter(NodeBondInterface.node_id == node.id)
         for bond_assignment in bond_assignments:
             bond_assignment.network_id = \
-                netgroups_mapping[bond_assignment.network_id]
+                netgroups_id_mapping[bond_assignment.network_id]
 
     @classmethod
     def assign_ips(cls, nodes, network_name):
@@ -1449,17 +1449,16 @@ class AllocateVIPs70Mixin(object):
     def get_end_point_ip(cls, cluster_id):
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
         net_role = cls.find_network_role_by_id(cluster_db, 'public/vip')
-        if net_role:
-            node_group = objects.Cluster.get_controllers_node_group(cluster_db)
-            net_group_mapping = cls.build_role_to_network_group_mapping(
-                cluster_db, node_group.name)
-            net_group = cls.get_network_group_for_role(
-                net_role, net_group_mapping)
-            return cls.assign_vip(cluster_db, net_group, vip_type='public')
-        else:
+        if not net_role:
             raise errors.CanNotDetermineEndPointIP(
-                u'Can not determine end point IP for cluster %s' %
-                cluster_db.full_name)
+                u'Can not determine end point IP for cluster {0}'.format(
+                    cluster_db.full_name))
+        node_group = objects.Cluster.get_controllers_node_group(cluster_db)
+        net_group_mapping = cls.build_role_to_network_group_mapping(
+            cluster_db, node_group.name)
+        net_group = cls.get_network_group_for_role(
+            net_role, net_group_mapping)
+        return cls.assign_vip(cluster_db, net_group, vip_type='public')
 
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):

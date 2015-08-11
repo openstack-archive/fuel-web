@@ -212,7 +212,7 @@ class NetworkManager(object):
             filter(NodeBondInterface.node_id == node.id)
         for bond_assignment in bond_assignments:
             bond_assignment.network_id = \
-                netgroups_mapping[bond_assignment.network_id]
+                netgroups_id_mapping[bond_assignment.network_id]
 
     @classmethod
     def assign_ips(cls, nodes, network_name):
@@ -465,28 +465,58 @@ class NetworkManager(object):
         return False
 
     @classmethod
-    def is_ip_usable(cls, network_group, ip):
-        return (ip != network_group.gateway
-            and db().query(IPAddr).filter_by(ip_addr=ip).first() is None)
+    def _iter_free_ips(cls, ip_ranges, ips_in_use):
+        """Iterator over free IP addresses in given IP ranges.
+        IP addresses which exist in ips_in_use are excluded from output.
+        """
+        for ip_range in ip_ranges:
+            for ip_addr in ip_range:
+                ip_str = str(ip_addr)
+                if ip_str not in ips_in_use:
+                    yield ip_str
 
     @classmethod
-    def _iter_free_ips(cls, network_group):
-        """Represents iterator over free IP addresses
-        in all ranges for given Network Group
+    def get_free_ips_from_ranges(cls, net_name, ip_ranges, ips_in_use, count):
+        """Returns list of free IP addresses for given IP ranges. Required
+        quantity of IPs is set in "count". IP addresses which exist in
+        ips_in_use or exist in DB are excluded.
         """
-        for ip_range in network_group.ip_ranges:
-            for ip in IPRange(ip_range.first, ip_range.last):
-                if cls.is_ip_usable(network_group, str(ip)):
-                    yield str(ip)
+        result = []
+        ip_iterator = cls._iter_free_ips(ip_ranges, ips_in_use)
+        while count > 0:
+            # Eager IP mining to not run DB query on every single IP when just
+            # 1 or 2 IPs are required and a long series of IPs from this range
+            # are occupied already.
+            free_ips = list(islice(ip_iterator,
+                                   max(count, consts.MIN_IPS_PER_REQUEST)))
+            if not free_ips:
+                ranges_str = ','.join(str(r) for r in ip_ranges)
+                raise errors.OutOfIPs(
+                    "Not enough free IP addresses in ranges [{0}] of '{1}' "
+                    "network".format(ranges_str, net_name))
+
+            ips_in_db = db().query(
+                IPAddr.ip_addr.distinct()
+            ).filter(
+                IPAddr.ip_addr.in_(free_ips)
+            )
+
+            for ip in ips_in_db:
+                free_ips.remove(ip[0])
+
+            result.extend(free_ips)
+            count -= len(free_ips)
+
+        return result
 
     @classmethod
     def get_free_ips(cls, network_group, num=1):
         """Returns list of free IP addresses for given Network Group
         """
-        free_ips = list(islice(cls._iter_free_ips(network_group), 0, num))
-        if len(free_ips) < num:
-            raise errors.OutOfIPs()
-        return free_ips
+        ip_ranges = [IPRange(r.first, r.last)
+                     for r in network_group.ip_ranges]
+        return cls.get_free_ips_from_ranges(
+            network_group.name, ip_ranges, set(), num)
 
     @classmethod
     def _get_ips_except_admin(cls, node_id=None,
@@ -1449,17 +1479,16 @@ class AllocateVIPs70Mixin(object):
     def get_end_point_ip(cls, cluster_id):
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
         net_role = cls.find_network_role_by_id(cluster_db, 'public/vip')
-        if net_role:
-            node_group = objects.Cluster.get_controllers_node_group(cluster_db)
-            net_group_mapping = cls.build_role_to_network_group_mapping(
-                cluster_db, node_group.name)
-            net_group = cls.get_network_group_for_role(
-                net_role, net_group_mapping)
-            return cls.assign_vip(cluster_db, net_group, vip_type='public')
-        else:
+        if not net_role:
             raise errors.CanNotDetermineEndPointIP(
-                u'Can not determine end point IP for cluster %s' %
-                cluster_db.full_name)
+                u'Can not determine end point IP for cluster {0}'.format(
+                    cluster_db.full_name))
+        node_group = objects.Cluster.get_controllers_node_group(cluster_db)
+        net_group_mapping = cls.build_role_to_network_group_mapping(
+            cluster_db, node_group.name)
+        net_group = cls.get_network_group_for_role(
+            net_role, net_group_mapping)
+        return cls.assign_vip(cluster_db, net_group, vip_type='public')
 
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):

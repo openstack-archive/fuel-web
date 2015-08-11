@@ -41,7 +41,7 @@ scapy_config.logLevel = 40
 scapy_config.use_pcap = True
 import scapy.all as scapy
 
-from scapy.utils import rdpcap
+from scapy.utils import PcapReader
 
 from network_checker.net_check.utils import signal_timeout
 
@@ -78,6 +78,7 @@ class Actor(object):
             'duration': 5,
             'repeat': 1,
             'collect_timeout': 300,
+            'collect_chunks': 100,
         }
         if config:
             self.config.update(config)
@@ -505,8 +506,13 @@ class Listener(Actor):
     def read_pcap_file(self, iface, filename):
         try:
             pcap_file = os.path.join(self.config['pcap_dir'], filename)
-            for pkt in rdpcap(pcap_file):
-                self.fprn(pkt, iface)
+            pcap_reader = PcapReader(pcap_file)
+            chunks = pcap_reader.read_all(count=self.config['collect_chunks'])
+            while chunks:
+                for pkt in chunks:
+                    self.fprn(pkt, iface)
+                chunks = pcap_reader.read_all(
+                    count=self.config['collect_chunks'])
         except Exception:
             self.logger.exception('Cant read pcap file %s', pcap_file)
 

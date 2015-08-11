@@ -13,7 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
+import mock
+
 from oslo_serialization import jsonutils
 
 from nailgun import consts
@@ -21,9 +22,100 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
-from nailgun.task.task import CheckBeforeDeploymentTask
+from nailgun.task import task
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import reverse
+
+
+class TestClusterDeletionTask(BaseTestCase):
+
+    def create_cluster_and_execute_deletion_task(
+            self, attributes=None, os=consts.RELEASE_OS.centos):
+        self.env.create(
+            cluster_kwargs={
+                'editable_attributes': attributes,
+            },
+            release_kwargs={
+                'operating_system': os,
+                'version': '2025-7.0',
+            },
+        )
+        self.fake_task = Task(name=consts.TASK_NAMES.cluster_deletion,
+                              cluster=self.env.clusters[0])
+        task.ClusterDeletionTask.execute(self.fake_task)
+
+    @mock.patch('nailgun.task.task.DeletionTask', autospec=True)
+    @mock.patch.object(task.DeleteIBPImagesTask, 'execute')
+    def test_target_images_deletion_skipped_empty_attributes(
+            self, mock_img_task, mock_del):
+        self.create_cluster_and_execute_deletion_task({})
+        self.assertTrue(mock_del.execute.called)
+        self.assertFalse(mock_img_task.called)
+
+    @mock.patch('nailgun.task.task.DeletionTask', autospec=True)
+    @mock.patch.object(task.DeleteIBPImagesTask, 'execute')
+    def test_target_images_deletion_skipped_os_centos(
+            self, mock_img_task, mock_del):
+        attributes = {'provision': {
+            'method': consts.PROVISION_METHODS.image,
+        }}
+        self.create_cluster_and_execute_deletion_task(attributes)
+        self.assertTrue(mock_del.execute.called)
+        self.assertFalse(mock_img_task.called)
+
+    @mock.patch('nailgun.task.task.DeletionTask', autospec=True)
+    @mock.patch.object(task.DeleteIBPImagesTask, 'execute')
+    def test_target_images_deletion_skipped_os_ubuntu_cobbler(
+            self, mock_img_task, mock_del):
+        os = consts.RELEASE_OS.ubuntu
+        attributes = {'provision': {
+            'method': consts.PROVISION_METHODS.cobbler,
+        }}
+        self.create_cluster_and_execute_deletion_task(attributes, os)
+        self.assertTrue(mock_del.execute.called)
+        self.assertFalse(mock_img_task.called)
+
+    @mock.patch('nailgun.task.task.DeletionTask', autospec=True)
+    @mock.patch.object(task.DeleteIBPImagesTask, 'execute')
+    def test_target_images_deletion_executed(self, mock_img_task, mock_del):
+        os = consts.RELEASE_OS.ubuntu
+        attributes = {'provision': {
+            'method': consts.PROVISION_METHODS.image,
+        }}
+        self.create_cluster_and_execute_deletion_task(attributes, os)
+        self.assertTrue(mock_del.execute.called)
+        self.assertTrue(mock_img_task.called)
+        fake_attrs = objects.Attributes.merged_attrs_values(
+            self.fake_task.cluster.attributes)
+        mock_img_task.assert_called_once_with(
+            mock.ANY, fake_attrs['provision']['image_data'])
+
+
+class TestDeleteIBPImagesTask(BaseTestCase):
+
+    @mock.patch('nailgun.task.task.settings')
+    @mock.patch('nailgun.task.task.make_astute_message')
+    def test_message(self, mock_astute, mock_settings):
+        mock_settings.PROVISIONING_IMAGES_PATH = '/fake/path'
+        mock_settings.REMOVE_IMAGES_TIMEOUT = 'fake_timeout'
+        task_mock = mock.Mock()
+        task_mock.cluster.id = '123'
+        task_mock.uuid = 'fake_uuid'
+        fake_image_data = {'/': {'uri': 'http://a.b/fake.img'},
+                           '/boot': {'uri': 'http://c.d/fake-boot.img'}}
+        task.DeleteIBPImagesTask.message(task_mock, fake_image_data)
+        mock_astute.assert_called_once_with(
+            mock.ANY, 'execute_tasks', 'remove_cluster_resp', {
+                'tasks': [{
+                    'type': 'shell',
+                    'uids': [consts.MASTER_ROLE],
+                    'parameters': {
+                        'retries': 3,
+                        'cmd': 'rm -f /fake/path/fake-boot.img '
+                        '/fake/path/fake.img',
+                        'cwd': '/',
+                        'timeout': 'fake_timeout',
+                        'interval': 1}}]})
 
 
 class TestHelperUpdateClusterStatus(BaseTestCase):
@@ -52,11 +144,12 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
     def test_update_nodes_to_error_if_deployment_task_failed(self):
         self.cluster.nodes[0].status = 'deploying'
         self.cluster.nodes[0].progress = 12
-        task = Task(name='deployment', cluster=self.cluster, status='error')
-        self.db.add(task)
+        deployment_task = Task(name='deployment', cluster=self.cluster,
+                               status='error')
+        self.db.add(deployment_task)
         self.db.commit()
 
-        objects.Task._update_cluster_data(task)
+        objects.Task._update_cluster_data(deployment_task)
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
@@ -64,11 +157,11 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.nodes_should_not_be_error(self.cluster.nodes[1:])
 
     def test_update_cluster_to_error_if_deploy_task_failed(self):
-        task = Task(name='deploy', cluster=self.cluster, status='error')
-        self.db.add(task)
+        deploy_task = Task(name='deploy', cluster=self.cluster, status='error')
+        self.db.add(deploy_task)
         self.db.commit()
 
-        objects.Task._update_cluster_data(task)
+        objects.Task._update_cluster_data(deploy_task)
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
@@ -76,11 +169,12 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
     def test_update_nodes_to_error_if_provision_task_failed(self):
         self.cluster.nodes[0].status = 'provisioning'
         self.cluster.nodes[0].progress = 12
-        task = Task(name='provision', cluster=self.cluster, status='error')
-        self.db.add(task)
+        provision_task = Task(name='provision', cluster=self.cluster,
+                              status='error')
+        self.db.add(provision_task)
         self.db.commit()
 
-        objects.Task._update_cluster_data(task)
+        objects.Task._update_cluster_data(provision_task)
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
@@ -88,11 +182,11 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.nodes_should_not_be_error(self.cluster.nodes[1:])
 
     def test_update_cluster_to_operational(self):
-        task = Task(name='deploy', cluster=self.cluster, status='ready')
-        self.db.add(task)
+        deploy_task = Task(name='deploy', cluster=self.cluster, status='ready')
+        self.db.add(deploy_task)
         self.db.commit()
 
-        objects.Task._update_cluster_data(task)
+        objects.Task._update_cluster_data(deploy_task)
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'operational')
@@ -105,11 +199,11 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.cluster.nodes[0].status = 'deploying'
         self.cluster.nodes[0].progress = 24
 
-        task = Task(name='deploy', cluster=self.cluster, status='ready')
-        self.db.add(task)
+        deploy_task = Task(name='deploy', cluster=self.cluster, status='ready')
+        self.db.add(deploy_task)
         self.db.commit()
 
-        objects.Task._update_cluster_data(task)
+        objects.Task._update_cluster_data(deploy_task)
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'operational')
@@ -123,16 +217,17 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             node.status = 'provisioning'
             node.progress = 12
 
-        task = Task(name='provision', cluster=self.cluster, status='error')
-        self.db.add(task)
+        provision_task = Task(name='provision', cluster=self.cluster,
+                              status='error')
+        self.db.add(provision_task)
         self.db.commit()
 
         data = {'status': 'error', 'progress': 100}
-        objects.Task.update(task, data)
+        objects.Task.update(provision_task, data)
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
-        self.assertEqual(task.status, 'error')
+        self.assertEqual(provision_task.status, 'error')
 
         for node in self.cluster.nodes:
             self.assertEqual(node.status, 'error')
@@ -189,7 +284,8 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.assertEqual(self.node.error_type, error_type)
 
     def is_checking_required(self):
-        return CheckBeforeDeploymentTask._is_disk_checking_required(self.node)
+        return task.CheckBeforeDeploymentTask._is_disk_checking_required(
+            self.node)
 
     def test_is_disk_checking_required(self):
         self.set_node_status('ready')
@@ -215,32 +311,32 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
     def test_check_volumes_and_disks_do_not_run_if_node_ready(self):
         self.set_node_status('ready')
 
-        with patch.object(
+        with mock.patch.object(
                 VolumeManager,
                 'check_disk_space_for_deployment') as check_mock:
-            CheckBeforeDeploymentTask._check_disks(self.task)
+            task.CheckBeforeDeploymentTask._check_disks(self.task)
             self.assertFalse(check_mock.called)
 
-        with patch.object(
+        with mock.patch.object(
                 VolumeManager,
                 'check_volume_sizes_for_deployment') as check_mock:
-            CheckBeforeDeploymentTask._check_volumes(self.task)
+            task.CheckBeforeDeploymentTask._check_volumes(self.task)
             self.assertFalse(check_mock.called)
 
     def test_check_volumes_and_disks_run_if_node_not_ready(self):
         self.set_node_status('discover')
 
-        with patch.object(
+        with mock.patch.object(
                 VolumeManager,
                 'check_disk_space_for_deployment') as check_mock:
-            CheckBeforeDeploymentTask._check_disks(self.task)
+            task.CheckBeforeDeploymentTask._check_disks(self.task)
 
             self.assertEqual(check_mock.call_count, 1)
 
-        with patch.object(
+        with mock.patch.object(
                 VolumeManager,
                 'check_volume_sizes_for_deployment') as check_mock:
-            CheckBeforeDeploymentTask._check_volumes(self.task)
+            task.CheckBeforeDeploymentTask._check_volumes(self.task)
 
             self.assertEqual(check_mock.call_count, 1)
 
@@ -250,7 +346,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.assertRaises(
             errors.NodeOffline,
-            CheckBeforeDeploymentTask._check_nodes_are_online,
+            task.CheckBeforeDeploymentTask._check_nodes_are_online,
             self.task)
 
     def test_check_nodes_online_do_not_raise_exception_node_to_deletion(self):
@@ -258,7 +354,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.node.pending_deletion = True
         self.env.db.commit()
 
-        CheckBeforeDeploymentTask._check_nodes_are_online(self.task)
+        task.CheckBeforeDeploymentTask._check_nodes_are_online(self.task)
 
     def test_check_controllers_count_operational_cluster(self):
         self.cluster.status = consts.CLUSTER_STATUSES.operational
@@ -270,7 +366,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.assertRaises(
             errors.NotEnoughControllers,
-            CheckBeforeDeploymentTask._check_controllers_count,
+            task.CheckBeforeDeploymentTask._check_controllers_count,
             self.task)
 
     def test_check_controllers_count_new_cluster(self):
@@ -279,7 +375,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         # check there's not exceptions with one controller
         self.assertNotRaises(
             errors.NotEnoughControllers,
-            CheckBeforeDeploymentTask._check_controllers_count,
+            task.CheckBeforeDeploymentTask._check_controllers_count,
             self.task)
 
         # check there's exception with one non-controller node
@@ -287,7 +383,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.env.db.flush()
         self.assertRaises(
             errors.NotEnoughControllers,
-            CheckBeforeDeploymentTask._check_controllers_count,
+            task.CheckBeforeDeploymentTask._check_controllers_count,
             self.task)
 
     def find_net_by_name(self, nets, name):
@@ -304,14 +400,14 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.assertNotRaises(
             errors.NetworktemplateMissingRoles,
-            CheckBeforeDeploymentTask._validate_network_template,
+            task.CheckBeforeDeploymentTask._validate_network_template,
             self.task)
 
         ceph_node = self.env.create_node(roles=['ceph-osd'],
                                          cluster_id=self.cluster.id)
         self.assertRaises(
             errors.NetworkTemplateMissingRoles,
-            CheckBeforeDeploymentTask._validate_network_template,
+            task.CheckBeforeDeploymentTask._validate_network_template,
             self.task)
 
         objects.Node.delete(ceph_node)
@@ -325,7 +421,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.assertRaisesRegexp(
             errors.NetworkTemplateMissingNetRoles,
             "Network roles murano/api are missing",
-            CheckBeforeDeploymentTask._validate_network_template,
+            task.CheckBeforeDeploymentTask._validate_network_template,
             self.task)
 
     def test_check_public_networks(self):
@@ -359,7 +455,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.assertRaises(
             errors.NetworkCheckError,
-            CheckBeforeDeploymentTask._check_public_network,
+            task.CheckBeforeDeploymentTask._check_public_network,
             self.task)
 
         # enough IPs for 3 nodes and 2 VIPs
@@ -370,7 +466,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.assertNotRaises(
             errors.NetworkCheckError,
-            CheckBeforeDeploymentTask._check_public_network,
+            task.CheckBeforeDeploymentTask._check_public_network,
             self.task)
 
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
@@ -388,5 +484,5 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.assertRaises(
             errors.NetworkCheckError,
-            CheckBeforeDeploymentTask._check_public_network,
+            task.CheckBeforeDeploymentTask._check_public_network,
             self.task)

@@ -64,6 +64,7 @@ task_names_old = (
 )
 task_names_new = task_names_old + (
     'spawn_vms',
+    'remove_images',
 )
 
 

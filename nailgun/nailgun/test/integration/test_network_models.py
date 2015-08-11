@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from oslo_serialization import jsonutils
 
 from nailgun.objects.serializers.network_configuration \
@@ -23,6 +25,7 @@ from nailgun.objects.serializers.network_configuration \
 
 from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NODE_STATUSES
+from nailgun.consts import TASK_STATUSES
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.test.base import BaseIntegrationTest
@@ -35,13 +38,16 @@ class TestNetworkModels(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestNetworkModels, self).tearDown()
 
-    def test_cluster_locking_after_deployment(self):
+    def test_cluster_locking_during_deployment(self):
         self.env.create(
-            cluster_kwargs={'status': CLUSTER_STATUSES.operational},
+            cluster_kwargs={'status': CLUSTER_STATUSES.deployment},
             nodes_kwargs=[
-                {"pending_addition": False, 'status': NODE_STATUSES.ready},
-                {"pending_addition": False, 'status': NODE_STATUSES.ready},
-                {"pending_deletion": False, 'status': NODE_STATUSES.ready}])
+                {'pending_addition': False,
+                 'status': NODE_STATUSES.deploying},
+                {'pending_addition': False,
+                 'status': NODE_STATUSES.deploying},
+                {'pending_addition': False,
+                 'status': NODE_STATUSES.deploying}])
 
         test_nets = self.env.nova_networks_get(
             self.env.clusters[0].id).json_body
@@ -71,6 +77,70 @@ class TestNetworkModels(BaseIntegrationTest):
         # it's 400 because we used Nova network
         self.assertEqual(resp_neutron_net.status_code, 400)
         self.assertEqual(resp_cluster.status_code, 403)
+
+    def test_networks_update_after_deployment(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre',
+                'status': CLUSTER_STATUSES.operational
+            },
+            nodes_kwargs=[
+                {'pending_addition': False, 'status': NODE_STATUSES.ready},
+                {'pending_addition': False, 'status': NODE_STATUSES.ready},
+                {'pending_deletion': False, 'status': NODE_STATUSES.ready}])
+
+        test_nets = self.env.neutron_networks_get(
+            self.env.clusters[0].id).json_body
+
+        test_network_params = copy.deepcopy(test_nets['networking_parameters'])
+        # change something from 'networking_parameters'
+        test_nets['networking_parameters']['dns_nameservers'] = \
+            ['one.dns', 'two.dns']
+
+        # let's change for example management network
+        test_network_name = 'management'
+        mgmt_net = filter(lambda x: x['name'] == test_network_name,
+                          test_nets['networks'])[0]
+
+        mgmt_net['cidr'] = u'1.1.1.0/24'
+
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            test_nets)
+
+        # it's confusing but status will be 200 OK
+        self.assertEqual(200, resp_neutron_net.status_code)
+        self.assertEqual(TASK_STATUSES.error,
+                         resp_neutron_net.json_body['status'])
+        self.assertEqual(
+            "New IP ranges for network '{0}' conflict "
+            "with already allocated IPs.".format(test_network_name),
+            resp_neutron_net.json_body['message'])
+
+        mgmt_net['cidr'] = u'192.168.0.0/30'
+
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            test_nets)
+
+        self.assertEqual(200, resp_neutron_net.status_code)
+        self.assertEqual(TASK_STATUSES.ready,
+                         resp_neutron_net.json_body['status'],
+                         "Task error message: {0}".format(
+                             resp_neutron_net.json_body['message']))
+
+        new_nets = self.env.neutron_networks_get(
+            self.env.clusters[0].id).json_body
+
+        # test that network was changed
+        modified_net = filter(lambda x: x['name'] == test_network_name,
+                              new_nets['networks'])[0]
+        self.assertEqual(u'192.168.0.0/30', modified_net['cidr'])
+
+        # test that networking_parameters were not changed
+        self.assertDictEqual(test_network_params,
+                             new_nets['networking_parameters'])
 
     def test_nova_net_networking_parameters(self):
         cluster = self.env.create_cluster(api=False)

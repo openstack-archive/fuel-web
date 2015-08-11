@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+import os
 
 import netaddr
 import requests
@@ -42,6 +43,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
+from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
@@ -482,6 +484,37 @@ class DeletionTask(object):
     @classmethod
     def use_fake(cls):
         return settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
+
+
+class DeletionTargetImagesTask(object):
+
+    @classmethod
+    def message(cls, task, cluster_id):
+        task_params = {
+            'parameters': {
+                'cmd': 'rm -f {0}'.format(
+                os.path.join(settings.PROVISIONING_IMAGES_PATH,
+                             'env_%s_*' % cluster_id)),
+                'timeout': 60}}
+
+        rpc_message = make_astute_message(
+            task,
+            'execute_tasks',
+            'remove_cluster_resp',
+            {
+                'tasks': [tasks_templates.make_shell_task([consts.MASTER_ROLE],
+                                                          task_params),
+                          ]
+            }
+        )
+        return rpc_message
+
+    @classmethod
+    def execute(cls, task, cluster_id):
+        rpc.cast(
+            'naily',
+            cls.message(task, cluster_id)
+        )
 
 
 class StopDeploymentTask(object):

@@ -13,7 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from mock import patch
+
 from oslo_serialization import jsonutils
 
 from nailgun import consts
@@ -22,8 +24,29 @@ from nailgun.errors import errors
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
+from nailgun.task.task import DeletionTargetImagesTask
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import reverse
+
+
+class TestDeletionTargetImagesTask(BaseTestCase):
+
+    @patch('nailgun.task.task.settings')
+    @patch('nailgun.task.task.make_astute_message')
+    def test_message(self, mock_astute, mock_settings):
+        mock_settings.PROVISIONING_IMAGES_PATH = '/fake/path'
+        task_mock = mock.Mock()
+        task_mock.cluster.id = '123'
+        DeletionTargetImagesTask.message(task_mock)
+        mock_astute.assert_called_once_with(
+            mock.ANY, 'execute_tasks', 'remove_cluster_resp', {
+                'tasks': [{
+                    'type': 'shell',
+                    'uids': [consts.MASTER_ROLE],
+                    'parameters': {
+                        'retries': 3,
+                        'cmd': 'rm -f /fake/path/env_123_*',
+                        'cwd': '/', 'timeout': 60, 'interval': 1}}]})
 
 
 class TestHelperUpdateClusterStatus(BaseTestCase):

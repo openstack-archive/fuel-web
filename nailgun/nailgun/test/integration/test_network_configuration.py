@@ -178,7 +178,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
-            'Invalid network ID: 500'
+            'Invalid network ID(s): 500'
         )
 
     def test_admin_public_floating_untagged_others_tagged(self):
@@ -352,6 +352,20 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             "Change of 'segmentation_type' is prohibited"
         )
 
+    def test_networks_update_fails_with_no_net_id(self):
+        new_nets = {'networks': [{'name': 'new',
+                                  'vlan_start': 500}]}
+
+        resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
+                                             expect_errors=True)
+        self.assertEqual(200, resp.status_code)
+        task = resp.json_body
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
+        self.assertIn(
+            "No 'id' param present for",
+            task['message']
+        )
+
     def test_networks_update_fails_with_wrong_net_id(self):
         new_nets = {'networks': [{'id': 500,
                                   'name': 'new',
@@ -364,7 +378,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
-            'Invalid network ID: 500'
+            'Invalid network ID(s): 500'
         )
 
     def test_refresh_public_cidr_on_its_change(self):

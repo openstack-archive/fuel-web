@@ -692,7 +692,15 @@ def upgrade_cluster_bond_settings():
     }
 
     for release_id, networks_db_meta in releases:
+        # NOTE(prmtl): Release.networks_metadata field is nullable, so it is
+        # possible that it will be empty
+        if not networks_db_meta:
+            continue
+
         networks_meta = jsonutils.loads(networks_db_meta)
+        if 'bonding' not in networks_meta:
+            continue
+
         db_bond_meta = networks_meta['bonding']['properties']
         for bond_mode in new_bond_meta:
             if bond_mode in db_bond_meta:

@@ -17,7 +17,7 @@ from contextlib import contextmanager
 
 import six
 
-from nailgun.consts import NODE_STATUSES
+from nailgun import consts
 from nailgun import objects
 from nailgun.test import base
 
@@ -39,15 +39,15 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
 
     def test_primary_controllers_assigned_for_pendings_roles(self):
         self.env.create(
-            cluster_kwargs={'mode': 'ha_compact'},
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
                 {'pending_roles': [self.role_name],
-                 'status': NODE_STATUSES.discover,
+                 'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True},
                 {'pending_roles': [self.role_name],
-                 'status': NODE_STATUSES.discover,
+                 'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
@@ -60,22 +60,22 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
 
     def test_primary_controller_assigned_for_ready_node(self):
         self.env.create(
-            cluster_kwargs={'mode': 'ha_compact'},
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
                 {'pending_roles': [self.role_name],
-                 'status': NODE_STATUSES.discover,
+                 'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True},
                 {'roles': [self.role_name],
-                 'status': NODE_STATUSES.ready,
+                 'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         # primary assigned to node with ready status
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         ready_node = next(n for n in cluster.nodes
-                          if n.status == NODE_STATUSES.ready)
+                          if n.status == consts.NODE_STATUSES.ready)
         self.assertEqual(nodes[1], ready_node)
         self.assertEqual(
             objects.Node.all_roles(nodes[1]), [self.primary_role_name])
@@ -85,15 +85,17 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
     def test_primary_assignment_multinode(self):
         """Primary should not be assigned in multinode env."""
         self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'},
+                            'operating_system': 'Ubuntu',
+                            'modes': [consts.CLUSTER_MODES.ha_compact,
+                                      consts.CLUSTER_MODES.multinode]},
             nodes_kwargs=[
                 {'pending_roles': [self.role_name],
-                 'status': NODE_STATUSES.discover,
+                 'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True},
                 {'roles': [self.role_name],
-                 'status': NODE_STATUSES.ready,
+                 'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
@@ -104,12 +106,12 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
 
     def test_primary_not_assigned_to_pending_deletion(self):
         self.env.create(
-            cluster_kwargs={'mode': 'ha_compact'},
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
                 {'roles': [self.role_name],
-                 'status': NODE_STATUSES.ready,
+                 'status': consts.NODE_STATUSES.ready,
                  'pending_deletion': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
@@ -119,15 +121,15 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
     @contextmanager
     def assert_node_reassigned(self):
         self.env.create(
-            cluster_kwargs={'mode': 'ha_compact'},
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
                 {'pending_roles': [self.role_name],
-                 'status': NODE_STATUSES.discover,
+                 'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True},
                 {'roles': [self.role_name],
-                 'status': NODE_STATUSES.ready,
+                 'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)

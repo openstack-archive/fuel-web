@@ -14,8 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from random import randint
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -38,7 +40,11 @@ class TestMellanox(OrchestratorSerializerTestBase):
     def create_env(self, mode, mellanox=False, iser=False, iser_vlan=None):
         # Create env
         cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
+            release_kwargs={
+                'version': self.env_version,
+                'modes': [consts.CLUSTER_MODES.ha_compact,
+                          consts.CLUSTER_MODES.multinode],
+            },
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
@@ -52,7 +58,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         )
         self.cluster_id = cluster['id']
         cluster_db = objects.Cluster.get_by_uid(self.cluster_id)
-        editable_attrs = self._make_data_copy(cluster_db.attributes.editable)
+        editable_attrs = copy.deepcopy(cluster_db.attributes.editable)
 
         # Set Mellanox params
         if mellanox:
@@ -79,7 +85,8 @@ class TestMellanox(OrchestratorSerializerTestBase):
 
     def test_serialize_mellanox_plugin_enabled(self):
         # Serialize cluster
-        self.cluster = self.create_env('ha_compact', mellanox=True)
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact,
+                                       mellanox=True)
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
         for data in serialized_data:
@@ -112,9 +119,9 @@ class TestMellanox(OrchestratorSerializerTestBase):
 
     def test_serialize_mellanox_iser_enabled_untagged(self):
         # Serialize cluster
-        self.cluster = \
-            self.create_env('ha_compact', mellanox=True, iser=True,
-                            iser_vlan=None)
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact,
+                                       mellanox=True, iser=True,
+                                       iser_vlan=None)
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
 
@@ -142,9 +149,9 @@ class TestMellanox(OrchestratorSerializerTestBase):
         vlan_name = 'vlan{0}'.format(vlan)
 
         # Serialize cluster
-        self.cluster = \
-            self.create_env('ha_compact', mellanox=True, iser=True,
-                            iser_vlan=vlan)
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact,
+                                       mellanox=True, iser=True,
+                                       iser_vlan=vlan)
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
 
@@ -190,21 +197,21 @@ class TestMellanox(OrchestratorSerializerTestBase):
 
     def test_serialize_kernel_params_using_mellanox_sriov_plugin(self):
         self.check_mellanox_kernel_params(
-            mode='multinode',
+            mode=consts.CLUSTER_MODES.multinode,
             mellanox=True,
             iser=False,
         )
 
     def test_serialize_kernel_params_using_mellanox_iser(self):
         self.check_mellanox_kernel_params(
-            mode='ha_compact',
+            mode=consts.CLUSTER_MODES.ha_compact,
             mellanox=True,
             iser=True,
         )
 
     def test_serialize_kernel_params_not_using_mellanox(self):
         self.check_mellanox_kernel_params(
-            mode='ha_compact',
+            mode=consts.CLUSTER_MODES.ha_compact,
             mellanox=False,
             iser=False,
         )

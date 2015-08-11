@@ -16,6 +16,7 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
@@ -237,3 +238,65 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.db.refresh(cluster)
         self.assertEqual(long_name, cluster.name)
+
+
+class TestClusterModes(BaseIntegrationTest):
+
+    def test_fail_to_create_cluster_with_multinode_mode(self):
+        release = self.env.create_release(
+            version='2015-7.0',
+            modes=[consts.CLUSTER_MODES.ha_compact],
+        )
+        cluster_data = {
+            'name': 'CrazyFrog',
+            'release_id': release.id,
+            'mode': consts.CLUSTER_MODES.multinode,
+        }
+
+        resp = self.app.post(
+            reverse('ClusterCollectionHandler'),
+            jsonutils.dumps(cluster_data),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.check_wrong_response(resp)
+
+    def check_wrong_response(self, resp):
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(
+            'Cannot deploy in multinode mode in current release. '
+            'Need to be one of',
+            resp.json_body['message']
+        )
+
+    def test_update_cluster_to_wrong_mode(self):
+        update_resp = self._try_cluster_update(
+            name='SadCrazyFrog',
+            mode=consts.CLUSTER_MODES.multinode,
+        )
+        self.check_wrong_response(update_resp)
+
+    def test_update_cluster_but_not_mode(self):
+        update_resp = self._try_cluster_update(
+            name='HappyCrazyFrog',
+        )
+        self.assertEqual(update_resp.status_code, 200)
+
+    def _try_cluster_update(self, **attrs_to_update):
+        release = self.env.create_release(
+            version='2015-7.0',
+            modes=[consts.CLUSTER_MODES.ha_compact],
+        )
+        create_resp = self.env.create_cluster(
+            release_id=release.id,
+            mode=consts.CLUSTER_MODES.ha_compact,
+            api=True,
+        )
+        cluster_id = create_resp['id']
+
+        return self.app.put(
+            reverse('ClusterHandler', kwargs={'obj_id': cluster_id}),
+            jsonutils.dumps(attrs_to_update),
+            headers=self.default_headers,
+            expect_errors=True
+        )

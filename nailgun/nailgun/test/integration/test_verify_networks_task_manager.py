@@ -517,7 +517,8 @@ class TestVerifyNovaFlatDHCP(BaseIntegrationTest):
         resp = self.env.launch_verify_networks(expect_errors=True)
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.json_body['message'],
-                         'Not enough free IP addresses in pool')
+                         "Not enough free IP addresses in ranges "
+                         "[172.16.0.35-172.16.0.38] of 'public' network")
 
 
 class TestVerifyNeutronVlan(BaseIntegrationTest):

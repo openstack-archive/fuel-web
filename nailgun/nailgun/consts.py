@@ -351,3 +351,6 @@ NETWORK_NOTATION = Enum(
     "ip_ranges",
     "cidr",
 )
+
+# Minimal quantity of IPs to be fetched and checked within one request to DB.
+MIN_IPS_PER_REQUEST = 5

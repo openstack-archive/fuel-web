@@ -977,6 +977,10 @@ class NodeCollection(NailgunCollection):
         cluster = instances[0].cluster
         netmanager = Cluster.get_network_manager(cluster)
 
+        if cluster.network_config.configuration_template:
+            return netmanager.assign_ips_for_nodes_w_template(cluster,
+                                                              instances)
+
         nodes_by_id = dict((n.id, n) for n in instances)
 
         query = (

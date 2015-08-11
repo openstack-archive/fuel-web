@@ -248,7 +248,7 @@ class BaseHandler(object):
 def content_json(func, cls, *args, **kwargs):
     json_resp = lambda data: (
         jsonutils.dumps(data)
-        if isinstance(data, (dict, list)) or not data else data
+        if isinstance(data, (dict, list)) or data is None else data
     )
 
     request_validate_needed = True

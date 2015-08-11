@@ -16,6 +16,8 @@
 from netaddr import IPNetwork
 import six
 
+from oslo_serialization import jsonutils
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun.api.v1.validators.json_schema.network_template import \
@@ -33,21 +35,43 @@ from nailgun import objects
 class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
-    def validate_networks_update(cls, data, cluster):
+    def base_validation(cls, data):
         valid_data = cls.validate_json(data)
-        cls.validate_schema(valid_data, network_schema.NETWORKS)
+        valid_data = cls.prepare_data(valid_data)
 
-        net_ids = [net['id'] for net in valid_data['networks']]
-        ngs_db = db().query(NetworkGroup).filter(NetworkGroup.id.in_(net_ids))
-        ng_db_by_id = dict((ng.id, ng) for ng in ngs_db)
+        return valid_data
 
-        missing_network_ids = [i for i in net_ids if not ng_db_by_id.get(i)]
-        if missing_network_ids:
+    @classmethod
+    def validate_networks_data(cls, data, cluster):
+        data = cls.base_validation(data)
+
+        if 'networks' in data:
+            data = cls.validate_networks_update(data, cluster)
+
+        cls.additional_network_validation(data, cluster)
+
+        return data
+
+    @classmethod
+    def validate_networks_update(cls, data, cluster):
+        cls.validate_schema(data, network_schema.NETWORKS)
+
+        net_ids = [ng['id'] for ng in data['networks']]
+        ng_db_by_id = dict(
+            (ng.id, ng) for ng in db().query(NetworkGroup).filter(
+                NetworkGroup.id.in_(net_ids)
+            )
+        )
+        missing_ids = set(net_ids).difference(ng_db_by_id)
+        if missing_ids:
             raise errors.InvalidData(
-                "Networks with ID's {0} are not present "
-                "in the database".format(missing_network_ids))
+                u"Networks with ID's [{0}] are not present in the "
+                "database".format(
+                    ', '.join(map(str, sorted(missing_ids)))
+                )
+            )
 
-        for network in valid_data.get('networks'):
+        for network in data['networks']:
             net_id = network['id']
             ng_db = ng_db_by_id[net_id]
             cidr = network['cidr'] if 'cidr' in network else ng_db.cidr
@@ -87,7 +111,7 @@ class NetworkConfigurationValidator(BasicValidator):
                     "with already allocated IPs.".format(network['name'])
                 )
 
-        return valid_data
+        return data
 
     @classmethod
     def _check_for_ip_conflicts(cls, network, cluster, notation, use_gateway):
@@ -113,28 +137,26 @@ class NetworkConfigurationValidator(BasicValidator):
             ranges = [(ip_network[first_index], ip_network[-1])]
         return not manager.check_ips_belong_to_ranges(ips, ranges)
 
+    @classmethod
+    def prepare_data(cls, data):
+        return data
+
+    @classmethod
+    def additional_network_validation(cls, data, cluster):
+        pass
+
 
 class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
-    def validate_dns_servers_update(cls, data):
-        d = cls.validate_json(data)
+    def prepare_data(cls, data):
+        if data.get("networks"):
+            data["networks"] = [
+                n for n in data["networks"] if n.get("name") !=
+                consts.NETWORKS.fuelweb_admin
+            ]
 
-        dns_servers = d['dns_nameservers'].get("nameservers", [])
-
-        if not isinstance(dns_servers, list):
-            raise errors.InvalidData(
-                "It's expected to receive array of DNS servers, "
-                "not a single object",
-                log_message=True
-            )
-        if len(dns_servers) < 2:
-            raise errors.InvalidData(
-                "There should be at least two DNS servers",
-                log_message=True
-            )
-
-        return d
+        return data
 
 
 class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
@@ -155,6 +177,14 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
                             log_message=True
                         )
         return d
+
+    @classmethod
+    def additional_network_validation(cls, data, cluster):
+        if 'networking_parameters' in data:
+            cls.validate_neutron_params(
+                jsonutils.dumps(data),
+                cluster_id=cluster.id
+            )
 
 
 class NetAssignmentValidator(BasicValidator):

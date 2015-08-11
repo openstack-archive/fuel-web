@@ -924,7 +924,7 @@ class TestClusterObject(BaseTestCase):
             self.env.clusters[0].status = status
             self.db.flush()
             self.assertEqual(
-                objects.Cluster.is_template_modification_locked(
+                objects.Cluster.is_network_modification_locked(
                     self.env.clusters[0]),
                 status not in allowed
             )

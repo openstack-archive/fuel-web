@@ -12,10 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import re
-
 from oslo_serialization import jsonutils
-import six
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -251,18 +248,13 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         exc_context = self.get_context_of_validation_error()
         message = exc_context.exception.message
 
-        pattern = "Networks with ID's \[(\d+), (\d+)\] are not " \
-            "present in the database"
-        match = re.search(pattern, message)
-        self.assertIsNotNone(
-            match,
-            msg="Cannot find regexp '{0}' in '{1}'".format(pattern, message)
+        self.assertEqual(
+            "Networks with ID's [{0}, {1}] are not "
+            "present in the database".format(
+                *sorted([sto['id'], mgmt['id']])
+            ),
+            message
         )
-        expected_ids = map(six.text_type, [
-            sto['id'],
-            mgmt['id'],
-        ])
-        self.assertItemsEqual(match.groups(), expected_ids)
 
     def test_validate_network_no_ip_ranges(self):
         mgmt = self.find_net_by_name('management')

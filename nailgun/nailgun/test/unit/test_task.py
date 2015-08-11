@@ -22,8 +22,27 @@ from nailgun.errors import errors
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
+from nailgun.task.task import DeletionTargetImagesTask
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import reverse
+
+
+class TestDeletionTargetImagesTask(BaseTestCase):
+
+    @patch('nailgun.task.task.settings')
+    @patch('nailgun.task.task.make_astute_message')
+    def test_message(self, mock_astute, mock_settings):
+        mock_settings.PROVISIONING_IMAGES_PATH = '/fake/path'
+        DeletionTargetImagesTask.message('fake_task', 'fake_id')
+        mock_astute.assert_called_once_with(
+            'fake_task', 'execute_tasks', 'remove_cluster_resp', {
+                'tasks': [{
+                    'type': 'shell',
+                    'uids': [consts.MASTER_ROLE],
+                    'parameters': {
+                        'retries': 3,
+                        'cmd': 'rm -f /fake/path/env_fake_id_*',
+                        'cwd': '/', 'timeout': 60, 'interval': 1}}]})
 
 
 class TestHelperUpdateClusterStatus(BaseTestCase):

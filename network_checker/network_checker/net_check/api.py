@@ -80,7 +80,6 @@ class Actor(object):
             self.config.update(config)
 
         self.logger.debug("Running with config: %s", json.dumps(self.config))
-        self._execute(["modprobe", "8021q"])
         self.iface_down_after = {}
         self.viface_remove_after = {}
 

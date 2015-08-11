@@ -60,9 +60,9 @@ class ProviderHandler(BaseHandler):
             )
 
     def check_if_network_configuration_locked(self, cluster):
-        if cluster.is_locked:
-            raise self.http(403, "Network configuration can't be changed "
-                                 "after, or in deploy.")
+        if objects.Cluster.is_network_modification_locked(cluster):
+            raise self.http(403, "Network configuration cannot be changed "
+                                 "during deployment and after upgrade.")
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):
@@ -110,7 +110,8 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
             try:
                 if 'networks' in data:
                     self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
+                        jsonutils.dumps(data),
+                        cluster.is_locked
                     )
 
                 if 'dns_nameservers' in data:
@@ -173,7 +174,8 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
             try:
                 if 'networks' in data:
                     self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
+                        jsonutils.dumps(data),
+                        cluster.is_locked
                     )
 
                 if 'networking_parameters' in data:
@@ -202,7 +204,7 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
     validator = NetworkTemplateValidator
 
     def check_if_template_modification_locked(self, cluster):
-        if objects.Cluster.is_template_modification_locked(cluster):
+        if objects.Cluster.is_network_modification_locked(cluster):
             raise self.http(403, "Network template cannot be changed "
                                  "during deployment and after upgrade.")
 

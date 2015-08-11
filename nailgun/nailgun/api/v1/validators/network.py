@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from netaddr import IPNetwork
 import six
 
 from nailgun.api.v1.validators.base import BasicValidator
@@ -26,14 +27,17 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
+
+from nailgun.network.manager import NetworkManager
 
 
 class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
-    def validate_networks_update(cls, data):
+    def validate_networks_update(cls, data, cluster_locked=False):
         d = cls.validate_json(data)
         if not d:
             raise errors.InvalidData(
@@ -47,13 +51,41 @@ class NetworkConfigurationValidator(BasicValidator):
                 "'networks' is expected to be an array",
                 log_message=True
             )
-        for i in networks:
-            if 'id' not in i:
+        for network in networks:
+            if 'id' not in network:
                 raise errors.InvalidData(
-                    "No 'id' param presents for '{0}' network".format(i),
+                    "No 'id' param presents for '{0}' network"
+                    .format(network),
                     log_message=True
                 )
+
+            if cluster_locked and cls._check_for_ip_conflicts(network):
+
+                raise errors.InvalidData(
+                    "New IP ranges for network '{0}' conflict "
+                    "with already allocated IPs.".format(network['name'])
+                )
         return d
+
+    @classmethod
+    def _check_for_ip_conflicts(cls, network):
+        # skip admin network
+        if network['id'] == NetworkManager.get_admin_network_group_id():
+            return False
+
+        ng_db = db().query(NetworkGroup).get(network['id'])
+        notation = ng_db.meta.get("notation")
+        if not notation:
+            return False
+        ips = NetworkManager.get_assigned_ips_by_network_id(network['id'])
+        ranges = network.get('ip_ranges',
+                             [[x.first, x.last] for x in ng_db.ip_ranges])
+        if notation == 'cidr':
+            cidr = network.get('cidr', ng_db.cidr)
+            ip_network = IPNetwork(cidr)
+            first_index = 2 if network.get('gateway', None) else 1
+            ranges = [[ip_network[first_index], ip_network[-1]]]
+        return not NetworkManager.check_ips_belong_to_ranges(ips, ranges)
 
 
 class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):

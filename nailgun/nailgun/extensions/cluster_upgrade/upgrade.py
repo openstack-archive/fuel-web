@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import copy
 import six
 
@@ -106,6 +107,41 @@ class UpgradeHelper(object):
             new_cluster.editable_attrs)
 
     @classmethod
+    def transform_vips_for_net_groups_70(cls, vips):
+        """Rename or remove types of VIPs for 7.0 network groups.
+
+        This method renames types of VIPs from older releases (<7.0) to
+        be compatible with network groups of the 7.0 release according
+        to the rules:
+
+            management: haproxy -> management
+            public: haproxy -> public
+            public: vrouter -> vrouter_pub
+
+        Note, that in the result VIPs are present only those IPs that
+        correspond to the given rules.
+        """
+        rename_vip_rules = {
+            "management": {
+                "haproxy": "management",
+                "vrouter": "vrouter",
+            },
+            "public": {
+                "haproxy": "public",
+                "vrouter": "vrouter_pub",
+            },
+        }
+        renamed_vips = collections.defaultdict(dict)
+        for ng_name, vips in six.iteritems(vips):
+            ng_vip_rules = rename_vip_rules[ng_name]
+            for vip_type, vip_addr in six.iteritems(vips):
+                if vip_type not in ng_vip_rules:
+                    continue
+                new_vip_type = ng_vip_rules[vip_type]
+                renamed_vips[ng_name][new_vip_type] = vip_addr
+        return renamed_vips
+
+    @classmethod
     def copy_network_config(cls, orig_cluster, new_cluster):
         nets_serializer = cls.network_serializers[orig_cluster.net_provider]
         nets = merge_nets(
@@ -121,6 +157,11 @@ class UpgradeHelper(object):
             if ng_name not in (consts.NETWORKS.public,
                                consts.NETWORKS.management):
                 vips.pop(ng_name)
+        # NOTE(akscram): In the 7.0 release was introduced networking
+        #                templates that use the vip_type column as
+        #                unique names of VIPs.
+        if orig_cluster.release.environment_version < "7.0":
+            vips = cls.transform_vips_for_net_groups_70(vips)
         new_net_manager.assign_given_vips_for_net_groups(vips)
         new_net_manager.assign_vips_for_net_groups()
 

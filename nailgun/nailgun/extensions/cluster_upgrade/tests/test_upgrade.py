@@ -17,7 +17,6 @@
 import copy
 import six
 
-from nailgun import consts
 from nailgun.objects.serializers import network_configuration
 
 from . import base as base_tests
@@ -65,11 +64,12 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
         new_cluster = self.helper.create_cluster_clone(self.cluster_61,
                                                        self.data)
         orig_net_manager = self.cluster_61.get_network_manager()
-        new_net_manager = new_cluster.get_network_manager()
+        serialize_nets = network_configuration.\
+            NeutronNetworkConfigurationSerializer.\
+            serialize_for_cluster
 
         # Do some unordinary changes
-        nets = network_configuration.NeutronNetworkConfigurationSerializer.\
-            serialize_for_cluster(self.cluster_61.cluster)
+        nets = serialize_nets(self.cluster_61.cluster)
         nets["networks"][0].update({
             "cidr": "172.16.42.0/24",
             "gateway": "172.16.42.1",
@@ -80,13 +80,16 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
 
         self.helper.copy_network_config(self.cluster_61, new_cluster)
 
-        orig_vips = orig_net_manager.get_assigned_vips()
-        new_vips = new_net_manager.get_assigned_vips()
-        for net_name in (consts.NETWORKS.public,
-                         consts.NETWORKS.management):
-            for vip_type in consts.NETWORK_VIP_TYPES:
-                self.assertEqual(orig_vips[net_name][vip_type],
-                                 new_vips[net_name][vip_type])
+        orig_nets = serialize_nets(self.cluster_61_db)
+        new_nets = serialize_nets(new_cluster.cluster)
+        self.assertEqual(orig_nets["management_vip"],
+                         new_nets["management_vip"])
+        self.assertEqual(orig_nets["management_vrouter_vip"],
+                         new_nets["management_vrouter_vip"])
+        self.assertEqual(orig_nets["public_vip"],
+                         new_nets["public_vip"])
+        self.assertEqual(orig_nets["public_vrouter_vip"],
+                         new_nets["public_vrouter_vip"])
 
     def test_clone_cluster(self):
         orig_net_manager = self.cluster_61.get_network_manager()

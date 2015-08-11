@@ -97,6 +97,10 @@ class NailgunReleaseAdapter(object):
     def is_deployable(self):
         return self.release.is_deployable
 
+    @property
+    def environment_version(self):
+        return self.release.environment_version
+
     def __cmp__(self, other):
         if isinstance(other, NailgunReleaseAdapter):
             other = other.release

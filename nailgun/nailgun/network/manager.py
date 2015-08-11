@@ -695,10 +695,10 @@ class NetworkManager(object):
 
     @classmethod
     def _get_admin_node_network(cls, node):
-        node_db = db().query(Node).get(node)
-        net = cls.get_admin_network_group(node)
+        node_db = db().query(Node).get(node.id)
+        net = cls.get_admin_network_group(node_id=node.id)
         net_cidr = IPNetwork(net.cidr)
-        ip_addr = cls.get_admin_ip_for_node(node)
+        ip_addr = cls.get_admin_ip_for_node(node.id)
         if ip_addr:
             ip_addr = cls.get_ip_w_cidr_prefix_len(ip_addr, net)
 
@@ -767,7 +767,7 @@ class NetworkManager(object):
                     network_data.append(cls._get_network_data_wo_ip(
                         node, interface, net))
 
-        network_data.append(cls._get_admin_node_network(node.id))
+        network_data.append(cls._get_admin_node_network(node))
 
         return network_data
 
@@ -993,14 +993,14 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def get_admin_ip_for_node(cls, node):
+    def get_admin_ip_for_node(cls, node_id):
         """Returns first admin IP address for node
         """
-        admin_net_id = cls.get_admin_network_group_id(node_id=node)
+        admin_net_id = cls.get_admin_network_group_id(node_id=node_id)
         admin_ip = db().query(IPAddr).order_by(
             IPAddr.id
         ).filter_by(
-            node=node
+            node=node_id
         ).filter_by(
             network=admin_net_id
         ).first()

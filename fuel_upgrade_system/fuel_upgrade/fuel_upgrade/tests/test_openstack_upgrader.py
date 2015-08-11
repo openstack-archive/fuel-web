@@ -157,7 +157,7 @@ class TestOpenStackUpgrader(BaseTestCase):
         return_value=[])
     def test_install_releases(self, _, mock_cr, mock_cn, mock_pd, mock_files):
         # test one release
-        release_response = {'id': '1', 'version': '111'}
+        release_response = {'id': '1', 'version': '111', 'is_deployable': True}
         mock_cr.return_value = release_response
         mock_cn.return_value = {'id': '100'}
 
@@ -184,7 +184,8 @@ class TestOpenStackUpgrader(BaseTestCase):
         'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
         return_value=[])
     def test_install_releases_with_errors(self, _, mock_cr, mock_cn, mock_pd):
-        mock_cr.return_value = {'id': '1', 'version': '111'}
+        mock_cr.return_value = {'id': '1', 'version': '111',
+                                'is_deployable': True}
         mock_cn.side_effect = requests.exceptions.HTTPError('Something wrong')
 
         self.assertRaises(

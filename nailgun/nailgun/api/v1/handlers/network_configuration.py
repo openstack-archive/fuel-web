@@ -22,8 +22,6 @@ import six
 import traceback
 import web
 
-from oslo_serialization import jsonutils
-
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 
@@ -39,7 +37,10 @@ from nailgun.api.v1.validators.network \
     import NovaNetworkConfigurationValidator
 
 from nailgun import consts
+from nailgun import db
 from nailgun import objects
+
+from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -50,6 +51,8 @@ from nailgun.task.manager import VerifyNetworksTaskManager
 class ProviderHandler(BaseHandler):
     """Base class for network configuration handlers
     """
+
+    provider = None
 
     def check_net_provider(self, cluster):
         if cluster.net_provider != self.provider:
@@ -64,14 +67,21 @@ class ProviderHandler(BaseHandler):
             raise self.http(403, "Network configuration can't be changed "
                                  "after, or in deploy.")
 
+    def _raise_error_task(self, cluster, exc):
+        # set task status to error and update its corresponding data
+        task = Task(
+            name=consts.TASK_NAMES.check_networks,
+            cluster=cluster,
+            status=consts.TASK_STATUSES.error,
+            progress=100,
+            message=six.text_type(exc)
+        )
+        db.db().add(task)
+        db.db().commit()
 
-class NovaNetworkConfigurationHandler(ProviderHandler):
-    """Network configuration handler
-    """
+        logger.error(traceback.format_exc())
 
-    validator = NovaNetworkConfigurationValidator
-    serializer = NovaNetworkConfigurationSerializer
-    provider = "nova_network"
+        self.raise_task(task)
 
     @content
     def GET(self, cluster_id):
@@ -91,46 +101,35 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
-        # TODO(pkaminski): this seems to be synchronous, no task needed here
-        data = jsonutils.loads(web.data())
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") != "fuelweb_admin"
-            ]
-
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
 
         self.check_if_network_configuration_locked(cluster)
 
+        try:
+            data = self.validator.validate_networks_data(web.data(), cluster)
+        except Exception as exc:
+            self._raise_error_task(cluster, exc)
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
         if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
+            objects.Cluster.get_network_manager(
+                cluster
+            ).update(cluster, data)
 
-                if 'dns_nameservers' in data:
-                    self.validator.validate_dns_servers_update(
-                        jsonutils.dumps(data)
-                    )
-
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': consts.TASK_STATUSES.error,
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-
-                logger.error(traceback.format_exc())
-
+        # TODO(pkaminski): this is synchronous, no task needed here
         self.raise_task(task)
+
+
+class NovaNetworkConfigurationHandler(ProviderHandler):
+    """Network configuration handler
+    """
+
+    validator = NovaNetworkConfigurationValidator
+    serializer = NovaNetworkConfigurationSerializer
+    provider = consts.CLUSTER_NET_PROVIDERS.nova_network
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -139,61 +138,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
     validator = NeutronNetworkConfigurationValidator
     serializer = NeutronNetworkConfigurationSerializer
-    provider = "neutron"
-
-    @content
-    def GET(self, cluster_id):
-        """:returns: JSONized network configuration for cluster.
-        :http: * 200 (OK)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
-        return self.serializer.serialize_for_cluster(cluster)
-
-    @content
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-        :http: * 200 (task successfully executed)
-               * 202 (network checking task scheduled for execution)
-               * 400 (data validation failed)
-               * 404 (cluster not found in db)
-        """
-        # TODO(pkaminski): this seems to be synchronous, no task needed here
-        data = jsonutils.loads(web.data())
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
-
-        self.check_if_network_configuration_locked(cluster)
-
-        task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
-        task = task_manager.execute(data)
-
-        if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
-
-                if 'networking_parameters' in data:
-                    self.validator.validate_neutron_params(
-                        jsonutils.dumps(data),
-                        cluster_id=cluster_id
-                    )
-
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': 'error',
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-                logger.error(traceback.format_exc())
-
-        self.raise_task(task)
+    provider = consts.CLUSTER_NET_PROVIDERS.neutron
 
 
 class TemplateNetworkConfigurationHandler(BaseHandler):
@@ -291,7 +236,7 @@ class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):
     """
 
     validator = NovaNetworkConfigurationValidator
-    provider = "nova_network"
+    provider = consts.CLUSTER_NET_PROVIDERS.nova_network
 
 
 class NeutronNetworkConfigurationVerifyHandler(
@@ -300,4 +245,4 @@ class NeutronNetworkConfigurationVerifyHandler(
     """
 
     validator = NeutronNetworkConfigurationValidator
-    provider = "neutron"
+    provider = consts.CLUSTER_NET_PROVIDERS.neutron

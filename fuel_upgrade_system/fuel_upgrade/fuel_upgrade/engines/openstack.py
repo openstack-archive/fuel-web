@@ -129,15 +129,16 @@ class OpenStackUpgrader(UpgradeEngine):
             logger.debug('Add notification about new release: %s (%s)',
                          release['name'],
                          release['version'])
-            response = self.nailgun.create_notification({
-                'topic': 'release',
-                'message': 'New release available: {0} ({1})'.format(
-                    release['name'],
-                    release['version'],
-                ),
-            })
-            # save notification id for futher possible rollback
-            self._rollback_ids['notification'].append(response['id'])
+            if release['is_deployable']:
+                response = self.nailgun.create_notification({
+                    'topic': 'release',
+                    'message': 'New release available: {0} ({1})'.format(
+                        release['name'],
+                        release['version'],
+                    ),
+                })
+                # save notification id for futher possible rollback
+                self._rollback_ids['notification'].append(response['id'])
 
     def upload_release_deployment_tasks(self, release):
         """Performs os.walk by puppet src, matches all files with tasks

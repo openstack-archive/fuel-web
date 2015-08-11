@@ -1030,10 +1030,30 @@ class ClusterDeletionManager(TaskManager):
                     cluster=self.cluster)
         db().add(task)
         db().commit()
+        task_remove_images = None
+        attrs = objects.Attributes.merged_attrs_values(self.cluster.attributes)
+        if attrs.get('provision'):
+            if (self.cluster.release.operating_system ==
+                    consts.RELEASE_OS.ubuntu and
+                    attrs['provision']['method'] ==
+                    consts.PROVISION_METHODS.image):
+                logger.debug("Creating target images deletion task")
+                task_remove_images = Task(name=consts.TASK_NAMES.remove_images,
+                                          cluster=self.cluster)
+                db().add(task_remove_images)
+                db().commit()
+        else:
+            logger.debug("Skipping target images deletion task")
         self._call_silently(
             task,
             tasks.ClusterDeletionTask
         )
+        if task_remove_images:
+                self._call_silently(
+                    task_remove_images,
+                    tasks.DeletionTargetImagesTask,
+                    attrs['provision']['image_data'],
+                )
         return task
 
 

@@ -465,6 +465,23 @@ class NetworkManager(object):
         return False
 
     @classmethod
+    def check_ips_belong_to_ranges(cls, ips, ranges):
+        """
+        Returns *True* if every of provided IPs belongs \
+        to any of provided ranges.
+
+        :param ips: list of IPs (e.g. ['192.168.1.1', '127.0.0.1'], ...)
+        :param ranges: list of IP ranges (e.g. [[first_ip, last_ip], ...])
+        :return: *True* if all IPs belong to ranges or *False* otherwise
+        """
+        ranges = [IPRange(x[0], x[1]) for x in ranges]
+        for ip in ips:
+            ip_addr = IPAddress(ip)
+            if not filter(lambda r: ip_addr in r, ranges):
+                return False
+        return True
+
+    @classmethod
     def is_ip_usable(cls, network_group, ip):
         return (ip != network_group.gateway
             and db().query(IPAddr).filter_by(ip_addr=ip).first() is None)
@@ -1282,25 +1299,29 @@ class NetworkManager(object):
 
                 # If 'notation' is present in 'network_group.meta'
                 # save it in the model.
-                if 'notation' in ng.get('meta', {}):
-                    notation = ng['meta']['notation']
-                    meta_copy = dict(ng_db.meta)
-                    meta_copy['notation'] = notation
-                    ng_db.meta = meta_copy
+                meta = ng.get('meta', {})
+                if 'notation' in meta:
+                    notation = meta['notation']
+                    ng_db.meta['notation'] = notation
                 else:
                     notation = ng_db.meta.get("notation")
+
+                use_gateway = meta.get('use_gateway', None)
+                if use_gateway is not None:
+                    ng_db.meta['use_gateway'] = use_gateway
+                else:
+                    use_gateway = ng_db.meta['use_gateway']
 
                 if notation == consts.NETWORK_NOTATION.ip_ranges:
                     ip_ranges = ng.get("ip_ranges") or \
                                 [(r.first, r.last) for r in ng_db.ip_ranges]
                     cls._set_ip_ranges(ng['id'], ip_ranges)
                 elif notation == consts.NETWORK_NOTATION.cidr:
-                    use_gateway = ng_db.gateway is not None
                     cidr = ng["cidr"] or ng_db.cidr
                     cls.update_range_mask_from_cidr(
                         ng_db, cidr, use_gateway=use_gateway)
 
-                if notation:
+                if notation and not cluster.is_locked:
                     cls.cleanup_network_group(ng_db)
                 objects.Cluster.add_pending_changes(cluster, 'networks')
 
@@ -1309,6 +1330,11 @@ class NetworkManager(object):
         cls.update_networks(cluster, network_configuration)
 
         if 'networking_parameters' in network_configuration:
+            if cluster.is_locked:
+                logger.warning("'network_parameters' are presented in update"
+                               " data but they are locked after deployment."
+                               " New values were ignored.")
+                return
             for key, value in network_configuration['networking_parameters'] \
                     .items():
                 setattr(cluster.network_config, key, value)
@@ -1435,6 +1461,12 @@ class NetworkManager(object):
         """Returns IP with address space prefix, e.g. "10.20.0.1/24"
         """
         return "{0}/{1}".format(ip, IPNetwork(network_group.cidr).prefixlen)
+
+    @classmethod
+    def get_assigned_ips_by_network_id(cls, network_id):
+        return [x[0] for x in
+                db().query(IPAddr.ip_addr).filter_by(
+                    network=network_id)]
 
 
 class AllocateVIPs70Mixin(object):

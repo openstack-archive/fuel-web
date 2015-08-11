@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from netaddr import IPNetwork
 import six
 
 from nailgun.api.v1.validators.base import BasicValidator
@@ -32,7 +33,7 @@ from nailgun import objects
 class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
-    def validate_networks_update(cls, data):
+    def validate_networks_update(cls, data, cluster):
         valid_data = cls.validate_json(data)
         cls.validate_schema(valid_data, network_schema.NETWORKS)
 
@@ -54,10 +55,21 @@ class NetworkConfigurationValidator(BasicValidator):
                 (r.first, r.last) for r in ng_db.ip_ranges]
 
             # 'notation' is always taken either from request or from DB
-            if 'notation' in network.get('meta', {}):
+            meta = network.get('meta', {})
+            if 'notation' in meta:
                 notation = network['meta']['notation']
             else:
                 notation = ng_db_by_id[net_id].meta.get('notation')
+
+            use_gateway = meta.get('use_gateway', None)
+
+            if use_gateway and not network.get('gateway', None):
+                raise errors.InvalidData(
+                    "Flag 'use_gateway' cannot be provided without gateway")
+
+            if use_gateway is None:
+                use_gateway = ng_db_by_id[net_id].meta.get('use_gateway',
+                                                           False)
 
             # Depending on notation required parameters must be either in
             # the request or DB
@@ -73,8 +85,36 @@ class NetworkConfigurationValidator(BasicValidator):
                     raise errors.InvalidData(
                         "No CIDR was specified for network "
                         "{0}".format(net_id))
+            if cluster.is_locked and cls._check_for_ip_conflicts(
+                    network, cluster, notation, use_gateway):
+
+                raise errors.InvalidData(
+                    "New IP ranges for network '{0}' conflict "
+                    "with already allocated IPs.".format(network['name'])
+                )
 
         return valid_data
+
+    @classmethod
+    def _check_for_ip_conflicts(cls, network, cluster, notation, use_gateway):
+        # skip admin network
+        manager = objects.Cluster.get_network_manager(cluster)
+        if network['id'] == manager.get_admin_network_group_id():
+            return False
+
+        ng_db = db().query(NetworkGroup).get(network['id'])
+
+        ips = manager.get_assigned_ips_by_network_id(network['id'])
+        ranges = []
+        if notation == consts.NETWORK_NOTATION.ip_ranges:
+            ranges = network.get('ip_ranges',
+                                 [[x.first, x.last] for x in ng_db.ip_ranges])
+        if notation == consts.NETWORK_NOTATION.cidr:
+            cidr = network.get('cidr', ng_db.cidr)
+            ip_network = IPNetwork(cidr)
+            first_index = 2 if use_gateway else 1
+            ranges = [[ip_network[first_index], ip_network[-1]]]
+        return not manager.check_ips_belong_to_ranges(ips, ranges)
 
 
 class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):

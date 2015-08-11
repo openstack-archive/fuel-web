@@ -35,6 +35,8 @@ from nailgun.utils import reverse
 
 from nailgun.errors import errors
 
+from nailgun.expression import Expression
+
 from nailgun import consts
 
 from nailgun.db import NoCacheQuery
@@ -1085,12 +1087,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
 
     def test_no_plugins_no_additional_roles(self):
         roles = objects.Cluster.get_roles(self.cluster)
-        self.assertEqual(roles, {
-            'role_a': {
-                'name': 'Role A', 'description': 'Role A is ...', },
-            'role_b': {
-                'name': 'Role B', 'description': 'Role B is ...', },
-        })
+        self.assertItemsEqual(roles.keys(), ['role_a', 'role_b'])
 
     def test_plugin_adds_new_roles(self):
         self.create_plugin({
@@ -1099,14 +1096,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
         })
 
         roles = objects.Cluster.get_roles(self.cluster)
-        self.assertEqual(roles, {
-            'role_a': {
-                'name': 'Role A', 'description': 'Role A is ...', },
-            'role_b': {
-                'name': 'Role B', 'description': 'Role B is ...', },
-            'role_c': {
-                'name': 'Role C', 'description': 'Role C is ...', },
-        })
+        self.assertItemsEqual(roles.keys(), ['role_a', 'role_b', 'role_c'])
 
     def test_plugin_role_conflict_with_core_roles(self):
         plugin = self.create_plugin({
@@ -1164,9 +1154,33 @@ class TestClusterObjectGetRoles(BaseTestCase):
 
         # 0 - the whole message, 1 - is first match of (.*) pattern
         roles = re.match(message_pattern, str(cm.exception)).group(1)
-        roles = set([role.lstrip().rstrip() for role in roles.split(',')])
+        roles = [role.lstrip().rstrip() for role in roles.split(',')]
 
-        self.assertEqual(roles, set(['role_x', 'role_a']))
+        self.assertItemsEqual(roles, ['role_x', 'role_a'])
+
+    def test_plugin_role_restrictions_normalization(self):
+        plugin = self.create_plugin({
+            'role_x': {
+                'name': 'Role X',
+                'description': 'Role X is ...',
+            },
+            'role_y': {
+                'name': 'Role Y',
+                'description': 'Role Y is ...',
+                'restrictions': []
+            },
+            'role_z': {
+                'name': 'Role Z',
+                'description': 'Role Z is ...',
+                'restrictions': [
+                    'cluster:mode != "ha_compact"'
+                ]
+            },
+        })
+
+        for role, meta in six.iteritems(plugin.normalized_roles_metadata):
+            condition = meta['restrictions'][0]
+            self.assertNotRaises(Exception, Expression, condition)
 
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):

@@ -281,7 +281,8 @@ class TestNovaHandlers(TestNetworkChecking):
         self.assertIn("public", task['message'])
 
     def test_network_checking_fails_if_vlan_id_in_fixed_vlan_range(self):
-        self.nets['networking_parameters']['net_manager'] = 'VLANManager'
+        self.nets['networking_parameters']['net_manager'] = \
+            consts.NOVA_NET_MANAGERS.VlanManager
         self.find_net_by_name('public')["vlan_start"] = 1111
         self.nets['networking_parameters']['fixed_networks_vlan_start'] = \
             1100
@@ -305,7 +306,8 @@ class TestNovaHandlers(TestNetworkChecking):
         )
 
     def test_network_size_not_fit_cidr_in_flatdhcp(self):
-        self.nets['networking_parameters']['net_manager'] = 'FlatDHCPManager'
+        self.nets['networking_parameters']['net_manager'] = \
+            consts.NOVA_NET_MANAGERS.FlatDHCPManager
         self.nets['networking_parameters']['fixed_networks_cidr'] = \
             "10.10.0.0/28"
         self.nets['networking_parameters']['fixed_networks_amount'] = 1
@@ -316,7 +318,8 @@ class TestNovaHandlers(TestNetworkChecking):
         self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
     def test_network_size_and_amount_not_fit_cidr(self):
-        self.nets['networking_parameters']['net_manager'] = 'VlanManager'
+        self.nets['networking_parameters']['net_manager'] = \
+            consts.NOVA_NET_MANAGERS.VlanManager
         self.nets['networking_parameters']['fixed_networks_cidr'] = \
             "10.10.0.0/24"
         self.nets['networking_parameters']['fixed_networks_amount'] = 8

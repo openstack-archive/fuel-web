@@ -14,13 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import itertools
+import netaddr
 import six
 
 from nailgun import consts
 from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
+
+from nailgun.logger import logger
 
 from nailgun.network.manager import AllocateVIPs70Mixin
 from nailgun.network.manager import NetworkManager
@@ -146,3 +151,143 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
                 'gateway': admin_ng.gateway
             }
         return networks
+
+    @classmethod
+    def get_endpoints_by_node_roles(cls, node):
+        """Returns a set of endpoints for particular node for the case when
+        template is loaded. Endpoints are taken from 'endpoints' field
+        of templates for every node role.
+        """
+        endpoints = set()
+        template = node.network_template
+
+        for role in node.all_roles:
+            role_templates = template['templates_for_node_role'][role]
+            for role_template in role_templates:
+                endpoints.update(
+                    template['templates'][role_template]['endpoints'])
+
+        return endpoints
+
+    @classmethod
+    def get_network_mapping_by_node_roles(cls, node):
+        """Returns a list of pairs (network, endpoint) for particular node
+        for the case when template is loaded. Networks are aggregated for all
+        node roles assigned to node. Endpoints are taken from 'endpoints' field
+        of templates for every node role and they are mapped to networks from
+        'network_assignments' field.
+        """
+        output = []
+        endpoints = cls.get_endpoints_by_node_roles(node)
+
+        mappings = node.network_template['network_assignments']
+        for netgroup, endpoint in six.iteritems(mappings):
+            if endpoint['ep'] in endpoints:
+                output.append((netgroup, endpoint['ep']))
+
+        return output
+
+    @classmethod
+    def get_network_name_to_endpoint_mappings(cls, cluster):
+        """
+        """
+        output = {}
+        template = cluster.network_config.configuration_template[
+            'adv_net_template']
+
+        for ng in cluster.node_groups:
+            output[ng.id] = {}
+            mappings = template[ng.name]['network_assignments']
+            for network, endpoint in six.iteritems(mappings):
+                output[ng.id][endpoint['ep']] = network
+
+        return output
+
+    @classmethod
+    def assign_ips_in_node_group(
+            cls, group_id, net_id, net_name, node_ids, ip_ranges):
+
+        ips_by_node_id = db().query(
+            models.IPAddr.ip_addr,
+            models.IPAddr.node
+        ).filter(
+            network=net_id
+        )
+
+        nodes_dont_need_ip = set()
+        for ip_str, node_id in ips_by_node_id:
+            ip_addr = netaddr.IPAddress(ip_str)
+            for ip_range in ip_ranges:
+                if ip_addr in ip_range:
+                    nodes_dont_need_ip.add(node_id)
+
+        nodes_need_ip = node_ids - nodes_dont_need_ip
+
+        # NEED TO FIX
+        free_ips = cls.get_free_ips(network, len(nodes))
+        for ip, n in zip(free_ips, nodes):
+            logger.info(
+                "Assigning IP for node '{0}' in network '{1}'".format(
+                    n,
+                    network_name
+                )
+            )
+            ip_db = IPAddr(node=n,
+                           ip_addr=ip,
+                           network=network.id)
+            db().add(ip_db)
+        db().flush()
+
+    @classmethod
+    def assign_ips_for_nodes_w_template(cls, cluster, nodes):
+        network_by_group = db().query(
+            models.NodeGroup.id,
+            models.NetworkGroup.id,
+            models.NetworkGroup.name,
+            models.NetworkGroup.meta,
+        ).join(
+            models.NodeGroup.networks
+        ).filter(
+            models.NodeGroup.cluster_id == cluster.id,
+            models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin
+        )
+
+        ip_ranges_by_network = db().query(
+            models.NetworkGroup.id,
+            models.IPAddrRange.first,
+            models.IPAddrRange.last,
+        ).join(
+            models.NetworkGroup.ip_ranges,
+            models.NetworkGroup.group_id
+        ).filter(
+            models.NodeGroup.cluster_id == cluster.id
+        )
+
+        net_name_by_ep = cls.get_network_name_to_endpoint_mappings(cluster)
+
+        for group_id, nodes_in_group in itertools.groupby(
+                nodes, lambda n: n.group_id):
+
+            net_names = net_name_by_ep[group_id]
+            net_names_by_node = {}
+            for node in nodes_in_group:
+                eps = cls.get_endpoints_by_node_roles(node)
+                net_names_by_node[node.id] = set(net_names[ep] for ep in eps)
+
+            networks = network_by_group.filter(
+                models.NetworkGroup.group_id == group_id)
+            for net_id, net_name, net_meta in networks:
+                if not net_meta.get('notation'):
+                    continue
+                node_ids = set(node_id
+                               for node_id, net_names
+                               in six.iteritems(net_names_by_node)
+                               if net_name in net_names)
+                ip_ranges_ng = ip_ranges_by_network.filter(
+                    models.IPAddrRange.network_group_id == net_id
+                )
+                ip_ranges = [netaddr.IPRange(first, last)
+                             for _, first, last in ip_ranges_ng]
+
+                cls.assign_ips_in_node_group(
+                    group_id, net_id, net_name, node_ids, ip_ranges)

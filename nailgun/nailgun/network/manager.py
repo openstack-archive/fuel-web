@@ -212,7 +212,7 @@ class NetworkManager(object):
             filter(NodeBondInterface.node_id == node.id)
         for bond_assignment in bond_assignments:
             bond_assignment.network_id = \
-                netgroups_mapping[bond_assignment.network_id]
+                netgroups_id_mapping[bond_assignment.network_id]
 
     @classmethod
     def assign_ips(cls, nodes, network_name):

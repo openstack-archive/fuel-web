@@ -218,8 +218,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
         },
         getFilterOptions: function(filter) {
-            if (_.contains(this.props.screenNodesLabels, filter)) {
-                var values = _.uniq(_.reject(this.props.screenNodes.getLabelValues(filter), _.isUndefined));
+            if (_.contains(this.getNodeLabels(), filter)) {
+                var values = _.uniq(_.reject(this.props.nodes.getLabelValues(filter), _.isUndefined));
                 return values.map(function(value) {
                     return {
                         name: value,
@@ -310,6 +310,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 isLabelsPanelOpen: _.isUndefined(value) ? !this.state.isLabelsPanelOpen : value
             });
         },
+        getNodeLabels: function() {
+            return _.chain(this.props.nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
+        },
         render: function() {
             var cluster = this.props.cluster,
                 locked = !!cluster.tasks({group: 'deployment', status: 'running'}).length,
@@ -317,7 +320,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 processedRoleData = this.processRoleLimits();
 
             // labels to work with in filters and sorters panels
-            var screenNodesLabels = _.chain(nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
+            var screenNodesLabels = this.getNodeLabels();
 
             // labels to manage in labels panel
             var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {

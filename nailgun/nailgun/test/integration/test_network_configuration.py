@@ -61,10 +61,12 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_change_net_manager(self):
         self.assertEqual(self.cluster.network_config.net_manager,
-                         'FlatDHCPManager')
+                         consts.NOVA_NET_MANAGERS.FlatDHCPManager)
 
         new_net_manager = {
-            'networking_parameters': {'net_manager': 'VlanManager'}
+            'networking_parameters': {
+                'net_manager': consts.NOVA_NET_MANAGERS.VlanManager,
+            }
         }
         self.env.nova_networks_put(self.cluster.id, new_net_manager)
 
@@ -126,7 +128,9 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_do_not_update_net_manager_if_validation_is_failed(self):
         new_net_manager = {
-            'networking_parameters': {'net_manager': 'VlanManager'},
+            'networking_parameters': {
+                'net_manager': consts.NOVA_NET_MANAGERS.VlanManager,
+            },
             'networks': [{'id': 500, 'vlan_start': 500}]
         }
         self.env.nova_networks_put(self.cluster.id, new_net_manager,
@@ -156,8 +160,12 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             not_(NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
         ).first()
         new_vlan_id = 500  # non-used vlan id
-        new_net = {'networking_parameters': {'net_manager': 'VlanManager'},
-                   'networks': [{'id': network.id, 'vlan_start': new_vlan_id}]}
+        new_net = {
+            'networking_parameters': {
+                'net_manager': consts.NOVA_NET_MANAGERS.VlanManager
+            },
+            'networks': [{'id': network.id, 'vlan_start': new_vlan_id}]
+        }
         self.env.nova_networks_put(self.cluster.id, new_net)
 
         self.db.refresh(self.cluster)
@@ -178,7 +186,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
-            'Invalid network ID: 500'
+            'Invalid network ID(s): 500'
         )
 
     def test_admin_public_floating_untagged_others_tagged(self):
@@ -352,6 +360,20 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             "Change of 'segmentation_type' is prohibited"
         )
 
+    def test_networks_update_fails_with_no_net_id(self):
+        new_nets = {'networks': [{'name': 'new',
+                                  'vlan_start': 500}]}
+
+        resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
+                                             expect_errors=True)
+        self.assertEqual(200, resp.status_code)
+        task = resp.json_body
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
+        self.assertIn(
+            "'id' is a required property",
+            task['message']
+        )
+
     def test_networks_update_fails_with_wrong_net_id(self):
         new_nets = {'networks': [{'id': 500,
                                   'name': 'new',
@@ -364,7 +386,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
-            'Invalid network ID: 500'
+            'Invalid network ID(s): 500'
         )
 
     def test_refresh_public_cidr_on_its_change(self):
@@ -415,7 +437,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             ng_db = filter(lambda ng: ng.name == ng_name,
                            self.cluster.network_groups)[0]
             self.assertEqual(ng_db.cidr, net_template + '.0/24')
-            self.assertEqual(ng_db.meta['notation'], 'ip_ranges')
+            self.assertEqual(ng_db.meta['notation'],
+                             consts.NETWORK_NOTATION.ip_ranges)
             self.assertEqual(ng_db.ip_ranges[0].first, net_template + '.11')
             self.assertEqual(ng_db.ip_ranges[0].last, net_template + '.33')
             self.assertEqual(ng_db.ip_ranges[1].first, net_template + '.55')

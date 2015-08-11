@@ -50,12 +50,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         fetchData: function() {
             return this.props.cluster.get('nodes').fetch();
         },
-        getInitialState: function() {
-            return {
-                actionInProgress: false,
-                hasDeployBlockers: false
-            };
-        },
         getTitle: function() {
             var title = 'title_new',
                 cluster = this.props.cluster;
@@ -343,15 +337,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 networking_parameters: cluster.get('networkConfiguration').get('networking_parameters')
             };
         },
-        getInitialState: function() {
-            var alerts = this.validate(this.props.cluster),
-                state = {
-                    alerts: alerts,
-                    hasErrors: !_.isEmpty(alerts.error),
-                    actionInProgress: false
-                };
-            return state;
-        },
         validate: function(cluster) {
             return _.reduce(
                 this.validations,
@@ -464,8 +449,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 hasNodes = !!nodes.length,
-                isDeploymentPossible = cluster.isDeploymentPossible() &&
-                    !this.state.alerts.blocker.length,
+                alerts = this.validate(cluster),
+                isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
@@ -528,15 +513,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 linkTitle='user_guide'
                                             />
                                         }
-                                        {this.state.hasErrors &&
-                                            <WarningsBlock
-                                                cluster={cluster}
-                                                alerts={_.pick(this.state.alerts, 'error')}
-                                            />
-                                        }
                                         {!hasNodes &&
                                             [
-                                                <h4>{i18n(namespace + 'new_environment_welcome')}</h4>,
+                                                <h4 key='welcome'>{i18n(namespace + 'new_environment_welcome')}</h4>,
                                                 <InstructionElement
                                                     key='no_nodes_instruction'
                                                     description='no_nodes_instruction'
@@ -554,7 +533,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             <div className='invalid'>
                                                 {i18n('dialog.display_changes.redeployment_needed')}
                                             </div>,
-                                        !_.isEmpty(this.state.alerts.blocker) &&
+                                        !_.isEmpty(alerts.blocker) &&
                                             [
                                                 <InstructionElement
                                                     key='deployment_cannot_be_started'
@@ -565,22 +544,24 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                     wrapperClass='invalid'
                                                 />,
                                                 <WarningsBlock
+                                                    key='blocker'
                                                     cluster={cluster}
-                                                    alerts={_.pick(this.state.alerts, 'blocker')}
+                                                    alerts={_.pick(alerts, 'blocker')}
                                                 />
                                             ],
-                                        (!_.isEmpty(this.state.alerts.error) || !_.isEmpty(this.state.alerts.warning)) &&
+                                        !_.isEmpty(alerts.error) &&
+                                            <WarningsBlock
+                                                key='error'
+                                                cluster={cluster}
+                                                alerts={_.pick(alerts, 'error')}
+                                            />,
+                                        !_.isEmpty(alerts.warning) &&
                                             [
                                                 <p>{i18n(namespace + 'note_recommendations')}</p>,
                                                 <WarningsBlock
-                                                    key='error'
-                                                    cluster={cluster}
-                                                    alerts={_.pick(this.state.alerts, 'error')}
-                                                />,
-                                                <WarningsBlock
                                                     key='warning'
                                                     cluster={cluster}
-                                                    alerts={_.pick(this.state.alerts, 'warning')}
+                                                    alerts={_.pick(alerts, 'warning')}
                                                 />
                                             ]
                                     ]

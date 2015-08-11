@@ -61,7 +61,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster_db = self.env.clusters[0]
 
         common_attrs = {
-            'deployment_mode': 'ha_compact',
+            'deployment_mode': consts.CLUSTER_MODES.ha_compact,
 
             'management_vip': '192.168.0.1',
             'management_vrouter_vip': '192.168.0.2',
@@ -247,8 +247,9 @@ class TestHandlers(BaseIntegrationTest):
         admin_net = self.env.network_manager.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
-            udev_interfaces_mapping = ','.join([
-                '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
+            udev_interfaces_mapping = ','.join(
+                ['{0}_{1}'.format(iface.mac, iface.name)
+                 for iface in n.interfaces])
             pnd = {
                 'uid': n.uid,
                 'slave_name': objects.Node.get_slave_name(n),
@@ -429,7 +430,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
 
         common_attrs = {
-            'deployment_mode': 'ha_compact',
+            'deployment_mode': consts.CLUSTER_MODES.ha_compact,
 
             'management_vip': '192.168.0.1',
             'management_vrouter_vip': '192.168.0.2',
@@ -699,8 +700,9 @@ class TestHandlers(BaseIntegrationTest):
         admin_net = self.env.network_manager.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
-            udev_interfaces_mapping = ','.join([
-                '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
+            udev_interfaces_mapping = ','.join(
+                ['{0}_{1}'.format(iface.mac, iface.name)
+                 for iface in n.interfaces])
 
             pnd = {
                 'uid': n.uid,
@@ -879,7 +881,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
 
         common_attrs = {
-            'deployment_mode': 'ha_compact',
+            'deployment_mode': consts.CLUSTER_MODES.ha_compact,
 
             'management_vip': '192.168.0.1',
             'management_vrouter_vip': '192.168.0.2',
@@ -1167,8 +1169,9 @@ class TestHandlers(BaseIntegrationTest):
         admin_net = self.env.network_manager.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
-            udev_interfaces_mapping = ','.join([
-                '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
+            udev_interfaces_mapping = ','.join(
+                ['{0}_{1}'.format(iface.mac, iface.name)
+                 for iface in n.interfaces])
 
             pnd = {
                 'uid': n.uid,
@@ -1407,7 +1410,7 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_deploy_ha_neutron_gre_w_custom_public_ranges(self, mocked_rpc):
         self.env.create(
-            cluster_kwargs={'mode': 'ha_compact',
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact,
                             'net_provider': 'neutron',
                             'net_segment_type': 'gre'},
             nodes_kwargs=[{"pending_addition": True},
@@ -1580,8 +1583,11 @@ class TestHandlers(BaseIntegrationTest):
     # TODO(awoodward): Purge multinode
     def test_occurs_error_not_enough_controllers_for_multinode(self):
         self.env.create(
+            release_kwargs={
+                'modes': [consts.CLUSTER_MODES.multinode, ]
+            },
             cluster_kwargs={
-                'mode': 'multinode'
+                'mode': consts.CLUSTER_MODES.multinode
             },
             nodes_kwargs=[
                 {'roles': ['compute'], 'pending_addition': True}])

@@ -64,6 +64,12 @@ def prepare():
             'version': '2014.2.2-6.1',
             'operating_system': 'ubuntu',
             'state': 'available',
+            # 'multinode' must be here to see if we remove it correctly
+            'modes': jsonutils.dumps([
+                'multinode',
+                'ha_compact',
+                'crazy-mode',
+            ]),
             'roles': jsonutils.dumps([
                 'controller',
                 'compute',
@@ -124,6 +130,12 @@ def prepare():
             'version': '2014.2-6.0',
             'operating_system': 'ubuntu',
             'state': 'available',
+            # modes without 'multinode' to see if we do not fail in such case
+            'modes': jsonutils.dumps([
+                'multinode',
+                'ha_compact',
+                'crazy-mode',
+            ]),
             'roles': jsonutils.dumps([
                 'controller',
                 'compute',
@@ -146,6 +158,21 @@ def prepare():
                     }
                 },
             }),
+            'is_deployable': True
+        }])
+
+    db.execute(
+        meta.tables['releases'].insert(),
+        [{
+            # no modes at all
+            'name': 'release_with_no_modes',
+            'version': '2014.2-7.0',
+            'operating_system': 'ubuntu',
+            'state': 'available',
+            'roles': jsonutils.dumps([]),
+            'roles_metadata': jsonutils.dumps({}),
+            'attributes_metadata': jsonutils.dumps({}),
+            'networks_metadata': jsonutils.dumps({}),
             'is_deployable': True
         }])
 
@@ -817,3 +844,17 @@ class TestStringNetworkGroupName(base.BaseAlembicMigrationTest):
                 [self.meta.tables['network_groups'].c.name])). \
             fetchall()
         self.assertIn(('custom_name',), names)
+
+
+class TestRemoveMultinodeModeFromRelease(base.BaseAlembicMigrationTest):
+
+    def test_all_releases_have_multinode_mode_removed(self):
+        modes_query = db.execute(
+            sa.select([
+                self.meta.tables['releases'].c.modes,
+            ])
+        ).fetchall()
+        for result in modes_query:
+            modes = result[0]
+            if modes is not None:
+                self.assertNotIn('multinode', modes)

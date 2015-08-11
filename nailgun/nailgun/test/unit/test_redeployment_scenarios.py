@@ -15,17 +15,24 @@
 #    under the License.
 
 
+from nailgun import consts
 from nailgun.task import helpers
 from nailgun.test import base
 
 
 class TestClusterRedeploymentScenario(base.BaseTestCase):
 
-    def test_cluster_deployed_with_computes(self):
-        self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
+    def create_env(self, nodes_kwargs):
+        return self.env.create(
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'},
+                            'operating_system': 'Ubuntu',
+                            'modes': [consts.CLUSTER_MODES.ha_compact,
+                                      consts.CLUSTER_MODES.multinode]},
+            nodes_kwargs=nodes_kwargs)
+
+    def test_cluster_deployed_with_computes(self):
+        self.create_env(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'status': 'discover',
@@ -37,10 +44,7 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
         self.assertEqual(cluster.nodes, nodes)
 
     def test_cluster_deployed_with_cinder(self):
-        self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
-            release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'},
+        self.create_env(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'status': 'discover',
@@ -52,10 +56,7 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
         self.assertEqual(cluster.nodes, nodes)
 
     def test_ceph_osd_is_not_affected(self):
-        self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
-            release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'},
+        self.create_env(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'status': 'discover',
@@ -69,10 +70,7 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
         self.assertEqual(nodes[0].pending_roles, ['controller'])
 
     def test_cinder_is_not_affected_when_add_compute(self):
-        self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
-            release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'},
+        self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': 'ready'},
@@ -88,10 +86,7 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
         self.assertEqual(nodes[0].pending_roles, ['compute'])
 
     def test_controllers_redeployed_if_ceph_added(self):
-        self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
-            release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'},
+        self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': 'ready'},
@@ -104,10 +99,7 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
         self.assertEqual(sorted(cluster.nodes), sorted(nodes))
 
     def test_controllers_not_redeployed_if_ceph_previously_in_cluster(self):
-        self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
-            release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'},
+        self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': 'ready'},

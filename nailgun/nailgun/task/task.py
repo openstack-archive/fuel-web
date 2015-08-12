@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 from copy import deepcopy
 
 import netaddr
@@ -589,9 +590,6 @@ class BaseNetworkVerification(object):
         self.config = config
 
     def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
-        # Save bonds info to be able to check net-probe results w/o
-        # need to access nodes in DB (node can be deleted before the test is
-        # completed). This info is needed for non-deployed nodes only.
         bonds = {}
         for bond in node.bond_interfaces:
             bonds[bond.name] = sorted(s.name for s in bond.slaves)
@@ -727,7 +725,166 @@ class BaseNetworkVerification(object):
         return True
 
 
-class VerifyNetworksTask(BaseNetworkVerification):
+class VerifyNetworksForTemplateMixin(object):
+
+    @staticmethod
+    def _get_private_vlan_range(cluster, template):
+        if cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan and \
+                'neutron/private' in template['roles']:
+            vlan_range = cluster.network_config.vlan_range
+            return range(vlan_range[0], vlan_range[1] + 1)
+        return None
+
+    @classmethod
+    def _add_interface(cls, ifaces, ifname, vlan_ids, bond_name=None):
+        ifname, vlan = cls._parse_template_iface(ifname)
+        bond_name = bond_name or ifname
+        ifaces[bond_name].add(int(vlan))
+        if vlan_ids:
+            ifaces[bond_name].update(vlan_ids)
+
+        return ifname
+
+    @classmethod
+    def _get_transformations(cls, node):
+        templates_for_node_mapping = \
+            node.network_template['templates_for_node_role']
+
+        node_templates = set()
+        for role_name in node.all_roles:
+            node_templates.update(templates_for_node_mapping[role_name])
+
+        cluster = node.cluster
+
+        templates = node.network_template['templates']
+        for template_name in node_templates:
+            template = templates[template_name]
+            transformations = template['transformations']
+
+            vlan_ids = cls._get_private_vlan_range(cluster, template)
+
+            for transformation in transformations:
+                yield transformation, vlan_ids
+
+    @staticmethod
+    def _parse_template_iface(ifname):
+        vlan = 0
+        chunks = ifname.rsplit('.', 1)
+        if len(chunks) == 2:
+            ifname, vlan = chunks
+
+        return ifname, vlan
+
+    @classmethod
+    def _filter_nodes_for_templates(cls, nodes):
+        """Filters VLANs which are define for single particular node only.
+
+        If VLAN is set only on the single node, it is skipped and not passed
+        to the verificator, since it will cause verification falure.
+        In this case some interfaces may have empty VLAN list.
+        These interfaces with empty VLAN list are not passed
+        to the verificator.
+        """
+        nodes_by_vlan = collections.defaultdict(list)
+        for node_json in nodes:
+            for network in node_json['networks']:
+                for vlan in network['vlans']:
+                    nodes_by_vlan[vlan].append(node_json['uid'])
+
+        for node_json in nodes:
+            networks = []
+            for network in node_json['networks']:
+                network['vlans'] = [vlan for vlan in network['vlans']
+                                    if len(nodes_by_vlan[vlan]) > 1]
+                if network['vlans']:
+                    networks.append(network)
+            node_json['networks'] = networks
+
+    @classmethod
+    def get_ifaces_from_template_on_undeployed_node(cls, node, node_json):
+        """Retrieves list of network interfaces on the undeployed node
+        from the network template.
+        """
+        bonds = collections.defaultdict(list)
+        ifaces = collections.defaultdict(set)
+
+        for transformation, vlan_ids in cls._get_transformations(node):
+            if transformation['action'] == 'add-port':
+                cls._add_interface(ifaces, transformation['name'], vlan_ids)
+            elif transformation['action'] == 'add-bond':
+                if transformation.get('mode') == consts.BOND_MODES.l_802_3ad:
+                    node_json['excluded_networks'].append(
+                        transformation['name'])
+                else:
+                    for ifname in sorted(transformation['interfaces']):
+                        ifname = cls._add_interface(ifaces, ifname, vlan_ids)
+                        bond_name = transformation['name']
+                        bonds[bond_name].append(ifname)
+
+        for if_name, vlans in six.iteritems(ifaces):
+            node_json['networks'].append({
+                'iface': if_name,
+                'vlans': sorted(vlans)
+            })
+
+        if bonds:
+            node_json['bonds'] = bonds
+
+    @classmethod
+    def get_ifaces_from_template_on_deployed_node(cls, node, node_json):
+        """Retrieves list of network interfaces on the deployed node
+        from the network template.
+        """
+        ifaces = collections.defaultdict(set)
+        for transformation, vlan_ids in cls._get_transformations(node):
+            if transformation['action'] == 'add-port':
+                cls._add_interface(ifaces, transformation['name'], vlan_ids)
+            elif transformation['action'] == 'add-bond':
+                bond_name = transformation['name']
+                for ifname in transformation['interfaces']:
+                    cls._add_interface(ifaces, ifname, vlan_ids, bond_name)
+
+        for if_name, vlans in six.iteritems(ifaces):
+            node_json['networks'].append({
+                'iface': if_name,
+                'vlans': sorted(vlans)
+            })
+
+    def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
+        """Retrieves list of network interfaces on the undeployed node.
+
+        By default list of network interfaces is based on the information
+        recieved from the fuel agent unless cluster has network template
+        attached. In this case, list of interfaces retrieved from the
+        network template.
+        """
+        if node.network_template:
+            self.get_ifaces_from_template_on_undeployed_node(node, node_json)
+            return
+
+        super(VerifyNetworksForTemplateMixin, self
+              ).get_ifaces_on_undeployed_node(node, node_json, has_public)
+
+    def get_ifaces_on_deployed_node(self, node, node_json, has_public):
+        """Retrieves list of network interfaces on the deployed node.
+        """
+        if node.network_template:
+            self.get_ifaces_from_template_on_deployed_node(node, node_json)
+            return
+
+        super(VerifyNetworksForTemplateMixin, self
+              ).get_ifaces_on_deployed_node(node, node_json, has_public)
+
+    def get_message_body(self):
+        body = super(VerifyNetworksForTemplateMixin, self).get_message_body()
+        if self.task.cluster.network_config.configuration_template:
+            self._filter_nodes_for_templates(body['nodes'])
+        return body
+
+
+class VerifyNetworksTask(VerifyNetworksForTemplateMixin,
+                         BaseNetworkVerification):
 
     def __init__(self, *args):
         super(VerifyNetworksTask, self).__init__(*args)
@@ -742,7 +899,8 @@ class VerifyNetworksTask(BaseNetworkVerification):
         return message
 
 
-class CheckDhcpTask(BaseNetworkVerification):
+class CheckDhcpTask(VerifyNetworksForTemplateMixin,
+                    BaseNetworkVerification):
     """Task for dhcp verification
     """
 

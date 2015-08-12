@@ -482,6 +482,23 @@ class NetworkCheck(object):
                                 "errors": ["gateway"]})
         self.expose_error_messages()
 
+    def neutron_check_gateways(self):
+        """Check that gateways are set if non-default node groups are used"""
+        if objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster.id).count() > 1:
+            for net in self.networks:
+                if net['meta']['notation'] in ('cidr', 'ip_ranges'):
+                    cidr = netaddr.IPNetwork(net['cidr'])
+                    gw = netaddr.IPAddress(net['gateway'])
+                    if gw not in cidr:
+                        self.err_msgs.append(
+                            u"Invalid gateway specified for network."
+                        )
+                        self.result.append(
+                            {"ids": [net['id']], "errors": ["gateway"]}
+                        )
+            self.expose_error_messages()
+
     def check_network_classes_exclude_loopback(self):
         """1. check network address space lies inside A,B or C network class
         address space
@@ -660,6 +677,7 @@ class NetworkCheck(object):
             self.neutron_check_network_address_spaces_intersection()
             self.neutron_check_segmentation_ids()
             self.neutron_check_l3_addresses_not_match_subnet_and_broadcast()
+            self.neutron_check_gateways()
         else:
             self.check_public_floating_ranges_intersection()
             self.check_network_address_spaces_intersection()

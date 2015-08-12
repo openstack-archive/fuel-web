@@ -791,6 +791,61 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertRaises(
             errors.InvalidData, manager_.execute, cluster_db.nodes)
 
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @mock.patch('nailgun.task.manager.rpc.cast')
+    def test_node_deletion_redeploy_started_for_proper_controllers(self,
+                                                                   mcast):
+        self.env.create()
+        cluster_db = self.env.clusters[0]
+
+        node_to_delete = self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.ready
+        )
+        node_to_deploy = self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.ready
+        )
+        self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.provisioned
+        )
+        self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.discover
+        )
+
+        manager_ = manager.NodeDeletionTaskManager(cluster_id=cluster_db.id)
+        manager_.execute([node_to_delete])
+
+        args, kwargs = mcast.call_args_list[0]
+        depl_info = args[1][0]['args']['deployment_info']
+
+        self.assertEqual(node_to_deploy.uid, depl_info[0]['uid'])
+
+    def test_node_deletion_task_failed_with_controller_in_error(self):
+        self.env.create()
+        cluster_db = self.env.clusters[0]
+
+        node_to_delete = self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.ready
+        )
+        self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.error
+        )
+
+        manager_ = manager.NodeDeletionTaskManager(cluster_id=cluster_db.id)
+        self.assertRaises(errors.ControllerInErrorState,
+                          manager_.execute, [node_to_delete])
+
     @fake_tasks()
     def test_deployment_on_controller_removal_via_apply_changes(self):
         self.env.create(
@@ -877,7 +932,8 @@ class TestTaskManagers(BaseIntegrationTest):
     @mock.patch('nailgun.rpc.cast')
     def test_delete_nodes_reelection_if_primary_for_deletion(self, _):
         self.env.create(
-            nodes_kwargs=[{'roles': ['controller']}] * 3)
+            nodes_kwargs=[{'roles': ['controller'],
+                           'status': consts.NODE_STATUSES.ready}] * 3)
         cluster = self.env.clusters[0]
         task_manager = manager.NodeDeletionTaskManager(cluster_id=cluster.id)
         objects.Cluster.set_primary_roles(cluster, self.env.nodes)

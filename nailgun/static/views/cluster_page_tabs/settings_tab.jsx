@@ -76,7 +76,6 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             };
         },
         componentDidMount: function() {
-            this.getHiddenSettings();
             this.props.cluster.get('settings').isValid({models: this.state.configModels});
         },
         componentWillUnmount: function() {
@@ -119,34 +118,27 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }
             return deferred;
         },
-        getHiddenSettings: function() {
-            var hidden = {};
-            var settings = this.props.cluster.get('settings');
-            _.each(settings.attributes, function(group, groupKey) {
-                _.each(group, function(field, fieldKey) {
-                    if (field && field.type != 'hidden') {
-                        return;
-                    }
-                    var key = settings.makePath(groupKey, fieldKey);
-                    hidden[key] = _.clone(field);
-                });
-            });
-            this.hiddenSettings = hidden;
-        },
-        setHiddenSettings: function() {
-            var settings = this.props.cluster.get('settings');
-            _.each(this.hiddenSettings, function(value, key) {
-                settings.set(key, value, {silent: true});
-            });
-        },
         loadDefaults: function() {
             var settings = this.props.cluster.get('settings'),
-                deferred = settings.fetch({url: _.result(settings, 'url') + '/defaults'});
+                lockedCluster = !this.props.cluster.isAvailableForSettingsChanges(),
+                defaultSettings = new models.Settings(),
+                deferred = defaultSettings.fetch({url: _.result(this.props.cluster, 'url') + '/attributes/defaults'});
+
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
-                    .always(_.bind(function() {
-                        this.setHiddenSettings();
+                    .done(_.bind(function() {
+                        _.each(settings.attributes, function(group, groupName) {
+                            if (!lockedCluster || group.metadata.always_editable) {
+                                _.each(group, function(setting, settingName) {
+                                    // do not update hidden settings (hack for #1442143)
+                                    if (setting.type == 'hidden') return;
+                                    var path = settings.makePath(groupName, settingName);
+                                    settings.set(path, defaultSettings.get(path), {silent: true});
+                                });
+                            }
+                        });
+
                         settings.isValid({models: this.state.configModels});
                         this.setState({
                             actionInProgress: false,
@@ -200,6 +192,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 }),
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
+                someSettingsEditable = _.any(settings.attributes, function(group) {return group.metadata.always_editable;}),
                 hasChanges = this.hasChanges(),
                 allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
                 activeGroupVisible = !this.checkRestrictions('hide', settings.makePath(this.state.activeGroupName, 'metadata')).result,
@@ -247,7 +240,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
-                                <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
+                                <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || (lockedCluster && !someSettingsEditable)}>
                                     {i18n('common.load_defaults_button')}
                                 </button>
                                 <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>

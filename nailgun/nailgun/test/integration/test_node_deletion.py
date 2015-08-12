@@ -30,24 +30,20 @@ logger = logging.getLogger(__name__)
 
 class TestNodeDeletion(BaseIntegrationTest):
 
+    def setUp(self):
+        super(TestNodeDeletion, self).setUp()
+        self.env.create(nodes_kwargs=[{"pending_addition": True}])
+        self.cluster = self.env.clusters[0]
+        self.node_ids = [node.id for node in self.cluster.nodes]
+
     @fake_tasks()
     def test_node_deletion_and_attributes_clearing(self):
-        self.env.create(
-            nodes_kwargs=[
-                {"pending_addition": True},
-            ]
-        )
-
-        self.env.launch_deployment()
-
-        cluster = self.env.clusters[0]
-        node = self.env.nodes[0]
-        node_id = node.id
+        node_id = self.node_ids[0]
 
         resp = self.app.delete(
             reverse(
                 'NodeHandler',
-                kwargs={'obj_id': node.id}),
+                kwargs={'obj_id': node_id}),
             headers=self.default_headers
         )
         self.assertEqual(202, resp.status_code)
@@ -55,13 +51,13 @@ class TestNodeDeletion(BaseIntegrationTest):
         self.env.wait_ready(task)
 
         node_try = self.db.query(Node).filter_by(
-            cluster_id=cluster.id
+            cluster_id=self.cluster.id
         ).first()
         self.assertIsNone(node_try)
 
         management_net = self.db.query(NetworkGroup).\
             filter(NetworkGroup.group_id ==
-                   objects.Cluster.get_default_group(cluster).id).\
+                   objects.Cluster.get_default_group(self.cluster).id).\
             filter_by(name='management').first()
 
         ipaddrs = self.db.query(IPAddr).\
@@ -72,19 +68,8 @@ class TestNodeDeletion(BaseIntegrationTest):
 
     @fake_tasks()
     def test_batch_node_deletion_and_attributes_clearing(self):
-        self.env.create(
-            nodes_kwargs=[
-                {"pending_addition": True},
-            ]
-        )
-
-        self.env.launch_deployment()
-
-        cluster = self.env.clusters[0]
-        node_ids = [node.id for node in cluster.nodes]
-
         url = reverse('NodeCollectionHandler')
-        query_str = 'ids={0}'.format(','.join(map(str, node_ids)))
+        query_str = 'ids={0}'.format(','.join(map(str, self.node_ids)))
 
         resp = self.app.delete(
             '{0}?{1}'.format(url, query_str),
@@ -94,25 +79,14 @@ class TestNodeDeletion(BaseIntegrationTest):
         task = objects.Task.get_by_uuid(resp.json_body['uuid'])
         self.env.wait_ready(task)
 
-        node_query = self.db.query(Node).filter_by(cluster_id=cluster.id)
+        node_query = self.db.query(Node).filter_by(cluster_id=self.cluster.id)
         self.assertEquals(node_query.count(), 0)
 
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_mclient_remove_is_false_on_node_deletion(self, mrpc):
-        self.env.create(
-            nodes_kwargs=[
-                {"pending_addition": True},
-            ]
-        )
-
-        self.env.launch_deployment()
-
-        cluster = self.env.clusters[0]
-        node_ids = [node.id for node in cluster.nodes]
-
         url = reverse(
             'NodeHandler',
-            kwargs={'obj_id': node_ids[0]}
+            kwargs={'obj_id': self.node_ids[0]}
         )
 
         self.app.delete(
@@ -127,8 +101,10 @@ class TestNodeDeletion(BaseIntegrationTest):
                  for node in msg['args']['nodes']])
         )
 
+    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    def test_mclient_remove_is_false_on_node_collection_deletion(self, mrpc):
         url = reverse('NodeCollectionHandler')
-        query_str = 'ids={0}'.format(','.join(map(str, node_ids)))
+        query_str = 'ids={0}'.format(','.join(map(str, self.node_ids)))
 
         self.app.delete(
             '{0}?{1}'.format(url, query_str),

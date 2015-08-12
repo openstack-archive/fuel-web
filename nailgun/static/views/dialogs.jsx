@@ -736,7 +736,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                                         return (
                                                             <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
                                                                 {_.map(utils.sortEntryProperties(entry, sortOrder[group]), function(propertyName) {
-                                                                    return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
+                                                                    //FIXME: Needs to handle bulky data
+                                                                    if (!_.isObject(entry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
                                                                 }, this)}
                                                             </div>
                                                         );

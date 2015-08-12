@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 from copy import deepcopy
 
 import netaddr
@@ -588,7 +589,85 @@ class BaseNetworkVerification(object):
         self.task = task
         self.config = config
 
+    @staticmethod
+    def _get_transformations(node):
+        templates_for_node_mapping = \
+            node.network_template['templates_for_node_role']
+
+        node_templates = set()
+        for role_name in node.all_roles:
+            node_templates.update(templates_for_node_mapping[role_name])
+
+        templates = node.network_template['templates']
+        for template_name in node_templates:
+            template = templates[template_name]
+            transformations = template['transformations']
+
+            for transformation in transformations:
+                yield transformation
+
+    @staticmethod
+    def _parse_template_iface(ifname):
+        vlan = 0
+        chunks = ifname.rsplit('.', 1)
+        if len(chunks) == 2:
+            ifname, vlan = chunks
+
+        return ifname, vlan
+
+    @classmethod
+    def get_ifaces_from_template_on_undeployed_node(cls, node, node_json):
+        bonds = {}
+        ifaces = collections.defaultdict(set)
+
+        for transformation in cls._get_transformations(node):
+            if transformation['action'] == 'add-port':
+                ifname = transformation['name']
+                ifname, vlan = cls._parse_template_iface(ifname)
+                ifaces[ifname].add(int(vlan))
+
+            elif transformation['action'] == 'add-bond':
+                if transformation.get('mode') == consts.BOND_MODES.l_802_3ad:
+                    node_json['excluded_networks'].append(
+                        transformation['name'])
+                else:
+                    bonds[transformation['name']] = sorted(
+                        cls._parse_template_iface(value)[0]
+                        for value in transformation['interfaces'])
+
+        for if_name, vlans in six.iteritems(ifaces):
+            node_json['networks'].append({
+                'iface': if_name,
+                'vlans': sorted(vlans)
+            })
+
+        if bonds:
+            node_json['bonds'] = bonds
+
+    @classmethod
+    def get_ifaces_from_template_on_deployed_node(cls, node, node_json):
+        ifaces = collections.defaultdict(set)
+        for transformation in cls._get_transformations(node):
+            if transformation['action'] == 'add-port':
+                ifname = transformation['name']
+                ifname, vlan = cls._parse_template_iface(ifname)
+                ifaces[ifname].add(int(vlan))
+            elif transformation['action'] == 'add-bond':
+                for ifname in transformation['interfaces']:
+                    ifname, vlan = cls._parse_template_iface(ifname)
+                    ifaces[ifname].add(int(vlan))
+
+        for if_name, vlans in six.iteritems(ifaces):
+            node_json['networks'].append({
+                'iface': if_name,
+                'vlans': sorted(vlans)
+            })
+
     def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
+        if node.network_template:
+            self.get_ifaces_from_template_on_undeployed_node(node, node_json)
+            return
+
         # Save bonds info to be able to check net-probe results w/o
         # need to access nodes in DB (node can be deleted before the test is
         # completed). This info is needed for non-deployed nodes only.
@@ -635,6 +714,10 @@ class BaseNetworkVerification(object):
                     {'iface': iface.name, 'vlans': vlans})
 
     def get_ifaces_on_deployed_node(self, node, node_json, has_public):
+        if node.network_template:
+            self.get_ifaces_from_template_on_deployed_node(node, node_json)
+            return
+
         for iface in node.interfaces:
             # In case of present bond interfaces - collect assigned networks
             # against bonds themselves. We can check bonds as they are up on

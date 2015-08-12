@@ -16,6 +16,7 @@
 
 import logging
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -117,3 +118,44 @@ class TestNodeDeletion(BaseIntegrationTest):
             all([node['mclient_remove'] is False
                  for node in msg['args']['nodes']])
         )
+
+
+class TestNodeDeletionBadRequest(BaseIntegrationTest):
+
+    def test_node_handlers_deletion_bad_request(self):
+        self.env.create()
+        cluster_db = self.env.clusters[0]
+
+        node_to_delete = self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.ready
+        )
+        self.env.create_node(
+            cluster_id=cluster_db.id,
+            roles=['controller'],
+            status=consts.NODE_STATUSES.error
+        )
+
+        err_msg = ("One of the cluster controllers is in error state, "
+                   "please, eliminate the problem prior to proceeding further")
+
+        resp = self.app.delete(
+            reverse(
+                'NodeHandler',
+                kwargs={'obj_id': node_to_delete.id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(err_msg, resp.body)
+
+        url = reverse('NodeCollectionHandler')
+        query_str = 'ids={0}'.format(node_to_delete.id)
+        resp = self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(err_msg, resp.body)

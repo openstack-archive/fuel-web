@@ -577,17 +577,18 @@ class TestUtils(BaseTestCase):
         mopen = mock.mock_open(read_data=template)
         with mock.patch('__builtin__.open', mopen, create=True):
             utils.render_template_to_file('mocked', 'mocked', {
-                'name': 'mos6.1-updates',
-                'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
-                           'mos6.1/updates/',
+                'name': 'mos7.0-updates',
+                'baseurl': 'http://mirror.fuel-infra.org/mos-repos/centos/'
+                           'mos7.0-centos6-fuel/updates/x86_64/',
                 'gpgcheck': 0,
                 'skip_if_unavailable': 1,
             })
 
             mopen().write.assert_called_once(textwrap.dedent('''\
-              [mos6.1-updates]
-              name=mos6.1-updates
-              baseurl=http://mirror.fuel-infra.org/mos/centos-6/mos6.1/updates/
+              [mos7.0-updates]
+              name=mos7.0-updates
+              baseurl=http://mirror.fuel-infra.org/mos-repos\
+/centos/mos7.0-centos6-fuel/updates/x86_64/
               gpgcheck=0
               skip_if_unavailable=1
             '''))

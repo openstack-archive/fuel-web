@@ -191,8 +191,8 @@ class TestUpgradeManager(BaseTestCase):
                 '/etc/yum.repos.d/mos9999-updates.repo',
                 {
                     'name': 'mos9999-updates',
-                    'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
-                               'mos9999/updates/',
+                    'baseurl': 'http://mirror.fuel-infra.org/mos-repos/'
+                               'centos/mos9999-centos6-fuel/updates/x86_64/',
                     'gpgcheck': 0,
                     'skip_if_unavailable': 1,
                 }),
@@ -201,8 +201,8 @@ class TestUpgradeManager(BaseTestCase):
                 '/etc/yum.repos.d/mos9999-security.repo',
                 {
                     'name': 'mos9999-security',
-                    'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
-                               'mos9999/security/',
+                    'baseurl': 'http://mirror.fuel-infra.org/mos-repos/'
+                               'centos/mos9999-centos6-fuel/security/x86_64/',
                     'gpgcheck': 0,
                     'skip_if_unavailable': 1,
                 }),

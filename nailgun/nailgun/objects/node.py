@@ -18,7 +18,6 @@
 Node-related objects and collections
 """
 import itertools
-import jinja2
 import operator
 from oslo_serialization import jsonutils
 import traceback
@@ -50,6 +49,8 @@ from nailgun.objects import NailgunObject
 from nailgun.objects import Notification
 
 from nailgun.settings import settings
+
+from nailgun.utils.template import NetworkTemplate
 
 
 class Node(NailgunObject):
@@ -880,12 +881,10 @@ class Node(NailgunObject):
             node_name = 'default'
 
         nic_mapping = nic_mapping[node_name]
-        env = jinja2.Environment(variable_start_string='<%',
-                                 variable_end_string='%>')
 
         # Replace interface references and re-parse JSON
-        template_object = env.from_string(jsonutils.dumps(template_body))
-        node_template = template_object.render(nic_mapping)
+        template_object = NetworkTemplate(jsonutils.dumps(template_body))
+        node_template = template_object.safe_substitute(nic_mapping)
         parsed_template = jsonutils.loads(node_template)
 
         output = parsed_template[node_group]

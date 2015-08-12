@@ -237,6 +237,9 @@ define(
     });
 
     var VCenter = React.createClass({
+        mixins: [
+            componentMixins.unsavedChangesMixin
+        ],
         statics: {
             isVisible: function(cluster) {
                 return cluster.get('settings').get('common.use_vcenter').value;
@@ -300,14 +303,35 @@ define(
                 this.model.loadDefaults = false;
             }, this));
         },
-        onCancel: function() {
-            this.readData();
-        },
-        onSave: function() {
+        applyChanges: function() {
             this.saveData();
         },
         revertChanges: function() {
             this.readData();
+        },
+        hasChanges: function() {
+            return this.detectChanges(this.json, JSON.stringify(this.model.toJSON()));
+        },
+        detectChanges: function(oldJson, currentJson) {
+            try {
+                var old = JSON.parse(oldJson);
+                var current = JSON.parse(currentJson);
+            } catch (error) {
+                return false;
+            }
+            var oldData = JSON.stringify(old, function(key, data) {
+                if(key=='target_node') {
+                    delete data.options;
+                }
+                return data;
+            });
+            var currentData = JSON.stringify(current, function(key, data) {
+                if(key=='target_node') {
+                    delete data.options;
+                }
+                return data;
+            });
+            return oldData != currentData;
         },
         render: function() {
             if (!this.state.model || !this.actions) {
@@ -321,10 +345,10 @@ define(
                 disable = this.actions.disable || {};
 
             model.isValid();
-            this.hasChanges = (this.json != currentJson);
-            this.hasDefaultsChanges = (this.defaultsJson != currentJson);
-            var saveDisabled = !editable || !this.hasChanges || !!model.validationError,
-                defaultsDisabled = !editable || !this.hasDefaultsChanges;
+            var hasChanges = this.hasChanges(this.json, currentJson);
+            var hasDefaultsChanges = this.hasChanges(this.defaultsJson, currentJson);
+            var saveDisabled = !editable || !hasChanges || !!model.validationError,
+                defaultsDisabled = !editable || !hasDefaultsChanges;
 
             return (
                 <div className='row'>
@@ -359,10 +383,10 @@ define(
                                 <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={defaultsDisabled}>
                                     {i18n('vmware.reset_to_defaults')}
                                 </button>
-                                <button className='btn btn-default btn-revert-changes' onClick={this.onCancel} disabled={!this.hasChanges}>
+                                <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!hasChanges}>
                                     {i18n('vmware.cancel')}
                                 </button>
-                                <button className='btn btn-success btn-apply-changes' onClick={this.onSave} disabled={saveDisabled}>
+                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={saveDisabled}>
                                     {i18n('vmware.apply')}
                                 </button>
                             </div>

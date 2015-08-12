@@ -531,28 +531,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 max: 0
             };
         },
-        changeStartValue: function(name, value) {
+        changeValue: function(name, value, index) {
             var values = this.props.values;
-            if (value == '') {
-                value = 0;
-            } else if (value < 0 || value < this.props.min) {
-                value = this.props.min;
-            } else if (value > values[1]) {
-                value = values[1];
-            }
-            values[0] = Number(value);
-            this.props.onChange(values);
-        },
-        changeEndValue: function(name, value) {
-            var values = this.props.values;
-            if (value == '') {
-                value = 0;
-            } else if (value < 0 || value > this.props.max) {
-                value = this.props.max;
-            } else if (value < values[0]) {
-                value = values[0];
-            }
-            values[1] = Number(value);
+            values[index] = _.max([Number(value), 0]);
             this.props.onChange(values);
         },
         closeOnEscapeKey: function(e) {
@@ -579,16 +560,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         <controls.Popover toggle={this.props.toggle}>
                             <div className='clearfix'>
                                 <controls.Input {...props}
-                                    name={this.props.name + '-start'}
+                                    name='start'
                                     value={this.props.values[0]}
-                                    onChange={this.changeStartValue}
+                                    onChange={_.partialRight(this.changeValue, 0)}
                                     autoFocus
                                 />
                                 <span className='pull-left'> &mdash; </span>
                                 <controls.Input {...props}
-                                    name={this.props.name + '-end'}
+                                    name='end'
                                     value={this.props.values[1]}
-                                    onChange={this.changeEndValue}
+                                    onChange={_.partialRight(this.changeValue, 1)}
                                 />
                             </div>
                         </controls.Popover>

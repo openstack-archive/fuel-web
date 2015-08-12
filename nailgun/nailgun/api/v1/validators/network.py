@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 import six
 
 from nailgun.api.v1.validators.base import BasicValidator
@@ -392,6 +393,25 @@ class NetworkGroupValidator(BasicValidator):
     def validate(cls, data):
         d = cls.validate_json(data)
         node_group = objects.NodeGroup.get_by_uid(d.get('group_id'))
+
+        name_regexes = [
+            '^(?!bond).*$',
+            '^(?!wlan).*$',
+            '^(?!lo).*$',
+            '^(?!eth).*$',
+            '^(?!en[ospx]\h+).*$',
+            '^(?!em\d+).*$',
+            '^(?!p\d+p\d+/).*$',
+            '^(?!ib\d*/).*$',
+            '^[a-z][0-9a-z\-]{0,10}[0-9a-z]$',
+        ]
+
+        for pattern in name_regexes:
+            m = re.match(pattern, d.get('name'))
+            if not m:
+                raise errors.InvalidData(
+                    "Wrong network name {0}".format(d.get('name'))
+                )
 
         if not node_group:
             raise errors.InvalidData(

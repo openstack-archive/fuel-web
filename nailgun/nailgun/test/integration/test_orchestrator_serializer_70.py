@@ -67,6 +67,17 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     env_version = '2015.1.0-7.0'
     prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
+    plugin_network_roles = yaml.safe_load("""
+- id: "ironic/baremetal"
+  default_mapping: "baremetal"
+  properties:
+    subnet: true
+    gateway: false
+    vip:
+       - name: "baremetal"
+         namespace: "haproxy"
+    """)
+
     def setUp(self):
         super(BaseTestDeploymentAttributesSerialization70, self).setUp()
         self.cluster = self.create_env('ha_compact')
@@ -107,6 +118,70 @@ class TestDeploymentAttributesSerialization70(
     BaseTestDeploymentAttributesSerialization70
 ):
     segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
+
+    def _add_plugin_network_roles(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['network_roles_metadata'] = self.plugin_network_roles
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster_db.plugins.append(plugin)
+        self.db.commit()
+
+    def _create_network_group(self, **kwargs):
+        ng = {
+            'release': self.cluster_db.release.id,
+            'name': 'baremetal',
+            'vlan_start': 50,
+            'cidr': '172.16.122.0/24',
+            'gateway': '172.16.122.1',
+            'group_id': objects.Cluster.get_default_group(self.cluster_db).id,
+            'meta': {
+                'notation': 'ip_ranges',
+                'map_priority': 2
+            }
+        }
+        ng.update(kwargs)
+
+        net_group = models.NetworkGroup(**ng)
+        ip_range = models.IPAddrRange(
+            first='172.16.122.2',
+            last='172.16.122.255'
+        )
+        ip_range.network_group = net_group
+
+        self.db.add(net_group)
+        self.db.add(ip_range)
+        self.db.commit()
+
+    def test_network_scheme_custom_networks(self):
+        cluster = self.env.create(
+            release_kwargs={'version': '2015.1.0-7.0-1'},
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_provider': 'neutron',
+                'net_segment_type': self.segmentation_type})
+        self.cluster_db = self.db.query(models.Cluster).get(cluster['id'])
+        self._create_network_group()
+        self._add_plugin_network_roles()
+        self.env.create_node(
+            api=True,
+            cluster_id=cluster['id'],
+            pending_roles=['controller'],
+            pending_addition=True)
+        self.prepare_for_deployment(self.cluster_db.nodes)
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        serializer = serializer_type(AstuteGraph(self.cluster_db))
+        serialized_for_astute = serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in serialized_for_astute:
+            vips = node['network_metadata']['vips']
+            roles = node['network_scheme']['roles']
+            transformations = node['network_scheme']['transformations']
+            self.assertNotEqual(roles.get('ironic/baremetal'), None)
+            self.assertNotEqual(vips.get('baremetal').get('network_role'),
+                                None)
+            baremetal_brs = filter(lambda t: t.get('name') == 'br-baremetal',
+                                   transformations)
+            self.assertEqual(1, len(baremetal_brs))
 
     def test_network_scheme(self):
         for node in self.serialized_for_astute:

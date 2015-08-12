@@ -452,6 +452,7 @@
       volumes_roles_mapping:
         controller:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "logs"}
           - {allocate_size: "all", id: "image"}
           - {allocate_size: "min", id: "mysql"}
         compute:
@@ -468,6 +469,7 @@
           - {allocate_size: "full-disk", id: "ceph"}
         mongo:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "logs"}
           - {allocate_size: "all", id: "mongo"}
         other:
           - {allocate_size: "all", id: "os"}
@@ -509,6 +511,20 @@
               size:
                 generator: "calc_total_vg"
                 generator_args: ["mongo"]
+              file_system: "ext4"
+        - id: "logs"
+          type: vg
+          label: "Logs"
+          min_size:
+            generator: calc_gb_to_mb
+            generator_args: [15]
+          volumes:
+            - mount: "/var/logs"
+              type: "lv"
+              name: "var-logs"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["logs"]
               file_system: "ext4"
         - id: "ceph"
           type: "partition"

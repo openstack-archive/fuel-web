@@ -1042,6 +1042,28 @@ class EnvironmentManager(object):
                              nodes,
                              expect_errors)
 
+    def _create_network_group(self, expect_errors=False, cluster=None,
+                              **kwargs):
+        if not cluster:
+            cluster = self.clusters[0]
+        ng = {
+            "release": cluster.release.id,
+            "name": "external",
+            "vlan_start": 50,
+            "cidr": "10.3.0.0/24",
+            "gateway": "10.3.0.1",
+            "group_id": Cluster.get_default_group(cluster).id,
+            "meta": {"notation": "cidr"}
+        }
+        ng.update(kwargs)
+        resp = self.app.post(
+            reverse('NetworkGroupCollectionHandler'),
+            jsonutils.dumps(ng),
+            headers=self.default_headers,
+            expect_errors=expect_errors,
+        )
+        return resp
+
 
 class BaseTestCase(TestCase):
 

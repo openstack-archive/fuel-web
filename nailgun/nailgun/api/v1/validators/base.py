@@ -14,6 +14,8 @@
 #    under the License.
 
 import jsonschema
+import re
+
 from jsonschema.exceptions import ValidationError
 
 from oslo_serialization import jsonutils
@@ -106,6 +108,41 @@ class BasicValidator(object):
                 "database. Please upload them. If you're operating "
                 "from Fuel Master node, please check '/etc/puppet' "
                 "directory.".format(cluster.release.name))
+
+    @classmethod
+    def validate_network_name(cls, name):
+        if not isinstance(name, basestring):
+            raise errors.InvalidData(
+                "Network name is expected to be an string",
+            )
+        if len(name) > 12:
+            raise errors.InvalidData(
+                "Network name too long {0}. "
+                "Allowed not more 12 chars.".format(name)
+            )
+        wrong_name_regexes = [
+            '^bond.*',
+            '^wlan.*',
+            '^lo\d*',
+            '^eth.*',
+            '^en[ospx]\h+',
+            '^em\d*',
+            '^p\d+p\d+',
+            '^ib[\h\.]+'
+        ]
+        for pattern in wrong_name_regexes:
+            m = re.match(pattern, name)
+            if m:
+                raise errors.InvalidData(
+                    "Wrong network name. "
+                    "{0} is not match pattern {1}".format(name, pattern)
+                )
+        pattern = '^[a-z][0-9a-z\-]*[0-9a-z]$'
+        if not re.match(pattern, name):
+            raise errors.InvalidData(
+                "Wrong network name. "
+                "{0} is not match pattern {1}".format(name, pattern)
+            )
 
 
 class BaseDefferedTaskValidator(BasicValidator):

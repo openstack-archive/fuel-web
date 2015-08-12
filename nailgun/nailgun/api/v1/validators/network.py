@@ -48,6 +48,7 @@ class NetworkConfigurationValidator(BasicValidator):
                 log_message=True
             )
         for i in networks:
+            cls.validate_network_name(i.get('name'))
             if 'id' not in i:
                 raise errors.InvalidData(
                     "No 'id' param presents for '{0}' network".format(i),
@@ -392,6 +393,8 @@ class NetworkGroupValidator(BasicValidator):
     def validate(cls, data):
         d = cls.validate_json(data)
         node_group = objects.NodeGroup.get_by_uid(d.get('group_id'))
+
+        cls.validate_network_name(d.get('name'))
 
         if not node_group:
             raise errors.InvalidData(

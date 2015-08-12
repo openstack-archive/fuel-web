@@ -45,6 +45,9 @@ from nailgun.test.integration.test_orchestrator_serializer import \
 from nailgun.test.integration.test_orchestrator_serializer import \
     TestSerializeInterfaceDriversData
 
+from netaddr import IPAddress
+from netaddr import IPNetwork
+
 
 class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
@@ -67,9 +70,26 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     env_version = '2015.1.0-7.0'
     prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
+    custom_network_name = "baremetal"
+    custom_network_role = "ironic/baremetal"
+    custom_network_cidr = "192.168.3.0/24"
+    custom_network_vlan_start = 50
+    custom_network_meta = {'notation': 'cidr', 'map_priority': 2}
+    custom_network_bridge = 'br-baremetal'
+    plugin_network_roles = yaml.safe_load("""
+- id: "{0}"
+  default_mapping: "{1}"
+  properties:
+    subnet: true
+    gateway: false
+    vip:
+       - name: "{2}"
+         namespace: "haproxy"
+    """.format(custom_network_role, custom_network_name, custom_network_name))
+
     def setUp(self):
         super(BaseTestDeploymentAttributesSerialization70, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
 
         self.prepare_for_deployment(self.env.nodes)
         self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
@@ -84,7 +104,7 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
-                'net_provider': 'neutron',
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': self.segmentation_type},
             nodes_kwargs=[
                 {'roles': ['controller'],
@@ -107,6 +127,66 @@ class TestDeploymentAttributesSerialization70(
     BaseTestDeploymentAttributesSerialization70
 ):
     segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
+
+    def _add_plugin_network_roles(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['network_roles_metadata'] = self.plugin_network_roles
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster_db.plugins.append(plugin)
+        self.db.commit()
+
+    def test_network_scheme_custom_networks(self):
+        self.env_version = '2015.1.0-7.0-1'
+        cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': self.segmentation_type})
+        self.cluster_db = objects.Cluster.get_by_uid(cluster['id'])
+        self.env._create_network_group(cluster=self.cluster_db,
+                                       name=self.custom_network_name,
+                                       cidr=self.custom_network_cidr,
+                                       meta=self.custom_network_meta,
+                                       vlan_start=
+                                       self.custom_network_vlan_start)
+        self._add_plugin_network_roles()
+        self.env.create_node(
+            api=True,
+            cluster_id=cluster['id'],
+            pending_roles=['controller'],
+            pending_addition=True)
+        self.prepare_for_deployment(self.cluster_db.nodes)
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        serializer = serializer_type(AstuteGraph(self.cluster_db))
+        serialized_for_astute = serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in serialized_for_astute:
+            vips = node['network_metadata']['vips']
+            roles = node['network_scheme']['roles']
+            transformations = node['network_scheme']['transformations']
+            node_network_roles = (node['network_metadata']['nodes']
+                                  ['node-' + node['uid']]['network_roles'])
+            baremetal_ip = node_network_roles.get(self.custom_network_role,
+                                                  '0.0.0.0')
+            baremetal_brs = filter(lambda t: t.get('name') ==
+                                   self.custom_network_bridge,
+                                   transformations)
+            baremetal_ports = filter(lambda t: t.get('name') ==
+                                     ("eth0.%s" %
+                                      self.custom_network_vlan_start),
+                                     transformations)
+            self.assertEqual(roles.get(self.custom_network_role),
+                             self.custom_network_bridge)
+            self.assertEqual(vips.get(self.custom_network_name,
+                                      {}).get('network_role'),
+                             self.custom_network_role)
+            self.assertTrue(IPAddress(baremetal_ip) in
+                            IPNetwork(self.custom_network_cidr))
+            self.assertEqual(len(baremetal_brs), 1)
+            self.assertEqual(len(baremetal_ports), 1)
+            self.assertEqual(baremetal_ports[0]['bridge'],
+                             self.custom_network_bridge)
 
     def test_network_scheme(self):
         for node in self.serialized_for_astute:
@@ -437,8 +517,8 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                 'deployment_tasks': self.release_deployment_tasks,
             },
             cluster_kwargs={
-                'mode': 'ha_compact',
-                'net_provider': 'neutron',
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
             },
             nodes_kwargs=[
@@ -775,9 +855,9 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
                 'version': self.env_version,
             },
             cluster_kwargs={
-                'mode': 'ha_compact',
-                'net_provider': 'neutron',
-                'net_segment_type': 'vlan',
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
             })
         self.cluster = self.env.clusters[0]
 
@@ -854,7 +934,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
-        self.cluster = self.create_env('ha_compact')
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         self.net_template = self.env.read_fixtures(['network_template'])[0]
 
         objects.Cluster.set_network_template(
@@ -874,8 +954,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             cluster_kwargs={
                 'api': False,
                 'mode': mode,
-                'net_provider': 'neutron',
-                'net_segment_type': 'vlan'},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan},
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_addition': True,
@@ -1220,8 +1300,8 @@ class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'api': False,
-                'net_provider': 'neutron',
-                'net_segment_type': 'gre'},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre},
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['compute']},

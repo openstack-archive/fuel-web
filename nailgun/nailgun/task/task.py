@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 from copy import deepcopy
 
 import netaddr
@@ -588,7 +589,59 @@ class BaseNetworkVerification(object):
         self.task = task
         self.config = config
 
+    def get_ifaces_from_network_template(self, node, node_json):
+        templates_for_node_mapping = \
+            node.network_template['templates_for_node_role']
+
+        node_templates = set()
+        for role_name in node.all_roles:
+            node_templates.update(templates_for_node_mapping[role_name])
+
+        bonds = {}
+        ifaces = collections.defaultdict(list)
+
+        templates = node.network_template['templates']
+        for template_name in node_templates:
+            template = templates[template_name]
+            transformations = template['transformations']
+
+            for transformation in transformations:
+
+                if transformation['action'] == 'add-port':
+                    ifname = transformation['name']
+                    vlan = 0
+
+                    chunks = ifname.rsplit('.', 1)
+                    if len(chunks) == 2:
+                        ifname, vlan = chunks
+
+                    ifaces[ifname].append(int(vlan))
+
+                elif transformation['action'] == 'add-bond':
+                    if transformation['mode'] == consts.BOND_MODES.l_802_3ad:
+                        node_json['excluded_networks'].append(
+                            transformation['name'])
+                    else:
+                        bonds[transformation['name']] = sorted(
+                            transformation['interfaces'])
+
+        for if_name, vlans in six.iteritems(ifaces):
+            node_json.append({
+                'iface': if_name,
+                'vlans': sorted(vlans)
+            })
+
+        if bonds:
+            node_json['bonds'] = bonds
+
     def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
+        logger.info('>>> GET_IFACES_ON_UNDEPLOYED_NODE {0}'.format(
+            repr(node.network_template)))
+
+        if node.network_template:
+            self.get_ifaces_from_network_template(node, node_json)
+            return
+
         # Save bonds info to be able to check net-probe results w/o
         # need to access nodes in DB (node can be deleted before the test is
         # completed). This info is needed for non-deployed nodes only.

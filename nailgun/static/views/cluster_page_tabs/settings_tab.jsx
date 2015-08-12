@@ -303,13 +303,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 messages = [];
 
             var restrictionsCheck = this.props.checkRestrictions('disable', path),
-                dependentRoles = this.checkDependentRoles(groupName, settingName),
-                dependentSettings = this.checkDependentSettings(groupName, settingName),
                 messagesCheck = this.props.checkRestrictions('none', path);
 
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
-            if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
-            if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
             if (messagesCheck.message) messages.push(messagesCheck.message);
 
             // FIXME: hack for #1442475 to lock images_ceph in env with controllers
@@ -321,12 +317,25 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }
 
             return {
-                result: result || restrictionsCheck.result || !!dependentRoles.length || !!dependentSettings.length,
+                result: result || restrictionsCheck.result,
+                message: messages.join(' ')
+            };
+        },
+        checkDependencies: function(groupName, settingName) {
+            var messages = [],
+                dependentRoles = this.checkDependentRoles(groupName, settingName),
+                dependentSettings = this.checkDependentSettings(groupName, settingName);
+
+            if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
+            if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
+
+            return {
+                result: !!dependentRoles.length || !!dependentSettings.length,
                 message: messages.join(' ')
             };
         },
         areCalculationsPossible: function(setting) {
-            return _.contains(['checkbox', 'radio'], setting.type);
+            return setting.toggleable || _.contains(['checkbox', 'radio'], setting.type);
         },
         getValuesToCheck: function(setting, valueAttribute) {
             return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) : [!setting[valueAttribute]];
@@ -418,24 +427,29 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     .sortBy(function(settingName) {return group[settingName].weight;})
                     .value(),
                 processedGroupRestrictions = this.processRestrictions(this.props.groupName, 'metadata'),
+                processedGroupDependencies = this.checkDependencies(this.props.groupName, 'metadata'),
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
-                showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable;
+                showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable,
+                groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
             return (
-                <div className='col-xs-10 forms-box'>
-                    {processedGroupRestrictions.message && <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>}
+                <div className={'col-xs-10 forms-box ' + this.props.groupName}>
+                    {showSettingGroupWarning && processedGroupRestrictions.message &&
+                        <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>
+                    }
                     <h3>
-                        {metadata.toggleable &&
+                        {metadata.toggleable ?
                             <controls.Input
                                 type='checkbox'
                                 name='metadata'
+                                label={metadata.label || this.props.groupName}
                                 defaultChecked={metadata.enabled}
-                                disabled={isGroupDisabled}
-                                tooltipText={showSettingGroupWarning && processedGroupRestrictions.message}
+                                disabled={isGroupDisabled || processedGroupDependencies.result}
+                                tooltipText={showSettingGroupWarning && groupWarning}
                                 onChange={this.props.onChange}
-                                wrapperClassName='pull-left'
                             />
+                        :
+                            <span className={'subtab-group-' + this.props.groupName}>{metadata.label || this.props.groupName}</span>
                         }
-                        <span className={'subtab-group-' + this.props.groupName}>{metadata.label || this.props.groupName}</span>
                     </h3>
                     <div>
                         {_.map(sortedSettings, function(settingName) {
@@ -445,8 +459,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                             if (!this.props.checkRestrictions('hide', path).result) {
                                 var error = (this.props.settings.validationError || {})[path],
                                     processedSettingRestrictions = this.processRestrictions(this.props.groupName, settingName),
-                                    isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result,
-                                    showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled);
+                                    processedSettingDependencies = this.checkDependencies(this.props.groupName, settingName),
+                                    isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
+                                    showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
+                                    settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
 
                                 // support of custom controls
                                 var CustomControl = customControls[setting.type];
@@ -458,7 +474,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         path={path}
                                         error={error}
                                         disabled={isSettingDisabled}
-                                        tooltipText={processedSettingRestrictions.message}
+                                        tooltipText={showSettingWarning && settingWarning}
                                     />;
                                 }
 
@@ -482,7 +498,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         label={setting.label}
                                         values={values}
                                         error={error}
-                                        tooltipText={showSettingWarning && processedSettingRestrictions.message}
+                                        tooltipText={showSettingWarning && settingWarning}
                                     />;
                                 }
 
@@ -500,7 +516,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     toggleable={setting.type == 'password'}
                                     error={error}
                                     disabled={isSettingDisabled}
-                                    tooltipText={showSettingWarning && processedSettingRestrictions.message}
+                                    tooltipText={showSettingWarning && settingWarning}
                                     onChange={this.props.onChange}
                                 />;
                             }

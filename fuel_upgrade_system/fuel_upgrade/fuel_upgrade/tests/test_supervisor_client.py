@@ -114,3 +114,7 @@ class TestSupervisorClient(BaseTestCase):
              'command': 'command1',
              'log_path': '/var/log/docker-service_name1.log',
              'autostart': 'true'})
+
+    def test_remove_new_configs(self, _):
+        self.supervisor.remove_new_configs()
+        self.utils_mock.remove.assert_called_with('/etc/supervisord.d/9999')

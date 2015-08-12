@@ -457,7 +457,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
     def test_volumes_information_for_controller_role(self):
         node_db = self.create_node('controller')
         response = self.get(node_db.id)
-        self.check_volumes(response, ['os', 'image', 'mysql'])
+        self.check_volumes(response, ['os', 'image', 'mysql', 'logs'])
 
     def test_volumes_information_for_ceph_role(self):
         node_db = self.create_node('ceph-osd')
@@ -481,6 +481,15 @@ class TestVolumeManager(BaseIntegrationTest):
         self.assertTrue(type(size) == int)
         self.assertGreater(size, 0)
 
+    def get_vg_sum(self, disks, vg):
+        vg_sum = 0
+        for disk in only_disks(disks):
+            vg_volume = filter(
+                lambda volume: volume.get('vg') == vg, disk['volumes'])[0]
+            vg_sum += vg_volume['size']
+        self.non_zero_size(vg_sum)
+        return vg_sum
+
     def os_size(self, disks, with_lvm_meta=True):
         os_sum_size = 0
         for disk in only_disks(disks):
@@ -493,27 +502,14 @@ class TestVolumeManager(BaseIntegrationTest):
         self.non_zero_size(os_sum_size)
         return os_sum_size
 
-    def glance_size(self, disks):
-        glance_sum_size = 0
-        for disk in only_disks(disks):
-            glance_volume = filter(
-                lambda volume: volume.get('vg') == 'image', disk['volumes']
-            )[0]
-            glance_sum_size += glance_volume['size']
+    def logs_size(self, disks):
+        return self.get_vg_sum(disks, 'logs')
 
-        self.non_zero_size(glance_sum_size)
-        return glance_sum_size
+    def glance_size(self, disks):
+        return self.get_vg_sum(disks, 'image')
 
     def mysql_size(self, disks):
-        mysql_sum_size = 0
-        for disk in only_disks(disks):
-            mysql_volume = filter(
-                lambda volume: volume.get('vg') == 'mysql', disk['volumes']
-            )[0]
-            mysql_sum_size += mysql_volume['size']
-
-        self.non_zero_size(mysql_sum_size)
-        return mysql_sum_size
+        return self.get_vg_sum(disks, 'mysql')
 
     def reserved_size(self, spaces):
         reserved_size = 0
@@ -621,10 +617,12 @@ class TestVolumeManager(BaseIntegrationTest):
         os_sum_size = self.os_size(disks)
         mysql_sum_size = self.mysql_size(disks)
         glance_sum_size = self.glance_size(disks)
+        logs_sum_size = self.logs_size(disks)
         reserved_size = self.reserved_size(disks)
 
-        self.assertEqual(disks_size_sum - reserved_size,
-                         os_sum_size + glance_sum_size + mysql_sum_size)
+        self.assertEqual(
+            disks_size_sum - reserved_size,
+            os_sum_size + glance_sum_size + mysql_sum_size + logs_sum_size)
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
             VolumeManagerExtension.get_node_volumes(node))
         self.check_disk_size_equal_sum_of_all_volumes(

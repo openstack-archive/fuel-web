@@ -381,6 +381,7 @@ class TestNetworkCheck(BaseIntegrationTest):
     def test_check_configuration_neutron(self):
         checker = NetworkCheck(self.task, {})
         checker.net_provider = 'neutron'
+        checker.check_ip_addresses = MagicMock()
         checker.neutron_check_network_address_spaces_intersection = MagicMock()
         checker.neutron_check_segmentation_ids = MagicMock()
         checker.neutron_check_l3_addresses_not_match_subnet_and_broadcast = \
@@ -408,6 +409,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             self.assertFalse(mocked.called)
 
         called = [
+            'check_ip_addresses',
             'neutron_check_network_address_spaces_intersection',
             'neutron_check_segmentation_ids',
             'neutron_check_l3_addresses_not_match_subnet_and_broadcast',
@@ -421,6 +423,7 @@ class TestNetworkCheck(BaseIntegrationTest):
     def test_check_configuration_nova_network(self):
         checker = NetworkCheck(self.task, {})
         checker.net_provider = 'nova-network'
+        checker.check_ip_addresses = MagicMock()
         checker.neutron_check_network_address_spaces_intersection = MagicMock()
         checker.neutron_check_segmentation_ids = MagicMock()
         checker.neutron_check_l3_addresses_not_match_subnet_and_broadcast = \
@@ -447,6 +450,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             self.assertFalse(mocked.called)
 
         called = [
+            'check_ip_addresses',
             'check_public_floating_ranges_intersection',
             'check_network_address_spaces_intersection',
             'check_networks_amount',

@@ -465,3 +465,45 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.check_interface_mapping()
         mock_untagged.assert_called_with()
         mock_bond.assert_called_with()
+
+    @patch.object(helpers, 'db')
+    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    def test_neutron_check_gateways_success(self, get_by_cluster_id_mock,
+                                            mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.0.0/24',
+                             'gateway': '192.168.0.1',
+                             'meta': {'notation': 'cidr'}},
+                            {'id': 2,
+                             'cidr': '192.168.1.0/24',
+                             'gateway': '192.168.1.1',
+                             'meta': {'notation': 'ip_ranges'}}
+                            ]
+        nodegroup_mock = MagicMock(**{'count.return_value': 2})
+        get_by_cluster_id_mock.return_value = nodegroup_mock
+        self.assertNotRaises(errors.NetworkCheckError,
+                             checker.neutron_check_gateways)
+        get_by_cluster_id_mock.assert_called_once_with(checker.cluster.id)
+        nodegroup_mock.count.assert_called_once_with()
+
+    @patch.object(helpers, 'db')
+    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    def test_neutron_check_gateways_failure(self, get_by_cluster_id_mock,
+                                            mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.0.0/24',
+                             'gateway': '192.168.1.1',
+                             'meta': {'notation': 'cidr'}},
+                            {'id': 2,
+                             'cidr': '192.168.1.0/24',
+                             'gateway': '192.168.0.1',
+                             'meta': {'notation': 'ip_ranges'}}
+                            ]
+        nodegroup_mock = MagicMock(**{'count.return_value': 2})
+        get_by_cluster_id_mock.return_value = nodegroup_mock
+        self.assertRaises(errors.NetworkCheckError,
+                          checker.neutron_check_gateways)
+        get_by_cluster_id_mock.assert_called_once_with(checker.cluster.id)
+        nodegroup_mock.count.assert_called_once_with()

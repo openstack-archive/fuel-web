@@ -598,9 +598,85 @@ class NetworkCheck(object):
                 })
         self.expose_error_messages()
 
+    def check_ip_addresses(self):
+        """Check that all specified IP addresses are valid."""
+
+        # check self.networks
+        for net in self.networks:
+            try:
+                netaddr.IPNetwork(net["cidr"])
+            except netaddr.AddrFormatError:
+                self.err_msgs.append(
+                    u"Invalid 'cidr' specified for network")
+                self.result.append(
+                    {"ids": [net["id"]], "errors": ["cidr"]})
+            try:
+                netaddr.IPAddress(net["gateway"])
+            except netaddr.AddrFormatError:
+                self.err_msgs.append(
+                    u"Invalid 'gateway' specified for network")
+                self.result.append(
+                    {"ids": [net["id"]], "errors": ["gateway"]})
+            for ip_range in net['ip_ranges']:
+                if len(ip_range) != 2:
+                    self.err_msgs.append(
+                        u"Invalid 'ip_ranges' specified for network")
+                    self.result.append(
+                        {"ids": [net["id"]], "errors": ["ip_ranges"]})
+                    continue
+                try:
+                    netaddr.IPRange(ip_range[0], ip_range[1])
+                except netaddr.AddrFormatError:
+                    self.err_msgs.append(
+                        u"Invalid 'ip_ranges' specified for network")
+                    self.result.append(
+                        {"ids": [net["id"]], "errors": ["ip_ranges"]})
+
+        # check self.network_config
+        if self.network_config.get("fixed_networks_cidr") is not None:
+            try:
+                netaddr.IPNetwork(self.network_config["fixed_networks_cidr"])
+            except netaddr.AddrFormatError:
+                self.err_msgs.append(
+                    u"Invalid 'fixed_networks_cidr' specified")
+                self.result.append(
+                    {"ids": [], "errors": ["fixed_networks_cidr"]})
+        if self.network_config.get("internal_cidr") is not None:
+            try:
+                netaddr.IPNetwork(self.network_config["internal_cidr"])
+            except netaddr.AddrFormatError:
+                self.err_msgs.append(
+                    u"Invalid 'internal_cidr' specified")
+                self.result.append(
+                    {"ids": [], "errors": ["internal_cidr"]})
+        if self.network_config.get("internal_gateway") is not None:
+            try:
+                netaddr.IPAddress(self.network_config["internal_gateway"])
+            except netaddr.AddrFormatError:
+                self.err_msgs.append(
+                    u"Invalid 'internal_gateway' specified")
+                self.result.append(
+                    {"ids": [], "errors": ["internal_gateway"]})
+        for ip_range in self.network_config["floating_ranges"]:
+            if len(ip_range) != 2:
+                self.err_msgs.append(
+                    u"Invalid 'floating_ranges' specified")
+                self.result.append(
+                    {"ids": [], "errors": ["floating_ranges"]})
+                continue
+            try:
+                netaddr.IPRange(ip_range[0], ip_range[1])
+            except netaddr.AddrFormatError:
+                self.err_msgs.append(
+                    u"Invalid 'floating_ranges' specified")
+                self.result.append(
+                    {"ids": [], "errors": ["floating_ranges"]})
+        self.expose_error_messages()
+
     def check_configuration(self):
         """check network configuration parameters
         """
+        self.check_ip_addresses()
         if self.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
             self.neutron_check_network_address_spaces_intersection()
             self.neutron_check_segmentation_ids()

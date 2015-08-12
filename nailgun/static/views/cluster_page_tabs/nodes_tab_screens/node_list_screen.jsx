@@ -971,7 +971,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         </div>
                         {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
                             this.props.isLabelsPanelOpen &&
-                                <NodeLabelsPanel {... _.pick(this.props, 'nodes', 'screenNodes')}
+                                <NodeLabelsPanel {... _.pick(this.props, 'nodes', 'screenNodes', 'sorters', 'filters')}
                                     key='labels'
                                     labels={this.props.selectedNodeLabels}
                                     toggleLabelsPanel={this.toggleLabelsPanel}
@@ -1220,11 +1220,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 if (!labelData.key) {
                     return i18n(ns + 'empty_label_key');
                 }
+
                 if (_.any(this.state.labels, function(data, index) {
                     if (index == labelIndex) return false;
                     return data.key == labelData.key && (data.checked || data.indeterminate);
                 })) {
                     return i18n(ns + 'existing_label');
+                }
+
+                // FIXME(jkirnosova): need to remove the following limitations
+                // and fix #1476648 properly
+                if (_.contains(this.props.sorters, labelData.key)) {
+                    return i18n(ns + 'matches_default_sorter');
+                }
+                if (_.contains(this.props.filters, labelData.key)) {
+                    return i18n(ns + 'matches_default_filter');
                 }
             }
             return null;

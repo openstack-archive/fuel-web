@@ -510,6 +510,20 @@
                 generator: "calc_total_vg"
                 generator_args: ["mongo"]
               file_system: "ext4"
+        - id: "logs"
+          type: vg
+          label: "Logs"
+          min_size:
+            generator: calc_gb_to_mb
+            generator_args: 30
+          volumes:
+            - mount: "/var/logs"
+              type: "lv"
+              name: "var-logs"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["logs"]
+              file_system: "ext4"
         - id: "ceph"
           type: "partition"
           min_size: {generator: "calc_min_ceph_size"}

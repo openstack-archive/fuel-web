@@ -383,7 +383,7 @@
           - name: "management"
             cidr: "192.168.0.0/24"
             vlan_start: 101
-            use_gateway: false
+            use_gateway: true
             notation: "cidr"
             render_type: "cidr"
             render_addr_mask: "internal"
@@ -393,7 +393,7 @@
           - name: "storage"
             cidr: "192.168.1.0/24"
             vlan_start: 102
-            use_gateway: false
+            use_gateway: true
             notation: "cidr"
             render_type: "cidr"
             render_addr_mask: "storage"
@@ -402,7 +402,7 @@
           - name: "private"
             seg_type: "vlan"
             vlan_start: null
-            use_gateway: false
+            use_gateway: true
             notation: null
             render_type: null
             render_addr_mask: null
@@ -413,7 +413,7 @@
             seg_type: "gre"
             cidr: "192.168.2.0/24"
             vlan_start: 103
-            use_gateway: false
+            use_gateway: true
             notation: "cidr"
             render_type: "cidr"
             render_addr_mask: null
@@ -423,7 +423,7 @@
             seg_type: "tun"
             cidr: "192.168.2.0/24"
             vlan_start: 103
-            use_gateway: false
+            use_gateway: true
             notation: "cidr"
             render_type: "cidr"
             render_addr_mask: null

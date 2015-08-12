@@ -498,6 +498,46 @@ class NetworkCheck(object):
                                 "errors": ["gateway"]})
         self.expose_error_messages()
 
+    def _get_net_range_for_ip(self, ip, net):
+        """Returns the first network's IP range that contains given IP."""
+        if net.get('ip_ranges'):
+            for r in net['ip_ranges']:
+                ipr = netaddr.IPRange(r[0], r[1])
+                if ip in ipr:
+                    return ipr
+
+    def neutron_check_gateways(self):
+        """Check that gateways are set if non-default node groups are used."""
+        if objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster.id).count() < 2:
+            return
+        for net in self.networks:
+            if net['meta']['notation'] in (
+                    consts.NETWORK_NOTATION.cidr,
+                    consts.NETWORK_NOTATION.ip_ranges):
+                cidr = netaddr.IPNetwork(net['cidr'])
+                gw = netaddr.IPAddress(net['gateway'])
+                # broadcast and net address intersection is checked by
+                # check_network_addresses_not_match_subnet_and_broadcast
+                if gw in cidr:
+                    ip_range = self._get_net_range_for_ip(gw, net)
+                    if ip_range is not None:
+                        self.err_msgs.append(
+                            u"Gateway address belongs to the network's "
+                            u"IP range [{0}]".format(ip_range)
+                        )
+                    self.result.append(
+                        {"ids": [net['id']], "errors": ["gateway"]}
+                    )
+                else:
+                    self.err_msgs.append(
+                        u"Gateway address does not belong to the network."
+                    )
+                    self.result.append(
+                        {"ids": [net['id']], "errors": ["gateway"]}
+                    )
+        self.expose_error_messages()
+
     def check_network_classes_exclude_loopback(self):
         """Check if address space is in real world addresses space
 
@@ -623,6 +663,7 @@ class NetworkCheck(object):
             self.neutron_check_network_address_spaces_intersection()
             self.neutron_check_segmentation_ids()
             self.neutron_check_l3_addresses_not_match_subnet_and_broadcast()
+            self.neutron_check_gateways()
         else:
             self.check_public_floating_ranges_intersection()
             self.check_network_address_spaces_intersection()

@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 from copy import deepcopy
 
 import netaddr
@@ -588,7 +589,117 @@ class BaseNetworkVerification(object):
         self.task = task
         self.config = config
 
+    @staticmethod
+    def _get_private_vlan_range(cluster, template):
+        if cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan and \
+                'neutron/private' in template['roles']:
+            vlan_range = cluster.network_config.vlan_range
+            return range(vlan_range[0], vlan_range[1] + 1)
+        return None
+
+    @classmethod
+    def _add_interface(cls, ifaces, ifname, vlan_ids, bond_name=None):
+        ifname, vlan = cls._parse_template_iface(ifname)
+        bond_name = bond_name or ifname
+        ifaces[bond_name].add(int(vlan))
+        if vlan_ids:
+            ifaces[bond_name].update(vlan_ids)
+
+        return ifname
+
+    @classmethod
+    def _get_transformations(cls, node):
+        templates_for_node_mapping = \
+            node.network_template['templates_for_node_role']
+
+        node_templates = set()
+        for role_name in node.all_roles:
+            node_templates.update(templates_for_node_mapping[role_name])
+
+        cluster = node.cluster
+
+        templates = node.network_template['templates']
+        for template_name in node_templates:
+            template = templates[template_name]
+            transformations = template['transformations']
+
+            vlan_ids = cls._get_private_vlan_range(cluster, template)
+
+            for transformation in transformations:
+                yield transformation, vlan_ids
+
+    @staticmethod
+    def _parse_template_iface(ifname):
+        vlan = 0
+        chunks = ifname.rsplit('.', 1)
+        if len(chunks) == 2:
+            ifname, vlan = chunks
+
+        return ifname, vlan
+
+    @classmethod
+    def get_ifaces_from_template_on_undeployed_node(cls, node, node_json):
+        """Retrieves list of network interfaces on the undeployed node
+        from the network template.
+        """
+        bonds = collections.defaultdict(list)
+        ifaces = collections.defaultdict(set)
+
+        for transformation, vlan_ids in cls._get_transformations(node):
+            if transformation['action'] == 'add-port':
+                cls._add_interface(ifaces, transformation['name'], vlan_ids)
+            elif transformation['action'] == 'add-bond':
+                if transformation.get('mode') == consts.BOND_MODES.l_802_3ad:
+                    node_json['excluded_networks'].append(
+                        transformation['name'])
+                else:
+                    for ifname in sorted(transformation['interfaces']):
+                        ifname = cls._add_interface(ifaces, ifname, vlan_ids)
+                        bond_name = transformation['name']
+                        bonds[bond_name].append(ifname)
+
+        for if_name, vlans in six.iteritems(ifaces):
+            node_json['networks'].append({
+                'iface': if_name,
+                'vlans': sorted(vlans)
+            })
+
+        if bonds:
+            node_json['bonds'] = bonds
+
+    @classmethod
+    def get_ifaces_from_template_on_deployed_node(cls, node, node_json):
+        """Retrieves list of network interfaces on the deployed node
+        from the network template.
+        """
+        ifaces = collections.defaultdict(set)
+        for transformation, vlan_ids in cls._get_transformations(node):
+            if transformation['action'] == 'add-port':
+                cls._add_interface(ifaces, transformation['name'], vlan_ids)
+            elif transformation['action'] == 'add-bond':
+                bond_name = transformation['name']
+                for ifname in transformation['interfaces']:
+                    cls._add_interface(ifaces, ifname, vlan_ids, bond_name)
+
+        for if_name, vlans in six.iteritems(ifaces):
+            node_json['networks'].append({
+                'iface': if_name,
+                'vlans': sorted(vlans)
+            })
+
     def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
+        """Retrieves list of network interfaces on the undeployed node.
+
+        By default list of network interfaces is based on the information
+        recieved from the fuel agent unless cluster has network template
+        attached. In this case, list of interfaces retrieved from the
+        network template.
+        """
+        if node.network_template:
+            self.get_ifaces_from_template_on_undeployed_node(node, node_json)
+            return
+
         # Save bonds info to be able to check net-probe results w/o
         # need to access nodes in DB (node can be deleted before the test is
         # completed). This info is needed for non-deployed nodes only.
@@ -635,6 +746,12 @@ class BaseNetworkVerification(object):
                     {'iface': iface.name, 'vlans': vlans})
 
     def get_ifaces_on_deployed_node(self, node, node_json, has_public):
+        """Retrieves list of network interfaces on the deployed node.
+        """
+        if node.network_template:
+            self.get_ifaces_from_template_on_deployed_node(node, node_json)
+            return
+
         for iface in node.interfaces:
             # In case of present bond interfaces - collect assigned networks
             # against bonds themselves. We can check bonds as they are up on
@@ -671,6 +788,8 @@ class BaseNetworkVerification(object):
         if len(nodes_w_public) < 2:
             # don't check public VLANs if there is the only node with public
             nodes_w_public = []
+
+        nodes_by_vlan = collections.defaultdict(list)
         for node in self.task.cluster.nodes:
             if node.offline:
                 offline_nodes += 1
@@ -692,7 +811,21 @@ class BaseNetworkVerification(object):
             else:
                 self.get_ifaces_on_undeployed_node(node, node_json, has_public)
 
+            for network in node_json['networks']:
+                for vlan in network['vlans']:
+                    nodes_by_vlan[vlan].append(node.id)
+
             nodes.append(node_json)
+
+        if self.task.cluster.network_config.configuration_template:
+            for node_json in nodes:
+                networks = []
+                for network in node_json['networks']:
+                    network['vlans'] = [vlan for vlan in network['vlans']
+                                        if len(nodes_by_vlan[vlan]) > 1]
+                    if network['vlans']:
+                        networks.append(network)
+                node_json['networks'] = networks
 
         return {
             'nodes': nodes,

@@ -206,3 +206,8 @@ class SupervisorClient(object):
 
         utils.render_template_to_file(
             self.supervisor_template_path, config_path, params)
+
+    def remove_new_configs(self):
+        """Remove new version of configs from the filesystem.
+        """
+        utils.remove(self.supervisor_config_dir)

@@ -51,6 +51,9 @@ default_messages = {
     "InvalidOperatingSystem": "Invalid operating system",
     "CannotFindPluginForRelease": "Cannot find plugin for the release",
     "UnavailableRelease": "Release is unavailable",
+    "ControllerInErrorState": ("One of the cluster controllers is in error "
+                               "state, please, eliminate the problem prior "
+                               "to proceeding further"),
 
     # mongo errors
     "ExtMongoCheckerError": "Mongo nodes shouldn`t be used with external mongo",

@@ -94,6 +94,7 @@ class DockerUpgrader(UpgradeEngine):
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.supervisor.restart_and_wait()
+        self.supervisor.remove_new_configs()
 
     @property
     def required_free_space(self):

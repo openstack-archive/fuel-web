@@ -84,6 +84,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.supervisor_mock.switch_to_previous_configs)
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
+        self.called_once(self.supervisor_mock.remove_new_configs)
 
     def test_stop_fuel_containers(self):
         non_fuel_images = [

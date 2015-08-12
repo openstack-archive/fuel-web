@@ -1131,6 +1131,16 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
         objects.Cluster.adjust_nodes_lists_on_controller_removing(
             self.cluster, nodes_to_delete, nodes_to_deploy)
 
+        # in some cases (e.g. after environment reset action) we can
+        # can only rely on the node's status in order to filter out
+        # addtional controllers for which deployment cannot be started
+        allowed_statuses = (consts.NODE_STATUSES.ready,
+                            consts.NODE_STATUSES.error,
+                            consts.NODE_STATUSES.provisioned)
+
+        nodes_to_deploy = filter(lambda n: n.status in allowed_statuses,
+                                 nodes_to_deploy)
+
         if nodes_to_deploy:
             logger.debug("There are nodes to deploy: %s",
                          " ".join([objects.Node.get_node_fqdn(n)

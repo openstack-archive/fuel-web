@@ -1136,17 +1136,32 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
         objects.Cluster.adjust_nodes_lists_on_controller_removing(
             self.cluster, nodes_to_delete, nodes_to_deploy)
 
-        if nodes_to_deploy:
+        # NOTE(aroma): in case of removing of a controller node we do
+        # implicit redeployment of all left controllers here in
+        # order to preserve consistency of a HA cluster.
+        # The reason following filtering is added is that we must
+        # redeploy only controllers in ready status. Also in case
+        # one of the nodes is in error state we must cancel the whole
+        # operation as result of the redeployment in this case is unpredictable
+        # and user may end up with not working cluster
+        controllers_with_ready_status = []
+        for controller in nodes_to_deploy:
+            if controller.status == consts.NODE_STATUSES.error:
+                raise errors.ControllerInErrorState()
+            elif controller.status == consts.NODE_STATUSES.ready:
+                controllers_with_ready_status.append(controller)
+
+        if controllers_with_ready_status:
             logger.debug("There are nodes to deploy: %s",
                          " ".join([objects.Node.get_node_fqdn(n)
-                                   for n in nodes_to_deploy]))
+                                   for n in controllers_with_ready_status]))
             task_deployment = task.create_subtask(
                 consts.TASK_NAMES.deployment)
 
             deployment_message = self._call_silently(
                 task_deployment,
                 tasks.DeploymentTask,
-                nodes_to_deploy,
+                controllers_with_ready_status,
                 method_name='message'
             )
             db().flush()

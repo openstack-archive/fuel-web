@@ -15,9 +15,10 @@
 #    under the License.
 
 import copy
+import operator
 
+from oslo_serialization import jsonutils
 from six.moves import range
-
 import unittest2
 
 from nailgun import consts
@@ -481,6 +482,98 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             verify_network_task.cache['args']['nodes'],
             self.expected_args_deployed
         )
+
+
+class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNetworkVerificationWithTemplates, self).setUp()
+        template = self.env.read_fixtures(['network_template'])[0]
+        template.pop('pk')
+
+        self.create_env()
+        self.upload_template(self.cluster['id'], template)
+
+    def create_env(self):
+        meta1 = self.env.default_metadata()
+        meta2 = self.env.default_metadata()
+
+        self.env.set_interfaces_in_meta(meta1, [
+            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth1", "mac": "00:00:00:00:00:77"},
+            {"name": "eth2", "mac": "00:00:00:00:00:88"}]
+        )
+        self.env.set_interfaces_in_meta(meta2, [
+            {"name": "eth0", "mac": "00:00:00:00:11:66"},
+            {"name": "eth1", "mac": "00:00:00:00:22:77"},
+            {"name": "eth2", "mac": "00:00:00:00:33:88"}]
+        )
+        self.cluster = self.env.create(
+            release_kwargs={'version': '2015.1.0-7.0'},
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
+            },
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True,
+                 'meta': meta1},
+                {'api': True,
+                 'pending_addition': True,
+                 'meta': meta2}
+            ]
+        )
+
+    @property
+    def expected_bonds(self):
+        return {
+            u'ovs-bond0': [u'eth4', u'eth5']
+        }
+
+    @property
+    def expected_networks(self):
+        return [
+            {u'vlans': [0], u'iface': u'eth0'},
+            {u'vlans': [0], u'iface': u'eth1'},
+            {u'vlans': [101], u'iface': u'eth4'},
+            {u'vlans': [101], u'iface': u'eth5'},
+
+        ]
+
+    def upload_template(self, cluster_id, template):
+        resp = self.app.put(
+            reverse(
+                'TemplateNetworkConfigurationHandler',
+                kwargs={'cluster_id': cluster_id},
+            ),
+            jsonutils.dumps(template),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    @fake_tasks()
+    def test_get_ifaces_on_undeployed_node(self):
+        task = self.env.launch_verify_networks()
+
+        for i, node in enumerate(task.cache['args']['nodes']):
+            networks = sorted(node['networks'],
+                              key=operator.itemgetter('iface'))
+            self.assertEqual(
+                networks, self.expected_networks)
+            self.assertEqual(node['bonds'], self.expected_bonds)
+
+    @fake_tasks()
+    def test_get_ifaces_on_deployed_node(self):
+        deployment_task = self.env.launch_deployment()
+        self.env.wait_ready(deployment_task)
+
+        verify_network_task = self.env.launch_verify_networks()
+        for i, node in enumerate(verify_network_task.cache['args']['nodes']):
+            networks = sorted(node['networks'],
+                              key=operator.itemgetter('iface'))
+            self.assertEqual(networks, self.expected_networks)
+            self.assertNotIn('bonds', node)
 
 
 class TestVerifyNovaFlatDHCP(BaseIntegrationTest):

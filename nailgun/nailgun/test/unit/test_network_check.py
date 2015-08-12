@@ -469,3 +469,73 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.check_interface_mapping()
         mock_untagged.assert_called_with()
         mock_bond.assert_called_with()
+
+    @patch.object(helpers, 'db')
+    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    def test_neutron_check_gateways_valid(self, get_by_cluster_id_mock,
+                                          mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.0.0/24',
+                             'gateway': '192.168.0.1',
+                             'meta': {'notation': 'cidr'}}]
+        nodegroup_mock = MagicMock(**{'count.return_value': 2})
+        get_by_cluster_id_mock.return_value = nodegroup_mock
+        self.assertNotRaises(errors.NetworkCheckError,
+                             checker.neutron_check_gateways)
+
+    @patch.object(helpers, 'db')
+    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    def test_neutron_check_gateways_gw_none(self, get_by_cluster_id_mock,
+                                            mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.0.0/24',
+                             'gateway': None,
+                             'meta': {'notation': 'cidr'}}]
+        nodegroup_mock = MagicMock(**{'count.return_value': 2})
+        get_by_cluster_id_mock.return_value = nodegroup_mock
+        self.assertRaises(errors.NetworkCheckError,
+                          checker.neutron_check_gateways)
+
+    @patch.object(helpers, 'db')
+    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    def test_neutron_check_gateways_gw_net(self, get_by_cluster_id_mock,
+                                           mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.0.0/24',
+                             'gateway': '192.168.0.0',
+                             'meta': {'notation': 'cidr'}}]
+        nodegroup_mock = MagicMock(**{'count.return_value': 2})
+        get_by_cluster_id_mock.return_value = nodegroup_mock
+        self.assertRaises(errors.NetworkCheckError,
+                          checker.neutron_check_gateways)
+
+    @patch.object(helpers, 'db')
+    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    def test_neutron_check_gateways_gw_bcast(self, get_by_cluster_id_mock,
+                                             mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.0.0/24',
+                             'gateway': '192.168.0.255',
+                             'meta': {'notation': 'cidr'}}]
+        nodegroup_mock = MagicMock(**{'count.return_value': 2})
+        get_by_cluster_id_mock.return_value = nodegroup_mock
+        self.assertRaises(errors.NetworkCheckError,
+                          checker.neutron_check_gateways)
+
+    @patch.object(helpers, 'db')
+    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    def test_neutron_check_gateways_gw_outside(self, get_by_cluster_id_mock,
+                                               mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.0.0/24',
+                             'gateway': '192.168.1.1',
+                             'meta': {'notation': 'cidr'}}]
+        nodegroup_mock = MagicMock(**{'count.return_value': 2})
+        get_by_cluster_id_mock.return_value = nodegroup_mock
+        self.assertRaises(errors.NetworkCheckError,
+                          checker.neutron_check_gateways)

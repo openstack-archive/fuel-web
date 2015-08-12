@@ -161,3 +161,14 @@ class HostSystemUpgrader(UpgradeEngine):
         if utils.compare_version(self.config.from_version, '6.1') > 0:
             utils.remove_if_exists(
                 self.host_system_config['repo_aux_config_path'])
+        else:
+            # By some pity reason we're managing auxiliary repo in puppet
+            # manifests, but there's no management code for rollbacking.
+            # Therefore, we need to clean-up its artifacts in case of
+            # upgrade rollback procedure here; otherwise another try
+            # of upgrade will fail.
+            path, name = os.path.split(
+                self.host_system_config['repo_aux_config_path'])
+            utils.remove_if_exists(os.path.join(path, '{0}_{1}'.format(
+                self.config.new_version,
+                name)))

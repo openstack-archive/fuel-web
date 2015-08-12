@@ -671,19 +671,10 @@ input[type=range] {
       font-size: @base-font-size;
       letter-spacing: 1px;
       box-sizing: border-box;
-    }
-    .badge-animation-enter {
       opacity: 0;
-      transition: opacity .8s ease-in;
-      &.badge-animation-enter-active {
+      &.visible {
         opacity: 1;
-      }
-    }
-    .badge-animation-leave {
-      opacity: 1;
-      transition: opacity .5s ease-in;
-      &.badge-animation-leave-active {
-        opacity: 0;
+        transition: opacity .8s ease-in;
       }
     }
     .navbar-icon-sprite-index(@index) {

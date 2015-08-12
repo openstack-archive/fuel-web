@@ -27,7 +27,7 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Switch to common subtab');
     this.click('a.subtab-link-common');
-    this.test.assertSelectorAppears('span.subtab-group-common', 'Common subtab is selected');
+    this.test.assertSelectorAppears('.forms-box.common', 'Common subtab is selected');
 });
 
 casper.then(function() {

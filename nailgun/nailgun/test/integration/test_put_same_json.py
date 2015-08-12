@@ -17,6 +17,8 @@ from oslo_serialization import jsonutils
 
 from nailgun.test import base
 
+from nailgun import consts
+
 
 class TestPutSameJson(base.BaseIntegrationTest):
 
@@ -52,6 +54,17 @@ class TestPutSameJson(base.BaseIntegrationTest):
         if not isinstance(expected_status, list):
             expected_status = [expected_status]
         self.assertIn(response.status_code, expected_status)
+
+        # Heuristic checking if response is of task type
+        is_task = 'progress' in response.json_body and \
+            'status' in response.json_body and \
+            'uuid' in response.json_body
+
+        if is_task:
+            self.assertNotEqual(
+                response.json_body['status'],
+                consts.TASK_STATUSES.error
+            )
 
     def http_get(self, name, arguments):
         """Makes a GET request to a resource with `name`.
@@ -137,7 +150,7 @@ class TestPutSameJson(base.BaseIntegrationTest):
             cluster_attributes, 200
         )
 
-    def test_nove_network_configuration(self):
+    def test_nova_network_configuration(self):
         nova_config = self.http_get(
             'NovaNetworkConfigurationHandler', {
                 'cluster_id': self.cluster.id
@@ -162,6 +175,44 @@ class TestPutSameJson(base.BaseIntegrationTest):
                 {'api': True},
             ]
         )
+
+        neutron_config = self.http_get(
+            'NeutronNetworkConfigurationHandler', {
+                'cluster_id': self.cluster['id']
+            }
+        )
+
+        self.assertHttpPut(
+            'NeutronNetworkConfigurationHandler', {
+                'cluster_id': self.cluster['id']
+            },
+            neutron_config, 200
+        )
+
+    def test_neutron_network_configuration_with_nodegroups(self):
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                'api': True,
+                'net_provider': 'neutron',
+            },
+            nodes_kwargs=[
+                {'api': True},
+                {'api': True},
+            ]
+        )
+
+        resp = self.app.post(
+            base.reverse('NodeGroupCollectionHandler'),
+            params=jsonutils.dumps({
+                'cluster_id': self.cluster['id'],
+                'name': 'test-nodegroup',
+            }),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json_body['cluster'], self.cluster['id'])
+        self.assertEqual(resp.json_body['name'], 'test-nodegroup')
 
         neutron_config = self.http_get(
             'NeutronNetworkConfigurationHandler', {

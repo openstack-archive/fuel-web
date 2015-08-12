@@ -268,6 +268,8 @@ class EnvironmentManager(object):
         mac = kwargs.get('mac', self.generate_random_mac())
         if default_metadata['interfaces']:
             default_metadata['interfaces'][0]['mac'] = mac
+            for ifc in default_metadata['interfaces'][1:]:
+                ifc['mac'] = self.generate_random_mac()
             if not metadata or not meta_ifaces:
                 for iface in default_metadata['interfaces'][1:]:
                     if 'mac' in iface:

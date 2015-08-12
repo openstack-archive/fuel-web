@@ -230,7 +230,7 @@ def config(update_path, admin_password):
     """
     fuel_config_path = '/etc/fuel/'
 
-    can_upgrade_from = ['6.0']
+    can_upgrade_from = ['5.2.9']
 
     current_fuel_version_path = '/etc/fuel/version.yaml'
     new_upgrade_version_path = join(update_path, 'config/version.yaml')

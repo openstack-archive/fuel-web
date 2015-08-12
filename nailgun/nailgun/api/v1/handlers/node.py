@@ -30,6 +30,7 @@ from nailgun.api.v1.validators.network import NetAssignmentValidator
 from nailgun.api.v1.validators.node import NodeValidator
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun import objects
 
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
@@ -62,7 +63,15 @@ class NodeHandler(SingleHandler):
 
         node = self.get_object_or_404(self.single, obj_id)
         task_manager = NodeDeletionTaskManager(cluster_id=node.cluster_id)
-        task = task_manager.execute([node], mclient_remove=False)
+
+        try:
+            task = task_manager.execute([node], mclient_remove=False)
+        except errors.ControllerInErrorState:
+            raise self.http(
+                400,
+                ("One of the cluster controllers is in error state, "
+                 "please, eliminate the problem prior to proceed further")
+            )
 
         self.raise_task(task)
 
@@ -141,7 +150,15 @@ class NodeCollectionHandler(CollectionHandler):
         nodes = self.get_objects_list_or_404(self.collection, node_ids)
 
         task_manager = NodeDeletionTaskManager(cluster_id=nodes[0].cluster_id)
-        task = task_manager.execute(nodes, mclient_remove=False)
+
+        try:
+            task = task_manager.execute(nodes, mclient_remove=False)
+        except errors.ControllerInErrorState:
+            raise self.http(
+                400,
+                ("One of the cluster controllers is in error state, "
+                 "please, eliminate the problem prior to proceed further")
+            )
 
         self.raise_task(task)
 

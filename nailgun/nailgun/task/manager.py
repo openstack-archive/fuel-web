@@ -1131,17 +1131,24 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
         objects.Cluster.adjust_nodes_lists_on_controller_removing(
             self.cluster, nodes_to_delete, nodes_to_deploy)
 
-        if nodes_to_deploy:
+        controllers_in_ready = []
+        for controller in nodes_to_deploy:
+            if controller.status in consts.NODE_STATUSES.error:
+                raise errors.ControllerInErrorState()
+            elif controller.status in consts.NODE_STATUSES.ready:
+                controllers_in_ready.append(controller)
+
+        if controllers_in_ready:
             logger.debug("There are nodes to deploy: %s",
                          " ".join([objects.Node.get_node_fqdn(n)
-                                   for n in nodes_to_deploy]))
+                                   for n in controllers_in_ready]))
             task_deployment = task.create_subtask(
                 consts.TASK_NAMES.deployment)
 
             deployment_message = self._call_silently(
                 task_deployment,
                 tasks.DeploymentTask,
-                nodes_to_deploy,
+                controllers_in_ready,
                 method_name='message'
             )
             db().flush()

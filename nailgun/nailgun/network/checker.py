@@ -598,9 +598,64 @@ class NetworkCheck(object):
                 })
         self.expose_error_messages()
 
+    def _check_ip_network(self, data, ids, errs):
+        try:
+            netaddr.IPNetwork(data)
+        except netaddr.AddrFormatError:
+            self.err_msgs.append(
+                u"'{0}' is not a valid IP network")
+            self.result.append(
+                {"ids": ids, "errors": errs})
+
+    def _check_ip_address(self, data, ids, errs):
+        try:
+            netaddr.IPAddress(data)
+        except netaddr.AddrFormatError:
+            self.err_msgs.append(
+                u"'{0}' is not a valid IP address")
+            self.result.append(
+                {"ids": ids, "errors": errs})
+
+    def _check_ip_range(self, data, ids, errs):
+        if len(data) != 2:
+            self.err_msgs.append(
+                u"Unexpected number of items for IP range")
+            self.result.append(
+                {"ids": ids, "errors": errs})
+            return
+        try:
+            netaddr.IPRange(data[0], data[1])
+        except netaddr.AddrFormatError:
+            self.err_msgs.append(
+                u"{0}-{1} is not a valid IP range")
+            self.result.append(
+                {"ids": ids, "errors": errs})
+
+    def check_ip_addresses(self):
+        """Check that all specified IP addresses are valid."""
+
+        # check self.networks
+        for net in self.networks:
+            self._check_ip_network(net["cidr"], [net["id"]], "cidr")
+            self._check_ip_address(net["gateway"], [net["id"]], "gateway")
+            for ip_range in net["ip_ranges"]:
+                self._check_ip_range(ip_range, [net["id"]], "ip_ranges")
+
+        # check self.network_config
+        self._check_ip_network(self.network_config.get("fixed_networks_cidr"),
+                               [], "fixed_networks_cidr")
+        self._check_ip_network(self.network_config.get("internal_cidr"),
+                               [], "internal_cidr")
+        self._check_ip_address(self.network_config.get("internal_gateway"),
+                               [], "internal_gateway")
+        for ip_range in self.network_config["floating_ranges"]:
+            self._check_ip_range(ip_range, [], "floating_ranges")
+        self.expose_error_messages()
+
     def check_configuration(self):
         """check network configuration parameters
         """
+        self.check_ip_addresses()
         if self.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
             self.neutron_check_network_address_spaces_intersection()
             self.neutron_check_segmentation_ids()

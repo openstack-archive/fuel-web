@@ -125,6 +125,10 @@ class OpenStackUpgrader(UpgradeEngine):
             # save release id for futher possible rollback
             self._rollback_ids['release'].append(response['id'])
             self.upload_release_deployment_tasks(response)
+
+            if not release.get('is_deployable', True):
+                continue
+
             # add notification abot successfull releases
             logger.debug('Add notification about new release: %s (%s)',
                          release['name'],

@@ -604,15 +604,17 @@ def config(update_path, admin_password):
     master_node_repos = [
         {
             'name': 'mos{0}-updates'.format(new_version),
-            'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
-                       'mos{0}/updates/'.format(new_version),
+            'baseurl': 'http://mirror.fuel-infra.org/mos-repos/'
+                       'centos/mos{0}-centos6-fuel/updates/'
+                       'x86_64/'.format(new_version),
             'gpgcheck': 0,
             'skip_if_unavailable': 1,
         },
         {
             'name': 'mos{0}-security'.format(new_version),
-            'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
-                       'mos{0}/security/'.format(new_version),
+            'baseurl': 'http://mirror.fuel-infra.org/mos-repos/'
+                       'centos/mos{0}-centos6-fuel/security/'
+                       'x86_64/'.format(new_version),
             'gpgcheck': 0,
             'skip_if_unavailable': 1,
         }

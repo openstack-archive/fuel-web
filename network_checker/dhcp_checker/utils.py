@@ -11,8 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import fcntl
 import functools
 import re
+import socket
+import struct
 import subprocess
 import sys
 
@@ -223,3 +226,21 @@ class IfaceState(object):
         if self.pre_iface_state != 'UP' and self.rollback:
             command_util('ifconfig', self.iface, 'down')
         self.post_iface_state = _iface_state(self.iface)
+
+def get_iface_hwaddr(iface):
+    '''
+    Get MAC address of the interface.
+    '''
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    info = fcntl.ioctl(s.fileno(), 0x8927,  struct.pack('256s', iface[:15]))
+    return ['%02x' % ord(char) for char in info[18:24]]
+
+def create_mac_filter(iface):
+    '''
+    tcpdump can not cactch all 6 octets so it is splitted.
+    See http://blog.jasonantman.com/2010/04/dhcp-debugging-and-handy-tcpdump-filters/
+    '''
+    mac = get_iface_hwaddr(iface)
+    filter1 = '(udp[36:2] = 0x{0})'.format(''.join(mac[:2]))
+    filter2 = '(udp[38:4] = 0x{0})'.format(''.join(mac[2:]))
+    return '{0} and {1}'.format(filter1, filter2)

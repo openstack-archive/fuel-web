@@ -426,7 +426,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             onChange: React.PropTypes.func,
             extraContent: React.PropTypes.node,
             toggle: React.PropTypes.func.isRequired,
-            isOpen: React.PropTypes.bool.isRequired
+            isOpen: React.PropTypes.bool.isRequired,
+            nodeLabels: React.PropTypes.arrayOf(React.PropTypes.object)
         },
         getDefaultProps: function() {
             return {
@@ -502,6 +503,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     />
                                 );
                             }, this)}
+                            {this.props.dynamicValues && !!this.props.nodeLabels.length &&
+                                <div>
+                                    {this.props.options.length && <div key='divider' className='divider' />}
+                                    {_.map(this.props.nodeLabels.sort(utils.natsort), function(label, index) {
+                                        return (
+                                            <controls.Input
+                                                key={'label-' + index}
+                                                type='checkbox'
+                                                name={label}
+                                                label={label}
+                                                onChange={this.onChange}
+                                            />
+                                        );
+                                    }, this)}
+                                </div>
+                            }
                         </controls.Popover>
                     }
                     {this.props.extraContent}
@@ -778,13 +795,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return classes;
             }, this);
 
-            var activeSorters, inactiveSorters;
-            var filtersToDisplay, inactiveFilters, appliedFilters;
+            var activeSorters, inactiveSorters, inactiveLabelSorters;
+            var filtersToDisplay, inactiveFilters, appliedFilters, inactiveLabelFilters;
             if (this.props.mode != 'edit') {
                 activeSorters = _.flatten(_.map(this.props.activeSorters, _.keys));
-                inactiveSorters = _.difference(_.union(this.props.sorters, this.props.screenNodesLabels), activeSorters);
+                inactiveSorters = _.difference(this.props.sorters, activeSorters);
+                inactiveLabelSorters = _.difference(this.props.screenNodesLabels, activeSorters);
+
                 filtersToDisplay = _.extend(_.zipObject(this.props.defaultFilters, _.times(this.props.defaultFilters.length, function() {return [];})), this.props.activeFilters);
-                inactiveFilters = _.difference(_.union(this.props.filters, this.props.screenNodesLabels), _.keys(filtersToDisplay));
+                inactiveFilters = _.difference(this.props.filters, _.keys(filtersToDisplay));
+                inactiveLabelFilters = _.difference(this.props.screenNodesLabels, _.keys(filtersToDisplay));
                 appliedFilters = _.omit(this.props.activeFilters, function(values, filterName) {
                     return _.contains(this.props.filters, filterName) && !values.length;
                 }, this);
@@ -987,7 +1007,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 </div>
                                             );
                                         }, this)}
-                                        {!!inactiveSorters.length &&
+                                        {(!!inactiveSorters.length || !!inactiveLabelSorters.length) &&
                                             <MultiSelectControl
                                                 name='sorter-more'
                                                 label={i18n(ns + 'more')}
@@ -997,6 +1017,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         label: i18n('cluster_page.nodes_tab.sorters.' + sorterName, {defaultValue: sorterName})
                                                     };
                                                 })}
+                                                nodeLabels={inactiveLabelSorters}
                                                 onChange={this.props.addSorting}
                                                 dynamicValues={true}
                                                 isOpen= {this.state.openSorter == 'more'}
@@ -1038,7 +1059,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             var limits = this.props.getFilterLimits(filterName);
                                             return <NumberRangeControl {...props} min={limits[0]} max={limits[1]} />;
                                         }, this)}
-                                        {!!inactiveFilters.length &&
+                                        {(!!inactiveFilters.length || !inactiveLabelFilters.length) &&
                                             <MultiSelectControl
                                                 name='filter-more'
                                                 label={i18n(ns + 'more')}
@@ -1048,6 +1069,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         label: i18n('cluster_page.nodes_tab.filters.' + filterName, {defaultValue: filterName})
                                                     };
                                                 })}
+                                                nodeLabels={inactiveLabelFilters}
                                                 onChange={this.addFilter}
                                                 dynamicValues={true}
                                                 isOpen={this.state.openFilter == 'more'}
@@ -1489,7 +1511,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var getLabelValue = function(node, label) {
                 var labelValue = node.getLabel(label);
                 return _.isUndefined(labelValue) ?
-                        i18n('cluster_page.nodes_tab.node_management_panel.not_assigned_label', {label: label})
+                        i18n('cluster_page.nodes_tab.node_management_panel.labels.not_assigned_label', {label: label})
                     :
                         _.isNull(labelValue) ? i18n('common.not_specified') : label + ' "' + labelValue + '"';
             };

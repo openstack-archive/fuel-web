@@ -100,9 +100,11 @@ def upgrade():
     upgrade_node_labels()
     extend_segmentation_type()
     network_groups_name_upgrade()
+    upgrade_ip_addr_ranges_constraint()
 
 
 def downgrade():
+    downgrade_ip_addr_ranges_constraint()
     network_groups_name_downgrade()
     downgrade_node_labels()
     extensions_field_downgrade()
@@ -131,6 +133,24 @@ def downgrade():
     op.drop_constraint('nodes_nodegroups_fk', 'nodes', type_='foreignkey')
     op.drop_constraint('network_groups_nodegroups_fk', 'network_groups',
                        type_='foreignkey')
+
+
+def upgrade_ip_addr_ranges_constraint():
+    op.drop_constraint(
+        'ip_addr_ranges_network_group_id_fkey', 'ip_addr_ranges')
+    op.create_foreign_key(
+        'ip_addr_ranges_network_group_id_fkey', 'ip_addr_ranges',
+        'network_groups', ['network_group_id'], ['id'], ondelete="CASCADE"
+    )
+
+
+def downgrade_ip_addr_ranges_constraint():
+    op.drop_constraint(
+        'ip_addr_ranges_network_group_id_fkey', 'ip_addr_ranges')
+    op.create_foreign_key(
+        'ip_addr_ranges_network_group_id_fkey', 'ip_addr_ranges',
+        'network_groups', ['network_group_id'], ['id']
+    )
 
 
 def network_groups_name_upgrade():

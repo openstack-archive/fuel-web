@@ -1054,7 +1054,9 @@ class EnvironmentManager(object):
             "cidr": "10.3.0.0/24",
             "gateway": "10.3.0.1",
             "group_id": Cluster.get_default_group(cluster).id,
-            "meta": {"notation": "cidr", 'map_priority': 2}
+            "meta": {
+                "notation": consts.NETWORK_NOTATION.cidr,
+                "map_priority": 2}
         }
         ng.update(kwargs)
         resp = self.app.post(

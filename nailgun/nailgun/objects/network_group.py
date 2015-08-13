@@ -16,15 +16,14 @@
 
 from netaddr import IPNetwork
 
-from nailgun.objects.serializers.network_group import NetworkGroupSerializer
-
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-
 from nailgun.errors import errors
-
+from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects.serializers.network_group import NetworkGroupSerializer
 
 
 class NetworkGroup(NailgunObject):
@@ -76,6 +75,124 @@ class NetworkGroup(NailgunObject):
             db().add(ip_range)
             db().flush()
         return instance
+
+    @classmethod
+    def update_meta(cls, instance, data):
+        """Updates particular keys in object's meta.
+        Is used by NetworkManager.update_networks as
+        for old clusters only those data in meta is
+        allowed for updating
+        """
+        meta_copy = dict(instance.meta)
+        meta_copy.update(data)
+        instance.meta = meta_copy
+
+    @classmethod
+    def update(cls, instance, data):
+        # cleanup stalled data and generate new for the group
+        cls._regenerate_ip_ranges_on_notation(instance, data)
+
+        # as ip ranges were regenerated we must update instance object
+        # in order to prevent possible SQAlchemy errors with operating
+        # on stale data
+        db().refresh(instance)
+
+        # remove 'ip_ranges' (if) any from data as this is relation
+        # attribute for the orm model object
+        if data.get('ip_ranges'):
+            del data['ip_ranges']
+        return super(NetworkGroup, cls).update(instance, data)
+
+    @classmethod
+    def _regenerate_ip_ranges_on_notation(cls, instance, data):
+        """Regenerate IP-address ranges basing on 'notation' field of
+        Network group 'meta' content.
+
+        :param instance: NetworkGroup object
+        :param instance: models.NetworkGroup
+        :param ip_ranges: IP-address ranges sequence
+        :type ip_ranges: iterable of pairs
+        :return: None
+        """
+        notation = instance.meta['notation']
+        data_meta = data.get('meta', {})
+        # if notation data is present change ip ranges and remove
+        # stalled ip addresses for the network group
+        if notation and not instance.nodegroup.cluster.is_locked:
+            cls._delete_ips(instance)
+
+        notation = data_meta['notation'] \
+            if 'notation' in data_meta else notation
+
+        if notation == consts.NETWORK_NOTATION.ip_ranges:
+            ip_ranges = data.get("ip_ranges") or \
+                [(r.first, r.last) for r in instance.ip_ranges]
+            cls._set_ip_ranges(instance, ip_ranges)
+
+        elif notation == consts.NETWORK_NOTATION.cidr:
+            use_gateway = data_meta.get('use_gateway',
+                                        instance.meta.get('use_gateway'))
+
+            cidr = data["cidr"] if "cidr" in data else instance.cidr
+
+            cls._update_range_from_cidr(
+                instance, cidr, use_gateway=use_gateway)
+
+    @classmethod
+    def _set_ip_ranges(cls, instance, ip_ranges):
+        """Set IP-address ranges.
+
+        :param instance: NetworkGroup object being updated
+        :param instance: models.NetworkGroup
+        :param ip_ranges: IP-address ranges sequence
+        :type ip_ranges: iterable of pairs
+        :return: None
+        """
+        # deleting old ip ranges
+        db().query(models.IPAddrRange).filter_by(
+            network_group_id=instance.id).delete()
+
+        for r in ip_ranges:
+            new_ip_range = models.IPAddrRange(
+                first=r[0],
+                last=r[1],
+                network_group_id=instance.id)
+            db().add(new_ip_range)
+        db().flush()
+
+    @classmethod
+    def _update_range_from_cidr(
+            cls, instance, cidr, use_gateway=False):
+        """Update network ranges for CIDR.
+
+        :param instance: NetworkGroup object being updated
+        :param instance: models.NetworkGroup
+        :param cidr: CIDR network representation
+        :type cidr: basestring
+        :param use_gateway: whether gateway is taken into account
+        :type use_gateway: bool
+        :return: None
+        """
+        first_idx = 2 if use_gateway else 1
+        new_cidr = IPNetwork(cidr)
+        ip_range = (str(new_cidr[first_idx]), str(new_cidr[-2]))
+        cls._set_ip_ranges(instance, [ip_range])
+
+    @classmethod
+    def _delete_ips(cls, instance):
+        """Network group cleanup - deletes all IPs were assigned within
+        the network group.
+
+        :param nw_group: NetworkGroup object
+        :type  nw_group: NetworkGroup
+        :returns: None
+        """
+        logger.debug("Deleting old IPs for network with id=%s, cidr=%s",
+                     instance.id, instance.cidr)
+        db().query(models.IPAddr).filter(
+            models.IPAddr.network == instance.id
+        ).delete()
+        db().flush()
 
 
 class NetworkGroupCollection(NailgunCollection):

@@ -1687,6 +1687,8 @@ input[type=range] {
 
   &.multiselect {
     .popover-content {
+      overflow-y: auto;
+      max-height: 450px;
       > div {
         padding: 0 5px;
         .custom-tumbler + span {
@@ -1698,10 +1700,10 @@ input[type=range] {
           .font-normal;
           font-size: @base-font-size - 2;
         }
-        &.divider {
-          border-bottom: 1px solid @gray + 80%;
-          margin: 8px 0 10px;
-        }
+      }
+      .divider {
+        border-bottom: 1px solid @gray + 80%;
+        margin: 8px 0 10px;
       }
     }
   }

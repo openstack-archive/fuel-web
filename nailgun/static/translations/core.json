@@ -591,7 +591,8 @@
                     "neutron_with": "Neutron with",
                     "horizon": "Horizon",
                     "horizon_description": "OpenStack Environment management panel (Horizon) is now available ",
-                    "go_to_horizon": "Proceed to Horizon"
+                    "go_to_horizon": "Proceed to Horizon",
+                    "no_storage_enabled": "No storage option enabled"
                 },
                 "network_tab": {
                     "title": "Network Settings",

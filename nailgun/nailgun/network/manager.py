@@ -52,24 +52,6 @@ from nailgun.settings import settings
 class NetworkManager(object):
 
     @classmethod
-    def update_range_mask_from_cidr(cls, network_group, cidr,
-                                    use_gateway=False):
-        """Update network ranges for cidr
-        """
-        db().query(IPAddrRange).filter_by(
-            network_group_id=network_group.id).delete()
-
-        first_idx = 2 if use_gateway else 1
-        new_cidr = IPNetwork(cidr)
-        ip_range = IPAddrRange(
-            network_group_id=network_group.id,
-            first=str(new_cidr[first_idx]),
-            last=str(new_cidr[-2]))
-
-        db().add(ip_range)
-        db().flush()
-
-    @classmethod
     def get_admin_network_group_id(cls, node_id=None):
         """Method for receiving Admin NetworkGroup ID.
 
@@ -1216,19 +1198,6 @@ class NetworkManager(object):
         ).first()
 
     @classmethod
-    def _set_ip_ranges(cls, network_group_id, ip_ranges):
-        # deleting old ip ranges
-        db().query(IPAddrRange).filter_by(
-            network_group_id=network_group_id).delete()
-
-        for r in ip_ranges:
-            new_ip_range = IPAddrRange(
-                first=r[0],
-                last=r[1],
-                network_group_id=network_group_id)
-            db().add(new_ip_range)
-
-    @classmethod
     def create_admin_network_group(cls, cluster_id, group_id):
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
         admin_ng = cls.get_admin_network_group()
@@ -1320,39 +1289,32 @@ class NetworkManager(object):
 
                 ng_db = db().query(NetworkGroup).get(ng['id'])
 
-                # NOTE: Skip the ip_ranges key because it intersects
-                #       with the NetworkGroup.ip_ranges attribute that
-                #       is a relation. Skip meta as only certain fields
-                #       can be changed there.
-                for key, value in six.iteritems(ng):
-                    if key not in ("ip_ranges", "meta"):
-                        setattr(ng_db, key, value)
+                if 'meta' not in ng:
+                    # there are no restrictions on update process if
+                    # meta is not supplied
+                    objects.NetworkGroup.update(ng_db, ng)
+                    continue
 
-                # If 'notation' is present in 'network_group.meta'
-                # save it in the model.
-                meta = ng.get('meta', {})
+                # only 'notation' and 'use_gateway' attributes is
+                # allowed to be updated in network group metadata for
+                # old clusters so here we updated it manually with data
+                # which doesn't contain 'meta' key
+                meta_to_update = {}
 
-                notation = meta.get('notation', ng_db.meta['notation'])
-                if notation != ng_db.meta['notation']:
-                    ng_db.meta['notation'] = notation
+                for param in ('notation', 'use_gateway'):
+                    if param in ng.get('meta', {}):
+                        meta_to_update[param] = ng['meta'][param]
 
-                use_gateway = meta.get('use_gateway',
-                                       ng_db.get('use_gateway', False))
-                if use_gateway != ng_db.meta.get('use_gateway'):
-                    ng_db.meta['use_gateway'] = use_gateway
+                # update particular keys in data
+                objects.NetworkGroup.update_meta(
+                    ng_db, meta_to_update
+                )
 
-                if notation == consts.NETWORK_NOTATION.ip_ranges:
-                    ip_ranges = ng.get("ip_ranges") or \
-                                [(r.first, r.last) for r in ng_db.ip_ranges]
-                    cls._set_ip_ranges(ng['id'], ip_ranges)
-                elif notation == consts.NETWORK_NOTATION.cidr:
-                    cidr = ng["cidr"] or ng_db.cidr
-                    cls.update_range_mask_from_cidr(
-                        ng_db, cidr, use_gateway=use_gateway)
-
-                if notation and not cluster.is_locked:
-                    cls.cleanup_network_group(ng_db)
-                objects.Cluster.add_pending_changes(cluster, 'networks')
+                # preserve original input dict but remove 'meta' key
+                # for proper update of the network group instance
+                data_to_update = dict(ng)
+                del data_to_update['meta']
+                objects.NetworkGroup.update(ng_db, data_to_update)
 
     @classmethod
     def update(cls, cluster, network_configuration):

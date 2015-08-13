@@ -784,7 +784,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     wrapperClassName='pull-right'
                                 />
                                 {offloadingModes.length ?
-                                    <OffloadingModes interface={ifc} />
+                                    <OffloadingModes interface={ifc} disabled={locked} />
                                 :
                                     <button
                                         onClick={this.toggleOffloading}

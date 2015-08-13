@@ -23,6 +23,7 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.errors import errors
 
+from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
@@ -76,6 +77,47 @@ class NetworkGroup(NailgunObject):
             db().add(ip_range)
             db().flush()
         return instance
+
+    @classmethod
+    def update(cls, instance, data):
+        # to avoid circular imports
+        from nailgun.network.manager import NetworkManager
+
+        notation = instance.meta.get('notation')
+
+        # if notation data is present change ip ranges and remove
+        # stalled ip adresses for the network group
+        if notation:
+            NetworkManager.cleanup_network_group(instance)
+
+        notation = data['meta']['notation'] \
+            if 'notation' in data.get('meta', {}) else notation
+
+        NetworkManager._set_ip_ranges_on_notation(notation, instance, data)
+
+        cluster = instance.nodegroup.cluster
+        Cluster.add_pending_changes(cluster, 'networks')
+
+        # remove 'ip_ranges' (if) any from data as this is relation
+        # attribute for the orm model object
+        if data.get('ip_ranges'):
+            del(data['ip_ranges'])
+        return super(NetworkGroup, cls).update(instance, data)
+
+    @classmethod
+    def delete(cls, instance):
+        """Delete network group and do cleanup: remove ip range and
+        ip adresses associated with the group
+        """
+        # NOTE(aroma): ip range data will be removing from db
+        # automatically due to relations restrictions
+
+        # to avoid circular imports
+        from nailgun.network.manager import NetworkManager
+
+        NetworkManager.cleanup_network_group(instance)
+
+        super(NetworkGroup, cls).delete(instance)
 
 
 class NetworkGroupCollection(NailgunCollection):

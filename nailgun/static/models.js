@@ -421,7 +421,7 @@ define([
             return this.get('pending_addition') || this.get('status') == 'error';
         },
         getRolesSummary: function(releaseRoles) {
-            return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {
+            return _.map(this.sortedRoles(releaseRoles.sort().pluck('name')), function(role) {
                 return releaseRoles.findWhere({name: role}).get('label');
             }).join(', ');
         },

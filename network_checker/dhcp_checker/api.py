@@ -89,7 +89,9 @@ def make_listeners(ifaces):
     for iface in ifaces:
         try:
             listener = pcap.pcap(iface)
-            listener.setfilter('dst port 68')
+            mac_filter = utils.create_mac_filter(iface)
+            # catch the answers only for this iface
+            listener.setfilter('((dst port 68) and {0})'.format(mac_filter))
             listeners.append(listener)
         except Exception:
             LOG.warning(

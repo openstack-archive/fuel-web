@@ -1546,7 +1546,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
 
             // sort grouped nodes by other applied sorters
-            var preferredRolesOrder = roles.pluck('name');
+            var preferredRolesOrder = roles.sort().pluck('name');
             return groups.sort(_.bind(function(group1, group2) {
                 var result;
                 _.each(this.props.activeSorters, function(sorter) {

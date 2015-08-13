@@ -143,7 +143,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             dialogs.ShowNodeInfoDialog.show({node: this.props.node});
         },
         sortRoles: function(roles) {
-            var preferredOrder = this.props.cluster.get('release').get('roles');
+            var preferredOrder = this.props.cluster.get('roles').sort().pluck('name');
             return roles.sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });

@@ -1407,6 +1407,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         } else if (!_.contains(this.props.indeterminateRoles, roleName)) {
                             nodeRoles = _.without(nodeRoles, roleName);
                         }
+
+                        var preferredOrder = this.props.cluster.get('roles').pluck('name');
+                        nodeRoles = nodeRoles.sort(function(a, b) {
+                            return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
+                        });
                         node.set({pending_roles: nodeRoles}, {assign: true});
                     }
                 }, this);

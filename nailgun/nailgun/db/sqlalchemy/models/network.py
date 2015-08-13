@@ -41,7 +41,8 @@ class IPAddr(Base):
 class IPAddrRange(Base):
     __tablename__ = 'ip_addr_ranges'
     id = Column(Integer, primary_key=True)
-    network_group_id = Column(Integer, ForeignKey('network_groups.id'))
+    network_group_id = Column(Integer, ForeignKey('network_groups.id',
+                                                  ondelete="CASCADE"))
     first = Column(String(25), nullable=False)
     last = Column(String(25), nullable=False)
 
@@ -66,7 +67,9 @@ class NetworkGroup(Base):
     nodes = relationship(
         "Node",
         secondary=IPAddr.__table__,
-        backref="networks")
+        backref="networks",
+        passive_deletes=True
+    )
     meta = Column(MutableDict.as_mutable(JSON), default={})
 
 

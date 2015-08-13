@@ -579,10 +579,13 @@ class DeploymentTasksHandler(SingleHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         end = web.input(end=None).end
         start = web.input(start=None).start
+        # web.py depends on [] to understand that there will be multiple inputs
+        include = web.input(include=[]).include
         tasks = self.single.get_deployment_tasks(obj)
         if end or start:
             graph = deployment_graph.DeploymentGraph(tasks)
-            return graph.find_subgraph(end=end, start=start).node.values()
+            return graph.filter_subgraph(
+                end=end, start=start, include=include).node.values()
         return tasks
 
     @content

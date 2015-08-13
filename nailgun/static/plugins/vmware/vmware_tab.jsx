@@ -237,6 +237,9 @@ define(
     });
 
     var VCenter = React.createClass({
+        mixins: [
+            componentMixins.unsavedChangesMixin
+        ],
         statics: {
             isVisible: function(cluster) {
                 return cluster.get('settings').get('common.use_vcenter').value;
@@ -285,14 +288,14 @@ define(
             return {model: null};
         },
         readData: function() {
-            this.model.fetch();
+            return this.model.fetch();
         },
         readDefaultsData: function() {
             this.defaultModel.loadDefaults = true;
-            this.defaultModel.fetch();
+            return this.defaultModel.fetch();
         },
         saveData: function() {
-            this.model.save();
+            return this.model.save();
         },
         onLoadDefaults: function() {
             this.model.loadDefaults = true;
@@ -300,14 +303,44 @@ define(
                 this.model.loadDefaults = false;
             }, this));
         },
-        onCancel: function() {
-            this.readData();
-        },
-        onSave: function() {
-            this.saveData();
+        applyChanges: function() {
+            if (!this.isSavingPossible()) {
+                var result = $.Deferred();
+                result.reject();
+                return result;
+            }
+            return this.saveData();
         },
         revertChanges: function() {
-            this.readData();
+            return this.readData();
+        },
+        hasChanges: function() {
+            return this.detectChanges(this.json, JSON.stringify(this.model.toJSON()));
+        },
+        detectChanges: function(oldJson, currentJson) {
+            var old, current;
+            try {
+                old = JSON.parse(oldJson);
+                current = JSON.parse(currentJson);
+            } catch (error) {
+                return false;
+            }
+            var oldData = JSON.stringify(old, function(key, data) {
+                if (key == 'target_node') {
+                    delete data.options;
+                }
+                return data;
+            });
+            var currentData = JSON.stringify(current, function(key, data) {
+                if (key == 'target_node') {
+                    delete data.options;
+                }
+                return data;
+            });
+            return oldData != currentData;
+        },
+        isSavingPossible: function() {
+            return !this.state.model.validationError;
         },
         render: function() {
             if (!this.state.model || !this.actions) {
@@ -321,10 +354,10 @@ define(
                 disable = this.actions.disable || {};
 
             model.isValid();
-            this.hasChanges = (this.json != currentJson);
-            this.hasDefaultsChanges = (this.defaultsJson != currentJson);
-            var saveDisabled = !editable || !this.hasChanges || !!model.validationError,
-                defaultsDisabled = !editable || !this.hasDefaultsChanges;
+            var hasChanges = this.detectChanges(this.json, currentJson);
+            var hasDefaultsChanges = this.detectChanges(this.defaultsJson, currentJson);
+            var saveDisabled = !editable || !hasChanges || !this.isSavingPossible(),
+                defaultsDisabled = !editable || !hasDefaultsChanges;
 
             return (
                 <div className='row'>
@@ -359,10 +392,10 @@ define(
                                 <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={defaultsDisabled}>
                                     {i18n('vmware.reset_to_defaults')}
                                 </button>
-                                <button className='btn btn-default btn-revert-changes' onClick={this.onCancel} disabled={!this.hasChanges}>
+                                <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!hasChanges}>
                                     {i18n('vmware.cancel')}
                                 </button>
-                                <button className='btn btn-success btn-apply-changes' onClick={this.onSave} disabled={saveDisabled}>
+                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={saveDisabled}>
                                     {i18n('vmware.apply')}
                                 </button>
                             </div>

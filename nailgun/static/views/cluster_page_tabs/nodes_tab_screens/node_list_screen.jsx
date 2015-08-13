@@ -1059,7 +1059,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             var limits = this.props.getFilterLimits(filterName);
                                             return <NumberRangeControl {...props} min={limits[0]} max={limits[1]} />;
                                         }, this)}
-                                        {(!!inactiveFilters.length || !inactiveLabelFilters.length) &&
+                                        {(!!inactiveFilters.length || !!inactiveLabelFilters.length) &&
                                             <MultiSelectControl
                                                 name='filter-more'
                                                 label={i18n(ns + 'more')}

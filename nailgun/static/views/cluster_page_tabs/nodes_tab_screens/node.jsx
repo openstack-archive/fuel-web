@@ -142,12 +142,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (this.state.extendedView) this.toggleExtendedNodePanel();
             dialogs.ShowNodeInfoDialog.show({node: this.props.node});
         },
-        sortRoles: function(roles) {
-            var preferredOrder = this.props.cluster.get('release').get('roles');
-            return roles.sort(function(a, b) {
-                return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
-            });
-        },
         toggleExtendedNodePanel: function() {
             var states = this.state.extendedView ? {extendedView: false, renaming: false} : {extendedView: true};
             this.setState(states);
@@ -284,7 +278,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 node = this.props.node,
                 isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
                 status = node.getStatusSummary(),
-                roles = this.sortRoles(node.get('roles').length ? node.get('roles') : node.get('pending_roles'));
+                roles = node.sortedRoles(this.props.cluster.get('roles').pluck('name'));
 
             // compose classes
             var nodePanelClasses = {

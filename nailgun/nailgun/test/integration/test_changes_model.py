@@ -133,33 +133,6 @@ class TestClusterChanges(BaseIntegrationTest):
         ).all()
         self.assertEqual(len(pending_changes), 1)
 
-    def test_network_changing_adds_pending_changes(self):
-        cluster = self.env.create_cluster(api=True)
-        cluster_db = self.env.clusters[0]
-        objects.Cluster.clear_pending_changes(cluster_db)
-        all_changes = self.db.query(ClusterChanges).all()
-        self.assertEqual(len(all_changes), 0)
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            headers=self.default_headers
-        )
-        net_id = resp.json_body['networks'][0]["id"]
-        resp = self.app.put(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            jsonutils.dumps({'networks': [{
-                "id": net_id, "gateway": "10.0.0.1"}
-            ]}),
-            headers=self.default_headers
-        )
-        pending_changes = self.db.query(ClusterChanges).filter_by(
-            name="networks"
-        ).all()
-        self.assertEqual(len(pending_changes), 1)
-
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_successful_deployment_drops_all_changes(self):
         self.env.create(

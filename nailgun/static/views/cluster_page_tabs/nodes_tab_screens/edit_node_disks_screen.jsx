@@ -180,7 +180,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                         <div className='col-xs-12 page-buttons content-elements'>
                             <div className='well clearfix'>
                                 <div className='btn-group'>
-                                    <button onClick={this.returnToNodeList} className='btn btn-default'>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
+                                    {this.renderBackToNodeListButton()}
                                 </div>
                                 {!locked &&
                                     <div className='btn-group pull-right'>

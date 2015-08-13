@@ -123,24 +123,15 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
 
                 if (nodes.length && nodes.length == ids.length) {return nodes;}
             },
-            goToNodeList: function() {
-                app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-            },
             isLocked: function() {
                 return !!this.props.cluster.task({group: 'deployment', status: 'running'}) || !_.all(this.props.nodes.invoke('isConfigurable'));
             },
-            showDiscardChangesDialog: function() {
-                var dialogs = require('jsx!views/dialogs');
-                dialogs.DiscardSettingsChangesDialog
-                    .show(_.pick(this, 'applyChanges', 'revertChanges'))
-                    .done(this.goToNodeList);
-            },
-            returnToNodeList: function() {
-                if (this.hasChanges()) {
-                    this.showDiscardChangesDialog();
-                } else {
-                    this.goToNodeList();
-                }
+            renderBackToNodeListButton: function() {
+                return (
+                    <a className='btn btn-default' href={'#cluster/' + this.props.cluster.id + '/nodes'} disabled={this.state.actionInProgress}>
+                        {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
+                    </a>
+                );
             }
         }
     };

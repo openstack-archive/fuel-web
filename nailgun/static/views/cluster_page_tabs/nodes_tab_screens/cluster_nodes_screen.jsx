@@ -22,7 +22,6 @@ function(React, NodeListScreen) {
     'use strict';
 
     var ClusterNodesScreen = React.createClass({
-        hasChanges: false,
         render: function() {
             return <NodeListScreen
                 ref='screen'

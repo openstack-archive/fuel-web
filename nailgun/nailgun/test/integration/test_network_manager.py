@@ -460,25 +460,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
             self.env.network_manager.assign_given_vips_for_net_groups(
                 cluster, vips_to_assign)
 
-    def test_upgrade_range_mask_from_cidr(self):
-        cluster = self.env.create_cluster(api=False)
-        ng = cluster.network_groups[0]
-        self.env.network_manager.update_range_mask_from_cidr(
-            ng, "192.168.10.0/24")
-        ip_range = ng.ip_ranges[0]
-        self.assertEqual("192.168.10.1", ip_range.first)
-        self.assertEqual("192.168.10.254", ip_range.last)
-
-    def test_upgrade_range_mask_from_cidr_use_gateway(self):
-        cluster = self.env.create_cluster(api=False)
-        ng = cluster.network_groups[0]
-        self.env.network_manager.update_range_mask_from_cidr(
-            ng, "192.168.10.0/24",
-            use_gateway=True)
-        ip_range = ng.ip_ranges[0]
-        self.assertEqual("192.168.10.2", ip_range.first)
-        self.assertEqual("192.168.10.254", ip_range.last)
-
     def test_update_networks_idempotent(self):
         cluster = self.env.create_cluster(
             api=False,

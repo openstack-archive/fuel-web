@@ -150,7 +150,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (!options.assign) node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
         },
         hasChanges: function() {
-            return this.props.nodes.any(function(node) {
+            return this.props.mode != 'list' && this.props.nodes.any(function(node) {
                 return !_.isEqual(node.get('pending_roles'), this.initialRoles[node.id]);
             }, this);
         },

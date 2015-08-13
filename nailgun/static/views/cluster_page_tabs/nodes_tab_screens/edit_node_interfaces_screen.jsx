@@ -404,7 +404,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length,
                 hasChanges = this.hasChanges(),
                 slaveInterfaceNames = _.pluck(_.flatten(_.filter(interfaces.pluck('slaves'))), 'name'),
-                returnEnabled = !this.state.actionInProgress,
                 loadDefaultsEnabled = !this.state.actionInProgress,
                 revertChangesEnabled = !this.state.actionInProgress && hasChanges,
                 invalidSpeedsForBonding = bondingPossible && this.validateSpeedsForBonding(checkedBonds.concat(checkedInterfaces)) || interfaces.any(function(ifc) {
@@ -489,9 +488,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group'>
-                                <button className='btn btn-default' onClick={this.returnToNodeList} disabled={!returnEnabled}>
-                                    {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
-                                </button>
+                                {this.renderBackToNodeListButton()}
                             </div>
                             {!locked &&
                                 <div className='btn-group pull-right'>

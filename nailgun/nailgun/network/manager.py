@@ -1290,19 +1290,26 @@ class NetworkManager(object):
                 else:
                     notation = ng_db.meta.get("notation")
 
-                if notation == consts.NETWORK_NOTATION.ip_ranges:
-                    ip_ranges = ng.get("ip_ranges") or \
-                                [(r.first, r.last) for r in ng_db.ip_ranges]
-                    cls._set_ip_ranges(ng['id'], ip_ranges)
-                elif notation == consts.NETWORK_NOTATION.cidr:
-                    use_gateway = ng_db.gateway is not None
-                    cidr = ng["cidr"] or ng_db.cidr
-                    cls.update_range_mask_from_cidr(
-                        ng_db, cidr, use_gateway=use_gateway)
+                cls.set_ip_ranges_on_notation(notation, ng_db, ng)
 
                 if notation:
                     cls.cleanup_network_group(ng_db)
                 objects.Cluster.add_pending_changes(cluster, 'networks')
+
+    @classmethod
+    def set_ip_ranges_on_notation(cls, notation, ng_db, ng_data):
+        if notation == consts.NETWORK_NOTATION.ip_ranges:
+            ip_ranges = ng_data.get("ip_ranges") or \
+                        [(r.first, r.last) for r in ng_db.ip_ranges]
+            cls._set_ip_ranges(ng_data['id'], ip_ranges)
+        elif notation == consts.NETWORK_NOTATION.cidr:
+            use_gateway = bool(ng_data.get('gateway'))  \
+                or (ng_db.gateway is not None)
+
+            cidr = ng_data["cidr"] if "cidr" in ng_data else ng_db.cidr
+
+            cls.update_range_mask_from_cidr(
+                ng_db, cidr, use_gateway=use_gateway)
 
     @classmethod
     def update(cls, cluster, network_configuration):

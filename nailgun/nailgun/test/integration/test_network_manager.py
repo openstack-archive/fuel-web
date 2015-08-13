@@ -22,6 +22,7 @@ from mock import patch
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
+import six
 from sqlalchemy import not_
 
 import nailgun
@@ -541,25 +542,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
             self.env.network_manager.assign_given_vips_for_net_groups(
                 cluster, vips_to_assign)
 
-    def test_upgrade_range_mask_from_cidr(self):
-        cluster = self.env.create_cluster(api=False)
-        ng = cluster.network_groups[0]
-        self.env.network_manager.update_range_mask_from_cidr(
-            ng, "192.168.10.0/24")
-        ip_range = ng.ip_ranges[0]
-        self.assertEqual("192.168.10.1", ip_range.first)
-        self.assertEqual("192.168.10.254", ip_range.last)
-
-    def test_upgrade_range_mask_from_cidr_use_gateway(self):
-        cluster = self.env.create_cluster(api=False)
-        ng = cluster.network_groups[0]
-        self.env.network_manager.update_range_mask_from_cidr(
-            ng, "192.168.10.0/24",
-            use_gateway=True)
-        ip_range = ng.ip_ranges[0]
-        self.assertEqual("192.168.10.2", ip_range.first)
-        self.assertEqual("192.168.10.254", ip_range.last)
-
     def test_update_networks_idempotent(self):
         cluster = self.env.create_cluster(
             api=False,
@@ -573,13 +555,13 @@ class TestNetworkManager(BaseNetworkManagerTest):
         updated_nets = get_network_config(cluster)
         self.assertEqual(nets, updated_nets)
 
-    def test_update_networks(self):
-        def get_net_by_name(networks, name):
-            for net in networks:
-                if net["meta"]["name"] == name:
-                    return net
-            raise Exception("Network with name {0} not found".format(name))
+    def get_net_by_name(self, networks, name):
+        for net in networks:
+            if net["meta"]["name"] == name:
+                return net
+        raise Exception("Network with name {0} not found".format(name))
 
+    def test_update_networks(self):
         updates = {
             consts.NETWORKS.public: {
                 "cidr": "172.16.42.0/24",
@@ -599,15 +581,53 @@ class TestNetworkManager(BaseNetworkManagerTest):
         get_network_config = network_configuration.\
             NeutronNetworkConfigurationSerializer.serialize_for_cluster
         nets = get_network_config(cluster)
-        for net_name, net_changes in updates.items():
-            ng = get_net_by_name(nets["networks"], net_name)
+        for net_name, net_changes in six.iteritems(updates):
+            ng = self.get_net_by_name(nets["networks"], net_name)
             ng.update(net_changes)
         self.env.network_manager.update_networks(cluster, nets)
         updated_nets = get_network_config(cluster)
         for net_name in updates.keys():
-            expected_ng = get_net_by_name(nets["networks"], net_name)
-            updated_ng = get_net_by_name(updated_nets["networks"], net_name)
+            expected_ng = self.get_net_by_name(nets["networks"], net_name)
+            updated_ng = self.get_net_by_name(updated_nets["networks"],
+                                              net_name)
             self.assertEqual(expected_ng, updated_ng)
+
+    def test_update_networks_meta(self):
+        updates = {
+            "public": {
+                "meta": {"notation": consts.NETWORK_NOTATION.cidr},
+            },
+            "management": {
+                "meta": {"use_gateway": True}
+            },
+        }
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+        )
+
+        get_network_config = network_configuration.\
+            NeutronNetworkConfigurationSerializer.serialize_for_cluster
+        nets = get_network_config(cluster)
+
+        for net_name, net_changes in six.iteritems(updates):
+            ng = self.get_net_by_name(nets["networks"], net_name)
+            ng.update(net_changes)
+
+        self.env.network_manager.update_networks(cluster, nets)
+        updated_nets = get_network_config(cluster)
+
+        public_ng = self.get_net_by_name(
+            updated_nets["networks"],
+            consts.NETWORKS.public)
+        self.assertEqual(public_ng["meta"]["notation"],
+                         consts.NETWORK_NOTATION.cidr)
+
+        management_ng = self.get_net_by_name(
+            updated_nets["networks"],
+            consts.NETWORKS.management)
+        self.assertTrue(management_ng["meta"]["use_gateway"])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

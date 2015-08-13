@@ -604,9 +604,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     }
                     return (i18n('common.network.neutron_' + networkingParam.get('segmentation_type')));
                 case 'storage_backends':
-                    var volumesLVM = settings.get('storage').volumes_lvm,
-                        volumesCeph = settings.get('storage').volumes_ceph;
-                    return volumesLVM.value && volumesLVM.label || volumesCeph.value && volumesCeph.label;
+                    return _.map(_.where(settings.get('storage'), {value: true}), 'label').join('\n');
                 default:
                     return cluster.get(fieldName);
             }

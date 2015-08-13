@@ -102,23 +102,6 @@ class NetworkManager(object):
         return admin_ng
 
     @classmethod
-    def cleanup_network_group(cls, nw_group):
-        """Network group cleanup - deletes all IPs were assigned within
-        the network group.
-
-        :param nw_group: NetworkGroup object.
-        :type  nw_group: NetworkGroup
-        :returns: None
-        """
-        logger.debug("Deleting old IPs for network with id=%s, cidr=%s",
-                     nw_group.id, nw_group.cidr)
-        ips = db().query(IPAddr).filter(
-            IPAddr.network == nw_group.id
-        ).all()
-        map(db().delete, ips)
-        db().flush()
-
-    @classmethod
     def reusable_ip_address(cls, node, network):
         """Verifies that ip belongs to network and creates IPAddr in case it is
 
@@ -1262,7 +1245,7 @@ class NetworkManager(object):
             if net.get("notation"):
                 nw_group.ip_ranges.append(new_ip_range)
                 db().flush()
-                cls.cleanup_network_group(nw_group)
+                objects.NetworkGroup.cleanup(nw_group)
 
     @classmethod
     def update_networks(cls, cluster, network_configuration):
@@ -1292,7 +1275,7 @@ class NetworkManager(object):
                                                     use_gateway=use_gateway)
 
                 if notation:
-                    cls.cleanup_network_group(ng_db)
+                    objects.NetworkGroup.cleanup(ng_db)
                 objects.Cluster.add_pending_changes(cluster, 'networks')
 
     @classmethod

@@ -16,6 +16,7 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -141,6 +142,51 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(204, resp.status_code)
+
+    def test_delete_network_group_cleanup_ip_range(self):
+        ng_id = self._create_network_group(
+            meta={
+                "notation": "ip_ranges",
+                "ip_range": ["10.3.0.33", "10.3.0.158"]
+            }
+        ).json["id"]
+        self.app.delete(
+            reverse(
+                'NetworkGroupHandler',
+                kwargs={'obj_id': ng_id}
+            ),
+            headers=self.default_headers,
+        )
+        ip_range = self.db.query(models.IPAddrRange)\
+            .filter_by(network_group_id=ng_id)\
+            .first()
+        self.assertIsNone(ip_range)
+
+    def test_delete_network_group_cleanup_ip_addrs(self):
+        ng_id = self._create_network_group().json["id"]
+        node = self.env.create_node(api=False)
+
+        ip_address = []
+        for ip_addr in ('10.3.0.2', '10.3.0.3'):
+            ip_addr_data = {'network': ng_id,
+                            'node': node.id,
+                            'ip_addr': ip_addr}
+            ip_address.append(ip_addr_data)
+
+        self.db.add_all([models.IPAddr(**ips) for ips in ip_address])
+        self.db.flush()
+
+        self.app.delete(
+            reverse(
+                'NetworkGroupHandler',
+                kwargs={'obj_id': ng_id}
+            ),
+            headers=self.default_headers,
+        )
+        ips_db = self.db.query(models.IPAddr)\
+            .filter_by(network=ng_id)\
+            .all()
+        self.assertFalse(ips_db)
 
     def test_cannot_delete_admin_network_group(self):
         admin = objects.Cluster.get_network_manager().get_admin_network_group()

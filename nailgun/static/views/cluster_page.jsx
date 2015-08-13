@@ -142,6 +142,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 });
             }
         },
+        getInitialState: function() {
+            return {
+                activeGroupName: this.pickDefaultSettingGroup()
+            };
+        },
         removeFinishedNetworkTasks: function(callback) {
             var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
             if (callback) request.always(callback);
@@ -194,6 +199,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return !tabData.tab.isVisible || tabData.tab.isVisible(cluster);
             });
         },
+        pickDefaultSettingGroup: function() {
+            var settings = this.props.cluster.get('settings');
+            return _.min(_.keys(settings.attributes), function(groupName) {
+                return settings.get(groupName + '.metadata.weight');
+            });
+        },
+        setActiveSettingsGroupName: function(value) {
+            if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
+            this.setState({activeGroupName: value});
+        },
         render: function() {
             var cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
@@ -227,7 +242,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         </div>
                     </div>
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
-                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} {...this.props.tabData} />
+                        <Tab
+                            ref='tab'
+                            cluster={cluster}
+                            tabOptions={this.props.tabOptions}
+                            setActiveGroupName={this.setActiveSettingsGroupName}
+                            activeGroupName={this.state.activeGroupName}
+                            {...this.props.tabData} />
                     </div>
                 </div>
             );

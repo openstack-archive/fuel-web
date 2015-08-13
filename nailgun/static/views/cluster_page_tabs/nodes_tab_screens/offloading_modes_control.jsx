@@ -130,6 +130,7 @@ function($, _, React, i18n, utils) {
                                 <td key={mode.name + modeState}>
                                     <button
                                         className={utils.classNames(styles)}
+                                        disabled={this.props.disabled}
                                         onClick={this.onModeStateChange(mode.name, modeState)}>
                                         <i className='glyphicon glyphicon-ok'></i>
                                     </button>

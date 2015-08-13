@@ -22,7 +22,10 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 
 from nailgun.errors import errors
+from nailgun.logger import logger
 
+
+from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
@@ -76,6 +79,61 @@ class NetworkGroup(NailgunObject):
             db().add(ip_range)
             db().flush()
         return instance
+
+    @classmethod
+    def update(cls, instance, data):
+        # to avoid circular imports
+        from nailgun.network.manager import NetworkManager
+
+        notation = instance.meta.get('notation')
+
+        # if notation data is present change ip ranges and remove
+        # stalled ip adresses for the network group
+        if notation:
+            cls.cleanup(instance)
+
+        notation = data['meta']['notation'] \
+            if 'notation' in data.get('meta', {}) else notation
+
+        if notation != 'cidr':
+            ip_ranges = data.pop('ip_ranges') if 'ip_ranges' in data \
+                else [(r.first, r.last) for r in instance.ip_ranges]
+            NetworkManager._set_ip_ranges(instance.id, ip_ranges)
+        else:
+            cidr = data['cidr'] if 'cidr' in data else instance.cidr
+
+            use_gateway = bool(data.get('gateway'))  \
+                or (instance.gateway is not None)
+
+            NetworkManager.update_range_mask_from_cidr(
+                instance, cidr, use_gateway)
+
+            cluster = instance.nodegroup.cluster
+            Cluster.add_pending_changes(cluster, 'networks')
+
+        return super(NetworkGroup, cls).update(instance, data)
+
+    @classmethod
+    def delete(cls, instance):
+        """Delete network group and do cleanup: remove ip range and
+        ip adresses associated with the group
+        """
+        # NOTE(aroma): ip range data will be removing from db
+        # automatically due to relations restrictions
+
+        cls.cleanup(instance)
+        super(NetworkGroup, cls).delete(instance)
+
+    @classmethod
+    def cleanup(cls, instance):
+        """Remove all IPs that were assigned for the network group
+        """
+        logger.debug("Deleting old IPs for network with id=%s, cidr=%s",
+                     instance.id, instance.cidr)
+        db().query(models.IPAddr)\
+            .filter_by(network=instance.id)\
+            .delete()
+        db().flush()
 
 
 class NetworkGroupCollection(NailgunCollection):

@@ -15,28 +15,15 @@
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun import consts
 
-IP_RANGE = {
-    "type": "array",
-    "minItems": 2,
-    "maxItems": 2,
-    "uniqueItems": True,
-    "items": {
-        "type": "string",
-        'anyOf': [
-            {'format': 'ipv4'},
-            {'format': 'ipv6'},
-        ]
-    }
-}
-
-NETWORK = {
+NETWORK_META = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "name": {"type": "string"},
         "cidr": base_types.NULLABLE_NET_ADDRESS,
         "gateway": base_types.NULLABLE_IP_ADDRESS,
-        "ip_range": IP_RANGE,
+        "ip_range": base_types.IP_ADDRESS_RANGE,
         "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
         "seg_type": {
             "type": "string",
@@ -59,35 +46,119 @@ NETWORK = {
             "uniqueItems": True,
             "items": {"type": "string", "pattern": "^[a-zA-Z_]+$"}
         }
-    },
-    "additionalProperties": False
+    }
 }
 
-NETWORKS = {
+_NETWORK_GROUP = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "NetworkGroup",
+    "description": "Serialized NetworkGroup object",
+    "type": "object",
+    "required": ["id"],
+    "additionalProperties": False,
+    "properties": {
+        "id": {"type": "integer"},
+        "group_id": base_types.NULLABLE_ID,
+        "name": {"type": "string"},
+        "release": base_types.NULLABLE_ID,
+        "gateway": base_types.NULLABLE_IP_ADDRESS,
+        "cidr": base_types.NULLABLE_NET_ADDRESS,
+        "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
+        "ip_ranges": {
+            "type": "array",
+            "items": base_types.IP_ADDRESS_RANGE,
+        },
+        "meta": NETWORK_META
+    }
+}
+
+NETWORK_GROUPS = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
+    "required": ["networks"],
     "properties": {
         "networks": {
             "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "id": {"type": "integer"},
-                    "group_id": base_types.NULLABLE_ID,
-                    "name": {"type": "string"},
-                    "gateway": base_types.NULLABLE_IP_ADDRESS,
-                    "cidr": base_types.NULLABLE_NET_ADDRESS,
-                    "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
-                    "ip_ranges": {
-                        "type": "array",
-                        "items": IP_RANGE
-                    },
-                    "meta": NETWORK
+            "items": _NETWORK_GROUP
+        }
+    }
+}
+
+NOVA_NETWORK_CONFIGURATION = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "networking_parameters": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "dns_nameservers": base_types.IP_ADDRESS_RANGE,
+                "fixed_network_size": base_types.NON_NEGATIVE_INTEGER,
+                "fixed_networks_amount": base_types.NON_NEGATIVE_INTEGER,
+                "fixed_networks_cidr": base_types.NET_ADDRESS,
+                "fixed_networks_vlan_start": base_types.NON_NEGATIVE_INTEGER,
+                "net_manager": {
+                    "enum": list(consts.NOVA_NET_MANAGERS)
                 },
-                "required": ["id"],
-                "additionalProperties": False
+                "floating_ranges": {
+                    "type": "array",
+                    "items": base_types.IP_ADDRESS_RANGE
+                }
             }
         }
-    },
-    "required": ["networks"],
+    }
+}
+
+NEUTRON_NETWORK_CONFIGURATION = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "networking_parameters": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "base_mac": base_types.MAC_ADDRESS,
+                "configuration_template": base_types.NULLABLE_STRING,
+                "dns_nameservers": base_types.IP_ADDRESS_RANGE,
+                "floating_ranges": {
+                    "type": "array",
+                    "items": base_types.IP_ADDRESS_RANGE
+                },
+                "gre_id_range": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "uniqueItems": True,
+                    "items": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 65535,
+                        "exclusiveMinimum": False,
+                        "exclusiveMaximum": False
+                    },
+                },
+                "internal_cidr": base_types.NULLABLE_NET_ADDRESS,
+                "internal_gateway": base_types.NULLABLE_IP_ADDRESS,
+                "net_l23_provider": {
+                    "enum": list(consts.NEUTRON_L23_PROVIDERS)
+                },
+                "segmentation_type": {
+                    "enum": list(consts.NEUTRON_SEGMENT_TYPES)
+                },
+                "vlan_range": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "uniqueItems": True,
+                    "items": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 4094,
+                        "exclusiveMinimum": False,
+                        "exclusiveMaximum": False
+                    }
+                }
+            }
+        }
+    }
 }

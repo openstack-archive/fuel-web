@@ -1455,8 +1455,11 @@ class BaseValidatorTest(TestCase):
         context = self.get_invalid_data_context(obj)
 
         self.assertIn(
-            "Additional properties are not allowed (u'{0}' "
-            "was unexpected)".format(key),
+            "Additional properties are not allowed".format(key),
+            context.exception.message)
+
+        self.assertIn(
+            "'{0}' was unexpected".format(key),
             context.exception.message)
 
     def assertRaisesRequiredProperty(self, obj, key):
@@ -1479,7 +1482,7 @@ class BaseValidatorTest(TestCase):
             "{0} is not of type {1}".format(value, expected_value),
             context.exception.message)
 
-    def assertRaisesInvalidAnyOf(self, obj, expected_value):
+    def assertRaisesInvalidAnyOf(self, obj, passed_value, instance):
         context = self.get_invalid_data_context(obj)
         self.assertIn(
             "Failed validating 'anyOf' in schema",
@@ -1487,7 +1490,12 @@ class BaseValidatorTest(TestCase):
 
         err_msg = "{0} is not valid under any of the given schemas"
         self.assertIn(
-            err_msg.format(expected_value), context.exception.message)
+            err_msg.format(passed_value),
+            context.exception.message)
+
+        self.assertIn(
+            "On instance{0}".format(instance),
+            context.exception.message)
 
     def assertRaisesInvalidEnum(self, obj, value, expected_value):
         context = self.get_invalid_data_context(obj)

@@ -27,13 +27,13 @@ define(['config'], function(config) {
             'selenium-version': '2.45.0'
         },
         maxConcurrency: 1,
-        useLoader: {
+        loaders: {
             'host-node': 'requirejs',
             'host-browser': '/vendor/bower/requirejs/require.js'
         },
         grep: /^/,
         excludeInstrumentation: /^/,
-        loader: config,
-        reporters: ['console']
+        loaderOptions: config,
+        reporters: ['Console']
     };
 });

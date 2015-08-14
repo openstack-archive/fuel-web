@@ -42,6 +42,7 @@ function usage {
   echo "      --ui-func               Run UI functional tests"
   echo "      --no-ui-func            Don't run UI functional tests"
   echo "      --ui-selenium           Run UI functional selenium tests"
+  echo "      --no-ui-compression     Skip UI compression"
   echo ""
   echo "Note: with no options specified, the script will try to run all available"
   echo "      tests with all available checks."
@@ -73,6 +74,7 @@ function process_options {
       --ui-func) ui_func_tests=1;;
       --ui-selenium) ui_func_selenium_tests=1;;
       --no-ui-func) no_ui_func_tests=1;;
+      --no-ui-compression) no_ui_compression=1;;
       -t|--tests) certain_tests=1;;
       -*) testropts="$testropts $arg";;
       *) testrargs="$testrargs $arg"
@@ -130,6 +132,7 @@ extensions_tests=0
 no_extensions_tests=0
 certain_tests=0
 ui_func_selenium_tests=0
+no_ui_compression=0
 
 function run_tests {
   run_cleanup
@@ -362,15 +365,17 @@ function run_ui_func_selenium_tests {
 
   pushd $ROOT/nailgun >> /dev/null
 
-  # test compression
-  echo -n "Compressing UI... "
-  local output=$(${GULP} build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
-  if [ $? -ne 0 ]; then
-    echo "$output"
-    popd >> /dev/null
-    exit 1
+  if [ $no_ui_compression -ne 1 ]; then
+    # test compression
+    echo -n "Compressing UI... "
+    local output=$(${GULP} build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+    if [ $? -ne 0 ]; then
+      echo "$output"
+      popd >> /dev/null
+      exit 1
+    fi
+    echo "done"
   fi
-  echo "done"
 
   # run js testcases
   local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`

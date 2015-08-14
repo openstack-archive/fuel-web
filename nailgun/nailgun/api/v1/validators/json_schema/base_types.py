@@ -74,7 +74,20 @@ IP_ADDRESS = {
         {'format': 'ipv4'},
         {'format': 'ipv6'},
     ]
+}
 
+IP_ADDRESS_RANGE = {
+    "type": "array",
+    "minItems": 2,
+    "maxItems": 2,
+    "uniqueItems": True,
+    "items": {
+        "type": "string",
+        'anyOf': [
+            {'format': 'ipv4'},
+            {'format': 'ipv6'},
+        ]
+    }
 }
 
 NULLABLE_IP_ADDRESS = {

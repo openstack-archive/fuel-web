@@ -17,12 +17,13 @@
 define([
     'intern!object',
     'intern/chai!assert',
+    'intern/dojo/node!leadfoot/helpers/pollUntil',
     'tests/functional/pages/node',
     'tests/functional/pages/modal',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
     'tests/functional/helpers'
-], function(registerSuite, assert, NodeComponent, ModalWindow, Common, ClusterPage) {
+], function(registerSuite, assert, pollUntil, NodeComponent, ModalWindow, Common, ClusterPage) {
     'use strict';
 
     registerSuite(function() {
@@ -146,8 +147,10 @@ define([
                     .assertElementNotExists('.node', 'Node has been removed');
             },
             'Additional tests for unallocated node': function() {
+                var self = this;
                 return this.remote
                     .clickByCssSelector('button.btn-add-nodes')
+                    .then(pollUntil(self.remote.isElementVisibleByClass, ['node'], 3000))
                     .assertElementAppears('.node-list', 2000, 'Unallocated node list loaded')
                     .then(function() {
                         return node.openCompactNodeExtendedView();

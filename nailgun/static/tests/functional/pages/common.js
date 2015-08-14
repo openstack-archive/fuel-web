@@ -18,12 +18,13 @@ define([
   'intern/dojo/node!lodash',
   'intern/chai!assert',
   'tests/functional/helpers',
+  'intern/dojo/node!leadfoot/helpers/pollUntil',
   'tests/functional/pages/login',
   'tests/functional/pages/welcome',
   'tests/functional/pages/cluster',
   'tests/functional/pages/clusters'
 ],
-function(_, assert, Helpers, LoginPage, WelcomePage, ClusterPage, ClustersPage) {
+function(_, assert, Helpers, pollUntil, LoginPage, WelcomePage, ClusterPage, ClustersPage) {
   'use strict';
   function CommonMethods(remote) {
     this.remote = remote;
@@ -113,6 +114,9 @@ function(_, assert, Helpers, LoginPage, WelcomePage, ClusterPage, ClustersPage) 
         .waitForCssSelector('button.btn-add-nodes', 3000)
         .clickByCssSelector('button.btn-add-nodes')
         .waitForCssSelector('.node', 3000)
+        .then(pollUntil(function() {
+          return window.$('.node-list-management-buttons').is(':visible') && window.$('.role-panel').is(':visible') || null;
+        }, 3000))
         .then(function() {
           if (nodeNameFilter) return self.clusterPage.searchForNode(nodeNameFilter);
         })

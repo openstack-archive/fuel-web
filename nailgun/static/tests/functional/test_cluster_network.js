@@ -68,7 +68,14 @@ define([
       },
       afterEach: function() {
         return this.remote
-          .clickByCssSelector('.btn-revert-changes');
+          .findByCssSelector('.btn-revert-changes')
+            .then(function(element) {
+              return element.isEnabled()
+                .then(function(isEnabled) {
+                  if (isEnabled) return element.click();
+                });
+            })
+            .end();
       },
       'Network Tab is rendered correctly': function() {
         return this.remote
@@ -149,7 +156,8 @@ define([
           .clickByCssSelector('input[name=auto_assign_floating_ip][type=checkbox]')
           .clickByCssSelector(networksPage.applyButtonSelector)
           .assertElementsAppear('input:not(:disabled)', 2000, 'Inputs are not disabled')
-          .assertElementDisabled(networksPage.applyButtonSelector, 'Save changes button is disabled again after successfull settings saving');
+          .assertElementAppears(networksPage.applyButtonSelector + ':disabled', 200,
+            'Save changes button is disabled again after successfull settings saving');
       },
       'Testing cluster networks: verification': function() {
         return this.remote
@@ -264,7 +272,14 @@ define([
       },
       afterEach: function() {
         return this.remote
-          .clickByCssSelector('.btn-revert-changes');
+          .findByCssSelector('.btn-revert-changes')
+            .then(function(element) {
+              return element.isEnabled()
+                .then(function(isEnabled) {
+                  if (isEnabled) return element.click();
+                });
+            })
+            .end();
       },
       'Add ranges manipulations': function() {
         var rangeSelector = '.public .ip_ranges ';
@@ -386,6 +401,7 @@ define([
           .clickByCssSelector('.glyphicon-pencil')
           .waitForCssSelector('.network-group-name input[type=text]', 2000)
           .findByCssSelector('.node-group-renaming input[type=text]')
+            .clearValue()
             .type('Node_Network_Group_2')
             // Enter
             .type('\uE007')

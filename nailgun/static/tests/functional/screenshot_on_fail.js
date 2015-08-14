@@ -14,21 +14,38 @@
  * under the License.
  **/
 
-define(function() {
+define(['intern/dojo/node!fs'], function(fs) {
   'use strict';
 
-  var remotes = {};
-
-  function saveScreenshot(testOrSuite) {
-    var remote = remotes[testOrSuite.sessionId];
-    if (remote && remote.takeScreenshotAndSave) remote.takeScreenshotAndSave(testOrSuite.id);
-  }
-
-  return {
-    '/session/start': function(remote) {
-      remotes[remote.sessionId] = remote;
-    },
-    '/suite/error': saveScreenshot,
-    '/test/fail': saveScreenshot
+  var ScreenshotOnFailReporter = function() {
+    this.remotes = {};
   };
+
+  ScreenshotOnFailReporter.prototype = {
+    saveScreenshot: function(testOrSuite) {
+      var remote = this.remotes[testOrSuite.sessionId];
+      if (remote) {
+        remote.takeScreenshot().then(function(buffer) {
+          var targetDir = process.env.ARTIFACTS || process.cwd();
+          var filename = testOrSuite.id + ' - ' + new Date().toTimeString();
+          filename = filename.replace(/[\s\*\?\\\/]/g, '_');
+          filename = targetDir + '/' + filename + '.png';
+          fs.writeFileSync(filename, buffer);
+          console.log('Saved screenshot to', filename); // eslint-disable-line no-console
+        });
+      }
+    },
+    sessionStart: function(remote) {
+      var sessionId = remote._session._sessionId;
+      this.remotes[sessionId] = remote;
+    },
+    suiteError: function(suite) {
+      this.saveScreenshot(suite);
+    },
+    testFail: function(test) {
+      this.saveScreenshot(test);
+    }
+  };
+
+  return ScreenshotOnFailReporter;
 });

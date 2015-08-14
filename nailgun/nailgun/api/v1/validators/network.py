@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import six
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun.api.v1.validators.json_schema.network_template import \
     NETWORK_TEMPLATE
-from nailgun.api.v1.validators.json_schema import networks as network_schema
+from nailgun.api.v1.validators.json_schema import networks
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
@@ -34,7 +34,14 @@ class NetworkConfigurationValidator(BasicValidator):
     @classmethod
     def validate_networks_update(cls, data):
         valid_data = cls.validate_json(data)
-        cls.validate_schema(valid_data, network_schema.NETWORKS)
+
+        # A tiny tuning of Network Group JSON-schema
+        # to validate networks' update
+        NETWORKS = copy.copy(networks.NETWORK_GROUP)
+        NETWORKS["required"] = ["networks"]
+        NETWORKS.pop("release")
+
+        cls.validate_schema(valid_data, NETWORKS)
 
         net_ids = [net['id'] for net in valid_data['networks']]
         ngs_db = db().query(NetworkGroup).filter(NetworkGroup.id.in_(net_ids))
@@ -61,18 +68,16 @@ class NetworkConfigurationValidator(BasicValidator):
 
             # Depending on notation required parameters must be either in
             # the request or DB
-            if notation == consts.NETWORK_NOTATION.ip_ranges:
-                if not ip_ranges and not ng_db.ip_ranges:
-                    raise errors.InvalidData(
-                        "No IP ranges were specified for network "
-                        "{0}".format(net_id))
+            if not ip_ranges and notation == consts.NETWORK_NOTATION.ip_ranges:
+                raise errors.InvalidData(
+                    "No IP ranges were specified for network "
+                    "{0}".format(net_id))
 
-            if notation in [consts.NETWORK_NOTATION.cidr,
-                            consts.NETWORK_NOTATION.ip_ranges]:
-                if not cidr and not ng_db.cidr:
-                    raise errors.InvalidData(
-                        "No CIDR was specified for network "
-                        "{0}".format(net_id))
+            if not cidr and notation in [consts.NETWORK_NOTATION.cidr,
+                                         consts.NETWORK_NOTATION.ip_ranges]:
+                raise errors.InvalidData(
+                    "No CIDR was specified for network "
+                    "{0}".format(net_id))
 
         return valid_data
 
@@ -407,7 +412,7 @@ class NetAssignmentValidator(BasicValidator):
 
 class NetworkGroupValidator(BasicValidator):
 
-    single_schema = ng_scheme.NETWORK_GROUP
+    single_schema = networks.NETWORK_GROUP
 
     @classmethod
     def validate(cls, data):

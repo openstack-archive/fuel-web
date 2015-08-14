@@ -87,7 +87,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(400, resp.status_code)
         self.assertEqual(
             resp.json_body["message"],
-            "notation: u'new' is not one of ['cidr', 'ip_ranges', None]")
+            "IPAddrRange object cannot be created for network "
+            "'external' with notation='new', ip_range='None'")
 
         resp = self._create_network_group(
             meta={"notation": "ip_ranges"},
@@ -106,7 +107,9 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(400, resp.status_code)
         self.assertEqual(resp.json_body["message"],
-                         "ip_range: [u'10.3.0.33'] is too short")
+                         "IPAddrRange object cannot be created for network "
+                         "'external' with notation='ip_ranges', "
+                         "ip_range='[u'10.3.0.33']'")
 
     def test_get_network_group(self):
         resp = self._create_network_group(name='test')

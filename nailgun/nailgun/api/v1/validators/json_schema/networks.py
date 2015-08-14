@@ -63,7 +63,7 @@ NETWORK = {
     "additionalProperties": False
 }
 
-NETWORKS = {
+NETWORK_GROUP = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
     "properties": {
@@ -75,6 +75,7 @@ NETWORKS = {
                     "id": {"type": "integer"},
                     "group_id": base_types.NULLABLE_ID,
                     "name": {"type": "string"},
+                    "release": base_types.NULLABLE_ID,
                     "gateway": base_types.NULLABLE_IP_ADDRESS,
                     "cidr": base_types.NULLABLE_NET_ADDRESS,
                     "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
@@ -88,6 +89,5 @@ NETWORKS = {
                 "additionalProperties": False
             }
         }
-    },
-    "required": ["networks"],
+    }
 }

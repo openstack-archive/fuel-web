@@ -1295,7 +1295,8 @@ class NetworkManager(object):
                                 [(r.first, r.last) for r in ng_db.ip_ranges]
                     cls._set_ip_ranges(ng['id'], ip_ranges)
                 elif notation == consts.NETWORK_NOTATION.cidr:
-                    use_gateway = ng_db.gateway is not None
+                    use_gateway = ng.get('gateway') or \
+                                  ng_db.gateway is not None
                     cidr = ng["cidr"] or ng_db.cidr
                     cls.update_range_mask_from_cidr(
                         ng_db, cidr, use_gateway=use_gateway)

@@ -151,7 +151,7 @@ class TestClusterChanges(BaseIntegrationTest):
                 'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster['id']}),
             jsonutils.dumps({'networks': [{
-                "id": net_id, "access": "restricted"}
+                "id": net_id, "gateway": "10.0.0.1"}
             ]}),
             headers=self.default_headers
         )

@@ -218,16 +218,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
         },
         getFilterOptions: function(filter) {
-            if (_.contains(this.getNodeLabels(), filter)) {
-                var values = _.uniq(_.reject(this.props.nodes.getLabelValues(filter), _.isUndefined));
-                return values.map(function(value) {
-                    return {
-                        name: value,
-                        label: _.isNull(value) ? i18n('common.not_specified') : value
-                    };
-                });
-            }
-
             var options;
             switch (filter) {
                 case 'status':
@@ -252,7 +242,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     options = this.props.cluster.get('roles').invoke('pick', 'name', 'label');
                     break;
             }
-            return options;
+            if (options) return options;
+
+            if (_.contains(this.getNodeLabels(), filter)) {
+                var values = _.uniq(_.reject(this.props.nodes.getLabelValues(filter), _.isUndefined));
+                return values.map(function(value) {
+                    return {
+                        name: value,
+                        label: _.isNull(value) ? i18n('common.not_specified') : value
+                    };
+                });
+            }
+
+            return [];
         },
         getFilterLimits: function(filter) {
             var min = _.min(this.props.nodes.invoke('resource', filter)),
@@ -319,9 +321,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 nodes = this.props.nodes,
                 processedRoleData = this.processRoleLimits();
 
-            // labels to work with in filters and sorters panels
-            var screenNodesLabels = this.getNodeLabels();
-
             // labels to manage in labels panel
             var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
                     return this.state.selectedNodeIds[node.id];
@@ -342,30 +341,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
                 // filters
                 return _.all(this.state.activeFilters, function(values, filter) {
-                    if (!_.contains(this.props.filters, filter) && !_.contains(screenNodesLabels, filter)) return true;
+                    if (_.contains(this.props.filters, filter)) {
+                        if (!values.length) return true;
 
-                    if (_.contains(screenNodesLabels, filter)) {
-                        return values.length ? _.contains(values, node.getLabel(filter)) : !_.isUndefined(node.getLabel(filter));
+                        if (filter == 'roles') {
+                            return _.any(values, function(role) {return node.hasRole(role);});
+                        }
+                        if (filter == 'status') {
+                            return _.contains(values, node.getStatusSummary());
+                        }
+                        if (filter == 'manufacturer') {
+                            return _.contains(values, node.get('manufacturer'));
+                        }
+
+                        // handle number ranges
+                        var currentValue = node.resource(filter);
+                        if (filter == 'hdd' || filter == 'ram') {
+                            currentValue = currentValue / Math.pow(1024, 3);
+                        }
+                        return currentValue >= values[0] && (_.isUndefined(values[1]) || currentValue <= values[1]);
                     }
 
-                    if (!values.length) return true;
-
-                    if (filter == 'roles') {
-                        return _.any(values, function(role) {return node.hasRole(role);});
-                    }
-                    if (filter == 'status') {
-                        return _.contains(values, node.getStatusSummary());
-                    }
-                    if (filter == 'manufacturer') {
-                        return _.contains(values, node.get('manufacturer'));
-                    }
-
-                    // handle number ranges
-                    var currentValue = node.resource(filter);
-                    if (filter == 'hdd' || filter == 'ram') {
-                        currentValue = currentValue / Math.pow(1024, 3);
-                    }
-                    return currentValue >= values[0] && (_.isUndefined(values[1]) || currentValue <= values[1]);
+                    // filter by label
+                    return values.length ? _.contains(values, node.getLabel(filter)) : !_.isUndefined(node.getLabel(filter));
                 }, this);
             }, this);
 
@@ -387,7 +385,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         nodes={selectedNodes}
                         screenNodes={nodes}
                         filteredNodes={filteredNodes}
-                        screenNodesLabels={screenNodesLabels}
+                        screenNodesLabels={this.getNodeLabels()}
                         selectedNodeLabels={selectedNodeLabels}
                         hasChanges={this.hasChanges()}
                         locked={locked}
@@ -403,9 +401,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     <NodeList
                         {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedNodeIds', 'selectedRoles')}
-                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'sorters')}
                         {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
-                        screenNodesLabels={screenNodesLabels}
                         nodes={filteredNodes}
                         totalNodesLength={nodes.length}
                         locked={this.state.isLabelsPanelOpen}
@@ -1518,36 +1515,34 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             var groupingMethod = _.bind(function(node) {
                 return (_.map(_.difference(activeSorters, uniqValueSorters), function(sorter) {
-                    if (_.contains(this.props.screenNodesLabels, sorter)) {
-                        return getLabelValue(node, sorter);
+                    if (_.contains(this.props.sorters, sorter)) {
+                        if (sorter == 'roles') {
+                            return node.getRolesSummary(roles);
+                        }
+                        if (sorter == 'status') {
+                            return i18n('cluster_page.nodes_tab.node.status.' + node.getStatusSummary(), {
+                                os: this.props.cluster.get('release').get('operating_system') || 'OS'
+                            });
+                        }
+                        if (sorter == 'manufacturer') {
+                            return node.get('manufacturer') || i18n('common.not_specified');
+                        }
+                        if (sorter == 'hdd') {
+                            return i18n('node_details.total_hdd', {
+                                total: utils.showDiskSize(node.resource('hdd'))
+                            });
+                        }
+                        if (sorter == 'disks') {
+                            return composeNodeDiskSizesLabel(node);
+                        }
+                        if (sorter == 'ram') {
+                            return i18n('node_details.total_ram', {
+                                total: utils.showMemorySize(node.resource('ram'))
+                            });
+                        }
+                        return i18n('node_details.' + (sorter == 'interfaces' ? 'interfaces_amount' : sorter), {count: node.resource(sorter)});
                     }
-
-                    if (sorter == 'roles') {
-                        return node.getRolesSummary(roles);
-                    }
-                    if (sorter == 'status') {
-                        return i18n('cluster_page.nodes_tab.node.status.' + node.getStatusSummary(), {
-                            os: this.props.cluster.get('release').get('operating_system') || 'OS'
-                        });
-                    }
-                    if (sorter == 'manufacturer') {
-                        return node.get('manufacturer') || i18n('common.not_specified');
-                    }
-                    if (sorter == 'hdd') {
-                        return i18n('node_details.total_hdd', {
-                            total: utils.showDiskSize(node.resource('hdd'))
-                        });
-                    }
-                    if (sorter == 'disks') {
-                        return composeNodeDiskSizesLabel(node);
-                    }
-                    if (sorter == 'ram') {
-                        return i18n('node_details.total_ram', {
-                            total: utils.showMemorySize(node.resource('ram'))
-                        });
-                    }
-
-                    return i18n('node_details.' + (sorter == 'interfaces' ? 'interfaces_amount' : sorter), {count: node.resource(sorter)});
+                    return getLabelValue(node, sorter);
                 }, this)).join('; ');
             }, this);
             var groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
@@ -1575,15 +1570,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     var node1 = group1[1][0], node2 = group2[1][0];
                     var sorterName = _.keys(sorter)[0];
 
-                    if (_.contains(this.props.screenNodesLabels, sorterName)) {
-                        var node1Label = node1.getLabel(sorterName),
-                            node2Label = node2.getLabel(sorterName);
-                        if (node1Label && node2Label) {
-                            result = utils.natsort(node1Label, node2Label, {insensitive: true});
-                        } else {
-                            result = node1Label === node2Label ? 0 : _.isString(node1Label) ? -1 : _.isNull(node1Label) ? -1 : 1;
-                        }
-                    } else {
+                    if (_.contains(this.props.sorters, sorterName)) {
                         switch (sorterName) {
                             case 'roles':
                                 var roles1 = node1.sortedRoles(preferredRolesOrder),
@@ -1606,6 +1593,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             default:
                                 result = node1.resource(sorterName) - node2.resource(sorterName);
                                 break;
+                        }
+                    } else {
+                        //sort by labels
+                        var node1Label = node1.getLabel(sorterName),
+                            node2Label = node2.getLabel(sorterName);
+                        if (node1Label && node2Label) {
+                            result = utils.natsort(node1Label, node2Label, {insensitive: true});
+                        } else {
+                            result = node1Label === node2Label ? 0 : _.isString(node1Label) ? -1 : _.isNull(node1Label) ? -1 : 1;
                         }
                     }
 

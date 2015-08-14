@@ -51,23 +51,26 @@ class TestNetworkCheck(BaseIntegrationTest):
             ]
         )
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+
+        ng1 = NetworkGroup()
+        ng1.name = consts.NETWORKS.storage
+        ng2 = NetworkGroup()
+        ng2.name = consts.NETWORKS.management
+        self.env.db().add(ng1)
+        self.env.db().add(ng2)
+        self.env.db().flush()
+
         checker = NetworkCheck(FakeTask(cluster_db), {})
-        checker.networks = [{'id': 1,
+        checker.networks = [{'id': ng1.id,
                              'cidr': '192.168.0.0/24',
                              'name': consts.NETWORKS.storage,
                              'vlan_start': None,
                              'meta': {'notation': 'cidr'}},
-                            {'id': 2,
+                            {'id': ng2.id,
                              'cidr': '192.168.0.0/26',
                              'name': consts.NETWORKS.management,
                              'vlan_start': None,
                              'meta': {'notation': 'cidr'}}]
-        ng1 = NetworkGroup()
-        ng1.name = consts.NETWORKS.storage
-        ng1.id = 1
-        ng2 = NetworkGroup()
-        ng2.name = consts.NETWORKS.management
-        ng2.id = 2
         checker.cluster.nodes[0].interfaces[0].assigned_networks_list = \
             [ng1, ng2]
         checker.cluster.nodes[0].interfaces[1].assigned_networks_list = \

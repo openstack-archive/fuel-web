@@ -17,18 +17,27 @@
 define(function() {
     'use strict';
 
-    var remotes = {};
-
-    function saveScreenshot(testOrSuite) {
-        var remote = remotes[testOrSuite.sessionId];
-        if (remote && remote.takeScreenshotAndSave) remote.takeScreenshotAndSave(testOrSuite.id);
+    var ScreenshotOnFailReporter = function(options) {
+        this.console = options.console;
+        this.remotes = {};
     }
 
-    return {
-        '/session/start': function(remote) {
-            remotes[remote.sessionId] = remote;
+    ScreenshotOnFailReporter.prototype = {
+        saveScreenshot: function(testOrSuite) {
+            var remote = this.remotes[testOrSuite.sessionId];
+            if (remote && remote.takeScreenshotAndSave) remote.takeScreenshotAndSave(testOrSuite.id);
         },
-        '/suite/error': saveScreenshot,
-        '/test/fail': saveScreenshot
+        sessionStart: function(remote) {
+            var sessionId = remote._session._sessionId;
+            this.remotes[sessionId] = remote;
+        },
+        suiteError: function(suite) {
+            this.saveScreenshot(suite);
+        },
+        testFail: function(test) {
+            this.saveScreenshot(test);
+        }
     };
+
+    return ScreenshotOnFailReporter;
 });

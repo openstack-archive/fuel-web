@@ -18,8 +18,12 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 
+from nailgun.api.v1.validators.json_schema import node_group
+
 
 class NodeGroupValidator(BasicValidator):
+
+    single_schema = node_group.single_schema
 
     @classmethod
     def validate(cls, data):

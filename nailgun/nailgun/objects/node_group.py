@@ -36,10 +36,11 @@ class NodeGroup(NailgunObject):
         "description": "Serialized NodeGroup object",
         "type": "object",
         "properties": {
-            "id": {"type": "number"},
-            "cluster_id": {"type": "number"},
-            "name": {"type": "string"}
-        }
+            "id": {"type": "integer"},
+            "cluster_id": {"type": "integer"},
+            "name": {"type": "string"},
+        },
+        "required": ["cluster_id", "name"],
     }
 
     @classmethod

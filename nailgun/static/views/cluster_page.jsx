@@ -144,7 +144,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         getInitialState: function() {
             return {
-                activeGroupName: this.pickDefaultSettingGroup()
+                activeGroupName: this.pickDefaultSettingGroup(),
+                selectedNodeIds: {}
             };
         },
         removeFinishedNetworkTasks: function(callback) {
@@ -209,6 +210,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
             this.setState({activeGroupName: value});
         },
+        selectNodes: function(ids, checked) {
+            if (ids && ids.length) {
+                var nodeSelection = this.state.selectedNodeIds;
+                _.each(ids, function(id) {
+                    if (checked) {
+                        nodeSelection[id] = true;
+                    } else {
+                        delete nodeSelection[id];
+                    }
+                });
+                this.setState({selectedNodeIds: nodeSelection});
+            } else {
+                this.setState({selectedNodeIds: {}});
+            }
+        },
         render: function() {
             var cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
@@ -248,6 +264,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             tabOptions={this.props.tabOptions}
                             setActiveGroupName={this.setActiveSettingsGroupName}
                             activeGroupName={this.state.activeGroupName}
+                            selectedNodeIds={this.state.selectedNodeIds}
+                            selectNodes={this.selectNodes}
                             {...this.props.tabData} />
                     </div>
                 </div>

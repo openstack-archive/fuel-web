@@ -15,10 +15,11 @@
  **/
 
 define([
+    'underscore',
     'intern!object',
     'intern/chai!assert',
     'tests/functional/pages/common'
-], function(registerSuite, assert, Common) {
+], function(_, registerSuite, assert, Common) {
     'use strict';
 
     registerSuite(function() {

@@ -109,7 +109,6 @@ define([
                     .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
                         .end()
-
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {

@@ -223,3 +223,13 @@ class IfaceState(object):
         if self.pre_iface_state != 'UP' and self.rollback:
             command_util('ifconfig', self.iface, 'down')
         self.post_iface_state = _iface_state(self.iface)
+
+
+def create_mac_filter(iface):
+    '''tcpdump can not cactch all 6 octets so it is splitted.
+    See http://blog.jasonantman.com/2010/04/dhcp-debugging-and-handy-tcpdump-filters # noqa
+    '''
+    mac = scapy.get_if_hwaddr(iface).split(':')
+    filter1 = '(udp[36:2] = 0x{0})'.format(''.join(mac[:2]))
+    filter2 = '(udp[38:4] = 0x{0})'.format(''.join(mac[2:]))
+    return '{0} and {1}'.format(filter1, filter2)

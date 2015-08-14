@@ -312,6 +312,6 @@ class TaskCollection(NailgunCollection):
             cluster_id=cluster.id).filter(cls.single.model.name.in_(names))
 
     @classmethod
-    def delete_by_names(cls, cluster_id, names):
-        cls.get_by_name_and_cluster(cluster_id, names).delete(
+    def delete_by_names(cls, cluster, names):
+        cls.get_by_name_and_cluster(cluster, names).delete(
             synchronize_session=False)

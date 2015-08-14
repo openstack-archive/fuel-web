@@ -1452,8 +1452,11 @@ class BaseValidatorTest(TestCase):
         context = self.get_invalid_data_context(obj)
 
         self.assertIn(
-            "Additional properties are not allowed (u'{0}' "
-            "was unexpected)".format(key),
+            "Additional properties are not allowed".format(key),
+            context.exception.message)
+
+        self.assertIn(
+            "'{0}' was unexpected".format(key),
             context.exception.message)
 
     def assertRaisesRequiredProperty(self, obj, key):

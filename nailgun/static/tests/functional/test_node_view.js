@@ -17,12 +17,13 @@
 define([
     'intern!object',
     'intern/chai!assert',
+    'intern/dojo/node!leadfoot/helpers/pollUntil',
     'tests/functional/pages/node',
     'tests/functional/pages/modal',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
     'tests/functional/helpers'
-], function(registerSuite, assert, NodeComponent, ModalWindow, Common, ClusterPage) {
+], function(registerSuite, assert, pollUntil, NodeComponent, ModalWindow, Common, ClusterPage) {
     'use strict';
 
     registerSuite(function() {
@@ -119,6 +120,9 @@ define([
                     .then(function() {
                         return node.openCompactNodeExtendedView();
                     })
+                    .then(pollUntil(function() {
+                        return window.$('.node-name').is(':visible') || null;
+                    }, 3000))
                     .clickByCssSelector('.node-name [type=checkbox]')
                     .assertElementExists('.compact-node .node-checkbox i.glyphicon-ok', 'Node compact panel is checked')
                     .then(function() {
@@ -149,6 +153,9 @@ define([
                 return this.remote
                     .clickByCssSelector('button.btn-add-nodes')
                     .assertElementAppears('.node-list', 2000, 'Unallocated node list loaded')
+                    .then(pollUntil(function() {
+                        return window.$('.node-list').is(':visible') || null;
+                    }, 3000))
                     .then(function() {
                         return node.openCompactNodeExtendedView();
                     })

@@ -14,9 +14,8 @@
 
 import mock
 
-from oslo_serialization import jsonutils
-
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
+from nailgun.api.v1.validators.network import NovaNetworkConfigurationValidator
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
@@ -24,7 +23,27 @@ from nailgun.network.neutron import NeutronManager
 from nailgun.test import base
 
 
-class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
+class BaseNetworkConfigurationValidatorProtocolTest(base.BaseValidatorTest):
+
+    def get_invalid_data_context(self, obj):
+        """The method is used by assertRaises* methods of base class
+           and should be overridden because by default it calls
+           validator with only one argument.
+        """
+        with self.assertRaises(errors.InvalidData) as context:
+            with mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
+                            new_callable=mock.PropertyMock,
+                            return_value=False) as mocked_property:
+                cluster_mock = Cluster()
+                self.validator(obj, cluster_mock)
+
+        return context
+
+
+class TestNetworkConfigurationValidatorProtocol(
+    BaseNetworkConfigurationValidatorProtocolTest
+):
+
     validator = NetworkConfigurationValidator.validate_networks_update
 
     def setUp(self):
@@ -57,22 +76,6 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
             ]
         }
 
-    # This method is used by assertRaises* methods of base class
-    # and should be overridden because by default it calls
-    # validator with only one argument.
-    def get_invalid_data_context(self, obj):
-        json_obj = jsonutils.dumps(obj)
-
-        with self.assertRaises(errors.InvalidData) as context:
-            with mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
-                            new_callable=mock.PropertyMock) \
-                    as mocked_property:
-                mocked_property.return_value = False
-                cluster_mock = Cluster()
-                self.validator(json_obj, cluster_mock)
-
-        return context
-
     # networks
     def test_required_property_networks(self):
         self.nc['test_key'] = self.nc.pop('networks')
@@ -96,19 +99,24 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
 
     def test_networks_invalid_type_group_id(self):
         self.nc['networks'][0]['group_id'] = 'x'
-        self.assertRaisesInvalidAnyOf(self.nc, "u'x'")
+        self.assertRaisesInvalidAnyOf(
+            self.nc,
+            "'x'",
+            "['networks'][0]['group_id']")
 
     def test_networks_invalid_type_gateway(self):
         self.nc['networks'][0]['gateway'] = []
-        self.assertRaisesInvalidAnyOf(self.nc, [])
+        self.assertRaisesInvalidAnyOf(
+            self.nc, [], "['networks'][0]['gateway']")
 
     def test_networks_invalid_type_cidr(self):
         self.nc['networks'][0]['cidr'] = 1
-        self.assertRaisesInvalidAnyOf(self.nc, 1)
+        self.assertRaisesInvalidAnyOf(self.nc, 1, "['networks'][0]['cidr']")
 
     def test_networks_invalid_type_vlan_start(self):
         self.nc['networks'][0]['vlan_start'] = {}
-        self.assertRaisesInvalidAnyOf(self.nc, {})
+        self.assertRaisesInvalidAnyOf(
+            self.nc, {}, "['networks'][0]['vlan_start']")
 
     def test_networks_invalid_type_ip_ranges(self):
         self.nc['networks'][0]['ip_ranges'] = {}
@@ -129,11 +137,13 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
 
     def test_networks_meta_invalid_type_gateway(self):
         self.nc['networks'][0]['meta']['gateway'] = {}
-        self.assertRaisesInvalidAnyOf(self.nc, {})
+        self.assertRaisesInvalidAnyOf(
+            self.nc, {}, "['networks'][0]['meta']['gateway']")
 
     def test_networks_meta_invalid_type_cidr(self):
         self.nc['networks'][0]['meta']['cidr'] = {}
-        self.assertRaisesInvalidAnyOf(self.nc, {})
+        self.assertRaisesInvalidAnyOf(
+            self.nc, {}, "['networks'][0]['meta']['cidr']")
 
     # networks.meta.ip_range
     def test_networks_meta_ip_range(self):
@@ -147,28 +157,30 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
             ["1.1.1.1", "1.1.1.2", "1.1.1.3"]
         self.assertRaisesTooLong(
             self.nc,
-            "[u'1.1.1.1', u'1.1.1.2', u'1.1.1.3']")
+            "['1.1.1.1', '1.1.1.2', '1.1.1.3']")
 
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1"]
-        self.assertRaisesTooShort(self.nc, "[u'1.1.1.1']")
+        self.assertRaisesTooShort(self.nc, "['1.1.1.1']")
 
         self.nc['networks'][0]['meta']['ip_range'] = ['1.2.3.4', '1.2.3.4']
-        self.assertRaisesNonUnique(self.nc, "[u'1.2.3.4', u'1.2.3.4']")
+        self.assertRaisesNonUnique(self.nc, "['1.2.3.4', '1.2.3.4']")
 
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1", "1.2.3.x"]
-        self.assertRaisesInvalidAnyOf(self.nc, "u'1.2.3.x'")
+        self.assertRaisesInvalidAnyOf(
+            self.nc, "'1.2.3.x'", "['networks'][0]['meta']['ip_range']")
 
     def test_networks_meta_invalid_type_vlan_start(self):
         self.nc['networks'][0]['meta']['vlan_start'] = {}
-        self.assertRaisesInvalidAnyOf(self.nc, {})
+        self.assertRaisesInvalidAnyOf(
+            self.nc, {}, "['networks'][0]['meta']['vlan_start']")
 
     def test_networks_meta_invalid_type_seg_type(self):
         self.nc['networks'][0]['meta']['seg_type'] = 'x'
-        self.assertRaisesInvalidEnum(self.nc, "u'x'", "['vlan', 'gre', 'tun']")
+        self.assertRaisesInvalidEnum(self.nc, "'x'", "['vlan', 'gre', 'tun']")
 
     def test_networks_invalid_type_neutron_vlan_range(self):
         self.nc['networks'][0]['meta']['neutron_vlan_range'] = 'z'
-        self.assertRaisesInvalidType(self.nc, "u'z'", "'boolean'")
+        self.assertRaisesInvalidType(self.nc, "'z'", "'boolean'")
 
     def test_networks_meta_invalid_type_use_gateway(self):
         self.nc['networks'][0]['meta']['use_gateway'] = {}
@@ -177,7 +189,7 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
     def test_networks_invalid_type_notation(self):
         self.nc['networks'][0]['meta']['notation'] = 'x'
         self.assertRaisesInvalidEnum(
-            self.nc, "u'x'", "['cidr', 'ip_ranges', None]")
+            self.nc, "'x'", "['cidr', 'ip_ranges', None]")
 
     def test_networks_invalid_type_render_type(self):
         self.nc['networks'][0]['meta']['render_type'] = 1
@@ -197,7 +209,7 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
 
     def test_networks_meta_invalid_type_configurable(self):
         self.nc['networks'][0]['meta']['configurable'] = 'hello'
-        self.assertRaisesInvalidType(self.nc, "u'hello'", "'boolean'")
+        self.assertRaisesInvalidType(self.nc, "'hello'", "'boolean'")
 
     def test_networks_meta_invalid_type_floating_range_var(self):
         self.nc['networks'][0]['meta']['floating_range_var'] = {}
@@ -216,10 +228,10 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
         self.nc['networks'][0]['meta']['vips'] = ['vip_a', 'vip_a']
-        self.assertRaisesNonUnique(self.nc, "[u'vip_a', u'vip_a']")
+        self.assertRaisesNonUnique(self.nc, "['vip_a', 'vip_a']")
 
         self.nc['networks'][0]['meta']['vips'] = ["a", "b", "c1"]
-        self.assertRaisesNotMatchPattern(self.nc, "u'c1'")
+        self.assertRaisesNotMatchPattern(self.nc, "'c1'")
 
 
 class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
@@ -246,10 +258,9 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
                 return net
 
     def get_context_of_validation_error(self):
-        config = jsonutils.dumps(self.config)
         with self.assertRaises(errors.InvalidData) as exc_context:
-            self.validator.validate_networks_update(config,
-                                                    self.cluster)
+            self.validator.validate_networks_update(
+                self.config, self.cluster)
         return exc_context
 
     def assertRaisesInvalidData(self, message):
@@ -337,3 +348,31 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
             mgmt, self.cluster, 'ip_ranges', False)
         self.assertTrue(result)
+
+
+class TestNovaNetworkConfigurationValidatorProtocol(
+    BaseNetworkConfigurationValidatorProtocolTest
+):
+
+    validator = NovaNetworkConfigurationValidator.additional_network_validation
+
+    def setUp(self):
+        super(TestNovaNetworkConfigurationValidatorProtocol, self).setUp()
+        self.nc = {
+            "networking_parameters": {
+                "base_mac": "fa:16:3e:00:00:00",
+                "configuration_template": None,
+                "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+                "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
+                "gre_id_range": [2, 65535],
+                "internal_cidr": "192.168.111.0/24",
+                "internal_gateway": "192.168.111.1",
+                "net_l23_provider": "ovs",
+                "segmentation_type": "gre",
+                "vlan_range": [1000, 1030]}
+        }
+
+    # networking parameters
+    def test_networking_parameters_invalid_type(self):
+        self.nc['networking_parameters'] = 1
+        self.assertRaisesInvalidType(self.nc, "1", "'object'")

@@ -311,8 +311,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.nets['networking_parameters']['fixed_networks_cidr'] = \
             "10.10.0.0/28"
         self.nets['networking_parameters']['fixed_networks_amount'] = 1
-        self.nets['networking_parameters']['fixed_network_size'] = \
-            "256"
+        self.nets['networking_parameters']['fixed_network_size'] = 256
         task = self.update_nova_networks_success(self.cluster.id, self.nets)
 
         self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
@@ -323,8 +322,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.nets['networking_parameters']['fixed_networks_cidr'] = \
             "10.10.0.0/24"
         self.nets['networking_parameters']['fixed_networks_amount'] = 8
-        self.nets['networking_parameters']['fixed_network_size'] = \
-            "32"
+        self.nets['networking_parameters']['fixed_network_size'] = 32
         self.update_nova_networks_success(self.cluster.id, self.nets)
 
         self.nets['networking_parameters']['fixed_networks_amount'] = 32

@@ -29,6 +29,7 @@ from nailgun.objects.serializers.network_configuration \
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
 
+from nailgun.api.v1.validators.network import NetworkConfigurationValidator
 from nailgun.api.v1.validators.network import NetworkTemplateValidator
 from nailgun.api.v1.validators.network \
     import NeutronNetworkConfigurationValidator
@@ -190,6 +191,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
     """Network configuration verify handler base
     """
 
+    validator = NetworkConfigurationValidator
+
     @content
     def PUT(self, cluster_id):
         """:IMPORTANT: this method should be rewritten to be more RESTful
@@ -205,7 +208,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         self.launch_verify(cluster)
 
     def launch_verify(self, cluster):
-        data = self.validator.validate_networks_update(web.data(), cluster)
+        data = self.validator.base_validation(web.data())
+        data = self.validator.validate_networks_update(data, cluster)
 
         data["networks"] = [
             n for n in data["networks"] if n.get("name") != "fuelweb_admin"

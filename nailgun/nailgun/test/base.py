@@ -1452,7 +1452,7 @@ class BaseValidatorTest(TestCase):
         context = self.get_invalid_data_context(obj)
 
         self.assertIn(
-            "Additional properties are not allowed (u'{0}' "
+            "Additional properties are not allowed ('{0}' "
             "was unexpected)".format(key),
             context.exception.message)
 

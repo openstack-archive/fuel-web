@@ -66,10 +66,6 @@ define([
             return clusterPage.goToTab('Networks');
           });
       },
-      afterEach: function() {
-        return this.remote
-          .clickByCssSelector('.btn-revert-changes');
-      },
       'Network Tab is rendered correctly': function() {
         return this.remote
           .assertElementExists('.nova-managers .radio-group', 'Nova Network manager radiogroup is present')
@@ -124,7 +120,8 @@ define([
           .assertElementSelected('.storage .cidr input[type=checkbox]', 'Storage network has "cidr" notation by default')
           .assertElementNotExists('.storage .ip_ranges input[type=text]:not(:disabled)', 'It is impossible to configure IP ranges for network with "cidr" notation')
           .clickByCssSelector('.storage .cidr input[type=checkbox]')
-          .assertElementNotExists('.storage .ip_ranges input[type=text]:disabled', 'Network notation was changed to "ip_ranges"');
+          .assertElementNotExists('.storage .ip_ranges input[type=text]:disabled', 'Network notation was changed to "ip_ranges"')
+          .clickByCssSelector('.btn-revert-changes');
       },
       'Testing cluster networks: VLAN range fields': function() {
         return this.remote
@@ -132,7 +129,8 @@ define([
             return networksPage.switchNetworkManager();
           })
           .clickByCssSelector('.subtab-link-nova_configuration')
-          .assertElementAppears('input[name=range-end_fixed_networks_vlan_start]', 2000, 'VLAN range is displayed');
+          .assertElementAppears('input[name=range-end_fixed_networks_vlan_start]', 2000, 'VLAN range is displayed')
+          .clickByCssSelector('.btn-revert-changes');
       },
       'Testing cluster networks: save network changes': function() {
         return this.remote
@@ -149,7 +147,8 @@ define([
           .clickByCssSelector('input[name=auto_assign_floating_ip][type=checkbox]')
           .clickByCssSelector(networksPage.applyButtonSelector)
           .assertElementsAppear('input:not(:disabled)', 2000, 'Inputs are not disabled')
-          .assertElementDisabled(networksPage.applyButtonSelector, 'Save changes button is disabled again after successfull settings saving');
+          .assertElementAppears(networksPage.applyButtonSelector + ':disabled', 200,
+            'Save changes button is disabled again after successfull settings saving');
       },
       'Testing cluster networks: verification': function() {
         return this.remote
@@ -194,7 +193,8 @@ define([
           .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
           .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
           .assertElementExists('.management .has-error input[name=vlan_start]',
-            'Field validation has worked properly in case of empty value');
+            'Field validation has worked properly in case of empty value')
+          .clickByCssSelector('.btn-revert-changes');
       },
       'Testing cluster networks: data validation on manager change': function() {
         return this.remote
@@ -216,7 +216,8 @@ define([
           })
           .clickByCssSelector('input[name=fixed_networks_vlan_start][type=checkbox]')
           .assertElementNotExists('.has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
-              'Field validation works properly');
+              'Field validation works properly')
+          .clickByCssSelector('.btn-revert-changes');
       },
       'Testing cluster networks: data validation on invalid settings': function() {
         return this.remote
@@ -262,10 +263,6 @@ define([
             return clusterPage.goToTab('Networks');
           });
       },
-      afterEach: function() {
-        return this.remote
-          .clickByCssSelector('.btn-revert-changes');
-      },
       'Add ranges manipulations': function() {
         var rangeSelector = '.public .ip_ranges ';
         return this.remote
@@ -283,7 +280,8 @@ define([
           .clickByCssSelector('.subtab-link-neutron_l3')
           .clickByCssSelector(dnsNameserversSelector + '.ip-ranges-add')
           .assertElementExists(dnsNameserversSelector + '.range-row .has-error',
-              'New nameserver is added and contains validation error');
+              'New nameserver is added and contains validation error')
+          .clickByCssSelector('.btn-revert-changes');
       },
       'Segmentation types differences': function() {
         return this.remote

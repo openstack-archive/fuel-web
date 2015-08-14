@@ -42,7 +42,7 @@ define([
                     .then(function() {
                         return loginPage.login('login', '*****');
                     })
-                    .assertElementExists('div.login-error', 'Error message is expected to get displayed');
+                    .waitForCssSelector('div.login-error', 1000);
             },
             'Login with proper credentials': function() {
                 return this.remote

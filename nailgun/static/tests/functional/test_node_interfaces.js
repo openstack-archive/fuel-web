@@ -17,9 +17,10 @@
 define([
     'intern!object',
     'tests/functional/helpers',
+    'intern/dojo/node!leadfoot/helpers/pollUntil',
     'tests/functional/pages/interfaces',
     'tests/functional/pages/common'
-], function(registerSuite, helpers, InterfacesPage, Common) {
+], function(registerSuite, helpers, pollUntil, InterfacesPage, Common) {
     'use strict';
 
     registerSuite(function() {
@@ -46,7 +47,10 @@ define([
                     })
                     .clickByCssSelector('.node.pending_addition input[type=checkbox]:not(:checked)')
                     .clickByCssSelector('button.btn-configure-interfaces')
-                    .assertElementAppears('div.ifc-list', 2000, 'Node interfaces loaded');
+                    .assertElementAppears('div.ifc-list', 2000, 'Node interfaces loaded')
+                    .then(pollUntil(function() {
+                        return window.$('div.ifc-list').is(':visible') || null;
+                    }, 1000));
             },
             afterEach: function() {
                 return this.remote

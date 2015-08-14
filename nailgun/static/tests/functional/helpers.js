@@ -17,9 +17,8 @@
 define([
     'intern/dojo/node!lodash',
     'intern/chai!assert',
-    'intern/dojo/node!fs',
     'intern/dojo/node!leadfoot/Command'
-], function(_, assert, fs, Command) {
+], function(_, assert, Command) {
     'use strict';
 
     _.defaults(Command.prototype, {
@@ -37,20 +36,6 @@ define([
                     .findByCssSelector(cssSelector)
                         .click()
                         .end();
-            });
-        },
-        takeScreenshotAndSave: function(filename) {
-            return new this.constructor(this, function() {
-                return this.parent
-                    .takeScreenshot()
-                    .then(function(buffer) {
-                        var targetDir = process.env.ARTIFACTS || process.cwd();
-                        if (!filename) filename = new Date().toTimeString();
-                        filename = filename.replace(/[\s\*\?\\\/]/g, '_');
-                        filename = targetDir + '/' + filename + '.png';
-                        console.log('Saving screenshot to', filename); // eslint-disable-line no-console
-                        fs.writeFileSync(filename, buffer);
-                });
             });
         },
         waitForCssSelector: function(cssSelector, timeout) {
@@ -492,6 +477,10 @@ define([
                     })
                     .end();
             });
+        },
+        isElementVisible: function(cssSelector) {
+            var elmnt = window.$(cssSelector);
+            return elmnt.is(':visible') || null;
         }
     });
 

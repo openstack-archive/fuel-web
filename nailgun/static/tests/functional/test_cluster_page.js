@@ -33,7 +33,7 @@ define([
             setup: function() {
                 common = new Common(this.remote);
                 clusterPage = new ClusterPage(this.remote);
-                clusterName = 'Test Cluster #' + Math.round(99999 * Math.random());
+                clusterName = 'Test Cluster #' + _.random(1000, 9999);
             },
             beforeEach: function() {
                 return this.remote
@@ -77,7 +77,7 @@ define([
                         return common.goToEnvironment(clusterName);
                     })
                     .setFindTimeout(5000)
-                    .findByCssSelector('button.btn-add-nodes')
+                    .findByCssSelector('a.btn-add-nodes')
                         .click()
                         .end()
                     .findByCssSelector('button.btn-apply')
@@ -109,7 +109,6 @@ define([
                     .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
                         .end()
-
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {

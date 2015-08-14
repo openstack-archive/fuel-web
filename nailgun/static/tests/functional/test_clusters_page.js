@@ -15,10 +15,11 @@
  **/
 
 define([
+    'underscore',
     'intern!object',
     'intern/chai!assert',
     'tests/functional/pages/common'
-], function(registerSuite, assert, Common) {
+], function(_, registerSuite, assert, Common) {
     'use strict';
 
     registerSuite(function() {
@@ -29,7 +30,7 @@ define([
             name: 'Clusters page',
             setup: function() {
                 common = new Common(this.remote);
-                clusterName = 'Test Cluster #' + Math.round(99999 * Math.random());
+                clusterName = 'Test Cluster #' + _.random(1000, 9999);
             },
             beforeEach: function() {
                 return this.remote

@@ -20,7 +20,7 @@ define(['./intern'], function(config) {
         browserName: 'phantomjs',
         'phantomjs.binary.path': 'node_modules/phantomjs/lib/phantom/bin/phantomjs'
     }];
-    config.loader.shim.react = {
+    config.loaderOptions.shim.react = {
         deps: ['tests/bower/es5-shim/es5-shim']
     };
     return config;

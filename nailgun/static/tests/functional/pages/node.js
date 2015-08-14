@@ -38,7 +38,9 @@ define([
         // the following timeout as we have 0.3s transition for the button
         .sleep(500)
         .clickByCssSelector('div.compact-node .node-hardware p.btn')
-        .waitForCssSelector('.node-popover', 1000);
+        .waitForCssSelector('.node-popover', 1000)
+        // the following timeout as we have 0.3s transition for the popover
+        .sleep(300);
     },
     openNodePopup: function(fromExtendedView) {
       var self = this,

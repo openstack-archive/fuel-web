@@ -19,10 +19,9 @@ import six
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema import network_group as ng_scheme
 from nailgun.api.v1.validators.json_schema.network_template import \
     NETWORK_TEMPLATE
-from nailgun.api.v1.validators.json_schema import networks as network_schema
+from nailgun.api.v1.validators.json_schema import networks
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
@@ -43,10 +42,11 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_data(cls, data, cluster):
+        data = cls.base_validation(data)
+
         if 'networks' in data:
+            cls.validate_schema(data, networks.NETWORK_GROUPS)
             data = cls.validate_networks_update(data, cluster)
-        else:
-            data = cls.base_validation(data)
 
         cls.additional_network_validation(data, cluster)
 
@@ -54,8 +54,7 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_update(cls, data, cluster):
-        data = cls.base_validation(data)
-        cls.validate_schema(data, network_schema.NETWORKS)
+        cls.validate_schema(data, networks.NETWORK_GROUPS)
 
         net_ids = [ng['id'] for ng in data['networks']]
         ng_db_by_id = dict(
@@ -92,11 +91,10 @@ class NetworkConfigurationValidator(BasicValidator):
 
             # Depending on notation required parameters must be either in
             # the request or DB
-            if notation == consts.NETWORK_NOTATION.ip_ranges:
-                if not ip_ranges and not ng_db.ip_ranges:
-                    raise errors.InvalidData(
-                        "No IP ranges were specified for network "
-                        "{0}".format(net_id))
+            if not ip_ranges and notation == consts.NETWORK_NOTATION.ip_ranges:
+                raise errors.InvalidData(
+                    "No IP ranges were specified for network "
+                    "{0}".format(net_id))
 
             if notation in [consts.NETWORK_NOTATION.cidr,
                             consts.NETWORK_NOTATION.ip_ranges]:
@@ -159,12 +157,20 @@ class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
 
         return data
 
+    @classmethod
+    def additional_network_validation(cls, data, cluster):
+        if 'networking_parameters' in data:
+            cls.validate_schema(
+                data,
+                networks.NOVA_NETWORK_CONFIGURATION)
+
 
 class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)
+
         np = d.get('networking_parameters')
         cluster_id = kwargs.get("cluster_id")
         if cluster_id:
@@ -182,6 +188,9 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
     @classmethod
     def additional_network_validation(cls, data, cluster):
         if 'networking_parameters' in data:
+            cls.validate_schema(
+                data,
+                networks.NEUTRON_NETWORK_CONFIGURATION)
             cls.validate_neutron_params(
                 jsonutils.dumps(data),
                 cluster_id=cluster.id
@@ -474,8 +483,6 @@ class NetAssignmentValidator(BasicValidator):
 
 
 class NetworkGroupValidator(BasicValidator):
-
-    single_schema = ng_scheme.NETWORK_GROUP
 
     @classmethod
     def validate(cls, data):

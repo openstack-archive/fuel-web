@@ -44,6 +44,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.network.manager import NetworkManager
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
+from nailgun.network.template import NetworkTemplate
 
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
@@ -575,6 +576,25 @@ class TestNodeObject(BaseIntegrationTest):
             "net_provider": consts.CLUSTER_NET_PROVIDERS.nova_network,
         }
         self._assert_cluster_create_data(network_data)
+
+    def test_apply_network_template(self):
+        node = self.env.create_node()
+        template = self.env.read_fixtures(['network_template'])[0]
+
+        group_name = 'group-custom-1'
+        custom_template = template['adv_net_template'][group_name]
+        custom_template_obj = NetworkTemplate(jsonutils.dumps(custom_template))
+        node_custom_template = custom_template_obj.safe_substitute(
+            custom_template['nic_mapping']['default'])
+        expected_node_template = jsonutils.loads(node_custom_template)
+        expected_node_template = expected_node_template['network_scheme']
+
+        with mock.patch('objects.NodeGroup.get_by_uid') as ng_mock:
+            ng_mock.return_value = mock.Mock()
+            ng_mock.return_value.configure_mock(name=group_name)
+            objects.Node.apply_network_template(node, template)
+            actual_node_template = node.network_template['templates']
+            self.assertDictEqual(actual_node_template, expected_node_template)
 
 
 class TestTaskObject(BaseIntegrationTest):

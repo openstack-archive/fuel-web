@@ -70,7 +70,7 @@
     "gulp-eslint": "1.0.0",
     "gulp-lintspaces": "0.3.2",
     "gulp-shell": "0.4.1",
-    "intern": "2.2.2",
+    "intern": "3.0.6",
     "karma": "~0.13.9",
     "karma-chai": "~0.1.0",
     "karma-mocha": "~0.2.0",

@@ -97,7 +97,7 @@ class TestNetworkModels(BaseIntegrationTest):
         test_network_params = copy.deepcopy(test_nets['networking_parameters'])
         # change something from 'networking_parameters'
         test_nets['networking_parameters']['dns_nameservers'] = \
-            ['one.dns', 'two.dns']
+            ['8.8.8.8', '8.8.4.4']
 
         # let's change for example management network
         test_network_name = consts.NETWORKS.management

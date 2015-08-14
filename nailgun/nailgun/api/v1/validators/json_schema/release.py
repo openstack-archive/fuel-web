@@ -21,7 +21,7 @@ NOVA_NETWORK_SCHEMA = {
     'properties': {
         'networks': {
             'type': 'array',
-            'items': networks.NETWORK},
+            'items': networks.NETWORK_META},
         'config': {'type': 'object'}},
     'required': ['networks', 'config']
 }
@@ -31,7 +31,7 @@ NEUTRON_SCHEMA = {
     'properties': {
         'networks': {
             'type': 'array',
-            'items': networks.NETWORK},
+            'items': networks.NETWORK_META},
         'config': {'type': 'object'}},
     'required': ['networks', 'config']
 }

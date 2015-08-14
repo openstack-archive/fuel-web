@@ -27,6 +27,7 @@ blank = urwid.Divider()
 VERSION_YAML_FILE = '/etc/nailgun/version.yaml'
 FUEL_BOOTSTRAP_IMAGE_CONF = '/etc/fuel-bootstrap-image.conf'
 BOOTSTRAP_FLAVOR_KEY = 'BOOTSTRAP/flavor'
+MOS_REPO_DFLT = 'http://mirror.fuel-infra.org/mos-repos/ubuntu/{mos_version}'
 
 
 class bootstrapimg(urwid.WidgetWrap):
@@ -52,11 +53,7 @@ class bootstrapimg(urwid.WidgetWrap):
         self.fields = ['BOOTSTRAP/{0}'.format(var) for var in fields]
         # TODO(asheplyakov):
         # switch to the new MOS APT repo structure when it's ready
-        mos_repo_dflt = 'http://mirror.fuel-infra.org/mos-repos'\
-            '/{mos_version}/cluster/base/{distro_release}'.format(
-                mos_version=self.mos_version,
-                distro_release=self.distro_release)
-        self.defaults = {
+        mos_repo_dflt = MOS_REPOS_DFLT.format(mos_version=self.mos_version)
             BOOTSTRAP_FLAVOR_KEY: {
                 "label": "Flavor",
                 "tooltip": "",
@@ -257,13 +254,9 @@ class bootstrapimg(urwid.WidgetWrap):
 
     def checkMOSRepo(self, base_url, http_proxy):
         # deb {repo_base_url}/mos/ubuntu mos{mos_version} main
-        # TODO(asheplyakov): current MOS APT repo structre is badly broken,
-        # so we have
-        # deb {base_url}/mos-repos/{mos_version}/cluster/base/trusy trusty main
-        # instead. Update release_url after fixing the repo structure.
-
-        release_url = '{base_url}/dists/{distro_release}/Release'.format(
-            base_url=base_url, distro_release=self.distro_release)
+        codename = 'mos{0}'.format(mos_version)
+        release_url = '{base_url}/dists/{codename}/Release'.format(
+            base_url=base_url, codename=codename)
         available = self.check_url(release_url, http_proxy)
         return available
 

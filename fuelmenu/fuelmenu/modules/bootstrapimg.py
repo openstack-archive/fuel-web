@@ -50,12 +50,7 @@ class bootstrapimg(urwid.WidgetWrap):
             'HTTP_PROXY',
             'EXTRA_DEB_REPOS')
         self.fields = ['BOOTSTRAP/{0}'.format(var) for var in fields]
-        # TODO(asheplyakov):
-        # switch to the new MOS APT repo structure when it's ready
-        mos_repo_dflt = 'http://mirror.fuel-infra.org/mos-repos'\
-            '/{mos_version}/cluster/base/{distro_release}'.format(
-                mos_version=self.mos_version,
-                distro_release=self.distro_release)
+        mos_repo_dflt = 'http://mirror.fuel-infra.org/mos-repos/ubuntu'
         self.defaults = {
             BOOTSTRAP_FLAVOR_KEY: {
                 "label": "Flavor",
@@ -138,7 +133,7 @@ class bootstrapimg(urwid.WidgetWrap):
             errors.append("MOS repo URL must not be empty.")
 
         if not self.checkMOSRepo(mos_repo_base, http_proxy):
-            errors.append("MOS repository is not accessible.")
+            errors.append("MOS repository is not accessible: {0}".format(mos_repo_base))
 
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
@@ -257,13 +252,8 @@ class bootstrapimg(urwid.WidgetWrap):
 
     def checkMOSRepo(self, base_url, http_proxy):
         # deb {repo_base_url}/mos/ubuntu mos{mos_version} main
-        # TODO(asheplyakov): current MOS APT repo structre is badly broken,
-        # so we have
-        # deb {base_url}/mos-repos/{mos_version}/cluster/base/trusy trusty main
-        # instead. Update release_url after fixing the repo structure.
-
-        release_url = '{base_url}/dists/{distro_release}/Release'.format(
-            base_url=base_url, distro_release=self.distro_release)
+        release_url = '{base_url}/{mos_version}/dists/mos{mos_version}/Release'.format(
+            base_url=base_url, mos_version=self._mos_version)
         available = self.check_url(release_url, http_proxy)
         return available
 

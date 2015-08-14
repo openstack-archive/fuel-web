@@ -870,7 +870,8 @@ class Node(NailgunObject):
         # Get the correct nic_mapping for this node so we can
         # dynamically replace any interface references in any
         # template for this node.
-        node_group = instance.group_id
+        from nailgun.objects import NodeGroup
+        node_group = NodeGroup.get_by_uid(instance.group_id).name
         if node_group not in template_body:
             node_group = 'default'
 

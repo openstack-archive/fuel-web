@@ -62,7 +62,14 @@ define([
       },
       afterEach: function() {
         return this.remote
-          .clickByCssSelector('.btn-revert-changes');
+          .findByCssSelector('.btn-revert-changes')
+            .then(function(element) {
+              return element.isEnabled()
+                .then(function(isEnabled) {
+                  if (isEnabled) return element.click();
+                });
+            })
+            .end();
       },
       'Add ranges manipulations': function() {
         var rangeSelector = '.public .ip_ranges ';
@@ -184,6 +191,7 @@ define([
           .clickByCssSelector('.glyphicon-pencil')
           .waitForCssSelector('.network-group-name input[type=text]', 2000)
           .findByCssSelector('.node-group-renaming input[type=text]')
+            .clearValue()
             .type('Node_Network_Group_2')
             // Enter
             .type('\uE007')

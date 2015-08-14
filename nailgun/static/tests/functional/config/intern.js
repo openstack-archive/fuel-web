@@ -23,6 +23,6 @@ define(function() {
         maxConcurrency: 1,
         grep: /^/,
         excludeInstrumentation: /^/,
-        reporters: ['console', 'tests/functional/screenshot_on_fail']
+        reporters: ['Runner', 'tests/functional/screenshot_on_fail']
     };
 });

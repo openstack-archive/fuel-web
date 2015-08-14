@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun import consts
 
@@ -29,7 +31,7 @@ IP_RANGE = {
     }
 }
 
-NETWORK = {
+NETWORK_META = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
     "properties": {
@@ -63,31 +65,41 @@ NETWORK = {
     "additionalProperties": False
 }
 
-NETWORKS = {
+NETWORK_GROUP = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "NetworkGroup",
+    "description": "Serialized NetworkGroup object",
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "group_id": base_types.NULLABLE_ID,
+        "name": {"type": "string"},
+        "release": base_types.NULLABLE_ID,
+        "gateway": base_types.NULLABLE_IP_ADDRESS,
+        "cidr": base_types.NULLABLE_NET_ADDRESS,
+        "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
+        "ip_ranges": {
+            "type": "array",
+            "items": IP_RANGE
+        },
+        "meta": NETWORK_META
+    },
+    "required": ["id"],
+    "additionalProperties": False
+}
+
+NETWORK_GROUPS = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
     "properties": {
         "networks": {
             "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "id": {"type": "integer"},
-                    "group_id": base_types.NULLABLE_ID,
-                    "name": {"type": "string"},
-                    "gateway": base_types.NULLABLE_IP_ADDRESS,
-                    "cidr": base_types.NULLABLE_NET_ADDRESS,
-                    "vlan_start": base_types.NULLABLE_NON_NEGATIVE_INTEGER,
-                    "ip_ranges": {
-                        "type": "array",
-                        "items": IP_RANGE
-                    },
-                    "meta": NETWORK
-                },
-                "required": ["id"],
-                "additionalProperties": False
-            }
+            "items": NETWORK_GROUP
         }
-    },
-    "required": ["networks"],
+    }
 }
+
+NETWORK_CONFIGURATION = copy.deepcopy(NETWORK_GROUPS)
+NETWORK_CONFIGURATION["required"] = ["networks"]
+NETWORK_CONFIGURATION['properties']['networks']['items']['properties'].pop(
+    'release')

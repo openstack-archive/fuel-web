@@ -32,13 +32,13 @@ define(['config'], function(config) {
             'selenium-version': '2.45.0'
         },
         maxConcurrency: 1,
-        useLoader: {
+        loaders: {
             'host-node': 'requirejs',
-            'host-browser': '/vendor/bower/requirejs/require.js'
+            'host-browser': 'vendor/bower/requirejs/require.js'
         },
         grep: /^/,
         excludeInstrumentation: /^/,
-        loader: config,
-        reporters: ['console', 'tests/screenshot_on_fail']
+        loaderOptions: config,
+        reporters: ['Runner', 'tests/screenshot_on_fail']
     };
 });

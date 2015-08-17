@@ -694,6 +694,8 @@ class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
         self.assertItemsEqual(ui_settings['view_mode'], 'standard')
         self.assertItemsEqual(ui_settings['filter'], {})
         self.assertItemsEqual(ui_settings['sort'], [{'roles': 'asc'}])
+        self.assertItemsEqual(ui_settings['filter_by_labels'], {})
+        self.assertItemsEqual(ui_settings['sort_by_labels'], [])
         self.assertItemsEqual(ui_settings['search'], '')
 
 

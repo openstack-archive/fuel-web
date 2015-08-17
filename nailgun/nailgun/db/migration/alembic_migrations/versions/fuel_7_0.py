@@ -637,6 +637,8 @@ def upgrade_cluster_ui_settings():
                 "view_mode": "standard",
                 "filter": {},
                 "sort": [{"roles": "asc"}],
+                "filter_by_labels": {},
+                "sort_by_labels": [],
                 "search": ""
             }),
             nullable=False

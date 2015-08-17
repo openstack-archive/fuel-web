@@ -12,7 +12,6 @@
     "jsx-requirejs-plugin": "0.5.1",
     "routefilter": "0.2.1",
     "lodash": "3.9.3",
-    "autoNumeric": "1.9.12",
     "backbone": "1.2.1",
     "backbone.stickit": "0.9.2",
     "i18next": "1.7.1",
@@ -35,9 +34,6 @@
     },
     "requirejs-plugins": {
       "main": "src/json.js"
-    },
-    "autoNumeric": {
-      "main": "autoNumeric.js"
     },
     "i18next": {
       "main": "release/i18next-1.7.1.js"

@@ -22,7 +22,6 @@ define(function() {
         paths: {
             jquery: 'vendor/bower/jquery/dist/jquery',
             'js-cookie': 'vendor/bower/js-cookie/src/js.cookie',
-            'jquery-autoNumeric': 'vendor/bower/autoNumeric/autoNumeric',
             lodash: 'vendor/bower/lodash/lodash',
             underscore: 'vendor/bower/lodash/lodash',
             backbone: 'vendor/bower/backbone/backbone',
@@ -75,10 +74,6 @@ define(function() {
                 // even though deepmodel uses AMD format, it uses _.mixin
                 // before define() call
                 deps: ['underscore']
-            },
-            'jquery-autoNumeric': {
-                // non-AMD module, relies on global jQuery
-                deps: ['jquery']
             }
         },
         map: {

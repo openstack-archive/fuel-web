@@ -698,6 +698,13 @@ define([
             var volumes = this.collection.disk.get('volumes'),
                 diskAllocatedSpace = volumes.reduce(function(total, volume) {return this.get('name') == volume.get('name') ? total : total + volume.get('size');}, 0, this);
             return this.collection.disk.get('size') - diskAllocatedSpace ;
+        },
+        validate: function(attrs, options) {
+            var min = this.getMinimalSize(options.minimum);
+            if (attrs.size < min) {
+                return i18n('cluster_page.nodes_tab.configure_disks.volume_error', {size: utils.formatNumber(min)});
+            }
+            return null;
         }
     });
 

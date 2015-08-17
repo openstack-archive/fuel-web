@@ -328,7 +328,6 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
         attrs['roles']['mgmt/corosync'] = 'br-mgmt'
         attrs['roles']['mgmt/database'] = 'br-mgmt'
         attrs['roles']['mgmt/messaging'] = 'br-mgmt'
-        attrs['roles']['mgmt/api'] = 'br-mgmt'
         attrs['roles']['mgmt/memcache'] = 'br-mgmt'
         attrs['roles']['mgmt/vip'] = 'br-mgmt'
 
@@ -396,7 +395,6 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
                 'horizon': ip_by_net['management'],
 
                 'management': ip_by_net['management'],
-                'mgmt/api': ip_by_net['management'],
                 'mgmt/database': ip_by_net['management'],
                 'mgmt/messaging': ip_by_net['management'],
                 'mgmt/corosync': ip_by_net['management'],

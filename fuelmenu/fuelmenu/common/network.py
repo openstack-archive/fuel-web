@@ -80,10 +80,22 @@ def netmaskToCidr(netmask):
     return sum([bin(int(x)).count('1') for x in netmask.split('.')])
 
 
-def duplicateIPExists(ip, iface):
+def duplicateIPExists(ip, iface, arping_bind=False):
+    """Checks for duplicate IP addresses using arping
+    Don't use arping_bind unless you know what you are doing.
+
+    :param ip: IP to scan for
+    :param iface: Interface on which to send requests
+    :param arping_bind: Bind to IP when probing (IP must be already assigned.)
+    :returns: boolean
+    """
     noout = open('/dev/null', 'w')
+    if arping_bind:
+        bind_ip = ip
+    else:
+        bind_ip = "0.0.0.0"
     no_dupes = subprocess.call(["arping", "-D", "-c3", "-w1", "-I", iface,
-                               ip], stdout=noout, stderr=noout)
+                               "-s", bind_ip, ip], stdout=noout, stderr=noout)
     return (no_dupes != 0)
 
 

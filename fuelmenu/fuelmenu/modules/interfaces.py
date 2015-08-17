@@ -249,8 +249,14 @@ class interfaces(urwid.WidgetWrap):
                     except NetworkException as e:
                         errors.append("Cannot activate {0} to check for "
                                       "duplicate IP.".format(self.activeiface))
+
+                # Bind arping to requested IP if it's already assigned
+                assigned_ips = [v.get('addr') for _, v in
+                                self.netsettings.iteritems()]
+                arping_bind = responses["ipaddr"] in assigned_ips
+
                 if network.duplicateIPExists(responses["ipaddr"],
-                                             self.activeiface):
+                                             self.activeiface, arping_bind):
                     errors.append("Duplicate host found with IP {0}.".format(
                         responses["ipaddr"]))
         if len(errors) > 0:

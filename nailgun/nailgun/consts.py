@@ -113,6 +113,18 @@ NODE_VIEW_MODES = Enum(
     'compact'
 )
 
+NODE_LIST_FILTERS = Enum(
+    'roles',
+    'status',
+    'manufacturer',
+    'cores',
+    'ht_cores',
+    'hdd',
+    'disks_amount',
+    'ram',
+    'interfaces'
+)
+
 NETWORK_INTERFACE_TYPES = Enum(
     'ether',
     'bond'

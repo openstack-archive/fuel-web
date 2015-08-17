@@ -65,7 +65,7 @@ function(_, React, NodeListScreen) {
                     'offline',
                     'removing'
                 ]}
-                defaultFilters={['roles', 'status']}
+                defaultFilters={{roles: [], status: []}}
             />;
         }
     });

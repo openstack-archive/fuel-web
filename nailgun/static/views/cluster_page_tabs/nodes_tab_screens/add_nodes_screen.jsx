@@ -70,7 +70,7 @@ function($, _, React, models, NodeListScreen) {
                     'offline',
                     'removing'
                 ]}
-                defaultFilters={['status']}
+                defaultFilters={{status: []}}
             />;
         }
     });

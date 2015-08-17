@@ -141,6 +141,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                     max: volume.getMaxSize(),
                     min: volume.getMinimalSize(this.props.volumes.findWhere({name: name}).get('min_size'))
                 };
+                if (volume.validationError) _.extend(volumes[name], {validationError: volume.validationError})
             }, this);
             volumes.unallocated = {
                 size: disk.getUnallocatedSpace(),
@@ -151,8 +152,13 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         getVolumeWidth: function(disk, size) {
             return disk.get('size') ? utils.floor(size / disk.get('size') * 100, 2) : 0;
         },
+        hasErrors: function() {
+            return this.props.disks.any(function(disk) {
+                return disk.get('volumes').any('validationError');
+            });
+        },
         isSavingPossible: function() {
-            return !this.state.actionInProgress && this.hasChanges();
+            return !this.state.actionInProgress && this.hasChanges() && !this.hasErrors();
         },
         render: function() {
             var hasChanges = this.hasChanges(),
@@ -211,10 +217,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                 volumeInfo = this.props.volumesInfo[name];
             if (size > volumeInfo.max) {
                 size = volumeInfo.max;
-            } else if (size < volumeInfo.min) {
-                size = volumeInfo.min;
             }
-            this.props.disk.get('volumes').findWhere({name: name}).set({size: size});
+            this.props.disk.get('volumes').findWhere({name: name}).set({size: size}).isValid({minimum: volumeInfo.min});
             this.props.disk.trigger('change', this.props.disk);
             if (force) {
                 this.setState({key: _.now()});
@@ -291,7 +295,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                     var volumeName = volume.get('name'),
                                         value = volumesInfo[volumeName].size,
                                         currentMaxSize = volumesInfo[volumeName].max,
-                                        currentMinSize = _.max([volumesInfo[volumeName].min, 0]);
+                                        currentMinSize = _.max([volumesInfo[volumeName].min, 0]),
+                                        validationError = volumesInfo[volumeName].validationError;
 
                                     var props = {
                                         name: volumeName,
@@ -322,12 +327,16 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                     type='number'
                                                     wrapperClassName='col-xs-3 volume-group-input'
                                                     onChange={_.partialRight(this.updateDisk, true)}
+                                                    error={validationError}
                                                     value={value}
                                                 />
                                                 <div className='col-xs-1 volume-group-size-label'>{i18n('common.size.mb')}</div>
                                             </div>
                                             {!!value && value == currentMinSize &&
                                                 <div className='volume-group-notice text-info'>{i18n(ns + 'minimum_reached')}</div>
+                                            }
+                                            {validationError &&
+                                                <div className='volume-group-notice text-danger'>{validationError}</div>
                                             }
                                         </div>
                                     );

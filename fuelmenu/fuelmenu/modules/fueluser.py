@@ -43,7 +43,7 @@ class fueluser(urwid.WidgetWrap):
             "Default password: admin",
             "",
             "The password should contain upper and lower-case letters, digits"
-            "and characters like !@#$%^&*()_+."
+            ", and characters like !@#$%^&*()_+."
         ]
         self.fields = ["FUEL_ACCESS/password", "CONFIRM_PASSWORD"]
         self.defaults = \

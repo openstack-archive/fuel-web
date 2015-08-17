@@ -32,7 +32,7 @@ define([
 
             return this.remote
                 .setWindowSize(1280, 1024)
-                .setTimeout('page load', 20000)
+                .setTimeout('page load', 70000)
                 .getCurrentUrl()
                 .then(function(url) {
                     if (url !== Helpers.serverUrl + '/#login') {

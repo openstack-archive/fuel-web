@@ -14,28 +14,20 @@
  * under the License.
  **/
 
-define(['config'], function(config) {
+define(['underscore'], function(_) {
     'use strict';
+    function DeploymentPage(remote) {
+        this.remote = remote;
+    }
 
-    config.baseUrl = '';
-    config.waitSeconds = 7;
-
-    config.paths.sinon = 'tests/bower/sinon/lib/sinon';
-
-    return {
-        proxyPort: 9057,
-        proxyUrl: 'http://localhost:9057/',
-        capabilities: {
-            'selenium-version': '2.45.0'
-        },
-        maxConcurrency: 1,
-        useLoader: {
-            'host-node': 'requirejs',
-            'host-browser': '/vendor/bower/requirejs/require.js'
-        },
-        grep: /^/,
-        excludeInstrumentation: /^/,
-        loader: config,
-        reporters: ['pretty', 'console']
+    DeploymentPage.prototype = {
+        constructor: DeploymentPage,
+        isDeploymentButtonVisible: function() {
+            return this.remote
+                .setFindTimeout(100)
+                    .findByCssSelector('button.deploy-btn')
+                    .then(_.constant(true), _.constant(false));
+        }
     };
+    return DeploymentPage;
 });

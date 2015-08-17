@@ -496,15 +496,15 @@ class TestAlwaysEditable(BaseIntegrationTest):
             {
                 'type': 'rpm',
                 'name': 'mos-updates',
-                'uri': 'http://mirror.fuel-infra.org/mos/centos-6/mos7.0/'
-                       'updates',
+                'uri': 'http://mirror.fuel-infra.org/mos-repos/centos/'
+                       'mos7.0-centos6-fuel/updates/x86_64',
                 'priority': None,
             },
             {
                 'type': 'rpm',
                 'name': 'mos-security',
-                'uri': 'http://mirror.fuel-infra.org/mos/centos-6/mos7.0/'
-                       'security',
+                'uri': 'http://mirror.fuel-infra.org/mos-repos/centos/'
+                       'mos7.0-centos6-fuel/security/x86_64',
                 'priority': None,
             },
             {

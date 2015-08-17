@@ -12,6 +12,7 @@ Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Prefix: %{_prefix}
 BuildRequires:  python-setuptools
+BuildRequires:  python-yaml
 BuildRequires:  git
 BuildRequires: nodejs
 BuildArch: noarch
@@ -143,13 +144,31 @@ install -m 600 %{_builddir}/%{name}-%{version}/fuelmenu/fuelmenu/settings.yaml %
 install -m 755 %{_builddir}/%{name}-%{version}/bin/fencing-agent.rb %{buildroot}/opt/nailgun/bin/fencing-agent.rb
 install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/etc/cron.d/fencing-agent
 install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/download-debian-installer %{buildroot}%{_bindir}/download-debian-installer
-
+install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml %{buildroot}%{_datadir}/fuel-openstack-metadata/openstack.yaml
+python -c "import yaml; print filter(lambda r: r['fields'].get('name'), yaml.safe_load(open('%{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml')))[0]['fields']['version']" > %{buildroot}%{_sysconfdir}/fuel_openstack_version
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files -f %{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
 %defattr(0755,root,root)
+
+%package -n fuel-openstack-metadata
+
+Summary:   Fuel Openstack metadata files
+Version:   %{version}
+Release:   %{release}
+License:   GPLv2
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+URL:       http://github.com/Mirantis
+
+%description -n fuel-openstack-metadata
+This package currently installs just a single file openstack.yaml
+
+%files -n fuel-openstack-metadata
+%defattr(-,root,root)
+%{_datadir}/fuel-openstack-metadata/*
+%{_sysconfdir}/fuel_openstack_version
 
 %package -n nailgun-net-check
 

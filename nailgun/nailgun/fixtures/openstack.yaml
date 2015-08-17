@@ -1566,19 +1566,19 @@
             value:
               - type: "deb"
                 name: "ubuntu"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "http://{settings.MASTER_IP}:8080/mirror/archive.ubuntu.com/ubuntu/"
                 suite: "trusty"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-updates"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "http://{settings.MASTER_IP}:8080/mirror/archive.ubuntu.com/ubuntu/"
                 suite: "trusty-updates"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-security"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "http://{settings.MASTER_IP}:8080/mirror/archive.ubuntu.com/ubuntu/"
                 suite: "trusty-security"
                 section: "main universe multiverse"
                 priority: null
@@ -1590,19 +1590,19 @@
                 priority: 1050
               - type: "deb"
                 name: "mos-updates"
-                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                uri: "http://{settings.MASTER_IP}:8080/mirror/mirror.fuel-infra.org/mos-repos/ubuntu/7.0"
                 suite: "mos7.0-updates"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-security"
-                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                uri: "http://{settings.MASTER_IP}:8080/mirror/mirror.fuel-infra.org/mos-repos/ubuntu/7.0"
                 suite: "mos7.0-security"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-holdback"
-                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                uri: "http://{settings.MASTER_IP}:8080/mirror/mirror.fuel-infra.org/mos-repos/ubuntu/7.0"
                 suite: "mos7.0-holdback"
                 section: "main restricted"
                 priority: 1100

@@ -107,11 +107,7 @@
         description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
         weight: 90
         conflicts:
-          - controller
-          - compute
-          - cinder
-          - ceph-osd
-          - mongo
+          - "*"
         restrictions:
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"

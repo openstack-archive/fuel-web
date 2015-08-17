@@ -14,26 +14,25 @@
  * under the License.
  **/
 
-define(['config'], function(config) {
+define(['underscore',
+    '../../helpers'], function(_, Helpers) {
     'use strict';
+    function NetworksPage(remote) {
+        this.remote = remote;
+    }
 
-    config.baseUrl = '';
-    config.waitSeconds = 7;
-
-    return {
-        proxyPort: 9057,
-        proxyUrl: 'http://localhost:9057/',
-        capabilities: {
-            'selenium-version': '2.45.0'
-        },
-        maxConcurrency: 1,
-        useLoader: {
-            'host-node': 'requirejs',
-            'host-browser': '/vendor/bower/requirejs/require.js'
-        },
-        grep: /^/,
-        excludeInstrumentation: /^/,
-        loader: config,
-        reporters: ['pretty', 'console']
+    NetworksPage.prototype = {
+        constructor: NetworksPage,
+        goToTab: function(tabName) {
+            var that = this;
+            return this.remote
+                .then(function() {
+                    return Helpers.clickLinkByText(
+                        that.remote,
+                        '.tabs-box .tabs a.' + tabName,
+                        tabName);
+                });
+        }
     };
+    return NetworksPage;
 });

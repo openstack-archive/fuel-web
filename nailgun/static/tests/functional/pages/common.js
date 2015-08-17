@@ -94,6 +94,16 @@ define([
                         return that.clustersPage.createCluster(clusterName);
                     });
             },
+            createVCenterNovaCluster: function(clusterName) {
+                var that = this;
+                return this.remote
+                    .then(function() {
+                        return that.clickLink('Environments');
+                    })
+                    .then(function() {
+                        return that.clustersPage.createVCenterNovaCluster(clusterName);
+                    });
+            },
             removeCluster: function(clusterName, suppressErrors) {
                 var that = this;
                 return this.remote
@@ -125,6 +135,16 @@ define([
                                     return (name === clusterName) || matchFound;
                                 }
                             )}, false);
+                    });
+            },
+            goToTab: function(tabName) {
+                var that = this;
+                return this.remote
+                    .then(function() {
+                        return Helpers.clickLinkByText(
+                            that.remote,
+                            '.tabs-box .tabs a',
+                            tabName);
                     });
             }
         };

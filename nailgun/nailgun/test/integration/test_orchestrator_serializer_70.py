@@ -50,8 +50,8 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
                   'ceilometer/api', 'cinder/api', 'glance/api', 'heat/api',
                   'nova/api', 'murano/api', 'horizon', 'management',
-                  'mgmt/api', 'mgmt/database', 'mgmt/messaging',
-                  'mgmt/corosync', 'mgmt/memcache', 'mgmt/vip', 'mongo/db',
+                  'mgmt/database', 'mgmt/messaging', 'mgmt/corosync',
+                  'mgmt/memcache', 'mgmt/vip', 'mongo/db',
                   'ceph/public', 'nova/migration']
     fuelweb_admin = ['admin/pxe', 'fw-admin']
     neutron = ['neutron/private', 'neutron/floating']
@@ -265,7 +265,6 @@ class TestDeploymentSerializationForNovaNetwork70(
                 'murano/api': 'br-mgmt',
                 'horizon': 'br-mgmt',
 
-                'mgmt/api': 'br-mgmt',
                 'mgmt/database': 'br-mgmt',
                 'mgmt/messaging': 'br-mgmt',
                 'mgmt/corosync': 'br-mgmt',
@@ -342,7 +341,6 @@ class TestDeploymentSerializationForNovaNetwork70(
                     'horizon': ip_by_net['management'],
 
                     'management': ip_by_net['management'],
-                    'mgmt/api': ip_by_net['management'],
                     'mgmt/database': ip_by_net['management'],
                     'mgmt/messaging': ip_by_net['management'],
                     'mgmt/corosync': ip_by_net['management'],
@@ -914,9 +912,9 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 'nova/api': 'br-mgmt',
                 'murano/api': 'br-mgmt',
                 'horizon': 'br-mgmt',
-                'mgmt/api': 'br-mgmt',
                 'mgmt/memcache': 'br-mgmt',
                 'mgmt/database': 'br-mgmt',
+                'ceph/public': 'br-mgmt',
                 'public/vip': 'br-ex',
                 'swift/public': 'br-ex',
                 'neutron/floating': 'br-floating',
@@ -928,8 +926,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 'mongo/db': 'br-mgmt',
                 'nova/migration': 'br-mgmt',
                 'fw-admin': 'br-fw-admin',
-                'ex': 'br-ex',
-                'ceph/public': 'br-ex',
+                'ex': 'br-ex'
             },
             # compute/cinder node
             objects.Node.get_node_fqdn(self.cluster.nodes[1]): {
@@ -946,9 +943,9 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 'nova/api': 'br-mgmt',
                 'murano/api': 'br-mgmt',
                 'horizon': 'br-mgmt',
-                'mgmt/api': 'br-mgmt',
                 'mgmt/memcache': 'br-mgmt',
                 'mgmt/database': 'br-mgmt',
+                'ceph/public': 'br-mgmt',
                 'cinder/iscsi': 'br-storage',
                 'swift/replication': 'br-storage',
                 'ceph/replication': 'br-storage',
@@ -1043,7 +1040,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                     'nova/api': ip_by_net['management'],
                     'murano/api': ip_by_net['management'],
                     'horizon': ip_by_net['management'],
-                    'mgmt/api': ip_by_net['management'],
                     'mgmt/memcache': ip_by_net['management'],
                     'mgmt/database': ip_by_net['management'],
                     'mgmt/messaging': ip_by_net['management'],
@@ -1052,6 +1048,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                     'mgmt/corosync': ip_by_net['management'],
                     'mongo/db': ip_by_net['management'],
                     'nova/migration': ip_by_net['management'],
+                    'ceph/public': ip_by_net['management'],
                     'fw-admin': ip_by_net['fuelweb_admin']
                 }
 
@@ -1061,8 +1058,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                         'swift/public': ip_by_net['public'],
                         'neutron/floating': None,
                         'ceph/radosgw': ip_by_net['public'],
-                        'ex': ip_by_net['public'],
-                        'ceph/public': ip_by_net['public'],
+                        'ex': ip_by_net['public']
                     })
                 else:
                     network_roles.update({
@@ -1158,7 +1154,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             'nova/api',
             'murano/api',
             'horizon',
-            'mgmt/api',
             'mgmt/memcache',
             'mgmt/database',
             'mgmt/messaging',

@@ -21,7 +21,14 @@ from nailgun.api.v1.validators.json_schema import role
 
 CLUSTER_UI_SETTINGS = {
     "type": "object",
-    "required": ["view_mode", "filter", "sort", "search"],
+    "required": [
+        "view_mode",
+        "filter",
+        "sort",
+        "filter_by_labels",
+        "sort_by_labels",
+        "search"
+    ],
     "properties": {
         "view_mode": {
             "type": "string",
@@ -30,14 +37,28 @@ CLUSTER_UI_SETTINGS = {
         },
         "filter": {
             "type": "object",
-            "description": "Filters applied to node list",
+            "description": "Filters applied to node list and "
+                "based on node attributes",
         },
         "sort": {
             "type": "array",
-            "description": "Sorters applied to node list",
-            'minItems': 1,
-            'items': [
-                {'type': 'object'},
+            "description": "Sorters applied to node list and "
+                "based on node attributes",
+            "items": [
+                {"type": "object"},
+            ],
+        },
+        "filter_by_labels": {
+            "type": "object",
+            "description": "Filters applied to node list and "
+                "based on node custom labels",
+        },
+        "sort_by_labels": {
+            "type": "array",
+            "description": "Sorters applied to node list and "
+                "based on node custom labels",
+            "items": [
+                {"type": "object"},
             ],
         },
         "search": {

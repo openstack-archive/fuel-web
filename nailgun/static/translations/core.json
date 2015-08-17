@@ -441,6 +441,7 @@
                             "manage_labels": "Manage Labels",
                             "add_label": "Add Label",
                             "not_assigned_label": "No label \"__label__\"",
+                            "not_specified_label" : "Label \"__label__\" not specified",
                             "label_key": "Name",
                             "label_value": "Value",
                             "empty_label_key": "Label name can not be empty",

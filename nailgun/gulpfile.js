@@ -180,7 +180,7 @@ function runIntern(params) {
 }
 
 gulp.task('intern:unit', runIntern({suites: argv.suites || 'static/tests/unit/**/*.js', browser: 'phantomjs'}));
-gulp.task('intern:functional', runIntern({functionalSuites: argv.suites || 'static/tests/functional/**/test_*.js'}));
+gulp.task('intern:functional', runIntern({functionalSuites: argv.suites || 'static/tests/functional/**/test_cluster_network.js'}));
 
 gulp.task('unit-tests', function(cb) {
     runSequence('selenium', 'intern:unit', function(err) {

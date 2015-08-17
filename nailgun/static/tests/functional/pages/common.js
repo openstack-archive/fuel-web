@@ -126,6 +126,16 @@ define([
                                 }
                             )}, false);
                     });
+            },
+            goToTab: function(tabName) {
+                var that = this;
+                return this.remote
+                    .then(function() {
+                        return Helpers.clickLinkByText(
+                            that.remote,
+                            '.tabs-box .tabs a.' + tabName,
+                            tabName);
+                    });
             }
         };
         return CommonMethods;

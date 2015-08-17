@@ -45,6 +45,38 @@ define([], function() {
                 .waitForDeletedByCssSelector('div.modal-content')
                     .end();
         },
+        createVCenterNovaCluster: function(clusterName) {
+            return this.remote
+                .setFindTimeout(1000)
+                .findByClassName('create-cluster')
+                .click()
+                .end()
+                .setFindTimeout(2000)
+                .findByCssSelector('div.modal-content')
+                .findByName('name')
+                .clearValue()
+                .type(clusterName)
+                //going to Compute step
+                .pressKeys('\uE007')
+                .setFindTimeout(2000)
+                .findByCssSelector('.custom-tumbler input[name=vcenter]')
+                .click()
+                .end()
+                //going to Networks step
+                .pressKeys('\uE007')
+                //Storage backends
+                .pressKeys('\uE007')
+                //Additional Services
+                .pressKeys('\uE007')
+                // Finish
+                .pressKeys('\uE007')
+                // pressing Finish
+                .pressKeys('\uE007')
+                .end()
+                .setFindTimeout(4000)
+                .waitForDeletedByCssSelector('div.modal-content')
+                .end();
+        },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {
             var that = this;

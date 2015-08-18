@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-//jshint strict:false
+/*eslint-disable strict*/
 
 var argv = require('minimist')(process.argv.slice(2));
 
@@ -79,6 +79,10 @@ var jsFilter = filter('**/*.js');
 var jsxFilter = filter('**/*.jsx');
 var lessFilter = filter('**/*.less');
 var indexFilter = filter('index.html');
+var buildSourceFilter = filter([
+    '**',
+    '!tests/**'
+]);
 var buildResultFilter = filter([
     'index.html',
     'main.js',
@@ -103,7 +107,7 @@ gulp.task('bower:fetch', bower);
 
 gulp.task('bower:copy-main', function() {
     var dirs = [
-        {dirName: 'static/vendor/bower', includeDev: 'inclusive'},
+        {dirName: 'static/vendor/bower', includeDev: false},
         {dirName: 'static/tests/bower', includeDev: 'exclusive'}
     ];
     var streams = dirs.map(function(dir) {
@@ -291,6 +295,7 @@ gulp.task('rjs', function() {
         .pipe(indexFilter)
         .pipe(replace('__CACHE_BUST__', Date.now()))
         .pipe(indexFilter.restore())
+        .pipe(buildSourceFilter)
         .pipe(intermediate({output: '_build'}, function(tempDir, cb) {
             var configFile = path.join(tempDir, 'build.json');
             rjsConfig.appDir = tempDir;

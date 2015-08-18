@@ -20,6 +20,8 @@ define(['config'], function(config) {
     config.baseUrl = '';
     config.waitSeconds = 7;
 
+    config.paths.sinon = 'tests/bower/sinon/lib/sinon';
+
     return {
         proxyPort: 9057,
         proxyUrl: 'http://localhost:9057/',

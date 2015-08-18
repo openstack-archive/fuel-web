@@ -29,9 +29,9 @@ define([
             name: 'Clusters page',
             setup: function() {
                 common = new Common(this.remote);
-                clusterName = common.pickRandomName('Test Cluster');
             },
             beforeEach: function() {
+                clusterName = common.pickRandomName('Test Cluster');
                 return this.remote
                     .then(function() {
                         return common.getIn();
@@ -54,6 +54,35 @@ define([
                     .then(function(result) {
                         assert.ok(result, 'Newly created cluster name found in the list');
                     });
+            },
+            'Attempt to create cluster with duplicate name': function() {
+                return this.remote
+                    .then(function() {
+                        return common.createCluster(clusterName, true);
+                    })
+                    .setFindTimeout(1000)
+                    .findAllByCssSelector('.create-cluster-form .form-group.has-error')
+                    .then(function(result) {
+                        assert.strictEqual(result.length, 1, 'Cluster creation error exists');
+                    });
+            },
+            'Testing cluster list page': function() {
+                return this.remote
+                    .then(function() {
+                        return common.clickLink('Environments')
+                    })
+                    .setFindTimeout(2000)
+                    //Cluster container exists
+                    .findAllByCssSelector('.clusters-page .clusterbox')
+                    .then(function(elements) {
+                        return assert.ok(elements.length, 'Cluster container exists');
+                    })
+                    .end()
+                    .findAllByCssSelector('.create-cluster')
+                    .then(function(elements) {
+                        return assert.strictEqual(elements.length, 1, 'Cluster creation control exists');
+                    })
+                    .end()
             }
         };
     });

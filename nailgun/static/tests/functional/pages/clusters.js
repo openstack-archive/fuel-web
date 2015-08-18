@@ -22,8 +22,9 @@ define([], function() {
 
     ClustersPage.prototype = {
         constructor: ClustersPage,
-        createCluster: function(clusterName) {
-            return this.remote
+        createCluster: function(clusterName, dontEnsureSuccess) {
+            var self = this;
+            var result = this.remote
                 .setFindTimeout(1000)
                 .findByClassName('create-cluster')
                     .click()
@@ -40,10 +41,13 @@ define([], function() {
                     .pressKeys('\uE007')
                     .pressKeys('\uE007')
                     .pressKeys('\uE007')
-                    .end()
-                .setFindTimeout(4000)
-                .waitForDeletedByCssSelector('div.modal-content')
-                    .end();
+                    .then(function() {
+                        if (!dontEnsureSuccess) return self.remote
+                            .setFindTimeout(4000)
+                            .waitForDeletedByCssSelector('div.modal-content')
+                            .end()
+                    })
+            return result;
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {

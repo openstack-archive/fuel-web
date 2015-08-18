@@ -62,16 +62,23 @@ define([
                         .click()
                         .end();
             },
-            waitForModal: function() {
+            waitForDialog: function() {
                 return this.remote
                     .setTimeout(2000)
-                    .findByCssSelector('div.modal-content')
+                    .findByCssSelector('div.modal')
                         .end();
             },
-            waitForModalToClose: function() {
+            waitForDialogToClose: function() {
                 return this.remote
                     .setTimeout(2000)
-                    .waitForDeletedByCssSelector('div.modal-content')
+                    .waitForDeletedByCssSelector('div.modal')
+                        .end();
+            },
+            closeActiveDialog: function() {
+                return this.remote
+                    .setTimeout(2000)
+                    .waitForDeletedByCssSelector('div.modal .modal-header button.close')
+                        .click()
                         .end();
             },
             goToEnvironment: function(clusterName) {
@@ -84,14 +91,14 @@ define([
                         return that.clustersPage.goToEnvironment(clusterName);
                     });
             },
-            createCluster: function(clusterName) {
+            createCluster: function(clusterName, dontEnsureSuccess) {
                 var that = this;
                 return this.remote
                     .then(function() {
                         return that.clickLink('Environments');
                     })
                     .then(function() {
-                        return that.clustersPage.createCluster(clusterName);
+                        return that.clustersPage.createCluster(clusterName, dontEnsureSuccess);
                     });
             },
             removeCluster: function(clusterName, suppressErrors) {

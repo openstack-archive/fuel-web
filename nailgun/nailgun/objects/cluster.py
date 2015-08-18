@@ -154,37 +154,6 @@ class Cluster(NailgunObject):
     #: Serializer for Cluster
     serializer = ClusterSerializer
 
-    #: Cluster JSON schema
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Cluster",
-        "description": "Serialized Cluster object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "number"},
-            "name": {"type": "string"},
-            "mode": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_MODES)
-            },
-            "status": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_STATUSES)
-            },
-            "net_provider": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_NET_PROVIDERS)
-            },
-            "ui_settings": CLUSTER_UI_SETTINGS,
-            "release_id": {"type": "number"},
-            "pending_release_id": {"type": "number"},
-            "replaced_deployment_info": {"type": "object"},
-            "replaced_provisioning_info": {"type": "object"},
-            "is_customized": {"type": "boolean"},
-            "fuel_version": {"type": "string"}
-        }
-    }
-
     @classmethod
     def create(cls, data):
         """Create Cluster instance with specified parameters in DB.

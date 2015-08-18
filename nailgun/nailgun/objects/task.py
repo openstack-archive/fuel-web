@@ -39,31 +39,6 @@ class Task(NailgunObject):
     model = models.Task
     serializer = TaskSerializer
 
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Task",
-        "description": "Serialized Task object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "number"},
-            "cluster_id": {"type": "number"},
-            "parent_id": {"type": "number"},
-            "name": {
-                "type": "string",
-                "enum": list(consts.TASK_NAMES)
-            },
-            "message": {"type": "string"},
-            "status": {
-                "type": "string",
-                "enum": list(consts.TASK_STATUSES)
-            },
-            "progress": {"type": "number"},
-            "weight": {"type": "number"},
-            "cache": {"type": "object"},
-            "result": {"type": "object"}
-        }
-    }
-
     @classmethod
     def create_subtask(cls, instance, name):
         if name not in consts.TASK_NAMES:

@@ -103,7 +103,7 @@ gulp.task('bower:fetch', bower);
 
 gulp.task('bower:copy-main', function() {
     var dirs = [
-        {dirName: 'static/vendor/bower', includeDev: 'inclusive'},
+        {dirName: 'static/vendor/bower', includeDev: false},
         {dirName: 'static/tests/bower', includeDev: 'exclusive'}
     ];
     var streams = dirs.map(function(dir) {

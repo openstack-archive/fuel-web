@@ -104,14 +104,14 @@ define([
                         if (tabName) return that.clusterPage.goToTab(tabName);
                     });
             },
-            createCluster: function(clusterName) {
+            createCluster: function(clusterName, dontEnsureSuccess) {
                 var that = this;
                 return this.remote
                     .then(function() {
                         return that.clickLink('Environments');
                     })
                     .then(function() {
-                        return that.clustersPage.createCluster(clusterName);
+                        return that.clustersPage.createCluster(clusterName, dontEnsureSuccess);
                     });
             },
             removeCluster: function(clusterName, suppressErrors) {
@@ -168,6 +168,10 @@ define([
                     .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
                         .end();
+            },
+            isNoElementError: function(error) {
+                if (error && error.name == 'NoSuchElement') return true;
+                throw error;
             }
         };
         return CommonMethods;

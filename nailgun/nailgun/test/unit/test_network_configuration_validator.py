@@ -12,7 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -225,25 +228,41 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
             if net['name'] == name:
                 return net
 
-    def assertRaisesInvalidData(self, message):
+    def get_context_of_validation_error(self):
         config = jsonutils.dumps(self.config)
-        with self.assertRaises(errors.InvalidData) as context:
+        with self.assertRaises(errors.InvalidData) as exc_context:
             self.validator.validate_networks_update(config)
-        self.assertIn(message, context.exception.message)
+        return exc_context
+
+    def assertRaisesInvalidData(self, message):
+        exc_context = self.get_context_of_validation_error()
+        self.assertIn(message, exc_context.exception.message)
 
     def test_validate_networks_not_in_db(self):
         mgmt = self.find_net_by_name('management')
         sto = self.find_net_by_name('storage')
 
         mgmt_db = self.db.query(NetworkGroup).get(mgmt['id'])
-        prv_db = self.db.query(NetworkGroup).get(sto['id'])
+        sto_db = self.db.query(NetworkGroup).get(sto['id'])
         self.db.delete(mgmt_db)
-        self.db.delete(prv_db)
+        self.db.delete(sto_db)
         self.db.flush()
 
-        self.assertRaisesInvalidData(
-            "Networks with ID's [{0}, {1}] are not present "
-            "in the database".format(mgmt['id'], sto['id']))
+        exc_context = self.get_context_of_validation_error()
+        message = exc_context.exception.message
+
+        pattern = "Networks with ID's \[(\d+), (\d+)\] are not " \
+            "present in the database"
+        match = re.search(pattern, message)
+        self.assertIsNotNone(
+            match,
+            msg="Cannot find regexp '{0}' in '{1}'".format(pattern, message)
+        )
+        expected_ids = map(six.text_type, [
+            sto['id'],
+            mgmt['id'],
+        ])
+        self.assertItemsEqual(match.groups(), expected_ids)
 
     def test_validate_network_no_ip_ranges(self):
         mgmt = self.find_net_by_name('management')

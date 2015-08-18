@@ -121,3 +121,21 @@ class TestNodeReassignValidator(base.BaseTestCase):
         cluster = mock.Mock(id=42)
         with self.assertRaises(errors.InvalidData):
             self.validator.validate_node_cluster(node, cluster)
+
+    def test_validate_empty_data(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id,
+                                    roles=["compute"],
+                                    status="ready")
+        msg = "^'node_id' is a required property"
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate("{}", node)
+
+    def test_validate_empty_body(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id,
+                                    roles=["compute"],
+                                    status="ready")
+        msg = "^Empty request received$"
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate("", node)

@@ -31,30 +31,6 @@ class ActionLog(NailgunObject):
     #: Serializer for ActionLog
     serializer = ActionLogSerializer
 
-    #: JSON schema for ActionLog
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "ActionLog",
-        "description": "Serialized ActionLog object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "number"},
-            "actor_id": {"type": ["string", "null"]},
-            "action_group": {"type": "string"},
-            "action_name": {"type": "string"},
-            "action_type": {
-                "type": "string",
-                "enum": list(consts.ACTION_TYPES)
-            },
-            "start_timestamp": {"type": "string"},
-            "end_timestamp": {"type": "string"},
-            "additional_info": {"type": "object"},
-            "is_sent": {"type": "boolean"},
-            "cluster_id": {"type": ["number", "null"]},
-            "task_uuid": {"type": ["string", "null"]}
-        }
-    }
-
     @classmethod
     def update(cls, instance, data):
         """Form additional info for further instance update.

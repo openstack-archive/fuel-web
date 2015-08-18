@@ -35,30 +35,6 @@ class Notification(NailgunObject):
     model = models.Notification
     serializer = NotificationSerializer
 
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Notification",
-        "description": "Serialized Notification object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "number"},
-            "cluster_id": {"type": "number"},
-            "node_id": {"type": "number"},
-            "task_id": {"type": "number"},
-            "time": {"type": "string"},
-            "date": {"type": "string"},
-            "topic": {
-                "type": "string",
-                "enum": list(consts.NOTIFICATION_TOPICS)
-            },
-            "message": {"type": "string"},
-            "status": {
-                "type": "string",
-                "enum": list(consts.NOTIFICATION_STATUSES)
-            }
-        }
-    }
-
     @classmethod
     def create(cls, data):
         """Creates and returns a notification instance.

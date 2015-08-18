@@ -62,48 +62,6 @@ class Node(NailgunObject):
     #: Serializer for Node
     serializer = NodeSerializer
 
-    #: Node JSON schema
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Node",
-        "description": "Serialized Node object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "number"},
-            "cluster_id": {"type": "number"},
-            "name": {"type": "string"},
-            "status": {
-                "type": "string",
-                "enum": list(consts.NODE_STATUSES)
-            },
-            "group_id": {"type": "number"},
-            "meta": {"type": "object"},
-            "mac": {"type": "string"},
-            "manufacturer": {"type": "string"},
-            "platform_name": {"type": "string"},
-            "kernel_params": {"type": "string"},
-            "progress": {"type": "number"},
-            "os_platform": {"type": "string"},
-            "pending_addition": {"type": "boolean"},
-            "pending_deletion": {"type": "boolean"},
-            "error_type": {
-                "type": "string",
-                "enum": list(consts.NODE_ERRORS)
-            },
-            "error_msg": {"type": "string"},
-            "online": {"type": "boolean"},
-            "labels": {
-                "type": "object",
-                "additionalProperties": {
-                    "type": ["string", "null"]
-                }
-            },
-            "roles": {"type": "array"},
-            "pending_roles": {"type": "array"},
-            "agent_checksum": {"type": "string"}
-        }
-    }
-
     @classmethod
     def delete(cls, instance):
         fire_callback_on_node_delete(instance)

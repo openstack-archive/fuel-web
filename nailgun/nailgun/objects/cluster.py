@@ -26,8 +26,6 @@ import sqlalchemy as sa
 import yaml
 
 
-from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -126,9 +124,6 @@ class Cluster(NailgunObject):
 
     #: Serializer for Cluster
     serializer = ClusterSerializer
-
-    #: Cluster JSON schema
-    schema = cluster_schema.single_schema
 
     @classmethod
     def create(cls, data):

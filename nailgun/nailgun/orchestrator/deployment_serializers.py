@@ -90,7 +90,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
-        self.set_critical_nodes(nodes)
+        self.set_critical_nodes(cluster, nodes)
         return [utils.dict_merge(node, common_attrs) for node in nodes]
 
     def serialize_customized(self, cluster, nodes):
@@ -217,10 +217,14 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     def not_roles(self, nodes, roles):
         return filter(lambda node: node['role'] not in roles, nodes)
 
-    def set_critical_nodes(self, nodes):
-        """Set behavior on nodes deployment error during deployment process."""
+    def set_critical_nodes(self, cluster, nodes):
+        """Schedule deployment failure if failed one of critical nodes"""
+        critical_roles = set()
+        for role_meta in objects.Cluster.get_roles(cluster).values():
+            critical_roles |= set(role_meta.get('is_critical', []))
+
         for n in nodes:
-            n['fail_if_error'] = n['role'] in self.critical_roles
+            n['fail_if_error'] = n['role'] in critical_roles
 
     def serialize_nodes(self, nodes):
         """Serialize node for each role.

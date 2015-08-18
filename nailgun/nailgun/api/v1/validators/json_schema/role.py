@@ -111,7 +111,12 @@ ROLE_META_INFO = {
         "public_ip_required": {
             "type": "boolean",
             "description": "Specify if role needs public IP address."},
-
+        "is_critical": {
+            "type": "array",
+            "description": ("Mark listet roles as critical for deployment. Can"
+                            " contain role name itself and 'primary-' + role"
+                            " name."),
+            "items": {"type": "string", "pattern": "^[a-zA-Z_-]+$"}},
         "update_required": {
             "type": "array",
             "description": ("Specified roles will be selected for deployment,"

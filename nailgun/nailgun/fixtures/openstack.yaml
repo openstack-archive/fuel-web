@@ -1530,11 +1530,11 @@
         provision:
           image_data:
             /:
-              uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_66_x86_64.img.gz"
               format: "ext4"
               container: "gzip"
             /boot:
-              uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_66_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
 - pk: 2

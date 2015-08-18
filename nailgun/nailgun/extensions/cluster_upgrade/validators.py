@@ -93,6 +93,7 @@ class NodeReassignValidator(base.BasicValidator):
         "properties": {
             "node_id": {"type": "number"},
         },
+        "required": ["node_id"],
     }
 
     @classmethod

@@ -163,3 +163,23 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         self.assertEqual("Node {0} is already assigned to cluster {1}".
                          format(node_id, cluster_id),
                          resp.json_body['message'])
+
+    def test_node_reassign_handler_with_empty_data(self):
+        cluster = self.env.create_cluster(api=False)
+        resp = self.app.post(
+            reverse('NodeReassignHandler',
+                    kwargs={'cluster_id': cluster.id}),
+            "{}",
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+
+    def test_node_reassign_handler_with_empty_body(self):
+        cluster = self.env.create_cluster(api=False)
+        resp = self.app.post(
+            reverse('NodeReassignHandler',
+                    kwargs={'cluster_id': cluster.id}),
+            "",
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)

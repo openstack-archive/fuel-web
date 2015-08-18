@@ -30,19 +30,6 @@ class NodeGroup(NailgunObject):
     model = DBNodeGroup
     serializer = NodeGroupSerializer
 
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "NodeGroup",
-        "description": "Serialized NodeGroup object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "integer"},
-            "cluster_id": {"type": "integer"},
-            "name": {"type": "string"},
-        },
-        "required": ["cluster_id", "name"],
-    }
-
     @classmethod
     def create(cls, data):
         new_group = super(NodeGroup, cls).create(data)

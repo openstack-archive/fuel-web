@@ -108,7 +108,6 @@
                         "swift/api": "br-mgmt",
                         "heat/api": "br-mgmt",
                         "cinder/api": "br-mgmt",
-                        "mgmt/api": "br-mgmt",
                         "murano/api": "br-mgmt",
                         "nova/api": "br-mgmt",
                         "horizon": "br-mgmt",
@@ -118,7 +117,8 @@
                         "mgmt/vip": "br-mgmt",
                         "mgmt/corosync": "br-mgmt",
                         "mongo/db": "br-mgmt",
-                        "nova/migration": "br-mgmt"
+                        "nova/migration": "br-mgmt",
+                        "ceph/public": "br-mgmt"
                     }
                 },
                 "private": {
@@ -187,7 +187,6 @@
                         "ex": "br-ex",
                         "ceph/radosgw": "br-ex",
                         "swift/public": "br-ex",
-                        "ceph/public": "br-ex",
                         "public/vip": "br-ex",
                         "neutron/floating": "br-floating"
                     }

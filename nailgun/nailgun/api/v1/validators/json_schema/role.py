@@ -111,7 +111,10 @@ ROLE_META_INFO = {
         "public_ip_required": {
             "type": "boolean",
             "description": "Specify if role needs public IP address."},
-
+        "is_critical": {
+            "type": "boolean",
+            "description": ("Set behavior on nodes deployment error during"
+                            " deployment process.")},
         "update_required": {
             "type": "array",
             "description": ("Specified roles will be selected for deployment,"

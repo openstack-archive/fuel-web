@@ -87,11 +87,12 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
-        nodes = self.serialize_nodes(nodes)
+        node_pairs = self.serialize_nodes(nodes)
+        nodes = [serialized_node for db_node, serialized_node in node_pairs]
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
-        self.set_critical_nodes(nodes)
+        self.set_critical_nodes(cluster, node_pairs)
         return [utils.dict_merge(node, common_attrs) for node in nodes]
 
     def serialize_customized(self, cluster, nodes):
@@ -205,12 +206,28 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     def not_roles(self, nodes, roles):
         return filter(lambda node: node['role'] not in roles, nodes)
 
-    def set_critical_nodes(self, nodes):
+    def set_critical_nodes(self, cluster, nodes):
         """Set behavior on nodes deployment error
         during deployment process.
         """
-        for n in nodes:
-            n['fail_if_error'] = n['role'] in self.critical_roles
+        roles_alias = {}
+        roles_meta = objects.Cluster.get_roles(cluster)
+        for db_node, serialized_node in nodes:
+            try:
+                aliases = roles_alias[db_node.uid]
+            except KeyError:
+                roles_alias[db_node.uid] = aliases = \
+                    objects.Node.get_role_aliases(db_node)
+
+            role_raw = serialized_node['role']
+            role = aliases[role_raw]
+            meta = roles_meta[role]
+
+            flag = meta.get('is_critical')
+            if flag is None:
+                flag = role in self.critical_roles
+
+            serialized_node['fail_if_error'] = bool(flag)
 
     def serialize_nodes(self, nodes):
         """Serialize node for each role.
@@ -218,11 +235,11 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         in orchestrator will be passed two serialized
         nodes.
         """
-        serialized_nodes = []
+        node_pairs = []
         for node in nodes:
             for role in objects.Node.all_roles(node):
-                serialized_nodes.append(self.serialize_node(node, role))
-        return serialized_nodes
+                node_pairs.append((node, self.serialize_node(node, role)))
+        return node_pairs
 
     def serialize_node(self, node, role):
         """Serialize node, then it will be

@@ -74,6 +74,7 @@ class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
         self.cluster_mock = mock.MagicMock(pending_release_id=None)
         self.cluster_mock.deployment_tasks = []
         self.cluster_mock.release.deployment_tasks = []
+        self.cluster_mock.release.roles_metadata = {}
 
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node['role'], nodes)
@@ -431,7 +432,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster_mock.release.environment_version = '5.0'
         serializer = DeploymentMultinodeSerializer(
             AstuteGraph(self.cluster_mock))
-        serializer.set_critical_nodes(nodes)
+        serializer.set_critical_nodes(self.cluster_mock, nodes)
         expected_ciritial_roles = [
             {'role': 'mongo', 'fail_if_error': False},
             {'role': 'mongo', 'fail_if_error': False},

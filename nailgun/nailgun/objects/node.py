@@ -862,6 +862,17 @@ class Node(NailgunObject):
         return sorted(roles | primary_roles)
 
     @classmethod
+    def get_role_aliases(cls, instance):
+        aliases = {}
+        for dest in itertools.chain(instance.roles, instance.pending_roles):
+            if source in instance.primary_roles:
+                source = 'primary-' + source
+            else:
+                source = dest
+            aliases[source] = dest
+        return aliases
+
+    @classmethod
     def apply_network_template(cls, instance, template):
         if template is None:
             instance.network_template = None

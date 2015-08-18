@@ -17,6 +17,9 @@
           - compute
           - cinder
         has_primary: true
+        is_critical:
+          - controller
+          - primary-controller
         public_ip_required: true
         public_for_dvr_required: true
         limits:
@@ -62,6 +65,8 @@
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
         weight: 50
+        is_critical:
+          - ceph-osd
         limits:
             min: "settings:storage.osd_pool_size.value"
         restrictions:
@@ -72,6 +77,8 @@
       mongo:
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
+        is_critical:
+          - primary-mongo
         weight: 60
         conflicts:
           - compute
@@ -126,7 +133,11 @@
         restrictions:
           - condition: "settings:additional_components.ironic.value == false"
             message: "Ironic should be enabled."
-
+      swift-proxy:
+        name: "Swift proxy"
+        description: "A node that runs swift-proxy."
+        is_critical:
+          - primary-swift-proxy
     network_roles_metadata:
       -
         id: "keystone/api"
@@ -489,6 +500,8 @@
         compute-vmware:
           - {allocate_size: "min", id: "os"}
         ironic:
+          - {allocate_size: "all", id: "os"}
+        swift-proxy:
           - {allocate_size: "all", id: "os"}
       volumes:
         - id: "os"

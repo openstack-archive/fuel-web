@@ -37,6 +37,7 @@ class TestRoleApi(BaseRoleTest):
     meta:
         name: My Role
         description: Something goes here
+        is_critical: []
     volumes_roles_mapping:
         - id: os
           allocate_size: all
@@ -190,6 +191,7 @@ meta:
         - condition: "cluster:mode == 'multinode'"
           action: hide
           message: "Multi-node environment can not have more."
+    is_critical: []
 volumes_roles_mapping:
     - id: os
       allocate_size: all

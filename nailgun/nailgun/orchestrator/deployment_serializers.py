@@ -63,8 +63,6 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer
 
-    critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
-
     def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which are passed to puppet"""
         def keyfunc(node):
@@ -90,7 +88,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
-        self.set_critical_nodes(nodes)
+        self.set_critical_nodes(cluster, nodes)
         return [utils.dict_merge(node, common_attrs) for node in nodes]
 
     def serialize_customized(self, cluster, nodes):
@@ -217,10 +215,14 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     def not_roles(self, nodes, roles):
         return filter(lambda node: node['role'] not in roles, nodes)
 
-    def set_critical_nodes(self, nodes):
+    def set_critical_nodes(self, cluster, nodes):
         """Set behavior on nodes deployment error during deployment process."""
+        critical_roles = set()
+        for role_meta in objects.Cluster.get_roles(cluster).values():
+            critical_roles |= set(role_meta.get('is_critical', []))
+
         for n in nodes:
-            n['fail_if_error'] = n['role'] in self.critical_roles
+            n['fail_if_error'] = n['role'] in critical_roles
 
     def serialize_nodes(self, nodes):
         """Serialize node for each role.
@@ -316,12 +318,6 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):
     """Serializer for HA mode."""
-
-    critical_roles = ['primary-controller',
-                      'primary-mongo',
-                      'primary-swift-proxy',
-                      'ceph-osd',
-                      'controller']
 
     def get_last_controller(self, nodes):
         sorted_nodes = sorted(

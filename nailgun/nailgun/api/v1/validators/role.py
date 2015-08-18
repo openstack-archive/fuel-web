@@ -42,6 +42,7 @@ class RoleValidator(BasicValidator):
     def validate(cls, data, instance=None):
         parsed = super(RoleValidator, cls).validate(data)
         cls.validate_schema(parsed, role.SCHEMA)
+        cls._validate_meta_is_critical(parsed)
         return parsed
 
     @classmethod
@@ -65,3 +66,21 @@ class RoleValidator(BasicValidator):
     @classmethod
     def validate_create(cls, data):
         return cls.validate(data)
+
+    @classmethod
+    def _validate_meta_is_critical(cls, data):
+        meta = data['meta']
+        is_critical = meta.setdefault('is_critical', [])
+        allow = set(data['name'], )
+        if meta.get('has_primary', False):
+            allow.add('primary-' + data['name'])
+
+        extra = set(is_critical) - allow
+        if extra:
+            extra = '", "'.join(sorted(extra))
+            allow = '", "'.join(allow)
+            raise errors.InvalidData(
+                'Invalid value into meta.is_critical list: "{extra}". You can '
+                'use only "{allow}".'.format(extra=extra, allow=allow))
+
+        meta['is_critical'] = sorted(is_critical)

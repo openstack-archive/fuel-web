@@ -85,13 +85,13 @@ Here's a test example which confirms the above explanations:
 Test run ordering and profiles
 ------------------------------
 
-Each test set (sanity, smoke, ha and platform_tests) contains a special
+Each test set (sanity, smoke, HA and platform_tests) contains a special
 variable in __init__.py module which is called __profile__.
 The profile variable makes it possible to set different rules, such as test run
 order, set up deployment tags, information gathering on cleanup and expected
 time estimate for running a test set.
 
-If you are develop a new set of tests, you need to create __init__.py module
+If you are to develop a new set of tests, you need to create __init__.py module
 and place __profile__ dict in it. It is important that your profile matches
 the following structure::
 
@@ -104,13 +104,14 @@ the following structure::
                         " Duration 3 min - 60 min"),
         "cleanup_path": "fuel_health.cleanup",
         "deployment_tags": ['additional_components'],
-        "exclusive_testsets": []
+        "exclusive_testsets": [],
+        "available_since_release": "2015.2-6.1",
         }
 
 Take note of each field in the profile, along with acceptable values.
 
   - test_runs_ordering_priority is a field responsible for setting the priority
-    in which the test set will be displayed, for example, if you set "6" for
+    in which the test set will be displayed. For example, if you set "6" for
     sanity tests and "3" for smoke tests, smoke test set will be displayed
     first on the HealthCheck tab;
   - id is just the unique id of a test set;
@@ -126,8 +127,11 @@ Take note of each field in the profile, along with acceptable values.
     available depending on cluster settings;
   - exclusive_testsets field gives you an opportunity to specify test sets that
     will be run successively. For example, you can specify "smoke_sanity" for
-    smoke and sanity test set profiles, then these tests will be ran not
+    smoke and sanity test set profiles, then these tests will be run not
     simultaneously, but successively.
+  - available_since_release field is responsible for the release version
+    starting from which a particular test set can be run. This means that
+    the test will run only on the specified or newer version of Fuel.
 
 It is necessary to specify a value for each of the attributes. The optional
 attribute is "deployment_tags", meaning optionally you may not specify it

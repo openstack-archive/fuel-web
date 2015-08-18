@@ -132,8 +132,8 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1"]
         self.assertRaisesTooShort(self.nc, "[u'1.1.1.1']")
 
-        self.nc['networks'][0]['meta']['ip_range'] = [1, 1]
-        self.assertRaisesNonUnique(self.nc, "[1, 1]")
+        self.nc['networks'][0]['meta']['ip_range'] = ['1.2.3.4', '1.2.3.4']
+        self.assertRaisesNonUnique(self.nc, "[u'1.2.3.4', u'1.2.3.4']")
 
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1", "1.2.3.x"]
         self.assertRaisesInvalidAnyOf(self.nc, "u'1.2.3.x'")
@@ -195,8 +195,8 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
         self.nc['networks'][0]['meta']['vips'] = [1]
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
-        self.nc['networks'][0]['meta']['vips'] = [1, 1]
-        self.assertRaisesNonUnique(self.nc, "[1, 1]")
+        self.nc['networks'][0]['meta']['vips'] = ['vip_a', 'vip_a']
+        self.assertRaisesNonUnique(self.nc, "[u'vip_a', u'vip_a']")
 
         self.nc['networks'][0]['meta']['vips'] = ["a", "b", "c1"]
         self.assertRaisesNotMatchPattern(self.nc, "u'c1'")

@@ -412,6 +412,7 @@
                         "validation_error": "Volume groups total size exceeds available space of __size__ MB",
                         "minimum_reached": "Minimum allowed size reached",
                         "not_enough_space": "There is no enough space for assigned volume groups",
+                        "volume_error": "The value is too low. You should allocate at least __size__ MB",
                         "configuration_error": {
                             "title": "Disks Configuration Error",
                             "saving_warning": "Unable to apply changes",

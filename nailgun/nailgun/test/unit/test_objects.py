@@ -24,10 +24,14 @@ from itertools import ifilter
 import re
 import uuid
 
+from sqlalchemy import inspect as sqlalchemy_inspect
+
 import jsonschema
 from oslo_serialization import jsonutils
 import six
 from six.moves import range
+
+from nailgun.api.v1.validators.json_schema import action_log
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
@@ -53,7 +57,7 @@ class TestObjects(BaseIntegrationTest):
 
     def test_filter_by(self):
         names = cycle('ABCD')
-        os = cycle(['CentOS', 'Ubuntu'])
+        os = cycle([consts.RELEASE_OS.centos, consts.RELEASE_OS.ubuntu])
         for i in range(12):
             self.env.create_release(
                 name=names.next(),
@@ -64,7 +68,7 @@ class TestObjects(BaseIntegrationTest):
         query_filtered = objects.ReleaseCollection.filter_by(
             objects.ReleaseCollection.all(),
             name="A",
-            operating_system="CentOS"
+            operating_system=consts.RELEASE_OS.centos
         )
         self.assertIsInstance(query_filtered, NoCacheQuery)
         self.assertEqual(
@@ -73,13 +77,13 @@ class TestObjects(BaseIntegrationTest):
         )
         for r in query_filtered:
             self.assertEqual(r.name, "A")
-            self.assertEqual(r.operating_system, "CentOS")
+            self.assertEqual(r.operating_system, consts.RELEASE_OS.centos)
 
         # filtering iterable - returns ifilter
         iterable_filtered = objects.ReleaseCollection.filter_by(
             list(objects.ReleaseCollection.all()),
             name="A",
-            operating_system="CentOS"
+            operating_system=consts.RELEASE_OS.centos
         )
         self.assertIsInstance(iterable_filtered, ifilter)
         self.assertEqual(
@@ -88,7 +92,7 @@ class TestObjects(BaseIntegrationTest):
         )
         for r in iterable_filtered:
             self.assertEqual(r.name, "A")
-            self.assertEqual(r.operating_system, "CentOS")
+            self.assertEqual(r.operating_system, consts.RELEASE_OS.centos)
 
         iterable_filtered = objects.ReleaseCollection.filter_by(
             list(),
@@ -99,7 +103,7 @@ class TestObjects(BaseIntegrationTest):
 
     def test_filter_by_not(self):
         names = cycle('ABCDE')
-        os = cycle(['CentOS', 'Ubuntu'])
+        os = cycle([consts.RELEASE_OS.centos, consts.RELEASE_OS.ubuntu])
 
         # create releases: we'll have only two releases with both
         # name A and operating_system CentOS
@@ -113,7 +117,7 @@ class TestObjects(BaseIntegrationTest):
         query_filtered = objects.ReleaseCollection.filter_by_not(
             objects.ReleaseCollection.all(),
             name="A",
-            operating_system="CentOS"
+            operating_system=consts.RELEASE_OS.centos
         )
         self.assertIsInstance(query_filtered, NoCacheQuery)
         self.assertEqual(
@@ -122,15 +126,16 @@ class TestObjects(BaseIntegrationTest):
         )
         for r in query_filtered:
             if r.name == "A":
-                self.assertNotEqual(r.operating_system, "CentOS")
-            elif r.operating_system == "CentOS":
+                self.assertNotEqual(r.operating_system,
+                                    consts.RELEASE_OS.centos)
+            elif r.operating_system == consts.RELEASE_OS.centos:
                 self.assertNotEqual(r.name, "A")
 
         # filtering iterable - returns ifilter
         iterable_filtered = objects.ReleaseCollection.filter_by_not(
             list(objects.ReleaseCollection.all()),
             name="A",
-            operating_system="CentOS"
+            operating_system=consts.RELEASE_OS.centos
         )
         self.assertIsInstance(iterable_filtered, ifilter)
         self.assertEqual(
@@ -139,8 +144,9 @@ class TestObjects(BaseIntegrationTest):
         )
         for r in iterable_filtered:
             if r.name == "A":
-                self.assertNotEqual(r.operating_system, "CentOS")
-            elif r.operating_system == "CentOS":
+                self.assertNotEqual(r.operating_system,
+                                    consts.RELEASE_OS.centos)
+            elif r.operating_system == consts.RELEASE_OS.centos:
                 self.assertNotEqual(r.name, "A")
 
 
@@ -275,7 +281,8 @@ class TestNodeObject(BaseIntegrationTest):
              'pending_addition': True}]
         self.env.create(
             cluster_kwargs={
-                'net_provider': 'neutron'},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            },
             nodes_kwargs=nodes)
 
         cluster = self.env.clusters[0]
@@ -323,7 +330,8 @@ class TestNodeObject(BaseIntegrationTest):
              'pending_addition': True}]
         self.env.create(
             cluster_kwargs={
-                'net_provider': 'neutron'},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            },
             nodes_kwargs=nodes)
 
         cluster = self.env.clusters[0]
@@ -376,10 +384,14 @@ class TestNodeObject(BaseIntegrationTest):
             "mac",
             "meta",
             "name",
-            "agent_checksum"
+            "agent_checksum",
+            "uuid",
+            "timestamp",
+            "nic_interfaces",
+            "attributes",
         ]
         fields = set(
-            objects.Node.schema["properties"].keys()
+            c.key for c in sqlalchemy_inspect(objects.Node.model).attrs
         ) - set(exclude_fields)
 
         for f in fields:
@@ -417,9 +429,10 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertNotEqual(node_db.meta["disks"], data["meta"]["disks"])
 
         # test status handling
-        for status in ('provisioning', 'error'):
+        for status in (consts.NODE_STATUSES.provisioning,
+                       consts.NODE_STATUSES.error):
             node_db.status = status
-            data["status"] = "discover"
+            data["status"] = consts.NODE_STATUSES.discover
             objects.Node.update_by_agent(node_db, copy.deepcopy(data))
 
             self.assertEqual(node_db.status, status)
@@ -588,66 +601,76 @@ class TestTaskObject(BaseIntegrationTest):
                 {'roles': ['cinder']}])
 
     def _node_should_be_error_with_type(self, node, error_type):
-        self.assertEquals(node.status, 'error')
+        self.assertEquals(node.status, consts.NODE_STATUSES.error)
         self.assertEquals(node.error_type, error_type)
         self.assertEquals(node.progress, 0)
 
     def _nodes_should_not_be_error(self, nodes):
         for node in nodes:
-            self.assertEquals(node.status, 'discover')
+            self.assertEquals(node.status, consts.NODE_STATUSES.discover)
 
     @property
     def cluster(self):
         return self.env.clusters[0]
 
     def test_update_nodes_to_error_if_deployment_task_failed(self):
-        self.cluster.nodes[0].status = 'deploying'
+        self.cluster.nodes[0].status = consts.NODE_STATUSES.deploying
         self.cluster.nodes[0].progress = 12
-        task = Task(name='deployment', cluster=self.cluster, status='error')
+        task = Task(name=consts.TASK_NAMES.deployment,
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.error)
         self.db.add(task)
         self.db.flush()
 
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
-        self._node_should_be_error_with_type(self.cluster.nodes[0], 'deploy')
+        self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
+        self._node_should_be_error_with_type(self.cluster.nodes[0],
+                                             consts.NODE_ERRORS.deploy)
         self._nodes_should_not_be_error(self.cluster.nodes[1:])
 
     def test_update_cluster_to_error_if_deploy_task_failed(self):
-        task = Task(name='deploy', cluster=self.cluster, status='error')
+        task = Task(name=consts.TASK_NAMES.deploy,
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.error)
         self.db.add(task)
         self.db.flush()
 
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
 
     def test_update_nodes_to_error_if_provision_task_failed(self):
-        self.cluster.nodes[0].status = 'provisioning'
+        self.cluster.nodes[0].status = consts.NODE_STATUSES.provisioning
         self.cluster.nodes[0].progress = 12
-        task = Task(name='provision', cluster=self.cluster, status='error')
+        task = Task(name=consts.TASK_NAMES.provision,
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.error)
         self.db.add(task)
         self.db.flush()
 
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
         self._node_should_be_error_with_type(self.cluster.nodes[0],
-                                             'provision')
+                                             consts.NODE_ERRORS.provision)
         self._nodes_should_not_be_error(self.cluster.nodes[1:])
 
     def test_update_cluster_to_operational(self):
-        task = Task(name='deploy', cluster=self.cluster, status='ready')
+        task = Task(name=consts.TASK_NAMES.deploy,
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.ready)
         self.db.add(task)
         self.db.flush()
 
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEquals(self.cluster.status,
+                          consts.CLUSTER_STATUSES.operational)
 
     def test_update_vms_conf(self):
         kvm_node = self.cluster.nodes[0]
@@ -656,7 +679,8 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Node.set_vms_conf(kvm_node,
                                   [{'id': 1, 'cluster_id': self.cluster.id}])
         task = Task(name=consts.TASK_NAMES.spawn_vms,
-                    cluster=self.cluster, status='ready')
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.ready)
         self.db.add(task)
         self.db.flush()
 
@@ -667,61 +691,67 @@ class TestTaskObject(BaseIntegrationTest):
             if consts.VIRTUAL_NODE_TYPES.virt in node.roles:
                 self.assertTrue(node.attributes.vms_conf[0].get('created'))
             else:
-                self.assertNotEquals(node.status, 'ready')
+                self.assertNotEquals(node.status, consts.NODE_STATUSES.ready)
 
     def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
         for node in self.cluster.nodes:
-            node.status = 'ready'
+            node.status = consts.NODE_STATUSES.ready
             node.progress = 100
 
-        self.cluster.nodes[0].status = 'deploying'
+        self.cluster.nodes[0].status = consts.NODE_STATUSES.deploying
         self.cluster.nodes[0].progress = 24
 
-        task = Task(name='deploy', cluster=self.cluster, status='ready')
+        task = Task(name=consts.TASK_NAMES.deploy,
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.ready)
         self.db.add(task)
         self.db.flush()
 
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEquals(self.cluster.status,
+                          consts.CLUSTER_STATUSES.operational)
 
         for node in self.cluster.nodes:
-            self.assertEquals(node.status, 'ready')
+            self.assertEquals(node.status, consts.NODE_STATUSES.ready)
             self.assertEquals(node.progress, 100)
 
     def test_update_cluster_status_if_task_was_already_in_error_status(self):
         for node in self.cluster.nodes:
-            node.status = 'provisioning'
+            node.status = consts.NODE_STATUSES.provisioning
             node.progress = 12
 
-        task = Task(name='provision', cluster=self.cluster, status='error')
+        task = Task(name=consts.TASK_NAMES.provision,
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.error)
         self.db.add(task)
         self.db.flush()
 
-        data = {'status': 'error', 'progress': 100}
+        data = {'status': consts.TASK_STATUSES.error, 'progress': 100}
 
         objects.Task.update(task, data)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
-        self.assertEquals(task.status, 'error')
+        self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
+        self.assertEquals(task.status, consts.TASK_STATUSES.error)
 
         for node in self.cluster.nodes:
-            self.assertEquals(node.status, 'error')
+            self.assertEquals(node.status, consts.NODE_STATUSES.error)
             self.assertEquals(node.progress, 0)
 
     def test_do_not_set_cluster_to_error_if_validation_failed(self):
-        for task_name in ['check_before_deployment', 'check_networks']:
+        for task_name in [consts.TASK_NAMES.check_before_deployment,
+                          consts.TASK_NAMES.check_networks]:
             supertask = Task(
-                name='deploy',
+                name=consts.TASK_NAMES.deploy,
                 cluster=self.cluster,
-                status='error')
+                status=consts.TASK_STATUSES.error)
 
             check_task = Task(
                 name=task_name,
                 cluster=self.cluster,
-                status='error')
+                status=consts.TASK_STATUSES.error)
 
             supertask.subtasks.append(check_task)
             self.db.add(check_task)
@@ -730,10 +760,10 @@ class TestTaskObject(BaseIntegrationTest):
             objects.Task._update_cluster_data(supertask)
             self.db.flush()
 
-            self.assertEquals(self.cluster.status, 'new')
+            self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.new)
 
     def test_get_task_by_uuid_returns_task(self):
-        task = Task(name='deploy')
+        task = Task(name=consts.TASK_NAMES.deploy)
         self.db.add(task)
         self.db.flush()
         task_by_uuid = objects.Task.get_by_uuid(task.uuid)
@@ -746,7 +776,7 @@ class TestTaskObject(BaseIntegrationTest):
                           fail_if_not_found=True)
 
     def test_task_wrong_status_filtered(self):
-        task = Task(name='deploy')
+        task = Task(name=consts.TASK_NAMES.deploy)
         self.db.add(task)
         self.db.flush()
 
@@ -795,7 +825,7 @@ class TestActionLogObject(BaseIntegrationTest):
 
         instance_to_validate = jsonutils.loads(objects.ActionLog.to_json(al))
         self.assertNotRaises(jsonschema.ValidationError, jsonschema.validate,
-                             instance_to_validate, objects.ActionLog.schema)
+                             instance_to_validate, action_log.schema)
 
     def test_validate_json_schema_failure(self):
         object_data = {
@@ -812,7 +842,7 @@ class TestActionLogObject(BaseIntegrationTest):
 
         instance_to_validate = jsonutils.loads(objects.ActionLog.to_json(al))
         self.assertRaises(jsonschema.ValidationError, jsonschema.validate,
-                          instance_to_validate, objects.ActionLog.schema)
+                          instance_to_validate, action_log.schema)
 
     def test_get_by_uuid_method(self):
         object_data = {
@@ -886,7 +916,7 @@ class TestClusterObject(BaseTestCase):
     def _get_network_role_metadata(self, **kwargs):
         network_role = {
             'id': 'test_network_role',
-            'default_mapping': 'public',
+            'default_mapping': consts.NETWORKS.public,
             'properties': {
                 'subnet': True,
                 'gateway': False,

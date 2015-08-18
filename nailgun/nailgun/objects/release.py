@@ -42,42 +42,6 @@ class Release(NailgunObject):
     #: Serializer for Release
     serializer = release_serializer.ReleaseSerializer
 
-    #: Release JSON schema
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Release",
-        "description": "Serialized Release object",
-        "type": "object",
-        "required": [
-            "name",
-            "operating_system"
-        ],
-        "properties": {
-            "id": {"type": "number"},
-            "name": {"type": "string"},
-            "version": {"type": "string"},
-            "can_update_from_versions": {"type": "array"},
-            "description": {"type": "string"},
-            "operating_system": {"type": "string"},
-            "state": {
-                "type": "string",
-                "enum": list(consts.RELEASE_STATES)
-            },
-            "networks_metadata": {"type": "array"},
-            "attributes_metadata": {"type": "object"},
-            "volumes_metadata": {"type": "object"},
-            "modes_metadata": {"type": "object"},
-            "roles_metadata": {"type": "object"},
-            "network_roles_metadata": {"type": "array"},
-            "wizard_metadata": {"type": "object"},
-            "roles": {"type": "array"},
-            "clusters": {"type": "array"},
-            "is_deployable": {"type": "boolean"},
-            "vmware_attributes_metadata": {"type": "object"},
-            "modes": {"type": "array"}
-        }
-    }
-
     @classmethod
     def create(cls, data):
         """Create Release instance with specified parameters in DB.

@@ -127,9 +127,6 @@ class Cluster(NailgunObject):
     #: Serializer for Cluster
     serializer = ClusterSerializer
 
-    #: Cluster JSON schema
-    schema = cluster_schema.single_schema
-
     @classmethod
     def create(cls, data):
         """Create Cluster instance with specified parameters in DB.

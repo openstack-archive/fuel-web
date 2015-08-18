@@ -44,6 +44,8 @@ var lintspaces = require('gulp-lintspaces');
 
 var jscs = require('gulp-jscs');
 var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
+var eslint = require('gulp-eslint');
+var eslintConfig = JSON.parse(fs.readFileSync('./.eslintrc'));
 
 var intermediate = require('gulp-intermediate');
 var rjs = require('requirejs');
@@ -228,9 +230,6 @@ gulp.task('jscs', function() {
 });
 
 gulp.task('eslint', function() {
-    // FIXME(vkramskikh): move to top after fixing packaging issues
-    var eslint = require('gulp-eslint');
-    var eslintConfig = JSON.parse(fs.readFileSync('./.eslintrc'));
     return gulp.src(jsFiles)
         .pipe(eslint(eslintConfig))
         .pipe(eslint.format())

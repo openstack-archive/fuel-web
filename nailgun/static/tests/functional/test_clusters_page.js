@@ -46,13 +46,25 @@ define([
                         return common.removeCluster(clusterName, true);
                     });
             },
-            'Create Cluster': function() {
+            //'Create Cluster': function() {
+            //    return this.remote
+            //        .then(function() {
+            //            return common.doesClusterExist(clusterName);
+            //        })
+            //        .then(function(result) {
+            //            assert.ok(result, 'Newly created cluster name found in the list');
+            //        });
+            //},
+            'Attempt to create cluster with duplicate name': function() {
                 return this.remote
                     .then(function() {
-                        return common.doesClusterExist(clusterName);
+                        return common.createCluster(clusterName, true);
                     })
+                    .setFindTimeout(1000)
+                    .findAllByCssSelector('.create-cluster-form .form-group.has-error')
                     .then(function(result) {
-                        assert.ok(result, 'Newly created cluster name found in the list');
+                        assert.strictEqual(result.length, 1, 'Cluster creation error exists');
+                        //return common.closeActiveDialog();
                     });
             }
         };

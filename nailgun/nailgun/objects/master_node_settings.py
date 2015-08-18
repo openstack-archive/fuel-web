@@ -29,16 +29,6 @@ class MasterNodeSettings(NailgunObject):
 
     serializer = MasterNodeSettingsSerializer
 
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "ActionLog",
-        "description": "Serialized ActionLog object",
-        "type": "object",
-        "properties": {
-            "settings": {"type": "object"}
-        }
-    }
-
     @classmethod
     def get_one(cls, fail_if_not_found=False, lock_for_update=False):
         """Get one instance from table.

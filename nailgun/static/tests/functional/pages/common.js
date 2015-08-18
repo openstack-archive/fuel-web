@@ -104,14 +104,14 @@ define([
                         if (tabName) return that.clusterPage.goToTab(tabName);
                     });
             },
-            createCluster: function(clusterName) {
+            createCluster: function(clusterName, suppressErrors) {
                 var that = this;
                 return this.remote
                     .then(function() {
                         return that.clickLink('Environments');
                     })
                     .then(function() {
-                        return that.clustersPage.createCluster(clusterName);
+                        return that.clustersPage.createCluster(clusterName, suppressErrors);
                     });
             },
             removeCluster: function(clusterName, suppressErrors) {

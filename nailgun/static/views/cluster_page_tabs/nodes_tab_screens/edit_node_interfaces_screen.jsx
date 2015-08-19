@@ -84,7 +84,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         getInitialState: function() {
             return {
                 actionInProgress: false,
-                interfaceErrors: {}
+                interfaceErrors: {},
+                interfacesMap: _.range(0, this.props.interfaces.length)
             };
         },
         componentWillMount: function() {
@@ -92,6 +93,31 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         componentDidMount: function() {
             this.validate();
+        },
+        initInterfacesMap: function() {
+            this.setState({interfacesMap: _.range(0, this.props.interfaces.length)});
+        },
+        calculateInterfacesMap: function() {
+/*
+            this.props.interfaces contains interfaces configuration that user is changing on UI.
+            node.interfaces - actual interfaces configuration.
+
+            When one bonds some interfaces only this.props.interfaces gets changed
+            (new bond-interface is added at the beginning). Thus it's no longer possible to
+            reference node.interfaces by index from this.props.interfaces.
+
+            interfacesMap array maps indexes from this.props.interfaces to node.interfaces
+            until changes are applied.
+*/
+            var firstNodeInterfaces = this.props.nodes.at(0).interfaces;
+            this.setState({interfacesMap: this.props.interfaces.map(
+                function(ifc) {
+                    if (ifc.isBond()) return null;
+                    return firstNodeInterfaces.indexOf(
+                        firstNodeInterfaces.findWhere({name: ifc.get('name')})
+                    )
+                })
+            });
         },
         interfacesPickFromJSON: function(json) {
             // Pick certain interface fields that have influence on hasChanges.
@@ -122,6 +148,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             $.when(this.props.interfaces.fetch({
                 url: _.result(this.props.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true
             }, this)).done(_.bind(function() {
+                this.calculateInterfacesMap();
                 this.setState({actionInProgress: false});
             }, this)).fail(_.bind(function(response) {
                 var errorNS = ns + 'configuration_error.';
@@ -134,6 +161,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         revertChanges: function() {
             this.props.interfaces.reset(_.cloneDeep(this.state.initialInterfaces), {parse: true});
+            this.initInterfacesMap();
         },
         applyChanges: function() {
             if (!this.isSavingPossible()) return $.Deferred().reject();
@@ -186,6 +214,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         });
                     }
                 }, this);
+                this.initInterfacesMap();
 
                 return Backbone.sync('update', node.interfaces, {url: _.result(node, 'url') + '/interfaces'});
             }, this))
@@ -293,6 +322,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 ifc.set({checked: false});
             });
             this.props.interfaces.add(bonds);
+            this.calculateInterfacesMap();
             this.setState({actionInProgress: false});
         },
         unbondInterfaces: function() {
@@ -300,6 +330,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             _.each(this.props.interfaces.where({checked: true}), function(bond) {
                 this.removeInterfaceFromBond(bond.get('name'));
             }, this);
+            this.calculateInterfacesMap();
             this.setState({actionInProgress: false});
         },
         removeInterfaceFromBond: function(bondName, slaveInterfaceName) {
@@ -393,6 +424,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             var nodes = this.props.nodes,
                 nodeNames = nodes.pluck('name'),
                 interfaces = this.props.interfaces,
+                interfacesMap = this.state.interfacesMap,
                 locked = this.isLocked(),
                 bondingAvailable = this.bondingAvailable(),
                 configurationTemplateExists = this.configurationTemplateExists(),
@@ -411,15 +443,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 }, this);
 
             // calculate interfaces speed
-            var offset = 0,
-                indexOffsets = interfaces.map(function(ifc, index) {
-                    if (ifc.isBond()) offset++;
-                    return index - offset;
-                }),
-                getIfcSpeed = function(index) {
+            var getIfcSpeed = function(index) {
                     return _.unique(nodes.map(function(node) {
+                        // Handle the situation when this.props.interfaces has updated but
+                        // interfacesMap hasn't been recalculated yet
+                        if (_.isNull(interfacesMap[index]) || interfacesMap.length <= index) return null;
                         return utils.showBandwidth(
-                            node.interfaces.at(indexOffsets[index]).get('current_speed')
+                            node.interfaces.at(interfacesMap[index]).get('current_speed')
                         );
                     }));
                 },

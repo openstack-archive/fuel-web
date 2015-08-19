@@ -2439,7 +2439,6 @@ input[type=range] {
   }
 
   .login-fields-box {
-    height: 200px;
     overflow: hidden;
     padding-top: 10px;
     form {
@@ -2455,8 +2454,15 @@ input[type=range] {
     }
   }
 
+  .http-warning {
+    .text-warning;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: @base-font-size - 2;
+  }
+
   .login-btn {
-    margin-top: @login-indent + 10;
+    margin-bottom: 5px;
     padding-left: @login-indent;
     padding-right: @login-indent;
   }

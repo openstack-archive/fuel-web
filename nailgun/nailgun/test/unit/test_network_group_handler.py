@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
 from oslo_serialization import jsonutils
 
 from nailgun import objects
@@ -48,6 +50,17 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         return resp
+
+    def _update_network_group(self, ng_data, expect_errors=False):
+        return self.app.put(
+            reverse(
+                'NetworkGroupHandler',
+                kwargs={'obj_id': ng_data['id']}
+            ),
+            jsonutils.dumps(ng_data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
 
     def test_create_network_group_w_cidr(self):
         resp = self._create_network_group()
@@ -151,8 +164,29 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertEqual(resp.json_body["message"],
+        self.assertEqual(resp.json_body['message'],
                          'Default Admin-pxe network cannot be deleted')
+
+    def test_cannot_delete_locked_cluster_network_group(self):
+        resp = self._create_network_group(name='test')
+        self.assertEqual(201, resp.status_code)
+
+        net_group = jsonutils.loads(resp.body)
+
+        with mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
+                        return_value=True):
+            resp = self.app.delete(
+                reverse(
+                    'NetworkGroupHandler',
+                    kwargs={'obj_id': net_group['id']}
+                ),
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(400, resp.status_code)
+            self.assertEqual(resp.json_body['message'],
+                             'Network configuration cannot be changed '
+                             'after deployment.')
 
     def test_create_network_group_non_default_name(self):
         resp = self._create_network_group(name='test')
@@ -166,14 +200,7 @@ class TestHandlers(BaseIntegrationTest):
 
         new_ng['name'] = 'test2'
 
-        resp = self.app.put(
-            reverse(
-                'NetworkGroupHandler',
-                kwargs={'obj_id': new_ng['id']}
-            ),
-            jsonutils.dumps(new_ng),
-            headers=self.default_headers
-        )
+        resp = self._update_network_group(new_ng)
         updated_ng = jsonutils.loads(resp.body)
 
         self.assertEquals('test2', updated_ng['name'])
@@ -192,15 +219,7 @@ class TestHandlers(BaseIntegrationTest):
 
         new_ng['name'] = 'public'
 
-        resp = self.app.put(
-            reverse(
-                'NetworkGroupHandler',
-                kwargs={'obj_id': new_ng['id']}
-            ),
-            jsonutils.dumps(new_ng),
-            headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self._update_network_group(new_ng, expect_errors=True)
         self.assertEqual(409, resp.status_code)
         self.assertRegexpMatches(resp.json_body["message"],
                                  'Network with name .* already exists')
@@ -217,15 +236,7 @@ class TestHandlers(BaseIntegrationTest):
 
         new_ng['group_id'] = -1
 
-        resp = self.app.put(
-            reverse(
-                'NetworkGroupHandler',
-                kwargs={'obj_id': new_ng['id']}
-            ),
-            jsonutils.dumps(new_ng),
-            headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self._update_network_group(new_ng, expect_errors=True)
         self.assertEqual(400, resp.status_code)
         self.assertRegexpMatches(resp.json_body["message"],
                                  'Node group with ID -1 does not exist')
@@ -233,3 +244,81 @@ class TestHandlers(BaseIntegrationTest):
     def test_create_network_group_without_vlan(self):
         resp = self._create_network_group(vlan=None)
         self.assertEqual(201, resp.status_code)
+
+    def test_modify_network_no_ip_ranges(self):
+        resp = self._create_network_group(
+            name='test',
+            meta={"notation": "ip_ranges",
+                  "ip_range": ["10.3.0.33", "10.3.0.158"]},
+            expect_errors=True
+        )
+        new_ng = jsonutils.loads(resp.body)
+
+        new_ng.pop('ip_ranges', None)
+        new_ng.pop('name', None)
+
+        db_ng = objects.NetworkGroup.get_by_uid(new_ng['id'])
+        db_ng.ip_ranges = []
+        self.db.flush()
+
+        resp = self._update_network_group(new_ng, expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertRegexpMatches(
+            resp.json_body['message'],
+            'No IP ranges were specified for network {0}'.format(new_ng['id'])
+        )
+
+    def test_modify_network_no_cidr(self):
+        resp = self._create_network_group(name='test', expect_errors=True)
+        new_ng = jsonutils.loads(resp.body)
+
+        new_ng['meta']['notation'] = 'ip_ranges'
+        new_ng['ip_ranges'] = []
+        new_ng.pop('cidr', None)
+        new_ng.pop('name', None)
+
+        db_ng = objects.NetworkGroup.get_by_uid(new_ng['id'])
+        db_ng.cidr = None
+        self.db.flush()
+
+        resp = self._update_network_group(new_ng, expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertRegexpMatches(
+            resp.json_body['message'],
+            'No CIDR was specified for network {0}'.format(new_ng['id'])
+        )
+
+    def test_modify_network_no_gateway(self):
+        resp = self._create_network_group(
+            meta={"use_gateway": True},
+            gateway=None,
+            expect_errors=True
+        )
+        new_ng = jsonutils.loads(resp.body)
+
+        new_ng['meta']['notation'] = 'ip_ranges'
+        new_ng['ip_ranges'] = []
+        new_ng.pop('name', None)
+
+        db_ng = objects.NetworkGroup.get_by_uid(new_ng['id'])
+        db_ng.gateway = None
+        self.db.flush()
+
+        resp = self._update_network_group(new_ng, expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertRegexpMatches(
+            resp.json_body['message'],
+            "'use_gateway' cannot be provided without gateway"
+        )
+
+    def test_modify_network_release(self):
+        resp = self._create_network_group(name='test', expect_errors=True)
+        new_ng = jsonutils.loads(resp.body)
+
+        new_ng['release'] = 100
+        new_ng.pop('name', None)
+
+        resp = self._update_network_group(new_ng, expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertRegexpMatches(resp.json_body['message'],
+                                 'Network release could not be changed.')

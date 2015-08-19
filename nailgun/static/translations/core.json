@@ -109,7 +109,9 @@
                 "password": "Password",
                 "login_error": "Unable to log in",
                 "log_in": "Log in",
-                "title": "Log In"
+                "title": "Log In",
+                "http_warning": "You're not using a secure connection. ",
+                "http_warning_link": "Switch to HTTPS version"
             },
             "statistics": {
                 "help_to_improve": "Help us to improve your experience by sending Mirantis information about the settings, features, and deployment actions when you use Mirantis OpenStack.",

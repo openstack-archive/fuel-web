@@ -56,6 +56,25 @@ define(['underscore',
                     }
                 );
         },
+        addClusterNode: function(value) {
+            var number = value || 1,
+                that = this;
+            return this.remote
+                .setFindTimeout(2000)
+                .findByCssSelector('a.btn-add-nodes')
+                    .click()
+                    .end()
+                .then(function() {
+                    return that.checkNodeRoles(['Controller', 'Storage - Cinder']);
+                })
+                .then(function() {
+                    return that.checkNodes(number);
+                })
+                .setFindTimeout(5000)
+                .findByCssSelector('button.btn-apply')
+                    .click()
+                    .end()
+        },
         checkNodeRoles: function(assignRoles) {
             return this.remote
                 .setFindTimeout(2000)

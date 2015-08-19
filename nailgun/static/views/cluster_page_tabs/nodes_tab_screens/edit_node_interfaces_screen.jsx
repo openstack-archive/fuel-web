@@ -84,7 +84,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         getInitialState: function() {
             return {
                 actionInProgress: false,
-                interfaceErrors: {}
+                interfaceErrors: {},
+                interfacesMap: _.range(0, this.props.interfaces.length)
             };
         },
         componentWillMount: function() {
@@ -186,6 +187,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         });
                     }
                 }, this);
+                this.setState({interfacesMap: _.range(0, this.props.interfaces.length)});
 
                 return Backbone.sync('update', node.interfaces, {url: _.result(node, 'url') + '/interfaces'});
             }, this))
@@ -293,6 +295,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 ifc.set({checked: false});
             });
             this.props.interfaces.add(bonds);
+            var offset = 0,
+                bondName = bonds.get('name');
+            this.setState({interfacesMap: this.props.interfaces.map(function(ifc, index) {
+                if (ifc.get('name') == bondName) offset++;
+                return index - offset;
+            })});
+
             this.setState({actionInProgress: false});
         },
         unbondInterfaces: function() {
@@ -393,6 +402,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             var nodes = this.props.nodes,
                 nodeNames = nodes.pluck('name'),
                 interfaces = this.props.interfaces,
+                interfacesMap = this.state.interfacesMap,
                 locked = this.isLocked(),
                 bondingAvailable = this.bondingAvailable(),
                 configurationTemplateExists = this.configurationTemplateExists(),
@@ -411,15 +421,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 }, this);
 
             // calculate interfaces speed
-            var offset = 0,
-                indexOffsets = interfaces.map(function(ifc, index) {
-                    if (ifc.isBond()) offset++;
-                    return index - offset;
-                }),
-                getIfcSpeed = function(index) {
+            var getIfcSpeed = function(index) {
                     return _.unique(nodes.map(function(node) {
                         return utils.showBandwidth(
-                            node.interfaces.at(indexOffsets[index]).get('current_speed')
+                            node.interfaces.at(interfacesMap[index]).get('current_speed')
                         );
                     }));
                 },

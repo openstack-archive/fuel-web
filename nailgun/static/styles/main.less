@@ -2439,7 +2439,6 @@ input[type=range] {
   }
 
   .login-fields-box {
-    height: 200px;
     overflow: hidden;
     padding-top: 10px;
     form {
@@ -2455,17 +2454,28 @@ input[type=range] {
     }
   }
 
-  .login-btn {
-    margin-top: @login-indent + 10;
-    padding-left: @login-indent;
-    padding-right: @login-indent;
+  .login-error, .http-warning {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: @base-font-size - 1;
+  }
+
+  .http-warning {
+    .text-warning;
+    .glyphicon {
+      margin-right: 3px;
+      vertical-align: text-top;
+    }
   }
 
   .login-error {
-    position: absolute;
-    left: 0;
-    right: 0;
-    text-align: center;
+    .text-danger;
+  }
+
+  .login-btn {
+    margin-bottom: 5px;
+    padding-left: @login-indent;
+    padding-right: @login-indent;
   }
 
   .login-footer {

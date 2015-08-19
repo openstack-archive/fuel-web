@@ -19,9 +19,10 @@ define(
     'underscore',
     'i18n',
     'react',
-    'dispatcher'
+    'dispatcher',
+    'utils'
 ],
-function($, _, i18n, React, dispatcher) {
+function($, _, i18n, React, dispatcher, utils) {
     'use strict';
 
     var LoginPage = React.createClass({
@@ -107,7 +108,9 @@ function($, _, i18n, React, dispatcher) {
                 }, this));
         },
         render: function() {
-            var loginButtonDisabled = this.state.hasError || this.state.actionInProgress;
+            var httpsUsed = location.protocol == 'https:';
+            var httpsPort = 8443;
+            var httpsLink = 'https://' + location.hostname + ':' + httpsPort;
 
             return (
                 <form className='form-horizontal' onSubmit={this.onSubmit}>
@@ -127,12 +130,28 @@ function($, _, i18n, React, dispatcher) {
                             <input className='form-control input-sm' type='password' name='password' ref='password' placeholder={i18n('login_page.password')} onChange={this.onChange} />
                         </div>
                     </div>
+                    {!httpsUsed &&
+                        <div className='alert alert-warning'>
+                            {i18n('login_page.http_warning')}
+                            <a href={httpsLink}>{i18n('login_page.http_warning_link')}</a>
+                        </div>
+                    }
                     {this.state.hasError &&
                         <p className='text-danger login-error'>{i18n('login_page.login_error')}</p>
                     }
                     <div className='form-group'>
                         <div className='col-xs-12 text-center'>
-                            <button type='submit' className='btn btn-success login-btn' disabled={loginButtonDisabled}>{i18n('login_page.log_in')}</button>
+                            <button
+                                type='submit'
+                                className={utils.classNames({
+                                    'btn login-btn': true,
+                                    'btn-success': httpsUsed,
+                                    'btn-warning': !httpsUsed
+                                })}
+                                disabled={this.state.actionInProgress}
+                            >
+                                {i18n('login_page.log_in')}
+                            </button>
                         </div>
                     </div>
                 </form>

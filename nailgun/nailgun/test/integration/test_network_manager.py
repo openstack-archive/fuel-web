@@ -118,6 +118,31 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.assertEqual(False, gateway in assigned_ips)
         self.assertEqual(False, broadcast in assigned_ips)
 
+    def test_get_free_ips_from_ranges(self):
+        ranges = [IPRange("192.168.33.2", "192.168.33.222")]
+
+        ips = self.env.network_manager.get_free_ips_from_ranges(
+            'management', ranges, set(), 3
+        )
+        self.assertItemsEqual(["192.168.33.2", "192.168.33.3", "192.168.33.4"],
+                              ips)
+
+        self.db.add(IPAddr(ip_addr="192.168.33.3"))
+        self.db.flush()
+        ips = self.env.network_manager.get_free_ips_from_ranges(
+            'management', ranges, set(), 3
+        )
+        self.assertItemsEqual(["192.168.33.2", "192.168.33.4", "192.168.33.5"],
+                              ips)
+
+        ips = self.env.network_manager.get_free_ips_from_ranges(
+            'management', ranges, set(["192.168.33.5", "192.168.33.8"]), 7
+        )
+        self.assertItemsEqual(
+            ["192.168.33.2", "192.168.33.4", "192.168.33.6", "192.168.33.7",
+             "192.168.33.9", "192.168.33.10", "192.168.33.11"],
+            ips)
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_assign_ips_idempotent(self, mocked_rpc):

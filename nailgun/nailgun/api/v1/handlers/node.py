@@ -30,6 +30,7 @@ from nailgun.api.v1.validators.network import NetAssignmentValidator
 from nailgun.api.v1.validators.node import NodeValidator
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun import objects
 
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
@@ -58,11 +59,16 @@ class NodeHandler(SingleHandler):
                * 202 (node is successfully scheduled for deletion)
                * 400 (data validation failed)
                * 404 (node not found in db)
+               * 403 (on of the controllers is in error state)
         """
 
         node = self.get_object_or_404(self.single, obj_id)
         task_manager = NodeDeletionTaskManager(cluster_id=node.cluster_id)
-        task = task_manager.execute([node], mclient_remove=False)
+
+        try:
+            task = task_manager.execute([node], mclient_remove=False)
+        except errors.ControllerInErrorState as e:
+            raise self.http(403, e.message)
 
         self.raise_task(task)
 
@@ -130,6 +136,7 @@ class NodeCollectionHandler(CollectionHandler):
                * 202 (nodes are successfully scheduled for deletion)
                * 400 (data validation failed)
                * 404 (nodes not found in db)
+               * 403 (on of the controllers is in error state)
         """
         # TODO(pkaminski): web.py does not support parsing of array arguments
         # in the queryset so we specify the input as comma-separated list
@@ -141,7 +148,11 @@ class NodeCollectionHandler(CollectionHandler):
         nodes = self.get_objects_list_or_404(self.collection, node_ids)
 
         task_manager = NodeDeletionTaskManager(cluster_id=nodes[0].cluster_id)
-        task = task_manager.execute(nodes, mclient_remove=False)
+
+        try:
+            task = task_manager.execute(nodes, mclient_remove=False)
+        except errors.ControllerInErrorState as e:
+            raise self.http(403, e.message)
 
         self.raise_task(task)
 

@@ -53,6 +53,52 @@ class NetworkConfigurationValidator(BasicValidator):
         return data
 
     @classmethod
+    def validate_network_group(cls, ng_data, ng_db, cluster):
+        net_id = ng_data['id']
+        cidr = ng_data['cidr'] if 'cidr' in ng_data else ng_db.cidr
+        ip_ranges = ng_data['ip_ranges'] if 'ip_ranges' in ng_data else [
+            (r.first, r.last) for r in ng_db.ip_ranges]
+
+        release = ng_data.get('release', ng_db.get('release'))
+        if release != ng_db.get('release'):
+            raise errors.InvalidData('Network release could not be changed.')
+
+        # values are always taken either from request or from DB
+        meta = ng_data.get('meta', {})
+        notation = meta.get('notation', ng_db.meta.get('notation'))
+        use_gateway = meta.get('use_gateway',
+                               ng_db.meta.get('use_gateway', False))
+        gateway = ng_data.get('gateway', ng_db.get('gateway'))
+
+        if use_gateway and not gateway:
+            raise errors.InvalidData(
+                "Flag 'use_gateway' cannot be provided without gateway")
+
+        # Depending on notation required parameters must be either in
+        # the request or DB
+        if notation == consts.NETWORK_NOTATION.ip_ranges:
+            if not ip_ranges and not ng_db.ip_ranges:
+                raise errors.InvalidData(
+                    "No IP ranges were specified for network "
+                    "{0}".format(net_id))
+
+        if notation in (consts.NETWORK_NOTATION.cidr,
+                        consts.NETWORK_NOTATION.ip_ranges):
+            if not cidr and not ng_db.cidr:
+                raise errors.InvalidData(
+                    "No CIDR was specified for network "
+                    "{0}".format(net_id))
+        if cluster.is_locked and cls._check_for_ip_conflicts(
+                ng_data, cluster, notation, use_gateway):
+
+            raise errors.InvalidData(
+                "New IP ranges for network '{0}' conflict "
+                "with already allocated IPs.".format(ng_data['name'])
+            )
+
+        return ng_data
+
+    @classmethod
     def validate_networks_update(cls, data, cluster):
         data = cls.base_validation(data)
         cls.validate_schema(data, network_schema.NETWORKS)
@@ -73,44 +119,8 @@ class NetworkConfigurationValidator(BasicValidator):
             )
 
         for network in data['networks']:
-            net_id = network['id']
-            ng_db = ng_db_by_id[net_id]
-            cidr = network['cidr'] if 'cidr' in network else ng_db.cidr
-            ip_ranges = network['ip_ranges'] if 'ip_ranges' in network else [
-                (r.first, r.last) for r in ng_db.ip_ranges]
-
-            # values are always taken either from request or from DB
-            meta = network.get('meta', {})
-            notation = meta.get('notation', ng_db.meta.get('notation'))
-            use_gateway = meta.get('use_gateway',
-                                   ng_db.meta.get('use_gateway', False))
-            gateway = network.get('gateway', ng_db.get('gateway'))
-
-            if use_gateway and not gateway:
-                raise errors.InvalidData(
-                    "Flag 'use_gateway' cannot be provided without gateway")
-
-            # Depending on notation required parameters must be either in
-            # the request or DB
-            if notation == consts.NETWORK_NOTATION.ip_ranges:
-                if not ip_ranges and not ng_db.ip_ranges:
-                    raise errors.InvalidData(
-                        "No IP ranges were specified for network "
-                        "{0}".format(net_id))
-
-            if notation in [consts.NETWORK_NOTATION.cidr,
-                            consts.NETWORK_NOTATION.ip_ranges]:
-                if not cidr and not ng_db.cidr:
-                    raise errors.InvalidData(
-                        "No CIDR was specified for network "
-                        "{0}".format(net_id))
-            if cluster.is_locked and cls._check_for_ip_conflicts(
-                    network, cluster, notation, use_gateway):
-
-                raise errors.InvalidData(
-                    "New IP ranges for network '{0}' conflict "
-                    "with already allocated IPs.".format(network['name'])
-                )
+            cls.validate_network_group(
+                network, ng_db_by_id[network['id']], cluster)
 
         return data
 
@@ -473,7 +483,7 @@ class NetAssignmentValidator(BasicValidator):
                 )
 
 
-class NetworkGroupValidator(BasicValidator):
+class NetworkGroupValidator(NetworkConfigurationValidator):
 
     single_schema = ng_scheme.NETWORK_GROUP
 
@@ -499,7 +509,15 @@ class NetworkGroupValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, **kwargs):
-        return cls.validate(data)
+        valid_data = cls.validate(data)
+        ng_db = db().query(NetworkGroup).get(valid_data['id'])
+        if not ng_db.group_id:
+            # Only default Admin-pxe network doesn't have group_id.
+            # It cannot be changed.
+            raise errors.InvalidData(
+                "Default Admin-pxe network cannot be changed")
+        return cls.validate_network_group(
+            valid_data, ng_db, ng_db.nodegroup.cluster)
 
     @classmethod
     def validate_delete(cls, data, instance, force=False):
@@ -508,6 +526,9 @@ class NetworkGroupValidator(BasicValidator):
             # It cannot be deleted.
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be deleted")
+        elif instance.nodegroup.cluster.is_locked:
+            raise errors.InvalidData(
+                "Networks cannot be deleted after deployment")
 
 
 class NetworkTemplateValidator(BasicValidator):

@@ -1,13 +1,14 @@
 define([
     'underscore',
     'intern/node_modules/dojo/node!fs',
+    'intern/chai!assert',
     '../../helpers',
     'tests/functional/pages/login',
     'tests/functional/pages/welcome',
     'tests/functional/pages/cluster',
     'tests/functional/pages/clusters'
 ],
-    function(_, fs, Helpers, LoginPage, WelcomePage, ClusterPage, ClustersPage) {
+    function(_, fs, assert, Helpers, LoginPage, WelcomePage, ClusterPage, ClustersPage) {
     'use strict';
         function CommonMethods(remote) {
             this.remote = remote;
@@ -175,6 +176,24 @@ define([
                 element.clearValue()
                     .type(value)
                     .end();
+            },
+            isElementEnabled: function(cssSelector, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .isEnabled()
+                        .then(function(isEnabled) {
+                            return assert.isTrue(isEnabled, message);
+                        })
+                        .end();
+            },
+            isElementDisabled: function(cssSelector, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .isEnabled()
+                        .then(function(isEnabled) {
+                            return assert.isFalse(isEnabled, message);
+                        })
+                        .end();
             }
         };
         return CommonMethods;

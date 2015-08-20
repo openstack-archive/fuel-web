@@ -17,8 +17,11 @@ import mock
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
+from nailgun.api.v1.validators.network import \
+    NeutronNetworkConfigurationValidator
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.errors import errors
 from nailgun.network.neutron import NeutronManager
 from nailgun.test import base
@@ -337,3 +340,43 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
             mgmt, self.cluster, 'ip_ranges', False)
         self.assertTrue(result)
+
+
+class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):
+
+    validator = NeutronNetworkConfigurationValidator
+
+    def setUp(self):
+        super(TestNeutronNetworkConfigurationValidator, self).setUp()
+
+        self.cluster = self.env.create(
+            cluster_kwargs={"api": False, "net_provider": "neutron"})
+        self.config = self.env.neutron_networks_get(self.cluster.id).json_body
+
+    def create_additional_node_group(self):
+        node_group = NodeGroup(
+            name="custom_group_name", cluster_id=self.cluster.id)
+        self.env.db.add(node_group)
+        self.env.db.flush()
+
+        self.env.create_node(cluster_id=self.cluster.id,
+                             roles=["controller"])
+        self.env.create_node(cluster_id=self.cluster.id,
+                             roles=["compute"],
+                             group_id=node_group.id)
+
+    def check_no_fuelweb_admin_network_in_validated_data(self):
+        default_admin = self.db.query(
+            NetworkGroup).filter_by(group_id=None).first()
+        validated_data = self.validator.prepare_data(self.config)
+        self.assertNotIn(
+            default_admin.id,
+            [ng['id'] for ng in validated_data['networks']]
+        )
+
+    def test_fuelweb_admin_removed(self):
+        self.check_no_fuelweb_admin_network_in_validated_data()
+
+    def test_fuelweb_admin_removed_w_additional_node_group(self):
+        self.create_additional_node_group()
+        self.check_no_fuelweb_admin_network_in_validated_data()

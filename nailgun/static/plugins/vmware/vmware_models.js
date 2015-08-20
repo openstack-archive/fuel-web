@@ -135,14 +135,16 @@ function($, _, i18n, Backbone, models) {
             this.checkDuplicateField(keys, 'vsphere_cluster');
             this.checkDuplicateField(keys, 'service_name');
 
-            var targetNode = this.get('target_node');
-            if (targetNode.current.id && targetNode.current.id != 'controllers' &&
-                keys.target_node && keys.target_node[targetNode.current.id]) {
-                this.validationError = this.validationError || {};
-                this.validationError.target_node = i18n('vmware.duplicate_value');
+            var targetNode = this.get('target_node') || {};
+            if (targetNode.current) {
+                if (targetNode.current.id && targetNode.current.id != 'controllers' &&
+                    keys.target_node && keys.target_node[targetNode.current.id]) {
+                    this.validationError = this.validationError || {};
+                    this.validationError.target_node = i18n('vmware.duplicate_value');
+                }
+                keys.target_node = keys.target_node || {};
+                keys.target_node[targetNode.current.id] = true;
             }
-            keys.target_node = keys.target_node || {};
-            keys.target_node[targetNode.current.id] = true;
         }
     });
 

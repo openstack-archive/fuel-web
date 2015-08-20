@@ -109,7 +109,7 @@ define(
             if (!this.props.model) return null;
 
             // add nodes of 'compute-vmware' type to targetNode select
-            var targetNode = this.props.model.get('target_node');
+            var targetNode = this.props.model.get('target_node') || {};
             targetNode.options = [{id: 'controllers', label: 'controllers'}];
             var nodes = this.props.cluster.get('nodes').filter(function(node) {
                 return _.contains(node.get('pending_roles'), 'compute-vmware');

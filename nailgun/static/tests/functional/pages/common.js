@@ -1,4 +1,5 @@
 define([
+    'underscore',
     'intern/node_modules/dojo/node!fs',
     '../../helpers',
     'tests/functional/pages/login',
@@ -6,7 +7,7 @@ define([
     'tests/functional/pages/cluster',
     'tests/functional/pages/clusters'
 ],
-    function(fs, Helpers, LoginPage, WelcomePage, ClusterPage, ClustersPage) {
+    function(_, fs, Helpers, LoginPage, WelcomePage, ClusterPage, ClustersPage) {
     'use strict';
         function CommonMethods(remote) {
             this.remote = remote;
@@ -18,6 +19,9 @@ define([
 
         CommonMethods.prototype = {
             constructor: CommonMethods,
+            pickRandomName: function(prefix) {
+                return (prefix || 'Item') + ' #' + _.random(1000, 9999);
+            },
             takeScreenshot: function(filename, error) {
                 return this.remote
                     .takeScreenshot()
@@ -64,17 +68,30 @@ define([
             },
             waitForModal: function() {
                 return this.remote
-                    .setTimeout(2000)
+                    .setFindTimeout(2000)
                     .findByCssSelector('div.modal-content')
                         .end();
             },
-            waitForModalToClose: function() {
+            closeModal: function() {
                 return this.remote
-                    .setTimeout(2000)
-                    .waitForDeletedByCssSelector('div.modal-content')
+                    .findByCssSelector('.modal-header button.close')
+                        .click()
                         .end();
             },
-            goToEnvironment: function(clusterName) {
+            waitForElementDeletion: function(cssSelector) {
+                return this.remote
+                    .setFindTimeout(2000)
+                    .waitForDeletedByCssSelector(cssSelector)
+                    .catch()   // For cases when element is destroyed already
+                    .findByCssSelector(cssSelector)
+                        .then(function() {
+                            throw new Error('Element ' + cssSelector + ' was not destroyed');
+                        }, _.constant(true));
+            },
+            waitForModalToClose: function() {
+                return this.waitForElementDeletion('div.modal-content');
+            },
+            goToEnvironment: function(clusterName, tabName) {
                 var that = this;
                 return this.remote
                     .then(function() {
@@ -82,6 +99,9 @@ define([
                     })
                     .then(function() {
                         return that.clustersPage.goToEnvironment(clusterName);
+                    })
+                    .then(function() {
+                        if (tabName) return that.clusterPage.goToTab(tabName);
                     });
             },
             createCluster: function(clusterName) {
@@ -126,6 +146,28 @@ define([
                                 }
                             )}, false);
                     });
+            },
+            addNodesToCluster: function(nodesAmount, nodesRoles) {
+                var that = this;
+                return this.remote
+                    .setFindTimeout(5000)
+                    .findByCssSelector('a.btn-add-nodes')
+                        .click()
+                        .end()
+                    .findByCssSelector('div.role-panel')
+                        .end()
+                    .then(function() {
+                        return that.clusterPage.checkNodeRoles(nodesRoles);
+                    })
+                    .then(function() {
+                        return that.clusterPage.checkNodes(nodesAmount);
+                    })
+                    .findByCssSelector('button.btn-apply')
+                        .click()
+                        .end()
+                    .setFindTimeout(2000)
+                    .findByCssSelector('button.btn-add-nodes')
+                        .end();
             }
         };
         return CommonMethods;

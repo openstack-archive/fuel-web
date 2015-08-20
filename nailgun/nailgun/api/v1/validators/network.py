@@ -138,6 +138,22 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def prepare_data(cls, data):
+        """Filter input data based on the fact that
+        updating parameters of the fuel admin network
+        is forbidden for default node group.
+
+        Admin network cannot be updated because of:
+        - sharing itself between environments;
+        - having no mechanism to change its parameters on deployed Master node.
+        """
+        if data.get("networks"):
+            default_admin = db.query(
+                NetworkGroup).filter_by(group_id=None).first()
+            data["networks"] = [
+                n for n in data["networks"] if n.get("id") !=
+                default_admin.id
+            ]
+
         return data
 
     @classmethod
@@ -146,16 +162,7 @@ class NetworkConfigurationValidator(BasicValidator):
 
 
 class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
-
-    @classmethod
-    def prepare_data(cls, data):
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") !=
-                consts.NETWORKS.fuelweb_admin
-            ]
-
-        return data
+    pass
 
     @classmethod
     def additional_network_validation(cls, data, cluster):
@@ -166,7 +173,6 @@ class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
 
 
 class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
-
     @classmethod
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)

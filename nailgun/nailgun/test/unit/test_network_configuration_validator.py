@@ -18,8 +18,10 @@ from nailgun.api.v1.validators.network import NetworkConfigurationValidator
 from nailgun.api.v1.validators.network import \
     NeutronNetworkConfigurationValidator
 from nailgun.api.v1.validators.network import NovaNetworkConfigurationValidator
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.errors import errors
 from nailgun.network.neutron import NeutronManager
 from nailgun.test import base
@@ -243,7 +245,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         self.cluster = self.env.create(
             cluster_kwargs={
                 "api": False,
-                "net_provider": "neutron"
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron
             },
             nodes_kwargs=[
                 {"api": False,
@@ -368,8 +370,7 @@ class TestNovaNetworkConfigurationValidatorProtocol(
                 "fixed_networks_amount": 2,
                 "fixed_networks_cidr": "192.168.111.0/24",
                 "fixed_networks_vlan_start": 101,
-                "net_manager": "FlatDHCPManager",
-
+                "net_manager": consts.NOVA_NET_MANAGERS.FlatDHCPManager
             }
         }
 
@@ -424,8 +425,8 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
                 "gre_id_range": [2, 65535],
                 "internal_cidr": "192.168.111.0/24",
                 "internal_gateway": "192.168.111.1",
-                "net_l23_provider": "ovs",
-                "segmentation_type": "gre",
+                "net_l23_provider": consts.NEUTRON_L23_PROVIDERS.ovs,
+                "segmentation_type": consts.NEUTRON_SEGMENT_TYPES.gre,
                 "vlan_range": [1000, 1030]
             }
         }
@@ -461,3 +462,47 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
             self.nc,
             "'1.2.3.x'",
             "['networking_parameters']['dns_nameservers']")
+
+
+class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):
+
+    validator = NeutronNetworkConfigurationValidator
+
+    def setUp(self):
+        super(TestNeutronNetworkConfigurationValidator, self).setUp()
+
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                "api": False,
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron
+            }
+        )
+        self.config = self.env.neutron_networks_get(self.cluster.id).json_body
+
+    def create_additional_node_group(self):
+        node_group = NodeGroup(
+            name="custom_group_name", cluster_id=self.cluster.id)
+        self.env.db.add(node_group)
+        self.env.db.flush()
+
+        self.env.create_node(cluster_id=self.cluster.id,
+                             roles=["controller"])
+        self.env.create_node(cluster_id=self.cluster.id,
+                             roles=["compute"],
+                             group_id=node_group.id)
+
+    def check_no_fuelweb_admin_network_in_validated_data(self):
+        default_admin = self.db.query(
+            NetworkGroup).filter_by(group_id=None).first()
+        validated_data = self.validator.prepare_data(self.config)
+        self.assertNotIn(
+            default_admin.id,
+            [ng['id'] for ng in validated_data['networks']]
+        )
+
+    def test_fuelweb_admin_removed(self):
+        self.check_no_fuelweb_admin_network_in_validated_data()
+
+    def test_fuelweb_admin_removed_w_additional_node_group(self):
+        self.create_additional_node_group()
+        self.check_no_fuelweb_admin_network_in_validated_data()

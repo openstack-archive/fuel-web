@@ -81,3 +81,37 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
             )
         self.assertEqual(500, resp.status_code)
         self.assertEqual(exc_text, resp.body)
+
+    def test_master_node_uid_api(self):
+        resp = self.app.get(
+            reverse('MasterNodeUidHandler'),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+    @patch('nailgun.objects.MasterNodeSettings.get_one')
+    def test_master_node_uid_500_no_html_dev(self, get_one):
+        exc_text = "Here goes an exception"
+        get_one.side_effect = Exception(exc_text)
+        resp = self.app.get(
+            reverse('MasterNodeUidHandler'),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(500, resp.status_code)
+        self.assertIn(exc_text, resp.body)
+        self.assertIn("Traceback", resp.body)
+        self.assertNotIn("html", resp.body)
+
+    @patch('nailgun.objects.MasterNodeSettings.get_one')
+    def test_master_node_uid_500_no_html_production(self, get_one):
+        exc_text = "Here goes an exception"
+        get_one.side_effect = Exception(exc_text)
+        with patch('nailgun.settings.settings.DEVELOPMENT', 0):
+            resp = self.app.get(
+                reverse('MasterNodeUidHandler'),
+                headers=self.default_headers,
+                expect_errors=True
+            )
+        self.assertEqual(500, resp.status_code)
+        self.assertEqual(exc_text, resp.body)

@@ -106,6 +106,8 @@ from nailgun.api.v1.handlers.tasks import TaskHandler
 
 from nailgun.api.v1.handlers.version import VersionHandler
 
+from nailgun.api.v1.handlers.master_node_uid import MasterNodeUidHandler
+
 from nailgun.api.v1.handlers.vms import NodeVMsHandler
 from nailgun.api.v1.handlers.vms import SpawnVmsHandler
 
@@ -270,6 +272,9 @@ urls = (
     r'/version/?$',
     VersionHandler,
 
+    r'/master_node_uid/?$',
+    MasterNodeUidHandler,
+
     r'/capacity/?$',
     CapacityLogHandler,
     r'/capacity/csv/?$',
@@ -364,6 +369,7 @@ def app():
 
 def public_urls():
     return {
+        r'/master_node_uid/?$': ['GET'],
         r'/nodes/?$': ['POST'],
         r'/nodes/agent/?$': ['PUT'],
         r'/version/?$': ['GET']

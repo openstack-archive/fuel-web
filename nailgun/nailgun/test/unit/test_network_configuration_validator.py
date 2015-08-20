@@ -17,6 +17,9 @@ import mock
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
+from nailgun.api.v1.validators.network import \
+    NeutronNetworkConfigurationValidator
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
@@ -337,3 +340,35 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
             mgmt, self.cluster, 'ip_ranges', False)
         self.assertTrue(result)
+
+
+class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):
+
+    validator = NeutronNetworkConfigurationValidator
+
+    def create_cluster(self, cluster_mode=None):
+        cluster_kwargs = {
+            'api': False,
+            'net_provider': "neutron",
+            'mode': cluster_mode or consts.CLUSTER_MODES.ha_compact
+        }
+
+        self.cluster = self.env.create(cluster_kwargs=cluster_kwargs)
+        self.config = self.env.neutron_networks_get(self.cluster.id).json_body
+
+    def check_no_fuelweb_admin_network_in_validated_data(self):
+        default_admin = self.db.query(
+            NetworkGroup).filter_by(group_id=None).first()
+        validated_data = self.validator.prepare_data(self.config)
+        self.assertNotIn(
+            default_admin.id,
+            [ng['id'] for ng in validated_data['networks']]
+        )
+
+    def test_prepare_data_fuelweb_admin_removed_from_input(self):
+        self.create_cluster()
+        self.check_no_fuelweb_admin_network_in_validated_data()
+
+    def test_prepare_data_fuelweb_admin_removed_from_input_multinode(self):
+        self.create_cluster(cluster_mode=consts.CLUSTER_MODES.multinode)
+        self.check_no_fuelweb_admin_network_in_validated_data()

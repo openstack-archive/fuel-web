@@ -199,9 +199,9 @@ class bootstrapimg(urwid.WidgetWrap):
                 else:
                     self.defaults[setting]["value"] = oldsettings[setting]
             except KeyError:
-                log.warning("no setting named {0} found.", setting)
+                log.warning("no setting named {0} found.".format(setting))
             except Exception as e:
-                log.warning("unexpected error: {0}", e.message)
+                log.warning("unexpected error: {0}".format(e.message))
         return oldsettings
 
     def save(self, responses):
@@ -218,7 +218,7 @@ class bootstrapimg(urwid.WidgetWrap):
                 newsettings[setting] = responses[setting]
         ## Generic settings end ##
 
-        log.info("new settings {0}", str(newsettings))
+        log.info("new settings {0}".format(str(newsettings)))
         Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
                          outfn=self.parent.settingsfile)
@@ -230,12 +230,13 @@ class bootstrapimg(urwid.WidgetWrap):
             if fieldname != "blank":
                 log.info("resetting {0}".format(fieldname))
                 if fieldname not in self.defaults.keys():
-                    log.error("no such field: {0}, valid are {1}",
-                              fieldname, ' '.join(self.defaults.keys()))
+                    log.error("no such field: {0}, valid are {1}".format(
+                              fieldname, ' '.join(self.defaults.keys())))
                     continue
                 if fieldname not in newsettings.keys():
-                    log.error("newsettings: no such field: {0}, valid are {1}",
-                              fieldname, ' '.join(newsettings.keys()))
+                    log.error("newsettings: no such field: {0}, valid are" +
+                              "{1}".format(fieldname,
+                                           ' '.join(newsettings.keys())))
                     continue
                 self.defaults[fieldname]['value'] = newsettings[fieldname]
 

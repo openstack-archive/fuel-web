@@ -42,7 +42,7 @@ class bootstrapimg(urwid.WidgetWrap):
         self._mos_version = None
         self._bootstrap_flavor = None
 
-        #UI Text
+        # UI Text
         self.header_content = ["Bootstrap image configuration"]
         fields = (
             'flavor',
@@ -182,7 +182,7 @@ class bootstrapimg(urwid.WidgetWrap):
         self._ui_set_bootstrap_flavor()
 
     def load(self):
-        #Read in yaml
+        # Read in yaml
         defaultsettings = Settings().read(self.parent.defaultsettingsfile)
         oldsettings = defaultsettings
         oldsettings.update(Settings().read(self.parent.settingsfile))
@@ -199,42 +199,41 @@ class bootstrapimg(urwid.WidgetWrap):
                 else:
                     self.defaults[setting]["value"] = oldsettings[setting]
             except KeyError:
-                log.warning("no setting named {0} found.", setting)
+                log.warning("no setting named %s found.", setting)
             except Exception as e:
-                log.warning("unexpected error: {0}", e.message)
+                log.warning("unexpected error: %s", e.message)
         return oldsettings
 
     def save(self, responses):
-        ## Generic settings start ##
+        # Generic settings start
         newsettings = dict()
         for setting in responses.keys():
             if "/" in setting:
                 part1, part2 = setting.split("/")
                 if part1 not in newsettings:
-                #We may not touch all settings, so copy oldsettings first
+                    # We may not touch all settings, so copy oldsettings first
                     newsettings[part1] = self.oldsettings[part1]
                 newsettings[part1][part2] = responses[setting]
             else:
                 newsettings[setting] = responses[setting]
-        ## Generic settings end ##
+        # Generic settings end
 
-        log.info("new settings {0}", str(newsettings))
         Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
                          outfn=self.parent.settingsfile)
 
-        #Set oldsettings to reflect new settings
+        # Set oldsettings to reflect new settings
         self.oldsettings = newsettings
-        #Update self.defaults
+        # Update self.defaults
         for index, fieldname in enumerate(self.fields):
             if fieldname != "blank":
-                log.info("resetting {0}".format(fieldname))
+                log.info("resetting %s", fieldname)
                 if fieldname not in self.defaults.keys():
-                    log.error("no such field: {0}, valid are {1}",
+                    log.error("no such field: %s, valid are %s",
                               fieldname, ' '.join(self.defaults.keys()))
                     continue
                 if fieldname not in newsettings.keys():
-                    log.error("newsettings: no such field: {0}, valid are {1}",
+                    log.error("newsettings: no such field: %s, valid are %s",
                               fieldname, ' '.join(newsettings.keys()))
                     continue
                 self.defaults[fieldname]['value'] = newsettings[fieldname]

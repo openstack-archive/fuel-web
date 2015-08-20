@@ -43,10 +43,10 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_data(cls, data, cluster):
+        data = cls.base_validation(data)
+
         if 'networks' in data:
             data = cls.validate_networks_update(data, cluster)
-        else:
-            data = cls.base_validation(data)
 
         cls.additional_network_validation(data, cluster)
 
@@ -54,7 +54,6 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_update(cls, data, cluster):
-        data = cls.base_validation(data)
         cls.validate_schema(data, network_schema.NETWORKS)
 
         net_ids = [ng['id'] for ng in data['networks']]

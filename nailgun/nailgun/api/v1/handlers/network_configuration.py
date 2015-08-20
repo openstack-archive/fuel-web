@@ -202,21 +202,23 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
-        self.launch_verify(cluster)
 
-    def launch_verify(self, cluster):
-        data = self.validator.validate_networks_update(web.data(), cluster)
+        try:
+            data = self.validator.validate_networks_data(web.data(), cluster)
+        except Exception as exc:
+            self._raise_error_task(cluster, exc)
 
         data["networks"] = [
-            n for n in data["networks"] if n.get("name") != "fuelweb_admin"
+            n for n in data["networks"] if n.get("name") !=
+            consts.NETWORKS.fuelweb_admin
         ]
 
         vlan_ids = [{
-                    'name': n['name'],
-                    'vlans': objects.Cluster.get_network_manager(
-                        cluster
-                    ).generate_vlan_ids_list(
-                        data, cluster, n)
+                        'name': n['name'],
+                        'vlans': objects.Cluster.get_network_manager(
+                            cluster
+                        ).generate_vlan_ids_list(
+                            data, cluster, n)
                     } for n in data['networks']]
 
         task_manager = VerifyNetworksTaskManager(cluster_id=cluster.id)

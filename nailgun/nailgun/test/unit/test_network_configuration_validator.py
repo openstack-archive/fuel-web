@@ -17,6 +17,9 @@ import mock
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
+from nailgun.api.v1.validators.network import \
+    NeutronNetworkConfigurationValidator
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
@@ -337,3 +340,25 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
             mgmt, self.cluster, 'ip_ranges', False)
         self.assertTrue(result)
+
+
+class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):
+    def setUp(self):
+        super(TestNeutronNetworkConfigurationValidator, self).setUp()
+
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                "api": False,
+                "net_provider": "neutron"
+            },
+        )
+
+        self.config = self.env.neutron_networks_get(self.cluster.id).json_body
+        self.validator = NeutronNetworkConfigurationValidator
+
+    def test_prepare_data_fuelweb_admin_removed_from_input(self):
+        actual = self.validator.prepare_data(self.config)
+        self.assertNotIn(
+            consts.NETWORKS.fuelweb_admin,
+            (ng["name"] for ng in actual["networks"])
+        )

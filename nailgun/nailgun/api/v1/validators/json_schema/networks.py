@@ -13,6 +13,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.json_schema import base_types
+from nailgun.api.v1.validators.json_schema import network_template
 from nailgun import consts
 
 NETWORK_META = {
@@ -118,7 +119,12 @@ NEUTRON_NETWORK_CONFIGURATION = {
             "additionalProperties": False,
             "properties": {
                 "base_mac": base_types.MAC_ADDRESS,
-                "configuration_template": base_types.NULLABLE_STRING,
+                "configuration_template": {
+                    "anyOf": [
+                        network_template.NETWORK_TEMPLATE,
+                        base_types.NULL
+                    ]
+                },
                 "dns_nameservers": base_types.IP_ADDRESS_RANGE,
                 "floating_ranges": {
                     "type": "array",

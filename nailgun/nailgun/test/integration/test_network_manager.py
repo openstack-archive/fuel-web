@@ -80,7 +80,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
         self.env.network_manager.assign_ips(
             self.env.nodes,
-            "management"
+            consts.NETWORKS.management
         )
 
         management_net = self.db.query(NetworkGroup).\
@@ -88,7 +88,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
                 NetworkGroup.group_id ==
                 objects.Cluster.get_default_group(self.env.clusters[0]).id
             ).filter_by(
-                name='management'
+                name=consts.NETWORKS.management
             ).first()
 
         assigned_ips = []
@@ -122,7 +122,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
         ranges = [IPRange("192.168.33.2", "192.168.33.222")]
 
         ips = self.env.network_manager.get_free_ips_from_ranges(
-            'management', ranges, set(), 3
+            consts.NETWORKS.management, ranges, set(), 3
         )
         self.assertItemsEqual(["192.168.33.2", "192.168.33.3", "192.168.33.4"],
                               ips)
@@ -130,13 +130,14 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.db.add(IPAddr(ip_addr="192.168.33.3"))
         self.db.flush()
         ips = self.env.network_manager.get_free_ips_from_ranges(
-            'management', ranges, set(), 3
+            consts.NETWORKS.management, ranges, set(), 3
         )
         self.assertItemsEqual(["192.168.33.2", "192.168.33.4", "192.168.33.5"],
                               ips)
 
         ips = self.env.network_manager.get_free_ips_from_ranges(
-            'management', ranges, set(["192.168.33.5", "192.168.33.8"]), 7
+            consts.NETWORKS.management, ranges,
+            set(["192.168.33.5", "192.168.33.8"]), 7
         )
         self.assertItemsEqual(
             ["192.168.33.2", "192.168.33.4", "192.168.33.6", "192.168.33.7",
@@ -152,7 +153,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
                 {
                     "pending_addition": True,
                     "api": True,
-                    "status": "discover"
+                    "status": consts.NODE_STATUSES.discover,
                 }
             ]
         )
@@ -161,11 +162,11 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
         self.env.network_manager.assign_ips(
             [node_db],
-            "management"
+            consts.NETWORKS.management
         )
         self.env.network_manager.assign_ips(
             [node_db],
-            "management"
+            consts.NETWORKS.management
         )
 
         self.db.refresh(node_db)
@@ -173,7 +174,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.assertEqual(
             len(
                 filter(
-                    lambda n: n['name'] == 'management',
+                    lambda n: n['name'] == consts.NETWORKS.management,
                     self.env.network_manager.get_node_networks(
                         node_db
                     )
@@ -186,11 +187,11 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.env.create_cluster(api=True)
         vip = self.env.network_manager.assign_vip(
             self.env.clusters[0],
-            "management"
+            consts.NETWORKS.management
         )
         vip2 = self.env.network_manager.assign_vip(
             self.env.clusters[0],
-            "management"
+            consts.NETWORKS.management
         )
         self.assertEqual(vip, vip2)
 
@@ -201,24 +202,29 @@ class TestNetworkManager(BaseNetworkManagerTest):
                 {"pending_addition": True},
             ]
         )
-        networks_data = \
-            {'networking_parameters': {'net_manager': 'VlanManager'}}
+        networks_data = {
+            'networking_parameters': {
+                'net_manager': consts.NOVA_NET_MANAGERS.VlanManager,
+            },
+            'networks': [],
+        }
         resp = self.env.nova_networks_put(cluster['id'], networks_data)
-        self.assertEqual(resp.json_body['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
         network_data = self.env.network_manager.get_node_networks(
             self.env.nodes[0]
         )
 
         self.assertEqual(len(network_data), 5)
-        fixed_nets = filter(lambda net: net['name'] == 'fixed', network_data)
+        fixed_nets = filter(lambda net: net['name'] == consts.NETWORKS.fixed,
+                            network_data)
         self.assertEqual(len(fixed_nets), 1)
 
     def test_assign_admin_ip_multiple_groups(self):
         self.env.create(
             cluster_kwargs={
                 'api': False,
-                'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
             },
             nodes_kwargs=[{}, {}]
         )
@@ -255,8 +261,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.env.create(
             cluster_kwargs={
                 'api': False,
-                'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre
             },
             nodes_kwargs=[{}, {}]
         )
@@ -267,7 +273,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             filter(
                 NetworkGroup.group_id == node_group.json_body["id"]
             ).filter_by(
-                name='management'
+                name=consts.NETWORKS.management
             ).first()
 
         mock_range = IPAddrRange(
@@ -278,14 +284,15 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.db.add(mock_range)
         self.db.commit()
 
-        self.env.network_manager.assign_ips(self.env.nodes, "management")
+        self.env.network_manager.assign_ips(self.env.nodes,
+                                            consts.NETWORKS.management)
 
         for n in self.env.nodes:
             mgmt_net = self.db.query(NetworkGroup).\
                 filter(
                     NetworkGroup.group_id == n.group_id
                 ).filter_by(
-                    name='management'
+                    name=consts.NETWORKS.management
                 ).first()
             ip = self.db.query(IPAddr).\
                 filter_by(network=mgmt_net.id).\
@@ -307,7 +314,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
         self.env.network_manager.assign_ips(
             self.env.nodes,
-            "management"
+            consts.NETWORKS.management
         )
 
         ips = self.env.network_manager._get_ips_except_admin(joined=True)
@@ -397,13 +404,13 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_get_assigned_vips(self):
         vips_to_create = {
-            'management': {
-                'haproxy': '192.168.0.1',
-                'vrouter': '192.168.0.2',
+            consts.NETWORKS.management: {
+                consts.NETWORK_VIP_TYPES.haproxy: '192.168.0.1',
+                consts.NETWORK_VIP_TYPES.vrouter: '192.168.0.2',
             },
-            'public': {
-                'haproxy': '172.16.0.2',
-                'vrouter': '172.16.0.3',
+            consts.NETWORKS.public: {
+                consts.NETWORK_VIP_TYPES.haproxy: '172.16.0.2',
+                consts.NETWORK_VIP_TYPES.vrouter: '172.16.0.3',
             },
         }
         cluster = self.env.create_cluster(api=False)
@@ -413,21 +420,21 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_assign_given_vips_for_net_groups(self):
         vips_to_create = {
-            'management': {
-                'haproxy': '192.168.0.1',
+            consts.NETWORKS.management: {
+                consts.NETWORK_VIP_TYPES.haproxy: '192.168.0.1',
             },
-            'public': {
-                'haproxy': '172.16.0.2',
+            consts.NETWORKS.public: {
+                consts.NETWORK_VIP_TYPES.haproxy: '172.16.0.2',
             },
         }
         vips_to_assign = {
-            'management': {
-                'haproxy': '192.168.0.1',
-                'vrouter': '192.168.0.2',
+            consts.NETWORKS.management: {
+                consts.NETWORK_VIP_TYPES.haproxy: '192.168.0.1',
+                consts.NETWORK_VIP_TYPES.vrouter: '192.168.0.2',
             },
-            'public': {
-                'haproxy': '172.16.0.4',
-                'vrouter': '172.16.0.5',
+            consts.NETWORKS.public: {
+                consts.NETWORK_VIP_TYPES.haproxy: '172.16.0.4',
+                consts.NETWORK_VIP_TYPES.vrouter: '172.16.0.5',
             },
         }
         cluster = self.env.create_cluster(api=False)
@@ -449,8 +456,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_assign_given_vips_for_net_groups_assign_error(self):
         vips_to_assign = {
-            'management': {
-                'haproxy': '10.10.0.1',
+            consts.NETWORKS.management: {
+                consts.NETWORK_VIP_TYPES.haproxy: '10.10.0.1',
             },
         }
         expected_msg_regexp = '^Cannot assign VIP with the address "10.10.0.1"'
@@ -500,12 +507,12 @@ class TestNetworkManager(BaseNetworkManagerTest):
             raise Exception("Network with name {0} not found".format(name))
 
         updates = {
-            "public": {
+            consts.NETWORKS.public: {
                 "cidr": "172.16.42.0/24",
                 "gateway": "172.16.42.1",
                 "ip_ranges": [["172.16.42.2", "172.16.42.126"]],
             },
-            "management": {
+            consts.NETWORKS.management: {
                 'cidr': u'192.10.2.0/24',
                 'ip_ranges': [[u'192.10.2.1', u'192.10.2.254']],
             },
@@ -652,8 +659,8 @@ class TestNeutronManager(BaseIntegrationTest):
     def test_gre_get_default_nic_assignment(self):
         self.env.create(
             cluster_kwargs={
-                'net_provider': 'neutron',
-                'net_segment_type': 'gre'},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre},
             nodes_kwargs=[
                 {'api': True,
                  'pending_addition': True}
@@ -664,8 +671,8 @@ class TestNeutronManager(BaseIntegrationTest):
     def test_tun_get_default_nic_assignment(self):
         self.env.create(
             cluster_kwargs={
-                'net_provider': 'neutron',
-                'net_segment_type': 'tun'},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.tun},
             nodes_kwargs=[
                 {'api': True,
                  'pending_addition': True}
@@ -682,8 +689,8 @@ class TestNeutronManager(BaseIntegrationTest):
              {'name': 'eth2', 'mac': '00:00:00:00:00:33'}])
         self.env.create(
             cluster_kwargs={
-                'net_provider': 'neutron',
-                'net_segment_type': 'vlan'},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan},
             nodes_kwargs=[
                 {'api': True,
                  'meta': meta,

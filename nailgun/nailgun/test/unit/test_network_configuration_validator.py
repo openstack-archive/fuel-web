@@ -17,6 +17,7 @@ import mock
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
@@ -25,7 +26,7 @@ from nailgun.test import base
 
 
 class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
-    validator = NetworkConfigurationValidator.validate_networks_update
+    validator = NetworkConfigurationValidator.validate_networks_data
 
     def setUp(self):
         super(TestNetworkConfigurationValidatorProtocol, self).setUp()
@@ -38,22 +39,23 @@ class TestNetworkConfigurationValidatorProtocol(base.BaseValidatorTest):
                     "id": 2,
                     "ip_ranges": [["172.16.0.2", "172.16.0.126"]],
                     "meta": {
-                        "name": "public",
+                        "name": consts.NETWORKS.public,
                         "cidr": "172.16.0.0/24",
                         "gateway": "172.16.0.1",
                         "ip_range": ["172.16.0.2", "172.16.0.126"],
                         "vlan_start": None,
                         "use_gateway": True,
-                        "notation": "ip_ranges",
+                        "notation": consts.NETWORK_NOTATION.ip_ranges,
                         "render_type": None,
                         "map_priority": 1,
                         "configurable": True,
                         "floating_range_var": "floating_ranges",
                         "ext_net_data": [],
-                        "vips": ["haproxy", "vrouter"]
+                        "vips": consts.NETWORK_VIP_TYPES,
                     },
-                    "name": "public",
-                    "vlan_start": None}
+                    "name": consts.NETWORKS.public,
+                    "vlan_start": None
+                }
             ]
         }
 
@@ -229,7 +231,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         self.cluster = self.env.create(
             cluster_kwargs={
                 "api": False,
-                "net_provider": "neutron"
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron,
             },
             nodes_kwargs=[
                 {"api": False,
@@ -248,8 +250,8 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
     def get_context_of_validation_error(self):
         config = jsonutils.dumps(self.config)
         with self.assertRaises(errors.InvalidData) as exc_context:
-            self.validator.validate_networks_update(config,
-                                                    self.cluster)
+            self.validator.validate_networks_data(config,
+                                                  self.cluster)
         return exc_context
 
     def assertRaisesInvalidData(self, message):
@@ -257,8 +259,8 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         self.assertIn(message, exc_context.exception.message)
 
     def test_validate_networks_not_in_db(self):
-        mgmt = self.find_net_by_name('management')
-        sto = self.find_net_by_name('storage')
+        mgmt = self.find_net_by_name(consts.NETWORKS.management)
+        sto = self.find_net_by_name(consts.NETWORKS.storage)
 
         mgmt_db = self.db.query(NetworkGroup).get(mgmt['id'])
         sto_db = self.db.query(NetworkGroup).get(sto['id'])
@@ -278,8 +280,8 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         )
 
     def test_validate_network_no_ip_ranges(self):
-        mgmt = self.find_net_by_name('management')
-        mgmt['meta']['notation'] = 'ip_ranges'
+        mgmt = self.find_net_by_name(consts.NETWORKS.management)
+        mgmt['meta']['notation'] = consts.NETWORK_NOTATION.ip_ranges
         mgmt['ip_ranges'] = []
         mgmt_db = self.db.query(NetworkGroup).get(mgmt['id'])
         mgmt_db.ip_ranges = []
@@ -289,8 +291,8 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
             "No IP ranges were specified for network {0}".format(mgmt['id']))
 
     def test_validate_network_no_cidr(self):
-        mgmt = self.find_net_by_name('management')
-        mgmt['meta']['notation'] = 'cidr'
+        mgmt = self.find_net_by_name(consts.NETWORKS.management)
+        mgmt['meta']['notation'] = consts.NETWORK_NOTATION.cidr
         mgmt['cidr'] = None
         mgmt_db = self.db.query(NetworkGroup).get(mgmt['id'])
         mgmt_db.cidr = None
@@ -300,7 +302,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
             "No CIDR was specified for network {0}".format(mgmt['id']))
 
     def test_validate_network_no_gateway(self):
-        mgmt = self.find_net_by_name('management')
+        mgmt = self.find_net_by_name(consts.NETWORKS.management)
         mgmt['meta']['use_gateway'] = True
         mgmt['gateway'] = None
         mgmt_db = self.db.query(NetworkGroup).get(mgmt['id'])
@@ -311,7 +313,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
             "'use_gateway' cannot be provided without gateway")
 
     def test_check_ip_conflicts(self):
-        mgmt = self.find_net_by_name('management')
+        mgmt = self.find_net_by_name(consts.NETWORKS.management)
 
         # firstly check default IPs from management net assigned to nodes
         ips = NeutronManager.get_assigned_ips_by_network_id(mgmt['id'])
@@ -320,20 +322,20 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
 
         mgmt['cidr'] = '10.101.0.0/24'
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, 'cidr', False)
+            mgmt, self.cluster, consts.NETWORK_NOTATION.cidr, False)
         self.assertTrue(result)
 
         mgmt['cidr'] = '192.168.0.0/28'
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, 'cidr', False)
+            mgmt, self.cluster, consts.NETWORK_NOTATION.cidr, False)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['192.168.0.1', '192.168.0.15']]
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, 'ip_ranges', False)
+            mgmt, self.cluster, consts.NETWORK_NOTATION.ip_ranges, False)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['10.101.0.1', '10.101.0.255']]
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, 'ip_ranges', False)
+            mgmt, self.cluster, consts.NETWORK_NOTATION.ip_ranges, False)
         self.assertTrue(result)

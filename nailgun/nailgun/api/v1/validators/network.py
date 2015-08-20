@@ -43,10 +43,9 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_data(cls, data, cluster):
-        if 'networks' in data:
-            data = cls.validate_networks_update(data, cluster)
-        else:
-            data = cls.base_validation(data)
+        data = cls.base_validation(data)
+
+        data = cls.validate_networks_update(data, cluster)
 
         cls.additional_network_validation(data, cluster)
 
@@ -54,10 +53,9 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_update(cls, data, cluster):
-        data = cls.base_validation(data)
         cls.validate_schema(data, network_schema.NETWORKS)
 
-        net_ids = [ng['id'] for ng in data['networks']]
+        net_ids = [ng['id'] for ng in data.get('networks', [])]
         ng_db_by_id = dict(
             (ng.id, ng) for ng in db().query(NetworkGroup).filter(
                 NetworkGroup.id.in_(net_ids)
@@ -72,7 +70,7 @@ class NetworkConfigurationValidator(BasicValidator):
                 )
             )
 
-        for network in data['networks']:
+        for network in data.get('networks', []):
             net_id = network['id']
             ng_db = ng_db_by_id[net_id]
             cidr = network['cidr'] if 'cidr' in network else ng_db.cidr

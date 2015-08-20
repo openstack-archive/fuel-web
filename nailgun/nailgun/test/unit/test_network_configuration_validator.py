@@ -20,8 +20,8 @@ from nailgun.api.v1.validators.network import \
     NeutronNetworkConfigurationValidator
 from nailgun.api.v1.validators.network import NovaNetworkConfigurationValidator
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.errors import errors
 from nailgun.network.neutron import NeutronManager
 from nailgun.test import base
@@ -29,19 +29,16 @@ from nailgun.test import base
 
 class BaseNetworkConfigurationValidatorProtocolTest(base.BaseValidatorTest):
 
-    def get_invalid_data_context(self, obj):
+    @mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
+                new_callable=mock.PropertyMock,
+                return_value=False)
+    def get_invalid_data_context(self, obj, cluster_mock, *args, **kwargs):
         """The method is used by assertRaises* methods of base class
-           and should be overridden because by default it calls
-           validator with only one argument.
+           and should be overridden because of 'models.Cluster.is_locked'
+           should be mocked.
         """
-        with self.assertRaises(errors.InvalidData) as context:
-            with mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
-                            new_callable=mock.PropertyMock,
-                            return_value=False):
-                cluster_mock = Cluster()
-                self.validator(jsonutils.dumps(obj), cluster_mock)
-
-        return context
+        return super(BaseNetworkConfigurationValidatorProtocolTest, self).\
+            get_invalid_data_context(obj, cluster_mock, *args, **kwargs)
 
 
 class TestNetworkConfigurationValidatorProtocol(
@@ -246,7 +243,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         self.cluster = self.env.create(
             cluster_kwargs={
                 "api": False,
-                "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron,
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron
             },
             nodes_kwargs=[
                 {"api": False,
@@ -360,6 +357,7 @@ class TestNovaNetworkConfigurationValidatorProtocol(
 ):
 
     validator = NovaNetworkConfigurationValidator.additional_network_validation
+    stringify = False
 
     def setUp(self):
         super(TestNovaNetworkConfigurationValidatorProtocol, self).setUp()
@@ -371,16 +369,9 @@ class TestNovaNetworkConfigurationValidatorProtocol(
                 "fixed_networks_amount": 2,
                 "fixed_networks_cidr": "192.168.111.0/24",
                 "fixed_networks_vlan_start": 101,
-                "net_manager": consts.NOVA_NET_MANAGERS.FlatDHCPManager,
-
+                "net_manager": consts.NOVA_NET_MANAGERS.FlatDHCPManager
             }
         }
-
-    def get_invalid_data_context(self, obj):
-        with self.assertRaises(errors.InvalidData) as context:
-            self.validator(obj, None)
-
-        return context
 
     # networking parameters
     def test_networking_parameters_invalid_type(self):
@@ -414,6 +405,31 @@ class TestNovaNetworkConfigurationValidatorProtocol(
             "'1.2.3.x'",
             "['networking_parameters']['dns_nameservers']")
 
+    def test_fixed_network_size_invalid_type(self):
+        self.nc['networking_parameters']['fixed_network_size'] = {}
+        self.assertRaisesInvalidType(self.nc, "{}", "'integer'")
+
+    def test_fixed_networks_amount_invalid_type(self):
+        self.nc['networking_parameters']['fixed_networks_amount'] = {}
+        self.assertRaisesInvalidType(self.nc, "{}", "'integer'")
+
+    def test_fixed_networks_cidr_invalid_type(self):
+        self.nc['networking_parameters']['fixed_networks_cidr'] = 1
+        self.assertRaisesInvalidType(self.nc, "1", "'string'")
+
+    def test_fixed_networks_vlan_start_invalid_type(self):
+        self.nc['networking_parameters']['fixed_networks_vlan_start'] = {}
+        self.assertRaisesInvalidType(self.nc, "{}", "'integer'")
+
+    def test_net_manager_invalid_type(self):
+        self.nc['networking_parameters']['net_manager'] = 'x'
+        self.assertRaisesInvalidEnum(
+            self.nc, "'x'", "['FlatDHCPManager', 'VlanManager']")
+
+    def test_floating_ranges_invalid_type(self):
+        self.nc['networking_parameters']['floating_ranges'] = {}
+        self.assertRaisesInvalidType(self.nc, "{}", "'array'")
+
 
 class TestNeutronNetworkConfigurationValidatorProtocol(
     BaseNetworkConfigurationValidatorProtocolTest
@@ -421,12 +437,7 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
 
     validator = \
         NeutronNetworkConfigurationValidator.additional_network_validation
-
-    def get_invalid_data_context(self, obj):
-        with self.assertRaises(errors.InvalidData) as context:
-            self.validator(obj, None)
-
-        return context
+    stringify = False
 
     def setUp(self):
         super(TestNeutronNetworkConfigurationValidatorProtocol, self).setUp()
@@ -439,8 +450,8 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
                 "gre_id_range": [2, 65535],
                 "internal_cidr": "192.168.111.0/24",
                 "internal_gateway": "192.168.111.1",
-                "net_l23_provider": "ovs",
-                "segmentation_type": "gre",
+                "net_l23_provider": consts.NEUTRON_L23_PROVIDERS.ovs,
+                "segmentation_type": consts.NEUTRON_SEGMENT_TYPES.gre,
                 "vlan_range": [1000, 1030]
             }
         }
@@ -449,6 +460,10 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
     def test_networking_parameters_invalid_type(self):
         self.nc['networking_parameters'] = 1
         self.assertRaisesInvalidType(self.nc, "1", "'object'")
+
+    def test_base_mac_invalid_type(self):
+        self.nc['networking_parameters']['base_mac'] = 1
+        self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
     def test_dns_nameservers_ip_range(self):
         self.nc['networking_parameters']['dns_nameservers'] = {}
@@ -476,3 +491,101 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
             self.nc,
             "'1.2.3.x'",
             "['networking_parameters']['dns_nameservers']")
+
+    def test_floating_ranges_invalid_type(self):
+        self.nc['networking_parameters']['floating_ranges'] = {}
+        self.assertRaisesInvalidType(self.nc, "{}", "'array'")
+
+    def test_gre_id_range(self):
+        self.nc['networking_parameters']['gre_id_range'] = {}
+        self.assertRaisesInvalidType(self.nc, "{}", "'array'")
+
+        self.nc['networking_parameters']['gre_id_range'] = ["1", 2]
+        self.assertRaisesInvalidType(self.nc, "'1'", "'integer'")
+
+        self.nc['networking_parameters']['gre_id_range'] = [1, 2, 3]
+        self.assertRaisesTooLong(self.nc, "[1, 2, 3]")
+
+        self.nc['networking_parameters']['gre_id_range'] = [1]
+        self.assertRaisesTooShort(self.nc, "[1]")
+
+        self.nc['networking_parameters']['gre_id_range'] = [2, 2]
+        self.assertRaisesNonUnique(self.nc, "[2, 2]")
+
+    def test_internal_cidr_invalid_type(self):
+        self.nc['networking_parameters']['internal_cidr'] = 1
+        self.assertRaisesInvalidAnyOf(
+            self.nc, 1, "['networking_parameters']['internal_cidr']")
+
+    def test_internal_gateway_invalid_type(self):
+        self.nc['networking_parameters']['internal_gateway'] = []
+        self.assertRaisesInvalidAnyOf(
+            self.nc, [], "['networking_parameters']['internal_gateway']")
+
+    def test_net_l23_provider_invalid_type(self):
+        self.nc['networking_parameters']['net_l23_provider'] = 'x'
+        self.assertRaisesInvalidEnum(self.nc, "'x'", "['ovs', 'nsx']")
+
+    def test_segmentation_type_invalid_type(self):
+        self.nc['networking_parameters']['segmentation_type'] = 'x'
+        self.assertRaisesInvalidEnum(self.nc, "'x'", "['vlan', 'gre', 'tun']")
+
+    def test_vlan_range(self):
+        self.nc['networking_parameters']['gre_id_range'] = {}
+        self.assertRaisesInvalidType(self.nc, "{}", "'array'")
+
+        self.nc['networking_parameters']['gre_id_range'] = ["1", 2]
+        self.assertRaisesInvalidType(self.nc, "'1'", "'integer'")
+
+        self.nc['networking_parameters']['gre_id_range'] = [1, 2, 3]
+        self.assertRaisesTooLong(self.nc, "[1, 2, 3]")
+
+        self.nc['networking_parameters']['gre_id_range'] = [1]
+        self.assertRaisesTooShort(self.nc, "[1]")
+
+        self.nc['networking_parameters']['gre_id_range'] = [2, 2]
+        self.assertRaisesNonUnique(self.nc, "[2, 2]")
+
+
+class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):
+
+    validator = NeutronNetworkConfigurationValidator
+
+    def setUp(self):
+        super(TestNeutronNetworkConfigurationValidator, self).setUp()
+
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                "api": False,
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron
+            }
+        )
+        self.config = self.env.neutron_networks_get(self.cluster.id).json_body
+
+    def create_additional_node_group(self):
+        node_group = NodeGroup(
+            name="custom_group_name", cluster_id=self.cluster.id)
+        self.env.db.add(node_group)
+        self.env.db.flush()
+
+        self.env.create_node(cluster_id=self.cluster.id,
+                             roles=["controller"])
+        self.env.create_node(cluster_id=self.cluster.id,
+                             roles=["compute"],
+                             group_id=node_group.id)
+
+    def check_no_fuelweb_admin_network_in_validated_data(self):
+        default_admin = self.db.query(
+            NetworkGroup).filter_by(group_id=None).first()
+        validated_data = self.validator.prepare_data(self.config)
+        self.assertNotIn(
+            default_admin.id,
+            [ng['id'] for ng in validated_data['networks']]
+        )
+
+    def test_fuelweb_admin_removed(self):
+        self.check_no_fuelweb_admin_network_in_validated_data()
+
+    def test_fuelweb_admin_removed_w_additional_node_group(self):
+        self.create_additional_node_group()
+        self.check_no_fuelweb_admin_network_in_validated_data()

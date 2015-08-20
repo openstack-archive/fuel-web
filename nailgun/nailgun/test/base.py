@@ -1450,14 +1450,23 @@ class BaseValidatorTest(TestCase):
        1) All required properties are present;
        2) No additional properties allowed;
        3) Item has correct type.
+
+       :validator obj: reference to a validating method
+       :param stringify: whether object should be serialized to a JSON-string
+
     """
     validator = None
+    stringify = True
 
-    def get_invalid_data_context(self, obj):
-        json_obj = jsonutils.dumps(obj)
+    def get_invalid_data_context(self, *args, **kwargs):
+        """Returns context object of raised InvalidData exception.
+
+        :return: context of 'errors.InvalidData'
+        """
+        a = (jsonutils.dumps(args[0]),) + args[1:] if self.stringify else args
 
         with self.assertRaises(errors.InvalidData) as context:
-            self.validator(json_obj)
+            self.validator(*a, **kwargs)
 
         return context
 

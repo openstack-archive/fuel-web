@@ -59,7 +59,7 @@ class bootstrapimg(urwid.WidgetWrap):
                 "label": "Flavor",
                 "tooltip": "",
                 "value": "radio",
-                "choices": ["CentOS", "Ubuntu"]},
+                "choices": ["CentOS", "Ubuntu (EXPERIMENTAL)"]},
             "BOOTSTRAP/MIRROR_DISTRO": {
                 "label": "Ubuntu mirror",
                 "tooltip": "Ubuntu APT repo URL",
@@ -118,6 +118,10 @@ class bootstrapimg(urwid.WidgetWrap):
         self.parent.footer.set_text("Checking data...")
         self.parent.refreshScreen()
         responses = self.responses
+
+        if responses['flavor'] != 'ubuntu':
+            # Don't check for Ubuntu repos if CentOS bootstrap is selected
+            return responses
 
         errors = []
 

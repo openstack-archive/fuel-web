@@ -134,6 +134,7 @@ function($, _, i18n, React, dispatcher, utils) {
                         <div className='http-warning'>
                             <i className='glyphicon glyphicon-warning-sign'></i>
                             {i18n('login_page.http_warning')}
+                            <br/>
                             <a href={httpsLink}>{i18n('login_page.http_warning_link')}</a>
                         </div>
                     }

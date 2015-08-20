@@ -212,11 +212,6 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         except Exception as exc:
             self._raise_error_task(cluster, exc)
 
-        data["networks"] = [
-            n for n in data["networks"] if n.get("name") !=
-            consts.NETWORKS.fuelweb_admin
-        ]
-
         vlan_ids = [{
             'name': n['name'],
             'vlans': objects.Cluster.get_network_manager(

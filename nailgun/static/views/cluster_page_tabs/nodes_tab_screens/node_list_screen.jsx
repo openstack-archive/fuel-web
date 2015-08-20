@@ -97,6 +97,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         return roleName;
                     }
                 }, this)) : [];
+            var activeFilters = this.props.mode == 'add' ?
+                    Filter.fromObject(this.props.defaultFilters, false)
+                :
+                    _.union(
+                        Filter.fromObject(_.extend({}, this.props.defaultFilters, uiSettings.filter), false),
+                        Filter.fromObject(uiSettings.filter_by_labels, true)
+                    );
+            _.each(activeFilters, _.partial(this.updateFilterLimits, _, false), this);
+
             return {
                 search: this.props.mode == 'add' ? '' : uiSettings.search,
                 activeSorters: this.props.mode == 'add' ?
@@ -106,13 +115,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             _.map(uiSettings.sort, _.partial(Sorter.fromObject, _, false)),
                             _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
                         ),
-                activeFilters: this.props.mode == 'add' ?
-                        Filter.fromObject(this.props.defaultFilters, false)
-                    :
-                        _.union(
-                            Filter.fromObject(_.extend({}, this.props.defaultFilters, uiSettings.filter), false),
-                            Filter.fromObject(uiSettings.filter_by_labels, true)
-                        ),
+                activeFilters: activeFilters,
+                possibleSorterList: this.props.sorters.map(function(name) {return new Sorter(name, 'asc', false);}),
+                possibleFilterList: this.props.filters.map(function(name) {
+                    var filter = new Filter(name, [], false);
+                    this.updateFilterLimits(filter, true);
+                    return filter;
+                }, this),
                 viewMode: uiSettings.view_mode,
                 selectedRoles: selectedRoles,
                 indeterminateRoles: this.props.nodes.length ? _.compact(roles.map(function(role) {
@@ -148,9 +157,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         fetchData: function() {
             return this.props.nodes.fetch();
         },
+        calculateFilterLimits: function() {
+            _.each(this.state.possibleFilterList, _.partial(this.updateFilterLimits, _ , true), this);
+            _.each(this.state.activeFilters, _.partial(this.updateFilterLimits, _ , false), this);
+        },
         componentWillMount: function() {
             this.updateInitialRoles();
             this.props.nodes.on('update reset', this.updateInitialRoles, this);
+            this.props.nodes.on('update reset', this.calculateFilterLimits, this);
 
             this.changeSearch = _.debounce(this.changeSearch, 200, {leading: true});
 
@@ -161,6 +175,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         componentWillUnmount: function() {
             this.props.nodes.off('update reset', this.updateInitialRoles, this);
+            this.props.nodes.off('update reset', this.calculateFilterLimits, this);
             this.props.nodes.off('change:pending_roles', this.checkRoleAssignment, this);
         },
         processRoleLimits: function() {
@@ -291,15 +306,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
             return options;
         },
-        getFilterLimits: function(filter) {
-            var min = _.min(this.props.nodes.invoke('resource', filter.name)),
-                max = _.max(this.props.nodes.invoke('resource', filter.name));
-
-            if (filter.name == 'hdd' || filter.name == 'ram') {
-                return [Math.floor(min / Math.pow(1024, 3)), Math.ceil(max / Math.pow(1024, 3))];
+        updateFilterLimits: function(filter, updateValues) {
+            if (filter.isNumberRange) {
+                var limits = [0, 0];
+                if (this.props.nodes.length) {
+                    var resources = this.props.nodes.invoke('resource', filter.name);
+                    limits = [_.min(resources), _.max(resources)];
+                    if (filter.name == 'hdd' || filter.name == 'ram') {
+                        limits = [Math.floor(limits[0] / Math.pow(1024, 3)), Math.ceil(limits[1] / Math.pow(1024, 3))];
+                    }
+                }
+                filter.limits = limits;
+                if (updateValues) filter.values = _.clone(limits);
             }
-
-            return [min, max];
         },
         addFilter: function(filter) {
             this.updateFilters(this.state.activeFilters.concat(filter));
@@ -307,7 +326,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeFilter: function(filterToChange, values) {
             this.updateFilters(this.state.activeFilters.map(function(filter) {
                 if (filter.name == filterToChange.name && filter.isLabel == filterToChange.isLabel) {
-                    return Filter(filter.name, values, filter.isLabel);
+                    var changedFilter = Filter(filter.name, values, filter.isLabel);
+                    changedFilter.limits = filter.limits;
+                    return changedFilter;
                 }
                 return filter;
             }));
@@ -400,6 +421,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }, this);
             }, this);
 
+            var screenNodesLabels = this.getNodeLabels();
             return (
                 <div>
                     {this.props.mode == 'edit' &&
@@ -408,17 +430,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         </div>
                     }
                     <ManagementPanel
-                        {... _.pick(this.state, 'viewMode', 'search', 'activeSorters', 'activeFilters', 'isLabelsPanelOpen')}
-                        {... _.pick(this.props, 'cluster', 'mode', 'sorters', 'defaultSorting', 'filters', 'statusesToFilter', 'defaultFilters')}
+                        {... _.pick(this.state, 'viewMode', 'search', 'activeSorters', 'activeFilters', 'possibleSorterList', 'possibleFilterList', 'isLabelsPanelOpen')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'defaultSorting', 'statusesToFilter', 'defaultFilters')}
                         {... _.pick(this, 'addSorting', 'removeSorting', 'resetSorters', 'changeSortingOrder')}
-                        {... _.pick(this, 'addFilter', 'changeFilter', 'removeFilter', 'resetFilters', 'getFilterOptions', 'getFilterLimits')}
+                        {... _.pick(this, 'addFilter', 'changeFilter', 'removeFilter', 'resetFilters', 'getFilterOptions')}
                         {... _.pick(this, 'toggleLabelsPanel')}
                         {... _.pick(this, 'changeSearch', 'clearSearchField')}
                         {... _.pick(this, 'changeViewMode')}
+                        labelSorters={screenNodesLabels.map(function(name) {return new Sorter(name, 'asc', true);})}
+                        labelFilters={screenNodesLabels.map(function(name) {return new Filter(name, [], true);})}
                         nodes={selectedNodes}
                         screenNodes={nodes}
                         filteredNodes={filteredNodes}
-                        screenNodesLabels={this.getNodeLabels()}
                         selectedNodeLabels={selectedNodeLabels}
                         hasChanges={this.hasChanges()}
                         locked={locked}
@@ -602,7 +625,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var classNames = {'btn-group number-range': true, open: this.props.isOpen};
             if (this.props.className) classNames[this.props.className] = true;
-
             var props = {
                     type: 'number',
                     inputClassName: 'pull-left',
@@ -854,20 +876,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var inactiveSorters, canResetSorters;
             var inactiveFilters, appliedFilters;
             if (this.props.mode != 'edit') {
-                var createSorter = _.bind(function(sorterName, isLabel) {
-                    if (!_.any(this.props.activeSorters, {name: sorterName, isLabel: isLabel})) {
-                        return Sorter(sorterName, 'asc', isLabel);
-                    }
+                var checkSorter = _.bind(function(sorter, isLabel) {
+                    return !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
                 }, this);
-                inactiveSorters = _.compact(_.union(_.map(this.props.sorters, _.partial(createSorter, _, false)), _.map(this.props.screenNodesLabels, _.partial(createSorter, _, true))));
+                inactiveSorters = _.union(_.filter(this.props.possibleSorterList, _.partial(checkSorter, _, false)), _.filter(this.props.labelSorters, _.partial(checkSorter, _, true)));
                 canResetSorters = _.any(this.props.activeSorters, {isLabel: true}) || !_(this.props.activeSorters).where({isLabel: false}).map(Sorter.toObject).isEqual(this.props.defaultSorting);
 
-                var createFilter = _.bind(function(filterName, isLabel) {
-                    if (!_.any(this.props.activeFilters, {name: filterName, isLabel: isLabel})) {
-                        return Filter(filterName, [], isLabel);
-                    }
+                var checkFilter = _.bind(function(filter, isLabel) {
+                    return !_.any(this.props.activeFilters, {name: filter.name, isLabel: isLabel});
                 }, this);
-                inactiveFilters = _.compact(_.union(_.map(this.props.filters, _.partial(createFilter, _, false)), _.map(this.props.screenNodesLabels, _.partial(createFilter, _, true))));
+                inactiveFilters = _.union(_.filter(this.props.possibleFilterList, _.partial(checkFilter, _, false)), _.filter(this.props.labelFilters, _.partial(checkFilter, _, true)));
                 appliedFilters = _.reject(this.props.activeFilters, function(filter) {
                     return !filter.isLabel && !filter.values.length;
                 });
@@ -1097,6 +1115,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 key: (filter.isLabel ? 'label-' : '') + filter.name,
                                                 ref: filter.name,
                                                 name: filter.name,
+                                                values: filter.values,
                                                 className: 'filter-control',
                                                 label: filter.title,
                                                 extraContent: this.renderDeleteFilterButton(filter),
@@ -1107,19 +1126,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             };
 
                                             if (filter.isNumberRange) {
-                                                var limits = this.props.getFilterLimits(filter);
-                                                return <NumberRangeControl
-                                                    {...props}
-                                                    min={limits[0]}
-                                                    max={limits[1]}
-                                                    values={_.isEmpty(filter.values) ? limits : filter.values}
-                                                />;
+                                                return <NumberRangeControl {...props} min={filter.limits[0]} max={filter.limits[1]} />;
                                             }
-                                            return <MultiSelectControl
-                                                {...props}
-                                                values={filter.values}
-                                                options={this.props.getFilterOptions(filter)}
-                                            />;
+                                            return <MultiSelectControl {...props} options={this.props.getFilterOptions(filter)} />;
                                         }, this)}
                                         <MultiSelectControl
                                             name='filter-more'

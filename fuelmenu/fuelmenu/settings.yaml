@@ -16,9 +16,3 @@ ADMIN_NETWORK:
 FUEL_ACCESS:
   user: "admin"
   password: "admin"
-BOOTSTRAP:
-  MIRROR_DISTRO: "http://archive.ubuntu.com/ubuntu"
-  MIRROR_MOS: "http://mirror.fuel-infra.org/mos-repos/ubuntu/7.0"
-  HTTP_PROXY: ""
-  EXTRA_APT_REPOS: ""
-  flavor: "centos"

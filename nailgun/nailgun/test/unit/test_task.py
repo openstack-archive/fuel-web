@@ -506,8 +506,9 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         objects.Cluster.update(
             self.cluster,
             {'deployment_tasks': deployment_tasks})
-        CheckBeforeDeploymentTask._check_deployment_graph_for_correctness(
-            self.task)
+        task.CheckBeforeDeploymentTask.\
+            _check_deployment_graph_for_correctness(
+                self.task)
 
     def test_check_deployment_graph_with_incorrect_dependencies_data(self):
         incorrect_dependencies_yaml_tasks = """
@@ -530,8 +531,9 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
                 "Tasks 'non_existing_stage' can't be in requires|required_for|"
                 "groups|tasks for \['test-controller'\] because they don't "
                 "exist in the graph"):
-            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness(
-                self.task)
+            task.CheckBeforeDeploymentTask.\
+                _check_deployment_graph_for_correctness(
+                    self.task)
 
     def test_check_deployment_graph_with_cycling_dependencies_data(self):
         incorrect_cycle_yaml_tasks = """
@@ -551,5 +553,6 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         with self.assertRaisesRegexp(
                 errors.InvalidData,
                 "Tasks can not be processed because it contains cycles in it"):
-            CheckBeforeDeploymentTask._check_deployment_graph_for_correctness(
-                self.task)
+            task.CheckBeforeDeploymentTask.\
+                _check_deployment_graph_for_correctness(
+                    self.task)

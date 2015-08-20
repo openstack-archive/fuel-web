@@ -36,10 +36,13 @@
             },
             "nic_mapping": {
                 "default": {
-                    "if4": "eth3",
                     "if1": "eth0",
                     "if2": "eth1",
-                    "if3": "eth2"
+                    "if3": "eth2",
+                    "if4": "eth3",
+                    "if5": "eth4",
+                    "if6": "eth5",
+                    "if7": "eth6"
                 }
             },
             "network_scheme": {
@@ -147,7 +150,7 @@
                         {
                             "action": "add-port",
                             "bridge": "br-aux",
-                            "name": "<% if4 %>"
+                            "name": "<% if4 %>.101"
                         }
                     ],
                     "roles": {
@@ -181,6 +184,23 @@
                             "action": "add-port",
                             "bridge": "br-ex",
                             "name": "<% if2 %>"
+                        },
+                        {
+                            "action": "add-bond",
+                            "name": "ovs-bond0",
+                            "bridge": "br-bond0",
+                            "interfaces": ["<% if5 %>", "<% if6 %>"],
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-exclude",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-exclude",
+                            "name": "<% if7 %>.201"
                         }
                     ],
                     "roles": {

@@ -116,6 +116,26 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.assertEqual(400, resp.status_code)
 
+    def test_node_hostname_gets_updated_ssl_conflict(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(api=False, cluster_id=cluster.id)
+
+        cluster_attrs = objects.Cluster.get_attributes(cluster).editable
+        test_hostname = 'test-hostname'
+        cluster_attrs['public_ssl']['hostname']['value'] = test_hostname
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
+
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
+            jsonutils.dumps({'hostname': test_hostname}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "New hostname '{0}' conflicts with public TLS endpoint"
+            .format(test_hostname), resp.json_body['message'])
+
     def test_node_hostname_gets_updated_after_provisioning_starts(self):
         node = self.env.create_node(api=False,
                                     status=consts.NODE_STATUSES.provisioning)

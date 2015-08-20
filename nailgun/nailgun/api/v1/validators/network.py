@@ -53,9 +53,10 @@ class NetworkConfigurationValidator(BasicValidator):
     @classmethod
     def validate_network_group(cls, ng_data, ng_db, cluster):
         net_id = ng_data['id']
-        cidr = ng_data['cidr'] if 'cidr' in ng_data else ng_db.cidr
-        ip_ranges = ng_data['ip_ranges'] if 'ip_ranges' in ng_data else [
-            (r.first, r.last) for r in ng_db.ip_ranges]
+        cidr = ng_data.get('cidr', ng_db.cidr)
+        ip_ranges = ng_data.get(
+            'ip_ranges',
+            [(r.first, r.last) for r in ng_db.ip_ranges])
 
         release = ng_data.get('release', ng_db.get('release'))
         if release != ng_db.get('release'):
@@ -146,6 +147,25 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def prepare_data(cls, data):
+        """Prepares input data.
+
+        Filter input data based on the fact that
+        updating parameters of the fuel admin network
+        is forbidden for default node group.
+
+        Admin network cannot be updated because of:
+        - sharing itself between environments;
+        - having no mechanism to change its parameters on deployed Master node.
+        """
+        if data.get("networks"):
+            default_admin = db.query(
+                NetworkGroup).filter_by(group_id=None).first()
+            data["networks"] = [
+                n for n in data["networks"]
+                if n.get("id") != default_admin.id or
+                n.get("name") != consts.NETWORKS.fuelweb_admin
+            ]
+
         return data
 
     @classmethod
@@ -156,16 +176,6 @@ class NetworkConfigurationValidator(BasicValidator):
 class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
-    def prepare_data(cls, data):
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") !=
-                consts.NETWORKS.fuelweb_admin
-            ]
-
-        return data
-
-    @classmethod
     def additional_network_validation(cls, data, cluster):
         if 'networking_parameters' in data:
             cls.validate_schema(
@@ -174,7 +184,6 @@ class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
 
 
 class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
-
     @classmethod
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)

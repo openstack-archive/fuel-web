@@ -193,6 +193,16 @@ class NodeValidator(BasicValidator):
             raise errors.NotAllowed(
                 "Node hostname may be changed only before provisioning."
             )
+        cluster = objects.Cluster.get_by_uid(instance.cluster_id)
+        public_ssl_endpoint = cluster.attributes.editable.get(
+            'public_ssl', {}).get('hostname', {}).get('value', "")
+
+        if public_ssl_endpoint == hostname or \
+            public_ssl_endpoint == objects.Node.generate_fqdn_by_hostname(
+                hostname):
+            raise errors.InvalidData(
+                "New hostname '{0}' conflicts with public TLS endpoint".format(
+                    hostname))
         if objects.Node.get_by_hostname(
                 hostname,
                 instance.cluster_id):

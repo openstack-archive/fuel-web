@@ -33,7 +33,6 @@ from nailgun import objects
 
 
 class NetworkConfigurationValidator(BasicValidator):
-
     @classmethod
     def base_validation(cls, data):
         valid_data = cls.validate_json(data)
@@ -42,11 +41,12 @@ class NetworkConfigurationValidator(BasicValidator):
         return valid_data
 
     @classmethod
-    def validate_networks_data(cls, data, cluster):
-        if 'networks' in data:
+    def validate_networks_data(cls, data, cluster, networks_required=True):
+        data = cls.base_validation(data)
+
+        if networks_required or (
+                not networks_required and 'networks' in data):
             data = cls.validate_networks_update(data, cluster)
-        else:
-            data = cls.base_validation(data)
 
         cls.additional_network_validation(data, cluster)
 
@@ -54,7 +54,6 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_update(cls, data, cluster):
-        data = cls.base_validation(data)
         cls.validate_schema(data, network_schema.NETWORKS)
 
         net_ids = [ng['id'] for ng in data['networks']]

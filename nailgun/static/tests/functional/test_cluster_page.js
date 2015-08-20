@@ -29,11 +29,11 @@ define([
             clusterName;
 
         return {
-            name: 'Clusters page',
+            name: 'Cluster page',
             setup: function() {
                 common = new Common(this.remote);
                 clusterPage = new ClusterPage(this.remote);
-                clusterName = 'Test Cluster #' + Math.round(99999 * Math.random());
+                clusterName = common.pickRandomName('Test Cluster');
             },
             beforeEach: function() {
                 return this.remote

@@ -26,7 +26,7 @@ casper.then(function() {
     var authenticated = this.evaluate(function() {
             return window.app.user.get('authenticated');
         }),
-            token = this.evaluate(function() {
+        token = this.evaluate(function() {
             return window.app.keystoneClient.token;
         });
 

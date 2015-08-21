@@ -18,12 +18,14 @@ define([
     'underscore',
     'intern!object',
     'intern/chai!assert',
+    'tests/functional/pages/modal',
     'tests/functional/pages/common'
-], function(_, registerSuite, assert, Common) {
+], function(_, registerSuite, assert, ModalWindow, Common) {
     'use strict';
 
     registerSuite(function() {
         var common,
+            modal,
             clusterName,
             nodesAmount = 4;
 
@@ -31,6 +33,7 @@ define([
             name: 'Cluster Nodes page',
             setup: function() {
                 common = new Common(this.remote);
+                modal = new ModalWindow(this.remote);
                 clusterName = common.pickRandomName('Test Cluster');
 
                 return this.remote
@@ -47,7 +50,7 @@ define([
             teardown: function() {
                 return this.remote
                     .then(function() {
-                        return common.removeCluster(clusterName, true);
+                        return common.removeCluster(clusterName);
                     });
             },
             afterEach: function() {
@@ -99,7 +102,7 @@ define([
                         .click()
                         .end()
                     .then(function() {
-                        return common.waitForModal();
+                        return modal.waitToOpen();
                     })
                     .findByCssSelector('.modal-header h4.modal-title')
                         .getVisibleText()
@@ -108,10 +111,10 @@ define([
                         })
                         .end()
                     .then(function() {
-                        return common.closeModal();
+                        return modal.close();
                     })
                     .then(function() {
-                        return common.waitForModalToClose();
+                        return modal.waitToClose();
                     });
             },
             'Compact View Mode': function() {
@@ -126,7 +129,7 @@ define([
                         .findByCssSelector('div.node-checkbox')
                             .click()
                             .findByCssSelector('i.glyphicon-ok')
-                                // Check that node is selectable
+                                // Check self node is selectable
                                 .end()
                             .end();
             },
@@ -154,13 +157,13 @@ define([
                         return common.waitForElementDeletion('div.node-popover');
                     })
                     .then(function() {
-                        return common.waitForModal();
+                        return modal.waitToOpen();
                     })
                     .then(function() {
-                        return common.closeModal();
+                        return modal.close();
                     })
                     .then(function() {
-                        return common.waitForModalToClose();
+                        return modal.waitToClose();
                     })
                     .findByCssSelector('div.compact-node div.node-hardware p.btn')
                         // Open popover again
@@ -172,14 +175,14 @@ define([
                         .end()
                     .then(function() {
                         // Deletion confirmation shows up
-                        return common.waitForModal();
+                        return modal.waitToOpen();
                     })
                     .findByCssSelector('div.modal-content button.btn-delete')
                         // Confirm deletion
                         .click()
                         .end()
                     .then(function() {
-                        return common.waitForModalToClose();
+                        return modal.waitToClose();
                     })
                     .findAllByCssSelector('div.compact-node')
                     .then(function(nodes) {

@@ -88,7 +88,7 @@ class VolumeManagerExtension(BaseExtension):
 
     @classmethod
     def on_node_reset(cls, node):
-        cls.set_default_node_volumes(node)
+        pass
 
     @classmethod
     def on_node_delete(cls, node):

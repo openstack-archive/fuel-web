@@ -36,27 +36,27 @@ define([
                 });
             },
             getOut: function() {
-                var that = this;
+                var self = this;
                 return this.remote
                     .then(function() {
-                        return that.welcomePage.skip();
+                        return self.welcomePage.skip();
                     })
                     .then(function() {
-                        return that.loginPage.logout();
+                        return self.loginPage.logout();
                     });
             },
             getIn: function() {
-                var that = this;
+                var self = this;
                 return this.remote
                     .then(function() {
-                        return that.loginPage.logout();
+                        return self.loginPage.logout();
                     })
                     .then(function() {
-                        return that.loginPage.login();
+                        return self.loginPage.login();
                     })
                     .waitForDeletedByClassName('login-btn')
                     .then(function() {
-                        return that.welcomePage.skip();
+                        return self.welcomePage.skip();
                     });
             },
             clickLink: function(text) {
@@ -66,78 +66,67 @@ define([
                         .click()
                         .end();
             },
-            waitForModal: function() {
-                return this.remote
-                    .setFindTimeout(2000)
-                    .findByCssSelector('div.modal-content')
-                        .end();
-            },
-            closeModal: function() {
-                return this.remote
-                    .findByCssSelector('.modal-header button.close')
-                        .click()
-                        .end();
-            },
             waitForElementDeletion: function(cssSelector) {
                 return this.remote
-                    .setFindTimeout(2000)
+                    .setFindTimeout(5000)
                     .waitForDeletedByCssSelector(cssSelector)
-                    .catch()   // For cases when element is destroyed already
-                    .findByCssSelector(cssSelector)
-                        .then(function() {
-                            throw new Error('Element ' + cssSelector + ' was not destroyed');
-                        }, _.constant(true));
-            },
-            waitForModalToClose: function() {
-                return this.waitForElementDeletion('div.modal-content');
+                    .catch(function(error) {
+                        if (error.name != 'Timeout')
+                            throw error;
+                    })   // For cases when element is destroyed already
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            if (elements.length)
+                                throw new Error('Element ' + cssSelector + ' was not destroyed');
+                        });
             },
             goToEnvironment: function(clusterName, tabName) {
-                var that = this;
+                var self = this;
                 return this.remote
                     .then(function() {
-                        return that.clickLink('Environments');
+                        return self.clickLink('Environments');
                     })
                     .then(function() {
-                        return that.clustersPage.goToEnvironment(clusterName);
+                        return self.clustersPage.goToEnvironment(clusterName);
                     })
                     .then(function() {
-                        if (tabName) return that.clusterPage.goToTab(tabName);
+                        if (tabName) return self.clusterPage.goToTab(tabName);
                     });
             },
             createCluster: function(clusterName) {
-                var that = this;
+                var self = this;
                 return this.remote
                     .then(function() {
-                        return that.clickLink('Environments');
+                        return self.clickLink('Environments');
                     })
                     .then(function() {
-                        return that.clustersPage.createCluster(clusterName);
+                        return self.clustersPage.createCluster(clusterName);
                     });
             },
             removeCluster: function(clusterName, suppressErrors) {
-                var that = this;
+                var self = this;
                 return this.remote
                     .then(function() {
-                        return that.clickLink('Environments');
+                        return self.clickLink('Environments');
                     })
                     .then(function() {
-                        return that.clustersPage.goToEnvironment(clusterName);
+                        return self.clustersPage.goToEnvironment(clusterName);
                     })
                     .then(function() {
-                        return that.clusterPage.removeCluster();
+                        return self.clusterPage.removeCluster(clusterName);
                     })
                     .catch(function() {
                         if (!suppressErrors) throw new Error('Unable to delete cluster ' + clusterName);
                     });
             },
             doesClusterExist: function(clusterName) {
-                var that = this;
+                var self = this;
                 return this.remote
                     .setFindTimeout(2000)
                     .then(function() {
-                        return that.clickLink('Environments');
+                        return self.clickLink('Environments');
                     })
-                    .findAllByCssSelector(that.clustersPage.clusterSelector)
+                    .findAllByCssSelector(self.clustersPage.clusterSelector)
                     .then(function(divs) {
                         return divs.reduce(function(matchFound, element) {
                             return element.getVisibleText().then(
@@ -148,19 +137,21 @@ define([
                     });
             },
             addNodesToCluster: function(nodesAmount, nodesRoles) {
-                var that = this;
+                var self = this;
                 return this.remote
-                    .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
+                    .then(function() {
+                        return self.clusterPage.goToTab('Nodes');
+                    })
+                    .findByCssSelector('button.btn-add-nodes')
                         .click()
                         .end()
                     .findByCssSelector('div.role-panel')
                         .end()
                     .then(function() {
-                        return that.clusterPage.checkNodeRoles(nodesRoles);
+                        return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
                     .then(function() {
-                        return that.clusterPage.checkNodes(nodesAmount);
+                        return self.clusterPage.checkNodes(nodesAmount);
                     })
                     .findByCssSelector('button.btn-apply')
                         .click()
@@ -168,6 +159,17 @@ define([
                     .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
                         .end();
+            },
+            doesCssSelectorContainText: function(cssSelector, searchedText) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                    .then(function(messages) {
+                        return messages.reduce(function(result, message) {
+                            return message.getVisibleText().then(function(visibleText) {
+                                return visibleText == searchedText || result;
+                            });
+                        }, false)
+                    });
             }
         };
         return CommonMethods;

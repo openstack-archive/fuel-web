@@ -132,7 +132,7 @@ casper.skipWelcomeScreen = function() {
 }
 
 casper.createCluster = function(options) {
-    options.release = 1; // centos
+    options.release = 2; // ubuntu
     this.then(function() {
         return this.open(baseUrl + 'api/clusters', {
             method: 'post',

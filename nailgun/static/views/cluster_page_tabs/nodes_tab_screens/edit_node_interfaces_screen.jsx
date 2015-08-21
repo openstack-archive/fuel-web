@@ -662,7 +662,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             var ifc = this.props.interface,
                 cluster = this.props.cluster,
                 locked = this.props.locked,
-                availableBondingModes = this.props.bondingAvailable ? this.getAvailableBondingModes() : [],
+                availableBondingModes = this.props.bondingAvailable || ifc.isBond() ? this.getAvailableBondingModes() : [],
                 bondable = !!availableBondingModes.length,
                 networkConfiguration = cluster.get('networkConfiguration'),
                 networks = networkConfiguration.get('networks'),

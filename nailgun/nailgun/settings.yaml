@@ -27,6 +27,7 @@ VERSION:
   feature_groups:
     - experimental
     - advanced
+    - mirantis
 
 FUEL_KEY: "Unknown"
 

@@ -690,8 +690,10 @@ define([
         constructorName: 'Volume',
         urlRoot: '/api/volumes/',
         getMinimalSize: function(minimum) {
-            var currentDisk = this.collection.disk;
-            var groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
+            var currentDisk = this.collection.disk,
+                groupAllocatedSpace = 0;
+            if (currentDisk && currentDisk.collection)
+                groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
             return minimum - groupAllocatedSpace;
         },
         getMaxSize: function() {

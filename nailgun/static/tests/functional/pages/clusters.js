@@ -14,22 +14,25 @@
  * under the License.
  **/
 
-define([], function() {
+define(['tests/functional/pages/modal'], function(ModalWindow) {
     'use strict';
     function ClustersPage(remote) {
         this.remote = remote;
+        this.modal = new ModalWindow(remote);
     }
 
     ClustersPage.prototype = {
         constructor: ClustersPage,
         createCluster: function(clusterName) {
+            var self = this;
             return this.remote
                 .setFindTimeout(1000)
                 .findByClassName('create-cluster')
                     .click()
                     .end()
-                .setFindTimeout(2000)
-                .findByCssSelector('div.modal-content')
+                .then(function() {
+                    return self.modal.waitToOpen();
+                })
                 .findByName('name')
                     .clearValue()
                     .type(clusterName)
@@ -41,16 +44,16 @@ define([], function() {
                     .pressKeys('\uE007')
                     .pressKeys('\uE007')
                     .end()
-                .setFindTimeout(4000)
-                .waitForDeletedByCssSelector('div.modal-content')
-                    .end();
+                .then(function() {
+                    return self.modal.waitToClose();
+                });
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {
-            var that = this;
+            var self = this;
             return this.remote
                 .setFindTimeout(5000)
-                .findAllByCssSelector(that.clusterSelector)
+                .findAllByCssSelector(self.clusterSelector)
                 .then(function(divs) {
                     return divs.reduce(
                         function(matchFound, element) {

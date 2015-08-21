@@ -164,6 +164,7 @@ class TestExtensionUtils(BaseTestCase):
 
         for ext in get_m.return_value:
             ext.on_node_reset.assert_called_once_with(node)
+            self.assertEqual(ext.set_default_node_volumes.called, 0)
 
     @mock.patch('nailgun.extensions.base.get_all_extensions',
                 return_value=make_mock_extensions())

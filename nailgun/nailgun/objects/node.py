@@ -455,7 +455,7 @@ class Node(NailgunObject):
             cluster_id = data.pop("cluster", None)
             data["cluster_id"] = cluster_id
 
-        if new_meta:
+        if new_meta and instance.status == consts.NODE_STATUSES.discover:
             instance.update_meta(new_meta)
             # The call to update_interfaces will execute a select query for
             # the current instance. This appears to overwrite the object in the
@@ -517,10 +517,7 @@ class Node(NailgunObject):
             pending_roles_changed,
             cluster_changed,
             disks_changed,
-        )) and instance.status not in (
-            consts.NODE_STATUSES.provisioning,
-            consts.NODE_STATUSES.deploying
-        ):
+        )) and instance.status == consts.NODE_STATUSES.discover:
             # TODO(eli): we somehow should move this
             # condition into extension, in order to do
             # that probably we will have to create separate

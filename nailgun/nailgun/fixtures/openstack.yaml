@@ -1519,11 +1519,11 @@
                 priority: null
               - type: "rpm"
                 name: "mos-updates"
-                uri: "http://mirror.fuel-infra.org/mos/centos-6/mos7.0/updates"
+                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos6/updates/x86_64"
                 priority: null
               - type: "rpm"
                 name: "mos-security"
-                uri: "http://mirror.fuel-infra.org/mos/centos-6/mos7.0/security"
+                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos6/security/x86_64"
                 priority: null
               - type: "rpm"
                 name: "Auxiliary"
@@ -1596,19 +1596,19 @@
                 priority: 1050
               - type: "deb"
                 name: "mos-updates"
-                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
                 suite: "mos7.0-updates"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-security"
-                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
                 suite: "mos7.0-security"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-holdback"
-                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
                 suite: "mos7.0-holdback"
                 section: "main restricted"
                 priority: 1100

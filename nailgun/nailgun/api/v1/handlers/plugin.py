@@ -69,4 +69,4 @@ class PluginSyncHandler(base.BaseHandler):
         except errors.ParseError as exc:
             raise self.http(400, msg=six.text_type(exc))
 
-        raise self.http(200)
+        raise self.http(200, {})

@@ -66,30 +66,19 @@ define([
                         .click()
                         .end();
             },
-            waitForModal: function() {
-                return this.remote
-                    .setFindTimeout(2000)
-                    .findByCssSelector('div.modal-content')
-                        .end();
-            },
-            closeModal: function() {
-                return this.remote
-                    .findByCssSelector('.modal-header button.close')
-                        .click()
-                        .end();
-            },
             waitForElementDeletion: function(cssSelector) {
                 return this.remote
-                    .setFindTimeout(2000)
+                    .setFindTimeout(5000)
                     .waitForDeletedByCssSelector(cssSelector)
-                    .catch()   // For cases when element is destroyed already
-                    .findByCssSelector(cssSelector)
-                        .then(function() {
-                            throw new Error('Element ' + cssSelector + ' was not destroyed');
-                        }, _.constant(true));
-            },
-            waitForModalToClose: function() {
-                return this.waitForElementDeletion('div.modal-content');
+                    .catch(function(error) {
+                        if (error.name != 'Timeout')
+                            throw error;
+                    })   // For cases when element is destroyed already
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            if (elements.length != 0)
+                                throw new Error('Element ' + cssSelector + ' was not destroyed');
+                        });
             },
             goToEnvironment: function(clusterName, tabName) {
                 var that = this;
@@ -124,7 +113,7 @@ define([
                         return that.clustersPage.goToEnvironment(clusterName);
                     })
                     .then(function() {
-                        return that.clusterPage.removeCluster();
+                        return that.clusterPage.removeCluster(clusterName);
                     })
                     .catch(function() {
                         if (!suppressErrors) throw new Error('Unable to delete cluster ' + clusterName);
@@ -150,8 +139,10 @@ define([
             addNodesToCluster: function(nodesAmount, nodesRoles) {
                 var that = this;
                 return this.remote
-                    .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
+                    .then(function() {
+                        return that.clusterPage.goToTab('Nodes');
+                    })
+                    .findByCssSelector('button.btn-add-nodes')
                         .click()
                         .end()
                     .findByCssSelector('div.role-panel')
@@ -168,6 +159,17 @@ define([
                     .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
                         .end();
+            },
+            doesCssSelectorContainText: function(cssSelector, searchedText) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                    .then(function(messages) {
+                        return messages.reduce(function(result, message) {
+                            return message.getVisibleText().then(function(visibleText) {
+                                return visibleText == searchedText || result;
+                            });
+                        }, false)
+                    });
             }
         };
         return CommonMethods;

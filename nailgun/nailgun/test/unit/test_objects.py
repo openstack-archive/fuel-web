@@ -146,6 +146,26 @@ class TestObjects(BaseIntegrationTest):
 
 class TestNodeObject(BaseIntegrationTest):
 
+    @mock.patch('nailgun.objects.node.fire_callback_on_node_update')
+    def test_update(self, callback_mock):
+        should_reset_env_statuses = (consts.NODE_STATUSES.discover, )
+        should_not_reset_env_statuses = \
+            (status for status in consts.NODE_STATUSES
+                if status not in should_reset_env_statuses)
+
+        for status in should_reset_env_statuses:
+            data = {"meta": {"disks": [{"name": "test"}]}}
+            instance = self.env.create_node(meta={"disks": []}, status=status)
+            objects.Node.update(instance, data)
+            callback_mock.assert_called_once_with(instance)
+            callback_mock.reset_mock()
+
+        for status in should_not_reset_env_statuses:
+            data = {"meta": {"disks": [{"name": "test"}]}}
+            instance = self.env.create_node(meta={"disks": []}, status=status)
+            objects.Node.update(instance, data)
+            self.assertFalse(callback_mock.called)
+
     @mock.patch('nailgun.objects.node.fire_callback_on_node_delete')
     def test_delete(self, callback_mock):
         cluster = self.env.create(

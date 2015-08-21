@@ -138,7 +138,7 @@ class bootstrapimg(urwid.WidgetWrap):
         if not self.checkMOSRepo(mos_repo_base, http_proxy):
             errors.append("MOS repository is not accessible.")
 
-        if len(errors) > 0:
+        if responses['flavor'] == 'ubuntu' and len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
             log.error("Errors: %s %s" % (len(errors), errors))
             return False

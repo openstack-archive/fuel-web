@@ -15,10 +15,12 @@
  **/
 
 define(['underscore',
-        '../../helpers'], function(_, Helpers) {
+        'tests/functional/pages/modal',
+        '../../helpers'], function(_, ModalWindow, Helpers) {
     'use strict';
     function ClusterPage(remote) {
         this.remote = remote;
+        this.modal = new ModalWindow(remote);
     }
 
     ClusterPage.prototype = {
@@ -33,28 +35,37 @@ define(['underscore',
                         tabName);
                 });
         },
-        removeCluster: function() {
+        removeCluster: function(clusterName) {
             var that = this;
             return this.remote
+                .then(function() {
+                    return that.goToTab('Dashboard');
+                })
+                .findByCssSelector('button.delete-environment-btn')
+                    .click()
+                    .end()
+                .then(function() {
+                    return that.modal.waitToOpen();
+                })
+                .then(function() {
+                    return that.modal.clickFooterButton('Delete');
+                })
+                .findByCssSelector('div.confirm-deletion-form input[type=text]')
                 .then(
-                    function() {
-                        return this.parent
-                            .setFindTimeout(2000)
+                    function(confirmInput) {
+                        return confirmInput
+                                .type(clusterName)
                             .then(function() {
-                                return that.goToTab('Actions');
-                            })
-                            .findByCssSelector('button.delete-environment-btn')
-                                .click()
-                                .end()
-                            .setFindTimeout(2000)
-                            .findByCssSelector('div.modal-content')
-                            .findByCssSelector('button.remove-cluster-btn')
-                                .click()
-                                .end()
-                            .setFindTimeout(2000)
-                            .waitForDeletedByCssSelector('div.modal-content');
-                    }
-                );
+                                return that.modal.clickFooterButton('Delete');
+                            });
+                    },
+                    function(error) {
+                        if (error.name && error.name == 'NoSuchElement') return true;
+                        throw error;
+                    })
+                .then(function() {
+                    return that.modal.waitToClose();
+                });
         },
         checkNodeRoles: function(assignRoles) {
             return this.remote
@@ -97,6 +108,50 @@ define(['underscore',
                         },
                         true);
                 });
+        },
+        resetEnvironment: function(clusterName) {
+            var that = this;
+            return this.remote
+                .findByCssSelector('button.reset-environment-btn')
+                    .click()
+                    .end()
+                .then(function() {
+                    return that.modal.waitToOpen();
+                })
+                .then(function() {
+                    return that.modal.checkTitle('Reset Environment');
+                })
+                .then(function() {
+                    return that.modal.clickFooterButton('Reset');
+                })
+                .setFindTimeout(20000)
+                .findByCssSelector('div.confirm-reset-form input[type=text]')
+                    .then(
+                        function(confirmationInput) {
+                            return confirmationInput
+                                    .type(clusterName)
+                                .then(function() {
+                                    return that.modal.clickFooterButton('Reset');
+                                });
+                        },
+                        function(error) {
+                            if (error.name && error.name == 'NoSuchElement') return true;
+                            throw error;
+                        })
+                .then(function() {
+                    return that.modal.waitToClose();
+                })
+                .setFindTimeout(2000)
+                .waitForDeletedByCssSelector('div.progress-bar');
+        },
+        isTabLocked: function(tabName) {
+            var that = this;
+            return this.remote
+                .then(function() {
+                    return that.goToTab(tabName);
+                })
+                .findByCssSelector('div.tab-content div.row.changes-locked')
+                    .then(_.constant(true), _.constant(false));
         }
     };
     return ClusterPage;

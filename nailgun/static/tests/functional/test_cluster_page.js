@@ -70,14 +70,14 @@ define([
             },
             'Add Cluster Nodes': function() {
                 var nodesAmount = 3,
-                    that = this,
+                    self = this,
                     applyButton;
                 return this.remote
                     .then(function() {
                         return common.goToEnvironment(clusterName);
                     })
                     .setFindTimeout(5000)
-                    .findByCssSelector('button.btn-add-nodes')
+                    .findByCssSelector('a.btn-add-nodes')
                         .click()
                         .end()
                     .findByCssSelector('button.btn-apply')
@@ -113,7 +113,7 @@ define([
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {
-                                return that.remote
+                                return self.remote
                                     .setFindTimeout(1000)
                                     .findByCssSelector('div.node:nth-child(' + index + ')')
                                     .catch(function() {

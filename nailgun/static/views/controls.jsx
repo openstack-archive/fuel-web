@@ -155,6 +155,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             );
         },
         renderLabel: function(children) {
+            if (!this.props.label && !children) return null;
             return (
                 <label key='label' htmlFor={this.props.id}>
                     {children}

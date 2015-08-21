@@ -3075,8 +3075,11 @@ input[type=range] {
       margin: 0 0 @base-indent @base-indent * 0.5;
     }
     .form-inline {
-      margin-bottom: 5px;
+      margin-bottom: 15px;
       position: relative;
+      .form-group {
+        label {float:none;}
+      }
     }
     .form-group {
       margin: 0;
@@ -3098,7 +3101,7 @@ input[type=range] {
       }
     }
     .buttons {
-      padding: @base-indent * 0.5 0 0 @base-indent * 0.5;
+      padding: 0 0 0 @base-indent * 0.5;
     }
   }
 }
@@ -3627,7 +3630,7 @@ input[type=range] {
           width: @mini-width;
         }
         .validation-error {
-          margin-top: 19px;
+          margin-top: 9px;
           span {
             margin-left: -5px;
           }
@@ -3656,7 +3659,7 @@ input[type=range] {
               padding-left: 0;
             }
             .validation-error {
-              margin-top: @base-indent;
+              margin-top: -5px;
             }
           }
           .form-group {
@@ -3671,7 +3674,7 @@ input[type=range] {
           }
         }
         .validation-error {
-          margin-top: @base-indent * 2;
+          margin-top: 5px;
           span {
             font-size: @base-font-size - 2;
             margin-left: 10px;
@@ -3717,7 +3720,7 @@ input[type=range] {
   .range {
     .range-row {
       .form-group {
-        margin-top: -@base-indent;
+        margin-top: 5px;
         padding-left: 0;
         margin-right: 10px;
       }
@@ -3740,9 +3743,9 @@ input[type=range] {
       width: auto;
     }
     input[type=text] {
-      margin-left: -@base-indent * 4;
+      margin-left: -@base-indent * 3;
       // to fit the width of other controls
-      width: 248px;
+      width: 246px;
     }
     .checkbox-group {
       padding-left: 0;

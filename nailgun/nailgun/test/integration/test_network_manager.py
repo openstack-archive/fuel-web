@@ -709,6 +709,16 @@ class TestNeutronManager70(BaseNetworkManagerTest):
             }
         )
 
+    def _check_vip_configuration(self, expected_vips, real_vips):
+        for vip in expected_vips:
+            name = vip['name']
+            self.assertIn(name, real_vips)
+            self.assertEqual(real_vips[name]['namespace'],
+                             vip['namespace'])
+            self.assertEqual(real_vips[name]['node_roles'],
+                             ['controller',
+                              'primary-controller'])
+
     def _get_network_role_metadata(self, **kwargs):
         network_role = {
             'id': 'test_network_role',
@@ -774,10 +784,21 @@ class TestNeutronManager70(BaseNetworkManagerTest):
             'public_vip', 'public_vrouter_vip'
         ]
 
+        expected_vips = [
+            {'name': 'vrouter', 'namespace': 'vrouter'},
+            {'name': 'vrouter_pub', 'namespace': 'vrouter'},
+            {'name': 'management', 'namespace': 'haproxy'},
+            {'name': 'public', 'namespace': 'haproxy'},
+        ]
+
         assigned_vips = self.net_manager.assign_vips_for_net_groups_for_api(
             self.cluster)
 
-        self.assertItemsEqual(expected_aliases, assigned_vips.keys())
+        self._check_vip_configuration(expected_vips, assigned_vips['vips'])
+
+        # Also check that the configuration in the old format is included
+        for a in expected_aliases:
+            self.assertIn(a, assigned_vips)
 
     def test_assign_vips_for_net_groups(self):
         expected_vips = [
@@ -790,14 +811,7 @@ class TestNeutronManager70(BaseNetworkManagerTest):
         assigned_vips = self.net_manager.assign_vips_for_net_groups(
             self.cluster)
 
-        for vip in expected_vips:
-            name = vip['name']
-            self.assertIn(name, assigned_vips)
-            self.assertEqual(assigned_vips[name]['namespace'],
-                             vip['namespace'])
-            self.assertEqual(assigned_vips[name]['node_roles'],
-                             ['controller',
-                              'primary-controller'])
+        self._check_vip_configuration(expected_vips, assigned_vips)
 
     def test_get_assigned_vips(self):
         self.net_manager.assign_vips_for_net_groups(self.cluster)

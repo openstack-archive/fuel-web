@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+from nailgun import consts
 from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Release
@@ -99,3 +100,25 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(resp.json_body['is_deployable'], True)
+
+    @mock.patch.dict(settings.VERSION, {'feature_groups': ['experimental']})
+    def test_unavailable_release_not_deployable_in_experimental(self):
+        # set deployable to False and state to 'unavailable'
+        release = self.env.create_release(api=False)
+        resp = self.app.put(
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+            params=jsonutils.dumps({
+                'is_deployable': False,
+                'state': consts.RELEASE_STATES.unavailable
+            }),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+
+        # check that release is deployable
+        resp = self.app.get(
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+            headers=self.default_headers,
+        )
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(resp.json_body['is_deployable'], False)

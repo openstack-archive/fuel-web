@@ -64,6 +64,10 @@ class ClusterValidator(BasicValidator):
             if not release:
                 raise errors.InvalidData(
                     "Invalid release ID", log_message=True)
+            if not objects.Release.is_deployable(release):
+                raise errors.NotAllowed(
+                    "Release with ID '{0}' is not deployable.".format(
+                        release_id), log_message=True)
             cls._validate_mode(d, release)
 
         pend_release_id = d.get("pending_release_id")

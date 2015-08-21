@@ -1642,9 +1642,9 @@ class TestHandlers(BaseIntegrationTest):
     def test_occurs_error_release_is_unavailable(self):
         self.env.create(
             nodes_kwargs=[
-                {'roles': ['controller'], 'pending_addition': True}],
-            release_kwargs={
-                'state': consts.RELEASE_STATES.unavailable})
+                {'roles': ['controller'], 'pending_addition': True}])
+
+        self.env.clusters[0].release.state = consts.RELEASE_STATES.unavailable
 
         resp = self.app.put(
             reverse(

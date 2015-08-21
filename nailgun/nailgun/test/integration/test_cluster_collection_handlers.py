@@ -128,7 +128,8 @@ class TestHandlers(BaseIntegrationTest):
         release.version = "1111-6.0"
         release.name = u"release_name_" + str(release.version)
         release.description = u"release_desc" + str(release.version)
-        release.operating_system = "CentOS"
+        release.operating_system = consts.RELEASE_OS.ubuntu
+        release.state = consts.RELEASE_STATES.available
         release.networks_metadata = self.env.get_default_networks_metadata()
         release.attributes_metadata = {
             "editable": {

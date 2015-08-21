@@ -151,6 +151,7 @@ class EnvironmentManager(object):
         release_data.update({
             'name': u"release_name_" + version,
             'version': version,
+            'state': consts.RELEASE_STATES.available,
             'description': u"release_desc" + version,
         })
 

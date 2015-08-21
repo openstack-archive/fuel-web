@@ -141,6 +141,9 @@ class Release(NailgunObject):
         :param instance: a Release instance
         :returns: True if a given release is deployable; otherwise - False
         """
+        if instance.state == consts.RELEASE_STATES.unavailable:
+            return False
+
         # in experimental mode we deploy all releases
         if 'experimental' in settings.VERSION['feature_groups']:
             return True

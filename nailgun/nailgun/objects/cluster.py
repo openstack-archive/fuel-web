@@ -26,6 +26,8 @@ import sqlalchemy as sa
 import yaml
 
 
+from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -43,35 +45,6 @@ from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import traverse
-
-
-CLUSTER_UI_SETTINGS = {
-    "type": "object",
-    "required": ["view_mode", "filter", "sort", "search"],
-    "properties": {
-        "view_mode": {
-            "type": "string",
-            "description": "View mode of cluster nodes",
-            "enum": list(consts.NODE_VIEW_MODES),
-        },
-        "filter": {
-            "type": "object",
-            "description": "Filters applied to node list",
-        },
-        "sort": {
-            "type": "array",
-            "description": "Sorters applied to node list",
-            'minItems': 1,
-            'items': [
-                {'type': 'object'},
-            ],
-        },
-        "search": {
-            "type": "string",
-            "description": "Search value applied to node list",
-        },
-    }
-}
 
 
 class Attributes(NailgunObject):
@@ -155,35 +128,7 @@ class Cluster(NailgunObject):
     serializer = ClusterSerializer
 
     #: Cluster JSON schema
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Cluster",
-        "description": "Serialized Cluster object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "number"},
-            "name": {"type": "string"},
-            "mode": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_MODES)
-            },
-            "status": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_STATUSES)
-            },
-            "net_provider": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_NET_PROVIDERS)
-            },
-            "ui_settings": CLUSTER_UI_SETTINGS,
-            "release_id": {"type": "number"},
-            "pending_release_id": {"type": "number"},
-            "replaced_deployment_info": {"type": "object"},
-            "replaced_provisioning_info": {"type": "object"},
-            "is_customized": {"type": "boolean"},
-            "fuel_version": {"type": "string"}
-        }
-    }
+    schema = cluster_schema.single_schema
 
     @classmethod
     def create(cls, data):

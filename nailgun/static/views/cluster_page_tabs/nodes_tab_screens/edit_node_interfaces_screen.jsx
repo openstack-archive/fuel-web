@@ -239,7 +239,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         bondingAvailable: function() {
             var availableBondTypes = this.getBondType();
-            return !this.isLocked() && !!availableBondTypes && !this.configurationTemplateExists();
+            return !!availableBondTypes && !this.configurationTemplateExists();
         },
         getBondType: function() {
             return _.compact(_.flatten(_.map(this.props.bondingConfig.availability, function(modeAvailabilityData) {
@@ -473,7 +473,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                             <div className='alert alert-warning'>{i18n(ns + 'configuration_template_warning')}</div>
                         </div>
                     }
-                    {bondingAvailable &&
+                    {bondingAvailable && !locked &&
                         <div className='col-xs-12'>
                             <div className='page-buttons'>
                                 <div className='well clearfix'>
@@ -662,8 +662,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             var ifc = this.props.interface,
                 cluster = this.props.cluster,
                 locked = this.props.locked,
-                availableBondingModes = this.props.bondingAvailable ? this.getAvailableBondingModes() : [],
-                bondable = !!availableBondingModes.length,
+                availableBondingModes = ifc.isBond() ? this.getAvailableBondingModes() : [],
                 networkConfiguration = cluster.get('networkConfiguration'),
                 networks = networkConfiguration.get('networks'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
@@ -679,7 +678,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 },
                 bondProperties = ifc.get('bond_properties'),
                 interfaceProperties = ifc.get('interface_properties') || null,
-                offloadingModes = ifc.get('offloading_modes') || [];
+                offloadingModes = ifc.get('offloading_modes') || [],
+                bondingPossible = this.props.bondingAvailable && !locked;
 
             return this.props.connectDropTarget(
                 <div className='ifc-container'>
@@ -690,8 +690,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     })}>
                         {ifc.isBond() &&
                             <div className='bond-properties clearfix forms-box'>
-                                <div className='ifc-name pull-left'>
-                                    {this.props.bondingAvailable ?
+                                <div className={utils.classNames({
+                                    'ifc-name pull-left': true,
+                                    'no-checkbox': !bondingPossible
+                                })}>
+                                    {bondingPossible ?
                                         <controls.Input
                                             type='checkbox'
                                             label={ifc.get('name')}
@@ -704,7 +707,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 </div>
                                 <controls.Input
                                     type='select'
-                                    disabled={!this.props.bondingAvailable}
+                                    disabled={!bondingPossible}
                                     onChange={this.bondingModeChanged}
                                     value={this.getBondMode()}
                                     label={i18n(ns + 'bonding_mode')}
@@ -715,7 +718,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     <controls.Input
                                         type='select'
                                         value={bondProperties.xmit_hash_policy}
-                                        disabled={!this.props.bondingAvailable}
+                                        disabled={!bondingPossible}
                                         onChange={this.onPolicyChange}
                                         label={i18n(ns + 'bonding_policy')}
                                         children={this.getBondingOptions(this.getBondPropertyValues('xmit_hash_policy', 'values'), 'hash_policy')}
@@ -726,7 +729,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     <controls.Input
                                         type='select'
                                         value={bondProperties.lacp_rate}
-                                        disabled={!this.props.bondingAvailable}
+                                        disabled={!bondingPossible}
                                         onChange={this.onLacpChange}
                                         label={i18n(ns + 'lacp_rate')}
                                         children={this.getBondingOptions(this.getBondPropertyValues('lacp_rate', 'values'), 'lacp_rates')}
@@ -739,7 +742,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         <div className='networks-block row'>
                             <div className='col-xs-3'>
                                 <div className='ifc-checkbox pull-left'>
-                                    {!ifc.isBond() && bondable ?
+                                    {!ifc.isBond() && bondingPossible ?
                                         <controls.Input
                                             type='checkbox'
                                             onChange={this.bondingChanged}
@@ -764,7 +767,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                                     <div>
                                                         {i18n(ns + 'speed')}: {this.props.interfaceSpeeds[index].join(', ')}
                                                     </div>
-                                                    {(this.props.bondingAvailable && slaveInterfaces.length >= 3) &&
+                                                    {(bondingPossible && slaveInterfaces.length >= 3) &&
                                                         <button className='btn btn-link' onClick={_.partial(this.props.removeInterfaceFromBond, ifc.get('name'), slaveInterface.get('name'))}>
                                                             {i18n('common.remove_button')}
                                                         </button>

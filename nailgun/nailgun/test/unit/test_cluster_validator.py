@@ -15,6 +15,7 @@
 
 from mock import Mock
 from mock import patch
+from mock import PropertyMock
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.cluster import ClusterValidator
@@ -68,6 +69,13 @@ class TestClusterValidator(BaseTestCase):
     def test_release_non_exists_validation(self, release_get_by_uid):
         release_get_by_uid.return_value = None
         self.assertRaises(errors.InvalidData,
+                          ClusterValidator.validate, self.cluster_data)
+
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_release_unavailable_validation(self, release_get_by_uid):
+        type(release_get_by_uid.return_value).state = PropertyMock(
+            return_value=consts.RELEASE_STATES.unavailable)
+        self.assertRaises(errors.NotAllowed,
                           ClusterValidator.validate, self.cluster_data)
 
     def test_pending_release_validation_success(self):

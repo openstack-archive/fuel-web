@@ -47,10 +47,10 @@ define([], function() {
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {
-            var that = this;
+            var self = this;
             return this.remote
                 .setFindTimeout(5000)
-                .findAllByCssSelector(that.clusterSelector)
+                .findAllByCssSelector(self.clusterSelector)
                 .then(function(divs) {
                     return divs.reduce(
                         function(matchFound, element) {

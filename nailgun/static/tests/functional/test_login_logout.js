@@ -41,11 +41,10 @@ define([
                     .then(function() {
                         return loginPage.login('login', '*****');
                     })
-                    .findByCssSelector('div.login-fields-box p.text-danger')
-                    .isDisplayed()
-                    .then(function(errorShown) {
-                        assert.ok(errorShown, 'Error message is expected to be displayed');
-                    });
+                    .findByCssSelector('div.login-error')
+                        .then(null, function() {
+                            throw new Error('Error message is expected to be displayed');
+                        });
             },
             'Login with proper credentials': function() {
                 return this.remote

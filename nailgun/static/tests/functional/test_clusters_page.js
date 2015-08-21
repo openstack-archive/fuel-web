@@ -43,7 +43,7 @@ define([
             afterEach: function() {
                 return this.remote
                     .then(function() {
-                        return common.removeCluster(clusterName, true);
+                        return common.removeCluster(clusterName);
                     });
             },
             'Create Cluster': function() {

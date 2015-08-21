@@ -144,6 +144,8 @@ class BasePluginTest(base.BaseIntegrationTest):
             expect_errors=expect_errors
         )
 
+        self.assertValidJSON(resp.body)
+
         return resp
 
 

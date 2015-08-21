@@ -1096,6 +1096,9 @@ class BaseTestCase(TestCase):
             self.assertIsInstance(inst, exc)
             self.assertEqual(inst.message, msg)
 
+    def assertValidJSON(self, data):
+        self.assertNotRaises(ValueError, jsonutils.loads, data)
+
     def datadiff(self, node1, node2, path=None, ignore_keys=[],
                  compare_sorted=False):
         if path is None:

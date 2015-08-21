@@ -1501,6 +1501,17 @@ class NetworkManager(object):
 
 class AllocateVIPs70Mixin(object):
 
+
+    @classmethod
+    def _build_advanced_vip_info(cls, vip_info, role, address):
+        return {'network_role': role['id'],
+                'namespace': vip_info.get('namespace'),
+                'ipaddr': address,
+                'node_roles': vip_info.get('node_roles',
+                                           ['controller',
+                                            'primary-controller'])}
+
+
     @classmethod
     def find_network_role_by_id(cls, cluster, role_id):
         """Returns network role for specified role id.
@@ -1563,6 +1574,14 @@ class AllocateVIPs70Mixin(object):
         vips = {}
         for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
                 cluster):
+
+            vip_name = vip_info['name']
+            vips[vip_name] = cls._build_advanced_vip_info(vip_info,
+                                                          role,
+                                                          vip_addr)
+
+            # Add obsolete configuration.
+            # TODO(romcheg): Remove this in the 8.0 release
             alias = vip_info.get('alias')
             if alias:
                 vips[alias] = vip_addr
@@ -1591,13 +1610,7 @@ class AllocateVIPs70Mixin(object):
         for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
                 cluster):
             vip_name = vip_info['name']
-            vips[vip_name] = {
-                'network_role': role['id'],
-                'namespace': vip_info.get('namespace'),
-                'ipaddr': vip_addr,
-                'node_roles': vip_info.get('node_roles',
-                                           ['controller',
-                                            'primary-controller'])
-            }
-
+            vips[vip_name] = cls._build_advanced_vip_info(vip_info,
+                                                          role,
+                                                          vip_addr)
         return vips

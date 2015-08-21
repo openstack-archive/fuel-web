@@ -774,10 +774,27 @@ class TestNeutronManager70(BaseNetworkManagerTest):
             'public_vip', 'public_vrouter_vip'
         ]
 
+        expected_vips = [{'alias': 'management_vip',
+                          'name': 'vrouter',
+                          'namespace': 'vrouter'},
+                         {'alias': 'management_vrouter_vip',
+                          'name': 'vrouter_pub',
+                          'namespace': 'vrouter'},
+                         {'alias': 'public_vip',
+                          'name': 'management',
+                          'namespace': 'haproxy'},
+                         {'alias': 'public_vrouter_vip',
+                          'name': 'public',
+                          'namespace': 'haproxy'}]
+
         assigned_vips = self.net_manager.assign_vips_for_net_groups_for_api(
             self.cluster)
 
-        self.assertItemsEqual(expected_aliases, assigned_vips.keys())
+        self._check_vip_configuration(expected_vips, assigned_vips)
+
+        # Also check that the configuration in the old format is included
+        for a in expected_aliases:
+            self.assertIn(a, assigned_vips)
 
     def test_assign_vips_for_net_groups(self):
         expected_vips = [
@@ -790,12 +807,15 @@ class TestNeutronManager70(BaseNetworkManagerTest):
         assigned_vips = self.net_manager.assign_vips_for_net_groups(
             self.cluster)
 
+        self._check_vip_configuration(expected_vips, assigned_vips)
+
+    def _check_vip_configuration(self, expected_vips, real_vips):
         for vip in expected_vips:
             name = vip['name']
-            self.assertIn(name, assigned_vips)
-            self.assertEqual(assigned_vips[name]['namespace'],
+            self.assertIn(name, real_vips)
+            self.assertEqual(real_vips[name]['namespace'],
                              vip['namespace'])
-            self.assertEqual(assigned_vips[name]['node_roles'],
+            self.assertEqual(real_vips[name]['node_roles'],
                              ['controller',
                               'primary-controller'])
 

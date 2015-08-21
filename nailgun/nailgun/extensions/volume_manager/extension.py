@@ -88,7 +88,9 @@ class VolumeManagerExtension(BaseExtension):
 
     @classmethod
     def on_node_reset(cls, node):
-        cls.set_default_node_volumes(node)
+        # due to https://bugs.launchpad.net/fuel/+bug/1423328 disk partitions
+        # shouldn't be changed after cluster reset
+        pass
 
     @classmethod
     def on_node_delete(cls, node):

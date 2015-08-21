@@ -395,6 +395,81 @@ class TestNetworkManager(BaseNetworkManagerTest):
             self.assertEqual(len(admin_ips), 1)
             self.assertEqual(admin_ips[0].ip_addr, ip)
 
+    def test_get_node_networks_ips(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
+        node_net_ips = \
+            dict([(ip.network_data.name, ip.ip_addr) for ip in node.ip_addrs])
+        self.assertEquals(node_net_ips,
+                          self.env.network_manager.get_node_networks_ips(node))
+
+    def test_set_node_networks_ips(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
+        node_net_ips = \
+            dict([(net.name, self.env.network_manager.get_free_ips(net)[0])
+                  for net in node.networks])
+        self.env.network_manager.set_node_networks_ips(node, node_net_ips)
+        self.assertEquals(node_net_ips,
+                          self.env.network_manager.get_node_networks_ips(node))
+
+    def test_set_node_netgroups_ids(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
+        admin_ng_id = \
+            self.env.network_manager.get_admin_network_group_id(node.id)
+        node_ng_ids = dict([(ip.network, admin_ng_id) for ip in node.ip_addrs])
+        self.env.network_manager.set_node_netgroups_ids(node, node_ng_ids)
+        for ip in node.ip_addrs:
+            self.assertEquals(admin_ng_id, ip.network)
+
+    def test_set_nic_assignment_netgroups_ids(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
+        admin_ng_id = \
+            self.env.network_manager.get_admin_network_group_id(node.id)
+        nic_ng_ids = \
+            dict([(net.id, admin_ng_id) for iface in node.nic_interfaces
+                  for net in iface.assigned_networks_list])
+        self.env.network_manager.set_nic_assignment_netgroups_ids(node,
+                                                                  nic_ng_ids)
+        self.db.refresh(node)
+        for iface in node.nic_interfaces:
+            for net in iface.assigned_networks_list:
+                self.assertEquals(admin_ng_id, net.id)
+
+    def test_set_bond_assignment_netgroups_ids(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
+        assigned_networks = [net for iface in node.interfaces
+                             for net in iface.assigned_networks]
+        self.env.network_manager._update_attrs({
+            'id': node.id,
+            'interfaces': [{
+                'name': 'ovs-bond0',
+                'type': consts.NETWORK_INTERFACE_TYPES.bond,
+                'mode': consts.BOND_MODES.balance_slb,
+                'slaves': [{'name': 'eth0'}],
+                'assigned_networks': assigned_networks
+            }]
+        })
+        admin_ng_id = \
+            self.env.network_manager.get_admin_network_group_id(node.id)
+        bond_ng_ids = \
+            dict([(net.id, admin_ng_id) for iface in node.bond_interfaces
+                  for net in iface.assigned_networks_list])
+        self.env.network_manager.set_bond_assignment_netgroups_ids(node,
+                                                                   bond_ng_ids)
+        self.db.refresh(node)
+        for iface in node.bond_interfaces:
+            for net in iface.assigned_networks_list:
+                self.assertEquals(admin_ng_id, net.id)
+
     def test_get_assigned_vips(self):
         vips_to_create = {
             'management': {

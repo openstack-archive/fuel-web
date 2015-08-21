@@ -28,7 +28,7 @@ define([
         login: function(username, password) {
             username = username || Helpers.username;
             password = password || Helpers.password;
-            var that = this;
+            var self = this;
 
             return this.remote
                 .setWindowSize(1280, 1024)
@@ -36,7 +36,7 @@ define([
                 .getCurrentUrl()
                 .then(function(url) {
                     if (url !== Helpers.serverUrl + '/#login') {
-                        return that.logout();
+                        return self.logout();
                     }
                 })
                 .setFindTimeout(10000)

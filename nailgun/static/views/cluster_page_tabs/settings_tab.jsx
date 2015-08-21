@@ -195,10 +195,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 someSettingsEditable = _.any(settings.attributes, function(group) {return group.metadata.always_editable;}),
                 hasChanges = this.hasChanges(),
-                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
+                classes = {
+                    row: true,
+                    'changes-locked': lockedCluster
+                };
 
             return (
-                <div key={this.state.key} className='row'>
+                <div key={this.state.key} className={utils.classNames(classes)}>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
                     <SettingSubtabs
                         settings={settings}

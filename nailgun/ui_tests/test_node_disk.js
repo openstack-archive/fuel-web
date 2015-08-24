@@ -58,8 +58,8 @@ casper.then(function() {
     this.then(function() {
         this.test.comment('Testing nodes disk block');
         this.click(sdaDisk + ' .disk-visual [data-volume=os] .toggle');
-        vmSDA = this.getElementAttribute(sdaDiskVM + ' input', 'value');
-        osSDA = this.getElementAttribute(sdaDiskOS + ' input', 'value');
+        vmSDA = this.getElementAttribute(sdaDiskVM + ' input[type=number]', 'value');
+        osSDA = this.getElementAttribute(sdaDiskOS + ' input[type=number]', 'value');
         this.test.assertExists(sdaDiskOS, 'Base system group form is presented');
         this.test.assertExists(sdaDiskVM, 'Virtual Storage group form is presented');
         this.test.assertDoesntExist(sdaDisk + ' .disk-visual [data-volume=os] .close-btn', 'Button Close for Base system group is not presented');

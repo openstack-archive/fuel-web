@@ -26,6 +26,7 @@ class TestApi(unittest2.TestCase):
     def setUp(self):
         self.urls = ['http://url{0}'.format(i) for i in range(10)]
         self.paths = ['file:///tmp/test_api{0}'.format(i) for i in range(10)]
+        self.ftps = ['ftp://url{0}'.format(i) for i in range(10)]
 
     @requests_mock.Mocker()
     def test_check_urls(self, req_mocker):
@@ -54,5 +55,14 @@ class TestApi(unittest2.TestCase):
     @mock.patch('os.path.exists')
     def test_check_paths_fail(self, mock_exists):
         mock_exists.return_value = False
+        with self.assertRaises(errors.UrlNotAvailable):
+            api.check_urls(self.paths)
+
+    @mock.patch('urllib2.urlopen')
+    def test_check_ftp(self, _):
+        check_result = api.check_urls(self.ftps, timeout=5)
+        self.assertTrue(check_result)
+
+    def test_check_ftp_fail(self):
         with self.assertRaises(errors.UrlNotAvailable):
             api.check_urls(self.paths)

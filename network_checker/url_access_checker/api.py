@@ -15,6 +15,7 @@
 import json
 import os
 import socket
+import urllib2
 
 import requests
 
@@ -22,6 +23,8 @@ import url_access_checker.errors as errors
 
 
 FILE_PREFIX = 'file://'
+HTTP_PREFIX = 'http://'
+FTP_PREFIX = 'ftp://'
 
 
 def check_urls(urls, proxies=None, timeout=60):
@@ -64,8 +67,12 @@ def _get_response_tuple(url, proxies=None, timeout=60):
 
     if url.startswith(FILE_PREFIX):
         return _get_file_existence_tuple(url)
-    else:
+    elif url.startswith(HTTP_PREFIX):
         return _get_http_response_tuple(url, proxies, timeout)
+    elif url.startswith(FTP_PREFIX):
+        return _get_ftp_response_tuple(url, timeout)
+    else:
+        raise errors.InvalidProtocol(url)
 
 
 def _get_file_existence_tuple(url):
@@ -91,4 +98,14 @@ def _get_http_response_tuple(url, proxies=None, timeout=60):
             requests.exceptions.ProxyError,
             ValueError,
             socket.timeout):
+        return (True, url)
+
+
+def _get_ftp_response_tuple(url, timeout=60):
+    try:
+        # NOTE(mkwiek): requests don't have tested ftp adapter yet, so
+        # lower level urllib2 is used here
+        urllib2.urlopen(url, timeout=timeout)
+        return (False, url)
+    except urllib2.URLError:
         return (True, url)

@@ -20,6 +20,6 @@ Description: <insert up to 60 chars description>
 
 Package: nailgun-net-check
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-pypcap, vlan, python-scapy, cliff-tablib, python-stevedore, python-daemonize, python-yaml, tcpdump, python-requests
+Depends: ${misc:Depends}, ${python:Depends}, python-pypcap, vlan, python-scapy, cliff-tablib, python-stevedore, python-daemonize, python-yaml, tcpdump, python-requests, python-six
 Description: NailGun client net-check
  .

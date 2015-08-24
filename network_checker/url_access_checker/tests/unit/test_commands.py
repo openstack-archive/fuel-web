@@ -22,7 +22,7 @@ from url_access_checker import cli
 class TestUrlCheckerCommands(unittest.TestCase):
 
     def setUp(self):
-        self.urls = ['url{0}'.format(i) for i in range(10)]
+        self.urls = ['http://url{0}'.format(i) for i in range(10)]
 
     @mock.patch('requests.get')
     def test_check_urls_success(self, get_mock):

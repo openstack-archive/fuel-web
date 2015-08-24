@@ -176,6 +176,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 }, this))
                 .done(_.bind(function() {
                     dispatcher.trigger('updateNodeStats');
+                    this.state.result.resolve();
                     this.close();
                 }, this))
                 .fail(this.showError);

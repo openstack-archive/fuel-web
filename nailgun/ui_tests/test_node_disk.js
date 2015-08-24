@@ -58,8 +58,8 @@ casper.then(function() {
     this.then(function() {
         this.test.comment('Testing nodes disk block');
         this.click(sdaDisk + ' .disk-visual [data-volume=os] .toggle');
-        vmSDA = this.getElementAttribute(sdaDiskVM + ' input', 'value');
-        osSDA = this.getElementAttribute(sdaDiskOS + ' input', 'value');
+        vmSDA = this.getElementAttribute(sdaDiskVM + ' input[type=number]', 'value');
+        osSDA = this.getElementAttribute(sdaDiskOS + ' input[type=number]', 'value');
         this.test.assertExists(sdaDiskOS, 'Base system group form is presented');
         this.test.assertExists(sdaDiskVM, 'Virtual Storage group form is presented');
         this.test.assertDoesntExist(sdaDisk + ' .disk-visual [data-volume=os] .close-btn', 'Button Close for Base system group is not presented');
@@ -91,7 +91,10 @@ casper.then(function() {
         this.click(sdaDisk + ' .disk-visual [data-volume=vm] .close-btn');
         this.test.assertEquals(this.getElementBounds(sdaDisk + ' .disk-visual [data-volume=vm]').width, 0, 'VM group was removed successfully');
         this.click('.btn-revert-changes');
-        this.test.assertEvalEquals(function(sdaDiskVM) {return $(sdaDiskVM + ' input[type=number]').attr('value')}, vmSDA, 'Volume group input control VM contains default value', {sdaDiskVM:sdaDiskVM});
+        this.test.assertSelectorAppears('.btn-revert-changes:disabled', 'Changes reverted back');
+        this.then(function() {
+            this.test.assertEvalEquals(function(sdaDiskVM) {return $(sdaDiskVM + ' input[type=number]').attr('value')}, vmSDA, 'Volume group input control VM contains default value', {sdaDiskVM:sdaDiskVM});
+        });    
         this.click(sdaDisk + ' .disk-visual [data-volume=vm] .close-btn');
         this.test.assertEval(function(sdaDisk) {return $(sdaDisk + ' .disk-visual [data-volume=unallocated]').width() > 0}, 'There is unallocated space after Virtual Storage VG removal',{sdaDisk:sdaDisk});
         this.test.assertEvalEquals(function(sdaDiskVM) {return $(sdaDiskVM + ' input[type=number]').val()}, '0', 'Volume group input control contains correct value',{sdaDiskVM:sdaDiskVM});

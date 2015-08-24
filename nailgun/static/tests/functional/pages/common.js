@@ -103,6 +103,16 @@ define([
                         return self.clustersPage.createCluster(clusterName);
                     });
             },
+            createVCenterNovaCluster: function(clusterName) {
+                var that = this;
+                return this.remote
+                    .then(function() {
+                        return that.clickLink('Environments');
+                    })
+                    .then(function() {
+                        return that.clustersPage.createVCenterNovaCluster(clusterName);
+                    });
+            },
             removeCluster: function(clusterName, suppressErrors) {
                 var self = this;
                 return this.remote
@@ -170,6 +180,11 @@ define([
                             });
                         }, false)
                     });
+            },
+            setInputElementValue: function(element, value) {
+                element.clearValue()
+                    .type(value)
+                    .end();
             }
         };
         return CommonMethods;

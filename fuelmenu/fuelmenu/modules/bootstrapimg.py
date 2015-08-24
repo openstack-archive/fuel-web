@@ -66,7 +66,8 @@ class bootstrapimg(urwid.WidgetWrap):
                 "value": "http://archive.ubuntu.com/ubuntu"},
             "BOOTSTRAP/MIRROR_MOS": {
                 "label": "MOS mirror",
-                "tooltip": "MOS APT repo URL",
+                "tooltip": ("MOS APT repo URL (can use file:// protocol, will"
+                            "use local mirror in such case"),
                 "value": mos_repo_dflt},
             "BOOTSTRAP/HTTP_PROXY": {
                 "label": "HTTP proxy",

@@ -13,6 +13,7 @@
 #    under the License.
 
 import json
+import os
 import socket
 
 import requests
@@ -20,11 +21,20 @@ import requests
 import url_access_checker.errors as errors
 
 
+FILE_PREFIX = 'file://'
+
+
 def check_urls(urls, proxies=None, timeout=60):
-    """Checks a set of urls to see if they are up and returning 200
+    """Checks a set of urls to see if they are valid
+
+    Url is valid if
+    - it returns 200 upon requesting it with http (if it doesn't specify
+    protocol as "file")
+    - it is an existing file or directory (if the protocol used in url is
+    "file")
 
     Arguments:
-    url -- a string containing url for testing
+    urls -- an iterable containing urls for testing
     proxies -- proxy servers to use for the request
     timeout -- the max time to wait for a response, default 60 seconds
     """
@@ -43,7 +53,7 @@ def _get_response_tuple(url, proxies=None, timeout=60):
     """Return a tuple which contains a result of url test
 
     Arguments:
-    url -- a string containing url for testing
+    url -- a string containing url for testing, can be local file
     proxies -- proxy servers to use for the request
     timeout -- the max time to wait for a response, default 60 seconds
 
@@ -51,6 +61,19 @@ def _get_response_tuple(url, proxies=None, timeout=60):
         result[0] -- boolean value, True if the url is deemed failed
         result[1] -- unchange url argument
     """
+
+    if url.startswith(FILE_PREFIX):
+        return _get_file_existence_tuple(url)
+    else:
+        return _get_http_response_tuple(url, proxies, timeout)
+
+
+def _get_file_existence_tuple(url):
+    path = url[len(FILE_PREFIX):]
+    return (not os.path.exists(path), url)
+
+
+def _get_http_response_tuple(url, proxies=None, timeout=60):
     try:
         # requests seems to correctly handle various corner cases:
         # proxies=None or proxies={} mean 'use the default' rather than

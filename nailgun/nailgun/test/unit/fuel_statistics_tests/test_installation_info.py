@@ -36,6 +36,7 @@ class TestInstallationInfo(BaseTestCase):
         self.assertDictEqual(f_info, settings.VERSION)
 
     def test_get_attributes_centos(self):
+        self.skipTest('CentOS is unavailable in current release.')
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
         release = ReleaseCollection.filter_by(None, operating_system='CentOS')
@@ -90,7 +91,8 @@ class TestInstallationInfo(BaseTestCase):
     def test_clusters_info_no_vmware_attributes_exception(self):
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        release = ReleaseCollection.filter_by(
+            None, operating_system=consts.RELEASE_OS.ubuntu)
         nodes_params = [
             {'roles': ['compute']},
             {'roles': ['compute']},
@@ -112,7 +114,8 @@ class TestInstallationInfo(BaseTestCase):
     def test_clusters_info(self):
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        release = ReleaseCollection.filter_by(
+            None, operating_system=consts.RELEASE_OS.ubuntu)
         nodes_params = [
             {'roles': ['compute']},
             {'roles': ['compute']},

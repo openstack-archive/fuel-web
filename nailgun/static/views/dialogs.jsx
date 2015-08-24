@@ -176,6 +176,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 }, this))
                 .done(_.bind(function() {
                     dispatcher.trigger('updateNodeStats');
+                    dispatcher.trigger('updateNodesSelections', nodes.pluck('id'), false);
                     this.close();
                 }, this))
                 .fail(this.showError);

@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define([], function() {
+define(['tests/functional/pages/modal'], function(Modal) {
     'use strict';
     function ClustersPage(remote) {
         this.remote = remote;
@@ -43,6 +43,44 @@ define([], function() {
                     .end()
                 .setFindTimeout(4000)
                 .waitForDeletedByCssSelector('div.modal-content')
+                    .end();
+        },
+        createVCenterNovaCluster: function(clusterName) {
+            var modalPage = new Modal(this.remote);
+            return this.remote
+                .setFindTimeout(1000)
+                .findByClassName('create-cluster')
+                    .click()
+                    .end()
+                .setFindTimeout(2000)
+                .then(function() {
+                    return modalPage.waitToOpen();
+                })
+                    .findByName('name')
+                        .clearValue()
+                        .type(clusterName)
+                        //going to Compute step
+                        .pressKeys('\uE007')
+                        .end()
+                    .end()
+                .setFindTimeout(2000)
+                .findByCssSelector('.custom-tumbler input[name=vcenter]')
+                    .click()
+                    .end()
+                //going to Networks step
+                .pressKeys('\uE007')
+                //Storage backends
+                .pressKeys('\uE007')
+                //Additional Services
+                .pressKeys('\uE007')
+                // Finish
+                .pressKeys('\uE007')
+                // pressing Finish
+                .pressKeys('\uE007')
+                .setFindTimeout(4000)
+                .then(function() {
+                    return modalPage.waitToClose();
+                })
                     .end();
         },
         clusterSelector: '.clusterbox div.name',

@@ -59,7 +59,7 @@ class bootstrapimg(urwid.WidgetWrap):
                 "label": "Flavor",
                 "tooltip": "",
                 "value": "radio",
-                "choices": ["CentOS", "Ubuntu"]},
+                "choices": ["CentOS", "Ubuntu (EXPERIMENTAL)"]},
             "BOOTSTRAP/MIRROR_DISTRO": {
                 "label": "Ubuntu mirror",
                 "tooltip": "Ubuntu APT repo URL",

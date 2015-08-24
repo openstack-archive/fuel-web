@@ -89,7 +89,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 hasOfflineNodes = nodes.any({online: false}),
                 resetDeploymentTask = cluster.task({name: 'reset_environment'}),
                 isDeploymentPossible = cluster.isDeploymentPossible();
-
             return (
                 <div>
                     {failedDeploymentTask && !!title &&
@@ -124,6 +123,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             <DeployReadinessBlock
                                 cluster={cluster}
                                 deploymentErrorTask={failedDeploymentTask}
+                                selectNodes={this.props.selectNodes}
                             />
                         </div>
                     }
@@ -435,7 +435,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             }
         ],
         showDialog: function(Dialog) {
-            Dialog.show({cluster: this.props.cluster});
+            Dialog.show({cluster: this.props.cluster})
+                .done(this.props.selectNodes);
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
             var areNodesPresent = !!nodes.length;

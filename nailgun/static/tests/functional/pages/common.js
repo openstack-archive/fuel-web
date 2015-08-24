@@ -22,6 +22,11 @@ define([
             pickRandomName: function(prefix) {
                 return (prefix || 'Item') + ' #' + _.random(1000, 9999);
             },
+            getElement: function(selector) {
+                return this.remote
+                    .setFindTimeout(1000)
+                    .findByCssSelector(selector)
+            },
             takeScreenshot: function(filename, error) {
                 return this.remote
                     .takeScreenshot()

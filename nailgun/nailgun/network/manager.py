@@ -348,9 +348,8 @@ class NetworkManager(object):
             node=None,
             vip_type=vip_type
         ).first()
-        # check if cluster_vip is in required cidr: network.cidr
-        if cluster_vip and cls.check_ip_belongs_to_net(cluster_vip.ip_addr,
-                                                       network):
+        # if suitable IP address is found, use it
+        if cluster_vip:
             return cluster_vip.ip_addr
 
         # IP address has not been assigned, let's do it

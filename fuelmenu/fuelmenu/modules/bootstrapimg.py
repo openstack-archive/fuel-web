@@ -27,7 +27,11 @@ blank = urwid.Divider()
 VERSION_YAML_FILE = '/etc/nailgun/version.yaml'
 FUEL_BOOTSTRAP_IMAGE_CONF = '/etc/fuel-bootstrap-image.conf'
 BOOTSTRAP_FLAVOR_KEY = 'BOOTSTRAP/flavor'
-MOS_REPO_DFLT = 'http://mirror.fuel-infra.org/mos-repos/ubuntu/{mos_version}'
+DISTRO_SUITES_TMPL = ('{distro_release} {distro_release}-security '
+                      '{distro_release}-updates')
+MOS_MIRROR_TMPL = 'http://mirror.fuel-infra.org/mos-repos/ubuntu/{mos_version}'
+MOS_SUITES_TMPL = ('mos{mos_version} mos{mos_version}-security '
+                   'mos{mos_version}-updates mos{mos_version}-holdback')
 
 
 class bootstrapimg(urwid.WidgetWrap):
@@ -46,29 +50,57 @@ class bootstrapimg(urwid.WidgetWrap):
         self.header_content = ["Bootstrap image configuration"]
         fields = (
             'flavor',
-            'MIRROR_DISTRO',
-            'MIRROR_MOS',
+            'DISTRO_MIRROR',
+            'DISTRO_SUITES',
+            'DISTRO_SECTIONS',
+            'MOS_MIRROR',
+            'MOS_SUITES',
+            'MOS_SECTIONS',
             'HTTP_PROXY',
             'EXTRA_DEB_REPOS')
         self.fields = ['BOOTSTRAP/{0}'.format(var) for var in fields]
         # TODO(asheplyakov):
         # switch to the new MOS APT repo structure when it's ready
-        mos_repo_dflt = MOS_REPO_DFLT.format(mos_version=self.mos_version)
+        distro_suites_dflt = DISTRO_SUITES_TMPL.format(
+            distro_release=self.distro_release)
+        mos_mirror_dflt = MOS_MIRROR_TMPL.format(mos_version=self.mos_version)
+        mos_suites_dflt = MOS_SUITES_TMPL.format(mos_version=self.mos_version)
         self.defaults = {
             BOOTSTRAP_FLAVOR_KEY: {
                 "label": "Flavor",
                 "tooltip": "",
                 "value": "radio",
                 "choices": ["CentOS", "Ubuntu (EXPERIMENTAL)"]},
-            "BOOTSTRAP/MIRROR_DISTRO": {
+            "BOOTSTRAP/DISTRO_MIRROR": {
                 "label": "Ubuntu mirror",
                 "tooltip": "Ubuntu APT repo URL",
                 "value": "http://archive.ubuntu.com/ubuntu"},
-            "BOOTSTRAP/MIRROR_MOS": {
+            "BOOTSTRAP/DISTRO_SUITES": {
+                "label": "Ubuntu suites",
+                "tooltip": "Space separated list of suites. "
+                           "E.g. 'trusty trusty-security trusty-updates'. "
+                           "First suite in will be used for debootstrap",
+                "value": distro_suites_dflt},
+            "BOOTSTRAP/DISTRO_SECTIONS": {
+                "label": "Ubuntu sections",
+                "tooltip": "Space separated list of sections. "
+                           "E.g. main universe",
+                "value": "main universe multiverse restricted"},
+            "BOOTSTRAP/MOS_MIRROR": {
                 "label": "MOS mirror",
                 "tooltip": ("MOS APT repo URL (can use file:// protocol, will"
                             "use local mirror in such case"),
-                "value": mos_repo_dflt},
+                "value": mos_mirror_dflt},
+            "BOOTSTRAP/MOS_SUITES": {
+                "label": "MOS suites",
+                "tooltip": "Space separated list of suites. "
+                           "E.g. mos7.0 mos7.0-security",
+                "value": mos_suites_dflt},
+            "BOOTSTRAP/MOS_SECTIONS": {
+                "label": "MOS sections",
+                "tooltip": "Space separated list of sections. "
+                           "E.g. main restricted",
+                "value": "main"},
             "BOOTSTRAP/HTTP_PROXY": {
                 "label": "HTTP proxy",
                 "tooltip": "Use this proxy when building the bootstrap image",
@@ -123,21 +155,57 @@ class bootstrapimg(urwid.WidgetWrap):
         errors = []
 
         # APT repo URL must not be empty
-        distro_repo_base = responses['BOOTSTRAP/MIRROR_DISTRO'].strip()
-        mos_repo_base = responses['BOOTSTRAP/MIRROR_MOS'].strip()
+        distro_mirror= responses['BOOTSTRAP/DISTRO_MIRROR'].strip()
+        distro_suites = responses['BOOTSTRAP/DISTRO_SUITES'].strip()
+        distro_sections = responses['BOOTSTRAP/DISTRO_SECTIONS'].strip()
+        mos_mirror = responses['BOOTSTRAP/MOS_MIRROR'].strip()
+        mos_suites = responses['BOOTSTRAP/MOS_SUITES'].strip()
+        mos_sections = responses['BOOTSTRAP/MOS_SECTIONS'].strip()
         http_proxy = responses['BOOTSTRAP/HTTP_PROXY'].strip()
 
-        if len(distro_repo_base) == 0:
+        if len(distro_mirror) == 0:
             errors.append("Ubuntu mirror URL must not be empty.")
 
-        if not self.checkDistroRepo(distro_repo_base, http_proxy):
-            errors.append("Ubuntu repository is not accessible.")
+        if len(distro_suites) == 0:
+            errors.append("Ubuntu suites must contain at least one suite. "
+                          "E.g. 'trusty trusty-security trusty-updates'")
 
-        if len(mos_repo_base) == 0:
+        if len(distro_suites) == 0:
+            errors.append("Ubuntu sections must contain at least one section. "
+                          "E.g. 'main universe multiverse restricted'")
+
+        release_url_tmpl = '{mirror}/dists/{suite}/Release'
+
+        # Check if all distro suites are available
+        for distro_suite in distro_suites.split():
+            if not self.check_url(release_url_tmpl.format(
+                mirror=distro_mirror, suite=distro_suite), http_proxy):
+                errors.append(
+                    "Repository {mirror} {suite} is not accessible.".format(
+                        mirror=distro_mirror, suite=distro_suite))
+
+        # TODO(asheplyakov):
+        # check if it's possible to debootstrap with distro mirror
+        # and first suite in the list of distro suites.
+
+        if len(mos_mirror) == 0:
             errors.append("MOS repo URL must not be empty.")
 
-        if not self.checkMOSRepo(mos_repo_base, http_proxy):
-            errors.append("MOS repository is not accessible.")
+        if len(mos_suites) == 0:
+            errors.append("MOS suites must contain at least one suite. "
+                          "E.g. 'mos7.0 mos7.0-updates'.")
+
+        if len(mos_sections) == 0:
+            errors.append("MOS sections must contain at least one section. "
+                          "E.g. 'main restricted'.")
+
+        # Check if all mos suites are available
+        for mos_suite in mos_suites.split():
+            if not self.check_url(release_url_tmpl.format(
+                mirror=mos_mirror, suite=mos_suite), http_proxy):
+                errors.append(
+                    "Repository {mirror} {suite} is not accessible.".format(
+                        mirror=mos_mirror, suite=mos_suite))
 
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
@@ -244,22 +312,6 @@ class bootstrapimg(urwid.WidgetWrap):
             return urlck.check_urls([url], proxies={'http': http_proxy})
         except url_errors.UrlNotAvailable:
             return False
-
-    def checkDistroRepo(self, base_url, http_proxy):
-        release_url = '{base_url}/dists/{distro_release}/Release'.format(
-            base_url=base_url, distro_release=self.distro_release)
-        available = self.check_url(release_url, http_proxy)
-        # TODO(asheplyakov):
-        # check if it's possible to debootstrap with this repo
-        return available
-
-    def checkMOSRepo(self, base_url, http_proxy):
-        # deb {repo_base_url}/mos/ubuntu mos{mos_version} main
-        codename = 'mos{0}'.format(self.mos_version)
-        release_url = '{base_url}/dists/{codename}/Release'.format(
-            base_url=base_url, codename=codename)
-        available = self.check_url(release_url, http_proxy)
-        return available
 
     def radioSelect(self, current, state, user_data=None):
         pass

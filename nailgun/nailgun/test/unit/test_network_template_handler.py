@@ -17,8 +17,10 @@
 from oslo_serialization import jsonutils
 
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import NodeGroup
 
 from nailgun import consts
+from nailgun.test import base
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -55,6 +57,42 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.get_template(cluster.id)
         self.assertEqual(200, resp.status_code)
         self.assertEqual(template, resp.json_body)
+
+    def test_network_template_upload_on_multi_group_cluster(self):
+        cluster = self.env.create_cluster(api=False)
+
+        custom_group_name = 'group-custom-1'
+        custom_group = NodeGroup(name=custom_group_name, cluster_id=cluster.id)
+        self.env.db.add(custom_group)
+        self.env.db.flush()
+
+        node1 = self.env.create_node(cluster_id=cluster.id,
+                                     roles=["controller"])
+        node2 = self.env.create_node(cluster_id=cluster.id,
+                                     roles=["compute"],
+                                     group_id=custom_group.id)
+
+        template = self.env.read_fixtures(['network_template'])[0]
+        template.pop('pk')  # PK is not needed
+
+        resp = self.app.put(
+            reverse(
+                'TemplateNetworkConfigurationHandler',
+                kwargs={'cluster_id': cluster.id},
+            ),
+            jsonutils.dumps(template),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertDictEqual(
+            node1.network_template['templates'],
+            base.get_nodegroup_network_schema_template(template, 'default')
+        )
+        self.assertDictEqual(
+            node2.network_template['templates'],
+            base.get_nodegroup_network_schema_template(
+                template, custom_group_name)
+        )
 
     def test_wrong_network_template_upload_failed(self):
         cluster = self.env.create_cluster(api=False)

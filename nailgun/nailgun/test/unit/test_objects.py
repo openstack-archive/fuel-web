@@ -39,6 +39,7 @@ from nailgun import consts
 
 from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import NodeBondInterface
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.network.manager import NetworkManager
@@ -47,6 +48,7 @@ from nailgun.network.neutron import NeutronManager70
 
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
+from nailgun.test import base
 
 
 class TestObjects(BaseIntegrationTest):
@@ -575,6 +577,20 @@ class TestNodeObject(BaseIntegrationTest):
             "net_provider": consts.CLUSTER_NET_PROVIDERS.nova_network,
         }
         self._assert_cluster_create_data(network_data)
+
+    def test_apply_network_template(self):
+        node = self.env.create_node()
+        template = self.env.read_fixtures(['network_template'])[0]
+
+        group_name = 'group-custom-1'
+        with mock.patch('objects.NodeGroup.get_by_uid',
+                        return_value=NodeGroup(name=group_name)):
+            objects.Node.apply_network_template(node, template)
+            self.assertDictEqual(
+                node.network_template['templates'],
+                base.get_nodegroup_network_schema_template(
+                    template, group_name)
+            )
 
 
 class TestTaskObject(BaseIntegrationTest):

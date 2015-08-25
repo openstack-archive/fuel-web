@@ -71,6 +71,7 @@ from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
+from nailgun.network.template import NetworkTemplate
 from nailgun.utils import reverse
 
 
@@ -1312,6 +1313,14 @@ def reflect_db_metadata():
     meta = sa.MetaData()
     meta.reflect(bind=db.get_bind())
     return meta
+
+
+def get_nodegroup_network_schema_template(template, group_name):
+    custom_template = template['adv_net_template'][group_name]
+    custom_template_obj = NetworkTemplate(jsonutils.dumps(custom_template))
+    node_custom_template = custom_template_obj.safe_substitute(
+        custom_template['nic_mapping']['default'])
+    return jsonutils.loads(node_custom_template)['network_scheme']
 
 
 class BaseAlembicMigrationTest(TestCase):

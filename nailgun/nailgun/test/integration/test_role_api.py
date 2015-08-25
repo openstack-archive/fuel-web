@@ -121,6 +121,21 @@ class TestRoleApi(BaseRoleTest):
             self.release.id, role['name'], expect_errors=True)
         self.assertEqual(delete_resp.status_code, 400)
 
+    def test_delete_role_when_assigned_another_role(self):
+        # There was bug with such validation
+        # https://bugs.launchpad.net/fuel/+bug/1488091
+        role = self.env.create_role(self.release.id, self.role_data).json
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['compute'], 'pending_addition': True},
+            ],
+            cluster_kwargs={'release_id': self.release.id},
+        )
+
+        delete_resp = self.env.delete_role(
+            self.release.id, role['name'])
+        self.assertEqual(delete_resp.status_code, 204)
+
     def test_delete_pending_assigned_role(self):
         role = self.env.create_role(self.release.id, self.role_data).json
         self.env.create(

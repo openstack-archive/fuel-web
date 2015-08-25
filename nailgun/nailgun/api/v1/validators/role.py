@@ -29,10 +29,10 @@ class RoleValidator(BasicValidator):
         clusters = [cluster.id for cluster in release.clusters]
         node = db().query(models.Node).filter(
             models.Node.cluster_id.in_(clusters)
-        ).filter(sa.not_(sa.and_(
+        ).filter(sa.or_(
             models.Node.roles.any(role_name),
             models.Node.pending_roles.any(role_name)
-        ))).first()
+        )).first()
 
         if node:
             raise errors.CannotDelete(

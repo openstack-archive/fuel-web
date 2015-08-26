@@ -496,7 +496,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 isOpen: false
             };
         },
-        onChange: function(name, checked) {
+        onChange: function(name, checked, isLabel) {
             if (!this.props.dynamicValues) {
                 var values = name == 'all' ?
                         checked ? _.pluck(this.props.options, 'name') : []
@@ -504,7 +504,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         checked ? _.union(this.props.values, [name]) : _.difference(this.props.values, [name]);
                 this.props.onChange(values);
             } else {
-                this.props.onChange(_.find(this.props.options, {name: name}));
+                this.props.onChange(_.find(this.props.options, {name: name, isLabel: isLabel}));
             }
         },
         closeOnEscapeKey: function(e) {
@@ -543,8 +543,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     key: option.name,
                     type: 'checkbox',
                     name: option.name,
-                    label: option.title,
-                    onChange: this.onChange
+                    label: option.title
                 };
             }, this);
 
@@ -577,6 +576,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         return <controls.Input {...optionProps(option)}
                                             label={option.label}
                                             checked={_.contains(this.props.values, option.name)}
+                                            onChange={this.onChange}
                                         />;
                                     }, this)}
                                 </div>
@@ -585,12 +585,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     {_.map(attributes, function(option) {
                                         return <controls.Input {...optionProps(option)}
                                             checked={_.contains(this.props.values, option.name)}
+                                            onChange={_.partialRight(this.onChange, false)}
                                         />;
                                     }, this)}
                                     {!!attributes.length && !!labels.length && <div key='divider' className='divider' />}
                                     {_.map(labels, function(option) {
-                                        return <controls.Input {...optionProps(option)} key={'label-' + option.name} />;
-                                    })}
+                                        return <controls.Input {...optionProps(option)}
+                                            key={'label-' + option.name}
+                                            onChange={_.partialRight(this.onChange, true)}
+                                        />;
+                                    }, this)}
                                 </div>
                             }
                         </controls.Popover>

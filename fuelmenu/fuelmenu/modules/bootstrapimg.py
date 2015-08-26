@@ -121,7 +121,19 @@ class bootstrapimg(urwid.WidgetWrap):
         responses = self.responses
 
         errors = []
+        if responses.get(BOOTSTRAP_FLAVOR_KEY) == 'ubuntu':
+            errors.extend(self.check_apt_repos(responses))
 
+        if errors:
+            self.parent.footer.set_text("Error: %s" % (errors[0]))
+            log.error("Errors: %s", errors)
+            return False
+        else:
+            self.parent.footer.set_text("No errors found.")
+            return responses
+
+    def check_apt_repos(self, responses):
+        errors = []
         # APT repo URL must not be empty
         distro_repo_base = responses['BOOTSTRAP/MIRROR_DISTRO'].strip()
         mos_repo_base = responses['BOOTSTRAP/MIRROR_MOS'].strip()
@@ -139,13 +151,7 @@ class bootstrapimg(urwid.WidgetWrap):
         if not self.checkMOSRepo(mos_repo_base, http_proxy):
             errors.append("MOS repository is not accessible.")
 
-        if len(errors) > 0:
-            self.parent.footer.set_text("Error: %s" % (errors[0]))
-            log.error("Errors: %s %s" % (len(errors), errors))
-            return False
-        else:
-            self.parent.footer.set_text("No errors found.")
-            return responses
+        return errors
 
     def apply(self, args):
         responses = self.check(args)

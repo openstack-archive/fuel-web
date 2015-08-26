@@ -360,7 +360,6 @@ class BuildUtilsTestCase(testtools.TestCase):
             self.assertIn("n=testcodename", calls_args[2])
             self.assertIn("a=test-archive", calls_args[2])
             self.assertIn("o=TestOrigin", calls_args[2])
-            self.assertIn("c=section1", calls_args[2])
             self.assertEqual(calls_args[3], 'Pin-Priority: 123\n')
 
         expected_mock_path_calls = [
@@ -394,11 +393,11 @@ class BuildUtilsTestCase(testtools.TestCase):
             second_section = [
                 c for c in calls_args if 'c={0}'.format(fake_sections[1]) in c
             ]
-            self.assertEqual(len(calls_package), len(fake_sections))
-            self.assertEqual(len(calls_pin), len(fake_sections))
-            self.assertEqual(len(calls_pin_p), len(fake_sections))
-            self.assertEqual(len(first_section), 1)
-            self.assertEqual(len(second_section), 1)
+            self.assertEqual(len(calls_package), 1)
+            self.assertEqual(len(calls_pin), 1)
+            self.assertEqual(len(calls_pin_p), 1)
+            self.assertEqual(len(first_section), 0)
+            self.assertEqual(len(second_section), 0)
 
             for pin_line in calls_args[2::4]:
                 self.assertIn("l=TestLabel", pin_line)

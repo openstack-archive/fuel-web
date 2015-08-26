@@ -457,18 +457,10 @@ def add_apt_preference(name, priority, suite, section, chroot, uri):
 
     with open(os.path.join(chroot, DEFAULT_APT_PATH['preferences_dir'],
                            filename), 'w') as f:
-        sections = section.split()
-        if sections:
-            for s in sections:
-                f.write('Package: *\n')
-                f.write('Pin: release ')
-                f.write(', '.join(conditions) + ", c={0}\n".format(s))
-                f.write('Pin-Priority: {priority}\n'.format(priority=priority))
-        else:
-            f.write('Package: *\n')
-            f.write('Pin: release ')
-            f.write(', '.join(conditions) + "\n")
-            f.write('Pin-Priority: {priority}\n'.format(priority=priority))
+        f.write('Package: *\n')
+        f.write('Pin: release ')
+        f.write(', '.join(conditions) + "\n")
+        f.write('Pin-Priority: {priority}\n'.format(priority=priority))
 
 
 def pre_apt_get(chroot, allow_unsigned_file=CONF.allow_unsigned_file,

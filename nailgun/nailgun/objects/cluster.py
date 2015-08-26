@@ -241,14 +241,14 @@ class Cluster(NailgunObject):
         :returns: Dict object
         """
         editable = instance.release.attributes_metadata.get("editable")
-        editable = traverse(editable, AttributesGenerator, {
-            'cluster': instance,
-            'settings': settings,
-        })
         # when attributes created we need to understand whether should plugin
         # be applied for created cluster
         plugin_attrs = PluginManager.get_plugin_attributes(instance)
         editable = dict(plugin_attrs, **editable)
+        editable = traverse(editable, AttributesGenerator, {
+            'cluster': instance,
+            'settings': settings,
+        })
         return editable
 
     @classmethod

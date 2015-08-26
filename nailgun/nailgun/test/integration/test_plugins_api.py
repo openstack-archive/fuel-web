@@ -267,6 +267,27 @@ class TestPluginsApi(BasePluginTest):
                 resp.json_body["message"],
                 'Problem with loading YAML file')
 
+    @mock.patch('nailgun.objects.cluster.AttributesGenerator')
+    def test_plugin_generator(self, mock_attributes_generator):
+        mock_attributes_generator.test_plugin_generator.return_value = 'test'
+        plugin_name = 'testing_plugin'
+        self.sample_plugin = self.env.get_default_plugin_metadata(
+            name=plugin_name
+        )
+        self.plugin_env_config = \
+            self.env.get_default_plugin_env_config(
+                value={
+                    'generator': 'test_plugin_generator',
+                },
+                plugin_name=plugin_name
+            )
+        self.create_plugin()
+        cluster = self.create_cluster()
+        self.assertIn(self.sample_plugin['name'], cluster.attributes.editable)
+        plugin_dict = cluster.attributes.editable[plugin_name]
+        value = plugin_dict['%s_text' % plugin_name]['value']
+        self.assertEqual(value, 'test')
+
     def _create_new_and_old_version_plugins_for_sync(self):
         plugin_ids = []
 

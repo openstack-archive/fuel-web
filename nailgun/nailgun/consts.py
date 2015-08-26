@@ -88,6 +88,31 @@ NEUTRON_SEGMENT_TYPES = Enum(
     'tun'
 )
 
+BRIDGE_NAME_MAX_LEN = 15
+
+DEFAULT_BRIDGES_NAMES = Enum(
+    'br-fw-admin',
+    'br-storage',
+    'br-mgmt',
+    'br-prv',
+    'br-floating',
+    'br-int',
+    'br-ex',
+    'br-mesh',
+    'br-aux',
+    names=(
+        'br_fw_admin',
+        'br_storage',
+        'br_mgmt',
+        'br_prv',
+        'br_floating',
+        'br_int',
+        'br_ex',
+        'br_mesh',
+        'br_aux'
+    )
+)
+
 NODE_STATUSES = Enum(
     'ready',
     'discover',

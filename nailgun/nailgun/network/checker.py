@@ -595,6 +595,34 @@ class NetworkCheck(object):
                                 "errors": ['dns_nameservers']})
             self.expose_error_messages()
 
+    def check_enough_ips_on_public_net(self):
+        """Checks whether specified ranges fit for everything."""
+
+        public_net = next(n for n in self.networks
+                          if n['name'] == consts.NETWORKS.public)
+
+        addr_number = sum(len(netaddr.IPRange(start, end))
+                          for start, end in public_net['ip_ranges'])
+
+        vips = self.net_man.get_assigned_vips(self.cluster)
+        required_addr = len(vips[consts.NETWORKS.public])
+
+
+        if objects.Cluster.should_assign_public_to_all_nodes(self.cluster):
+            required_addr += len(self.cluster.nodes)
+        else:
+            required_addr += len(n for n in self.cluster.nodes
+                                 if objects.Node.should_have_public(n))
+
+        if required_addr > addr_number:
+            self.err_msgs.append(
+                'Specified address ranges in public network '
+                'only contain {avail} addresses while {req} '
+                'are required'.format(avail=addr_number,
+                                      req=required_addr)
+            )
+            self.expose_error_messages()
+
     def check_calculated_network_cidr(self):
         """Check calculated networks CIDRs are equal to values set by user
 
@@ -628,6 +656,7 @@ class NetworkCheck(object):
             self.check_network_address_spaces_intersection()
             self.check_networks_amount()
             self.check_vlan_ids_range_and_intersection()
+        self.check_enough_ips_on_public_net()
         self.check_network_classes_exclude_loopback()
         self.check_network_addresses_not_match_subnet_and_broadcast()
         self.check_dns_servers_ips()

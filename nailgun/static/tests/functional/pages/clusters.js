@@ -48,6 +48,40 @@ define(['tests/functional/pages/modal'], function(ModalWindow) {
                     return self.modal.waitToClose();
                 });
         },
+        createVCenterNovaCluster: function(clusterName) {
+            var self = this;
+            return this.remote
+                .setFindTimeout(1000)
+                .findByClassName('create-cluster')
+                    .click()
+                    .end()
+                .then(function() {
+                    return self.modal.waitToOpen();
+                })
+                .findByName('name')
+                    .clearValue()
+                    .type(clusterName)
+                //going to Compute step
+                .pressKeys('\uE007')
+                    .end()
+                .setFindTimeout(2000)
+                .findByCssSelector('.custom-tumbler input[name=vcenter]')
+                    .click()
+                    .end()
+                //going to Networks step
+                .pressKeys('\uE007')
+                //Storage backends
+                .pressKeys('\uE007')
+                //Additional Services
+                .pressKeys('\uE007')
+                // Finish
+                .pressKeys('\uE007')
+                // pressing Finish
+                .pressKeys('\uE007')
+                .then(function() {
+                    return self.modal.waitToClose();
+                });
+        },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {
             var self = this;

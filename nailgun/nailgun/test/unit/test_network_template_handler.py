@@ -53,6 +53,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
+        self.assertEquals(template, resp.json_body)
 
         resp = self.get_template(cluster.id)
         self.assertEqual(200, resp.status_code)

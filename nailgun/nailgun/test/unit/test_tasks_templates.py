@@ -20,7 +20,6 @@ import mock
 import requests
 
 from oslo_serialization import jsonutils
-from six.moves import zip_longest
 
 from nailgun.test import base
 
@@ -229,32 +228,26 @@ class TestMakeUbuntuPreferencesTask(base.BaseTestCase):
     def _check_apt_preferences(self, data, sections, priority):
         pins = data.split('\n\n')
 
-        # in non-flat repo we have one pin per section
-        if sections:
-            self.assertEqual(len(pins), len(sections))
+        self.assertEqual(len(pins), 1)
 
-        # we should have one pin per section
-        for pin, section in zip_longest(pins, sections):
-            conditions = self._re_pin.search(pin).group(1).split(',')
+        conditions = self._re_pin.search(pins[0]).group(1).split(',')
 
-            # check general template
-            self.assertRegexpMatches(
-                data, (
-                    'Package: \*\n'
-                    'Pin: release .*\n'
-                    'Pin-Priority: {0}'.format(priority)
-                ))
+        # check general template
+        self.assertRegexpMatches(
+            data, (
+                'Package: \*\n'
+                'Pin: release .*\n'
+                'Pin-Priority: {0}'.format(priority)
+            ))
 
-            # check pin
-            expected_conditions = [
-                'a=test-archive',
-                'l=TestLabel',
-                'n=testcodename',
-                'o=TestOrigin',
-            ]
-            if section:
-                expected_conditions.append('c={0}'.format(section))
-            self.assertItemsEqual(conditions, expected_conditions)
+        # check pin
+        expected_conditions = [
+            'a=test-archive',
+            'l=TestLabel',
+            'n=testcodename',
+            'o=TestOrigin',
+        ]
+        self.assertItemsEqual(conditions, expected_conditions)
 
     @mock.patch('nailgun.utils.debian.requests.get',
                 return_value=mock.Mock(text=_fake_debian_release))

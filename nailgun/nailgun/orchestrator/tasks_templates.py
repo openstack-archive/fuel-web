@@ -70,17 +70,30 @@ def make_ubuntu_preferences_task(uids, repo):
         logger.exception("Failed to parse 'Release' file.")
         return None
 
-    # if sections are detected (non-flat repo) create pinning per
-    # sections; otherwise - create just one pin for the entire repo
-    if repo['section']:
-        for section in repo['section'].split():
-            preferences_content.append(template.format(
-                conditions='{0},c={1}'.format(pin, section),
-                priority=repo['priority']))
-    else:
-        preferences_content.append(template.format(
-            conditions=pin,
-            priority=repo['priority']))
+    # NOTE(kozhukalov): When a package is available both in:
+    # 1) http://archive.ubuntu.com/ubuntu trusty universe
+    # 2) http://mirror.fuel-infra.org/mos-repos/ubuntu/7.0 mos7.0 main
+    # And if the content of the preferences file is (i.e. by section priority):
+    #    Package: *
+    #    Pin: release o=Mirantis, a=mos7.0, n=mos7.0, l=mos7.0, c=main
+    #    Pin-Priority: 1050
+    # then the package available in MOS won't match the pin because for
+    # some reason apt still thinks this package is in universe section.
+    # As a result:
+    # # apt-cache policy ohai
+    # ohai:
+    # Installed: (none)
+    # Candidate: 6.14.0-2
+    # Version table:
+    # 6.14.0-2 0
+    #    500 http://10.20.0.1/mirror/ubuntu/ trusty/universe amd64 Packages
+    # 6.14.0-2~u14.04+mos1 0
+    #    500 http://10.20.0.2:8080/2015.1.0-7.0/ubuntu/x86_64/ mos7.0/main
+    # amd64 Packages
+
+    preferences_content.append(template.format(
+        conditions=pin,
+        priority=repo['priority']))
 
     preferences_content = '\n\n'.join(preferences_content)
     preferences_path = '/etc/apt/preferences.d/{0}.pref'.format(repo['name'])

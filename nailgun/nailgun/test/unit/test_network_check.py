@@ -469,3 +469,50 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.check_interface_mapping()
         mock_untagged.assert_called_with()
         mock_bond.assert_called_with()
+
+    @patch.object(NetworkCheck, 'expose_error_messages')
+    def test_not_enough_ip(self, m_expose):
+        cluster = self.env.create(
+            nodes_kwargs=[{'roles': ['controller'], 'pending_addition': True}
+                          for i in range(10)],
+            cluster_kwargs={
+                'editable_attributes': {
+                    'public_network_assignment': {
+                        'assign_to_all_nodes': {'value': True}
+                    }
+                }
+            }
+        )
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        checker = NetworkCheck(FakeTask(cluster_db), {})
+        checker.networks = [{'cidr': '192.168.0.0/24',
+                             'name': 'public',
+                             'ip_ranges': [['10.0.0.1', '10.0.0.3']]}]
+
+        checker.err_msgs = []
+
+        checker.check_enough_ips_on_public_net()
+
+        self.assertEqual(['Specified address ranges in public network only '
+                         'contain 3 addresses while 10 are required'],
+                         checker.err_msgs)
+
+    @patch.object(NetworkCheck, 'expose_error_messages')
+    def test_enough_ip(self, m_expose):
+        cluster = self.env.create(
+            nodes_kwargs=[{'roles': ['controller'], 'pending_addition': True}
+                          for i in range(10)])
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        checker = NetworkCheck(FakeTask(cluster_db), {})
+        checker.networks = [{'cidr': '192.168.0.0/24',
+                             'name': 'public',
+                             'ip_ranges': [['10.0.0.1', '10.0.0.3']]}]
+
+        checker.err_msgs = []
+
+        checker.check_enough_ips_on_public_net()
+
+        self.assertEqual([], checker.err_msgs)
+        self.assertFalse(m_expose.called)

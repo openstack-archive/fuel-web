@@ -7,3 +7,4 @@ daemonize
 pyyaml
 requests
 netifaces
+six

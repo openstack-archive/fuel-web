@@ -19,3 +19,7 @@ class UrlNotAvailable(Exception):
 
 class CommandFailed(Exception):
     pass
+
+
+class InvalidProtocol(Exception):
+    pass

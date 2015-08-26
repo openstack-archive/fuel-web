@@ -17,11 +17,9 @@ import os
 import socket
 
 import requests
+from six.moves import urllib
 
 import url_access_checker.errors as errors
-
-
-FILE_PREFIX = 'file://'
 
 
 def check_urls(urls, proxies=None, timeout=60):
@@ -62,14 +60,19 @@ def _get_response_tuple(url, proxies=None, timeout=60):
         result[1] -- unchange url argument
     """
 
-    if url.startswith(FILE_PREFIX):
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme == 'file':
         return _get_file_existence_tuple(url)
-    else:
+    elif parsed.scheme in ['http', 'https']:
         return _get_http_response_tuple(url, proxies, timeout)
+    elif parsed.scheme == 'ftp':
+        return _get_ftp_response_tuple(url, timeout)
+    else:
+        raise errors.InvalidProtocol(url)
 
 
 def _get_file_existence_tuple(url):
-    path = url[len(FILE_PREFIX):]
+    path = url[len('file://'):]
     return (not os.path.exists(path), url)
 
 
@@ -91,4 +94,19 @@ def _get_http_response_tuple(url, proxies=None, timeout=60):
             requests.exceptions.ProxyError,
             ValueError,
             socket.timeout):
+        return (True, url)
+
+
+def _get_ftp_response_tuple(url, timeout=60):
+    """Return a tuple which contains a result of ftp url test
+
+    It will try to open ftp url as anonymous user and return (True, url) if
+    any errors occur, or return (False, url) otherwise.
+    """
+    try:
+        # NOTE(mkwiek): requests don't have tested ftp adapter yet, so
+        # lower level urllib2 is used here
+        urllib.request.urlopen(url, timeout=timeout)
+        return (False, url)
+    except urllib.error.URLError:
         return (True, url)

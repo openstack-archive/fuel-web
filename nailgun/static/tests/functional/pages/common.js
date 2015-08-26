@@ -170,6 +170,11 @@ define([
                             });
                         }, false)
                     });
+            },
+            setInputElementValue: function(element, value) {
+                element.clearValue()
+                    .type(value)
+                    .end();
             }
         };
         return CommonMethods;

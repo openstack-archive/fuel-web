@@ -291,6 +291,24 @@ function($, _, i18n, Backbone, models) {
                     errors[key] = model.validationError;
                 }
             }, this);
+
+            // check unassigned nodes exist
+            var assignedNodes = {};
+            var availabilityZones = this.get('availability_zones') || [];
+            availabilityZones.each(function(zone) {
+                var novaComputes = zone.get('nova_computes') || [];
+                novaComputes.each(function(compute) {
+                    var targetNode = compute.get('target_node');
+                    assignedNodes[targetNode.current.id] = targetNode.current.label;
+                }, this);
+            }, this);
+            var unassignedNodes = restrictionModels.cluster.get('nodes').filter(function(node) {
+                return _.contains(node.get('pending_roles'), 'compute-vmware') && !assignedNodes[node.get('hostname')];
+            });
+            if (unassignedNodes.length > 0) {
+                errors.unassigned_nodes = unassignedNodes;
+            }
+
             return _.isEmpty(errors) ? null : errors;
         },
         setModels: function(models) {

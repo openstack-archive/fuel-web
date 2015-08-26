@@ -132,8 +132,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
                         ),
                 activeFilters: activeFilters,
-                availableSorters: this.props.sorters.map(function(name) {return new Sorter(name, 'asc', false);}),
-                availableFilters: this.props.filters.map(function(name) {
+                availableSorters: (this.props.sorters || []).map(function(name) {return new Sorter(name, 'asc', false);}),
+                availableFilters: (this.props.filters || []).map(function(name) {
                     var filter = new Filter(name, [], false);
                     filter.updateLimits(this.props.nodes, true);
                     return filter;

@@ -370,9 +370,6 @@ class TestHandlers(BaseIntegrationTest):
                          'uids',
                          'percentage',
                          'vms_conf'])
-
-        self.check_pg_count(args[1][1]['args']['deployment_info'])
-
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -384,8 +381,7 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'priority',
                          'workloads_collector',
-                         'vms_conf',
-                         'storage'])
+                         'vms_conf'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -825,9 +821,6 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'uids',
                          'percentage'])
-
-        self.check_pg_count(args[1][1]['args']['deployment_info'])
-
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -838,33 +831,7 @@ class TestHandlers(BaseIntegrationTest):
                          'IP',
                          'tasks',
                          'priority',
-                         'workloads_collector',
-                         'storage'])
-
-    def check_pg_count(self, deployment_info):
-        pools = ['volumes', 'compute', 'backups', '.rgw',
-                 'images', 'default_pg_num']
-
-        for node_info in deployment_info:
-            self.assertIn('storage', node_info)
-            stor_attrs = node_info['storage']
-
-            self.assertIn('pg_num', stor_attrs)
-            def_count = stor_attrs['pg_num']
-            self.assertIsInstance(def_count, int)
-
-            self.assertIn('per_pool_pg_nums', stor_attrs)
-            per_pg = stor_attrs['per_pool_pg_nums']
-
-            self.assertIn('default_pg_num', per_pg)
-            self.assertIsInstance(per_pg['default_pg_num'], int)
-            self.assertEqual(def_count, per_pg['default_pg_num'])
-
-            if len(per_pg) > 1:
-                for pool in pools:
-                    self.assertIn(pool, per_pg)
-                    self.assertIsInstance(per_pg[pool], int)
-                    self.assertGreaterEqual(per_pg[pool], def_count)
+                         'workloads_collector'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -1322,9 +1289,6 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'uids',
                          'percentage'])
-
-        self.check_pg_count(args[1][1]['args']['deployment_info'])
-
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -1336,8 +1300,7 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'priority',
                          'workloads_collector',
-                         'vms_conf',
-                         'storage'])
+                         'vms_conf'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

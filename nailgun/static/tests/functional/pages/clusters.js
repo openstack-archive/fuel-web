@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['tests/functional/pages/modal'], function(ModalWindow) {
+define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) {
     'use strict';
     function ClustersPage(remote) {
         this.remote = remote;

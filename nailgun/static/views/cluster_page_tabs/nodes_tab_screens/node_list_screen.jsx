@@ -102,6 +102,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }),
             componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters')
         ],
+        getDefaultProps: function() {
+            return {
+                sorters: [],
+                filters: []
+            }
+        },
         getInitialState: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),

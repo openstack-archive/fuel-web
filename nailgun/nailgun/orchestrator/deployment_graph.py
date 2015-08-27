@@ -29,10 +29,11 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
+from nailgun.utils.group_patterns import GroupPatterns
 
 
 class DeploymentGraph(nx.DiGraph):
-    """DirectedGraph that is used to generate configuration for speficific
+    """DirectedGraph that is used to generate configuration for specific
     orchestrators.
 
     In case of astute - we are working with priorities
@@ -101,9 +102,15 @@ class DeploymentGraph(nx.DiGraph):
 
         # tasks and groups should be used for declaring dependencies between
         # tasks and roles (which are simply group of tasks)
-        for req in task.get('groups', ()):
+        groups = self.get_groups_for_task(task)
+        for req in groups:
             self.add_edge(task['id'], req)
-        for req in task.get('tasks', ()):
+
+        tasks = task.get('tasks', [])
+        if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
+            tasks += self.get_tasks_for_group_name_by_pattern(task['id'])
+
+        for req in tasks:
             self.add_edge(req, task['id'])
 
         # FIXME(dshulyak) remove it after change in library will be merged
@@ -137,6 +144,32 @@ class DeploymentGraph(nx.DiGraph):
         roles = [t['id'] for t in self.node.values()
                  if t['type'] == consts.ORCHESTRATOR_TASK_TYPES.group]
         return self.subgraph(roles)
+
+    def get_tasks_for_group_name_by_pattern(self, group_name):
+        """Find all tasks for new group name by pattern only
+
+        :param group_name: group name
+        :returns list of tasks
+        """
+
+        patterns = GroupPatterns(group_name)
+        tasks = [t['id'] for t in self.node.values()
+                 if patterns.match(t.get('groups', ()))]
+
+        return tasks
+
+    def get_groups_for_task(self, task):
+        """Find all groups for new task
+
+        :param task: new task
+        :returns list of groups
+        """
+
+        patterns = GroupPatterns()
+        groups = [t['id'] for t in self.node.values()
+                  if t.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group]
+
+        return patterns.all_matches(task.get('groups', ()), groups)
 
     def get_group_tasks(self, group_name):
         rst = []

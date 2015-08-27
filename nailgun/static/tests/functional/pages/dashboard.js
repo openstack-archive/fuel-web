@@ -69,6 +69,14 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.modal.waitToClose();
                 });
+        },
+        isAddNodesButtonVisible: function() {
+            return this.remote
+                .setFindTimeout(100)
+                .findAllByCssSelector('.btn-add-nodes')
+                .then(function(buttons) {
+                    return buttons.length > 0;
+                });
         }
     };
     return DashboardPage;

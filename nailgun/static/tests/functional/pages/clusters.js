@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['tests/functional/pages/modal'], function(ModalWindow) {
+define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) {
     'use strict';
     function ClustersPage(remote) {
         this.remote = remote;
@@ -23,8 +23,11 @@ define(['tests/functional/pages/modal'], function(ModalWindow) {
 
     ClustersPage.prototype = {
         constructor: ClustersPage,
-        createCluster: function(clusterName) {
-            var self = this;
+        createCluster: function(clusterName, stepsMethods) {
+            var self = this,
+                stepMethod = function(stepName) {
+                    return _.bind(_.get(stepsMethods, stepName, _.noop), self);
+                };
             return this.remote
                 .setFindTimeout(1000)
                 .findByClassName('create-cluster')
@@ -33,17 +36,27 @@ define(['tests/functional/pages/modal'], function(ModalWindow) {
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
+                // Name and release
                 .findByName('name')
                     .clearValue()
                     .type(clusterName)
-                    .pressKeys('\uE007')
-                    .pressKeys('\uE007')
-                    .pressKeys('\uE007')
-                    .pressKeys('\uE007')
-                    .pressKeys('\uE007')
-                    .pressKeys('\uE007')
-                    .pressKeys('\uE007')
                     .end()
+                .then(stepMethod('Name and Release'))
+                .pressKeys('\uE007')
+                // Compute
+                .then(stepMethod('Compute'))
+                .pressKeys('\uE007')
+                // Networking Setup
+                .then(stepMethod('Networking Setup'))
+                .pressKeys('\uE007')
+                //Storage Backends
+                .then(stepMethod('Storage Backends'))
+                .pressKeys('\uE007')
+                // Additional Services
+                .then(stepMethod('Additional Services'))
+                .pressKeys('\uE007')
+                // Finish
+                .pressKeys('\uE007')
                 .then(function() {
                     return self.modal.waitToClose();
                 });

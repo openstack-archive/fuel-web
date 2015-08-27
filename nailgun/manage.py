@@ -90,6 +90,21 @@ def load_db_parsers(subparsers):
         'model', action='store', help='model name to dump; underscored name'
         'should be used, e.g. network_group for NetworkGroup model'
     )
+    generate_parser = subparsers.add_parser(
+        'generate_nodes_fixture', help='generate new nodes fixture'
+    )
+    generate_parser.add_argument(
+        '-n', '--total-nodes', dest='total_nodes', action='store', type=int,
+        help='total nodes count to generate', required=True
+    )
+    generate_parser.add_argument(
+        '-e', '--error-nodes', dest='error_nodes', action='store', type=int,
+        help='error nodes count to generate'
+    )
+    generate_parser.add_argument(
+        '-o', '--offline-nodes', dest='offline_nodes', action='store', type=int,
+        help='offline nodes count to generate'
+    )
     subparsers.add_parser(
         'loaddefault',
         help='load data from default fixtures (settings.FIXTURES_TO_UPLOAD) '
@@ -168,6 +183,29 @@ def action_dumpdata(params):
     from nailgun.db.sqlalchemy import fixman
     fixman.dump_fixture(params.model)
     sys.exit(0)
+
+
+def action_generate_nodes_fixture(params):
+    import logging
+    from oslo.serialization import jsonutils
+    from nailgun.utils import fake_generator
+
+    logging.info('Generating new nodes fixture...')
+    total_nodes_count = params.total_nodes
+    fixtures_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'nailgun/fixtures/')
+    file_path = os.path.join(
+        fixtures_dir,
+        '{0}_fake_nodes_environment.json'.format(total_nodes_count)
+    )
+    generator = fake_generator.FakeNodesGenerator()
+    res = generator.generate_fake_nodes(total_nodes_count, params.error_nodes,
+                                        params.offline_nodes)
+
+    with open(file_path, "w+") as file_to_write:
+        file_to_write.write(jsonutils.dumps(res, indent=4))
+
+    logging.info('Done. New fixture was stored in {0} file', file_path)
 
 
 def action_loaddata(params):

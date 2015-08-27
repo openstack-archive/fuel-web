@@ -17,12 +17,10 @@
 from mock import patch
 
 import nailgun
-
-from nailgun import objects
-
+from nailgun import consts
 from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.task import Task
-
+from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -109,3 +107,31 @@ class TestStopDeployment(BaseIntegrationTest):
         )
         self.assertEqual(self.cluster.status, "stopped")
         self.assertEqual(stop_task.progress, 100)
+
+    @patch('nailgun.rpc.cast')
+    def test_latest_task_is_sent(self, mocked_rpc):
+        for uuid, status in [(1, consts.TASK_STATUSES.ready),
+                             (2, consts.TASK_STATUSES.running)]:
+
+            self.env.create_task(
+                name=consts.TASK_NAMES.deployment,
+                uuid="deploy-{0}".format(uuid),
+                status=status,
+                cluster_id=self.cluster.id)
+            self.env.create_task(
+                name=consts.TASK_NAMES.provision,
+                uuid="provision-{0}".format(uuid),
+                status=status,
+                cluster_id=self.cluster.id)
+
+        self.env.stop_deployment()
+
+        rpc_args_list = nailgun.task.manager.rpc.cast.call_args_list
+        self.assertEqual(len(rpc_args_list), 2)
+        provision, deploy = rpc_args_list
+        (_, deploy_args), _ = deploy
+        (_, provision_args), _ = provision
+        self.assertEqual(deploy_args['args']['stop_task_uuid'],
+                         'deploy-2')
+        self.assertEqual(provision_args['args']['stop_task_uuid'],
+                         'provision-2')

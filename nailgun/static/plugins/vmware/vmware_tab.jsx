@@ -236,6 +236,32 @@ define(
         }
     });
 
+    var UnassignedNodesWarning = React.createClass({
+        render: function() {
+            if (!this.props.errors || !this.props.errors.unassigned_nodes) return null;
+            return (
+                <div className='alert alert-danger'>
+                    <div>
+                        {i18n('vmware.unassigned_nodes')}
+                    </div>
+                    <ul className='unassigned-node-list'>
+                        {
+                            this.props.errors.unassigned_nodes.map(function(node) {
+                                return (
+                                    <li className='unassigned-node'>
+                                        <span className='unassigned-node-name'>{node.get('name')}</span>
+                                        &nbsp;
+                                        ({node.get('mac')})
+                                    </li>
+                                )
+                            })
+                        }
+                    </ul>
+                </div>
+            );
+        }
+    });
+
     var VCenter = React.createClass({
         mixins: [
             componentMixins.unsavedChangesMixin
@@ -362,6 +388,7 @@ define(
             return (
                 <div className='row'>
                     <div className='title'>{i18n('vmware.title')}</div>
+                    <UnassignedNodesWarning errors={model.validationError}/>
                     {!hide.availability_zones.result &&
                         <AvailabilityZones
                             collection={model.get('availability_zones')}

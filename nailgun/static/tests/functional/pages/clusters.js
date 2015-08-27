@@ -23,9 +23,9 @@ define(['tests/functional/pages/modal'], function(ModalWindow) {
 
     ClustersPage.prototype = {
         constructor: ClustersPage,
-        createCluster: function(clusterName) {
+        createCluster: function(clusterName, suppressErrors) {
             var self = this;
-            return this.remote
+            var result = this.remote
                 .setFindTimeout(1000)
                 .findByClassName('create-cluster')
                     .click()
@@ -43,10 +43,12 @@ define(['tests/functional/pages/modal'], function(ModalWindow) {
                     .pressKeys('\uE007')
                     .pressKeys('\uE007')
                     .pressKeys('\uE007')
-                    .end()
-                .then(function() {
-                    return self.modal.waitToClose();
-                });
+                    .end();
+                if (!suppressErrors) return self.remote
+                    .then(function() {
+                        return self.modal.waitToClose();
+                    });
+            return result;
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {

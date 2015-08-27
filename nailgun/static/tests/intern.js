@@ -36,6 +36,6 @@ define(['config'], function(config) {
         grep: /^/,
         excludeInstrumentation: /^/,
         loader: config,
-        reporters: ['console']
+        reporters: ['pretty', 'console']
     };
 });

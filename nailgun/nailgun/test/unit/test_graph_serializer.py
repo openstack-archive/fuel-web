@@ -116,6 +116,36 @@ SUBTASKS = """
   requires: [setup_anything]
 """
 
+SUBTASKS_WITH_PATTERNS = """
+- id: install_controller
+  type: puppet
+  requires: [setup_network]
+  groups: ['/controller/']
+  required_for: [deploy_end]
+  parameters:
+    puppet_manifests: /etc/puppet/manifests/controller.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 360
+- id: setup_network
+  type: puppet
+  groups: ['*', '!cinder', '!compute', '!/network/']
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    puppet_manifest: run_setup_network.pp
+    puppet_modules: /etc/puppet
+    timeout: 120
+
+- id: setup_anything
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment]
+  type: shell
+- id: setup_more_stuff
+  type: shell
+  requires_for: [pre_deployment]
+  requires: [setup_anything]
+"""
+
 
 class TestGraphDependencies(base.BaseTestCase):
 
@@ -123,6 +153,7 @@ class TestGraphDependencies(base.BaseTestCase):
         super(TestGraphDependencies, self).setUp()
         self.tasks = yaml.load(TASKS)
         self.subtasks = yaml.load(SUBTASKS)
+        self.subtasks_with_patterns = yaml.load(SUBTASKS_WITH_PATTERNS)
         self.graph = deployment_graph.DeploymentGraph()
 
     def test_build_deployment_graph(self):
@@ -142,6 +173,14 @@ class TestGraphDependencies(base.BaseTestCase):
 
     def test_subtasks_in_correct_order(self):
         self.graph.add_tasks(self.tasks + self.subtasks)
+        subtasks = self.graph.get_group_tasks('controller')
+        topology_by_id = [item['id'] for item in subtasks]
+        self.assertItemsEqual(
+            topology_by_id,
+            ['setup_network', 'install_controller'])
+
+    def test_subtasks_with_pattern(self):
+        self.graph.add_tasks(self.tasks + self.subtasks_with_patterns)
         subtasks = self.graph.get_group_tasks('controller')
         topology_by_id = [item['id'] for item in subtasks]
         self.assertItemsEqual(

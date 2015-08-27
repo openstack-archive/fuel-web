@@ -386,6 +386,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         render: function() {
             var test = this.props.test,
                 result = this.props.result,
+                description = _.escape(_.trim(test.get('description'))),
                 status = this.props.status,
                 currentStatusClassName = 'text-center healthcheck-status healthcheck-status-' + status,
                 iconClasses = {
@@ -395,6 +396,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     running: 'glyphicon glyphicon-refresh animate-spin',
                     wait_running: 'glyphicon glyphicon-time'
                 };
+
             return (
                 <tr>
                     <td>
@@ -419,9 +421,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 <div className='well' dangerouslySetInnerHTML={{__html:
                                     utils.urlify(
                                         (result && _.isNumber(result.step)) ?
-                                            this.highlightStep(test.escape('description'), result.step)
+                                            this.highlightStep(description, result.step)
                                         :
-                                            test.escape('description')
+                                            description
                                         )
                                     }}>
                                 </div>

@@ -496,6 +496,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     }
                                     {nodes.hasChanges() &&
                                         <a
+                                            className='discard-changes'
                                             key='discard-changes'
                                             onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
                                         >

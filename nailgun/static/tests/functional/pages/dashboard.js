@@ -69,6 +69,50 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.modal.waitToClose();
                 });
+        },
+        isAddNodesButtonVisible: function() {
+            return this.remote
+                .setFindTimeout(100)
+                .findAllByCssSelector('.btn-add-nodes')
+                .then(function(buttons) {
+                    return buttons.length > 0;
+                });
+        },
+        startClusterRenaming: function() {
+            return this.remote
+                .setFindTimeout(100)
+                .findByCssSelector('.cluster-info-value.name .glyphicon-pencil')
+                    .click()
+                    .end();
+        },
+        isRenameControlVisible: function() {
+            return this.remote
+                .findAllByCssSelector('.rename-block input[type=text]')
+                    .then(function(elements) {
+                        return elements.length;
+                    });
+        },
+        getClusterName: function() {
+            return this.remote
+                .setFindTimeout(100)
+                .findByCssSelector('.cluster-info-value.name a')
+                .getVisibleText()
+                    .then(function(value) {
+                        return value;
+                    });
+        },
+        setClusterName: function(name) {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.startClusterRenaming();
+                })
+                .setFindTimeout(100)
+                .findByCssSelector('.rename-block input[type=text]')
+                    .clearValue()
+                    .type(name)
+                    .type('')
+                    .end();
         }
     };
     return DashboardPage;

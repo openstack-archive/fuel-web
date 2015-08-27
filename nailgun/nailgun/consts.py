@@ -392,3 +392,6 @@ NETWORK_NOTATION = Enum(
 
 # Minimal quantity of IPs to be fetched and checked within one request to DB.
 MIN_IPS_PER_DB_QUERY = 5
+
+GROUP_NAME_DELIMITER = '-'
+GROUP_NAME_PATTERN = '[a-zA-Z0-9-_]+'

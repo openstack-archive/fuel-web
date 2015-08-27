@@ -619,7 +619,7 @@ class StopDeploymentTaskManager(TaskManager):
             name=consts.TASK_NAMES.deployment,
         )
         deployment_task = objects.TaskCollection.order_by(
-            deployment_task, 'id'
+            deployment_task, '-id'
         ).first()
 
         provisioning_task = objects.TaskCollection.filter_by(
@@ -628,7 +628,7 @@ class StopDeploymentTaskManager(TaskManager):
             name=consts.TASK_NAMES.provision,
         )
         provisioning_task = objects.TaskCollection.order_by(
-            provisioning_task, 'id'
+            provisioning_task, '-id'
         ).first()
 
         if not deployment_task and not provisioning_task:

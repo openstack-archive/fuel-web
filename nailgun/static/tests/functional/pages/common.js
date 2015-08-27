@@ -93,14 +93,14 @@ define([
                         if (tabName) return self.clusterPage.goToTab(tabName);
                     });
             },
-            createCluster: function(clusterName) {
+            createCluster: function(clusterName, stepsMethods) {
                 var self = this;
                 return this.remote
                     .then(function() {
                         return self.clickLink('Environments');
                     })
                     .then(function() {
-                        return self.clustersPage.createCluster(clusterName);
+                        return self.clustersPage.createCluster(clusterName, stepsMethods);
                     });
             },
             removeCluster: function(clusterName, suppressErrors) {

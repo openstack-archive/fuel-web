@@ -95,7 +95,7 @@ class Task(NailgunObject):
     @classmethod
     def update_verify_networks(cls, instance, status,
                                progress, msg, result):
-        #TODO(dshulyak) move network tests into ostf
+        # TODO(dshulyak) move network tests into ostf
         previous_status = instance.status
 
         statuses = [sub.status for sub in instance.subtasks]

@@ -106,7 +106,7 @@ class TestDeleteIBPImagesTask(BaseTestCase):
                            '/boot': {'uri': 'http://c.d/fake-boot.img'}}
         task.DeleteIBPImagesTask.message(task_mock, fake_image_data)
         mock_astute.assert_called_once_with(
-            mock.ANY, 'execute_tasks', 'remove_cluster_resp', {
+            mock.ANY, 'execute_tasks', 'remove_images_resp', {
                 'tasks': [{
                     'type': 'shell',
                     'uids': [consts.MASTER_ROLE],

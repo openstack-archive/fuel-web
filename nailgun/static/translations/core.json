@@ -28,6 +28,8 @@
                     "gb": "GB",
                     "tb": "TB"
                 },
+                "true": "True",
+                "false": "False",
                 "node": "__count__ node",
                 "node_plural": "__count__ nodes",
                 "important": "Important",

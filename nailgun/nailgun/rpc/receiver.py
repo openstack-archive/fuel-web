@@ -204,6 +204,18 @@ class NailgunReceiver(object):
             )
 
     @classmethod
+    def remove_images_resp(cls, **kwargs):
+        logger.info(
+            "RPC method remove_images_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        status = kwargs.get('status')
+        if status == consts.TASK_STATUSES.ready:
+            logger.info("IBP images from deleted cluster have been removed")
+        elif status == consts.TASK_STATUSES.error:
+            logger.error("Removing IBP images failed")
+
+    @classmethod
     def deploy_resp(cls, **kwargs):
         logger.info(
             "RPC method deploy_resp received: %s" %

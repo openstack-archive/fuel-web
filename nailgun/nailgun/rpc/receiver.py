@@ -204,6 +204,29 @@ class NailgunReceiver(object):
             )
 
     @classmethod
+    def remove_images_resp(cls, **kwargs):
+        logger.info(
+            "RPC method remove_images_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        status = kwargs.get('status')
+        task_uuid = kwargs['task_uuid']
+        task = objects.Task.get_by_uuid(task_uuid)
+
+        if status == consts.TASK_STATUSES.ready:
+            logger.info("IBP images from deleted cluster have been removed")
+        elif status == consts.TASK_STATUSES.error:
+            msg = "Removing IBP images failed: task_uuid {0}".format(task_uuid)
+            logger.error(msg)
+
+            # Not providing cluster_id, because it's highly possible
+            # the cluster is already cleaned up from db
+            notifier.notify(consts.NOTIFICATION_TOPICS.error, msg,
+                            task_uuid=task_uuid)
+
+        objects.Task.update(task, {'status': status})
+
+    @classmethod
     def deploy_resp(cls, **kwargs):
         logger.info(
             "RPC method deploy_resp received: %s" %

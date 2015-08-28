@@ -8,3 +8,4 @@ Packaging
    :numbered:
 
    packaging/package_versions
+   packaging/perestroika

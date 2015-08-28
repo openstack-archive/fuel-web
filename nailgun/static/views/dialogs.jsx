@@ -582,6 +582,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     value = utils.showFrequency(value);
                 } else if (name == 'max_speed' || name == 'current_speed') {
                     value = utils.showBandwidth(value);
+                } else if (_.isBoolean(value)) {
+                    value = value ? i18n('common.true') : i18n('common.false');
                 }
             } catch (ignore) {}
             return !_.isNumber(value) && _.isEmpty(value) ? '\u00A0' : value;

@@ -36,6 +36,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
@@ -157,7 +158,7 @@ class DeploymentTask(object):
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
         orchestrator_graph.only_tasks(deployment_tasks)
 
-        #NOTE(dshulyak) At this point parts of the orchestration can be empty,
+        # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
         serialized_cluster = deployment_serializers.serialize(
@@ -508,7 +509,7 @@ class DeleteIBPImagesTask(object):
         rpc_message = make_astute_message(
             task,
             'execute_tasks',
-            'remove_cluster_resp',
+            'remove_images_resp',
             {
                 'tasks': [tasks_templates.make_shell_task([consts.MASTER_ROLE],
                                                           task_params),
@@ -518,7 +519,10 @@ class DeleteIBPImagesTask(object):
         return rpc_message
 
     @classmethod
-    def execute(cls, task, image_data):
+    def execute(cls, cluster, image_data):
+        task = Task(name=consts.TASK_NAMES.remove_images, cluster=cluster)
+        db().add(task)
+        db().flush()
         rpc.cast('naily', cls.message(task, image_data))
 
 
@@ -614,10 +618,6 @@ class ClusterDeletionTask(object):
     @classmethod
     def execute(cls, task):
         logger.debug("Cluster deletion task is running")
-        DeletionTask.execute(
-            task,
-            nodes=DeletionTask.get_task_nodes_for_cluster(task.cluster),
-            respond_to='remove_cluster_resp')
         attrs = objects.Attributes.merged_attrs_values(task.cluster.attributes)
         if attrs.get('provision'):
             if (task.cluster.release.operating_system ==
@@ -626,9 +626,14 @@ class ClusterDeletionTask(object):
                     consts.PROVISION_METHODS.image):
                 logger.debug("Delete IBP images task is running")
                 DeleteIBPImagesTask.execute(
-                    task, attrs['provision']['image_data'])
+                    task.cluster, attrs['provision']['image_data'])
         else:
             logger.debug("Skipping IBP images deletion task")
+        DeletionTask.execute(
+            task,
+            nodes=DeletionTask.get_task_nodes_for_cluster(task.cluster),
+            respond_to='remove_cluster_resp'
+        )
 
 
 class BaseNetworkVerification(object):

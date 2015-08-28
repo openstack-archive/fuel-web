@@ -1347,6 +1347,50 @@ class TestConsumer(BaseReciverTestCase):
         cluster_db = self.db.query(Cluster).get(cluster_id)
         self.assertIsNone(cluster_db)
 
+    def test_remove_images_resp(self):
+        self.env.create()
+        cluster_db = self.env.clusters[0]
+
+        task = Task(
+            name=consts.TASK_NAMES.remove_images,
+            cluster_id=cluster_db.id
+        )
+        self.db.add(task)
+        self.db.flush()
+
+        kwargs = {
+            'task_uuid': task.uuid,
+            'progress': 100,
+            'status': consts.TASK_STATUSES.ready,
+        }
+
+        self.receiver.remove_images_resp(**kwargs)
+
+        self.db().refresh(task)
+        self.assertEqual(consts.TASK_STATUSES.ready, task.status)
+
+    def test_remove_images_resp_failed(self):
+        self.env.create()
+        cluster_db = self.env.clusters[0]
+
+        task = Task(
+            name=consts.TASK_NAMES.remove_images,
+            cluster_id=cluster_db.id
+        )
+        self.db.add(task)
+        self.db.flush()
+
+        kwargs = {
+            'task_uuid': task.uuid,
+            'progress': 100,
+            'status': consts.TASK_STATUSES.error,
+        }
+
+        self.receiver.remove_images_resp(**kwargs)
+
+        self.db().refresh(task)
+        self.assertEqual(consts.TASK_STATUSES.error, task.status)
+
     def test_remove_cluster_resp_failed(self):
         self.env.create(
             cluster_kwargs={},

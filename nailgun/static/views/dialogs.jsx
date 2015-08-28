@@ -584,7 +584,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     value = utils.showBandwidth(value);
                 }
             } catch (ignore) {}
-            return !_.isNumber(value) && _.isEmpty(value) ? '\u00A0' : value;
+            return !_.isNumber(value) && _.isEmpty(value) && !_.isBoolean(value) ? '\u00A0' : value.toString();
         },
         componentDidUpdate: function() {
             this.assignAccordionEvents();

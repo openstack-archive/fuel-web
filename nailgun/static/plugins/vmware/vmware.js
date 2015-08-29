@@ -16,17 +16,18 @@
 
 define(
 [
-    'jsx!./vmware_tab',
+    './vmware_tab',
     './vmware_models',
-    'json!./translations.json',
-    'less!./styles',
+    './translations.json',
+    './styles.less',
     'jquery',
-    'underscore'
+    'underscore',
+    'i18next'
 ],
-function(VmWareTab, vmWareModels, translations, styles, $, _) {
+function(VmWareTab, vmWareModels, translations, styles, $, _, i18next) {
     'use strict';
 
-    _.merge($.i18n.options.resStore, translations);
+    _.merge(i18next.options.resStore, translations);
 
     return {
         VmWareTab: VmWareTab,

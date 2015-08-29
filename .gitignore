@@ -22,9 +22,7 @@ nailgun.log
 lock
 
 node_modules
-bower_components
-nailgun/static/vendor/bower
-nailgun/static/tests/bower
+nailgun/static/vendor/npm/*
 
 *.egg
 .testrepository

@@ -20,7 +20,7 @@ define(['config'], function(config) {
     config.baseUrl = '';
     config.waitSeconds = 7;
 
-    config.paths.sinon = 'tests/bower/sinon/lib/sinon';
+    config.paths.sinon = 'vendor/npm/sinon/lib/sinon';
 
     return {
         proxyPort: 9057,
@@ -31,7 +31,7 @@ define(['config'], function(config) {
         maxConcurrency: 1,
         useLoader: {
             'host-node': 'requirejs',
-            'host-browser': '/vendor/bower/requirejs/require.js'
+            'host-browser': '/vendor/npm/requirejs/require.js'
         },
         grep: /^/,
         excludeInstrumentation: /^/,

@@ -15,18 +15,15 @@
  **/
 
 define([
-    'intern!object',
-    'intern/chai!assert',
     'underscore',
     'utils',
     'i18n',
     'backbone'
-], function(registerSuite, assert, _, utils, i18n, Backbone) {
+], function(_, utils, i18n, Backbone) {
     'use strict';
 
-    registerSuite({
-        name: 'Test utils',
-        'Test getResponseText': function() {
+    suite('Test utils', function() {
+        test('Test getResponseText', function() {
             var response;
             var getResponseText = utils.getResponseText;
             var serverErrorMessage = i18n('dialog.error_dialog.server_error');
@@ -46,8 +43,9 @@ define([
 
             response = {status: 400, responseText: JSON.stringify({message: '123'})};
             assert.equal(getResponseText(response), '123', 'HTTP 400 with JSON response is treated correctly');
-        },
-        'Test comparison': function() {
+        });
+
+        test('Test comparison', function() {
             var compare = utils.compare;
             var model1 = new Backbone.Model({
                     string: 'bond2',
@@ -83,8 +81,9 @@ define([
             assert.equal(compare(model2, model2, {attr: 'boolean'}), 0, 'Boolean comparison false and false');
 
             assert.equal(compare(model1, model2, {attr: 'booleanFlagWithNull'}), 0, 'Comparison null and false');
-        },
-        'Test highlightTestStep': function() {
+        });
+
+        test('Test highlightTestStep', function() {
             var text;
             var highlight = utils.highlightTestStep;
 
@@ -135,6 +134,6 @@ define([
                 text,
                 'Attempting to highlight non-existent step keeps text as it is'
             );
-        }
+        });
     });
 });

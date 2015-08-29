@@ -20,8 +20,8 @@ define([
     'react',
     'utils',
     'models',
-    'jsx!views/dialogs',
-    'jsx!views/controls'
+    'views/dialogs',
+    'views/controls'
 ], function($, _, i18n, React, utils, models, dialogs, controls) {
     'use strict';
 

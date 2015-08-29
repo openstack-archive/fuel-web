@@ -64,7 +64,7 @@ var rjsConfig = _.merge(rjs('static/config.js'), {
         }
     },
     paths: {
-        react: 'vendor/bower/react/react-with-addons.min'
+        react: 'vendor/react/dist/react-with-addons.min'
     },
     stubModules: ['jsx'],
     modules: [
@@ -120,6 +120,20 @@ gulp.task('bower:copy-main', function() {
 
 gulp.task('bower', function(cb) {
     runSequence('bower:fetch', 'bower:copy-main', cb);
+});
+
+gulp.task('copy-main', function() {
+    var config = JSON.parse(fs.readFileSync('package.json'));
+    var streams = _.map(config.mainFiles, function(files, package) {
+        if (!(package in config.dependencies) && !(package in config.devDependencies)) {
+            throw new Error(package + ' is not a dependency');
+        }
+        return _.map(_.isArray(files) ? files : [files], function(file) {
+            return gulp.src('node_modules/' + package + '/' + file, {base: 'node_modules'})
+                .pipe(gulp.dest('static/vendor/'));
+        });
+    });
+    return es.merge(_.flatten(streams));
 });
 
 var selenium = require('selenium-standalone');

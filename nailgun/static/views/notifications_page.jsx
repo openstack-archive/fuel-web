@@ -19,8 +19,8 @@ define(
     'react',
     'utils',
     'models',
-    'jsx!views/dialogs',
-    'jsx!component_mixins'
+    'views/dialogs',
+    'component_mixins'
 ],
 function(i18n, React, utils, models, dialogs, componentMixins) {
     'use strict';

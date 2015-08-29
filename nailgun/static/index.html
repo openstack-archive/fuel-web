@@ -13,7 +13,6 @@
     <meta http-equiv="pragma" content="no-cache" />
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" type="text/css" href="/static/styles/layout.css">
-    <script src="/static/vendor/npm/requirejs/require.js"></script>
     <script type="text/javascript">
       (function() {
         'use strict';
@@ -22,6 +21,14 @@
         function showError(error) {
           if (error) loadingErrors.push(error);
           if (mainContainer && loadingErrors.length) mainContainer.textContent = loadingErrors.join('; ');
+        }
+
+        function loadScript(src, errorMessage) {
+          var script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = src;
+          script.onerror = showError.bind(null, errorMessage || ('Failed to load ' + src));
+          document.head.appendChild(script);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -53,9 +60,7 @@
         }());
 
         if (hasCookies && hasStorage) {
-          requirejs.config({baseUrl: '/static', urlArgs: '_=__CACHE_BUST__'});
-          requirejs.onError = showError;
-          requirejs(['main']);
+          loadScript('static/build/bundle.js?__CACHE_BUST__', 'Failed to load compressed Fuel UI bundle');
         } else {
           showError('Fuel UI requires Cookies and LocalStorage to work');
         }

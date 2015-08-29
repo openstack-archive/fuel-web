@@ -17,11 +17,12 @@ define([
     'underscore',
     'i18n',
     'react',
-    'jsx!views/layout',
+    'views/layout',
     'dispatcher',
-    'jsx!component_mixins',
-    'react-dnd'
-], function(_, i18n, React, layoutComponents, dispatcher, componentMixins, DND) {
+    'component_mixins',
+    'react-dnd',
+    'react-dnd/modules/backends/HTML5'
+], function(_, i18n, React, layoutComponents, dispatcher, componentMixins, DND, HTML5Backend) {
     'use strict';
 
     var RootComponent = React.createClass({
@@ -76,5 +77,5 @@ define([
         }
     });
 
-    return DND.DragDropContext(DND.HTML5)(RootComponent);
+    return DND.DragDropContext(HTML5Backend)(RootComponent);
 });

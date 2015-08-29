@@ -20,10 +20,10 @@ define(
     'i18n',
     'backbone',
     'react',
-    'jsx!views/dialogs',
-    'jsx!component_mixins',
+    'views/dialogs',
+    'component_mixins',
     'models',
-    'jsx!views/statistics_mixin'
+    'views/statistics_mixin'
 ],
 function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) {
     'use strict';

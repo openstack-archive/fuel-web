@@ -22,7 +22,7 @@ nailgun.log
 lock
 
 node_modules
-nailgun/static/vendor/npm/*
+nailgun/static/build
 
 *.egg
 .testrepository

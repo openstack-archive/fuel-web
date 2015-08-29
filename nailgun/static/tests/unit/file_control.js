@@ -1,17 +1,26 @@
-define([
-    'intern!object',
-    'intern/chai!assert',
-    'underscore',
-    'sinon'
-], function(registerSuite, assert, _, sinon) {
+/*
+ * Copyright 2015 Mirantis, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
+
+define(function() {
     'use strict';
 
     var input;
 
-    registerSuite({
-        name: 'File Control',
-
-        beforeEach: function() {
+    suite('File Control', function() {
+        setup(function() {
             var controls = require('views/controls');
 
             input = new controls.Input({
@@ -26,17 +35,17 @@ define([
                     content: 'CERTIFICATE'
                 }
             });
-        },
+        });
 
-        Initialization: function() {
+        test('Initialization', function() {
             var initialState = input.getInitialState();
 
             assert.equal(input.props.type, 'file', 'Input type should be equal to file');
             assert.equal(initialState.fileName, 'certificate.crt', 'Default file name must correspond to provided one');
             assert.equal(initialState.content, 'CERTIFICATE', 'Content should be equal to the default');
-        },
+        });
 
-        'File selection': function() {
+        test('File selection', function() {
             var clickSpy = sinon.spy();
 
             sinon.stub(input, 'getInputDOMNode').returns({
@@ -45,9 +54,9 @@ define([
 
             input.pickFile();
             assert.ok(clickSpy.calledOnce, 'When icon clicked input control should be clicked too to open select file dialog');
-        },
+        });
 
-        'File fetching': function() {
+        test('File fetching', function() {
             var readMethod = sinon.mock(),
                 readerObject = {
                     readAsBinaryString: readMethod,
@@ -70,9 +79,9 @@ define([
             readerObject.onload();
             assert.ok(saveMethod.calledOnce, 'saveFile handler called once');
             sinon.assert.calledWith(saveMethod, 'somefile.ext', 'File contents');
-        },
+        });
 
-        'File saving': function() {
+        test('File saving', function() {
             var setState = sinon.spy(input, 'setState'),
                 dummyName = 'dummy.ext',
                 dummyContent = 'Lorem ipsum dolores';
@@ -87,6 +96,6 @@ define([
                 name: dummyName,
                 content: dummyContent
             }, 'Control sends updated data upon changes');
-        }
+        });
     });
 });

@@ -22,7 +22,7 @@ nailgun.log
 lock
 
 node_modules
-nailgun/static/vendor/npm/*
+nailgun/static/build
 
 *.egg
 .testrepository
@@ -30,7 +30,7 @@ nailgun/static/vendor/npm/*
 .venv
 .idea
 .DS_Store
-test_run/*
+test_run/
 
 *.egg-info
 

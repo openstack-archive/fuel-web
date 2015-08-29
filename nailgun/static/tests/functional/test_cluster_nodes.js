@@ -15,7 +15,7 @@
  **/
 
 define([
-    'underscore',
+    'intern/dojo/node!lodash',
     'tests/register_suite',
     'intern/chai!assert',
     'tests/functional/pages/modal',

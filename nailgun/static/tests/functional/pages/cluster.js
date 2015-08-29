@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) {
+define(['intern/dojo/node!lodash', 'tests/functional/pages/modal'], function(_, ModalWindow) {
     'use strict';
     function ClusterPage(remote) {
         this.remote = remote;

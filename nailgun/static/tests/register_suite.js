@@ -15,7 +15,7 @@
  **/
 
 define([
-    'underscore',
+    'intern/dojo/node!lodash',
     'intern!object',
     'intern/dojo/node!leadfoot/Command',
     './helpers'

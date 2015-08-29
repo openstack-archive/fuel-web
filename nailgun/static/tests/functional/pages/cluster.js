@@ -15,7 +15,7 @@
  **/
 
 define([
-    'underscore',
+    'intern/dojo/node!lodash',
     'tests/functional/pages/modal',
     '../../helpers'
 ], function(_, ModalWindow) {

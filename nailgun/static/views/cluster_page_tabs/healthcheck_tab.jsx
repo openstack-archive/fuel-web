@@ -22,8 +22,8 @@ define(
     'react',
     'models',
     'utils',
-    'jsx!component_mixins',
-    'jsx!views/controls'
+    'component_mixins',
+    'views/controls'
 ],
 function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) {
     'use strict';

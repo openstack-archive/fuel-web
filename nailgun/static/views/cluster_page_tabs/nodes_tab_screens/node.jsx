@@ -23,8 +23,8 @@ define(
     'utils',
     'models',
     'dispatcher',
-    'jsx!views/controls',
-    'jsx!views/dialogs'
+    'views/controls',
+    'views/dialogs'
 ],
 function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs) {
     'use strict';

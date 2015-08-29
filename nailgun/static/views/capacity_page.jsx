@@ -19,8 +19,8 @@ define(
     'i18n',
     'react',
     'models',
-    'jsx!component_mixins',
-    'jsx!views/controls'
+    'component_mixins',
+    'views/controls'
 ],
 function(_, i18n, React, models, componentMixins, controls) {
     'use strict';

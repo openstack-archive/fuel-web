@@ -20,7 +20,7 @@ define([
     'jquery',
     'underscore',
     'i18next',
-    'json!translations/core.json'
+    './translations/core.json'
 ], function($, _, i18next, translations) {
     'use strict';
 

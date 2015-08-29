@@ -21,10 +21,10 @@ var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
 var path = require('path');
 var glob = require('glob');
-var spawn = require('child_process').spawn;
 var rimraf = require('rimraf');
-var es = require('event-stream');
 var _ = require('lodash');
+
+var webpack = require('webpack');
 
 var gulp = require('gulp');
 var gutil = require('gulp-util');
@@ -32,86 +32,14 @@ var shell = require('gulp-shell');
 var runSequence = require('run-sequence');
 
 var filter = require('gulp-filter');
-var react = require('gulp-react');
-var less = require('gulp-less');
-var autoprefixer = require('gulp-autoprefixer');
 var replace = require('gulp-replace');
 var jison = require('gulp-jison');
-var lintspaces = require('gulp-lintspaces');
-
-var jscs = require('gulp-jscs');
-var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
-
-var intermediate = require('gulp-intermediate');
-var rjs = require('requirejs');
-var rjsConfig = _.merge(rjs('static/config.js'), {
-    baseUrl: '.',
-    appDir: 'static',
-    optimize: 'uglify2',
-    optimizeCss: 'standard',
-    generateSourceMaps: true,
-    preserveLicenseComments: false, // required for generateSourceMaps
-    wrapShim: true,
-    pragmas: {
-        compressed: true
-    },
-    map: {
-        '*': {
-            JSXTransformer: 'empty:'
-        }
-    },
-    paths: {
-        react: 'vendor/npm/react/dist/react-with-addons.min'
-    },
-    stubModules: ['jsx'],
-    modules: [
-        {
-            name: 'main',
-            exclude: ['require-css/normalize']
-        }
-    ]
-});
-
-var jsFilter = filter('**/*.js');
-var jsxFilter = filter('**/*.jsx');
-var lessFilter = filter('**/*.less');
-var indexFilter = filter('index.html');
-var buildSourceFilter = filter([
-    '**',
-    '!tests/**'
-]);
-var buildResultFilter = filter([
-    'index.html',
-    'main.js',
-    'main.js.map',
-    'vendor/npm/requirejs/require.js',
-    'vendor/npm/requirejs/require.js.map',
-    'styles/*.css',
-    'favicon.ico',
-    'img/**',
-    '**/*.+(ttf|eot|svg|woff|woff2)',
-    'plugins/**'
-]);
 
 var validateTranslations = require('./gulp/i18n').validate;
 gulp.task('i18n:validate', function() {
     var tranlations = JSON.parse(fs.readFileSync('static/translations/core.json'));
     var locales = argv.locales ? argv.locales.split(',') : null;
     validateTranslations(tranlations, locales);
-});
-
-gulp.task('copy-main', function() {
-    var config = JSON.parse(fs.readFileSync('package.json'));
-    var streams = _.map(config.mainFiles, function(files, package) {
-        if (!(package in config.dependencies) && !(package in config.devDependencies)) {
-            throw new Error(package + ' is not a dependency');
-        }
-        return _.map(_.isArray(files) ? files : [files], function(file) {
-            return gulp.src('node_modules/' + package + '/' + file, {base: 'node_modules'})
-                .pipe(gulp.dest('static/vendor/npm/'));
-        });
-    });
-    return es.merge(_.flatten(streams));
 });
 
 var selenium = require('selenium-standalone');
@@ -201,6 +129,7 @@ gulp.task('jison', function() {
 var jsFiles = [
     'static/**/*.js',
     'static/**/*.jsx',
+    '!static/build/**',
     '!static/vendor/**',
     '!static/expression/parser.js',
     'static/tests/**/*.js'
@@ -208,22 +137,26 @@ var jsFiles = [
 var styleFiles = [
     'static/**/*.less',
     'static/**/*.css',
+    '!static/build/**',
     '!static/vendor/**'
 ];
 
 gulp.task('jscs:fix', function() {
+    var jscs = require('gulp-jscs');
+    var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
     return gulp.src(jsFiles, {base: '.'})
         .pipe(jscs(_.extend({fix: true}, jscsConfig)))
         .pipe(gulp.dest('.'));
 });
 
 gulp.task('jscs', function() {
+    var jscs = require('gulp-jscs');
+    var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
     return gulp.src(jsFiles)
         .pipe(jscs(jscsConfig));
 });
 
 gulp.task('eslint', function() {
-    // FIXME(vkramskikh): move to top after fixing packaging issues
     var eslint = require('gulp-eslint');
     var eslintConfig = JSON.parse(fs.readFileSync('./.eslintrc'));
     return gulp.src(jsFiles)
@@ -240,6 +173,7 @@ var lintspacesConfig = {
 };
 
 gulp.task('lintspaces:js', function() {
+    var lintspaces = require('gulp-lintspaces');
     return gulp.src(jsFiles)
         .pipe(lintspaces(_.extend({}, lintspacesConfig, {
             ignores: ['js-comments'],
@@ -249,6 +183,7 @@ gulp.task('lintspaces:js', function() {
 });
 
 gulp.task('lintspaces:styles', function() {
+    var lintspaces = require('gulp-lintspaces');
     return gulp.src(styleFiles)
         .pipe(lintspaces(_.extend({}, lintspacesConfig, {
             ignores: ['js-comments'],
@@ -265,42 +200,60 @@ gulp.task('lint', [
     'lintspaces:styles'
 ]);
 
-gulp.task('build', function() {
-    var targetDir = argv['static-dir'] || '/tmp/static_compressed';
-    rimraf.sync(targetDir);
+gulp.task('build', function(cb) {
+    var watch = argv.watch;
+    var dev = argv.dev;
+    var tmpDir = '/tmp/static_compressed';
+    var targetDir = argv['static-dir'];
 
-    return gulp.src(['static/**'])
-        .pipe(jsxFilter)
-        .pipe(react())
-        .pipe(jsxFilter.restore())
-        .pipe(lessFilter)
-        .pipe(less())
-        .pipe(autoprefixer())
-        .pipe(lessFilter.restore())
-        .pipe(jsFilter)
-        // use CSS loader instead LESS loader - styles are precompiled
-        .pipe(replace(/less!/g, 'require-css/css!'))
-        // remove explicit calls to JSX loader plugin
-        .pipe(replace(/jsx!/g, ''))
-        .pipe(jsFilter.restore())
-        .pipe(indexFilter)
-        .pipe(replace('__CACHE_BUST__', Date.now()))
-        .pipe(indexFilter.restore())
-        .pipe(buildSourceFilter)
-        .pipe(intermediate({output: '_build'}, function(tempDir, cb) {
-            var configFile = path.join(tempDir, 'build.json');
-            rjsConfig.appDir = tempDir;
-            rjsConfig.dir = path.join(tempDir, '_build');
-            fs.createWriteStream(configFile).write(JSON.stringify(rjsConfig));
+    var config = require('./webpack.config');
+    if (!dev) {
+        config.plugins.push(
+            new webpack.DefinePlugin({'process.env': {NODE_ENV: '"production"'}}),
+            new webpack.optimize.DedupePlugin(),
+            new webpack.optimize.UglifyJsPlugin({compress: {warnings: false}})
+        );
+    }
+    if (targetDir) {
+        rimraf.sync(targetDir);
+        config.output.path = tmpDir + '/build/';
+    }
 
-            var rjs = spawn('./node_modules/.bin/r.js', ['-o', configFile]);
-            rjs.stdout.on('data', function(data) {
-                _(data.toString().split('\n')).compact().each(_.ary(gutil.log, 1)).value();
-            });
-            rjs.on('close', cb);
-        }))
-        .pipe(buildResultFilter)
-        .pipe(gulp.dest(targetDir));
+    var compiler = webpack(config);
+    var action = watch ? compiler.watch.bind(compiler, {}) : compiler.run.bind(compiler);
+
+    action(function(err, stats) {
+        if (err) return cb(err);
+
+        gutil.log(stats.toString({
+            colors: true,
+            hash: false,
+            version: false,
+            assets: false,
+            chunks: false
+        }));
+
+        if (stats.hasErrors()) return cb('Build failed');
+
+        if (targetDir) {
+            var indexFilter = filter('index.html');
+            var stream = gulp
+                .src([
+                    'static/index.html',
+                    'static/favicon.ico',
+                    'static/img/loader-bg.svg',
+                    'static/img/loader-logo.svg',
+                    'static/styles/layout.css'
+                ], {base: 'static'})
+                .pipe(indexFilter)
+                .pipe(replace('__CACHE_BUST__', Date.now()))
+                .pipe(indexFilter.restore())
+                .pipe(gulp.dest(targetDir));
+            if (!watch) stream.on('end', cb);
+        } else {
+            cb();
+        }
+    });
 });
 
 gulp.task('default', ['build']);

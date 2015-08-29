@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['underscore', 'intern/node_modules/dojo/node!fs'], function(_, fs) {
+define(['intern/dojo/node!lodash', 'intern/node_modules/dojo/node!fs'], function(_, fs) {
     'use strict';
 
     var serverHost = '127.0.0.1',

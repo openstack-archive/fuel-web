@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'], function(_, fs, Command) {
+define(['intern/dojo/node!lodash', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'], function(_, fs, Command) {
     'use strict';
 
     _.defaults(Command.prototype, {

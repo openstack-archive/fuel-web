@@ -271,7 +271,7 @@ function run_ui_unit_tests {
 
   pushd $ROOT/nailgun >> /dev/null
 
-  ${GULP} bower && ${GULP} unit-tests || result=1
+  ${GULP} unit-tests || result=1
 
   popd >> /dev/null
 

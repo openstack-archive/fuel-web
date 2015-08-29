@@ -19,7 +19,7 @@ define(
     'underscore',
     'react',
     'models',
-    'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
+    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
 function($, _, React, models, NodeListScreen) {
     'use strict';

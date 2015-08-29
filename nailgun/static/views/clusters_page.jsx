@@ -22,7 +22,7 @@ define(
     'models',
     'utils',
     'dispatcher',
-    'jsx!component_mixins',
+    'component_mixins',
     'views/wizard'
 ],
 function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) {

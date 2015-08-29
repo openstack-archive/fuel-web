@@ -22,9 +22,9 @@ define(
     'utils',
     'models',
     'dispatcher',
-    'jsx!views/dialogs',
-    'jsx!component_mixins',
-    'jsx!views/controls'
+    'views/dialogs',
+    'component_mixins',
+    'views/controls'
 ],
 function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins, controls) {
     'use strict';

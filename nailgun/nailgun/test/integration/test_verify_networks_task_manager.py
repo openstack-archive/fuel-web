@@ -853,3 +853,47 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
         msg = "envs < 6.1 must not have check repo availability tasks"
         self.assertFalse(bool(check_repo_tasks), msg)
+
+
+class TestVerifyNetworkWithTemplateLoaded(BaseIntegrationTest):
+    def setUp(self):
+        super(TestVerifyNetworkWithTemplateLoaded, self).setUp()
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.neutron
+            },
+            nodes_kwargs=[
+                {
+                    'api': True,
+                    'pending_addition': True,
+                    'roles': ['controller'],
+                },
+                {
+                    'api': True,
+                    'pending_addition': True,
+                    'roles': ['compute'],
+                }
+            ]
+        )
+
+    @fake_tasks()
+    def test_network_template_upload(self):
+        task = self.env.launch_verify_networks()
+        self.env.wait_ready(task, 30)
+
+        template = self.env.read_fixtures(['network_template'])[0]
+        template.pop('pk')  # PK is not needed
+
+        resp = self.app.put(
+            reverse(
+                'TemplateNetworkConfigurationHandler',
+                kwargs={'cluster_id': self.cluster['id']},
+            ),
+            jsonutils.dumps(template),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEquals(template, resp.json_body)
+
+        task = self.env.launch_verify_networks()
+        self.env.wait_ready(task, 30)

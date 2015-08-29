@@ -20,7 +20,7 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'],
+define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
     function(i18n, $, _, React, utils, componentMixins) {
     'use strict';
 

@@ -2,7 +2,7 @@
 
 var fs = require('fs');
 var gutil = require('gulp-util');
-var _ = require('lodash-node');
+var _ = require('lodash');
 
 function validate(translations, locales) {
     var processedTranslations = {};

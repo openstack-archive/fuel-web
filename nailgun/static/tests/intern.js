@@ -14,16 +14,8 @@
  * under the License.
  **/
 
-define(['config'], function(config) {
+define(function() {
     'use strict';
-
-    config.baseUrl = '';
-    config.waitSeconds = 7;
-
-    config.paths.sinon = 'vendor/npm/sinon/lib/sinon';
-
-    // FIXME(vkramskikh): workaround for https://github.com/theintern/intern/issues/348
-    delete config.map['*'];
 
     return {
         proxyPort: 9057,
@@ -38,7 +30,6 @@ define(['config'], function(config) {
         },
         grep: /^/,
         excludeInstrumentation: /^/,
-        loader: config,
         reporters: ['console', 'tests/screenshot_on_fail']
     };
 });

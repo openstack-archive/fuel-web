@@ -1,14 +1,9 @@
 Managing UI Dependencies
 ========================
 
-The UI has 2 types of dependencies: managed by NPM_ (run on node.js) and
-managed by Bower_ (run in browser).
+The dependencies of Fuel UI are managed by NPM_.
 
-Managing NPM Packages
----------------------
-
-NPM packages such as gulp_, bower_ and others are used in a development
-environment only. Used NPM packages are listed in the *devDependencies* section
+Used NPM packages are listed in *dependencies* and *devDependencies* sections
 of a package.json file. To install all required packages, run::
 
     npm install
@@ -23,39 +18,24 @@ versions. First you need to install the clingwrap package globally:
 
     sudo npm install -g clingwrap
 
-Then you need to remove the existing npm-shrinkwrap.json file::
+Then install required package::
+
+    npm install --save some-package
+
+Then run::
+
+    clingwrap some-package
+
+to update npm-shrinkwrap.json.
+
+Alternatively, you can completely regenerate npm-shrinkwrap.json by running::
 
     rm npm-shrinkwrap.json
-
-Then make required changes to a package.json file and run::
-
+    rm -rf node_modules
     npm install
-
-to remove old packages and install new ones. Then regenerate
-npm-shrinkwrap.json by running::
-
     npm shrinkwrap --dev
     clingwrap npmbegone
 
-
-Managing Bower Packages
------------------------
-
-Bower_ is used to download libraries that run in browser. To add a new package,
-just add an entry to dependencies section of a bower.json file and run::
-
-    gulp bower
-
-to download it. The new package will be placed in the
-nailgun/static/js/libs/bower/ directory. If the package contains more than one
-JS file, you must add a new entry to the exportsOverride section with a path to
-the appropriate file, in order to prevent unwanted JS files from appearing in
-the final UI build.
-
-If a library does not exist in the bower repository, it should be placed in the
-nailgun/static/js/libs/custom/ directory.
-
 .. _npm: https://www.npmjs.org/
-.. _bower: http://bower.io/
 .. _gulp: http://gulpjs.com/
 .. _npm-shrinkwrap: https://www.npmjs.org/doc/cli/npm-shrinkwrap.html

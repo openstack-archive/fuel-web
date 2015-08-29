@@ -20,7 +20,7 @@ define([
     'i18n',
     'react',
     'utils',
-    'jsx!views/controls'
+    'views/controls'
 ], function($, _, i18n, React, utils, controls) {
     'use strict';
 

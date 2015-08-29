@@ -15,7 +15,7 @@
  **/
 
 define([
-    'underscore',
+    'intern/dojo/node!lodash',
     'intern/chai!assert'
 ], function(_, assert) {
     'use strict';

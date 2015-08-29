@@ -3,7 +3,7 @@ define([
     'intern/chai!assert',
     'underscore',
     'sinon',
-    'jsx!views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
+    'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
 ], function(registerSuite, assert, _, sinon, OffloadingModes) {
     'use strict';
 

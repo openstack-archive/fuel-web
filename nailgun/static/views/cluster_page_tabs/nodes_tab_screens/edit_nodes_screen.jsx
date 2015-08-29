@@ -20,8 +20,8 @@ define(
     'react',
     'models',
     'utils',
-    'jsx!component_mixins',
-    'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
+    'component_mixins',
+    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
 function($, _, React, models, utils, ComponentMixins, NodeListScreen) {
     'use strict';

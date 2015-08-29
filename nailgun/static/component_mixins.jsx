@@ -46,7 +46,7 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                 if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
                     e.preventDefault();
 
-                    var dialogs = require('jsx!views/dialogs');
+                    var dialogs = require('views/dialogs');
                     dialogs.DiscardSettingsChangesDialog
                         .show({
                             reasonToStay: _.result(this, 'getStayMessage'),

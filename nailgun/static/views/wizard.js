@@ -20,20 +20,21 @@ define(
     'underscore',
     'i18n',
     'backbone',
+    'backbone.stickit',
     'utils',
     'models',
-    'text!templates/wizard/create_cluster_wizard.html',
-    'text!templates/wizard/name_and_release.html',
-    'text!templates/wizard/common_wizard_panel.html',
-    'text!templates/wizard/mode.html',
-    'text!templates/wizard/network.html',
-    'text!templates/wizard/storage.html',
-    'text!templates/wizard/ready.html',
-    'text!templates/wizard/control_template.html',
-    'text!templates/wizard/warning.html',
-    'text!templates/wizard/text_input.html'
+    'templates/wizard/create_cluster_wizard.html',
+    'templates/wizard/name_and_release.html',
+    'templates/wizard/common_wizard_panel.html',
+    'templates/wizard/mode.html',
+    'templates/wizard/network.html',
+    'templates/wizard/storage.html',
+    'templates/wizard/ready.html',
+    'templates/wizard/control_template.html',
+    'templates/wizard/warning.html',
+    'templates/wizard/text_input.html'
 ],
-function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, $, _, i18n, Backbone, stickit, utils, models, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {},

@@ -21,8 +21,8 @@ define([
     'utils',
     'expression',
     'expression/objects',
-    'jsx!views/custom_controls',
-    'deepModel'
+    'views/custom_controls',
+    'deep-model'
 ], function($, _, i18n, Backbone, utils, Expression, expressionObjects, customControls) {
     'use strict';
 

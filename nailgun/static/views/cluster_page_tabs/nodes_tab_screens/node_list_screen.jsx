@@ -23,10 +23,10 @@ define(
     'utils',
     'models',
     'dispatcher',
-    'jsx!views/controls',
-    'jsx!views/dialogs',
-    'jsx!component_mixins',
-    'jsx!views/cluster_page_tabs/nodes_tab_screens/node'
+    'views/controls',
+    'views/dialogs',
+    'component_mixins',
+    'views/cluster_page_tabs/nodes_tab_screens/node'
 ],
 function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins, Node) {
     'use strict';

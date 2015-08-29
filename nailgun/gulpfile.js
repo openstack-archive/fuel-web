@@ -21,7 +21,6 @@ var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
 var path = require('path');
 var glob = require('glob');
-var spawn = require('child_process').spawn;
 var rimraf = require('rimraf');
 var es = require('event-stream');
 var _ = require('lodash');
@@ -32,86 +31,17 @@ var shell = require('gulp-shell');
 var runSequence = require('run-sequence');
 
 var filter = require('gulp-filter');
-var react = require('gulp-react');
-var less = require('gulp-less');
-var autoprefixer = require('gulp-autoprefixer');
-var replace = require('gulp-replace');
 var jison = require('gulp-jison');
 var lintspaces = require('gulp-lintspaces');
 
 var jscs = require('gulp-jscs');
 var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
 
-var intermediate = require('gulp-intermediate');
-var rjs = require('requirejs');
-var rjsConfig = _.merge(rjs('static/config.js'), {
-    baseUrl: '.',
-    appDir: 'static',
-    optimize: 'uglify2',
-    optimizeCss: 'standard',
-    generateSourceMaps: true,
-    preserveLicenseComments: false, // required for generateSourceMaps
-    wrapShim: true,
-    pragmas: {
-        compressed: true
-    },
-    map: {
-        '*': {
-            JSXTransformer: 'empty:'
-        }
-    },
-    paths: {
-        react: 'vendor/npm/react/dist/react-with-addons.min'
-    },
-    stubModules: ['jsx'],
-    modules: [
-        {
-            name: 'main',
-            exclude: ['require-css/normalize']
-        }
-    ]
-});
-
-var jsFilter = filter('**/*.js');
-var jsxFilter = filter('**/*.jsx');
-var lessFilter = filter('**/*.less');
-var indexFilter = filter('index.html');
-var buildSourceFilter = filter([
-    '**',
-    '!tests/**'
-]);
-var buildResultFilter = filter([
-    'index.html',
-    'main.js',
-    'main.js.map',
-    'vendor/npm/requirejs/require.js',
-    'vendor/npm/requirejs/require.js.map',
-    'styles/*.css',
-    'favicon.ico',
-    'img/**',
-    '**/*.+(ttf|eot|svg|woff|woff2)',
-    'plugins/**'
-]);
-
 var validateTranslations = require('./gulp/i18n').validate;
 gulp.task('i18n:validate', function() {
     var tranlations = JSON.parse(fs.readFileSync('static/translations/core.json'));
     var locales = argv.locales ? argv.locales.split(',') : null;
     validateTranslations(tranlations, locales);
-});
-
-gulp.task('copy-main', function() {
-    var config = JSON.parse(fs.readFileSync('package.json'));
-    var streams = _.map(config.mainFiles, function(files, package) {
-        if (!(package in config.dependencies) && !(package in config.devDependencies)) {
-            throw new Error(package + ' is not a dependency');
-        }
-        return _.map(_.isArray(files) ? files : [files], function(file) {
-            return gulp.src('node_modules/' + package + '/' + file, {base: 'node_modules'})
-                .pipe(gulp.dest('static/vendor/npm/'));
-        });
-    });
-    return es.merge(_.flatten(streams));
 });
 
 var selenium = require('selenium-standalone');
@@ -201,6 +131,7 @@ gulp.task('jison', function() {
 var jsFiles = [
     'static/**/*.js',
     'static/**/*.jsx',
+    '!static/build/**',
     '!static/vendor/**',
     '!static/expression/parser.js',
     'static/tests/**/*.js'
@@ -208,6 +139,7 @@ var jsFiles = [
 var styleFiles = [
     'static/**/*.less',
     'static/**/*.css',
+    '!static/build/**',
     '!static/vendor/**'
 ];
 
@@ -270,36 +202,11 @@ gulp.task('build', function() {
     rimraf.sync(targetDir);
 
     return gulp.src(['static/**'])
-        .pipe(jsxFilter)
-        .pipe(react())
-        .pipe(jsxFilter.restore())
-        .pipe(lessFilter)
-        .pipe(less())
-        .pipe(autoprefixer())
-        .pipe(lessFilter.restore())
-        .pipe(jsFilter)
-        // use CSS loader instead LESS loader - styles are precompiled
-        .pipe(replace(/less!/g, 'require-css/css!'))
-        // remove explicit calls to JSX loader plugin
-        .pipe(replace(/jsx!/g, ''))
-        .pipe(jsFilter.restore())
-        .pipe(indexFilter)
-        .pipe(replace('__CACHE_BUST__', Date.now()))
-        .pipe(indexFilter.restore())
-        .pipe(buildSourceFilter)
-        .pipe(intermediate({output: '_build'}, function(tempDir, cb) {
-            var configFile = path.join(tempDir, 'build.json');
-            rjsConfig.appDir = tempDir;
-            rjsConfig.dir = path.join(tempDir, '_build');
-            fs.createWriteStream(configFile).write(JSON.stringify(rjsConfig));
-
-            var rjs = spawn('./node_modules/.bin/r.js', ['-o', configFile]);
-            rjs.stdout.on('data', function(data) {
-                _(data.toString().split('\n')).compact().each(_.ary(gutil.log, 1)).value();
-            });
-            rjs.on('close', cb);
-        }))
-        .pipe(buildResultFilter)
+        .pipe(filter([
+            'index.html',
+            'favicon.ico',
+            'build/**'
+        ]))
         .pipe(gulp.dest(targetDir));
 });
 

@@ -23,11 +23,11 @@ define(
     'utils',
     'models',
     'dispatcher',
-    'jsx!views/dialogs',
-    'jsx!views/controls',
-    'jsx!component_mixins',
+    'views/dialogs',
+    'views/controls',
+    'component_mixins',
     'react-dnd',
-    'jsx!views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
+    'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
 ],
 function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins, DND, OffloadingModes) {
     'use strict';

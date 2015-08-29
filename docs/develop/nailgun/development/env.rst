@@ -227,7 +227,6 @@ Running Nailgun in Fake Mode
 
     cd nailgun
     npm install
-    gulp bower
 
 #. Populate the database from fixtures::
 

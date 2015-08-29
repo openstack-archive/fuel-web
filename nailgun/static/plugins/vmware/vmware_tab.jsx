@@ -22,8 +22,8 @@ define(
     'underscore',
     'dispatcher',
     'utils',
-    'jsx!views/controls',
-    'jsx!component_mixins',
+    'views/controls',
+    'component_mixins',
     'plugins/vmware/vmware_models'
 ], function(React, $, i18n, _, dispatcher, utils, controls, componentMixins, vmwareModels) {
     'use strict';

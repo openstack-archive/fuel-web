@@ -26,6 +26,7 @@ define(['underscore', 'expression/parser', 'expression/objects'], function(_, Ex
     }
     _.extend(Expression.prototype, {
         evaluate: function(extraModels) {
+            //console.log(ExpressionParser, ExpressionParser.yy);
             // FIXME(vkramskikh): currently Jison supports sharing state
             // only via ExpressionParser.yy. It is unsafe and could lead to
             // issues in case we start to use webworkers

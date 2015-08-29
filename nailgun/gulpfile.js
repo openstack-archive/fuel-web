@@ -31,9 +31,6 @@ var gutil = require('gulp-util');
 var shell = require('gulp-shell');
 var runSequence = require('run-sequence');
 
-var bower = require('gulp-bower');
-var mainBowerFiles = require('main-bower-files');
-
 var filter = require('gulp-filter');
 var react = require('gulp-react');
 var less = require('gulp-less');
@@ -64,7 +61,7 @@ var rjsConfig = _.merge(rjs('static/config.js'), {
         }
     },
     paths: {
-        react: 'vendor/bower/react/react-with-addons.min'
+        react: 'vendor/react/dist/react-with-addons.min'
     },
     stubModules: ['jsx'],
     modules: [
@@ -87,8 +84,8 @@ var buildResultFilter = filter([
     'index.html',
     'main.js',
     'main.js.map',
-    'vendor/bower/requirejs/require.js',
-    'vendor/bower/requirejs/require.js.map',
+    'vendor/requirejs/require.js',
+    'vendor/requirejs/require.js.map',
     'styles/*.css',
     'favicon.ico',
     'img/**',
@@ -103,23 +100,18 @@ gulp.task('i18n:validate', function() {
     validateTranslations(tranlations, locales);
 });
 
-gulp.task('bower:fetch', bower);
-
-gulp.task('bower:copy-main', function() {
-    var dirs = [
-        {dirName: 'static/vendor/bower', includeDev: false},
-        {dirName: 'static/tests/bower', includeDev: 'exclusive'}
-    ];
-    var streams = dirs.map(function(dir) {
-        rimraf.sync(dir.dirName);
-        return gulp.src(mainBowerFiles({checkExistence: true, includeDev: dir.includeDev}), {base: 'bower_components'})
-            .pipe(gulp.dest(dir.dirName));
+gulp.task('copy-main', function() {
+    var config = JSON.parse(fs.readFileSync('package.json'));
+    var streams = _.map(config.mainFiles, function(files, package) {
+        if (!(package in config.dependencies) && !(package in config.devDependencies)) {
+            throw new Error(package + ' is not a dependency');
+        }
+        return _.map(_.isArray(files) ? files : [files], function(file) {
+            return gulp.src('node_modules/' + package + '/' + file, {base: 'node_modules'})
+                .pipe(gulp.dest('static/vendor/'));
+        });
     });
-    return es.merge(streams);
-});
-
-gulp.task('bower', function(cb) {
-    runSequence('bower:fetch', 'bower:copy-main', cb);
+    return es.merge(_.flatten(streams));
 });
 
 var selenium = require('selenium-standalone');
@@ -211,8 +203,7 @@ var jsFiles = [
     'static/**/*.jsx',
     '!static/vendor/**',
     '!static/expression/parser.js',
-    'static/tests/**/*.js',
-    '!static/tests/bower/**/*.js'
+    'static/tests/**/*.js'
 ];
 var styleFiles = [
     'static/**/*.less',
@@ -274,7 +265,7 @@ gulp.task('lint', [
     'lintspaces:styles'
 ]);
 
-gulp.task('rjs', function() {
+gulp.task('build', function() {
     var targetDir = argv['static-dir'] || '/tmp/static_compressed';
     rimraf.sync(targetDir);
 
@@ -310,10 +301,6 @@ gulp.task('rjs', function() {
         }))
         .pipe(buildResultFilter)
         .pipe(gulp.dest(targetDir));
-});
-
-gulp.task('build', function(cb) {
-    runSequence('bower', 'rjs', cb);
 });
 
 gulp.task('default', ['build']);

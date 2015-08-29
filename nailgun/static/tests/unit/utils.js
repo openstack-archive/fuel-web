@@ -15,17 +15,14 @@
  **/
 
 define([
-    'intern!object',
-    'intern/chai!assert',
     'underscore',
     'utils',
     'i18n'
-], function(registerSuite, assert, _, utils, i18n) {
+], function(_, utils, i18n) {
     'use strict';
 
-    registerSuite({
-        name: 'Test utils',
-        'Test getResponseText': function() {
+    suite('Test utils', function() {
+        test('Test getResponseText', function() {
             var response;
             var getResponseText = utils.getResponseText;
             var serverErrorMessage = i18n('dialog.error_dialog.server_error');
@@ -43,10 +40,11 @@ define([
             response = {status: 400, responseText: 'Bad request'};
             assert.equal(getResponseText(response), serverErrorMessage, 'HTTP 400 with plain text response is treated as a server error');
 
-            response = {status: 400, responseText: JSON.stringify({message: '123'})};
+            response = {status: 400, responseText: JSON.stringify({message: '1234'})};
             assert.equal(getResponseText(response), '123', 'HTTP 400 with JSON response is treated correctly');
-        },
-        'Test highlightTestStep': function() {
+        });
+
+        test('Test highlightTestStep', function() {
             var text;
             var highlight = utils.highlightTestStep;
 
@@ -97,6 +95,6 @@ define([
                 text,
                 'Attempting to highlight non-existent step keeps text as it is'
             );
-        }
+        });
     });
 });

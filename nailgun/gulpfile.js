@@ -21,10 +21,10 @@ var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
 var path = require('path');
 var glob = require('glob');
-var spawn = require('child_process').spawn;
 var rimraf = require('rimraf');
-var es = require('event-stream');
 var _ = require('lodash');
+
+var webpack = require('webpack');
 
 var gulp = require('gulp');
 var gutil = require('gulp-util');
@@ -32,86 +32,14 @@ var shell = require('gulp-shell');
 var runSequence = require('run-sequence');
 
 var filter = require('gulp-filter');
-var react = require('gulp-react');
-var less = require('gulp-less');
-var autoprefixer = require('gulp-autoprefixer');
 var replace = require('gulp-replace');
 var jison = require('gulp-jison');
-var lintspaces = require('gulp-lintspaces');
-
-var jscs = require('gulp-jscs');
-var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
-
-var intermediate = require('gulp-intermediate');
-var rjs = require('requirejs');
-var rjsConfig = _.merge(rjs('static/config.js'), {
-    baseUrl: '.',
-    appDir: 'static',
-    optimize: 'uglify2',
-    optimizeCss: 'standard',
-    generateSourceMaps: true,
-    preserveLicenseComments: false, // required for generateSourceMaps
-    wrapShim: true,
-    pragmas: {
-        compressed: true
-    },
-    map: {
-        '*': {
-            JSXTransformer: 'empty:'
-        }
-    },
-    paths: {
-        react: 'vendor/npm/react/dist/react-with-addons.min'
-    },
-    stubModules: ['jsx'],
-    modules: [
-        {
-            name: 'main',
-            exclude: ['require-css/normalize']
-        }
-    ]
-});
-
-var jsFilter = filter('**/*.js');
-var jsxFilter = filter('**/*.jsx');
-var lessFilter = filter('**/*.less');
-var indexFilter = filter('index.html');
-var buildSourceFilter = filter([
-    '**',
-    '!tests/**'
-]);
-var buildResultFilter = filter([
-    'index.html',
-    'main.js',
-    'main.js.map',
-    'vendor/npm/requirejs/require.js',
-    'vendor/npm/requirejs/require.js.map',
-    'styles/*.css',
-    'favicon.ico',
-    'img/**',
-    '**/*.+(ttf|eot|svg|woff|woff2)',
-    'plugins/**'
-]);
 
 var validateTranslations = require('./gulp/i18n').validate;
 gulp.task('i18n:validate', function() {
     var tranlations = JSON.parse(fs.readFileSync('static/translations/core.json'));
     var locales = argv.locales ? argv.locales.split(',') : null;
     validateTranslations(tranlations, locales);
-});
-
-gulp.task('copy-main', function() {
-    var config = JSON.parse(fs.readFileSync('package.json'));
-    var streams = _.map(config.mainFiles, function(files, package) {
-        if (!(package in config.dependencies) && !(package in config.devDependencies)) {
-            throw new Error(package + ' is not a dependency');
-        }
-        return _.map(_.isArray(files) ? files : [files], function(file) {
-            return gulp.src('node_modules/' + package + '/' + file, {base: 'node_modules'})
-                .pipe(gulp.dest('static/vendor/npm/'));
-        });
-    });
-    return es.merge(_.flatten(streams));
 });
 
 var selenium = require('selenium-standalone');
@@ -148,6 +76,14 @@ gulp.task('selenium', ['selenium:fetch'], function(cb) {
     );
 });
 
+gulp.task('karma', function(cb) {
+    var Server = require('karma').Server;
+    new Server({
+        configFile: __dirname + '/karma.config.js',
+        browsers: [argv.browser || 'firefox']
+    }, cb).start();
+});
+
 function runIntern(params) {
     return function() {
         var baseDir = 'static';
@@ -175,11 +111,10 @@ function runIntern(params) {
     };
 }
 
-gulp.task('intern:unit', runIntern({suites: argv.suites || 'static/tests/unit/**/*.js'}));
 gulp.task('intern:functional', runIntern({functionalSuites: argv.suites || 'static/tests/functional/**/test_*.js'}));
 
 gulp.task('unit-tests', function(cb) {
-    runSequence('selenium', 'intern:unit', function(err) {
+    runSequence('selenium', 'karma', function(err) {
         shutdownSelenium();
         cb(err);
     });
@@ -201,6 +136,7 @@ gulp.task('jison', function() {
 var jsFiles = [
     'static/**/*.js',
     'static/**/*.jsx',
+    '!static/build/**',
     '!static/vendor/**',
     '!static/expression/parser.js',
     'static/tests/**/*.js'
@@ -208,22 +144,26 @@ var jsFiles = [
 var styleFiles = [
     'static/**/*.less',
     'static/**/*.css',
+    '!static/build/**',
     '!static/vendor/**'
 ];
 
 gulp.task('jscs:fix', function() {
+    var jscs = require('gulp-jscs');
+    var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
     return gulp.src(jsFiles, {base: '.'})
         .pipe(jscs(_.extend({fix: true}, jscsConfig)))
         .pipe(gulp.dest('.'));
 });
 
 gulp.task('jscs', function() {
+    var jscs = require('gulp-jscs');
+    var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
     return gulp.src(jsFiles)
         .pipe(jscs(jscsConfig));
 });
 
 gulp.task('eslint', function() {
-    // FIXME(vkramskikh): move to top after fixing packaging issues
     var eslint = require('gulp-eslint');
     var eslintConfig = JSON.parse(fs.readFileSync('./.eslintrc'));
     return gulp.src(jsFiles)
@@ -240,6 +180,7 @@ var lintspacesConfig = {
 };
 
 gulp.task('lintspaces:js', function() {
+    var lintspaces = require('gulp-lintspaces');
     return gulp.src(jsFiles)
         .pipe(lintspaces(_.extend({}, lintspacesConfig, {
             ignores: ['js-comments'],
@@ -249,6 +190,7 @@ gulp.task('lintspaces:js', function() {
 });
 
 gulp.task('lintspaces:styles', function() {
+    var lintspaces = require('gulp-lintspaces');
     return gulp.src(styleFiles)
         .pipe(lintspaces(_.extend({}, lintspacesConfig, {
             ignores: ['js-comments'],
@@ -265,46 +207,95 @@ gulp.task('lint', [
     'lintspaces:styles'
 ]);
 
-gulp.task('rjs', function() {
-    var targetDir = argv['static-dir'] || '/tmp/static_compressed';
-    rimraf.sync(targetDir);
+var WEBPACK_STATS_OPTIONS = {
+    colors: true,
+    hash: false,
+    version: false,
+    assets: false,
+    chunks: false
+};
 
-    return gulp.src(['static/**'])
-        .pipe(jsxFilter)
-        .pipe(react())
-        .pipe(jsxFilter.restore())
-        .pipe(lessFilter)
-        .pipe(less())
-        .pipe(autoprefixer())
-        .pipe(lessFilter.restore())
-        .pipe(jsFilter)
-        // use CSS loader instead LESS loader - styles are precompiled
-        .pipe(replace(/less!/g, 'require-css/css!'))
-        // remove explicit calls to JSX loader plugin
-        .pipe(replace(/jsx!/g, ''))
-        .pipe(jsFilter.restore())
-        .pipe(indexFilter)
-        .pipe(replace('__CACHE_BUST__', Date.now()))
-        .pipe(indexFilter.restore())
-        .pipe(buildSourceFilter)
-        .pipe(intermediate({output: '_build'}, function(tempDir, cb) {
-            var configFile = path.join(tempDir, 'build.json');
-            rjsConfig.appDir = tempDir;
-            rjsConfig.dir = path.join(tempDir, '_build');
-            fs.createWriteStream(configFile).write(JSON.stringify(rjsConfig));
+gulp.task('dev-server', function() {
+    var devServerHost = argv['dev-server-host'] || '127.0.0.1';
+    var devServerPort = argv['dev-server-port'] || 8080;
+    var devServerUrl = 'http://' + devServerHost + ':' + devServerPort;
+    var nailgunHost = argv['nailgun-host'] || '127.0.0.1';
+    var nailgunPort = argv['nailgun-port'] || 8000;
+    var nailgunUrl = 'http://' + nailgunHost + ':' + nailgunPort;
+    var hotReload = !argv['no-hot'];
 
-            var rjs = spawn('./node_modules/.bin/r.js', ['-o', configFile]);
-            rjs.stdout.on('data', function(data) {
-                _(data.toString().split('\n')).compact().each(_.ary(gutil.log, 1)).value();
-            });
-            rjs.on('close', cb);
-        }))
-        .pipe(buildResultFilter)
-        .pipe(gulp.dest(targetDir));
+    var config = require('./webpack.config');
+    config.entry.push('webpack-dev-server/client?' + devServerUrl);
+    if (hotReload) {
+        config.entry.push('webpack/hot/dev-server');
+        config.plugins.push(new webpack.HotModuleReplacementPlugin());
+        config.plugins.push(new webpack.NoErrorsPlugin());
+    }
+
+    var WebpackDevServer = require('webpack-dev-server');
+    var options = {
+        hot: hotReload,
+        stats: WEBPACK_STATS_OPTIONS,
+        proxy: [
+            {path: '/', target: devServerUrl, rewrite: function(req) {
+                req.url = '/static/index.html';
+            }},
+            {path: /^\/(?!static\/).+/, target: nailgunUrl}
+        ]
+    };
+    _.extend(options, config.output);
+    new WebpackDevServer(webpack(config), options).listen(devServerPort, devServerHost, function(err) {
+        if (err) throw err;
+        gutil.log('Development server started at ' + devServerUrl);
+    });
 });
 
 gulp.task('build', function(cb) {
-    runSequence('copy-main', 'rjs', cb);
+    var sourceDir = path.resolve('static');
+    var targetDir = argv['static-dir'] ? path.resolve(argv['static-dir']) : sourceDir;
+
+    var config = require('./webpack.config');
+    config.output.path = path.join(targetDir, 'build');
+    if (!argv.dev) {
+        config.plugins.push(
+            new webpack.DefinePlugin({'process.env': {NODE_ENV: '"production"'}}),
+            new webpack.optimize.DedupePlugin()
+        );
+    }
+    if (argv.uglify) {
+        config.plugins.push(
+            new webpack.optimize.UglifyJsPlugin({compress: {warnings: false}})
+        );
+    }
+
+    rimraf.sync(config.output.path);
+
+    webpack(config).run(function(err, stats) {
+        if (err) return cb(err);
+
+        gutil.log(stats.toString(WEBPACK_STATS_OPTIONS));
+
+        if (stats.hasErrors()) return cb('Build failed');
+
+        if (targetDir != sourceDir) {
+            var indexFilter = filter('index.html');
+            gulp
+                .src([
+                    'index.html',
+                    'favicon.ico',
+                    'img/loader-bg.svg',
+                    'img/loader-logo.svg',
+                    'styles/layout.css'
+                ], {cwd: sourceDir, base: sourceDir})
+                .pipe(indexFilter)
+                .pipe(replace('__CACHE_BUST__', Date.now()))
+                .pipe(indexFilter.restore())
+                .pipe(gulp.dest(targetDir))
+                .on('end', cb);
+        } else {
+            cb();
+        }
+    });
 });
 
 gulp.task('default', ['build']);

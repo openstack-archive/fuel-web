@@ -30,7 +30,29 @@ from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 
 
-class ProvisioningSerializer(object):
+class MellanoxMixin(object):
+
+    @classmethod
+    def inject_mellanox_settings(cls, cluster_attrs, serialized_node):
+        mellanox_data = cluster_attrs.get('neutron_mellanox')
+        if mellanox_data:
+            serialized_node['ks_meta'].update({
+                'mlnx_vf_num': mellanox_data.get('vf_num'),
+                'mlnx_plugin_mode': mellanox_data.get('plugin'),
+                'mlnx_iser_enabled': cluster_attrs.get(
+                    'storage', {}).get('iser')
+            })
+            # Add relevant kernel parameter when using Mellanox SR-IOV
+            # and/or iSER (which works on top of a probed virtual function)
+            # unless it was explicitly added by the user
+            pm_data = serialized_node['ks_meta']['pm_data']
+            if ((mellanox_data['plugin'] == 'ethernet' or
+                    cluster_attrs['storage']['iser'] is True) and
+                    'intel_iommu=' not in pm_data['kernel_params']):
+                        pm_data['kernel_params'] += ' intel_iommu=on'
+
+
+class ProvisioningSerializer(MellanoxMixin):
     """Provisioning serializer"""
 
     @classmethod
@@ -173,22 +195,7 @@ class ProvisioningSerializer(object):
         if vlan_splinters.get('vswitch') == 'kernel_lt':
             serialized_node['ks_meta']['kernel_lt'] = 1
 
-        mellanox_data = cluster_attrs.get('neutron_mellanox')
-        if mellanox_data:
-            serialized_node['ks_meta'].update({
-                'mlnx_vf_num': mellanox_data['vf_num'],
-                'mlnx_plugin_mode': mellanox_data['plugin'],
-                'mlnx_iser_enabled': cluster_attrs['storage']['iser'],
-            })
-            # Add relevant kernel parameter when using Mellanox SR-IOV
-            # and/or iSER (which works on top of a probed virtual function)
-            # unless it was explicitly added by the user
-            pm_data = serialized_node['ks_meta']['pm_data']
-            if ((mellanox_data['plugin'] == 'ethernet' or
-                    cluster_attrs['storage']['iser'] is True) and
-                    'intel_iommu=' not in pm_data['kernel_params']):
-                        pm_data['kernel_params'] += ' intel_iommu=on'
-
+        cls.inject_mellanox_settings(cluster_attrs, serialized_node)
         net_manager = objects.Cluster.get_network_manager(node.cluster)
         gw = net_manager.get_default_gateway(node.id)
         serialized_node['ks_meta'].update({'gw': gw})

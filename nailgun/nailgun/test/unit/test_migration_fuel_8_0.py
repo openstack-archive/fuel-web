@@ -70,6 +70,19 @@ def prepare():
                 'neutron': {
                     'networks': [],
                     'config': {}
+                },
+                'bonding': {
+                    'availability': [
+                        {'linux': 'expression'},
+                        {'ovs': 'false'}]
+                }
+            }),
+            'attributes_metadata': jsonutils.dumps({
+                'editable': {
+                    'neutron_mellanox': {},
+                    'storage': {
+                        'iser': {}
+                    }
                 }
             })
         }
@@ -258,6 +271,23 @@ class TestReleaseMigrations(base.BaseAlembicMigrationTest):
 
         for state in states:
             self.assertEqual(state, 'manageonly')
+
+    def test_mellanox_removed_from_release(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.attributes_metadata]))
+        for row in result.fetchall():
+            self.assertNotIn(
+                'neutron_mellanox', jsonutils.loads(row[0])['editable'])
+            self.assertNotIn(
+                'iser', jsonutils.loads(row[0])['editable']['storage'])
+
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.networks_metadata]))
+        for row in result.fetchall():
+            self.assertDictEqual({
+                'availability': [
+                    {'ovs': 'false'}]},
+                jsonutils.loads(row[0])['bonding'])
 
 
 class TestTaskStatus(base.BaseAlembicMigrationTest):

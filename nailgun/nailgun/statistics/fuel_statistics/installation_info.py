@@ -71,7 +71,6 @@ class InstallationInfo(object):
 
         WhiteListRule(('storage', 'volumes_lvm', 'value'),
                       'volumes_lvm', None),
-        WhiteListRule(('storage', 'iser', 'value'), 'iser', None),
         WhiteListRule(('storage', 'volumes_ceph', 'value'),
                       'volumes_ceph', None),
         WhiteListRule(('storage', 'images_ceph', 'value'),
@@ -84,11 +83,6 @@ class InstallationInfo(object):
                       'objects_ceph', None),
         WhiteListRule(('storage', 'osd_pool_size', 'value'),
                       'osd_pool_size', None),
-
-        WhiteListRule(('neutron_mellanox', 'plugin', 'value'),
-                      'mellanox', None),
-        WhiteListRule(('neutron_mellanox', 'vf_num', 'value'),
-                      'mellanox_vf_num', None),
 
         WhiteListRule(('additional_components', 'sahara', 'value'),
                       'sahara', None),

@@ -33,7 +33,6 @@ _task_output_white_list_template = {
                     "uid": "",
                     "ks_meta": {
                         "mco_enable": "",
-                        "mlnx_iser_enabled": "",
                         "puppet_enable": "",
                         "fuel_version": "",
                         "install_log_2_syslog": "",
@@ -55,9 +54,7 @@ _task_output_white_list_template = {
                                 }
                             }
                         },
-                        "mlnx_plugin_mode": "",
-                        "mco_connector": "",
-                        "mlnx_vf_num": ""
+                        "mco_connector": ""
                     },
                     "netboot_enabled": ""
                 }
@@ -197,13 +194,6 @@ _task_output_white_list_template = {
                 },
                 "kernel_params": {
                     "kernel": ""
-                },
-                "neutron_mellanox": {
-                    "vf_num": "",
-                    "plugin": "",
-                    "metadata": {
-                        "enabled": ""
-                    }
                 },
                 "debug": "",
                 "deployment_id": "",

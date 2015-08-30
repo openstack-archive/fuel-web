@@ -636,9 +636,7 @@ _new_roles_metadata = {
 _bonding_metadata = {
     "availability": [
         {"ovs": "'experimental' in version:feature_groups and "
-                "cluster:net_provider != 'neutron' and "
-                "settings:storage.iser.value == false and "
-                "settings:neutron_mellanox.plugin.value != 'ethernet'"},
+                "cluster:net_provider != 'neutron'"},
         {"linux": "false"}
     ],
     "properties": {

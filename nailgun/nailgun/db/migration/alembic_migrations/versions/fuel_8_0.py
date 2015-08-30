@@ -122,6 +122,7 @@ def upgrade():
     create_openstack_configs_table()
     upgrade_master_node_ui_settings()
     upgrade_plugins_parameters()
+    remove_mellanox_data()
 
 
 def downgrade():
@@ -752,3 +753,27 @@ def upgrade_plugins_parameters():
 
 def downgrade_plugins_parameters():
     op.drop_column('plugins', 'is_hotpluggable')
+
+
+def remove_mellanox_data():
+    connection = op.get_bind()
+    select_query = sa.text(
+        "SELECT id, attributes_metadata, networks_metadata FROM releases")
+    update_query = sa.text(
+        "UPDATE releases"
+        " SET attributes_metadata = :attrs_meta, networks_metadata= :net_meta"
+        " WHERE id = :release_id")
+    for release_id, attributes_metadata, networks_metadata \
+            in connection.execute(select_query):
+        attrs = jsonutils.loads(attributes_metadata)
+        attrs['editable'].pop('neutron_mellanox')
+        net = jsonutils.loads(networks_metadata)
+        availability = net['bonding']['availability']
+        for item in availability:
+            if 'linux' in item:
+                availability.remove(item)
+        connection.execute(
+            update_query,
+            attrs_meta=jsonutils.dumps(attrs),
+            net_meta=jsonutils.dumps(net),
+            release_id=release_id)

@@ -35,7 +35,78 @@ from nailgun.settings import settings
 from nailgun import utils
 
 
-class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
+class MellanoxMixin(object):
+
+    @classmethod
+    def mellanox_settings(cls, node_attrs, cluster, networks):
+        """Mellanox settings
+
+        Serialize mellanox node attrs then it will be
+        merged with common attributes, if mellanox plugin or iSER storage
+        enabled.
+        """
+        neutron_mellanox_data = \
+            objects.Cluster.get_editable_attributes(cluster).get(
+                'neutron_mellanox', {})
+        if neutron_mellanox_data:
+            storage_data = objects.Cluster.get_editable_attributes(
+                cluster).get('storage', {})
+            nm = objects.Cluster.get_network_manager(cluster)
+            node_attrs['neutron_mellanox'] = {}
+
+            # Find Physical port for VFs generation
+            if 'plugin' in neutron_mellanox_data and \
+                    neutron_mellanox_data['plugin']['value'] == 'ethernet':
+                # Set config for ml2 mellanox mechanism driver
+                node_attrs['neutron_mellanox'].update({
+                    'physical_port': nm.get_network_by_netname(
+                        'private', networks)['dev'],
+                    'ml2_eswitch': {
+                        'vnic_type': 'hostdev',
+                        'apply_profile_patch': True}
+                })
+
+            # Fix network scheme to have physical port for RDMA if iSER enabled
+            if 'iser' in storage_data and storage_data['iser']['value']:
+                iser_new_name = 'eth_iser0'
+                node_attrs['neutron_mellanox'].update({
+                    'storage_parent': nm.get_network_by_netname(
+                        'storage', networks)['dev'],
+                    'iser_interface_name': iser_new_name
+                })
+
+                storage_vlan = \
+                    nm.get_network_by_netname('storage', networks).get('vlan')
+                if storage_vlan:
+                    vlan_name = "vlan{0}".format(storage_vlan)
+                    # Set storage rule to iSER interface vlan interface
+                    node_attrs['network_scheme']['roles']['storage'] = \
+                        vlan_name
+                    # Set iSER interface vlan interface
+                    node_attrs['network_scheme']['interfaces'][vlan_name] = \
+                        {'L2': {'vlan_splinters': 'off'}}
+                    node_attrs['network_scheme']['endpoints'][vlan_name] = \
+                        node_attrs['network_scheme']['endpoints'].pop(
+                            'br-storage', {})
+                    node_attrs['network_scheme']['endpoints'][vlan_name][
+                        'vlandev'] = iser_new_name
+                else:
+                    # Set storage rule to iSER port
+                    node_attrs['network_scheme']['roles'][
+                        'storage'] = iser_new_name
+                    node_attrs['network_scheme']['interfaces'][
+                        iser_new_name] = {'L2': {'vlan_splinters': 'off'}}
+                    node_attrs['network_scheme']['endpoints'][
+                        iser_new_name] = node_attrs['network_scheme'][
+                        'endpoints'].pop('br-storage', {})
+
+        return node_attrs
+
+
+class NeutronNetworkDeploymentSerializer(
+    NetworkDeploymentSerializer,
+    MellanoxMixin
+):
 
     @classmethod
     def network_provider_cluster_attrs(cls, cluster):
@@ -61,113 +132,10 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         nm = objects.Cluster.get_network_manager(cluster)
         networks = nm.get_node_networks(node)
         node_attrs = {
-            'network_scheme': cls.generate_network_scheme(node, networks),
+            'network_scheme': cls.generate_network_scheme(node, networks)
         }
-        node_attrs = cls.mellanox_settings(node_attrs, cluster, networks)
-        return node_attrs
 
-    @classmethod
-    def mellanox_settings(cls, node_attrs, cluster, networks):
-        """Mellanox settings
-
-        Serialize mellanox node attrsthen it will be
-        merged with common attributes, if mellanox plugin or iSER storage
-        enabled.
-        """
-        # Get Mellanox data
-        neutron_mellanox_data = \
-            objects.Cluster.get_editable_attributes(cluster)\
-            .get('neutron_mellanox', {})
-
-        # Get storage data
-        storage_data = \
-            objects.Cluster.get_editable_attributes(cluster).get('storage', {})
-
-        # Get network manager
-        nm = objects.Cluster.get_network_manager(cluster)
-
-        # Init mellanox dict
-        node_attrs['neutron_mellanox'] = {}
-
-        # Find Physical port for VFs generation
-        if 'plugin' in neutron_mellanox_data and \
-           neutron_mellanox_data['plugin']['value'] == 'ethernet':
-            node_attrs = cls.set_mellanox_ml2_config(
-                node_attrs, nm, networks)
-
-        # Fix network scheme to have physical port for RDMA if iSER enabled
-        if 'iser' in storage_data and storage_data['iser']['value']:
-            node_attrs = cls.fix_iser_port(node_attrs, nm, networks)
-
-        return node_attrs
-
-    @classmethod
-    def set_mellanox_ml2_config(cls, node_attrs, nm, networks):
-        """Set config for ml2 mellanox mechanism driver
-
-        Change the yaml file to include the required configurations
-        for ml2 mellanox mechanism driver.
-
-        should be called only in case of mellanox SR-IOV plugin usage.
-        """
-        # Set physical port for SR-IOV virtual functions
-        node_attrs['neutron_mellanox']['physical_port'] = \
-            nm.get_network_by_netname('private', networks)['dev']
-
-        # Set ML2 eswitch section conf
-        ml2_eswitch = {}
-        ml2_eswitch['vnic_type'] = 'hostdev'
-        ml2_eswitch['apply_profile_patch'] = True
-        node_attrs['neutron_mellanox']['ml2_eswitch'] = ml2_eswitch
-
-        return node_attrs
-
-    @classmethod
-    def fix_iser_port(cls, node_attrs, nm, networks):
-        """Fix iser port
-
-        Change the iser port to eth_iser probed (VF on the HV) interface
-        instead of br-storage. that change is made due to RDMA
-        (Remote Direct Memory Access) limitation of working with physical
-        interfaces.
-        """
-        # Set a new unique name for iSER virtual port
-        iser_new_name = 'eth_iser0'
-
-        # Add iSER extra params to astute.yaml
-        node_attrs['neutron_mellanox']['storage_parent'] = \
-            nm.get_network_by_netname('storage', networks)['dev']
-        node_attrs['neutron_mellanox']['iser_interface_name'] = iser_new_name
-
-        # Get VLAN if exists
-        storage_vlan = \
-            nm.get_network_by_netname('storage', networks).get('vlan')
-
-        if storage_vlan:
-            vlan_name = "vlan{0}".format(storage_vlan)
-
-            # Set storage rule to iSER interface vlan interface
-            node_attrs['network_scheme']['roles']['storage'] = vlan_name
-
-            # Set iSER interface vlan interface
-            node_attrs['network_scheme']['interfaces'][vlan_name] = \
-                {'L2': {'vlan_splinters': 'off'}}
-            node_attrs['network_scheme']['endpoints'][vlan_name] = \
-                node_attrs['network_scheme']['endpoints'].pop('br-storage', {})
-            node_attrs['network_scheme']['endpoints'][vlan_name]['vlandev'] = \
-                iser_new_name
-        else:
-
-            # Set storage rule to iSER port
-            node_attrs['network_scheme']['roles']['storage'] = iser_new_name
-
-            # Set iSER endpoint with br-storage parameters
-            node_attrs['network_scheme']['endpoints'][iser_new_name] = \
-                node_attrs['network_scheme']['endpoints'].pop('br-storage', {})
-            node_attrs['network_scheme']['interfaces'][iser_new_name] = \
-                {'L2': {'vlan_splinters': 'off'}}
-
-        return node_attrs
+        return cls.mellanox_settings(node_attrs, cluster, networks)
 
     @classmethod
     def _node_has_role_by_name(cls, node, rolename):
@@ -526,7 +494,9 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         return l3
 
 
-class NeutronNetworkDeploymentSerializer51(NeutronNetworkDeploymentSerializer):
+class NeutronNetworkDeploymentSerializer51(
+    NeutronNetworkDeploymentSerializer
+):
 
     @classmethod
     def generate_external_network(cls, cluster):

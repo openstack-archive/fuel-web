@@ -76,8 +76,11 @@ class TestInstallationInfo(BaseTestCase):
         attr_key_list = [a[1] for a in info.attributes_white_list]
         attrs_dict = info.get_attributes(editable, info.attributes_white_list)
         self.assertEqual(
-            # no vlan splinters for ubuntu
-            set(attr_key_list) - set(('vlan_splinters', 'vlan_splinters_ovs')),
+            # No vlan splinters for ubuntu.
+            # And no mellanox related entries since 8.0.
+            set(attr_key_list) - set(
+                ('vlan_splinters', 'vlan_splinters_ovs',
+                 'mellanox', 'mellanox_vf_num', 'iser')),
             set(attrs_dict.keys())
         )
 

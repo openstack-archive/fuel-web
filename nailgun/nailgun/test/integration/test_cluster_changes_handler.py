@@ -300,9 +300,6 @@ class TestHandlers(BaseIntegrationTest):
                     ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
                     'timezone': settings.TIMEZONE,
                     'master_ip': settings.MASTER_IP,
-                    'mlnx_vf_num': "16",
-                    'mlnx_plugin_mode': "disabled",
-                    'mlnx_iser_enabled': False,
                     'repo_setup': cluster_attrs['repo_setup'],
                     'image_data': cluster_attrs['provision']['image_data'],
                     'gw':
@@ -766,9 +763,6 @@ class TestHandlers(BaseIntegrationTest):
                     ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
                     'timezone': settings.TIMEZONE,
                     'master_ip': settings.MASTER_IP,
-                    'mlnx_vf_num': "16",
-                    'mlnx_plugin_mode': "disabled",
-                    'mlnx_iser_enabled': False,
                     'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
@@ -1272,9 +1266,6 @@ class TestHandlers(BaseIntegrationTest):
                     ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
                     'timezone': settings.TIMEZONE,
                     'master_ip': settings.MASTER_IP,
-                    'mlnx_vf_num': "16",
-                    'mlnx_plugin_mode': "disabled",
-                    'mlnx_iser_enabled': False,
                     'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),

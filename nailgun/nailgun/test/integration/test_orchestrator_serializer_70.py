@@ -93,8 +93,12 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 {'roles': ['compute'],
                  'pending_addition': True}])
 
-    def check_vips_serialized(self, vips_data):
+    def check_vips_serialized(self, node_data):
         vips_names = ['vrouter', 'management', 'vrouter_pub', 'public']
+        # check that vip-related info is not in root
+        self.assertTrue(all(vip_name not in node_data
+                            for vip_name in vips_names))
+        vips_data = node_data['network_metadata']['vips']
         self.assertItemsEqual(vips_data,
                               vips_names)
         for vip in vips_names:
@@ -313,7 +317,7 @@ class TestDeploymentAttributesSerialization70(
                         [ip_by_net['private']] * len(self.private))
 
                 self.assertEqual(v['network_roles'], dict(network_roles))
-            self.check_vips_serialized(node_data['network_metadata']['vips'])
+            self.check_vips_serialized(node_data)
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
@@ -474,7 +478,7 @@ class TestDeploymentSerializationForNovaNetwork70(
                     node_attrs['network_roles'],
                     network_roles
                 )
-            self.check_vips_serialized(node_data['network_metadata']['vips'])
+            self.check_vips_serialized(node_data)
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()

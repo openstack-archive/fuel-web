@@ -364,9 +364,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             self
         ).get_common_attrs(cluster)
 
-        net_manager = objects.Cluster.get_network_manager(cluster)
-
-        common_attrs.update(net_manager.assign_vips_for_net_groups(cluster))
+        common_attrs.update(self.get_assigned_vips(cluster))
 
         common_attrs['mp'] = [
             {'point': '1', 'weight': '1'},
@@ -376,6 +374,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         common_attrs.update(last_controller)
 
         return common_attrs
+
+    def get_assigned_vips(self, cluster):
+        """Assign and get vips for net groups
+        """
+        return objects.Cluster.get_network_manager(cluster).\
+            assign_vips_for_net_groups(cluster)
 
 
 class DeploymentMultinodeSerializer50(MuranoMetadataSerializerMixin,
@@ -506,6 +510,9 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
             return NeutronNetworkTemplateSerializer70
         else:
             return NeutronNetworkDeploymentSerializer70
+
+    def get_assigned_vips(self, cluster):
+        return {}
 
 
 def get_serializer_for_cluster(cluster):

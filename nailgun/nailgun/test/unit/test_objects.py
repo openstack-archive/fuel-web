@@ -1190,3 +1190,25 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
         self.env.clusters[0].release.version = '2014.2.2-7.0'
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])
         self.assertEqual(nm, NeutronManager70)
+
+
+class TestNetworkGroup(BaseTestCase):
+
+    def test_upgrade_range_mask_from_cidr(self):
+        cluster = self.env.create_cluster(api=False)
+        ng = cluster.network_groups[0]
+        objects.NetworkGroup._update_range_from_cidr(
+            ng, "192.168.10.0/24")
+        ip_range = ng.ip_ranges[0]
+        self.assertEqual("192.168.10.1", ip_range.first)
+        self.assertEqual("192.168.10.254", ip_range.last)
+
+    def test_upgrade_range_mask_from_cidr_use_gateway(self):
+        cluster = self.env.create_cluster(api=False)
+        ng = cluster.network_groups[0]
+        objects.NetworkGroup._update_range_from_cidr(
+            ng, "192.168.10.0/24",
+            use_gateway=True)
+        ip_range = ng.ip_ranges[0]
+        self.assertEqual("192.168.10.2", ip_range.first)
+        self.assertEqual("192.168.10.254", ip_range.last)

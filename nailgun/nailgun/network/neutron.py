@@ -279,16 +279,13 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
             models.NodeGroup.cluster_id == cluster.id
         )
 
-        net_name_by_ep = cls.get_network_name_to_endpoint_mappings(cluster)
-
         for group_id, nodes_in_group in itertools.groupby(
                 nodes, lambda n: n.group_id):
 
-            net_names = net_name_by_ep[group_id]
             net_names_by_node = {}
             for node in nodes_in_group:
-                eps = cls.get_node_endpoints(node)
-                net_names_by_node[node.id] = set(net_names[ep] for ep in eps)
+                net_names_by_node[node.id] = \
+                    set(x[0] for x in cls.get_node_network_mapping(node))
 
             networks = network_by_group.filter(
                 models.NetworkGroup.group_id == group_id)

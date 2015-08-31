@@ -255,7 +255,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 {_.map(ranges, function(range, index) {
                                     var rangeError = _.findWhere(error, {index: index}) || {},
                                         rowClasses = utils.classNames({
-                                            'range-row autocomplete offset-left': true
+                                            'range-row autocomplete offset-left row': true
                                         });
                                     return (
                                         <div className={rowClasses} key={index}>

@@ -568,6 +568,20 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         self.nc['networking_parameters']['vlan_range'] = [2, 2]
         self.assertRaisesNonUnique(self.nc, "[2, 2]")
 
+    def test_error_setting_multiple_floating_ip_ranges(self):
+        self.nc['networking_parameters']['floating_ranges'] = [
+            ["172.16.0.130", "172.16.0.254"],
+            ["172.16.1.1", "172.16.1.10"]
+        ]
+
+        cluster_mock = mock.Mock()
+        cluster_mock.configure_mock(id=1)
+
+        context = self.get_invalid_data_context(self.nc, cluster_mock)
+
+        err_msg = "Setting of multiple floating IP ranges is prohibited"
+        self.assertEqual(context.exception.message, err_msg)
+
 
 class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):
 

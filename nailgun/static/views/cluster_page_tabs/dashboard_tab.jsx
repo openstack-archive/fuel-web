@@ -300,11 +300,16 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     </div>
                     <div className='documentation col-xs-12'>
                         {isMirantisIso ?
-                            this.renderDocumentationLinks('http://docs.openstack.org/', 'openstack_documentation')
+                            _.map({
+                                mos_documentation: 'https://www.mirantis.com/openstack-documentation/',
+                                plugin_documentation: 'https://wiki.openstack.org/wiki/Fuel/Plugins'
+                            }, this.renderDocumentationLinks, this)
                         :
-                            this.renderDocumentationLinks('https://www.mirantis.com/openstack-documentation/', 'mos_documentation')
+                            _.map({
+                                openstack_documentation: 'http://docs.openstack.org/',
+                                plugin_documentation: utils.composeDocumentationLink('plugin-dev.html#plugin-dev')
+                            }, this.renderDocumentationLinks, this)
                         }
-                        {this.renderDocumentationLinks('https://wiki.openstack.org/wiki/Fuel/Plugins', 'plugin_documentation')}
                         {isMirantisIso && this.renderDocumentationLinks('https://software.mirantis.com/mirantis-openstack-technical-bulletins/', 'technical_bulletins')}
                     </div>
                 </div>

@@ -1067,6 +1067,44 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 self.fail("Unexpected combination of node roles: {0}".format(
                     node.all_roles))
 
+    def test_replacements_in_network_assignments(self):
+
+        node_roles_vs_net_names = [
+            (['controller'], ['public', 'management', 'fuelweb_admin']),
+            (['compute', 'cinder'],
+             ['storage', 'management', 'fuelweb_admin'])]
+
+        template_meta = self.net_template["adv_net_template"]["default"]
+
+        iface_var = template_meta['nic_mapping']['default'].keys()[0]
+
+        ep_with_var = "<% {0} %>.123".format(iface_var)
+
+        template_meta['network_assignments']['storage']['ep'] = ep_with_var
+        template_meta['network_scheme']['storage']['endpoints'] = \
+            [ep_with_var]
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template
+        )
+        self.prepare_for_deployment(self.env.nodes)
+        cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        serialized_for_astute = serializer(
+            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+
+        for node_data in serialized_for_astute:
+            node = objects.Node.get_by_uid(node_data['uid'])
+            for node_roles, net_names in node_roles_vs_net_names:
+                if node.all_roles == set(node_roles):
+                    self.check_node_ips_on_certain_networks(node, net_names)
+                    break
+            else:
+                self.fail("Unexpected combination of node roles: {0}".format(
+                    node.all_roles))
+
     def test_multiple_node_roles_network_roles(self):
         expected_roles = {
             # controller node

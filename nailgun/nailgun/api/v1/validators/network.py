@@ -187,18 +187,39 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)
         np = d.get('networking_parameters')
+
+        cls._check_multiple_ip_ranges_present(np)
+
         cluster_id = kwargs.get("cluster_id")
         if cluster_id:
-            cluster = db().query(Cluster).get(cluster_id)
-            if cluster and cluster.network_config:
-                cfg = cluster.network_config
-                for k in ("segmentation_type", "net_l23_provider"):
-                    if k in np and getattr(cfg, k) != np[k]:
-                        raise errors.InvalidData(
-                            "Change of '{0}' is prohibited".format(k),
-                            log_message=True
-                        )
+            cls._check_seg_type_changing(cluster_id, np)
+
         return d
+
+    @classmethod
+    def _check_seg_type_changing(cls, cluster_id, net_params):
+        cluster = db().query(Cluster).get(cluster_id)
+        if cluster and cluster.network_config:
+            cfg = cluster.network_config
+            for k in ("segmentation_type", "net_l23_provider"):
+                if k in net_params and getattr(cfg, k) != net_params[k]:
+                    raise errors.InvalidData(
+                        "Change of '{0}' is prohibited".format(k),
+                        log_message=True
+                    )
+
+    @classmethod
+    def _check_multiple_ip_ranges_present(cls, net_params):
+        # reject multiple floating ip ranges
+        # TODO(aroma): if only one ip range is supported
+        # by the protocol we should get rid from the nested
+        # list then
+        if "floating_ranges" in net_params:
+            if len(net_params["floating_ranges"]) > 1:
+                raise errors.InvalidData(
+                    "Setting of multiple floating ip ranges is "
+                    "prohibited"
+                )
 
     @classmethod
     def additional_network_validation(cls, data, cluster):

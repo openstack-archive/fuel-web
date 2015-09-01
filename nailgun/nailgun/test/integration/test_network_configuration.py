@@ -327,6 +327,22 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             "Change of 'segmentation_type' is prohibited"
         )
 
+    def test_prohibit_setting_multiple_floating_ip_ranges(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        data = resp.json_body
+        data['networking_parameters']['floating_ranges'].append(
+            ['172.16.1.1', '172.16.1.10']
+        )
+        resp = self.env.neutron_networks_put(self.cluster.id, data,
+                                             expect_errors=True)
+        self.assertEqual(200, resp.status_code)
+        task = resp.json_body
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
+        self.assertEqual(
+            task['message'],
+            'Setting of multiple floating ip ranges is prohibited'
+        )
+
     def test_network_group_update_changes_network(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body

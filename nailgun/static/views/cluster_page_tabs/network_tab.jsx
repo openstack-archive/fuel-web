@@ -897,7 +897,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 {(manager == 'VlanManager') ?
                                     <div>
                                         <controls.Input
-                                            {...this.composeProps('fixed_network_size')}
+                                            {...this.composeProps('fixed_network_size', false, true)}
                                             type='select'
                                             children={_.map(this.props.fixedNetworkSizeValues, function(value) {
                                                 return <option key={value} value={value}>{value}</option>;

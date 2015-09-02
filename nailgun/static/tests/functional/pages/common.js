@@ -212,6 +212,23 @@ define([
                             return assert.equal(elements.length, 0, message);
                         })
                         .end();
+            },
+            clickElement: function(cssSelector) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .click()
+                        .end();
+            },
+            isElementValueEqualTo: function(cssSelector, initialValue, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .then(function(element) {
+                            return element.getAttribute('value')
+                                .then(function(value) {
+                                    assert.isTrue(value == initialValue, message);
+                                });
+                        })
+                        .end();
             }
         };
         return CommonMethods;

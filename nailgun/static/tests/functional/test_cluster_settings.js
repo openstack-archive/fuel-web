@@ -51,52 +51,48 @@ define([
                         return clusterPage.goToTab('Settings');
                     })
                     // go to Common subtab to use checkboxes for tests
-                    .findByCssSelector('a.subtab-link-common')
-                        .click()
-                        .end();
+                    .then(function() {
+                        return common.clickLink('Common');
+                    });
             },
             teardown: function() {
                 return this.remote
-                    // reset changes if any
-                    .findByCssSelector('.btn-revert-changes')
-                        .click()
-                        .end()
                     .then(function() {
                         return common.removeCluster(clusterName);
                     });
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
-                    .setFindTimeout(5000)
+                    .setFindTimeout(1000)
                     .then(function() {
-                        return common.isElementEnabled('.btn-load-defaults', 'Load defaults button is enabled');
+                        common.isElementEnabled('.btn-load-defaults', 'Load defaults button is enabled');
                     })
                     .then(function() {
-                        return common.isElementDisabled('.btn-revert-changes', 'Cancel Changes button is disabled');
+                        common.isElementDisabled('.btn-revert-changes', 'Cancel Changes button is disabled');
                     })
                     .then(function() {
-                        return common.isElementDisabled('.btn-apply-changes', 'Save Settings button is disabled');
+                        common.isElementDisabled('.btn-apply-changes', 'Save Settings button is disabled');
                     });
             },
             'Check Save Settings button': function() {
                 return this.remote
-                    .setFindTimeout(5000)
+                    .setFindTimeout(1000)
                     .findByCssSelector('input[type=checkbox]')
                         // introduce change
                         .click()
                         .then(function() {
-                            return common.isElementEnabled('.btn-apply-changes', 'Save Settings button is enabled');
+                            common.isElementEnabled('.btn-apply-changes', 'Save Settings button is enabled');
                         })
                         // reset the change
                         .click()
                         .then(function() {
-                            return common.isElementDisabled('.btn-apply-changes', 'Save Settings button is disabled');
+                            common.isElementDisabled('.btn-apply-changes', 'Save Settings button is disabled');
                         })
                         .end();
             },
             'Check Cancel Changes button': function() {
                 return this.remote
-                    .setFindTimeout(5000)
+                    .setFindTimeout(1000)
                     // introduce change
                     .findByCssSelector('input[type=checkbox]')
                         .click()
@@ -117,18 +113,18 @@ define([
                         .click()
                         .end()
                     .then(function() {
-                        return common.isElementDisabled('.btn-apply-changes', 'Save Settings button is disabled after changes were cancelled');
+                        common.isElementDisabled('.btn-apply-changes', 'Save Settings button is disabled after changes were cancelled');
                     });
             },
             'Check changes saving': function() {
                 return this.remote
-                    .setFindTimeout(5000)
+                    .setFindTimeout(1000)
                     // introduce change
                     .findByCssSelector('input[type=checkbox]')
                         .click()
                         .end()
                     .then(function() {
-                        return common.isElementEnabled('.btn-apply-changes', 'Save Settings button is enabled');
+                        common.isElementEnabled('.btn-apply-changes', 'Save Settings button is enabled');
                     })
                     // save changes
                     .findByCssSelector('.btn-apply-changes')
@@ -138,12 +134,12 @@ define([
                         return settingsPage.waitForRequestCompleted();
                     })
                     .then(function() {
-                        return common.isElementDisabled('.btn-revert-changes', 'Cancel changes button is disabled after changes were saved successfully');
+                        common.isElementDisabled('.btn-revert-changes', 'Cancel Changes button is disabled after changes were saved successfully');
                     });
             },
             'Check loading of defaults': function() {
                 return this.remote
-                    .setFindTimeout(5000)
+                    .setFindTimeout(1000)
                     // load defaults
                     .findByCssSelector('.btn-load-defaults')
                         .click()
@@ -152,11 +148,103 @@ define([
                         return settingsPage.waitForRequestCompleted();
                     })
                     .then(function() {
-                        return common.isElementEnabled('.btn-apply-changes', 'Save Settings button is enabled after defaults were loaded');
+                        common.isElementEnabled('.btn-apply-changes', 'Save Settings button is enabled after defaults were loaded');
                     })
                     .then(function() {
-                        return common.isElementEnabled('.btn-revert-changes', 'Cancel changes button is enabled after defaults were loaded');
+                        common.isElementEnabled('.btn-revert-changes', 'Cancel Changes button is enabled after defaults were loaded');
+                    })
+                    // revert the change
+                    .findByCssSelector('.btn-revert-changes')
+                        .click()
+                        .end();
+            },
+            'The choice of subgroup is preserved when user navigates through the cluster tabs': function() {
+                return this.remote
+                    .setFindTimeout(1000)
+                    .then(function() {
+                        return common.clickLink('Syslog');
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Settings');
+                    })
+                    .then(function() {
+                        common.doesElementExist('.nav-pills li.active a.subtab-link-syslog', 'The choice of subgroup is preserved when user navigates through the cluster tabs');
                     });
+            },
+            'The page reacts on invalid input': function() {
+                return this.remote
+                    .setFindTimeout(1000)
+                    .then(function() {
+                        return common.clickLink('Access');
+                    })
+                    .then(function() {
+                        // "nova" is forbidden username
+                        return common.fill('[type=text][name=user]', 'nova');
+                    })
+                    .then(function() {
+                        common.doesElementExist('.access .form-group.has-error', 'Invalid field marked as error');
+                    })
+                    .then(function() {
+                        common.doesElementExist('.subtab-link-access i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid');
+                    })
+                    .then(function() {
+                        common.isElementDisabled('.btn-apply-changes', 'Save Settings button is disabled in case of validation error');
+                    })
+                    // revert the change
+                    .findByCssSelector('.btn-revert-changes')
+                        .click()
+                        .end()
+                    .then(function() {
+                        common.doesntElementExist('.access .form-group.has-error', 'Validation error is cleared after resetting changes');
+                    })
+                    .then(function() {
+                        common.doesntElementExist('.subtab-link-access i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
+                    });
+            },
+            'Test repositories custom control': function() {
+                var repoAmount;
+                return this.remote
+                    .setFindTimeout(1000)
+                    .then(function() {
+                        return common.clickLink('Repositories');
+                    })
+                    // get amount of default repositories
+                    .findAllByCssSelector('.repos .form-inline')
+                        .then(function(elements) {
+                            repoAmount = elements.length;
+                        })
+                        .end()
+                    .then(function() {
+                        common.doesntElementExist('.repos .form-inline:nth-of-type(1) .btn-link', 'The first repo can not be deleted');
+                    })
+                    // delete some repo
+                    .findByCssSelector('.repos .form-inline .btn-link')
+                        .click()
+                        .end()
+                    .findAllByCssSelector('.repos .form-inline')
+                        .then(function(elements) {
+                            assert.equal(elements.length, repoAmount - 1, 'Repo was deleted');
+                        })
+                        .end()
+                    // add new repo
+                    .findByCssSelector('.btn-add-repo')
+                        .click()
+                        .end()
+                    .findAllByCssSelector('.repos .form-inline')
+                        .then(function(elements) {
+                            assert.equal(elements.length, repoAmount, 'New repo placeholder was added');
+                        })
+                        .end()
+                    .then(function() {
+                        common.doesElementExist('.repos .form-inline .repo-name.has-error', 'Empty repo marked as imnvalid');
+                    })
+                    // revert the change
+                    .findByCssSelector('.btn-revert-changes')
+                        .click()
+                        .end();
             }
         };
     });

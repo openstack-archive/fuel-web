@@ -308,7 +308,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         :
                             [
                                 this.renderDocumentationLinks('http://docs.openstack.org/', 'openstack_documentation'),
-                                this.renderDocumentationLinks('https://wiki.openstack.org/wiki/Fuel/Plugins', 'plugin_documentation')
+                                this.renderDocumentationLinks('http://stackalytics.com/report/driverlog?project_id=openstack%2Ffuel', 'plugin_documentation')
                             ]
                         }
                     </div>

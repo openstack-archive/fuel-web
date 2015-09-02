@@ -212,6 +212,13 @@ define([
                             return assert.equal(elements.length, 0, message);
                         })
                         .end();
+            },
+            clickButton: function(selector) {
+                return this.remote
+                    .setFindTimeout(1000)
+                    .findByCssSelector(selector)
+                        .click()
+                        .end();
             }
         };
         return CommonMethods;

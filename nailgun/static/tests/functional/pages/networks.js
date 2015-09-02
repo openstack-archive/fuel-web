@@ -18,24 +18,17 @@ define([], function() {
     'use strict';
 
     function NetworksPage(remote) {
+        this.applyButtonSelector = '.apply-btn';
         this.remote = remote;
     }
 
     NetworksPage.prototype = {
         constructor: NetworksPage,
-        getApplyButton: function() {
+        switchNetworkManager: function() {
             return this.remote
-                .findByCssSelector('.apply-btn')
-        },
-        isApplyButtonEnabled: function() {
-            return this.getApplyButton().isEnabled()
-                .then(function(isEnabled) {
-                    return isEnabled;
-                })
-        },
-        getCidrElement: function() {
-            return this.remote
-                .findByCssSelector('.storage input[name=cidr]');
+                .findByCssSelector('input[name=net_provider]:not(:checked)')
+                    .click()
+                    .end()
         }
     };
     return NetworksPage;

@@ -172,10 +172,12 @@ define([
                         }, false)
                     });
             },
-            setInputElementValue: function(element, value) {
-                element.clearValue()
-                    .type(value)
-                    .end();
+            fill: function(cssSelector, value) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .clearValue()
+                        .type(value)
+                        .end();
             },
             isElementEnabled: function(cssSelector, message) {
                 return this.remote
@@ -192,6 +194,22 @@ define([
                         .isEnabled()
                         .then(function(isEnabled) {
                             return assert.isFalse(isEnabled, message);
+                        })
+                        .end();
+            },
+            doesElementExist: function(cssSelector, message) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            return assert.equal(elements.length, 1, message);
+                        })
+                        .end();
+            },
+            doesntElementExist: function(cssSelector, message) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            return assert.equal(elements.length, 0, message);
                         })
                         .end();
             }

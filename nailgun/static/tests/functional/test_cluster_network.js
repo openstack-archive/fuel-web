@@ -138,7 +138,7 @@ define([
             'Testing cluster networks: Save button interactions': function() {
                 return this.remote
                     .then(function() {
-                        return common.setInputElementValue(cidrElement, '240.0.1.0/25');
+                        return common.setInputValue('.storage input[name=cidr]', '240.0.1.0/25');
                     })
                     // apply btn
                     .then(function() {
@@ -149,7 +149,7 @@ define([
                             .end();
                     })
                     .then(function() {
-                        return common.setInputElementValue(cidrElement, initialValue);
+                        return common.setInputValue('.storage input[name=cidr]', initialValue);
                     })
                     .then(function() {
                         return networksPage.isApplyButtonEnabled()

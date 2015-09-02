@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Code-Review+1: Roman Prykhodchenko <me@romcheg.me>
+Code-Review+1: Ksenia Demina <kdemina@mirantis.com>
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Workflow+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+1: Kate Pimenova <kpimenova@mirantis.com>
+Code-Review+1: Bartosz Kupidura <bkupidura@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 02 Sep 2015 14:56:26 +0000
+Reviewed-on: https://review.openstack.org/219631
+Project: stackforge/fuel-web
+Branch: refs/heads/master

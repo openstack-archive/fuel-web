@@ -957,7 +957,12 @@ class NeutronNetworkDeploymentSerializer70(
 
     @classmethod
     def generate_network_scheme(cls, node, networks):
-        # Create a data structure and fill it with static values.
+        """Create a data structure and fill it with static values.
+
+        :param node: instance of db.sqlalchemy.models.node.Node
+        :param networks: list of networks data dicts
+        :return: dict of network scheme attributes
+        """
         attrs = {
             'version': '1.1',
             'provider': 'lnx',
@@ -1000,7 +1005,7 @@ class NeutronNetworkDeploymentSerializer70(
             })
 
         # Add gateway.
-        if is_public and netgroups['public'].get('gateway'):
+        if Node.should_have_public_with_ip(node):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:

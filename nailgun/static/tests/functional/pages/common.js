@@ -194,6 +194,22 @@ define([
                             return assert.isFalse(isEnabled, message);
                         })
                         .end();
+            },
+            isElementPresent: function(cssSelector, message) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            assert.ok(elements.length, message);
+                        })
+                    .end();
+            },
+            isElementAbsent: function(cssSelector, message) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            assert.notOk(elements.length, message);
+                        })
+                    .end();
             }
         };
         return CommonMethods;

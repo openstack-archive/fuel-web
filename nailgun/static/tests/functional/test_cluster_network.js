@@ -21,19 +21,15 @@ define([
     'tests/helpers',
     'tests/functional/pages/common',
     'tests/functional/pages/networks',
-    'tests/functional/pages/cluster',
-    'tests/functional/pages/modal'
-], function(_, registerSuite, assert, helpers, Common, NetworksPage, ClusterPage, ModalWindow) {
+    'tests/functional/pages/cluster'
+], function(_, registerSuite, assert, helpers, Common, NetworksPage, ClusterPage) {
     'use strict';
 
     registerSuite(function() {
         var common,
             networksPage,
             clusterPage,
-            clusterName,
-            initialValue,
-            cidrElement,
-            modal;
+            clusterName;
 
         return {
             name: 'Networks page',
@@ -41,17 +37,12 @@ define([
                 common = new Common(this.remote);
                 networksPage = new NetworksPage(this.remote);
                 clusterPage = new ClusterPage(this.remote);
-                modal = new ModalWindow(this.remote);
+                clusterName = common.pickRandomName('Test Cluster');
 
                 return this.remote
                     .then(function() {
                         return common.getIn();
-                    });
-            },
-            beforeEach: function() {
-                clusterName = common.pickRandomName('Test Cluster');
-                return this.remote
-                    .setFindTimeout(2000)
+                    })
                     .then(function() {
                         return common.createCluster(
                             clusterName,
@@ -59,47 +50,31 @@ define([
                                 Compute: function() {
                                     // Selecting VCenter
                                     return this.remote
-                                        .setFindTimeout(2000)
                                         .findByCssSelector('.custom-tumbler input[name=vcenter]')
-                                            .click()
-                                            .end();
+                                        .click()
+                                        .end();
                                 }
                             }
                         );
                     })
                     .then(function() {
                         return clusterPage.goToTab('Networks');
-                    })
-                    .then(function() {
-                        cidrElement = networksPage.getCidrElement();
-                        return cidrElement;
-                    })
-                    .then(function() {
-                        return cidrElement.getAttribute('value')
-                            .then(function(initValue) {
-                                initialValue = initValue;
-                                return initialValue;
-                            })
-                            .end();
                     });
             },
             afterEach: function() {
                 return this.remote
+                    .findByCssSelector('.btn-revert-changes')
+                        .click()
+                        .end();
+            },
+            teardown: function() {
+                return this.remote
                     .then(function() {
-                        return clusterPage.goToTab('Dashboard');
-                    })
-                    .then(function() {
-                        return modal.clickFooterButton('Discard Changes');
-                    })
-                    .then(function() {
-                        return common.removeCluster(clusterName, true);
+                        return common.removeCluster(clusterName);
                     });
             },
-
             'Network Tab is rendered correctly': function() {
                 return this.remote
-                    .setFindTimeout(5000)
-                    //tab is rendered
                     .findByCssSelector('.network-tab')
                         .then(function(networkTab) {
                             return networkTab.isDisplayed().then(function(isDisplayed) {
@@ -107,20 +82,15 @@ define([
                             });
                         })
                         .end()
-                    //Network manager options are presented
-                    .findByCssSelector('.nova-managers .radio-group')
-                        .then(function(radioGroupWrapper) {
-                            return radioGroupWrapper.isDisplayed().then(function(isDisplayed) {
-                                assert.ok(isDisplayed, 'Nova Network manager radiogroup is present');
-                            });
-                        })
-                        .end()
+                    .then(function() {
+                        return common.elementExists('.nova-managers .radio-group',
+                            'Nova Network manager radiogroup is present');
+                    })
                     .findAllByCssSelector('.checkbox-group input[name=net_provider]')
                         .then(function(radioGroup) {
-                            assert.equal(radioGroup.length, 2, 'Network manager options are presented');
+                            assert.equal(radioGroup.length, 2, 'Network manager options are present');
                         })
                         .end()
-                    //Flat DHCP manager is chosen
                     .findByCssSelector('input[value=FlatDHCPManager]')
                         .then(function(flatDHCPManager) {
                             flatDHCPManager.isSelected().then(function(isSelected) {
@@ -128,194 +98,158 @@ define([
                             })
                         })
                         .end()
-                    //All networks are presented
                     .findAllByCssSelector('.network-tab h3')
                         .then(function(networkSections) {
-                            assert.equal(networkSections.length, 4, 'All networks are presented');
+                            assert.equal(networkSections.length, 4, 'All networks are present');
                         })
-                        .end();
+                        .end()
             },
-
             'Testing cluster networks: Save button interactions': function() {
+                var cidrInitialValue,
+                    cidrElementSelector = '.storage input[name=cidr]';
                 return this.remote
-                    .then(function() {
-                        return common.setInputValue('.storage input[name=cidr]', '240.0.1.0/25');
-                    })
-                    // apply btn
-                    .then(function() {
-                        return networksPage.isApplyButtonEnabled()
-                            .then(function(isEnabled) {
-                                assert.ok(isEnabled, 'Save networks button is enabled if there are changes');
+                    .findByCssSelector(cidrElementSelector)
+                        .getAttribute('value')
+                            .then(function(initialValue) {
+                                cidrInitialValue = initialValue;
                             })
-                            .end();
-                    })
-                    .then(function() {
-                        return common.setInputValue('.storage input[name=cidr]', initialValue);
-                    })
-                    .then(function() {
-                        return networksPage.isApplyButtonEnabled()
-                            .then(function(isEnabled) {
-                                assert.isFalse(isEnabled, 'Save networks button is disabled again if there are no changes');
-                            })
-                    })
-            },
-
-            'Testing cluster networks: change network manager': function() {
-                return this.remote
-                    .setFindTimeout(5000)
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
-                        .click()
-                        .end()
-                    .findAllByCssSelector('input[name=fixed_networks_amount]')
-                        .then(function(elements) {
-                            assert.equal(elements.length, 1, 'Amount field for a fixed network is presented in VLAN mode');
-                        })
-                        .end()
-                    .findAllByCssSelector('select[name=fixed_network_size]')
-                        .then(function(elements) {
-                            assert.equal(elements.length, 1, 'Size field for a fixed network is presented in VLAN mode');
-                        })
                         .end()
                     .then(function() {
-                        return networksPage.isApplyButtonEnabled()
-                            .then(function(isEnabled) {
-                                assert.ok(isEnabled, 'Save networks button is enabled after manager was changed');
-                            })
-                            .end()
+                        return common.setInputValue(cidrElementSelector, '240.0.1.0/25');
                     })
-                        .findByCssSelector('input[name=net_provider]:not(:checked)')
-                        .click()
-                        .end()
-                    .findAllByCssSelector('input[name=fixed_networks_amount]')
-                        .then(function(elements) {
-                            assert.notOk(elements.length, 'Amount field was hidden after revert to FlatDHCP');
-                        })
-                        .end()
-                    .findAllByCssSelector('select[name=fixed_network_size]')
-                        .then(function(elements) {
-                            assert.notOk(elements.length, 'Size field was hidden after revert to FlatDHCP');
-                        })
-                        .end()
                     .then(function() {
-                        return networksPage.isApplyButtonEnabled()
-                            .then(function(isEnabled) {
-                                assert.isFalse(isEnabled, 'Save networks button is disabled again after revert to FlatDHCP');
-                            })
+                        return common.isElementEnabled(networksPage.applyButtonSelector,
+                            'Save changes button is enabled if there are changes');
+                    })
+                    .then(function() {
+                        return common.setInputValue(cidrElementSelector, cidrInitialValue);
+                    })
+                    .then(function() {
+                        return common.isElementDisabled(networksPage.applyButtonSelector,
+                            'Save changes button is disabled again if there are no changes');
                     });
             },
-
+            'Testing cluster networks: change network manager': function() {
+                var amountSelector = 'input[name=fixed_networks_amount]',
+                    sizeSelector = 'select[name=fixed_network_size]';
+                return this.remote
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
+                    })
+                    .then(function() {
+                        return common.elementExists(amountSelector,
+                            'Amount field for a fixed network is present in VLAN mode');
+                    })
+                    .then(function() {
+                        return common.elementExists(sizeSelector,
+                            'Size field for a fixed network is present in VLAN mode');
+                    })
+                    .then(function() {
+                        return common.isElementEnabled(networksPage.applyButtonSelector,
+                            'Save changes button is enabled after manager was changed');
+                    })
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
+                    })
+                    .then(function() {
+                        return common.elementNotExists(amountSelector,
+                            'Amount field was hidden after revert to FlatDHCP');
+                    })
+                    .then(function() {
+                        return common.elementNotExists(sizeSelector,
+                            'Size field was hidden after revert to FlatDHCP');
+                    })
+                    .then(function() {
+                        return common.isElementDisabled(networksPage.applyButtonSelector,
+                            'Save changes button is disabled again after revert to FlatDHCP');
+                    });
+            },
             'Testing cluster networks: VLAN range fields': function() {
                 return this.remote
-                    .setFindTimeout(5000)
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
-                        .click()
-                        .end()
-                    .findAllByCssSelector('.network-section-wrapper input[name=range-end_fixed_networks_vlan_start]')
-                        .then(function(elements) {
-                            assert.equal(elements.length, 1, 'VLAN range is displayed')
-                        })
-                        .end()
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
-                        .click()
-                        .end();
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
+                    })
+                    .then(function() {
+                        return common.elementExists('.network-section-wrapper input[name=range-end_fixed_networks_vlan_start]',
+                            'VLAN range is displayed');
+                    });
             },
-
             'Testing cluster networks: save changes': function() {
                 return this.remote
-                    .setFindTimeout(5000)
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
+                    })
+                    .findByCssSelector(networksPage.applyButtonSelector)
                         .click()
                         .end()
-                    .then(function() {
-                        return networksPage.getApplyButton()
-                            .click()
-                            .end()
-                    })
                     .findAllByCssSelector('input:not(:disabled)')
                         .then(function(elements) {
-                            assert.ok(elements.length, 'Input is not disabled');
+                            assert.ok(elements.length, 'Inputs are not disabled');
                         })
                         .end()
-                    .findAllByCssSelector('.alert-error')
-                        .then(function(elements) {
-                            assert.notOk(elements.length, 'Correct settings were saved successfully');
-                        })
-                        .end();
+                    .then(function() {
+                        return common.elementNotExists('.alert-error',
+                            'Correct settings were saved successfully');
+                    });
             },
-
             'Testing cluster networks: verification': function() {
                 return this.remote
                     .findByCssSelector('.verify-networks-btn:not(:disabled)')
                         .click()
                         .end()
-                    .setFindTimeout(2000)
-                    .findAllByCssSelector('.connect-3.error')
-                        .then(function(elements) {
-                            assert.equal(elements.length, 1, 'At least two nodes are required to be in the environment for network verification.')
-                        })
-                        .end()
+                    .then(function() {
+                        return common.elementExists('.connect-3.error',
+                            'At least two nodes are required to be in the environment for network verification');
+                    })
                     // Testing cluster networks: verification task deletion
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
-                        .click()
-                        .end()
-                    .findAllByCssSelector('.page-control-box .alert')
-                        .then(function(elements) {
-                            assert.notOk(elements.length, 'Verification task was removed after settings has been changed');
-                        })
-                        .end()
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
-                        .click()
-                        .end();
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
+                    })
+                    .then(function() {
+                        return common.elementNotExists('.page-control-box .alert',
+                            'Verification task was removed after settings has been changed');
+                    });
             },
-
             'Check VlanID field validation': function() {
                 return this.remote
                     .findByCssSelector('.management input[type=checkbox]')
                         .click()
-                        .end()
-                    .findByCssSelector('.management input[type=checkbox]')
                         .click()
-                        .end()
-                    .findAllByCssSelector('.management .has-error input[name=vlan_start]')
-                    .then(function(elements) {
-                        assert.equal(elements.length, 1, 'Field validation has worked properly in case of empty value');
-                    })
-                    .end();
-            },
-
-            'Testing cluster networks: data validation': function() {
-                return this.remote
-                    .findByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start]')
-                        .click()
-                        .end()
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
-                        .click()
-                        .end()
-                    .findAllByCssSelector('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start]')
-                        .then(function(elements) {
-                            assert.equal(elements.length, 1, 'Field validation has worked');
-                        })
                         .end()
                     .then(function() {
-                        return networksPage.isApplyButtonEnabled()
-                            .then(function(isEnabled) {
-                                assert.isFalse(isEnabled, 'Save networks button is disabled if there is validation error');
-                            })
-                            .end()
+                        return common.elementExists('.management .has-error input[name=vlan_start]',
+                            'Field validation has worked properly in case of empty value');
+                    });
+            },
+            'Testing cluster networks: data validation': function() {
+                return this.remote
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
                     })
-                    .findByCssSelector('input[name=net_provider]:not(:checked)')
+                    .findByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
                         .click()
                         .end()
-                    .findByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start]')
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
+                    })
+                    .then(function() {
+                        return common.elementExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
+                            'Field validation has worked');
+                    })
+                    .then(function() {
+                        return common.isElementDisabled(networksPage.applyButtonSelector, 'Save changes button is disabled if there is validation error');
+                    })
+                    .then(function() {
+                        return networksPage.switchNetworkManager();
+                    })
+                    .findByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
                         .click()
                         .end()
-                    .findAllByCssSelector('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start]')
-                        .then(function(elements) {
-                            assert.equal(elements.length, 0, 'Field validation works properly');
-                        })
-                        .end();
+                    .then(function() {
+                        return common.elementNotExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
+                            'Field validation works properly');
+                    });
             }
-
         };
     });
 });

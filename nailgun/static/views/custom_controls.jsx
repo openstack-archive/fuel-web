@@ -179,7 +179,7 @@ define([
                         );
                     }, this)}
                     <div className='buttons'>
-                        <button key='addExtraRepo' className='btn btn-default' onClick={this.changeRepos.bind(this, 'add')} disabled={this.props.disabled}>
+                        <button key='addExtraRepo' className='btn btn-default btn-add-repo' onClick={this.changeRepos.bind(this, 'add')} disabled={this.props.disabled}>
                             {i18n(ns + 'add_repo_button')}
                         </button>
                     </div>

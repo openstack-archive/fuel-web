@@ -33,6 +33,13 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
             "package_version": "2.0.0"
@@ -63,6 +70,13 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
             "package_version": "2.0.0"
@@ -95,6 +109,52 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                }
+            ],
+            "package_version": "2.0.0"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "zabbix_monitoring",
+            "title": "Zabbix for Fuel",
+            "version": "2.0.0",
+            "description": "Enables Zabbix Monitoring. For information how to access Zabbix UI refer to Zabbix plugin User Guide. Zabbix URL schema is http://<VIP>/zabbix",
+            "fuel_version": ["6.1"],
+            "authors": ["Dmitry Klenov <dklenov@mirantis.com>", "Piotr Misiak <pmisiak@mirantis.com>", "Szymon Banka <sbanka@mirantis.com>", "Bartosz Kupidura <bkupidura@mirantis.com>", "Alexander Zatserklyany <azatserklyany@mirantis.com>"],
+            "licenses": ["Apache License Version 2.0"],
+            "homepage": "https://github.com/stackforge/fuel-plugin-external-zabbix",
+            "groups": ["monitoring"],
+            "releases": [
+                {
+                    "os": "ubuntu",
+                    "version": "2014.2-6.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                },
+                {
+                    "os": "centos",
+                    "version": "2014.2-6.1",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
             "package_version": "2.0.0"

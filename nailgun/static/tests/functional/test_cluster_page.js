@@ -26,7 +26,8 @@ define([
     registerSuite(function() {
         var common,
             clusterPage,
-            clusterName;
+            clusterName,
+            nodesAmount = 3;
 
         return {
             name: 'Cluster page',
@@ -34,21 +35,120 @@ define([
                 common = new Common(this.remote);
                 clusterPage = new ClusterPage(this.remote);
                 clusterName = common.pickRandomName('Test Cluster');
-            },
-            beforeEach: function() {
+
                 return this.remote
                     .then(function() {
                         return common.getIn();
                     })
                     .then(function() {
                         return common.createCluster(clusterName);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Nodes');
                     });
             },
-            afterEach: function() {
+            'Add Cluster Nodes': function() {
+                var self = this;
+
                 return this.remote
                     .then(function() {
-                        return common.removeCluster(clusterName, true);
-                    });
+                        return common.elementExists('.node-list .alert-warning', 'Node list shows warning if there are no nodes in environment');
+                    })
+                    // go to Add Nodes screen
+                    .findByCssSelector('button.btn-add-nodes')
+                        .click()
+                        .end()
+                    .then(function() {
+                        return common.isElementDisabled('button.btn-apply', 'Apply button is disabled until both roles and nodes chosen');
+                    })
+                    .then(function() {
+                        return common.isElementDisabled('.role-panel [type=checkbox][name=mongo]', 'Unavailable role has locked checkbox');
+                    })
+                    .then(function() {
+                        return common.elementExists('.role-panel .mongo i.tooltip-icon', 'Unavailable role has warning tooltip');
+                    })
+                    .then(function() {
+                        return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
+                    })
+                    .then(function() {
+                        return common.isElementDisabled('.role-panel [type=checkbox][name=compute]', 'Compute role can not be added together with selected roles');
+                    })
+                    .then(function() {
+                        return common.isElementDisabled('button.btn-apply', 'Apply button is disabled until both roles and nodes chosen');
+                    })
+                    .then(function() {
+                        return clusterPage.checkNodes(nodesAmount);
+                    })
+                    // save changes
+                    .findByCssSelector('button.btn-apply')
+                        .click()
+                        .end()
+                    // check cluster node list is rendered
+                    .findByCssSelectorWithTimeout('button.btn-add-nodes', 2000)
+                    // check node allocation
+                    .then(function() {
+                        return _.range(1, 1 + nodesAmount).reduce(
+                            function(nodesFound, index) {
+                                return self.remote
+                                    .findByCssSelector('div.node:nth-child(' + index + ')')
+                                        .catch(function() {
+                                            throw new Error('Unable to find ' + index + ' node in cluster');
+                                        });
+                            },
+                            0
+                        );
+                    })
+                    .findAllByCssSelector('.node-list .nodes-group')
+                        .then(function(elements) {
+                            return assert.equal(elements.length, 1, 'One node group is present');
+                        })
+                        .end();
+            },
+            'Edit cluster node roles': function() {
+                return this.remote
+                    .then(function() {
+                        return common.addNodesToCluster(1, ['Storage - Cinder']);
+                    })
+                    .findAllByCssSelector('.node-list .nodes-group')
+                        .then(function(elements) {
+                            return assert.equal(elements.length, 2, 'Two node groups are present');
+                        })
+                        .end()
+                    // select all nodes
+                    .findByCssSelector('.select-all label')
+                        .click()
+                        .end()
+                    // go to Edit Roles screen
+                    .findByCssSelector('button.btn-edit-roles')
+                        .click()
+                        .end()
+                    // wait for role management screen opened
+                    .findByCssSelectorWithTimeout('.role-panel', 1000)
+                    .then(function() {
+                        return common.elementNotExists('.node-box [type=checkbox]:not(:disabled)', 'Node selection is locked on Edit Roles screen');
+                    })
+                    .then(function() {
+                        return common.elementNotExists('[name=select-all]:not(:disabled)', 'Select All checkboxes are locked on Edit Roles screen');
+                    })
+                    .then(function() {
+                        return common.elementExists('.role-panel [type=checkbox][name=controller]:indeterminate', 'Controller role checkbox has indeterminate state');
+                    })
+                    .then(function() {
+                        // uncheck Cinder role
+                        return clusterPage.checkNodeRoles(['Storage - Cinder', 'Storage - Cinder']);
+                    })
+                    // save changes
+                    .findByCssSelector('button.btn-apply')
+                        .click()
+                        .end()
+                    // check cluster node list is rendered
+                    // nodes remain selected, so Edit Roles button is checked
+                    .findByCssSelectorWithTimeout('button.btn-edit-roles', 2000)
+                    .findAllByCssSelector('.node-list .node-box')
+                        .then(function(elements) {
+                            return assert.equal(elements.length, nodesAmount, 'One node was removed from cluster after editing roles');
+                        })
+                        .end();
             },
             'Remove Cluster': function() {
                 return this.remote
@@ -66,62 +166,6 @@ define([
                     })
                     .then(function(result) {
                         assert.notOk(result, 'Cluster removed successfully');
-                    });
-            },
-            'Add Cluster Nodes': function() {
-                var nodesAmount = 3,
-                    self = this,
-                    applyButton;
-                return this.remote
-                    .then(function() {
-                        return common.goToEnvironment(clusterName);
-                    })
-                    .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
-                        .click()
-                        .end()
-                    .findByCssSelector('button.btn-apply')
-                        .then(function(button) {
-                            applyButton = button;
-                            return applyButton.isEnabled().then(function(isEnabled) {
-                                assert.isFalse(isEnabled, 'Apply button is disabled until both roles and nodes chosen');
-                                return true;
-                            });
-                        })
-                        .end()
-                    .findByCssSelector('div.role-panel')
-                        .end()
-                    .then(function() {
-                        return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
-                    })
-                    .then(function() {
-                        return applyButton.isEnabled().then(function(isEnabled) {
-                            assert.isFalse(isEnabled, 'Apply button is disabled until both roles and nodes chosen');
-                            return true;
-                        });
-                    })
-                    .then(function() {
-                        return clusterPage.checkNodes(nodesAmount);
-                    })
-                    .then(function() {
-                        applyButton.click();
-                    })
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end()
-
-                    .then(function() {
-                        return _.range(1, 1 + nodesAmount).reduce(
-                            function(nodesFound, index) {
-                                return self.remote
-                                    .setFindTimeout(1000)
-                                    .findByCssSelector('div.node:nth-child(' + index + ')')
-                                    .catch(function() {
-                                        throw new Error('Unable to find ' + index + ' node in cluster');
-                                    });
-                            },
-                            0
-                        );
                     });
             }
         };

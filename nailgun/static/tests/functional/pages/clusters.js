@@ -58,7 +58,8 @@ define([
                 .pressKeys('\uE007')
                 .then(function() {
                     return self.modal.waitToClose();
-                });
+                })
+                .waitForCssSelector('.dashboard-tab', 1000);
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {

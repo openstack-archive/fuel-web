@@ -29,7 +29,7 @@ def find_requires():
 
 if __name__ == "__main__":
     setup(name='fuel_package_updates',
-          version='6.0.0',
+          version='8.0.0',
           description='Package update downloader for Fuel Master node',
           long_description='Package Update downloader for Fuel Master node',
           classifiers=[

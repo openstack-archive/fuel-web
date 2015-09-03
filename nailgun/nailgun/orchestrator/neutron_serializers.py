@@ -74,13 +74,13 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         enabled.
         """
         # Get Mellanox data
-        neutron_mellanox_data =  \
-            Cluster.get_attributes(cluster).editable\
+        neutron_mellanox_data = \
+            Cluster.get_editable_attributes(cluster)\
             .get('neutron_mellanox', {})
 
         # Get storage data
         storage_data = \
-            Cluster.get_attributes(cluster).editable.get('storage', {})
+            Cluster.get_editable_attributes(cluster).get('storage', {})
 
         # Get network manager
         nm = Cluster.get_network_manager(cluster)
@@ -186,7 +186,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
 
-        cluster_attrs = Cluster.get_attributes(cluster).editable
+        cluster_attrs = Cluster.get_editable_attributes(cluster)
         if 'nsx_plugin' in cluster_attrs and \
                 cluster_attrs['nsx_plugin']['metadata']['enabled']:
             attrs['L2']['provider'] = 'nsx'
@@ -491,7 +491,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             }
 
         # Set non-default ml2 configurations
-        attrs = Cluster.get_attributes(cluster).editable
+        attrs = Cluster.get_editable_attributes(cluster)
         if 'neutron_mellanox' in attrs and \
                 attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
             res['mechanism_drivers'] = 'mlnx,openvswitch'
@@ -506,7 +506,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         l3 = {
             "use_namespaces": True
         }
-        attrs = Cluster.get_attributes(cluster).editable
+        attrs = Cluster.get_editable_attributes(cluster)
         if 'nsx_plugin' in attrs and \
                 attrs['nsx_plugin']['metadata']['enabled']:
             dhcp_attrs = l3.setdefault('dhcp_agent', {})

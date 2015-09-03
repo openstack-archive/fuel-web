@@ -64,6 +64,7 @@ from nailgun.objects import MasterNodeSettings
 from nailgun.objects import Node
 from nailgun.objects import NodeGroup
 from nailgun.objects import Plugin
+from nailgun.objects import PluginCollection
 from nailgun.objects import Release
 
 from nailgun.app import build_app
@@ -418,17 +419,17 @@ class EnvironmentManager(object):
                 headers=self.default_headers,
                 expect_errors=False
             )
-
             plugin = Plugin.get_by_uid(resp.json_body['id'])
-            self.plugins.append(plugin)
         else:
             plugin = Plugin.create(plugin_data)
-            self.plugins.append(plugin)
+
+        self.plugins.append(plugin)
 
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
-
+            PluginCollection.set_attributes(plugin.id, cluster.id,
+                                            enabled=True)
         return plugin
 
     def default_metadata(self):
@@ -673,7 +674,13 @@ class EnvironmentManager(object):
                 {'repository_path': 'repositories/centos',
                  'version': '2014.2-6.0', 'os': 'centos',
                  'mode': ['ha', 'multinode'],
-                 'deployment_scripts_path': 'deployment_scripts/'}]}
+                 'deployment_scripts_path': 'deployment_scripts/'},
+                {'repository_path': 'repositories/ubuntu',
+                 'version': '2015.1-8.0', 'os': 'ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'deployment_scripts_path': 'deployment_scripts/'},
+            ]
+        }
 
         sample_plugin.update(kwargs)
         return sample_plugin

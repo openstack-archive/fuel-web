@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import six
 from six.moves import map
 
@@ -25,60 +26,157 @@ from nailgun.plugins.adapters import wrap_plugin
 class PluginManager(object):
 
     @classmethod
-    def process_cluster_attributes(cls, cluster, attrs):
+    def process_cluster_attributes(cls, cluster, attributes):
         """Generate Cluster-Plugins relation based on attributes
 
         Iterates through plugins attributes, creates
         or deletes Cluster <-> Plugins relation if plugin
         is enabled or disabled.
 
-        :param cluster: Cluster object
-        :param attrs: dictionary with cluster attributes
+        :param cluster: A cluster instance
+        :type cluster: nailgun.objects.cluster.Cluster
+        :param attributes: Cluster attributes
+        :type attributes: dict
         """
-        for key, attr in six.iteritems(attrs):
-            cls._process_attr(cluster, attr)
+        def _convert_attrs(plugin_id, attrs):
+            prefix = "#{0}_".format(plugin_id)
+            result = dict((title[len(prefix):], attrs[title])
+                          for title in attrs
+                          if title.startswith(prefix))
+            for attr in six.itervalues(result):
+                if 'restrictions' not in attr:
+                    continue
+                if len(attr['restrictions']) == 1:
+                    attr.pop('restrictions')
+                else:
+                    attr['restrictions'].pop()
+            return result
+
+        for attrs in six.itervalues(attributes):
+            if not isinstance(attrs, dict):
+                continue
+
+            plugin_versions = attrs.pop('plugin_versions', None)
+            if plugin_versions is None:
+                continue
+
+            metadata = attrs.pop('metadata', {})
+            plugin_enabled = metadata.get('enabled', False)
+            default = metadata.get('default', False)
+
+            for version in plugin_versions['values']:
+                pid = version.get('data')
+                plugin = Plugin.get_by_uid(pid)
+                if not plugin:
+                    logger.warning(
+                        'Plugin with id "%s" is not found, skip it', pid)
+                    continue
+
+                enabled = plugin_enabled and\
+                    str(plugin.id) == plugin_versions['value']
+
+                PluginCollection.set_attributes(
+                    plugin.id, cluster.id, enabled=enabled,
+                    attrs=_convert_attrs(plugin.id, attrs)
+                    if enabled or default else None
+                )
 
     @classmethod
-    def _process_attr(cls, cluster, attr):
-        if not isinstance(attr, dict):
-            return
+    def get_plugins_attributes(cls, cluster):
+        """Gets attributes of all plugins connected with given cluster.
 
-        metadata = attr.get('metadata', {})
-        plugin_id = metadata.get('plugin_id')
+        :param cluster: A cluster instance
+        :type cluster: nailgun.objects.cluster.Cluster
+        :return: Plugins attributes
+        :rtype: dict
+        """
+        plugins_attributes = {}
+        for pid, name, title, version, enabled, default_attrs, cluster_attrs\
+                in PluginCollection.get_connected(cluster.id):
+            data = plugins_attributes.get(name, {})
+            metadata = data.setdefault('metadata', {
+                u'toggleable': True,
+                u'weight': 70
+            })
+            metadata.update({
+                u'enabled': enabled or metadata.get('enabled', False),
+                u'label': title,
+            })
+            data.update(cluster_attrs if enabled else {})
+            plugins_attributes[name] = data
 
-        if not plugin_id:
-            return
-
-        plugin = Plugin.get_by_uid(plugin_id)
-        if not plugin:
-            logger.warning('Plugin with id "%s" is not found, skip it',
-                           plugin_id)
-            return
-
-        enabled = metadata.get('enabled', False)
-
-        # Value is true and plugin is not enabled for this cluster
-        # that means plugin was enabled on this request
-        if enabled and cluster not in plugin.clusters:
-            plugin.clusters.append(cluster)
-        # Value is false and plugin is enabled for this cluster
-        # that means plugin was disabled on this request
-        elif not enabled and cluster in plugin.clusters:
-            plugin.clusters.remove(cluster)
+        return plugins_attributes
 
     @classmethod
-    def get_plugin_attributes(cls, cluster):
-        plugin_attributes = {}
-        for plugin_db in PluginCollection.all_newest():
-            plugin_adapter = wrap_plugin(plugin_db)
-            attributes = plugin_adapter.get_plugin_attributes(cluster)
-            plugin_attributes.update(attributes)
-        return plugin_attributes
+    def get_plugins_attributes_with_versions(cls, cluster, default=False):
+        """Gets attributes of all plugins connected with given cluster for UI.
+
+        :param cluster: A cluster instance
+        :type cluster: nailgun.objects.cluster.Cluster
+        :param default: Need to return a default plugin's attributes or not
+        :type default: bool
+        :return: Plugins attributes
+        :rtype: dict
+        """
+        plugins_attributes = {}
+        versions = {
+            u'type': u'radio',
+            u'values': [],
+            u'weight': 10,
+            u'value': None,
+            u'label': 'Choose a plugin version'
+        }
+
+        def _convert_attr(pid, name, title, attr):
+            restrictions = attr.setdefault('restrictions', [])
+            restrictions.append({
+                'action': 'hide',
+                'condition': "settings:{0}.plugin_versions.value != '{1}'"
+                             .format(name, pid)
+            })
+            return "#{0}_{1}".format(pid, title), attr
+
+        for pid, name, title, version, enabled, default_attrs, cluster_attrs\
+                in PluginCollection.get_connected(cluster.id):
+            enabled = enabled and not default
+            data = plugins_attributes.get(name, {})
+            metadata = data.setdefault('metadata', {
+                u'toggleable': True,
+                u'weight': 70
+            })
+            metadata.update({
+                u'enabled': enabled or metadata.get('enabled', False),
+                u'label': title,
+                u'default': default
+            })
+
+            attrs = default_attrs if default else cluster_attrs
+            data.update(dict(_convert_attr(pid, name, key, attrs[key])
+                             for key in attrs))
+
+            if 'plugin_versions' in data:
+                plugin_versions = data['plugin_versions']
+            else:
+                plugin_versions = copy.deepcopy(versions)
+
+            plugin_versions['values'].append({
+                u'data': str(pid),
+                u'description': '',
+                u'label': version
+            })
+
+            if not plugin_versions['value'] or enabled:
+                plugin_versions['value'] = str(pid)
+
+            data['plugin_versions'] = plugin_versions
+            plugins_attributes[name] = data
+
+        return plugins_attributes
 
     @classmethod
     def get_cluster_plugins_with_tasks(cls, cluster):
         cluster_plugins = []
-        for plugin_db in cluster.plugins:
+        for plugin_db in PluginCollection.get_enabled(cluster.id):
             plugin_adapter = wrap_plugin(plugin_db)
             plugin_adapter.set_cluster_tasks()
             cluster_plugins.append(plugin_adapter)
@@ -91,7 +189,7 @@ class PluginManager(object):
 
         plugin_roles = []
         conflict_roles = {}
-        for plugin in cluster.plugins:
+        for plugin in PluginCollection.get_enabled(cluster.id):
             for role in plugin.network_roles_metadata:
                 role_id = role['id']
                 if role_id in known_roles:
@@ -111,9 +209,10 @@ class PluginManager(object):
     @classmethod
     def get_plugins_deployment_tasks(cls, cluster):
         deployment_tasks = []
-
         processed_tasks = {}
-        for plugin_adapter in map(wrap_plugin, cluster.plugins):
+
+        enabled_plugins = PluginCollection.get_enabled(cluster.id)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
             depl_tasks = plugin_adapter.deployment_tasks
 
             for t in depl_tasks:
@@ -127,7 +226,6 @@ class PluginManager(object):
                                 processed_tasks[t_id],
                                 t_id)
                     )
-
                 processed_tasks[t_id] = plugin_adapter.full_name
 
             deployment_tasks.extend(depl_tasks)
@@ -139,7 +237,7 @@ class PluginManager(object):
         result = {}
         core_roles = set(cluster.release.roles_metadata)
 
-        for plugin_db in cluster.plugins:
+        for plugin_db in PluginCollection.get_enabled(cluster.id):
             plugin_roles = wrap_plugin(plugin_db).normalized_roles_metadata
 
             # we should check all possible cases of roles intersection
@@ -181,7 +279,8 @@ class PluginManager(object):
         release_volumes_ids = [v['id'] for v in release_volumes]
         processed_volumes = {}
 
-        for plugin_adapter in map(wrap_plugin, cluster.plugins):
+        enabled_plugins = PluginCollection.get_enabled(cluster.id)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
             metadata = plugin_adapter.volumes_metadata
 
             for volume in metadata.get('volumes', []):
@@ -222,3 +321,29 @@ class PluginManager(object):
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
             plugin_adapter.sync_metadata_to_db()
+
+    @classmethod
+    def get_compatible_plugins(cls, cluster):
+        """Returns a list of plugins that are compatible with a given cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: nailgun.objects.cluster.Cluster
+        :returns: A list of plugin instances
+        """
+        return list(six.moves.filter(
+            lambda p: wrap_plugin(p).validate_cluster_compatibility(cluster),
+            PluginCollection.all()))
+
+    @classmethod
+    def add_compatible_plugins(cls, cluster):
+        """Populates 'cluster_plugins' table with compatible plugins.
+
+        :param cluster: A cluster instance
+        :type cluster: nailgun.objects.cluster.Cluster
+        """
+        for plugin in cls.get_compatible_plugins(cluster):
+            PluginCollection.connect_to_cluster(
+                plugin.id,
+                cluster.id,
+                plugin.attributes_metadata
+            )

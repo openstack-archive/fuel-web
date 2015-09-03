@@ -170,7 +170,6 @@ class Cluster(NailgunObject):
 
             if assign_nodes:
                 cls.update_nodes(new_cluster, assign_nodes)
-
         except (
             errors.OutOfVLANs,
             errors.OutOfIPs,
@@ -181,6 +180,8 @@ class Cluster(NailgunObject):
             raise errors.CannotCreate(exc.message)
 
         db().flush()
+
+        PluginManager.add_compatible_plugins(new_cluster)
 
         return new_cluster
 
@@ -241,14 +242,11 @@ class Cluster(NailgunObject):
         :returns: Dict object
         """
         editable = instance.release.attributes_metadata.get("editable")
-        # when attributes created we need to understand whether should plugin
-        # be applied for created cluster
-        plugin_attrs = PluginManager.get_plugin_attributes(instance)
-        editable = dict(plugin_attrs, **editable)
         editable = traverse(editable, AttributesGenerator, {
             'cluster': instance,
             'settings': settings,
         })
+
         return editable
 
     @classmethod
@@ -258,9 +256,14 @@ class Cluster(NailgunObject):
         :param instance: Cluster instance
         :returns: Attributes instance
         """
-        return db().query(models.Attributes).filter(
+        attrs = db().query(models.Attributes).filter(
             models.Attributes.cluster_id == instance.id
         ).first()
+
+        # let's merge plugins attributes into editable ones
+        attrs.editable.update(PluginManager.get_plugins_attributes(instance))
+
+        return attrs
 
     @classmethod
     def update_attributes(cls, instance, data):
@@ -486,8 +489,7 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def get_ifaces_for_network_in_cluster(
-            cls, instance, net):
+    def get_ifaces_for_network_in_cluster(cls, instance, net):
         """Method for receiving node_id:iface pairs for all nodes in
         specific cluster
 

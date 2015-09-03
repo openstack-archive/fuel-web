@@ -19,6 +19,7 @@ from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
+from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
 from nailgun.statistics.utils import get_attr_value
 from nailgun.statistics.utils import WhiteListRule
@@ -185,7 +186,7 @@ class InstallationInfo(object):
 
     def get_cluster_plugins_info(self, cluster):
         plugins_info = []
-        for plugin_inst in cluster.plugins:
+        for plugin_inst in PluginCollection.get_enabled(cluster.id):
             plugin_info = {
                 "id": plugin_inst.id,
                 "name": plugin_inst.name,

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -28,10 +29,23 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 class ClusterPlugins(Base):
 
     __tablename__ = 'cluster_plugins'
+
     id = Column(Integer, primary_key=True)
-    plugin_id = Column(Integer, ForeignKey('plugins.id', ondelete='CASCADE'),
+    plugin_id = Column(Integer,
+                       ForeignKey('plugins.id', ondelete='CASCADE'),
                        nullable=False)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer,
+                        ForeignKey('clusters.id', ondelete='CASCADE'),
+                        nullable=False)
+    enabled = Column(Boolean,
+                     nullable=False,
+                     default=False,
+                     server_default='false')
+    # Initially, 'attributes' is a copy of 'Plugin.attributes_metadata'.
+    # We need this column in order to store in there the modified (by user)
+    # version of attributes, because we don't want to store them in cluster
+    # attributes with no chance to remove.
+    attributes = Column(JSON, nullable=False, server_default='{}')
 
 
 class Plugin(Base):

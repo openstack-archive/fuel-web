@@ -14,9 +14,7 @@
  * under the License.
  **/
 
-// jshint node:true
-
-define(['underscore'], function(_) {
+define(['underscore', 'intern/node_modules/dojo/node!fs'], function(_, fs) {
     'use strict';
 
     var serverHost = '127.0.0.1',
@@ -29,21 +27,36 @@ define(['underscore'], function(_) {
         username: username,
         password: password,
         serverUrl: serverUrl,
-        clickLinkByText: function(remote, cssSelector, linkText) {
-            return remote
-                .setFindTimeout(1000)
-                .findAllByCssSelector(cssSelector)
-                .then(function(links) {
-                    return links.reduce(function(matchFound, link) {
-                        return link.getVisibleText().then(function(text) {
-                            if (_.trim(text) == linkText) {
-                                link.click();
-                                return true;
-                            }
-                            return matchFound;
+        leadfootHelpers: {
+            clickLinkByText: function(cssSelector, linkText) {
+                return new this.constructor(this, function() {
+                    return this.parent
+                        .setFindTimeout(1000)
+                        .findAllByCssSelector(cssSelector)
+                        .then(function(links) {
+                            return links.reduce(function(matchFound, link) {
+                                return link.getVisibleText().then(function(text) {
+                                    if (_.trim(text) == linkText) {
+                                        link.click();
+                                        return true;
+                                    }
+                                    return matchFound;
+                                });
+                            }, false);
                         });
-                    }, false);
                 });
+            },
+            takeScreenshotAndSave: function(filename) {
+                return new this.constructor(this, function() {
+                    return this.parent
+                        .takeScreenshot()
+                        .then(function(buffer) {
+                            if (!filename) filename = new Date().toTimeString();
+                            var targetDir = process.env.ARTIFACTS || process.cwd();
+                            fs.writeFileSync(targetDir + '/' + filename + '.png', buffer);
+                    });
+                });
+            }
         }
     };
 });

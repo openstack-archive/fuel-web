@@ -405,6 +405,7 @@ function run_ui_func_selenium_tests {
       { echo 'Failed to start Nailgun'; return 1; }
 
     SERVER_PORT=$SERVER_PORT \
+    ARTIFACTS=$artifacts \
     ${GULP} functional-tests --suites=$testcase
     if [ $? -ne 0 ]; then
       result=1

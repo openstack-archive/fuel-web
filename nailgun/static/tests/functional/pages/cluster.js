@@ -14,9 +14,7 @@
  * under the License.
  **/
 
-define(['underscore',
-        'tests/functional/pages/modal',
-        '../../helpers'], function(_, ModalWindow, Helpers) {
+define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) {
     'use strict';
     function ClusterPage(remote) {
         this.remote = remote;
@@ -26,14 +24,8 @@ define(['underscore',
     ClusterPage.prototype = {
         constructor: ClusterPage,
         goToTab: function(tabName) {
-            var self = this;
             return this.remote
-                .then(function() {
-                    return Helpers.clickLinkByText(
-                        self.remote,
-                        '.tabs-box .tabs a',
-                        tabName);
-                });
+                .clickLinkByText('.tabs-box .tabs a', tabName);
         },
         removeCluster: function(clusterName) {
             var self = this;

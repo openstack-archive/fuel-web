@@ -117,8 +117,8 @@ define([
                     .then(function() {
                         return self.clusterPage.checkNodes(nodesAmount);
                     })
-                    .clickByCssSelector('button.btn-apply')
-                    .waitForCssSelector('button.btn-add-nodes', 2000);
+                    .clickByCssSelector('.btn-apply')
+                    .waitForElementDeletion('.btn-apply', 2000);
             },
             assertElementContainsText: function(cssSelector, searchedText, message) {
                 return this.remote

@@ -1529,6 +1529,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
                                     tooltipText={!!this.props.nodes.length && processedRestrictions.message}
                                     onChange={this.props.selectRoles}
+                                    wrapperClassName={name}
                                 />
                             );
                         }

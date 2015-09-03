@@ -105,16 +105,16 @@ define([
                     .then(function() {
                         return self.clusterPage.goToTab('Nodes');
                     })
-                    .clickByCssSelector('button.btn-add-nodes')
-                    .waitForCssSelector('.node', 2000)
+                    .clickByCssSelector('.btn-add-nodes')
+                    .waitForElementDeletion('.progress-bar', 2000)
                     .then(function() {
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
                     .then(function() {
                         return self.clusterPage.checkNodes(nodesAmount);
                     })
-                    .clickByCssSelector('button.btn-apply')
-                    .waitForCssSelector('button.btn-add-nodes', 2000);
+                    .clickByCssSelector('.btn-apply')
+                    .waitForElementDeletion('.btn-apply', 2000);
             },
             assertElementContainsText: function(cssSelector, searchedText, message) {
                 return this.remote

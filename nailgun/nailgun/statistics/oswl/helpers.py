@@ -53,7 +53,8 @@ class ClientProvider(object):
             self._nova = nova_client.Client(
                 settings.OPENSTACK_API_VERSION["nova"],
                 *self.credentials,
-                service_type=consts.NOVA_SERVICE_TYPE.compute
+                service_type=consts.NOVA_SERVICE_TYPE.compute,
+                insecure=True
             )
 
         return self._nova
@@ -63,7 +64,8 @@ class ClientProvider(object):
         if self._cinder is None:
             self._cinder = cinder_client.Client(
                 settings.OPENSTACK_API_VERSION["cinder"],
-                *self.credentials
+                *self.credentials,
+                insecure=True
             )
 
         return self._cinder
@@ -100,9 +102,9 @@ class ClientProvider(object):
         for version_data in discover.version_data():
             version = version_data["version"][0]
             if version <= 2:
-                return keystone_client_v2.Client(**auth_creds)
+                return keystone_client_v2.Client(insecure=True, **auth_creds)
             elif version == 3:
-                return keystone_client_v3.Client(**auth_creds)
+                return keystone_client_v3.Client(insecure=True, **auth_creds)
 
         raise Exception("Failed to discover keystone version "
                         "for auth_url {0}".format(

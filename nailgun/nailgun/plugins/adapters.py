@@ -26,6 +26,7 @@ import yaml
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.component import Component
+from nailgun.objects.plugin import ClusterPlugins
 from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
 
@@ -49,9 +50,6 @@ class PluginAdapterBase(object):
         self.plugin_path = os.path.join(
             settings.PLUGINS_PATH,
             self.path_name)
-        self.config_file = os.path.join(
-            self.plugin_path,
-            self.environment_config_name)
         self.tasks = []
 
     @abc.abstractmethod
@@ -92,83 +90,13 @@ class PluginAdapterBase(object):
                 item['role'].append('primary-controller')
         return data
 
-    def get_plugin_attributes(self, cluster):
-        """Should be used for initial configuration uploading to custom storage
-
-        Will be invoked in 2 cases:
-        1. Cluster is created but there was no plugins in system
-        on that time, so when plugin is uploaded we need to iterate
-        over all clusters and decide if plugin should be applied
-        2. Plugins is uploaded before cluster creation, in this case
-        we will iterate over all plugins and upload configuration for them
-
-        In this case attributes will be added to same cluster attributes
-        model and stored in editable field
-        """
-        config = {}
-        if os.path.exists(self.config_file):
-            config = self._load_config(self.config_file)
-        if self.validate_cluster_compatibility(cluster):
-            attrs = config.get("attributes", {})
-            self.update_metadata(attrs)
-            return {self.plugin.name: attrs}
-        return {}
-
-    def validate_cluster_compatibility(self, cluster):
-        """Validates if plugin is compatible with cluster
-
-        - validates operating systems
-        - modes of clusters (simple or ha)
-        - release version
-        """
-        for release in self.plugin.releases:
-            os_compat = (cluster.release.operating_system.lower()
-                         == release['os'].lower())
-            # plugin writer should be able to specify ha in release['mode']
-            # and know nothing about ha_compact
-            mode_compat = any(mode in cluster.mode for mode in release['mode'])
-            release_version_compat = self._is_release_version_compatible(
-                cluster.release.version, release['version'])
-            if all((os_compat, mode_compat, release_version_compat)):
-                return True
-        return False
-
-    def _is_release_version_compatible(self, rel_version, plugin_rel_version):
-        """Checks if release version is compatible with plugin version
-
-        :param str rel_version: release version
-        :param str plugin_rel_version: plugin release version
-        :returns: True if compatible, Fals if not
-        """
-        rel_os, rel_fuel = rel_version.split('-')
-        plugin_os, plugin_rel = plugin_rel_version.split('-')
-
-        return rel_os.startswith(plugin_os) and rel_fuel.startswith(plugin_rel)
-
-    def update_metadata(self, attributes):
-        """Overwrites only default values in metadata
-
-        Plugin should be able to provide UI "native" conditions
-        to enable/disable plugin on UI itself
-        """
-        attributes.setdefault('metadata', {})
-        attributes['metadata'].update(self.default_metadata)
-        return attributes
-
-    @property
-    def default_metadata(self):
-        return {u'enabled': False, u'toggleable': True,
-                u'weight': 70, u'label': self.plugin.title,
-                'plugin_id': self.plugin.id}
-
     def set_cluster_tasks(self):
         """Load plugins provided tasks and set them to instance tasks variable
 
         Provided tasks are loaded from tasks config file.
         """
         task_yaml = os.path.join(
-            self.plugin_path,
-            self.task_config_name)
+            self.plugin_path, self.task_config_name)
         if os.path.exists(task_yaml):
             self.tasks = self._load_tasks(task_yaml)
 
@@ -222,13 +150,14 @@ class PluginAdapterBase(object):
 
     def get_release_info(self, release):
         """Get plugin release information which corresponds to given release"""
-        os = release.operating_system.lower()
+        rel_os = release.operating_system.lower()
         version = release.version
 
         release_info = filter(
             lambda r: (
-                r['os'] == os and
-                self._is_release_version_compatible(version, r['version'])),
+                r['os'] == rel_os and
+                ClusterPlugins.is_release_version_compatible(version,
+                                                             r['version'])),
             self.plugin.releases)
 
         return release_info[0]
@@ -334,6 +263,8 @@ class PluginAdapterV3(PluginAdapterV2):
             # Plugin columns have constraints for nullable data, so
             # we need to check it
             if attribute_data:
+                if attribute == 'attributes_metadata':
+                    attribute_data = attribute_data['attributes']
                 data_to_update[attribute] = attribute_data
 
         Plugin.update(self.plugin, data_to_update)

@@ -60,6 +60,7 @@ from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
 from nailgun.objects import Cluster
+from nailgun.objects import ClusterPlugins
 from nailgun.objects import Component
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import Node
@@ -433,7 +434,6 @@ class EnvironmentManager(object):
                 headers=self.default_headers,
                 expect_errors=False
             )
-
             plugin = Plugin.get_by_uid(resp.json_body['id'])
         else:
             plugin = Plugin.create(plugin_data)
@@ -443,7 +443,7 @@ class EnvironmentManager(object):
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
-
+            ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
         return plugin
 
     def create_component(self, release=None, plugin=None, **kwargs):
@@ -705,7 +705,13 @@ class EnvironmentManager(object):
                 {'repository_path': 'repositories/centos',
                  'version': '2014.2-6.0', 'os': 'centos',
                  'mode': ['ha', 'multinode'],
-                 'deployment_scripts_path': 'deployment_scripts/'}]}
+                 'deployment_scripts_path': 'deployment_scripts/'},
+                {'repository_path': 'repositories/ubuntu',
+                 'version': '2015.1-8.0', 'os': 'ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'deployment_scripts_path': 'deployment_scripts/'},
+            ]
+        }
 
         sample_plugin.update(kwargs)
         return sample_plugin

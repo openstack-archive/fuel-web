@@ -7,7 +7,7 @@
             "title": "The Logging, Monitoring and Alerting (LMA) Collector Plugin",
             "version": "0.7.0",
             "description": "Collect logs, metrics and notifications from system and OpenStack services and forward that information to external backends such as Elasticsearch and InfluxDB.",
-            "fuel_version": ["6.1"],
+            "fuel_version": ["7.0"],
             "authors": ["Mirantis Inc."],
             "licenses": ["Apache License Version 2.0"],
             "homepage": "https://github.com/openstack/fuel-plugin-lma-collector",
@@ -33,9 +33,25 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
-            "package_version": "2.0.0"
+            "package_version": "2.0.0",
+            "attributes_metadata": {
+                "logging_text": {
+                    "value": "value",
+                    "type": "text",
+                    "description": "description",
+                    "weight": 25,
+                    "label": "label"
+                }
+            }
         }
     },
     {
@@ -63,6 +79,13 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
             "package_version": "2.0.0"
@@ -76,7 +99,7 @@
             "title": "Zabbix for Fuel",
             "version": "1.0.0",
             "description": "Enables Zabbix Monitoring. For information how to access Zabbix UI refer to Zabbix plugin User Guide. Zabbix URL schema is http://<VIP>/zabbix",
-            "fuel_version": ["6.1"],
+            "fuel_version": ["7.0"],
             "authors": ["Dmitry Klenov <dklenov@mirantis.com>", "Piotr Misiak <pmisiak@mirantis.com>", "Szymon Banka <sbanka@mirantis.com>", "Bartosz Kupidura <bkupidura@mirantis.com>", "Alexander Zatserklyany <azatserklyany@mirantis.com>"],
             "licenses": ["Apache License Version 2.0"],
             "homepage": "https://github.com/openstack/fuel-plugin-external-zabbix",
@@ -95,9 +118,80 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
-            "package_version": "2.0.0"
+            "package_version": "2.0.0",
+            "attributes_metadata": {
+                "zabbix_text_1": {
+                    "value": "value 1.1",
+                    "type": "text",
+                    "description": "description 1.1",
+                    "weight": 25,
+                    "label": "label 1.1"
+                }
+            }
+        }
+    },
+    {
+        "pk": 4,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "zabbix_monitoring",
+            "title": "Zabbix for Fuel",
+            "version": "2.0.0",
+            "description": "Enables Zabbix Monitoring. For information how to access Zabbix UI refer to Zabbix plugin User Guide. Zabbix URL schema is http://<VIP>/zabbix",
+            "fuel_version": ["7.0"],
+            "authors": ["Dmitry Klenov <dklenov@mirantis.com>", "Piotr Misiak <pmisiak@mirantis.com>", "Szymon Banka <sbanka@mirantis.com>", "Bartosz Kupidura <bkupidura@mirantis.com>", "Alexander Zatserklyany <azatserklyany@mirantis.com>"],
+            "licenses": ["Apache License Version 2.0"],
+            "homepage": "https://github.com/openstack/fuel-plugin-external-zabbix",
+            "groups": ["monitoring"],
+            "releases": [
+                {
+                    "os": "ubuntu",
+                    "version": "2014.2-6.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                },
+                {
+                    "os": "centos",
+                    "version": "2014.2-6.1",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-8.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
+                }
+            ],
+            "package_version": "2.0.0",
+            "attributes_metadata": {
+                "zabbix_text_1": {
+                    "value": "value 2.1",
+                    "type": "text",
+                    "description": "description 2.1",
+                    "weight": 25,
+                    "label": "label 2.1"
+                },
+                "zabbix_text_2": {
+                    "value": "value 2.2",
+                    "type": "text",
+                    "description": "description 2.2",
+                    "weight": 26,
+                    "label": "label 2.2"
+                }
+            }
         }
     }
 ]

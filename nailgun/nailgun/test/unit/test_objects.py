@@ -940,8 +940,11 @@ class TestClusterObject(BaseTestCase):
         cluster = self.env.create_cluster(api=False)
 
         for kw in plugins_kw_list:
-            cluster.plugins.append(objects.Plugin.create(kw))
-
+            plugin = objects.Plugin.create(kw)
+            cluster.plugins.append(plugin)
+            objects.ClusterPlugins.set_attributes(cluster.id,
+                                                  plugin.id,
+                                                  enabled=True)
         return cluster
 
     def _get_network_role_metadata(self, **kwargs):
@@ -1293,8 +1296,9 @@ class TestClusterObjectGetRoles(BaseTestCase):
             roles_metadata=roles_metadata,
         ))
         self.cluster.plugins.append(plugin)
-        self.db.flush()
-
+        objects.ClusterPlugins.set_attributes(self.cluster.id,
+                                              plugin.id,
+                                              enabled=True)
         return plugin
 
     def test_no_plugins_no_additional_roles(self):

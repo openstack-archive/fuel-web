@@ -131,12 +131,20 @@ class TestDeploymentAttributesSerialization70(
          namespace: "haproxy"
     """.format(**custom_network))
 
-    def _add_plugin_network_roles(self):
-        plugin_data = self.env.get_default_plugin_metadata()
-        plugin_data['network_roles_metadata'] = self.plugin_network_roles
+    def _add_plugin_network_roles(self, **kwargs):
+        plugin_data = self.env.get_default_plugin_metadata(releases=[{
+            'repository_path': 'repositories/ubuntu',
+            'version': self.cluster_db.release.version,
+            'os': self.cluster_db.release.operating_system.lower(),
+            'mode': [self.cluster_db.mode],
+        }])
+        plugin_data.update(**kwargs)
+
         plugin = objects.Plugin.create(plugin_data)
-        self.cluster_db.plugins.append(plugin)
-        self.db.commit()
+        objects.ClusterPlugins.set_attributes(self.cluster_db.id,
+                                              plugin.id,
+                                              enabled=True)
+        return plugin
 
     def test_non_default_bridge_mapping(self):
         expected_mapping = {
@@ -206,7 +214,8 @@ class TestDeploymentAttributesSerialization70(
                                        vlan_start=self.custom_network[
                                            'vlan_start'
                                        ])
-        self._add_plugin_network_roles()
+        self._add_plugin_network_roles(
+            network_roles_metadata=self.plugin_network_roles)
         self.env.create_node(
             api=True,
             cluster_id=cluster['id'],
@@ -561,9 +570,6 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
     def setUp(self):
         super(TestPluginDeploymentTasksInjection, self).setUp()
 
-        self.cluster = self._prepare_cluster()
-
-    def _prepare_cluster(self):
         self.env.create(
             release_kwargs={
                 'version': '2015.1.0-7.0',
@@ -579,36 +585,25 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                  'pending_addition': True}
             ]
         )
-        return self.env.clusters[0]
+
+        self.cluster = self.env.clusters[0]
+
+        self.plugin_data = {
+            'releases': [
+                {
+                    'repository_path': 'plugin_test',
+                    'version': self.cluster.release.version,
+                    'os': self.cluster.release.operating_system.lower(),
+                    'mode': ['ha', 'multinode'],
+                    'deployment_scripts_path': 'plugin_test/'
+                },
+            ],
+        }
 
     def prepare_plugins_for_cluster(self, cluster, plugins_kw_list):
-        plugins = [
-            self._create_plugin(**kw)
-            for kw in plugins_kw_list
-        ]
-        cluster.plugins.extend(plugins)
-        self.db.flush()
-
-    def _create_plugin(self, **plugin_kwargs):
-        plugin_kwargs.update(
-            {
-                'releases': [
-                    {
-                        'repository_path': 'plugin_test',
-                        'version': self.cluster.release.version,
-                        'os':
-                        self.cluster.release.operating_system.lower(),
-                        'mode': ['ha', 'multinode'],
-                        'deployment_scripts_path': 'plugin_test/'
-                    },
-                ],
-            }
-        )
-        plugin_data = self.env.get_default_plugin_metadata(
-            **plugin_kwargs
-        )
-
-        return objects.Plugin.create(plugin_data)
+        for kw in plugins_kw_list:
+            kw.update(self.plugin_data)
+            self.env.create_plugin(cluster=cluster, **kw)
 
     def _check_pre_deployment_tasks(self, serialized, task_type):
         self.assertTrue(serialized)
@@ -912,17 +907,30 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
             })
+
         self.cluster = self.env.clusters[0]
+
+        self.plugin_data = {
+            'releases': [
+                {
+                    'repository_path': 'repositories/ubuntu',
+                    'version': self.cluster.release.version,
+                    'os': self.cluster.release.operating_system.lower(),
+                    'mode': [self.cluster.mode],
+                }
+            ]
+        }
 
     def _get_serializer(self, cluster):
         return get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
 
     def test_tasks_were_serialized(self):
-        plugin_data = self.env.get_default_plugin_metadata()
-        plugin_data['roles_metadata'] = self.ROLES
-        plugin_data['deployment_tasks'] = self.DEPLOYMENT_TASKS
-        plugin = objects.Plugin.create(plugin_data)
-        self.cluster.plugins.append(plugin)
+        plugin_data = {
+            'roles_metadata': self.ROLES,
+            'deployment_tasks': self.DEPLOYMENT_TASKS
+        }
+        plugin_data.update(self.plugin_data)
+        self.env.create_plugin(cluster=self.cluster, **plugin_data)
 
         self.env.create_node(
             api=True,
@@ -949,11 +957,12 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
         }])
 
     def test_tasks_were_not_serialized(self):
-        plugin_data = self.env.get_default_plugin_metadata()
-        plugin_data['roles_metadata'] = {}
-        plugin_data['deployment_tasks'] = self.DEPLOYMENT_TASKS
-        plugin = objects.Plugin.create(plugin_data)
-        self.cluster.plugins.append(plugin)
+        plugin_data = {
+            'roles_metadata': {},
+            'deployment_tasks': self.DEPLOYMENT_TASKS
+        }
+        plugin_data.update(self.plugin_data)
+        self.env.create_plugin(cluster=self.cluster, **plugin_data)
 
         self.env.create_node(
             api=True,

@@ -1223,7 +1223,7 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def _check_vmware_consistency(cls, task):
         """Checks vmware attributes consistency and proper values"""
-        attributes = task.cluster.attributes.editable
+        attributes = objects.Cluster.get_attributes(task.cluster).editable
         vmware_attributes = task.cluster.vmware_attributes
         # Old(< 6.1) clusters haven't vmware support
         if vmware_attributes:

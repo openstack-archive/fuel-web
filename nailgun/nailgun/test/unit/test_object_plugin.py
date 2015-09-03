@@ -15,18 +15,54 @@
 #    under the License.
 
 
+from nailgun import consts
 from nailgun.objects import Plugin
 from nailgun.objects import PluginCollection
 from nailgun.test import base
+import sqlalchemy as sa
 
 
 class TestPluginCollection(base.BaseTestCase):
+
+    def _create_test_plugins(self):
+        plugin_ids = []
+        for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0']:
+            plugin_data = self.env.get_default_plugin_metadata(
+                version=version,
+                name='multiversion_plugin')
+            plugin = Plugin.create(plugin_data)
+            plugin_ids.append(plugin.id)
+
+        single_plugin_data = self.env.get_default_plugin_metadata(
+            name='single_plugin')
+        plugin = Plugin.create(single_plugin_data)
+        plugin_ids.append(plugin.id)
+
+        incompatible_plugin_data = self.env.get_default_plugin_metadata(
+            name='incompatible_plugin',
+            releases=[]
+        )
+        plugin = Plugin.create(incompatible_plugin_data)
+        plugin_ids.append(plugin.id)
+
+        return plugin_ids
+
+    def _create_test_cluster(self):
+        self.env.create(
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
+            release_kwargs={
+                'version': '2015.1-8.0',
+                'operating_system': 'Ubuntu',
+                'modes': [consts.CLUSTER_MODES.multinode,
+                          consts.CLUSTER_MODES.ha_compact]})
+
+        return self.env.clusters[0]
 
     def test_all_newest(self):
         self._create_test_plugins()
 
         newest_plugins = PluginCollection.all_newest()
-        self.assertEqual(len(newest_plugins), 2)
+        self.assertEqual(len(newest_plugins), 3)
 
         single_plugin = filter(
             lambda p: p.name == 'single_plugin',
@@ -48,18 +84,51 @@ class TestPluginCollection(base.BaseTestCase):
         self.assertListEqual(
             [plugin.id for plugin in plugins], ids)
 
-    def _create_test_plugins(self):
-        plugin_ids = []
-        for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0']:
-            plugin_data = self.env.get_default_plugin_metadata(
-                version=version,
-                name='multiversion_plugin')
-            plugin = Plugin.create(plugin_data)
-            plugin_ids.append(plugin.id)
+    def test_connect_with_cluster(self):
+        meta = base.reflect_db_metadata()
+        self._create_test_plugins()
+        self._create_test_cluster()
+        cluster_plugins = self.db.execute(
+            meta.tables['cluster_plugins'].select()
+        ).fetchall()
+        self.assertEqual(len(cluster_plugins), 5)
 
-        single_plugin_data = self.env.get_default_plugin_metadata(
-            name='single_plugin')
-        plugin = Plugin.create(single_plugin_data)
-        plugin_ids.append(plugin.id)
+    def test_get_connected(self):
+        self._create_test_plugins()
+        cluster = self._create_test_cluster()
+        cluster_plugins = PluginCollection.get_connected(cluster.id).all()
+        self.assertEqual(len(cluster_plugins), 5)
 
-        return plugin_ids
+    def test_set_plugin_attributes(self):
+        meta = base.reflect_db_metadata()
+        self._create_test_plugins()
+        cluster = self._create_test_cluster()
+
+        plugin_id = PluginCollection.get_connected(cluster.id)[0][0]
+        PluginCollection.set_attributes(
+            plugin_id,
+            cluster.id,
+            enabled=True
+        )
+
+        columns = meta.tables['cluster_plugins'].c
+        enabled = self.db.execute(
+            sa.select([columns.enabled])
+            .where(columns.cluster_id == cluster.id)
+            .where(columns.plugin_id == plugin_id)
+        ).fetchone()
+        self.assertTrue(enabled[0])
+
+    def test_get_enabled(self):
+        self._create_test_plugins()
+        cluster = self._create_test_cluster()
+
+        plugin_id = PluginCollection.get_connected(cluster.id)[0][0]
+        PluginCollection.set_attributes(
+            plugin_id,
+            cluster.id,
+            enabled=True
+        )
+
+        enabled_plugin = PluginCollection.get_enabled(cluster.id)[0].id
+        self.assertEqual(enabled_plugin, plugin_id)

@@ -148,8 +148,7 @@ define([
                     .findByCssSelector('button.btn-add-nodes')
                         .click()
                         .end()
-                    .findByCssSelector('div.role-panel')
-                        .end()
+                    .waitForCssSelector('div.role-panel', 2000)
                     .then(function() {
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
@@ -159,9 +158,7 @@ define([
                     .findByCssSelector('button.btn-apply')
                         .click()
                         .end()
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end();
+                    .waitForCssSelector('button.btn-add-nodes', 6000);
             },
             doesCssSelectorContainText: function(cssSelector, searchedText) {
                 return this.remote

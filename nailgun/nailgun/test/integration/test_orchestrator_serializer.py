@@ -72,6 +72,7 @@ class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
     def setUp(self):
         super(OrchestratorSerializerTestBase, self).setUp()
         self.cluster_mock = mock.MagicMock(pending_release_id=None)
+        self.cluster_mock.id = 0
         self.cluster_mock.deployment_tasks = []
         self.cluster_mock.release.deployment_tasks = []
 

@@ -30,13 +30,15 @@ define([
             name: 'Clusters page',
             setup: function() {
                 common = new Common(this.remote);
-            },
-            beforeEach: function() {
                 clusterName = common.pickRandomName('Test Cluster');
+
                 return this.remote
                     .then(function() {
                         return common.getIn();
-                    })
+                    });
+            },
+            beforeEach: function() {
+                return this.remote
                     .then(function() {
                         return common.createCluster(clusterName);
                     });

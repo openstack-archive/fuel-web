@@ -148,8 +148,6 @@ define([
                     .findByCssSelector('button.btn-add-nodes')
                         .click()
                         .end()
-                    .findByCssSelector('div.role-panel')
-                        .end()
                     .then(function() {
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
@@ -159,9 +157,9 @@ define([
                     .findByCssSelector('button.btn-apply')
                         .click()
                         .end()
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end();
+                    .then(function() {
+                        return self.findByCssSelectorWithTimeout('button.btn-add-nodes', 5000);
+                    });
             },
             doesCssSelectorContainText: function(cssSelector, searchedText) {
                 return this.remote

@@ -112,13 +112,9 @@ class ClientProvider(object):
     def credentials(self):
         if self._credentials is None:
             cluster_attrs_editable = \
-                objects.Cluster.get_editable_attributes(
-                    self.cluster
-                )["editable"]
+                objects.Cluster.get_editable_attributes(self.cluster)
 
-            access_data = cluster_attrs_editable.get(
-                "workloads_collector"
-            )
+            access_data = cluster_attrs_editable.get("workloads_collector")
 
             if not access_data:
                 # in case there is no section for workloads_collector

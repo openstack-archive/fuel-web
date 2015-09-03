@@ -85,7 +85,7 @@ function(_, i18n, React, models, utils) {
         render: function() {
             var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
                 links = {
-                    catalog: isMirantisIso ? 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' : 'https://www.fuel-infra.org/plugins/catalog.html',
+                    catalog: isMirantisIso ? 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' : 'http://stackalytics.com/report/driverlog?project_id=openstack%2Ffuel',
                     documentation: utils.composeDocumentationLink('plugin-dev.html')
                 };
             return (

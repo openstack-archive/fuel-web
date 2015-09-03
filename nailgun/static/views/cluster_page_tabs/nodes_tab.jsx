@@ -111,6 +111,7 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                 >
                     <ScreenTransitionWrapper
                         key={this.state.screen}
+                        screen={this.state.screen}
                         loading={this.state.loading}
                     >
                         <Screen
@@ -134,7 +135,10 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
             $(this.getDOMNode()).hide().delay('fast').fadeIn('fast', cb);
         },
         componentWillLeave: function(cb) {
-            $(this.getDOMNode()).fadeOut('fast', cb);
+            $(this.getDOMNode()).removeClass('loaded').fadeOut('fast', cb);
+        },
+        componentDidEnter: function() {
+            $(this.getDOMNode()).addClass('loaded');
         },
         render: function() {
             if (this.props.loading) return (
@@ -144,7 +148,7 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                     </div>
                 </div>
             );
-            return <div>{this.props.children}</div>;
+            return <div className={this.props.screen + '-nodes-screen'}>{this.props.children}</div>;
         }
     });
 

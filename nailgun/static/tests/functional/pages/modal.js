@@ -9,11 +9,21 @@ define([
 
         ModalWindow.prototype = {
             constructor: ModalWindow,
-            waitToOpen: function() {
+            waitToOpen: function(skipError) {
+                var self = this;
                 return this.remote
                     .setFindTimeout(2000)
-                    .findByCssSelector('div.modal-content')
-                        .end();
+                    .then(function() {
+                        if (skipError) {
+                            self.remote
+                                .findAllByCssSelector('div.modal-content')
+                                .end()
+                        } else {
+                            self.remote
+                                .findByCssSelector('div.modal-content')
+                                .end()
+                        }
+                    })
             },
             checkTitle: function(expectedTitle) {
                 return this.remote

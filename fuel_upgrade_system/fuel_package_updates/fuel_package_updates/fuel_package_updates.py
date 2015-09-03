@@ -68,7 +68,7 @@ KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
                   'tenant_name': os.environ.get('KEYSTONE_TENANT', 'admin')}
 
 # TODO(mattymo): parse from Fuel API
-FUEL_VER = "7.0"
+FUEL_VER = "8.0"
 UBUNTU_CODENAME = 'trusty'
 CENTOS_VERSION = 'centos-6'
 

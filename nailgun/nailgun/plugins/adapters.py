@@ -48,9 +48,6 @@ class PluginAdapterBase(object):
         self.plugin_path = os.path.join(
             settings.PLUGINS_PATH,
             self.path_name)
-        self.config_file = os.path.join(
-            self.plugin_path,
-            self.environment_config_name)
         self.tasks = []
 
     @abc.abstractmethod
@@ -94,7 +91,7 @@ class PluginAdapterBase(object):
                 item['role'].append('primary-controller')
         return data
 
-    def get_plugin_attributes(self, cluster):
+    def get_plugin_attributes(self):
         """Should be used for initial configuration uploading to
             custom storage. Will be invoked in 2 cases:
             1. Cluster is created but there was no plugins in system
@@ -102,18 +99,14 @@ class PluginAdapterBase(object):
             over all clusters and decide if plugin should be applied
             2. Plugins is uploaded before cluster creation, in this case
             we will iterate over all plugins and upload configuration for them
-
-            In this case attributes will be added to same cluster attributes
-            model and stored in editable field
         """
-        config = {}
-        if os.path.exists(self.config_file):
-            config = self._load_config(self.config_file)
-        if self.validate_cluster_compatibility(cluster):
-            attrs = config.get("attributes", {})
-            self.update_metadata(attrs)
-            return {self.plugin.name: attrs}
-        return {}
+        config_file = os.path.join(
+            self.plugin_path, self.environment_config_name)
+        config = self._load_config(config_file) or {}
+
+        attrs = config.get("attributes", {})
+        attrs.setdefault('metadata', {}).update(self.default_metadata)
+        return attrs
 
     def validate_cluster_compatibility(self, cluster):
         """Validates if plugin is compatible with cluster.
@@ -146,20 +139,9 @@ class PluginAdapterBase(object):
 
         return rel_os.startswith(plugin_os) and rel_fuel.startswith(plugin_rel)
 
-    def update_metadata(self, attributes):
-        """Overwrights only default values in metadata.
-        Plugin should be able to provide UI "native" conditions
-        to enable/disable plugin on UI itself
-        """
-        attributes.setdefault('metadata', {})
-        attributes['metadata'].update(self.default_metadata)
-        return attributes
-
     @property
     def default_metadata(self):
-        return {u'enabled': False, u'toggleable': True,
-                u'weight': 70, u'label': self.plugin.title,
-                'plugin_id': self.plugin.id}
+        return {u'toggleable': True, u'weight': 70}
 
     def set_cluster_tasks(self):
         """Loads plugins provided tasks from tasks config file and

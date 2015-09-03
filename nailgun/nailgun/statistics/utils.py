@@ -111,17 +111,18 @@ def set_proxy(proxy):
 
     :param proxy: - proxy url
     """
-    proxy_old_value = None
-
-    if os.environ.get("http_proxy"):
-        proxy_old_value = os.environ["http_proxy"]
-        logger.warning("http_proxy variable is already set with "
-                       "value: {0}. Change to {1}. Old value "
-                       "will be restored after exit from script's "
-                       "execution context"
-                       .format(proxy_old_value, proxy))
-
-    os.environ["http_proxy"] = proxy
+    variable_values = {
+        'http_proxy': os.environ.get('http_proxy'),
+        'https_proxy': os.environ.get('https_proxy')
+    }
+    for variable_name, variable_value in variable_values.items():
+        if os.environ.get(variable_name):
+            logger.warning("{0} variable is already set with "
+                           "value: {1}. Changing to {2}. Old value "
+                           "will be restored after exit from script's "
+                           "execution context"
+                           .format(variable_name, variable_value, proxy))
+        os.environ[variable_name] = proxy
 
     try:
         yield
@@ -129,12 +130,14 @@ def set_proxy(proxy):
         logger.exception("Error while talking to proxy. Details: {0}"
                          .format(six.text_type(e)))
     finally:
-        if proxy_old_value:
-            logger.info("Restoring old value for http_proxy")
-            os.environ["http_proxy"] = proxy_old_value
-        else:
-            logger.info("Deleting set http_proxy environment variable")
-            del os.environ["http_proxy"]
+        for variable_name, variable_value in variable_values.items():
+            if variable_value:
+                logger.info("Restoring old value for http_proxy")
+                os.environ[variable_name] = variable_value
+            else:
+                logger.info("Deleting set {0} environment variable"
+                            .format(variable_name))
+                del os.environ[variable_name]
 
 
 def dithered(medium, interval=(0.9, 1.1)):

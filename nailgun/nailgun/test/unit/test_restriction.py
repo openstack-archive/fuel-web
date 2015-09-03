@@ -262,14 +262,13 @@ class TestAttributesRestriction(base.BaseTestCase):
     def test_check_with_invalid_values(self):
         objects.Cluster.update_attributes(
             self.cluster, self.attributes_data)
-        attributes = objects.Cluster.get_attributes(self.cluster)
+        attributes = objects.Cluster.get_editable_attributes(self.cluster)
         models = {
-            'settings': attributes.editable,
-            'default': attributes.editable,
+            'settings': attributes,
+            'default': attributes,
         }
 
-        errs = AttributesRestriction.check_data(
-            models, attributes.editable)
+        errs = AttributesRestriction.check_data(models, attributes)
         self.assertItemsEqual(
             errs, ['Invalid username', 'Invalid tenant name'])
 
@@ -280,14 +279,13 @@ class TestAttributesRestriction(base.BaseTestCase):
 
         objects.Cluster.update_attributes(
             self.cluster, self.attributes_data)
-        attributes = objects.Cluster.get_attributes(self.cluster)
+        attributes = objects.Cluster.get_editable_attributes(self.cluster)
         models = {
-            'settings': attributes.editable,
-            'default': attributes.editable,
+            'settings': attributes,
+            'default': attributes,
         }
 
-        errs = AttributesRestriction.check_data(
-            models, attributes.editable)
+        errs = AttributesRestriction.check_data(models, attributes)
         self.assertListEqual(errs, [])
 
 
@@ -303,7 +301,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])[0]
 
     def test_check_data_with_empty_values_without_restrictions(self):
-        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes = objects.Cluster.get_editable_attributes(self.cluster)
         attributes['common']['use_vcenter']['value'] = True
         attributes['storage']['images_vcenter']['value'] = True
         vmware_attributes = self.vm_data.copy()
@@ -355,7 +353,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
 
     def test_check_data_with_invalid_values_without_restrictions(self):
         # Disable restrictions
-        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes = objects.Cluster.get_editable_attributes(self.cluster)
         attributes['common']['use_vcenter']['value'] = True
         attributes['storage']['images_vcenter']['value'] = True
         # value data taken from fixture one cluster of
@@ -376,7 +374,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
         self.assertItemsEqual(errs, ['Empty cluster'])
 
     def test_check_data_with_invalid_values_and_with_restrictions(self):
-        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes = objects.Cluster.get_editable_attributes(self.cluster)
         # fixture have restrictions enabled for glance that's why
         # only 'Empty cluster' should returned
         vmware_attributes = self.vm_data.copy()
@@ -395,7 +393,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
         self.assertItemsEqual(errs, ['Empty cluster'])
 
     def test_check_data_with_valid_values_and_with_restrictions(self):
-        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes = objects.Cluster.get_editable_attributes(self.cluster)
         vmware_attributes = self.vm_data.copy()
         # Set valid data for clusters
         for i, azone in enumerate(
@@ -419,7 +417,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
 
     def test_check_data_with_valid_values_and_without_restrictions(self):
         # Disable restrictions
-        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes = objects.Cluster.get_editable_attributes(self.cluster)
         attributes['common']['use_vcenter']['value'] = True
         attributes['storage']['images_vcenter']['value'] = True
         vmware_attributes = self.vm_data.copy()

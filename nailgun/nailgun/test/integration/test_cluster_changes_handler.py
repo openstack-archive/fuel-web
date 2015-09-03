@@ -425,7 +425,7 @@ class TestHandlers(BaseIntegrationTest):
                 self.db.delete(p)
                 self.db.flush()
 
-        attrs = cluster_db.attributes.editable
+        attrs = objects.Cluster.get_attributes(cluster_db).editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
         attrs['provision']['method'] = consts.PROVISION_METHODS.cobbler
@@ -910,7 +910,7 @@ class TestHandlers(BaseIntegrationTest):
                 self.db.delete(p)
                 self.db.flush()
 
-        attrs = cluster_db.attributes.editable
+        attrs = objects.Cluster.get_attributes(cluster_db).editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
         attrs['provision']['method'] = consts.PROVISION_METHODS.cobbler

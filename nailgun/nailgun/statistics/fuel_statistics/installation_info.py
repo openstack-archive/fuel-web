@@ -16,9 +16,11 @@ import copy
 
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
+from nailgun.objects import Cluster
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
+from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
 from nailgun.statistics.utils import get_attr_value
 from nailgun.statistics.utils import WhiteListRule
@@ -170,8 +172,10 @@ class InstallationInfo(object):
                 'node_groups': self.get_node_groups_info(cluster.node_groups),
                 'status': cluster.status,
                 'extensions': cluster.extensions,
-                'attributes': self.get_attributes(cluster.attributes.editable,
-                                                  self.attributes_white_list),
+                'attributes': self.get_attributes(
+                    Cluster.get_attributes(cluster).editable,
+                    self.attributes_white_list
+                ),
                 'vmware_attributes': self.get_attributes(
                     vmware_attributes_editable,
                     self.vmware_attributes_white_list
@@ -188,7 +192,7 @@ class InstallationInfo(object):
 
     def get_cluster_plugins_info(self, cluster):
         plugins_info = []
-        for plugin_inst in cluster.plugins:
+        for plugin_inst in PluginCollection.get_enabled(cluster.id):
             plugin_info = {
                 "id": plugin_inst.id,
                 "name": plugin_inst.name,

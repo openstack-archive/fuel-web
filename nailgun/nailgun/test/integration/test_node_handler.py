@@ -120,7 +120,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=False)
         node = self.env.create_node(cluster_id=cluster.id)
 
-        cluster_attrs = objects.Cluster.get_attributes(cluster).editable
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
         test_hostname = 'test-hostname'
         cluster_attrs['public_ssl']['hostname']['value'] = test_hostname
         objects.Cluster.update_attributes(

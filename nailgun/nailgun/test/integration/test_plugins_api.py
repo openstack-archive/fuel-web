@@ -90,7 +90,8 @@ class BasePluginTest(base.BaseIntegrationTest):
         return resp
 
     def modify_plugin(self, cluster, plugin_name, enabled):
-        editable_attrs = cluster.attributes.editable
+        editable_attrs = \
+            objects.Cluster.get_editable_attributes(cluster)['editable']
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
         resp = self.app.put(
             base.reverse('ClusterAttributesHandler',
@@ -162,19 +163,22 @@ class TestPluginsApi(BasePluginTest):
     def test_env_create_and_load_env_config(self):
         self.create_plugin()
         cluster = self.create_cluster()
-        self.assertIn(self.sample_plugin['name'], cluster.attributes.editable)
+        self.assertNotIn(self.sample_plugin['name'],
+                         cluster.attributes.editable)
 
     def test_enable_disable_plugin(self):
         resp = self.create_plugin()
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
         cluster = self.create_cluster()
-        self.assertEqual(plugin.clusters, [])
+        self.assertEqual(objects.PluginCollection.get_enabled(cluster.id), [])
+
         resp = self.enable_plugin(cluster, plugin.name)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(cluster, plugin.clusters)
+        self.assertIn(plugin, objects.PluginCollection.get_enabled(cluster.id))
+
         resp = self.disable_plugin(cluster, plugin.name)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(plugin.clusters, [])
+        self.assertEqual(objects.PluginCollection.get_enabled(cluster.id), [])
 
     def test_delete_plugin(self):
         resp = self.create_plugin()
@@ -210,7 +214,8 @@ class TestPluginsApi(BasePluginTest):
         self.create_plugin()
         cluster = self.create_cluster()
         default_attributes = self.default_attributes(cluster)
-        self.assertIn(self.sample_plugin['name'], default_attributes)
+        self.assertNotIn(self.sample_plugin['name'],
+                         default_attributes.json_body['editable'])
 
     def test_plugins_multiversioning(self):
         def create_with_version(version):
@@ -221,18 +226,30 @@ class TestPluginsApi(BasePluginTest):
             create_with_version(version)
 
         cluster = self.create_cluster()
-        # Create new plugin after environment is created
-        create_with_version('5.0.0')
-
         self.enable_plugin(cluster, 'multiversion_plugin')
-        self.assertEqual(len(cluster.plugins), 1)
-        enabled_plugin = cluster.plugins[0]
+
+        enabled_plugin = objects.PluginCollection.get_enabled(cluster.id)[0]
         # Should be enabled the newest plugin,
         # at the moment of environment creation
         self.assertEqual(enabled_plugin.version, '2.0.0')
 
+        # Create new plugin after environment is created
+        create_with_version('5.0.0')
+
+        self.assertEqual(len(cluster.plugins), 2)
+        self.assertEqual(
+            len(objects.PluginCollection.get_enabled(cluster.id)), 0)
+        self.enable_plugin(cluster, 'multiversion_plugin')
+        self.assertEqual(
+            len(objects.PluginCollection.get_enabled(cluster.id)), 1)
+
+        enabled_plugin = objects.PluginCollection.get_enabled(cluster.id)[0]
+        # Should be enabled the newest plugin
+        self.assertEqual(enabled_plugin.version, '5.0.0')
+
         self.disable_plugin(cluster, 'multiversion_plugin')
-        self.assertEqual(len(cluster.plugins), 0)
+        self.assertEqual(
+            len(objects.PluginCollection.get_enabled(cluster.id)), 0)
 
     def test_sync_all_plugins(self):
         self._create_new_and_old_version_plugins_for_sync()

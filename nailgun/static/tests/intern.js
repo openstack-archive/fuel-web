@@ -22,6 +22,9 @@ define(['config'], function(config) {
 
     config.paths.sinon = 'tests/bower/sinon/lib/sinon';
 
+    // FIXME(vkramskikh): workaround for https://github.com/theintern/intern/issues/348
+    delete config.map['*'];
+
     return {
         proxyPort: 9057,
         proxyUrl: 'http://localhost:9057/',

@@ -15,7 +15,7 @@
  **/
 
 define([
-    'intern!object',
+    'tests/register_suite',
     'intern/chai!assert',
     'tests/functional/pages/common'
 ], function(registerSuite, assert, Common) {

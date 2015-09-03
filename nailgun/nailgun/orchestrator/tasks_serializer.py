@@ -109,7 +109,8 @@ class ExpressionBasedTask(DeploymentHook):
     @property
     def _expression_context(self):
         return {'cluster': self.cluster,
-                'settings': self.cluster.attributes.editable}
+                'settings':
+                objects.Cluster.get_editable_attributes(self.cluster)}
 
     def should_execute(self):
         if 'condition' not in self.task:
@@ -259,7 +260,7 @@ class GenerateHaproxyKeys(GenericRolesHook):
         uids = self.get_uids()
         self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
             CLUSTER_ID=self.cluster.id,
-            CN_HOSTNAME=self.cluster.attributes.editable
+            CN_HOSTNAME=objects.Cluster.get_editable_attributes(self.cluster)
             ['public_ssl']['hostname']['value'])
         yield templates.make_shell_task(uids, self.task)
 

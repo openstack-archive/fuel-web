@@ -1595,7 +1595,7 @@
                 priority: null
               - type: "deb"
                 name: "mos"
-                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
                 suite: "mos7.0"
                 section: "main restricted"
                 priority: 1050

@@ -15,8 +15,10 @@
 #    under the License.
 
 import mock
+import uuid
 
 from nailgun.errors import errors
+from nailgun import objects
 from nailgun.plugins.adapters import PluginAdapterV3
 from nailgun.plugins.manager import PluginManager
 from nailgun.test import base
@@ -157,3 +159,77 @@ class TestPluginManager(base.BaseIntegrationTest):
     def test_sync_metadata_for_specific_plugin(self, sync_mock):
         PluginManager.sync_plugins_metadata([self.env.plugins[0].id])
         self.assertEqual(sync_mock.call_count, 1)
+
+
+class TestClusterPluginIntegration(base.BaseTestCase):
+
+    _compat_meta = {
+        'releases': [{
+            'os': 'ubuntu',
+            'mode': 'ha',
+            'version': '2015.1-7.0',
+        }]
+    }
+
+    _uncompat_meta = {
+        'releases': [{
+            'os': 'ubuntu',
+            'mode': 'ha',
+            'version': '2014.2-7.0',
+        }]
+    }
+
+    def setUp(self):
+        super(TestClusterPluginIntegration, self).setUp()
+
+        self.env.create(
+            release_kwargs={
+                'operating_system': 'ubuntu',
+                'version': '2015.1-7.0'},
+            cluster_kwargs={
+                'mode': 'ha_compact',
+            })
+        self.cluster = self.env.clusters[0]
+
+    def create_plugin(self, **kwargs):
+        plugin = objects.Plugin.create(self.env.get_default_plugin_metadata(
+            name=uuid.uuid4().get_hex(),
+            **kwargs
+        ))
+        self.db.flush()
+        return plugin
+
+    def test_get_compatible_plugins(self):
+        plugin_a = self.create_plugin(**self._compat_meta)
+        self.create_plugin(**self._uncompat_meta)
+
+        compat_plugins = PluginManager.get_compatible_plugins(self.cluster)
+        self.assertItemsEqual(compat_plugins, [plugin_a])
+
+    def test_get_enabled_plugins(self):
+        plugin_a = self.create_plugin(**self._compat_meta)
+        plugin_b = self.create_plugin(**self._compat_meta)
+
+        objects.PluginCollection.set_attributes(
+            plugin_a.id, self.cluster.id, enabled=True)
+
+        compat_plugins = PluginManager.get_compatible_plugins(self.cluster)
+        self.assertItemsEqual(compat_plugins, [plugin_a, plugin_b])
+
+        enabled_plugins = objects.PluginCollection.get_enabled(self.cluster.id)
+        self.assertItemsEqual(enabled_plugins, [plugin_a])
+
+    def test_get_compatible_plugins_for_new_cluster(self):
+        plugin_a = self.create_plugin(**self._compat_meta)
+        plugin_b = self.create_plugin(**self._compat_meta)
+        self.create_plugin(**self._uncompat_meta)
+
+        self.env.create(
+            cluster_kwargs={
+                'release_id': self.cluster.release.id,
+                'mode': 'ha_compact',
+            })
+        cluster = self.env.clusters[1]
+
+        compat_plugins = PluginManager.get_compatible_plugins(cluster)
+        self.assertItemsEqual(compat_plugins, [plugin_a, plugin_b])

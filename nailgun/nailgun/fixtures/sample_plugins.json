@@ -33,6 +33,13 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-7.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
             "package_version": "2.0.0"
@@ -63,6 +70,13 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-7.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
             "package_version": "2.0.0"
@@ -95,6 +109,13 @@
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/centos"
+                },
+                {
+                    "os": "ubuntu",
+                    "version": "2015.1-7.0",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu"
                 }
             ],
             "package_version": "2.0.0"

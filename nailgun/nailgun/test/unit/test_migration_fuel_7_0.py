@@ -39,23 +39,6 @@ def setup_module(module):
 
 def prepare():
     meta = base.reflect_db_metadata()
-    db.execute(
-        meta.tables['plugins'].insert(),
-        [{
-            'name': 'test_plugin',
-            'title': 'Test plugin',
-            'version': '1.0.0',
-            'description': 'Test plugin for Fuel',
-            'homepage': 'http://fuel_plugins.test_plugin.com',
-            'package_version': '3.0.0',
-            'groups': jsonutils.dumps(['tgroup']),
-            'authors': jsonutils.dumps(['tauthor']),
-            'licenses': jsonutils.dumps(['tlicense']),
-            'releases': jsonutils.dumps([
-                {'repository_path': 'repositories/ubuntu'}
-            ]),
-            'fuel_version': jsonutils.dumps(['6.1', '7.0']),
-        }])
 
     result = db.execute(
         meta.tables['releases'].insert(),
@@ -378,6 +361,85 @@ def prepare():
         ]
     )
 
+    result = db.execute(
+        meta.tables['plugins'].insert(),
+        [{
+            'name': 'test_plugin_a',
+            'title': 'Test plugin A',
+            'version': '1.0.0',
+            'description': 'Test plugin A for Fuel',
+            'homepage': 'http://fuel_plugins.test_plugin.com',
+            'package_version': '3.0.0',
+            'groups': jsonutils.dumps(['tgroup']),
+            'authors': jsonutils.dumps(['tauthor']),
+            'licenses': jsonutils.dumps(['tlicense']),
+            'releases': jsonutils.dumps([
+                {'repository_path': 'repositories/ubuntu'}
+            ]),
+            'fuel_version': jsonutils.dumps(['6.1', '7.0']),
+        }]
+    )
+    pluginid_a = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['plugins'].insert(),
+        [{
+            'name': 'test_plugin_b',
+            'title': 'Test plugin B',
+            'version': '1.0.0',
+            'description': 'Test plugin B for Fuel',
+            'homepage': 'http://fuel_plugins.test_plugin.com',
+            'package_version': '3.0.0',
+            'groups': jsonutils.dumps(['tgroup']),
+            'authors': jsonutils.dumps(['tauthor']),
+            'licenses': jsonutils.dumps(['tlicense']),
+            'releases': jsonutils.dumps([
+                {'repository_path': 'repositories/ubuntu'}
+            ]),
+            'fuel_version': jsonutils.dumps(['6.1', '7.0']),
+        }]
+    )
+    pluginid_b = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['cluster_plugins'].insert(),
+        [
+            {
+                'cluster_id': clusterid,
+                'plugin_id': pluginid_a
+            },
+            {
+                'cluster_id': clusterid,
+                'plugin_id': pluginid_b
+            }
+        ]
+    )
+
+    db.execute(
+        meta.tables['attributes'].insert(),
+        [{
+            'cluster_id': clusterid,
+            'editable': jsonutils.dumps({
+                'test_plugin_a': {
+                    'metadata': {
+                        'plugin_id': pluginid_a,
+                        'enabled': True,
+                        'toggleable': True,
+                        'weight': 70,
+                    }
+                },
+                'test_plugin_b': {
+                    'metadata': {
+                        'plugin_id': pluginid_b,
+                        'enabled': False,
+                        'toggleable': True,
+                        'weight': 80,
+                    }
+                }
+            }),
+            'generated': jsonutils.dumps({}),
+        }])
+
     db.commit()
 
 
@@ -387,12 +449,12 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.name]))
         self.assertEqual(
-            result.fetchone()[0], 'test_plugin')
+            result.fetchone()[0], 'test_plugin_a')
 
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.title]))
         self.assertEqual(
-            result.fetchone()[0], 'Test plugin')
+            result.fetchone()[0], 'Test plugin A')
 
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.version]))
@@ -402,7 +464,7 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.description]))
         self.assertEqual(
-            result.fetchone()[0], 'Test plugin for Fuel')
+            result.fetchone()[0], 'Test plugin A for Fuel')
 
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.homepage]))
@@ -819,3 +881,26 @@ class TestStringNetworkGroupName(base.BaseAlembicMigrationTest):
                 [self.meta.tables['network_groups'].c.name])). \
             fetchall()
         self.assertIn(('custom_name',), names)
+
+
+class TestClusterPluginsMigration(base.BaseAlembicMigrationTest):
+
+    def _get_enabled(self, plugin_name):
+        plugins = self.meta.tables['plugins']
+        cluster_plugins = self.meta.tables['cluster_plugins']
+
+        query = sa.select([cluster_plugins.c.enabled])\
+            .select_from(
+                sa.join(
+                    cluster_plugins, plugins,
+                    cluster_plugins.c.plugin_id == plugins.c.id))\
+            .where(plugins.c.name == plugin_name)
+        return db.execute(query).fetchone()[0]
+
+    def test_plugin_a_is_enabled(self):
+        enabled = self._get_enabled('test_plugin_a')
+        self.assertTrue(enabled)
+
+    def test_plugin_b_is_disabled(self):
+        enabled = self._get_enabled('test_plugin_b')
+        self.assertFalse(enabled)

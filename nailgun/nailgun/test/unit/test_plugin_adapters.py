@@ -64,7 +64,7 @@ class TestPluginBase(base.BaseTestCase):
         self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={
-                'version': '2014.2-6.0',
+                'version': '2015.1-7.0',
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
                           consts.CLUSTER_MODES.ha_compact]})
@@ -87,12 +87,13 @@ class TestPluginBase(base.BaseTestCase):
         maccess.return_value = True
         mexists.return_value = True
         mopen.side_effect = self.get_config
-        attributes = self.plugin_adapter.get_plugin_attributes(self.cluster)
+        attributes = self.plugin_adapter.get_plugin_attributes()
+
         self.assertEqual(
-            attributes['testing_plugin']['plugin_name_text'],
+            attributes['plugin_name_text'],
             self.env_config['attributes']['plugin_name_text'])
         self.assertEqual(
-            attributes['testing_plugin']['metadata'],
+            attributes['metadata'],
             self.plugin_adapter.default_metadata)
 
     def test_plugin_release_versions(self):
@@ -100,7 +101,9 @@ class TestPluginBase(base.BaseTestCase):
            is applicable to.
         """
         self.assertEqual(
-            self.plugin_adapter.plugin_release_versions, set(['2014.2-6.0']))
+            self.plugin_adapter.plugin_release_versions,
+            set(['2014.2-6.0', '2015.1-7.0'])
+        )
 
     def test_full_name(self):
         """Plugin full name should be made from name and version."""
@@ -284,10 +287,10 @@ class TestPluginV3(TestPluginBase):
             '{0}.yaml'.format(config_name))
 
 
-class TestClusterCompatiblityValidation(base.BaseTestCase):
+class TestClusterCompatibilityValidation(base.BaseTestCase):
 
     def setUp(self):
-        super(TestClusterCompatiblityValidation, self).setUp()
+        super(TestClusterCompatibilityValidation, self).setUp()
         self.plugin = Plugin.create(self.env.get_default_plugin_metadata(
             releases=[{
                 'version': '2014.2-6.0',

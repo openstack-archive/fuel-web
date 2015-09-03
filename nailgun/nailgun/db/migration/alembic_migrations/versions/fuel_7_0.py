@@ -102,9 +102,11 @@ def upgrade():
     extend_segmentation_type()
     network_groups_name_upgrade()
     upgrade_ip_addr_ranges_constraint()
+    cluster_plugins_upgrade()
 
 
 def downgrade():
+    cluster_plugins_downgrade()
     downgrade_ip_addr_ranges_constraint()
     network_groups_name_downgrade()
     downgrade_node_labels()
@@ -676,7 +678,8 @@ def downgrade_cluster_ui_settings():
             sa.Enum(
                 'roles', 'hardware', 'both', name='cluster_grouping'),
             nullable=False,
-            default='roles'
+            default='roles',
+            server_default='roles'
         )
     )
     op.drop_column('clusters', 'ui_settings')
@@ -779,3 +782,156 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def cluster_plugins_upgrade():
+    op.alter_column(
+        'cluster_plugins',
+        'cluster_id',
+        nullable=False
+    )
+    op.drop_constraint(
+        'cluster_plugins_cluster_id_fkey',
+        'cluster_plugins',
+        type_='foreignkey'
+    )
+    op.create_foreign_key(
+        'cluster_plugins_cluster_id_fkey',
+        'cluster_plugins', 'clusters',
+        ['cluster_id'], ['id'],
+        ondelete='CASCADE'
+    )
+    op.add_column(
+        'cluster_plugins',
+        sa.Column(
+            'enabled',
+            sa.Boolean,
+            nullable=False,
+            server_default='false'
+        )
+    )
+    op.add_column(
+        'cluster_plugins',
+        sa.Column(
+            'attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    # Iterate over all editable cluster attributes,
+    # and set entry in 'cluster_plugins' table
+
+    connection = op.get_bind()
+
+    q_get_plugins = sa.text('''
+        SELECT id, name FROM plugins
+    ''')
+    q_get_cluster_attributes = sa.text('''
+        SELECT cluster_id, editable FROM attributes
+    ''')
+    q_update_cluster_attributes = sa.text('''
+        UPDATE attributes
+        SET editable = :editable
+        WHERE cluster_id = :cluster_id
+    ''')
+    q_get_cluster_plugins = sa.text('''
+        SELECT id FROM cluster_plugins
+        WHERE cluster_id = :cluster_id AND plugin_id = :plugin_id
+    ''')
+    q_update_cluster_plugins = sa.text('''
+        UPDATE cluster_plugins
+        SET enabled = :enabled, attributes = :attributes
+        WHERE cluster_id = :cluster_id AND plugin_id = :plugin_id
+    ''')
+    q_insert_cluster_plugins = sa.text('''
+        INSERT INTO cluster_plugins
+            (cluster_id, plugin_id, enabled, attributes)
+        VALUES
+            (:cluster_id, :plugin_id, :enabled, :attributes)
+    ''')
+
+    plugins = dict(
+        (id_, name) for id_, name in connection.execute(q_get_plugins))
+    for cluster_id, editable in connection.execute(q_get_cluster_attributes):
+        editable = jsonutils.loads(editable)
+        for plugin_id, plugin_name in six.iteritems(plugins):
+            if plugin_name in editable:
+                attributes = editable.pop(plugin_name)
+                del attributes['metadata']['plugin_id']
+
+                action = q_update_cluster_plugins\
+                    if connection.execute(
+                        q_get_cluster_plugins,
+                        cluster_id=cluster_id,
+                        plugin_id=plugin_id,
+                    ).first()\
+                    else q_insert_cluster_plugins
+
+                connection.execute(
+                    action,
+                    cluster_id=cluster_id,
+                    plugin_id=plugin_id,
+                    enabled=attributes['metadata'].pop('enabled'),
+                    attributes=jsonutils.dumps(attributes)
+                )
+        connection.execute(
+            q_update_cluster_attributes,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable)
+        )
+
+
+def cluster_plugins_downgrade():
+    connection = op.get_bind()
+
+    q_get_cluster_attributes = sa.text('''
+        SELECT clusters.id, attributes.editable
+        FROM attributes JOIN clusters ON (attributes.cluster_id = clusters.id)
+    ''')
+    q_get_plugins = sa.text('''
+        SELECT plugins.id, plugins.name, plugins.title,
+          cluster_plugins.enabled, cluster_plugins.attributes
+        FROM plugins JOIN cluster_plugins
+          ON (plugins.id = cluster_plugins.plugin_id)
+        WHERE cluster_plugins.cluster_id = :cluster_id
+    ''')
+    q_update_cluster_attributes = sa.text('''
+        UPDATE attributes
+        SET editable = :editable
+        WHERE cluster_id = :cluster_id
+    ''')
+
+    for cluster_id, editable in connection.execute(q_get_cluster_attributes):
+        editable = jsonutils.loads(editable)
+        plugins = connection.execute(q_get_plugins, cluster_id=cluster_id)
+        for p_id, p_name, p_title, p_enabled, p_attr in plugins:
+            p_attr = jsonutils.loads(p_attr)
+            p_attr['metadata'].update({
+                'plugin_id': p_id,
+                'enabled': p_enabled,
+                'label': p_title
+            })
+            editable.update({p_name: p_attr})
+            connection.execute(q_update_cluster_attributes,
+                               cluster_id=cluster_id,
+                               editable=jsonutils.dumps(editable))
+
+    op.drop_column('cluster_plugins', 'attributes')
+    op.drop_column('cluster_plugins', 'enabled')
+    op.drop_constraint(
+        'cluster_plugins_cluster_id_fkey',
+        'cluster_plugins',
+        type_='foreignkey'
+    )
+    op.create_foreign_key(
+        'cluster_plugins_cluster_id_fkey',
+        'cluster_plugins', 'clusters',
+        ['cluster_id'], ['id']
+    )
+    op.alter_column(
+        'cluster_plugins',
+        'cluster_id',
+        nullable=None
+    )

@@ -72,6 +72,7 @@ class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
     def setUp(self):
         super(OrchestratorSerializerTestBase, self).setUp()
         self.cluster_mock = mock.MagicMock(pending_release_id=None)
+        self.cluster_mock.id = 0
         self.cluster_mock.deployment_tasks = []
         self.cluster_mock.release.deployment_tasks = []
 
@@ -2575,7 +2576,7 @@ class BaseDeploymentSerializer(base.BaseIntegrationTest):
 
     def check_generate_vmware_attributes_data(self):
         cluster_db = self.db.query(Cluster).get(self.cluster['id'])
-        cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
         cluster_attrs.get('common', {}).setdefault('use_vcenter', {})
         cluster_attrs['common']['use_vcenter']['value'] = True
 
@@ -2792,7 +2793,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
 
     def test_generate_test_vm_image_data(self):
         cluster_db = self.db.query(Cluster).get(self.cluster['id'])
-        cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
         cluster_attrs['common'].setdefault('use_vcenter', {})
         cluster_attrs['common']['use_vcenter']['value'] = True
 

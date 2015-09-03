@@ -133,7 +133,9 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        return objects.Cluster.get_editable_attributes(cluster)
+        return {
+            'editable': objects.Cluster.get_editable_attributes(cluster,
+                                                                versions=True)}
 
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster attributes.
@@ -170,8 +172,8 @@ class ClusterAttributesHandler(BaseHandler):
         # we want to change and block an entire operation if there
         # one with always_editable=False.
         if cluster.is_locked:
-            attrs = objects.Cluster.get_editable_attributes(cluster)
-            editable = attrs['editable']
+            editable = objects.Cluster.get_editable_attributes(cluster,
+                                                               versions=True)
 
             for group_name in data.get('editable', {}):
                 # we need bunch of gets because the attribute may not
@@ -183,7 +185,9 @@ class ClusterAttributesHandler(BaseHandler):
                         "after or during deployment.".format(group_name)))
 
         objects.Cluster.patch_attributes(cluster, data)
-        return objects.Cluster.get_editable_attributes(cluster)
+        return {
+            'editable': objects.Cluster.get_editable_attributes(cluster,
+                                                                versions=True)}
 
 
 class ClusterAttributesDefaultsHandler(BaseHandler):

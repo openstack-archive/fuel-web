@@ -64,7 +64,8 @@ class TestOpenStackClientProvider(BaseTestCase):
             nova_client_mock.assert_called_once_with(
                 settings.OPENSTACK_API_VERSION["nova"],
                 *fake_credentials,
-                service_type=consts.NOVA_SERVICE_TYPE.compute
+                service_type=consts.NOVA_SERVICE_TYPE.compute,
+                insecure=True
             )
 
         with patch(cinder_client_path,
@@ -76,7 +77,8 @@ class TestOpenStackClientProvider(BaseTestCase):
 
             cinder_client_mock.assert_called_once_with(
                 settings.OPENSTACK_API_VERSION["cinder"],
-                *fake_credentials
+                *fake_credentials,
+                insecure=True
             )
 
         with patch.object(client_provider, "_get_keystone_client",
@@ -129,7 +131,7 @@ class TestOpenStackClientProvider(BaseTestCase):
 
             self.assertTrue(kc_client_inst is client_inst_mock)
 
-            client_class_mock.assert_called_with(**auth_creds)
+            client_class_mock.assert_called_with(insecure=True, **auth_creds)
 
         check_returned(version_data_v2, kc_v2_mock, kc_v2_inst_mock)
         check_returned(version_data_v3, kc_v3_mock, kc_v3_inst_mock)

@@ -28,12 +28,13 @@ class TestUtilsFunctions(BaseTestCase):
         def check_proxy():
             with utils.set_proxy(new_proxy):
                 self.assertEqual(os.environ.get("http_proxy"), new_proxy)
+                self.assertEqual(os.environ.get("https_proxy"), new_proxy)
 
         def raise_inside_context():
             with utils.set_proxy(new_proxy):
                 raise Exception("Just an error")
 
-        expected = {"http_proxy": "test"}
+        expected = {"http_proxy": "test_http", "https_proxy": "test_https"}
         new_proxy = "fake_proxy"
 
         # check that proxy old value is restored
@@ -42,18 +43,24 @@ class TestUtilsFunctions(BaseTestCase):
             check_proxy()
             self.assertEqual(os.environ.get("http_proxy"),
                              expected["http_proxy"])
+            self.assertEqual(os.environ.get("https_proxy"),
+                             expected["https_proxy"])
 
             raise_inside_context()
             self.assertEqual(os.environ.get("http_proxy"),
                              expected["http_proxy"])
+            self.assertEqual(os.environ.get("https_proxy"),
+                             expected["https_proxy"])
 
         # check that env variable is deleted
         # after exit from context manager w/ and w/o exception
         check_proxy()
         self.assertNotIn("http_proxy", os.environ)
+        self.assertNotIn("https_proxy", os.environ)
 
         raise_inside_context()
         self.assertNotIn("http_proxy", os.environ)
+        self.assertNotIn("https_proxy", os.environ)
 
     def test_get_attr_value(self):
         attributes = {

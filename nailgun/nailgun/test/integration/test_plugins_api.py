@@ -89,21 +89,26 @@ class BasePluginTest(base.BaseIntegrationTest):
             headers=self.default_headers)
         return resp
 
-    def modify_plugin(self, cluster, plugin_name, enabled):
-        editable_attrs = cluster.attributes.editable
+    def modify_plugin(self, cluster, plugin_name, plugin_id, enabled):
+        editable_attrs = \
+            objects.Cluster.get_editable_attributes(cluster)['editable']
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
+        editable_attrs[plugin_name]['plugin_versions']['value'] = \
+            str(plugin_id)
+
         resp = self.app.put(
             base.reverse('ClusterAttributesHandler',
                          {'cluster_id': cluster.id}),
             jsonutils.dumps({'editable': editable_attrs}),
             headers=self.default_headers)
+
         return resp
 
-    def enable_plugin(self, cluster, plugin_name):
-        return self.modify_plugin(cluster, plugin_name, True)
+    def enable_plugin(self, cluster, plugin_name, plugin_id):
+        return self.modify_plugin(cluster, plugin_name, plugin_id, True)
 
     def disable_plugin(self, cluster, plugin_name):
-        return self.modify_plugin(cluster, plugin_name, False)
+        return self.modify_plugin(cluster, plugin_name, None, False)
 
     def get_pre_hooks(self, cluster):
         with mock.patch('nailgun.plugins.adapters.glob') as glob:
@@ -162,19 +167,22 @@ class TestPluginsApi(BasePluginTest):
     def test_env_create_and_load_env_config(self):
         self.create_plugin()
         cluster = self.create_cluster()
-        self.assertIn(self.sample_plugin['name'], cluster.attributes.editable)
+        self.assertIn(self.sample_plugin['name'],
+                      objects.Cluster.get_attributes(cluster).editable)
 
     def test_enable_disable_plugin(self):
         resp = self.create_plugin()
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
         cluster = self.create_cluster()
-        self.assertEqual(plugin.clusters, [])
-        resp = self.enable_plugin(cluster, plugin.name)
+        self.assertEqual(objects.PluginCollection.get_enabled(cluster.id), [])
+
+        resp = self.enable_plugin(cluster, plugin.name, plugin.id)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(cluster, plugin.clusters)
+        self.assertIn(plugin, objects.PluginCollection.get_enabled(cluster.id))
+
         resp = self.disable_plugin(cluster, plugin.name)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(plugin.clusters, [])
+        self.assertEqual(objects.PluginCollection.get_enabled(cluster.id), [])
 
     def test_delete_plugin(self):
         resp = self.create_plugin()
@@ -185,7 +193,7 @@ class TestPluginsApi(BasePluginTest):
         resp = self.create_plugin()
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
         cluster = self.create_cluster()
-        enable_resp = self.enable_plugin(cluster, plugin.name)
+        enable_resp = self.enable_plugin(cluster, plugin.name, plugin.id)
         self.assertEqual(enable_resp.status_code, 200)
         del_resp = self.delete_plugin(resp.json['id'], expect_errors=True)
         self.assertEqual(del_resp.status_code, 400)
@@ -210,29 +218,49 @@ class TestPluginsApi(BasePluginTest):
         self.create_plugin()
         cluster = self.create_cluster()
         default_attributes = self.default_attributes(cluster)
-        self.assertIn(self.sample_plugin['name'], default_attributes)
+        self.assertIn(self.sample_plugin['name'],
+                      default_attributes.json_body['editable'])
 
     def test_plugins_multiversioning(self):
-        def create_with_version(version):
-            self.create_plugin(sample=self.env.get_default_plugin_metadata(
-                name='multiversion_plugin', version=version))
+        def create_with_version(plugin_version):
+            response = self.create_plugin(
+                sample=self.env.get_default_plugin_metadata(
+                    name='multiversion_plugin',
+                    version=plugin_version
+                )
+            )
+            return response.json_body['id']
 
+        def get_num_enabled(cluster_id):
+            return len(objects.PluginCollection.get_enabled(cluster_id))
+
+        def get_enabled_version(cluster_id):
+            plugin = objects.PluginCollection.get_enabled(cluster_id)[0]
+            return plugin.version
+
+        plugin_ids = []
         for version in ['1.0.0', '2.0.0', '0.0.1']:
-            create_with_version(version)
+            plugin_ids.append(create_with_version(version))
 
         cluster = self.create_cluster()
-        # Create new plugin after environment is created
-        create_with_version('5.0.0')
+        self.assertEqual(get_num_enabled(cluster.id), 0)
 
-        self.enable_plugin(cluster, 'multiversion_plugin')
-        self.assertEqual(len(cluster.plugins), 1)
-        enabled_plugin = cluster.plugins[0]
-        # Should be enabled the newest plugin,
-        # at the moment of environment creation
-        self.assertEqual(enabled_plugin.version, '2.0.0')
+        self.enable_plugin(cluster, 'multiversion_plugin', plugin_ids[1])
+        self.assertEqual(get_num_enabled(cluster.id), 1)
+        self.assertEqual(get_enabled_version(cluster.id), '2.0.0')
+
+        # Create new plugin after environment is created
+        plugin_ids.append(create_with_version('5.0.0'))
+        self.assertEqual(len(cluster.plugins), 4)
+        self.assertEqual(get_num_enabled(cluster.id), 1)
+        self.assertEqual(get_enabled_version(cluster.id), '2.0.0')
+
+        self.enable_plugin(cluster, 'multiversion_plugin', plugin_ids[3])
+        self.assertEqual(get_num_enabled(cluster.id), 1)
+        self.assertEqual(get_enabled_version(cluster.id), '5.0.0')
 
         self.disable_plugin(cluster, 'multiversion_plugin')
-        self.assertEqual(len(cluster.plugins), 0)
+        self.assertEqual(get_num_enabled(cluster.id), 0)
 
     def test_sync_all_plugins(self):
         self._create_new_and_old_version_plugins_for_sync()
@@ -267,27 +295,6 @@ class TestPluginsApi(BasePluginTest):
             self.assertRegexpMatches(
                 resp.json_body["message"],
                 'Problem with loading YAML file')
-
-    @mock.patch('nailgun.objects.cluster.AttributesGenerator')
-    def test_plugin_generator(self, mock_attributes_generator):
-        mock_attributes_generator.test_plugin_generator.return_value = 'test'
-        plugin_name = 'testing_plugin'
-        self.sample_plugin = self.env.get_default_plugin_metadata(
-            name=plugin_name
-        )
-        self.plugin_env_config = \
-            self.env.get_default_plugin_env_config(
-                value={
-                    'generator': 'test_plugin_generator',
-                },
-                plugin_name=plugin_name
-            )
-        self.create_plugin()
-        cluster = self.create_cluster()
-        self.assertIn(self.sample_plugin['name'], cluster.attributes.editable)
-        plugin_dict = cluster.attributes.editable[plugin_name]
-        value = plugin_dict['%s_text' % plugin_name]['value']
-        self.assertEqual(value, 'test')
 
     def _create_new_and_old_version_plugins_for_sync(self):
         plugin_ids = []
@@ -360,7 +367,9 @@ class TestPrePostHooks(BasePluginTest):
             {'roles': ['controller'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True}])
         objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
-        self.enable_plugin(self.cluster, self.sample_plugin['name'])
+        self.enable_plugin(self.cluster,
+                           self.sample_plugin['name'],
+                           resp.json['id'])
 
     def tearDown(self):
         self._requests_mock.stop()
@@ -376,10 +385,10 @@ class TestPrePostHooks(BasePluginTest):
         self.assertEqual(len(rsync), 1)
         self.assertEqual(len(cmd_tasks), 2)
         for t in plugins_tasks:
-            #shoud uid be a string
+            # should uid be a string
             self.assertEqual(
                 sorted(t['uids']), sorted([n.uid for n in self.cluster.nodes]))
-            #diagnostic name is present only for plugin tasks
+            # diagnostic name is present only for plugin tasks
             self.assertEqual(t['diagnostic_name'], self.plugin.full_name)
         apt_update = [t for t in cmd_tasks
                       if u'apt-get update' in t['parameters']['cmd']]

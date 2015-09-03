@@ -49,7 +49,15 @@ class BaseComponentTestCase(base.BaseTestCase):
 class TestComponentCollection(BaseComponentTestCase):
 
     def test_get_all_by_release(self):
-        self.incompatible_plugin = self.env.create_plugin()
+        self.incompatible_plugin = self.env.create_plugin(
+            fuel_version=['6.0'],
+            releases=[{
+                'repository_path': 'repositories/centos',
+                'version': '2014.2-6.0',
+                'os': 'centos',
+                'mode': ['ha'],
+                'deployment_scripts_path': 'deployment_scripts/'}]
+        )
         self.incompatible_release = self.env.create_release(
             operating_system='Ubuntu',
             modes=[consts.CLUSTER_MODES.ha_compact])

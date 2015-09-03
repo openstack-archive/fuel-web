@@ -24,7 +24,8 @@ from distutils.version import StrictVersion
 import six
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
-
+from sqlalchemy.orm.exc import MultipleResultsFound
+from sqlalchemy.orm.exc import NoResultFound
 
 from nailgun import consts
 from nailgun.db import db
@@ -165,7 +166,6 @@ class Cluster(NailgunObject):
 
             if assign_nodes:
                 cls.update_nodes(new_cluster, assign_nodes)
-
         except (
             errors.OutOfVLANs,
             errors.OutOfIPs,
@@ -175,6 +175,8 @@ class Cluster(NailgunObject):
             raise errors.CannotCreate(exc.message)
 
         db().flush()
+
+        PluginManager.add_compatible_plugins(new_cluster)
 
         return new_cluster
 
@@ -235,31 +237,59 @@ class Cluster(NailgunObject):
         :returns: Dict object
         """
         editable = instance.release.attributes_metadata.get("editable")
-        # when attributes created we need to understand whether should plugin
-        # be applied for created cluster
-        plugin_attrs = PluginManager.get_plugin_attributes(instance)
+        # Add default attributes of connected plugins
+        plugin_attrs = PluginManager.get_plugins_attributes_with_versions(
+            instance, default=True)
         editable = dict(plugin_attrs, **editable)
         editable = traverse(editable, AttributesGenerator, {
             'cluster': instance,
             'settings': settings,
         })
+
         return editable
 
     @classmethod
-    def get_attributes(cls, instance):
+    def get_attributes(cls, instance, versions=False):
         """Get attributes for current Cluster instance
 
         :param instance: Cluster instance
-        :returns: Attributes instance
+        :param versions: Get attributes of all versions of plugin
+        or attributes of just enabled plugin
+        :returns: dict
         """
-        return db().query(models.Attributes).filter(
-            models.Attributes.cluster_id == instance.id
-        ).first()
+        try:
+            attrs = db().query(models.Attributes).filter(
+                models.Attributes.cluster_id == instance.id
+            ).one()
+        except MultipleResultsFound:
+            raise errors.InvalidData(
+                u"Multiple rows with attributes were found for cluster '{0}'"
+                .format(instance.name)
+            )
+        except NoResultFound:
+            raise errors.InvalidData(
+                u"No attributes were found for cluster '{0}'"
+                .format(instance.name)
+            )
+        attrs = dict(attrs)
+
+        # Merge plugins attributes into editable ones
+        if versions:
+            plugin_attrs = \
+                PluginManager.get_plugins_attributes_with_versions(instance)
+        else:
+            plugin_attrs = PluginManager.get_plugins_attributes(instance)
+        plugin_attrs = traverse(plugin_attrs, AttributesGenerator, {
+            'cluster': instance,
+            'settings': settings,
+        })
+        attrs['editable'].update(plugin_attrs)
+
+        return attrs
 
     @classmethod
     def update_attributes(cls, instance, data):
         PluginManager.process_cluster_attributes(instance, data['editable'])
-
         for key, value in data.iteritems():
             setattr(instance.attributes, key, value)
         cls.add_pending_changes(instance, "attributes")
@@ -275,11 +305,8 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def get_editable_attributes(cls, instance):
-        attrs = cls.get_attributes(instance)
-        editable = attrs.editable
-
-        return {'editable': editable}
+    def get_editable_attributes(cls, instance, versions=False):
+        return cls.get_attributes(instance, versions)['editable']
 
     @classmethod
     def get_updated_editable_attributes(cls, instance, data):
@@ -287,10 +314,10 @@ class Cluster(NailgunObject):
 
         :param instance: Cluster object
         :param data: dict
-        :return: dict
+        :returns: dict
         """
         return {'editable': dict_merge(
-            cls.get_editable_attributes(instance)['editable'],
+            cls.get_editable_attributes(instance),
             data.get('editable', {})
         )}
 
@@ -913,7 +940,7 @@ class Cluster(NailgunObject):
     @classmethod
     def is_vmware_enabled(cls, instance):
         """Check if current cluster supports vmware configuration."""
-        attributes = cls.get_attributes(instance).editable
+        attributes = cls.get_editable_attributes(instance)
         return attributes.get('common', {}).get('use_vcenter', {}).get('value')
 
     @staticmethod

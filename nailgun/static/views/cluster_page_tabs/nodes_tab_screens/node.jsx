@@ -205,7 +205,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         renderLogsLink: function(iconRepresentation) {
             return (
                 <controls.Tooltip key='logs' text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
-                    <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} href={this.getNodeLogsLink()}>
+                    <a className={'btn-view-logs ' + iconRepresentation ? 'icon icon-logs' : 'btn'} href={this.getNodeLogsLink()}>
                         {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
                     </a>
                 </controls.Tooltip>

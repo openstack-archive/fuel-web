@@ -41,10 +41,14 @@ define([
                         .end();
             },
             close: function() {
+                var self = this;
                 return this.remote
                     .findByCssSelector('.modal-header button.close')
                         .click()
-                        .end();
+                        .end()
+                    .then(function() {
+                        return self.waitToClose();
+                    });
             },
             clickFooterButton: function(buttonText) {
                 return this.remote

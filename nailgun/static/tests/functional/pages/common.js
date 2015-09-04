@@ -81,7 +81,8 @@ define([
                         .then(function(elements) {
                             if (elements.length)
                                 throw new Error('Element ' + cssSelector + ' was not destroyed');
-                        });
+                        })
+                    .end();
             },
             goToEnvironment: function(clusterName, tabName) {
                 var self = this;

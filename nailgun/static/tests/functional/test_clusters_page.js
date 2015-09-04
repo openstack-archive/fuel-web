@@ -85,9 +85,6 @@ define([
                                                 })
                                                 .then(function() {
                                                     return modal.close();
-                                                })
-                                                .then(function() {
-                                                    return modal.waitToClose();
                                                 });
                                         })
                                 }}

@@ -36,6 +36,14 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                     });
             });
         },
+        clickOnElement: function(cssSelector) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .click()
+                        .end();
+            });
+        },
         takeScreenshotAndSave: function(filename) {
             return new this.constructor(this, function() {
                 return this.parent

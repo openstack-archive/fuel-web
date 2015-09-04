@@ -1099,6 +1099,43 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         self.assertNotIn('gateway', network_scheme['endpoints']['br-ex'])
         self.assertEqual('none', network_scheme['endpoints']['br-ex']['IP'])
 
+    def test_public_iface_added_to_br_ex_in_dvr(self):
+        attrs = self.cluster.attributes.editable
+        attrs['neutron_advanced_configuration']['neutron_dvr']['value'] = True
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(objects.Cluster.neutron_dvr_enabled(self.cluster))
+
+        objects.Cluster.set_network_template(self.cluster, None)
+
+        computes = filter(lambda n: 'compute' in n.roles, self.cluster.nodes)
+        self.assertTrue(len(computes) > 0)
+        compute = computes[0]
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        networks = nm.get_node_networks(compute)
+        public_net = next((net for net in networks if net['name'] == 'public'),
+                          None)
+        self.assertIsNotNone(public_net)
+
+        self.assertFalse(objects.Node.should_have_public_with_ip(compute))
+        network_scheme = net_serializer.generate_network_scheme(
+            compute, networks)
+        expected = {'action': 'add-port',
+                    'bridge': 'br-ex',
+                    'name': public_net['dev']}
+        self.assertIn(expected, network_scheme['transformations'])
+
     def test_replacements_in_network_assignments(self):
 
         node_roles_vs_net_names = [

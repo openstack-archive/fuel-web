@@ -39,7 +39,7 @@ casper.then(function() {
     this.click('.node-hardware p.btn');
     this.test.assertSelectorAppears('.node-popover', 'Node expanded view appears', 1000);
     this.then(function() {
-        this.click('.node-popover-buttons .node-details');
+        this.click('.node-popover-buttons .node-settings');
         this.test.assertDoesntExist('.node-popover', 'Node extended view is closed when node pop-up is opened');
         this.test.assertSelectorAppears('.modal', 'Node pop-up is opened from node extended view');
         this.click('.modal-footer button');

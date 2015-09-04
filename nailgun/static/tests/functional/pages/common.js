@@ -175,6 +175,17 @@ define([
                                 });
                         })
                         .end();
+            },
+            assertElementTextEqualTo: function(cssSelector, text, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .then(function(element) {
+                            return element.getVisibleText()
+                                .then(function(elementText) {
+                                    assert.equal(elementText, text, message);
+                                });
+                        })
+                        .end()
             }
         };
         return CommonMethods;

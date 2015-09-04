@@ -25,7 +25,6 @@ from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.settings import settings
-from nailgun.statistics import errors
 from nailgun.statistics.oswl import helpers
 from nailgun.statistics.oswl.saver import oswl_statistics_save
 from nailgun.statistics import utils
@@ -65,7 +64,7 @@ def collect(resource_type):
                         client_provider, resource_type)
                     oswl_statistics_save(cluster.id, resource_type, data)
 
-            except errors.StatsException as e:
+            except Exception as e:
                 logger.error("Cannot collect OSWL resource {0} for cluster "
                              "with id {1}. Details: {2}."
                              .format(resource_type,

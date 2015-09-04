@@ -14,8 +14,43 @@
  * under the License.
  **/
 
-define(['underscore', 'intern/node_modules/dojo/node!fs'], function(_, fs) {
+define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'], function(_, fs, Command) {
     'use strict';
+
+    _.defaults(Command.prototype, {
+        clickLinkByText: function(cssSelector, linkText) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .setFindTimeout(1000)
+                    .findAllByCssSelector(cssSelector)
+                    .then(function(links) {
+                        return links.reduce(function(matchFound, link) {
+                            return link.getVisibleText().then(function(text) {
+                                if (_.trim(text) == linkText) {
+                                    link.click();
+                                    return true;
+                                }
+                                return matchFound;
+                            });
+                        }, false);
+                    });
+            });
+        },
+        takeScreenshotAndSave: function(filename) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .takeScreenshot()
+                    .then(function(buffer) {
+                        var targetDir = process.env.ARTIFACTS || process.cwd();
+                        if (!filename) filename = new Date().toTimeString();
+                        filename = filename.replace(/\s/g, '_');
+                        filename = targetDir + '/' + filename + '.png';
+                        console.log('Saving screenshot to', filename); // eslint-disable-line no-console
+                        fs.writeFileSync(filename, buffer);
+                });
+            });
+        }
+    });
 
     var serverHost = '127.0.0.1',
         serverPort = process.env.SERVER_PORT || 5544,
@@ -26,40 +61,6 @@ define(['underscore', 'intern/node_modules/dojo/node!fs'], function(_, fs) {
     return {
         username: username,
         password: password,
-        serverUrl: serverUrl,
-        leadfootHelpers: {
-            clickLinkByText: function(cssSelector, linkText) {
-                return new this.constructor(this, function() {
-                    return this.parent
-                        .setFindTimeout(1000)
-                        .findAllByCssSelector(cssSelector)
-                        .then(function(links) {
-                            return links.reduce(function(matchFound, link) {
-                                return link.getVisibleText().then(function(text) {
-                                    if (_.trim(text) == linkText) {
-                                        link.click();
-                                        return true;
-                                    }
-                                    return matchFound;
-                                });
-                            }, false);
-                        });
-                });
-            },
-            takeScreenshotAndSave: function(filename) {
-                return new this.constructor(this, function() {
-                    return this.parent
-                        .takeScreenshot()
-                        .then(function(buffer) {
-                            var targetDir = process.env.ARTIFACTS || process.cwd();
-                            if (!filename) filename = new Date().toTimeString();
-                            filename = filename.replace(/\s/g, '_');
-                            filename = targetDir + '/' + filename + '.png';
-                            console.log('Saving screenshot to', filename); // eslint-disable-line no-console
-                            fs.writeFileSync(filename, buffer);
-                    });
-                });
-            }
-        }
+        serverUrl: serverUrl
     };
 });

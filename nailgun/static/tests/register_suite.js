@@ -28,8 +28,21 @@ define([
         originalSuite = _.isFunction(originalSuite) ? originalSuite() : originalSuite;
         var suite = Object.create(originalSuite);
 
+        suite.setup = function() {
+            this.currentTestIndex = -1;
+            if (originalSuite.setup) return originalSuite.setup.apply(this, arguments);
+        };
+
+        suite.beforeEach = function() {
+            this.currentTestIndex++;
+            if (originalSuite.beforeEach) return originalSuite.beforeEach.apply(this, arguments);
+        };
+
         suite.afterEach = function() {
-            this.remote.takeScreenshotAndSave();
+            var currentTest = this.tests[this.currentTestIndex];
+            if (currentTest.error) {
+                this.remote.takeScreenshotAndSave(this.name + ' - ' + currentTest.name);
+            }
             if (originalSuite.afterEach) return originalSuite.afterEach.apply(this, arguments);
         };
 

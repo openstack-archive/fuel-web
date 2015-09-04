@@ -81,13 +81,14 @@ IP_ADDRESS_RANGE = {
     "minItems": 2,
     "maxItems": 2,
     "uniqueItems": True,
-    "items": {
-        "type": "string",
-        'anyOf': [
-            {'format': 'ipv4'},
-            {'format': 'ipv6'},
-        ]
-    }
+    "items": IP_ADDRESS
+}
+
+IP_ADDRESS_LIST = {
+    "type": "array",
+    "minItems": 1,
+    "uniqueItems": True,
+    "items": IP_ADDRESS
 }
 
 NULLABLE_IP_ADDRESS = {

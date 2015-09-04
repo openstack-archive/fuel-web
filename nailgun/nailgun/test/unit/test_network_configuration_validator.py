@@ -361,7 +361,11 @@ class TestNovaNetworkConfigurationValidatorProtocol(
         super(TestNovaNetworkConfigurationValidatorProtocol, self).setUp()
         self.nc = {
             "networking_parameters": {
-                "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+                "dns_nameservers": [
+                    "8.8.4.4",
+                    "8.8.8.8",
+                    "2001:4860:4860::8888"
+                ],
                 "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
                 "fixed_network_size": 1,
                 "fixed_networks_amount": 2,
@@ -377,6 +381,10 @@ class TestNovaNetworkConfigurationValidatorProtocol(
         """
         return data
 
+    def test_validation_passed(self):
+        serialized_data = self.serialize(self.nc)
+        self.validator(serialized_data, mock.Mock())
+
     # networking parameters
     def test_networking_parameters_additional_property(self):
         self.nc['networking_parameters']['test_key'] = 1
@@ -386,21 +394,15 @@ class TestNovaNetworkConfigurationValidatorProtocol(
         self.nc['networking_parameters'] = 1
         self.assertRaisesInvalidType(self.nc, "1", "'object'")
 
-    def test_dns_nameservers_ip_range(self):
+    def test_dns_nameservers_ip_address_list(self):
         self.nc['networking_parameters']['dns_nameservers'] = {}
         self.assertRaisesInvalidType(self.nc, "{}", "'array'")
 
         self.nc['networking_parameters']['dns_nameservers'] = [1, 2]
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
-        self.nc['networking_parameters']['dns_nameservers'] = \
-            ["1.1.1.1", "1.1.1.2", "1.1.1.3"]
-        self.assertRaisesTooLong(
-            self.nc,
-            "['1.1.1.1', '1.1.1.2', '1.1.1.3']")
-
-        self.nc['networking_parameters']['dns_nameservers'] = ["1.1.1.1"]
-        self.assertRaisesTooShort(self.nc, "['1.1.1.1']")
+        self.nc['networking_parameters']['dns_nameservers'] = []
+        self.assertRaisesTooShort(self.nc, "[]")
 
         self.nc['networking_parameters']['dns_nameservers'] =\
             ['1.2.3.4', '1.2.3.4']
@@ -452,7 +454,11 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
             "networking_parameters": {
                 "base_mac": "fa:16:3e:00:00:00",
                 "configuration_template": None,
-                "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+                "dns_nameservers": [
+                    "8.8.4.4",
+                    "8.8.8.8",
+                    "2001:4860:4860::8888"
+                ],
                 "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
                 "gre_id_range": [2, 65535],
                 "internal_cidr": "192.168.111.0/24",
@@ -468,6 +474,10 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         accepts object as is.
         """
         return data
+
+    def test_validation_passed(self):
+        serialized_data = self.serialize(self.nc)
+        self.validator(serialized_data, mock.Mock(id=1))
 
     # networking parameters
     def test_networking_parameters_additional_property(self):
@@ -487,21 +497,15 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         self.assertRaisesInvalidAnyOf(
             self.nc, 1, "['networking_parameters']['configuration_template']")
 
-    def test_dns_nameservers_ip_range(self):
+    def test_dns_nameservers_ip_address_list(self):
         self.nc['networking_parameters']['dns_nameservers'] = {}
         self.assertRaisesInvalidType(self.nc, "{}", "'array'")
 
         self.nc['networking_parameters']['dns_nameservers'] = [1, 2]
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
-        self.nc['networking_parameters']['dns_nameservers'] = \
-            ["1.1.1.1", "1.1.1.2", "1.1.1.3"]
-        self.assertRaisesTooLong(
-            self.nc,
-            "['1.1.1.1', '1.1.1.2', '1.1.1.3']")
-
-        self.nc['networking_parameters']['dns_nameservers'] = ["1.1.1.1"]
-        self.assertRaisesTooShort(self.nc, "['1.1.1.1']")
+        self.nc['networking_parameters']['dns_nameservers'] = []
+        self.assertRaisesTooShort(self.nc, "[]")
 
         self.nc['networking_parameters']['dns_nameservers'] =\
             ['1.2.3.4', '1.2.3.4']

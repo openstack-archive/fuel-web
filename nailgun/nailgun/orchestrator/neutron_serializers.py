@@ -983,6 +983,12 @@ class NeutronNetworkDeploymentSerializer70(
         # Populate IP and GW information to endpoints.
         netgroup_mapping = (cls.get_network_to_endpoint_mapping(node)
                             .items())
+        # get_network_to_endpoint_mapping() adds mapping for 'public' only in
+        # case the node 'should_have_public_with_ip'. Here we need to add it
+        # because proper transformations should be formed no matter if br-ex
+        # has IP or not.
+        if is_public:
+            netgroup_mapping[consts.NETWORKS.public] = 'br-ex'
 
         if node.cluster.network_config.segmentation_type in \
                 (consts.NEUTRON_SEGMENT_TYPES.gre,

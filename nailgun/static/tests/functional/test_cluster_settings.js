@@ -15,13 +15,14 @@
  **/
 
 define([
-    'tests/register_suite',
+    'intern!object',
     'intern/chai!assert',
+    'tests/helpers',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
     'tests/functional/pages/settings',
     'tests/functional/pages/modal'
-], function(registerSuite, assert, Common, ClusterPage, SettingsPage, ModalWindow) {
+], function(registerSuite, assert, helpers, Common, ClusterPage, SettingsPage, ModalWindow) {
     'use strict';
 
     registerSuite(function() {

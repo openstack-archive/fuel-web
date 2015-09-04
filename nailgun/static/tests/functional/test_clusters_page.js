@@ -15,10 +15,11 @@
  **/
 
 define([
-    'tests/register_suite',
+    'intern!object',
     'intern/chai!assert',
+    'tests/helpers',
     'tests/functional/pages/common'
-], function(registerSuite, assert, Common) {
+], function(registerSuite, assert, helpers, Common) {
     'use strict';
 
     registerSuite(function() {

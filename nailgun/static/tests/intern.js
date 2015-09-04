@@ -39,6 +39,6 @@ define(['config'], function(config) {
         grep: /^/,
         excludeInstrumentation: /^/,
         loader: config,
-        reporters: ['console']
+        reporters: ['console', 'tests/screenshot_on_fail']
     };
 });

@@ -49,6 +49,26 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                         fs.writeFileSync(filename, buffer);
                 });
             });
+        },
+        waitForCssSelector: function(cssSelector, timeout) {
+            // used to wait until the element will appear with custom timeout
+            return new this.constructor(this, function() {
+                var self = this,
+                    currentTimeout = 0;
+                return this.parent
+                    .getFindTimeout()
+                    .then(function(value) {
+                        currentTimeout = value;
+                    })
+                    .setFindTimeout(timeout)
+                    .findByCssSelector(cssSelector)
+                        .end()
+                    .catch(function(error) {
+                        self.setFindTimeout(currentTimeout);
+                        throw error;
+                    })
+                    .setFindTimeout(currentTimeout);
+            });
         }
     });
 

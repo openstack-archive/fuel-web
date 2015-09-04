@@ -93,7 +93,7 @@ NOVA_NETWORK_CONFIGURATION = {
             "type": "object",
             "additionalProperties": False,
             "properties": {
-                "dns_nameservers": base_types.IP_ADDRESS_RANGE,
+                "dns_nameservers": base_types.IP_ADDRESS_LIST,
                 "fixed_network_size": base_types.NON_NEGATIVE_INTEGER,
                 "fixed_networks_amount": base_types.NON_NEGATIVE_INTEGER,
                 "fixed_networks_cidr": base_types.NET_ADDRESS,
@@ -125,7 +125,7 @@ NEUTRON_NETWORK_CONFIGURATION = {
                         base_types.NULL
                     ]
                 },
-                "dns_nameservers": base_types.IP_ADDRESS_RANGE,
+                "dns_nameservers": base_types.IP_ADDRESS_LIST,
                 "floating_ranges": {
                     "type": "array",
                     "items": base_types.IP_ADDRESS_RANGE

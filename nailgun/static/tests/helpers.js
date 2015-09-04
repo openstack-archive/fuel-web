@@ -56,6 +56,17 @@ define(['underscore', 'intern/node_modules/dojo/node!fs'], function(_, fs) {
                             fs.writeFileSync(targetDir + '/' + filename + '.png', buffer);
                     });
                 });
+            },
+            findByCssSelectorWithTimeout: function(cssSelector, timeout) {
+                // used to wait for element appears
+                return new this.constructor(this, function() {
+                    return this.parent
+                        .setFindTimeout(timeout)
+                        .findByCssSelector(cssSelector)
+                            .end()
+                        // 0 is default timeout
+                        .setFindTimeout(0);
+                });
             }
         }
     };

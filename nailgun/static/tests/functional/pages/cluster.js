@@ -58,7 +58,6 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         },
         checkNodeRoles: function(assignRoles) {
             return this.remote
-                .setFindTimeout(2000)
                 .findAllByCssSelector('div.role-panel label')
                 .then(function(roles) {
                     return roles.reduce(
@@ -81,12 +80,10 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         checkNodes: function(amount) {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .setFindTimeout(1000)
                                 .findAllByCssSelector('.node.discover > label')
                                 .then(function(nodes) {
                                     return nodes[index].click();
@@ -128,7 +125,8 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                     return self.modal.waitToClose();
                 })
                 .setFindTimeout(10000)
-                .waitForDeletedByCssSelector('div.progress-bar');
+                .waitForDeletedByCssSelector('div.progress-bar')
+                .setFindTimeout(0);
         },
         isTabLocked: function(tabName) {
             var self = this;

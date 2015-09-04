@@ -48,6 +48,7 @@ define([
             },
             'Create Cluster': function() {
                 return this.remote
+                    .setFindTimeout(2000)
                     .then(function() {
                         return common.doesClusterExist(clusterName);
                     })

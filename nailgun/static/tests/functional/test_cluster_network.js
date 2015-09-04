@@ -16,7 +16,7 @@
 
 define([
     'underscore',
-    'intern!object',
+    'tests/register_suite',
     'intern/chai!assert',
     'tests/functional/pages/common',
     'tests/functional/pages/networks',

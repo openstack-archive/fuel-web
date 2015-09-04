@@ -46,9 +46,3 @@ class MutableList(Mutable, list):
 
         list.__delitem__(self, key)
         self.changed()
-
-    def __getstate__(self):
-        return list(self)
-
-    def __setstate__(self, state):
-        self[:] = state

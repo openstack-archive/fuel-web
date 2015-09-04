@@ -40,6 +40,7 @@ define([
                     .then(function() {
                         return common.getIn();
                     })
+                    .findByCssSelector('a.btn-add-nodes-----------------')
                     .then(function() {
                         return common.createCluster(clusterName);
                     });

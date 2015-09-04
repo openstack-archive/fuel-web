@@ -72,6 +72,13 @@ def collect(resource_type):
                                      cluster.id,
                                      six.text_type(e))
                              )
+            except Exception as e:
+                logger.exception("Error while collecting OSWL resource {0} "
+                                 "for cluster with id {1}. Details: {2}."
+                                 .format(resource_type,
+                                         cluster.id,
+                                         six.text_type(e))
+                                 )
 
         db.commit()
 

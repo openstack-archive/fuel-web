@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from sqlalchemy.ext.mutable import Mutable
 
 
@@ -52,3 +53,14 @@ class MutableList(Mutable, list):
 
     def __setstate__(self, state):
         self[:] = state
+
+    @classmethod
+    def __copy__(cls, value):
+        """use copy via constructor."""
+
+        return MutableList(value)
+
+    def __deepcopy__(self, memo, _deepcopy=copy.deepcopy):
+        """recursive copy each element."""
+
+        return MutableList(_deepcopy(x, memo) for x in self)

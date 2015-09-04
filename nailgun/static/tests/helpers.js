@@ -53,7 +53,9 @@ define(['underscore', 'intern/node_modules/dojo/node!fs'], function(_, fs) {
                         .then(function(buffer) {
                             if (!filename) filename = new Date().toTimeString();
                             var targetDir = process.env.ARTIFACTS || process.cwd();
-                            fs.writeFileSync(targetDir + '/' + filename + '.png', buffer);
+                            filename = targetDir + '/' + filename + '.png';
+                            console.log('Saving screenshot to', filename);
+                            fs.writeFileSync(filename, buffer);
                     });
                 });
             }

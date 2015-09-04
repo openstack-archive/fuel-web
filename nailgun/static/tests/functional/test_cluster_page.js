@@ -77,7 +77,7 @@ define([
                         return common.goToEnvironment(clusterName);
                     })
                     .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
+                    .findByCssSelector('a.btn-add-nodes-FAIL')
                         .click()
                         .end()
                     .findByCssSelector('button.btn-apply')

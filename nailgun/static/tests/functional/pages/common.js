@@ -64,7 +64,6 @@ define([
             },
             clickLink: function(text) {
                 return this.remote
-                    .setFindTimeout(1000)
                     .findByLinkText(text)
                         .click()
                         .end();
@@ -77,6 +76,7 @@ define([
                         if (error.name != 'Timeout')
                             throw error;
                     })   // For cases when element is destroyed already
+                    .setFindTimeout(0)
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
                             if (elements.length)
@@ -125,7 +125,6 @@ define([
             doesClusterExist: function(clusterName) {
                 var self = this;
                 return this.remote
-                    .setFindTimeout(2000)
                     .then(function() {
                         return self.clickLink('Environments');
                     })
@@ -159,9 +158,8 @@ define([
                     .findByCssSelector('button.btn-apply')
                         .click()
                         .end()
-                    .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
-                        .end();
+                        .end()
             },
             doesCssSelectorContainText: function(cssSelector, searchedText) {
                 return this.remote
@@ -212,6 +210,23 @@ define([
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
                             return assert.equal(elements.length, 0, message);
+                        })
+                        .end();
+            },
+            clickElement: function(cssSelector) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .click()
+                        .end();
+            },
+            isElementValueEqualTo: function(cssSelector, value, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .then(function(element) {
+                            return element.getAttribute('value')
+                                .then(function(elementValue) {
+                                    assert.equal(elementValue, value, message);
+                                });
                         })
                         .end();
             }

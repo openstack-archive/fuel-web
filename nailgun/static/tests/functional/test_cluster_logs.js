@@ -56,59 +56,39 @@ define([
                     });
             },
             '"Show" button availability and logs displaying': function() {
-                var showLogsButton;
                 return this.remote
-                    .setFindTimeout(5000)
                     .findByCssSelector('.sticker select[name=source] > option')
                         // Check if "Source" dropdown exist
                         .end()
-                    .findByCssSelector('.sticker button')
-                        .then(function(button) {
-                            showLogsButton = button;
-                            return showLogsButton
-                                .isEnabled()
-                                .then(function(isEnabled) {
-                                    assert.isFalse(isEnabled, '"Show" button is disabled until source change');
-                                });
-                        })
-                        .end()
-                    .findByCssSelector('.sticker select[name=source] option[value=api]')
-                        // Change the selected value for the "Source" dropdown to Rest API
-                        .click()
-                        .end()
-                    .findByCssSelector('.sticker select[name=level] option[value=DEBUG]')
-                        // Change the selected value for the "Level" dropdown to DEBUG
-                        .click()
-                        .end()
                     .then(function() {
-                        // It is possible to click "Show" button now
-                        return showLogsButton
-                            .isEnabled()
-                            .then(function(isEnabled) {
-                                assert.isTrue(isEnabled, '"Show" button is enabled after source change');
-                            });
+                        return common.isElementDisabled('.sticker button', '"Show" button is disabled until source change');
                     })
                     .then(function() {
-                        return showLogsButton.click();
+                        // Change the selected value for the "Source" dropdown to Rest API
+                        return common.clickElement('.sticker select[name=source] option[value=api]');
+                    })
+                    .then(function() {
+                        // Change the selected value for the "Level" dropdown to DEBUG
+                        return common.clickElement('.sticker select[name=level] option[value=DEBUG]');
+                    })
+                    .then(function() {
+                        return common.isElementEnabled('.sticker button', '"Show" button is enabled after source change');
+                    })
+                    .then(function() {
+                        return common.clickElement('.sticker button');
                     })
                     .then(function() {
                         // Wait till Progress bar disappears
                         return common.waitForElementDeletion('.logs-tab div.progress');
                     })
-                    .setFindTimeout(10000)
-                    .findAllByCssSelector('.log-entries > tbody > tr')
-                        .then(function(elements) {
-                            assert.ok(elements.length, 'Log tab entries are present');
-                        })
-                        .end()
-                    .findByCssSelector('.sticker select[name=type] > option[value=remote]')
+                    .waitForCssSelector('.log-entries > tbody > tr', 5000)
+                    .then(function() {
                         // "Other servers" option is present in "Logs" dropdown
-                        .click()
-                        .end()
-                    .findAllByCssSelector('.sticker select[name=node] > option')
-                        .then(function(elements) {
-                            assert.ok(elements.length, '"Node" dropdown is present');
-                        });
+                        return common.clickElement('.sticker select[name=type] > option[value=remote]');
+                    })
+                    .then(function() {
+                        return common.elementExists('.sticker select[name=node] > option', '"Node" dropdown is present');
+                    });
             }
         };
     });

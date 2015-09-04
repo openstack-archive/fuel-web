@@ -158,8 +158,7 @@ define([
                         return common.waitForElementDeletion('div.deploy-process div.progress');
                     })
                     // Deployment button available
-                    .findByCssSelector('div.deploy-block button.deploy-btn')
-                        .end()
+                    .waitForCssSelector('div.deploy-block button.deploy-btn', 2000)
                     .findByCssSelector('div.alert-warning strong')
                         .getVisibleText()
                         .then(function(alertTitle) {

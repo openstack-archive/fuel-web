@@ -159,7 +159,6 @@ define([
                     .findByCssSelector('button.btn-apply')
                         .click()
                         .end()
-                    .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
                         .end();
             },
@@ -212,6 +211,23 @@ define([
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
                             return assert.equal(elements.length, 0, message);
+                        })
+                        .end();
+            },
+            clickElement: function(cssSelector) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .click()
+                        .end();
+            },
+            isElementValueEqualTo: function(cssSelector, value, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .then(function(element) {
+                            return element.getAttribute('value')
+                                .then(function(elementValue) {
+                                    assert.equal(elementValue, value, message);
+                                });
                         })
                         .end();
             }

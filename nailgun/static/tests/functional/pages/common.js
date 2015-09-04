@@ -214,6 +214,14 @@ define([
                             return assert.equal(elements.length, 0, message);
                         })
                         .end();
+            },
+            findByCssSelectorWithTimeout: function(cssSelector, timeout) {
+                // used to wait for element appears
+                return this.remote
+                    .setFindTimeout(timeout)
+                    .findByCssSelector(cssSelector)
+                        .end()
+                    .setFindTimeout(1000);
             }
         };
         return CommonMethods;

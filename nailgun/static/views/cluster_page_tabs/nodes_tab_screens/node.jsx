@@ -205,7 +205,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         renderLogsLink: function(iconRepresentation) {
             return (
                 <controls.Tooltip key='logs' text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
-                    <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} href={this.getNodeLogsLink()}>
+                    <a className={'btn-view-logs ' + (iconRepresentation ? 'icon icon-logs' : 'btn')} href={this.getNodeLogsLink()}>
                         {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
                     </a>
                 </controls.Tooltip>
@@ -406,7 +406,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     {this.renderNodeHardwareSummary()}
                                 </div>
                                 <div className='node-popover-buttons'>
-                                    <button className='btn btn-default node-details' onClick={this.showNodeDetails}>Details</button>
+                                    <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>Details</button>
                                 </div>
                             </div>
                         </controls.Popover>
@@ -447,7 +447,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     node.hasChanges() && !this.props.locked &&
                                         <controls.Tooltip key={'pending_addition_' + node.id} text={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}>
                                             <div
-                                                className='icon'
+                                                className='icon btn-discard'
                                                 onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
                                             />
                                         </controls.Tooltip>

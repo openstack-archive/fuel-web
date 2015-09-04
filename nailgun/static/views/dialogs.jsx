@@ -703,7 +703,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                     />
                                 :
                                     <span>
-                                        {node.get('hostname') || i18n('common.not_available')}
+                                        <span className='node-hostname'>
+                                            {node.get('hostname') || i18n('common.not_available')}
+                                        </span>
                                         {(node.get('pending_addition') || !node.get('cluster')) &&
                                             <button
                                                 className='btn-link glyphicon glyphicon-pencil'

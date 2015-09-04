@@ -64,7 +64,6 @@ define([
             },
             clickLink: function(text) {
                 return this.remote
-                    .setFindTimeout(1000)
                     .findByLinkText(text)
                         .click()
                         .end();
@@ -77,6 +76,7 @@ define([
                         if (error.name != 'Timeout')
                             throw error;
                     })   // For cases when element is destroyed already
+                    .setFindTimeout(0)
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
                             if (elements.length)
@@ -125,19 +125,19 @@ define([
             doesClusterExist: function(clusterName) {
                 var self = this;
                 return this.remote
-                    .setFindTimeout(2000)
                     .then(function() {
                         return self.clickLink('Environments');
                     })
+                    .setFindTimeout(2000)
                     .findAllByCssSelector(self.clustersPage.clusterSelector)
-                    .then(function(divs) {
-                        return divs.reduce(function(matchFound, element) {
-                            return element.getVisibleText().then(
-                                function(name) {
-                                    return (name === clusterName) || matchFound;
-                                }
-                            )}, false);
-                    });
+                        .then(function(divs) {
+                            return divs.reduce(function(matchFound, element) {
+                                return element.getVisibleText().then(
+                                    function(name) {
+                                        return (name === clusterName) || matchFound;
+                                    }
+                                )}, false);
+                        });
             },
             addNodesToCluster: function(nodesAmount, nodesRoles) {
                 var self = this;
@@ -159,9 +159,7 @@ define([
                     .findByCssSelector('button.btn-apply')
                         .click()
                         .end()
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end();
+                    .findByCssSelectorWithTimeout('button.btn-add-nodes', 2000);
             },
             doesCssSelectorContainText: function(cssSelector, searchedText) {
                 return this.remote
@@ -199,13 +197,25 @@ define([
                         })
                         .end();
             },
+            elementsExists: function(cssSelector, message) {
+                return this.remote
+                    .setFindTimeout(1000)
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            return assert.ok(elements.length, message);
+                        })
+                        .end()
+                    .setFindTimeout(0);
+            },
             elementExists: function(cssSelector, message) {
                 return this.remote
+                    .setFindTimeout(1000)
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
                             return assert.equal(elements.length, 1, message);
                         })
-                        .end();
+                        .end()
+                    .setFindTimeout(0);
             },
             elementNotExists: function(cssSelector, message) {
                 return this.remote
@@ -214,6 +224,14 @@ define([
                             return assert.equal(elements.length, 0, message);
                         })
                         .end();
+            },
+            clickElement: function(cssSelector) {
+                return this.remote
+                    .setFindTimeout(1000)
+                    .findByCssSelector(cssSelector)
+                        .click()
+                        .end()
+                    .setFindTimeout(0);
             }
         };
         return CommonMethods;

@@ -59,7 +59,8 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .pressKeys('\uE007')
                 .then(function() {
                     return self.modal.waitToClose();
-                });
+                })
+                .setFindTimeout(0);
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {
@@ -87,7 +88,8 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                         throw new Error('Cluster ' + clusterName + ' not found');
                     }
                     return true;
-                });
+                })
+                .setFindTimeout(0);
         }
     };
     return ClustersPage;

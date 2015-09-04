@@ -76,10 +76,11 @@ define([
                     .then(function() {
                         return common.goToEnvironment(clusterName);
                     })
-                    .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
-                        .click()
-                        .end()
+                    .then(function() {
+                        return common.findByCssSelectorWithTimeout(5000, 'a.btn-add-nodes')
+                            .click()
+                            .end()
+                    })
                     .findByCssSelector('button.btn-apply')
                         .then(function(button) {
                             applyButton = button;
@@ -106,15 +107,15 @@ define([
                     .then(function() {
                         applyButton.click();
                     })
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end()
-
+                    .then(function() {
+                        return common.findByCssSelectorWithTimeout(2000, 'button.btn-add-nodes')
+                            .click()
+                            .end()
+                    })
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {
                                 return self.remote
-                                    .setFindTimeout(1000)
                                     .findByCssSelector('div.node:nth-child(' + index + ')')
                                     .catch(function() {
                                         throw new Error('Unable to find ' + index + ' node in cluster');

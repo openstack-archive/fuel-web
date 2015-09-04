@@ -16,11 +16,13 @@
 
 define(['underscore',
         'tests/functional/pages/modal',
-        '../../helpers'], function(_, ModalWindow, Helpers) {
+        'tests/functional/pages/common',
+        '../../helpers'], function(_, ModalWindow, Common, Helpers) {
     'use strict';
     function ClusterPage(remote) {
         this.remote = remote;
         this.modal = new ModalWindow(remote);
+        this.common = new Common(this.remote);
     }
 
     ClusterPage.prototype = {
@@ -66,7 +68,6 @@ define(['underscore',
         },
         checkNodeRoles: function(assignRoles) {
             return this.remote
-                .setFindTimeout(2000)
                 .findAllByCssSelector('div.role-panel label')
                 .then(function(roles) {
                     return roles.reduce(
@@ -89,12 +90,10 @@ define(['underscore',
         checkNodes: function(amount) {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .setFindTimeout(1000)
                                 .findAllByCssSelector('.node.discover > label')
                                 .then(function(nodes) {
                                     return nodes[index].click();
@@ -121,22 +120,24 @@ define(['underscore',
                 .then(function() {
                     return self.modal.clickFooterButton('Reset');
                 })
-                .setFindTimeout(20000)
-                .findAllByCssSelector('div.confirm-reset-form input[type=text]')
-                    .then(function(confirmationInputs) {
-                        if (confirmationInputs.length)
-                            return confirmationInputs[0]
-                                .type(clusterName)
-                                .then(function() {
-                                    return self.modal.clickFooterButton('Reset');
-                                });
-                    })
-                    .end()
+                .then(function() {
+                    return self.common.findAllByCssSelectorWithTimeout(20000, 'div.confirm-reset-form input[type=text]')
+                        .then(function(confirmationInputs) {
+                            if (confirmationInputs.length)
+                                return confirmationInputs[0]
+                                    .type(clusterName)
+                                    .then(function() {
+                                        return self.modal.clickFooterButton('Reset');
+                                    });
+                        })
+                        .end()
+                })
                 .then(function() {
                     return self.modal.waitToClose();
                 })
-                .setFindTimeout(10000)
-                .waitForDeletedByCssSelector('div.progress-bar');
+                .then(function() {
+                    return self.common.waitForDeletedByCssSelectorWithTimeout(10000, 'div.progress-bar');
+                })
         },
         isTabLocked: function(tabName) {
             var self = this;

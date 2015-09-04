@@ -143,12 +143,9 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .setFindTimeout(2000)
-                    .findAllByCssSelector('div.deploy-process div.progress')
-                        .then(function(elements) {
-                            assert.ok(elements.length, 'Deployment progress bar expected to appear');
-                        })
-                        .end()
+                    .then(function() {
+                        return common.elementExists('div.deploy-process div.progress', 'Deployment progress bar expected to appear');
+                    })
                     .then(function() {
                         return dashboardPage.stopDeployment();
                     })

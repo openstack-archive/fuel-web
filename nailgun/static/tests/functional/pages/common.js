@@ -16,6 +16,7 @@ define([
             this.welcomePage = new WelcomePage(remote);
             this.clusterPage = new ClusterPage(remote);
             this.clustersPage = new ClustersPage(remote);
+            this.initialTimeout = 1000;
         }
 
         CommonMethods.prototype = {
@@ -212,6 +213,30 @@ define([
                             return assert.equal(elements.length, 0, message);
                         })
                         .end();
+            },
+            findAllByCssSelectorWithTimeout: function(timeoutValue, cssSelector) {
+                return  this.remote
+                    .setFindTimeout(timeoutValue)
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            return elements;
+                        })
+                    .setFindTimeout(this.initialTimeout);
+            },
+            findByCssSelectorWithTimeout: function(timeoutValue, cssSelector) {
+                return  this.remote
+                    .setFindTimeout(timeoutValue)
+                    .findByCssSelector(cssSelector)
+                    .then(function(element) {
+                        return element;
+                    })
+                    .setFindTimeout(this.initialTimeout);
+            },
+            waitForDeletedByCssSelectorWithTimeout: function(timeoutValue, cssSelector) {
+                return this.remote
+                    .setFindTimeout(timeoutValue)
+                    .waitForDeletedByCssSelector(cssSelector)
+                    .setFindTimeout(this.initialTimeout);
             }
         };
         return CommonMethods;

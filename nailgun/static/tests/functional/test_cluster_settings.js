@@ -63,7 +63,6 @@ define([
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.isElementEnabled('.btn-load-defaults', 'Load defaults button is enabled');
                     })
@@ -76,7 +75,6 @@ define([
             },
             'Check Save Settings button': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .findByCssSelector('input[type=checkbox]')
                         // introduce change
                         .click()
@@ -92,7 +90,6 @@ define([
             },
             'Check Cancel Changes button': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // introduce change
                     .findByCssSelector('input[type=checkbox]')
                         .click()
@@ -118,7 +115,6 @@ define([
             },
             'Check changes saving': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // introduce change
                     .findByCssSelector('input[type=checkbox]')
                         .click()
@@ -139,7 +135,6 @@ define([
             },
             'Check loading of defaults': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // load defaults
                     .findByCssSelector('.btn-load-defaults')
                         .click()
@@ -160,7 +155,6 @@ define([
             },
             'The choice of subgroup is preserved when user navigates through the cluster tabs': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Syslog');
                     })
@@ -176,7 +170,6 @@ define([
             },
             'The page reacts on invalid input': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Access');
                     })
@@ -207,7 +200,6 @@ define([
             'Test repositories custom control': function() {
                 var repoAmount;
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Repositories');
                     })

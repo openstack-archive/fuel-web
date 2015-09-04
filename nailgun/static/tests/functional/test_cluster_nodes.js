@@ -16,11 +16,12 @@
 
 define([
     'underscore',
-    'tests/register_suite',
+    'intern!object',
     'intern/chai!assert',
+    'tests/helpers',
     'tests/functional/pages/modal',
     'tests/functional/pages/common'
-], function(_, registerSuite, assert, ModalWindow, Common) {
+], function(_, registerSuite, assert, helpers, ModalWindow, Common) {
     'use strict';
 
     registerSuite(function() {

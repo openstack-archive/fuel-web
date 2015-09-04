@@ -16,11 +16,12 @@
 
 define([
     'underscore',
-    'tests/register_suite',
+    'intern!object',
     'intern/chai!assert',
+    'tests/helpers',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster'
-], function(_, registerSuite, assert, Common, ClusterPage) {
+], function(_, registerSuite, assert, helpers, Common, ClusterPage) {
     'use strict';
 
     registerSuite(function() {
@@ -40,6 +41,7 @@ define([
                     .then(function() {
                         return common.getIn();
                     })
+                    .findByCssSelector('a.btn-add-nodes')
                     .then(function() {
                         return common.createCluster(clusterName);
                     });

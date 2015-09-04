@@ -393,14 +393,8 @@ class TestNovaNetworkConfigurationValidatorProtocol(
         self.nc['networking_parameters']['dns_nameservers'] = [1, 2]
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
-        self.nc['networking_parameters']['dns_nameservers'] = \
-            ["1.1.1.1", "1.1.1.2", "1.1.1.3"]
-        self.assertRaisesTooLong(
-            self.nc,
-            "['1.1.1.1', '1.1.1.2', '1.1.1.3']")
-
-        self.nc['networking_parameters']['dns_nameservers'] = ["1.1.1.1"]
-        self.assertRaisesTooShort(self.nc, "['1.1.1.1']")
+        self.nc['networking_parameters']['dns_nameservers'] = []
+        self.assertRaisesTooShort(self.nc, "[]")
 
         self.nc['networking_parameters']['dns_nameservers'] =\
             ['1.2.3.4', '1.2.3.4']
@@ -494,14 +488,8 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         self.nc['networking_parameters']['dns_nameservers'] = [1, 2]
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
-        self.nc['networking_parameters']['dns_nameservers'] = \
-            ["1.1.1.1", "1.1.1.2", "1.1.1.3"]
-        self.assertRaisesTooLong(
-            self.nc,
-            "['1.1.1.1', '1.1.1.2', '1.1.1.3']")
-
-        self.nc['networking_parameters']['dns_nameservers'] = ["1.1.1.1"]
-        self.assertRaisesTooShort(self.nc, "['1.1.1.1']")
+        self.nc['networking_parameters']['dns_nameservers'] = []
+        self.assertRaisesTooShort(self.nc, "[]")
 
         self.nc['networking_parameters']['dns_nameservers'] =\
             ['1.2.3.4', '1.2.3.4']

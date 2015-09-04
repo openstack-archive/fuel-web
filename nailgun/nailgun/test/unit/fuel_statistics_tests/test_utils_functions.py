@@ -46,7 +46,7 @@ class TestUtilsFunctions(BaseTestCase):
             self.assertEqual(os.environ.get("https_proxy"),
                              expected["https_proxy"])
 
-            raise_inside_context()
+            self.assertRaisesRegexp(Exception, "Just an error", raise_inside_context)
             self.assertEqual(os.environ.get("http_proxy"),
                              expected["http_proxy"])
             self.assertEqual(os.environ.get("https_proxy"),
@@ -58,7 +58,7 @@ class TestUtilsFunctions(BaseTestCase):
         self.assertNotIn("http_proxy", os.environ)
         self.assertNotIn("https_proxy", os.environ)
 
-        raise_inside_context()
+        self.assertRaisesRegexp(Exception, "Just an error", raise_inside_context)
         self.assertNotIn("http_proxy", os.environ)
         self.assertNotIn("https_proxy", os.environ)
 

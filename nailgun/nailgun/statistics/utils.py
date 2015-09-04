@@ -126,9 +126,6 @@ def set_proxy(proxy):
 
     try:
         yield
-    except Exception as e:
-        logger.exception("Error while talking to proxy. Details: {0}"
-                         .format(six.text_type(e)))
     finally:
         for variable_name, variable_value in variable_values.items():
             if variable_value:

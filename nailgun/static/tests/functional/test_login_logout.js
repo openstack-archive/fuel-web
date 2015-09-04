@@ -41,7 +41,7 @@ define([
                     .then(function() {
                         return loginPage.login('login', '*****');
                     })
-                    .findAllByCssSelector('div.login-error')
+                    .findAllByCssSelector('div.login-error--------')
                         .then(function(elements) {
                             assert.ok(elements.length, 'Error message is expected to get displayed');
                         });

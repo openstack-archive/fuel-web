@@ -14,15 +14,21 @@
  * under the License.
  **/
 
-define([
-    'underscore',
-    'intern!object',
-    'intern/dojo/node!leadfoot/Command',
-    './helpers'
-], function(_, registerSuite, Command, helpers) {
+define(function() {
     'use strict';
 
-    _.extend(Command.prototype, helpers.leadfootHelpers);
+    var remotes = {};
 
-    return registerSuite;
+    function saveScreenshot(testOrSuite) {
+        var remote = remotes[testOrSuite.sessionId];
+        if (remote.takeScreenshotAndSave) remote.takeScreenshotAndSave(testOrSuite.id);
+    }
+
+    return {
+        '/session/start': function(remote) {
+            remotes[remote.sessionId] = remote;
+        },
+        '/suite/error': saveScreenshot,
+        '/test/fail': saveScreenshot
+    };
 });

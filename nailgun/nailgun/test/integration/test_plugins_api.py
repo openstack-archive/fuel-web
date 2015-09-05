@@ -77,7 +77,8 @@ class BasePluginTest(base.BaseIntegrationTest):
                 os.path.exists.return_value = True
                 self.env.create(
                     release_kwargs={'version': '2014.2-6.0',
-                                    'operating_system': 'Ubuntu'},
+                                    'operating_system': 'Ubuntu',
+                                    'deployment_tasks': []},
                     nodes_kwargs=nodes)
         return self.env.clusters[0]
 
@@ -337,6 +338,7 @@ class TestPrePostHooks(BasePluginTest):
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True}])
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
         self.enable_plugin(self.cluster, self.sample_plugin['name'])
 
     def tearDown(self):

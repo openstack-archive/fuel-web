@@ -195,7 +195,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.env.launch_deployment()
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args_list[0]
         self.assertEqual(len(args[1]['args']['nodes']), 0)
 
         self.env.refresh_nodes()
@@ -213,8 +213,45 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.env.launch_deployment()
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args_list[0]
         self.assertEqual(len(args[1]['args']['nodes']), 1)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @mock.patch('nailgun.rpc.cast')
+    def test_update_nodes_info_on_node_removal(self, _):
+        self.env.create(
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
+            },
+            nodes_kwargs=[
+                {'status': consts.NODE_STATUSES.ready,
+                 'roles': ['controller']},
+                {'status': consts.NODE_STATUSES.ready, 'roles': ['compute'],
+                 'pending_deletion': True},
+                {'status': consts.NODE_STATUSES.ready, 'roles': ['compute']},
+                {'status': consts.NODE_STATUSES.ready, 'roles': ['compute']},
+            ])
+        objects.NodeCollection.prepare_for_deployment(
+            self.env.clusters[0].nodes)
+        self.env.launch_deployment()
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args_list[1]
+        self.assertEqual(args[1][0]['method'], 'execute_tasks')
+        self.assertEqual(args[1][0]['respond_to'], 'deploy_resp')
+
+        def is_upload_nodes(task):
+            return 'nodes.yaml' in task['parameters'].get('path', '')
+
+        def is_update_hosts(task):
+            return 'hosts.pp' in task['parameters'].get('puppet_manifest', '')
+
+        tasks = args[1][0]['args']['tasks']
+        self.assertIsNotNone(next((
+            t for t in tasks if is_upload_nodes(t)), None))
+        self.assertIsNotNone(next((
+            t for t in tasks if is_upload_nodes(t)), None))
 
     @fake_tasks()
     def test_do_not_redeploy_nodes_in_ready_status(self):

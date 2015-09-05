@@ -186,6 +186,37 @@ class DeploymentTask(object):
         return rpc_message
 
 
+class UpdateNodesTask(object):
+    """The task is intended to be used in order to update both nodes.yaml and
+    /etc/hosts on all slaves. This task aren't going to manage node or cluster
+    statuses, and will be used only in one case - when we remove some node
+    and don't add anything new.
+    """
+
+    # the following post deployment tasks are used to update nodes
+    # information on all slaves
+    _tasks = [
+        'upload_nodes_info',
+        'update_hosts',
+    ]
+
+    @classmethod
+    def message(cls, task):
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        orchestrator_graph.only_tasks(cls._tasks)
+
+        rpc_message = make_astute_message(
+            task,
+            'execute_tasks',
+            'deploy_resp',
+            {
+                'tasks': orchestrator_graph.post_tasks_serialize([])
+            }
+        )
+        db().flush()
+        return rpc_message
+
+
 class UpdateTask(object):
 
     @classmethod

@@ -455,10 +455,23 @@ class TestNodeNICsSerialization(BaseIntegrationTest):
 
 class TestNodeNICAdminAssigning(BaseIntegrationTest):
 
+    def check_admin_interface(self, node_db, admin_ng, mac, ip, name):
+        admin_iface = self.env.network_manager.get_admin_interface(node_db)
+        self.assertEqual(admin_iface.mac, mac)
+        self.assertEqual(admin_iface.ip_addr, ip)
+        self.assertEqual(admin_iface.name, name)
+        if not node_db.cluster:
+            return
+        for nic in node_db.nic_interfaces:
+            if nic == admin_iface:
+                self.assertIn(admin_ng, nic.assigned_networks_list)
+            else:
+                self.assertNotIn(admin_ng, nic.assigned_networks_list)
+
     def test_admin_nic_and_ip_assignment(self):
         cluster = self.env.create_cluster(api=True)
-        admin_ip = str(IPNetwork(
-            self.env.network_manager.get_admin_network_group().cidr)[0])
+        admin_ng = self.env.network_manager.get_admin_network_group()
+        admin_ip = str(IPNetwork(admin_ng.cidr)[0])
         mac1, mac2 = (self.env.generate_random_mac(),
                       self.env.generate_random_mac())
         meta = self.env.default_metadata()
@@ -468,31 +481,30 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.env.create_node(api=True, meta=meta, mac=mac2,
                              cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
-        admin_iface = self.env.network_manager.get_admin_interface(node_db)
-        self.assertEqual(admin_iface.mac, mac2)
-        self.assertEqual(admin_iface.ip_addr, admin_ip)
+        self.check_admin_interface(node_db, admin_ng, mac2, admin_ip, 'eth1')
 
         meta = deepcopy(node_db.meta)
         for interface in meta['interfaces']:
             if interface['mac'] == mac2:
-                # reset admin ip for previous admin interface
+                # reset admin ip,pxe for previous admin interface
                 interface['ip'] = None
+                interface['pxe'] = False
             elif interface['mac'] == mac1:
                 # set new admin interface
                 interface['ip'] = admin_ip
+                interface['pxe'] = True
 
         resp = self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps({'id': node_db.id,
+                             'mac': mac1,
                              'meta': meta}),
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(node_db)
-        admin_iface = self.env.network_manager.get_admin_interface(node_db)
-        self.assertEqual(admin_iface.mac, mac2)
-        self.assertEqual(admin_iface.ip_addr, None)
+        self.check_admin_interface(node_db, admin_ng, mac1, admin_ip, 'eth0')
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -503,9 +515,7 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(node_db)
-        admin_iface = self.env.network_manager.get_admin_interface(node_db)
-        self.assertEqual(admin_iface.mac, mac1)
-        self.assertEqual(admin_iface.ip_addr, admin_ip)
+        self.check_admin_interface(node_db, admin_ng, mac1, admin_ip, 'eth0')
 
 
 class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
@@ -513,16 +523,18 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
     def create_node_and_check_assignment(self):
         meta = self.env.default_metadata()
         admin_ip = str(IPNetwork(
-            self.env.network_manager.get_admin_network_group().cidr)[0])
+            self.env.network_manager.get_admin_network_group().cidr)[1])
+        admin_mac = self.env.generate_random_mac()
         meta['interfaces'] = [
             {'name': 'eth3', 'mac': self.env.generate_random_mac()},
             {'name': 'eth2', 'mac': self.env.generate_random_mac()},
-            {'name': 'eth0', 'mac': self.env.generate_random_mac(),
+            {'name': 'eth0', 'mac': admin_mac,
              'ip': admin_ip, 'pxe': True},
             {'name': 'eth1', 'mac': self.env.generate_random_mac()}
         ]
-        node = self.env.create_node(api=True, meta=meta,
-                                    cluster_id=self.env.clusters[0].id)
+        node = self.env.create_node(
+            api=True, meta=meta, mac=admin_mac, ip=admin_ip,
+            cluster_id=self.env.clusters[0].id)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),

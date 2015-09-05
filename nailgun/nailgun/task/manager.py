@@ -362,6 +362,22 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             db().commit()
             task_messages.append(deployment_message)
 
+        # Even if we don't have nodes to deploy, the deployment task
+        # should be created. Why? Because we need to update both
+        # nodes.yaml and /etc/hosts on all slaves. Since we need only
+        # those two tasks, let's create stripped version of
+        # deployment.
+        if nodes_to_delete and not nodes_to_deploy:
+            logger.debug(
+                "No nodes to deploy, just update nodes.yaml everywhere.")
+
+            task_deployment = supertask.create_subtask(
+                name=consts.TASK_NAMES.deployment)
+            task_message = tasks.UpdateNodesInfoTask.message(task_deployment)
+            task_deployment.cache = task_message
+            task_messages.append(task_message)
+            db().commit()
+
         if nodes_to_provision:
             nodes_to_provision = objects.NodeCollection.lock_nodes(
                 nodes_to_provision

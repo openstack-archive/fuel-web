@@ -45,6 +45,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
+from nailgun.orchestrator import tasks_serializer
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
@@ -180,6 +181,38 @@ class DeploymentTask(object):
                 'deployment_info': serialized_cluster,
                 'pre_deployment': pre_deployment,
                 'post_deployment': post_deployment
+            }
+        )
+        db().flush()
+        return rpc_message
+
+
+class UpdateNodesInfoTask(object):
+    """The task is intended to be used in order to update both nodes.yaml and
+    /etc/hosts on all slaves. This task aren't going to manage node or cluster
+    statuses, and should be used only in one case - when we remove some node
+    and don't add anything new (if some new node is added, these tasks will
+    be executed without any additional help).
+    """
+
+    # the following post deployment tasks are used to update nodes
+    # information on all slaves
+    _tasks = [
+        tasks_serializer.UploadNodesInfo.identity,
+        tasks_serializer.UpdateHosts.identity,
+    ]
+
+    @classmethod
+    def message(cls, task):
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        orchestrator_graph.only_tasks(cls._tasks)
+
+        rpc_message = make_astute_message(
+            task,
+            'execute_tasks',
+            'deploy_resp',
+            {
+                'tasks': orchestrator_graph.post_tasks_serialize([])
             }
         )
         db().flush()

@@ -13,6 +13,14 @@
   type: stage
   requires: [pre_deployment_start]
 
+- id: post_deployment_start
+  type: stage
+  requires: [deploy_end]
+
+- id: post_deployment_end
+  type: stage
+  requires: [post_deployment_start]
+
 - id: primary-controller
   type: group
   role: [primary-controller]
@@ -125,3 +133,21 @@
   parameters:
     strategy:
       type: parallel
+
+- id: upload_nodes_info
+  type: upload_file
+  role: '*'
+  requires: [post_deployment_start]
+  parameters:
+    path: /etc/hiera/nodes.yaml
+
+- id: update_hosts
+  type: puppet
+  role: '*'
+  required_for: [post_deployment_end]
+  requires: [upload_nodes_info]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hosts/hosts.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+    cwd: /

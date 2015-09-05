@@ -268,11 +268,19 @@ class EnvironmentManager(object):
 
         mac = kwargs.get('mac', self.generate_random_mac())
         if default_metadata['interfaces']:
-            default_metadata['interfaces'][0]['mac'] = mac
             if not metadata or not meta_ifaces:
+                default_metadata['interfaces'][0]['mac'] = mac
+                default_metadata['interfaces'][0]['pxe'] = True
                 for iface in default_metadata['interfaces'][1:]:
                     if 'mac' in iface:
                         iface['mac'] = self.generate_random_mac()
+            else:
+                for iface in default_metadata['interfaces']:
+                    if 'pxe' in iface or iface.get('mac') == mac:
+                        break
+                else:
+                    default_metadata['interfaces'][0]['mac'] = mac
+                    default_metadata['interfaces'][0]['pxe'] = True
 
         node_data = {
             'mac': mac,

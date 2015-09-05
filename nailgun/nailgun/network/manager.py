@@ -564,21 +564,32 @@ class NetworkManager(object):
         in db we should get pxe interface using appropriate
         function `get_admin_physical_iface`.
         """
-        db_interfaces = node.nic_interfaces
-        pxe = next((
-            i for i in node.meta['interfaces'] if i.get('pxe') or
-                i.get('mac').lower() == node.mac.lower()),
-            None)
-        if pxe:
-            return pxe.get('name')
-        pxe_db = next((i for i in db_interfaces if i.pxe), None)
-        if pxe_db:
-            return pxe_db.name
-        if db_interfaces:
-            return objects.Node.get_admin_physical_iface(node).name
-        logger.warning(u'Cannot find pxe interface for node "%s"',
-                       node.full_name)
-        return None
+        nic_pxe = next((i for i in node.meta['interfaces']
+                        if i.get('pxe')),
+                       None)
+        nic_mac = next((i for i in node.meta['interfaces']
+                        if i.get('mac').lower() == node.mac.lower()),
+                       None)
+        nic_ip = next((i for i in node.meta['interfaces']
+                       if cls.is_ip_belongs_to_admin_subnet(i.get('ip'),
+                                                            node.id)),
+                      None)
+        # 'pxe' flag is absent in agent's data often
+        if nic_pxe and not (nic_pxe == nic_mac == nic_ip) or \
+                nic_mac != nic_ip or (nic_ip and nic_ip['ip'] != node.ip):
+            logger.warning(
+                'PXE interface info is not consistent for node "%s"',
+                node.full_name)
+        # PXE sings are prioritised
+        if nic_pxe:
+            return nic_pxe['name']
+        if nic_mac:
+            return nic_mac['name']
+        if nic_ip:
+            return nic_ip['name']
+        # shouldn't be raised as it's checked in check_interfaces_correctness()
+        raise errors.CanNotFindInterface(
+            'Cannot find PXE interface for node: {0}'.format(node.full_name))
 
     @classmethod
     def clear_assigned_ips(cls, node):
@@ -882,8 +893,7 @@ class NetworkManager(object):
         pxe_iface_name = cls._get_pxe_iface_name(node)
         for interface in node.meta["interfaces"]:
             # set 'pxe' property for appropriate iface
-            if interface['name'] == pxe_iface_name:
-                interface['pxe'] = True
+            interface['pxe'] = (interface['name'] == pxe_iface_name)
             # try to get interface by mac address
             interface_db = next((
                 n for n in node.nic_interfaces
@@ -897,12 +907,50 @@ class NetworkManager(object):
                 None)
 
             if interface_db:
-                cls.__update_existing_interface(interface_db.id, interface,
+                cls.__update_existing_interface(interface_db, interface,
                                                 update_by_agent)
             else:
                 cls.__add_new_interface(node, interface)
 
         cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
+        if node.cluster:
+            cls._check_admin_network_mapping(node)
+
+    @classmethod
+    def _check_admin_network_mapping(cls, node):
+        """Check and remap Admin-pxe network when PXE interface is changed
+
+        :param node: Node instance
+        :return:     None
+        """
+        iface_mapped, iface_pxe = None, None
+        for iface in node.interfaces:
+            for n in iface.assigned_networks_list:
+                if n.name == consts.NETWORKS.fuelweb_admin:
+                    iface_mapped = iface
+                    break
+            if iface.type == consts.NETWORK_INTERFACE_TYPES.ether and \
+                    iface.pxe:
+                # set to bond by default because networks are mapped to bond
+                # if it exists
+                iface_pxe = iface.bond or iface
+
+        if not iface_pxe:
+            # shouldn't be raised as it's set in update_interfaces_info()
+            raise errors.CanNotFindInterface(
+                'Cannot find PXE interface for node: {0}'.format(
+                    node.full_name))
+        if iface_mapped == iface_pxe:
+            return
+
+        if iface_mapped:
+            # clear old Admin-pxe mapping
+            iface_mapped.assigned_networks_list = \
+                [n for n in iface_mapped.assigned_networks_list
+                 if n.name != consts.NETWORKS.fuelweb_admin]
+        iface_pxe.assigned_networks_list.append(
+            cls.get_admin_network_group(node.id))
+        db().flush()
 
     @classmethod
     def check_interfaces_correctness(cls, node):
@@ -916,24 +964,19 @@ class NetworkManager(object):
         """
         if not node.meta:
             raise errors.InvalidInterfacesInfo(
-                u'Meta field for node "%s" is empty' % node.full_name)
+                u'Meta field for node "%s" is empty', node.full_name)
         if not node.meta.get('interfaces'):
             raise errors.InvalidInterfacesInfo(
-                u'Cannot find interfaces field "%s" in meta' % node.full_name)
+                u'meta["interfaces"] is empty for node "%s"',
+                node.full_name)
 
         interfaces = node.meta['interfaces']
-        admin_interface = None
         for interface in interfaces:
             ip_addr = interface.get('ip')
-            if cls.is_ip_belongs_to_admin_subnet(ip_addr, node.id):
-                # Interface was founded
-                admin_interface = interface
+            if cls.is_ip_belongs_to_admin_subnet(ip_addr, node.id) or \
+                    utils.is_same_mac(interface['mac'], node.mac):
                 break
-            elif utils.is_same_mac(interface['mac'], node.mac):
-                admin_interface = interface
-                break
-
-        if not admin_interface:
+        else:
             raise errors.InvalidInterfacesInfo(
                 u'Cannot find interface with ip which '
                 'includes to admin subnet "%s"' % node.full_name)
@@ -964,14 +1007,15 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def __update_existing_interface(cls, interface_id, interface_attrs, update_by_agent=False):
-        interface = db().query(NodeNICInterface).get(interface_id)
-        cls.__set_interface_attributes(interface, interface_attrs, update_by_agent)
-        db().add(interface)
+    def __update_existing_interface(cls, interface, interface_attrs,
+                                    update_by_agent=False):
+        cls.__set_interface_attributes(interface, interface_attrs,
+                                       update_by_agent)
         db().flush()
 
     @classmethod
-    def __set_interface_attributes(cls, interface, interface_attrs, update_by_agent=False):
+    def __set_interface_attributes(cls, interface, interface_attrs,
+                                   update_by_agent=False):
         interface.name = interface_attrs['name']
         interface.mac = interface_attrs['mac']
 
@@ -1077,7 +1121,7 @@ class NetworkManager(object):
                          'network group on %s', node.full_name)
 
         for iface in node.nic_interfaces:
-            if cls.is_ip_belongs_to_admin_subnet(iface.ip_addr):
+            if cls.is_ip_belongs_to_admin_subnet(iface.ip_addr, node.id):
                 return iface
 
         logger.warning(u'Cannot find admin interface for node '

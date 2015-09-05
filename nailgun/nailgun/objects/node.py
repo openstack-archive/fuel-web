@@ -466,6 +466,13 @@ class Node(NailgunObject):
                 logger.info("Interfaces are locked for update on node %s",
                             instance.human_readable_name)
             else:
+                ip = data.pop("ip", None)
+                mac = data.pop("mac", None)
+                if ip:
+                    instance.ip = ip
+                if mac:
+                    instance.mac = mac
+                db().flush()
                 cls.update_interfaces(instance, update_by_agent)
 
         cluster_changed = False

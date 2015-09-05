@@ -485,7 +485,7 @@ class TestHandlers(BaseIntegrationTest):
                          {'disable_offloading': False,
                           'mtu': 1500})
 
-    def test_NIC_adds_by_agent(self):
+    def test_nic_adds_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
@@ -493,7 +493,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta)
 
         meta['interfaces'].append({
-            'name': 'new_nic', 'mac': '00:00:00:00:00:00'})
+            'name': 'new_nic', 'mac': '00:00:00:00:00:01'})
         node_data = {'mac': node['mac'], 'meta': meta}
         resp = self.app.put(
             reverse('NodeAgentHandler'),

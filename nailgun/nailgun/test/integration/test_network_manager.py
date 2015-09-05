@@ -803,6 +803,35 @@ class TestNeutronManager(BaseIntegrationTest):
 
         self.check_networks_assignment(self.env.nodes[0])
 
+    def test_check_admin_network_mapping(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.tun},
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True}
+            ])
+        node = self.env.nodes[0]
+        admin_nic = self.env.network_manager.get_admin_interface(node)
+        # move 'pxe' flag to another interface
+        for nic in node.nic_interfaces:
+            if nic != admin_nic:
+                admin_nic.pxe = False
+                nic.pxe = True
+                self.env.db.flush()
+                admin_nic = nic
+                break
+        # networks mapping in DB is not changed
+        self.assertNotEqual(
+            admin_nic,
+            self.env.network_manager.get_admin_interface(node))
+        self.env.network_manager._remap_admin_network(node)
+        # networks mapping in DB is changed
+        self.assertEqual(
+            admin_nic,
+            self.env.network_manager.get_admin_interface(node))
+
 
 class TestNeutronManager70(BaseNetworkManagerTest):
 

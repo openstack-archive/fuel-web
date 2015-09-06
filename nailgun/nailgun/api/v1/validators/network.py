@@ -19,6 +19,7 @@ import six
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.json_schema import interface
 from nailgun.api.v1.validators.json_schema.network_template import \
     NETWORK_TEMPLATE
 from nailgun.api.v1.validators.json_schema import networks
@@ -234,129 +235,9 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
 class NetAssignmentValidator(BasicValidator):
     @classmethod
     def validate(cls, node):
-        if not isinstance(node, dict):
-            raise errors.InvalidData(
-                "Each node should be dict",
-                log_message=True
-            )
-        if 'id' not in node:
-            raise errors.InvalidData(
-                "Each node should have ID",
-                log_message=True
-            )
-        if 'interfaces' not in node or \
-                not isinstance(node['interfaces'], list):
-            raise errors.InvalidData(
-                "Node '{0}': there is no 'interfaces' list".format(
-                    node['id']),
-                log_message=True
-            )
-
-        net_ids = set()
-        for iface in node['interfaces']:
-            if not isinstance(iface, dict):
-                raise errors.InvalidData(
-                    "Node '{0}': each interface should be a dict "
-                    "(got '{1}')".format(node['id'], iface),
-                    log_message=True
-                )
-            if 'type' not in iface:
-                raise errors.InvalidData(
-                    "Node '{0}': each interface must have a type".format(
-                        node['id']),
-                    log_message=True
-                )
-            if iface['type'] not in consts.NETWORK_INTERFACE_TYPES:
-                raise errors.InvalidData(
-                    "Node '{0}': unknown interface type".format(node['id']),
-                    log_message=True
-                )
-            if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
-                    and 'id' not in iface:
-                raise errors.InvalidData(
-                    "Node '{0}': each HW interface must have ID".format(
-                        node['id']),
-                    log_message=True
-                )
-            if iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
-                if 'name' not in iface:
-                    raise errors.InvalidData(
-                        "Node '{0}': each bond interface must have "
-                        "name".format(node['id']),
-                        log_message=True
-                    )
-                if 'slaves' not in iface \
-                        or not isinstance(iface['slaves'], list) \
-                        or len(iface['slaves']) < 2:
-                    raise errors.InvalidData(
-                        "Node '{0}': each bond interface must have two or more"
-                        " slaves".format(node['id']),
-                        log_message=True
-                    )
-                for slave in iface['slaves']:
-                    if 'name' not in slave:
-                        raise errors.InvalidData(
-                            "Node '{0}', interface '{1}': each bond slave "
-                            "must have name".format(node['id'], iface['name']),
-                            log_message=True
-                        )
-                if 'bond_properties' in iface:
-                    for k in iface['bond_properties'].keys():
-                        if k not in consts.BOND_PROPERTIES:
-                            raise errors.InvalidData(
-                                "Node '{0}', interface '{1}': unknown bond "
-                                "property '{2}'".format(
-                                    node['id'], iface['name'], k),
-                                log_message=True
-                            )
-                bond_mode = cls.get_bond_mode(iface)
-                if not bond_mode:
-                    raise errors.InvalidData(
-                        "Node '{0}': bond interface '{1}' doesn't have "
-                        "mode".format(node['id'], iface['name']),
-                        log_message=True
-                    )
-                if bond_mode not in consts.BOND_MODES:
-                    raise errors.InvalidData(
-                        "Node '{0}': bond interface '{1}' has unknown "
-                        "mode '{2}'".format(
-                            node['id'], iface['name'], bond_mode),
-                        log_message=True
-                    )
-            if 'assigned_networks' not in iface or \
-                    not isinstance(iface['assigned_networks'], list):
-                raise errors.InvalidData(
-                    "Node '{0}', interface '{1}':"
-                    " there is no 'assigned_networks' list".format(
-                        node['id'], iface.get('id') or iface.get('name')),
-                    log_message=True
-                )
-
-            for net in iface['assigned_networks']:
-                if not isinstance(net, dict):
-                    raise errors.InvalidData(
-                        "Node '{0}', interface '{1}':"
-                        " each assigned network should be a dict".format(
-                            node['id'], iface.get('id') or iface.get('name')),
-                        log_message=True
-                    )
-                if 'id' not in net:
-                    raise errors.InvalidData(
-                        "Node '{0}', interface '{1}':"
-                        " each assigned network should have ID".format(
-                            node['id'], iface.get('id') or iface.get('name')),
-                        log_message=True
-                    )
-                if net['id'] in net_ids:
-                    raise errors.InvalidData(
-                        "Node '{0}': there is a duplicated network '{1}' in"
-                        " assigned networks (second occurrence is in "
-                        "interface '{2}')".format(
-                            node['id'], net['id'],
-                            iface.get('id') or iface.get('name')),
-                        log_message=True
-                    )
-                net_ids.add(net['id'])
+        cls.validate_schema(
+            node,
+            interface.INTERFACES)
         return node
 
     @classmethod

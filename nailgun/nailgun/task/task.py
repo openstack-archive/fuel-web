@@ -839,15 +839,27 @@ class VerifyNetworksForTemplateMixin(object):
     def _get_transformations(cls, node):
         templates_for_node_mapping = \
             node.network_template['templates_for_node_role']
+        cluster = node.cluster
+
+        counter_by_network_role = collections.defaultdict(lambda: 0)
+        for n in cluster.nodes:
+            for r in n.all_roles:
+                for net_role in templates_for_node_mapping[r]:
+                    counter_by_network_role[net_role] += 1
 
         node_templates = set()
         for role_name in node.all_roles:
             node_templates.update(templates_for_node_mapping[role_name])
 
-        cluster = node.cluster
-
         templates = node.network_template['templates']
         for template_name in node_templates:
+            if counter_by_network_role[template_name] < 2:
+                logger.warning(
+                    'We have only one node in cluster with network role %s.'
+                    ' Therefore we can skip verification for this net role.',
+                    template_name)
+                continue
+
             template = templates[template_name]
             transformations = template['transformations']
 

@@ -545,7 +545,7 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
     @property
     def expected_bonds(self):
         return [
-            {u'ovs-bond0': [u'eth4', u'eth5']},
+            None,
             None,
             None,
         ]
@@ -556,16 +556,13 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
             {u'vlans': [0], u'iface': u'eth0'},
             {u'vlans': [0], u'iface': u'eth1'},
             {u'vlans': [0], u'iface': u'eth2'},
-            {u'vlans': [0, 101] + self.private_vlan_ids,
-             u'iface': u'eth3'},
+            {u'vlans': [0, 101] + self.private_vlan_ids, u'iface': u'eth3'},
         ]
 
         return [
             [
                 {u'vlans': [0], u'iface': u'eth0'},
                 {u'vlans': [0], u'iface': u'eth1'},
-                {u'vlans': [0], u'iface': u'eth4'},
-                {u'vlans': [0], u'iface': u'eth5'},
             ],
             compute_networks,
             compute_networks,
@@ -585,7 +582,6 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
             [
                 {u'vlans': [0], u'iface': u'eth0'},
                 {u'vlans': [0], u'iface': u'eth1'},
-                {u'vlans': [0], u'iface': u'ovs-bond0'},
             ],
             compute_networks,
             compute_networks,

@@ -111,8 +111,9 @@ define(
             // add nodes of 'compute-vmware' type to targetNode select
             var targetNode = this.props.model.get('target_node') || {};
             targetNode.options = [{id: 'controllers', label: 'controllers'}];
+
             var nodes = this.props.cluster.get('nodes').filter(function(node) {
-                return _.contains(node.get('pending_roles'), 'compute-vmware');
+                return node.hasRole('compute-vmware');
             });
             nodes.forEach(function(node) {
                 targetNode.options.push({
@@ -120,6 +121,7 @@ define(
                     label: node.get('name') + ' (' + node.get('mac').substr(9) + ')'
                 });
             });
+
             this.props.model.set('target_node', targetNode);
 
             return (

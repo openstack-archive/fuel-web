@@ -728,11 +728,12 @@ class BaseNetworkVerification(object):
             # deployed nodes.
             vlans = []
             for ng in iface.assigned_networks_list:
-                # Handle FuelWeb admin network first.
+                if ng.name == consts.NETWORKS.public and not has_public:
+                    continue
+
+                # ng.group_id is None only for fuelweb_admin network
                 if ng.group_id is None:
                     vlans.append(0)
-                    continue
-                if ng.name == consts.NETWORKS.public and not has_public:
                     continue
 
                 data_ng = filter(lambda i: i['name'] == ng.name,

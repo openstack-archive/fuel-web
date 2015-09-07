@@ -88,7 +88,7 @@ class TestOpenStackClientProvider(BaseTestCase):
 
             client_provider.keystone
 
-            get_kc_mock.assert_called_with_once(**auth_kwargs)
+            get_kc_mock.assert_called_once_with(auth_kwargs)
 
     def test_fail_if_no_online_controllers(self):
         self.env.create(

@@ -839,15 +839,33 @@ class VerifyNetworksForTemplateMixin(object):
     def _get_transformations(cls, node):
         templates_for_node_mapping = \
             node.network_template['templates_for_node_role']
+        cluster = node.cluster
+
+        counter_by_network_template = collections.defaultdict(int)
+        for n in cluster.nodes:
+            seen_templates = set()
+            for r in n.all_roles:
+                for net_template in templates_for_node_mapping[r]:
+                    # same template can be used for multiple node roles
+                    # therefore ensure that they counted only once
+                    if net_template not in seen_templates:
+                        counter_by_network_template[net_template] += 1
+                        seen_templates.add(net_template)
 
         node_templates = set()
         for role_name in node.all_roles:
             node_templates.update(templates_for_node_mapping[role_name])
 
-        cluster = node.cluster
-
         templates = node.network_template['templates']
         for template_name in node_templates:
+            if counter_by_network_template[template_name] < 2:
+                logger.warning(
+                    'We have only one node in cluster with '
+                    'network template %s.'
+                    ' Verification for this network template will be skipped.',
+                    template_name)
+                continue
+
             template = templates[template_name]
             transformations = template['transformations']
 
@@ -864,31 +882,6 @@ class VerifyNetworksForTemplateMixin(object):
             ifname, vlan = chunks
 
         return ifname, vlan
-
-    @classmethod
-    def _filter_nodes_for_templates(cls, nodes):
-        """Filters VLANs which are define for single particular node only.
-
-        If VLAN is set only on the single node, it is skipped and not passed
-        to the verificator, since it will cause verification falure.
-        In this case some interfaces may have empty VLAN list.
-        These interfaces with empty VLAN list are not passed
-        to the verificator.
-        """
-        nodes_by_vlan = collections.defaultdict(list)
-        for node_json in nodes:
-            for network in node_json['networks']:
-                for vlan in network['vlans']:
-                    nodes_by_vlan[vlan].append(node_json['uid'])
-
-        for node_json in nodes:
-            networks = []
-            for network in node_json['networks']:
-                network['vlans'] = [vlan for vlan in network['vlans']
-                                    if len(nodes_by_vlan[vlan]) > 1]
-                if network['vlans']:
-                    networks.append(network)
-            node_json['networks'] = networks
 
     @classmethod
     def get_ifaces_from_template_on_undeployed_node(cls, node, node_json):
@@ -964,12 +957,6 @@ class VerifyNetworksForTemplateMixin(object):
 
         super(VerifyNetworksForTemplateMixin, self
               ).get_ifaces_on_deployed_node(node, node_json, has_public)
-
-    def get_message_body(self):
-        body = super(VerifyNetworksForTemplateMixin, self).get_message_body()
-        if self.task.cluster.network_config.configuration_template:
-            self._filter_nodes_for_templates(body['nodes'])
-        return body
 
 
 class VerifyNetworksTask(VerifyNetworksForTemplateMixin,

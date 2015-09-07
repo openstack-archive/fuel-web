@@ -84,15 +84,15 @@ class Settings(object):
     }
     mirror_base = "http://mirror.fuel-infra.org/mos-repos"
     default_mirrors = {
-        DISTROS.centos_security: '{0}/centos/mos{1}-{2}-fuel/security'.format(
+        DISTROS.centos_security: '{0}/centos/mos{1}-{2}-fuel/security/'.format(
             mirror_base,
             FUEL_VER,
             CENTOS_VERSION),
-        DISTROS.centos: '{0}/centos/mos{1}-{2}-fuel/updates'.format(
+        DISTROS.centos: '{0}/centos/mos{1}-{2}-fuel/updates/'.format(
             mirror_base,
             FUEL_VER,
             CENTOS_VERSION),
-        DISTROS.ubuntu: '{0}/ubuntu/{1}'.format(mirror_base, FUEL_VER),
+        DISTROS.ubuntu: '{0}/ubuntu/{1}/'.format(mirror_base, FUEL_VER),
     }
     exclude_dirs = ('repodata/', 'mos?.?/')
     httproot = "/var/www/nailgun"

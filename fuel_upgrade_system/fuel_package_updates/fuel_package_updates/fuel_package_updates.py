@@ -70,7 +70,7 @@ KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
 # TODO(mattymo): parse from Fuel API
 FUEL_VER = "7.0"
 UBUNTU_CODENAME = 'trusty'
-CENTOS_VERSION = 'centos-6'
+CENTOS_VERSION = 'centos6'
 
 
 class Settings(object):
@@ -82,16 +82,17 @@ class Settings(object):
         DISTROS.ubuntu_baseos: os.path.join(r'/var/www/nailgun/{0}/ubuntu/',
                                             UBUNTU_CODENAME),
     }
-    mirror_base = "http://mirror.fuel-infra.org/mos"
+    mirror_base = "http://mirror.fuel-infra.org/mos-repos"
     default_mirrors = {
-        DISTROS.centos_security: '{0}/{1}/mos{2}/security/'.format(
+        DISTROS.centos_security: '{0}/centos/mos{1}-{2}-fuel/security'.format(
             mirror_base,
-            CENTOS_VERSION,
-            FUEL_VER),
-        DISTROS.centos: '{0}/{1}/mos{2}/updates/'.format(mirror_base,
-                                                         CENTOS_VERSION,
-                                                         FUEL_VER),
-        DISTROS.ubuntu: '{0}/ubuntu/'.format(mirror_base),
+            FUEL_VER,
+            CENTOS_VERSION),
+        DISTROS.centos: '{0}/centos/mos{1}-{2}-fuel/updates'.format(
+            mirror_base,
+            FUEL_VER,
+            CENTOS_VERSION),
+        DISTROS.ubuntu: '{0}/ubuntu/{1}'.format(mirror_base, FUEL_VER),
     }
     exclude_dirs = ('repodata/', 'mos?.?/')
     httproot = "/var/www/nailgun"

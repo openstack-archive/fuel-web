@@ -154,9 +154,7 @@ define([
                             .click()
                             .end()
                         .end()
-                    .then(function() {
-                        return common.waitForElementDeletion('div.node-popover');
-                    })
+                    .waitForElementDeletion('div.node-popover', 2000)
                     .then(function() {
                         return modal.waitToOpen();
                     })

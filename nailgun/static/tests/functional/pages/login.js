@@ -40,17 +40,9 @@ define([
                     }
                 })
                 .setFindTimeout(10000)
-                .findByName('username')
-                    .clearValue()
-                    .type(username)
-                    .end()
-                .findByName('password')
-                    .clearValue()
-                    .type(password)
-                    .end()
-                .findByClassName('login-btn')
-                    .click()
-                    .end();
+                .setInputValue('[name=username]', username)
+                .setInputValue('[name=password]', password)
+                .clickByCssSelector('.login-btn');
         },
         logout: function() {
             return this.remote
@@ -67,12 +59,8 @@ define([
                     }
                 })
                 .setFindTimeout(1000)
-                .findByCssSelector('li.user-icon')
-                    .click()
-                    .end()
-                .findByCssSelector('.user-popover button.btn-logout')
-                    .click()
-                    .end()
+                .clickByCssSelector('li.user-icon')
+                .clickByCssSelector('.user-popover button.btn-logout')
                 .findByCssSelector('.login-btn')
                 .then(
                     function() {return true},

@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Code-Review+2: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Workflow+1: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Code-Review+1: Ivan Kliuk <ikliuk@mirantis.com>
+Code-Review+2: Sebastian Kalinowski <skalinowski@mirantis.com>
+Code-Review+1: Bulat Gaifullin <bgaifullin@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 08 Sep 2015 10:12:48 +0000
+Reviewed-on: https://review.openstack.org/221229
+Project: stackforge/fuel-web
+Branch: refs/heads/stable/7.0

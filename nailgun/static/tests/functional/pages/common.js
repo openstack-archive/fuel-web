@@ -57,31 +57,16 @@ define([
                     .then(function() {
                         return self.loginPage.login();
                     })
-                    .waitForDeletedByClassName('login-btn')
+                    .waitForElementDeletion('.login-btn', 2000)
                     .then(function() {
                         return self.welcomePage.skip();
                     });
             },
             clickLink: function(text) {
                 return this.remote
-                    .setFindTimeout(1000)
                     .findByLinkText(text)
                         .click()
                         .end();
-            },
-            waitForElementDeletion: function(cssSelector) {
-                return this.remote
-                    .setFindTimeout(5000)
-                    .waitForDeletedByCssSelector(cssSelector)
-                    .catch(function(error) {
-                        if (error.name != 'Timeout')
-                            throw error;
-                    })   // For cases when element is destroyed already
-                    .findAllByCssSelector(cssSelector)
-                        .then(function(elements) {
-                            if (elements.length)
-                                throw new Error('Element ' + cssSelector + ' was not destroyed');
-                        });
             },
             goToEnvironment: function(clusterName, tabName) {
                 var self = this;
@@ -145,23 +130,17 @@ define([
                     .then(function() {
                         return self.clusterPage.goToTab('Nodes');
                     })
-                    .findByCssSelector('button.btn-add-nodes')
-                        .click()
-                        .end()
-                    .findByCssSelector('div.role-panel')
-                        .end()
+                    .waitForCssSelector('button.btn-add-nodes', 1000)
+                    .clickByCssSelector('button.btn-add-nodes')
+                    .waitForCssSelector('div.role-panel', 1000)
                     .then(function() {
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
                     .then(function() {
                         return self.clusterPage.checkNodes(nodesAmount);
                     })
-                    .findByCssSelector('button.btn-apply')
-                        .click()
-                        .end()
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end();
+                    .clickByCssSelector('button.btn-apply')
+                    .waitForCssSelector('button.btn-add-nodes', 1000);
             },
             doesCssSelectorContainText: function(cssSelector, searchedText) {
                 return this.remote

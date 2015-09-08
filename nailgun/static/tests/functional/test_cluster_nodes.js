@@ -65,7 +65,6 @@ define([
             'Standard View Mode': function() {
                 var nodeNewName = 'Node new name';
                 return this.remote
-                    .setFindTimeout(2000)
                     .findByCssSelector('label.standard')
                         // Standard mode chosen
                         .click()
@@ -73,8 +72,7 @@ define([
                     .findByClassName('node-box')
                         .click()
                         // Node gets selected upon clicking
-                        .findByCssSelector('.checkbox-group input[type=checkbox]:checked')
-                            .end()
+                        .waitForCssSelector('.checkbox-group input[type=checkbox]:checked', 1000)
                         .end()
                     .findByCssSelector('button.btn-delete-nodes')
                         // Delete and
@@ -92,6 +90,7 @@ define([
                             .type(nodeNewName)
                             .pressKeys('\uE007')
                             .end()
+                        .waitForCssSelector('.name p', 2000)
                         .findByCssSelector('.name p')
                             .getVisibleText()
                             .then(function(nodeName) {
@@ -120,7 +119,6 @@ define([
             },
             'Compact View Mode': function() {
                 return this.remote
-                    .setFindTimeout(2000)
                     .findByCssSelector('label.compact')
                         // Standard mode chosen by default
                         .click()
@@ -136,7 +134,6 @@ define([
             },
             'Compact View Node Popover': function() {
                 return this.remote
-                    .setFindTimeout(2000)
                     .findByCssSelector('label.compact')
                         // Standard mode chosen by default
                         .click()
@@ -154,9 +151,7 @@ define([
                             .click()
                             .end()
                         .end()
-                    .then(function() {
-                        return common.waitForElementDeletion('div.node-popover');
-                    })
+                    .waitForElementDeletion('div.node-popover', 2000)
                     .then(function() {
                         return modal.waitToOpen();
                     })

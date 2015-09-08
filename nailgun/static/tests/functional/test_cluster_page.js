@@ -72,45 +72,29 @@ define([
             'Add Cluster Nodes': function() {
                 var nodesAmount = 3,
                     self = this,
-                    applyButton;
+                    applyButton = 'button.btn-apply';
                 return this.remote
                     .then(function() {
                         return common.goToEnvironment(clusterName);
                     })
-                    .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
-                        .click()
-                        .end()
-                    .findByCssSelector('button.btn-apply')
-                        .then(function(button) {
-                            applyButton = button;
-                            return applyButton.isEnabled().then(function(isEnabled) {
-                                assert.isFalse(isEnabled, 'Apply button is disabled until both roles and nodes chosen');
-                                return true;
-                            });
-                        })
-                        .end()
-                    .findByCssSelector('div.role-panel')
-                        .end()
+                    .waitForCssSelector('a.btn-add-nodes', 2000)
+                    .clickByCssSelector('a.btn-add-nodes')
+                    .then(function() {
+                        return common.isElementDisabled(applyButton, 'Apply button is disabled until both roles and nodes chosen')
+                    })
+                    .waitForCssSelector('div.role-panel', 2000)
                     .then(function() {
                         return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
                     })
                     .then(function() {
-                        return applyButton.isEnabled().then(function(isEnabled) {
-                            assert.isFalse(isEnabled, 'Apply button is disabled until both roles and nodes chosen');
-                            return true;
-                        });
+                        return common.isElementDisabled(applyButton, 'Apply button is disabled until both roles and nodes chosen')
                     })
                     .then(function() {
                         return clusterPage.checkNodes(nodesAmount);
                     })
-                    .then(function() {
-                        applyButton.click();
-                    })
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end()
-
+                    .waitForCssSelector(applyButton, 3000)
+                    .clickByCssSelector(applyButton)
+                    .waitForCssSelector('button.btn-add-nodes', 1000)
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {

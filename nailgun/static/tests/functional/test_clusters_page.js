@@ -58,7 +58,6 @@ define([
             },
             'Attempt to create cluster with duplicate name': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Environments')
                     })
@@ -71,7 +70,6 @@ define([
                                         modal = new ModalWindow(this.remote);
                                     return this.remote
                                         .pressKeys('\uE007')
-                                        .setFindTimeout(2000)
                                         .findAllByCssSelector('form.create-cluster-form span.help-block')
                                         .then(function(errorMessages) {
                                             assert.ok(errorMessages.length, 'Error message should be displayed if names are duplicated');
@@ -97,22 +95,14 @@ define([
             },
             'Testing cluster list page': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Environments');
                     })
-                    .setFindTimeout(2000)
                     //Cluster container exists
-                    .findAllByCssSelector('.clusters-page .clusterbox')
-                        .then(function(elements) {
-                            return assert.ok(elements.length, 'Cluster container exists');
-                        })
-                        .end()
-                    .findAllByCssSelector('.create-cluster')
-                        .then(function(elements) {
-                            return assert.equal(elements.length, 1, 'Cluster creation control exists');
-                        })
-                        .end();
+                    .waitForCssSelector('.clusters-page .clusterbox', 1000)
+                    .then(function() {
+                        return common.elementExists('.create-cluster', 'Cluster creation control exists');
+                    });
             }
         };
     });

@@ -29,7 +29,6 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                     return _.bind(_.get(stepsMethods, stepName, _.noop), self);
                 };
             return this.remote
-                .setFindTimeout(1000)
                 .findByClassName('create-cluster')
                     .click()
                     .end()
@@ -63,8 +62,13 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {
-            var self = this;
+            var self = this,
+                currentTimeout = 0;
             return this.remote
+                .getFindTimeout()
+                    .then(function(value) {
+                        currentTimeout = value;
+                    })
                 .setFindTimeout(5000)
                 .findAllByCssSelector(self.clusterSelector)
                 .then(function(divs) {
@@ -87,7 +91,8 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                         throw new Error('Cluster ' + clusterName + ' not found');
                     }
                     return true;
-                });
+                })
+                .setFindTimeout(currentTimeout);
         }
     };
     return ClustersPage;

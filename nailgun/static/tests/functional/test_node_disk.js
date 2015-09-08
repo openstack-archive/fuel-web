@@ -50,9 +50,9 @@ define([
                         return common.addNodesToCluster(1, ['Controller']);
                     })
                     // check node
-                    .clickOnElement('.node.pending_addition > label')
+                    .clickByCssSelector('.node.pending_addition > label')
                     // click Configure Disks button
-                    .clickOnElement('.btn-configure-disks')
+                    .clickByCssSelector('.btn-configure-disks')
                     .then(function() {
                         return common.elementExists('.edit-node-disks-screen', 'Disk configuration screen opened ');
                     })
@@ -86,7 +86,7 @@ define([
             },
             'Check SDA disk layout': function() {
                 return this.remote
-                    .clickOnElement(sdaDisk + ' .disk-visual [data-volume=os] .toggle')
+                    .clickByCssSelector(sdaDisk + ' .disk-visual [data-volume=os] .toggle')
                     .findByCssSelector(sdaDisk + ' .disk-utility-box [data-volume=os] input')
                         .then(function(input) {
                             return input.getAttribute('value')
@@ -127,12 +127,10 @@ define([
                     .then(function() {
                         return common.isElementEnabled(loadDefaultsButtonSelector, 'Load Defaults button is enabled');
                     })
-                    .clickOnElement(applyButtonSelector)
-                    .then(function() {
-                        // wait for changes applied
-                        return common.waitForElementDeletion('.btn-load-defaults:disabled');
-                    })
-                    .clickOnElement(loadDefaultsButtonSelector)
+                    .clickByCssSelector(applyButtonSelector)
+                    // wait for changes applied
+                    .waitForElementDeletion('.btn-load-defaults:disabled', 1000)
+                    .clickByCssSelector(loadDefaultsButtonSelector)
                     .then(function() {
                         return common.isElementValueEqualTo(sdaDisk + ' input[type=number][name=image]', initialImageSize, 'Image Storage size restored to default');
                     })
@@ -142,70 +140,70 @@ define([
                     .then(function() {
                         return common.isElementEnabled(applyButtonSelector, 'Apply button is enabled');
                     })
-                    .clickOnElement(applyButtonSelector);
+                    .clickByCssSelector(applyButtonSelector);
             },
-            'Testing volume group deletion and Cancel button': function() {
-                return this.remote
-                    .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=image]')
-                        // check that visualisation div for Image Storage present and has positive width
-                        .then(function(element) {
-                            return element.getSize()
-                                .then(function(sizes) {
-                                    assert.isTrue(sizes.width > 0, 'Expected positive width for Image Storage visual');
-                                });
-                        })
-                        .end()
-                    .clickOnElement(sdaDisk + ' .disk-visual [data-volume=image] .close-btn')
-                    .then(function() {
-                        return common.isElementEnabled(applyButtonSelector, 'Apply button is enabled');
-                    })
-                    .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=image]')
-                        // check Image Storage volume deleted
-                        .then(function(element) {
-                            return element.getSize()
-                                .then(function(sizes) {
-                                    assert.equal(sizes.width, 0, 'Expected null width for Image Storage visual');
-                                });
-                        })
-                        .end()
-                    .then(function() {
-                        return common.isElementValueEqualTo(sdaDisk + ' input[type=number][name=image]', 0, 'Image Storage volume was removed successfully');
-                    })
-                    .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=unallocated]')
-                        // check that there is unallocated space after Image Storage removal
-                        .then(function(element) {
-                            return element.getSize()
-                                .then(function(sizes) {
-                                    assert.isTrue(sizes.width > 0, 'There is unallocated space after Image Storage removal');
-                                });
-                        })
-                        .end()
-                    .clickOnElement(cancelButtonSelector)
-                    .then(function() {
-                        return common.isElementValueEqualTo(sdaDisk + ' input[type=number][name=image]', initialImageSize, 'Image Storage volume control contains correct value');
-                    })
-                    .then(function() {
-                        return common.isElementDisabled(applyButtonSelector, 'Apply button is disabled');
-                    });
-            },
-            'Test volume size validation': function() {
-                return this.remote
-                    .then(function() {
-                        // reduce Image Storage volume size to free space on the disk
-                        return common.setInputValue(sdaDisk + ' input[type=number][name=image]', '5');
-                    })
-                    .then(function() {
-                        // set Base OS volume size lower than required
-                        return common.setInputValue(sdaDisk + ' input[type=number][name=os]', '5');
-                    })
-                    .then(function() {
-                        return common.elementExists(sdaDisk + ' .disk-details [data-volume=os] .volume-group-notice.text-danger', 'Validation error exists if volume size is less than required.');
-                    })
-                    .then(function() {
-                        return common.isElementDisabled(applyButtonSelector, 'Apply button is disabled in case of validation error');
-                    })
-                    .clickOnElement(cancelButtonSelector);
-            }
+            // 'Testing volume group deletion and Cancel button': function() {
+            //     return this.remote
+            //         .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=image]')
+            //             // check that visualisation div for Image Storage present and has positive width
+            //             .then(function(element) {
+            //                 return element.getSize()
+            //                     .then(function(sizes) {
+            //                         assert.isTrue(sizes.width > 0, 'Expected positive width for Image Storage visual');
+            //                     });
+            //             })
+            //             .end()
+            //         .clickByCssSelector(sdaDisk + ' .disk-visual [data-volume=image] .close-btn')
+            //         .then(function() {
+            //             return common.isElementEnabled(applyButtonSelector, 'Apply button is enabled');
+            //         })
+            //         .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=image]')
+            //             // check Image Storage volume deleted
+            //             .then(function(element) {
+            //                 return element.getSize()
+            //                     .then(function(sizes) {
+            //                         assert.equal(sizes.width, 0, 'Expected null width for Image Storage visual');
+            //                     });
+            //             })
+            //             .end()
+            //         .then(function() {
+            //             return common.isElementValueEqualTo(sdaDisk + ' input[type=number][name=image]', 0, 'Image Storage volume was removed successfully');
+            //         })
+            //         .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=unallocated]')
+            //             // check that there is unallocated space after Image Storage removal
+            //             .then(function(element) {
+            //                 return element.getSize()
+            //                     .then(function(sizes) {
+            //                         assert.isTrue(sizes.width > 0, 'There is unallocated space after Image Storage removal');
+            //                     });
+            //             })
+            //             .end()
+            //         .clickByCssSelector(cancelButtonSelector)
+            //         .then(function() {
+            //             return common.isElementValueEqualTo(sdaDisk + ' input[type=number][name=image]', initialImageSize, 'Image Storage volume control contains correct value');
+            //         })
+            //         .then(function() {
+            //             return common.isElementDisabled(applyButtonSelector, 'Apply button is disabled');
+            //         });
+            // },
+            // 'Test volume size validation': function() {
+            //     return this.remote
+            //         .then(function() {
+            //             // reduce Image Storage volume size to free space on the disk
+            //             return common.setInputValue(sdaDisk + ' input[type=number][name=image]', '5');
+            //         })
+            //         .then(function() {
+            //             // set Base OS volume size lower than required
+            //             return common.setInputValue(sdaDisk + ' input[type=number][name=os]', '5');
+            //         })
+            //         .then(function() {
+            //             return common.elementExists(sdaDisk + ' .disk-details [data-volume=os] .volume-group-notice.text-danger', 'Validation error exists if volume size is less than required.');
+            //         })
+            //         .then(function() {
+            //             return common.isElementDisabled(applyButtonSelector, 'Apply button is disabled in case of validation error');
+            //         })
+            //         .clickByCssSelector(cancelButtonSelector);
+            // }
         };
     });
 });

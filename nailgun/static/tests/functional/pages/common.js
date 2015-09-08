@@ -64,24 +64,9 @@ define([
             },
             clickLink: function(text) {
                 return this.remote
-                    .setFindTimeout(1000)
                     .findByLinkText(text)
                         .click()
                         .end();
-            },
-            waitForElementDeletion: function(cssSelector) {
-                return this.remote
-                    .setFindTimeout(5000)
-                    .waitForDeletedByCssSelector(cssSelector)
-                    .catch(function(error) {
-                        if (error.name != 'Timeout')
-                            throw error;
-                    })   // For cases when element is destroyed already
-                    .findAllByCssSelector(cssSelector)
-                        .then(function(elements) {
-                            if (elements.length)
-                                throw new Error('Element ' + cssSelector + ' was not destroyed');
-                        });
             },
             goToEnvironment: function(clusterName, tabName) {
                 var self = this;
@@ -130,14 +115,14 @@ define([
                         return self.clickLink('Environments');
                     })
                     .findAllByCssSelector(self.clustersPage.clusterSelector)
-                    .then(function(divs) {
-                        return divs.reduce(function(matchFound, element) {
-                            return element.getVisibleText().then(
-                                function(name) {
-                                    return (name === clusterName) || matchFound;
-                                }
-                            )}, false);
-                    });
+                        .then(function(divs) {
+                            return divs.reduce(function(matchFound, element) {
+                                return element.getVisibleText().then(
+                                    function(name) {
+                                        return (name === clusterName) || matchFound;
+                                    }
+                                )}, false);
+                        });
             },
             addNodesToCluster: function(nodesAmount, nodesRoles) {
                 var self = this;
@@ -159,9 +144,7 @@ define([
                     .findByCssSelector('button.btn-apply')
                         .click()
                         .end()
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end();
+                    .waitForCssSelector('button.btn-add-nodes', 2000);
             },
             doesCssSelectorContainText: function(cssSelector, searchedText) {
                 return this.remote
@@ -200,12 +183,19 @@ define([
                         .end();
             },
             elementExists: function(cssSelector, message) {
+                var currentTimeout = 0;
                 return this.remote
+                    .getFindTimeout()
+                        .then(function(value) {
+                            currentTimeout = value;
+                        })
+                    .setFindTimeout(1000)
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
                             return assert.equal(elements.length, 1, message);
                         })
-                        .end();
+                        .end()
+                    .setFindTimeout(currentTimeout);
             },
             elementNotExists: function(cssSelector, message) {
                 return this.remote

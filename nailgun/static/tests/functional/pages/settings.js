@@ -27,13 +27,8 @@ define([
     SettingsPage.prototype = {
         constructor: SettingsPage,
         waitForRequestCompleted: function() {
-            var self = this;
             return this.remote
-                .then(function() {
-                    // Load Defaults button is locked during any request is in progress on the tab
-                    // so this is a hacky way to track request state
-                    return self.common.waitForElementDeletion('.btn-load-defaults:disabled');
-                });
+                .waitForElementDeletion('.btn-load-defaults:disabled', 1000);
         }
     };
     return SettingsPage;

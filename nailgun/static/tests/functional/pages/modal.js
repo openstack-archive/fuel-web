@@ -27,9 +27,7 @@ define([
             constructor: ModalWindow,
             waitToOpen: function() {
                 return this.remote
-                    .setFindTimeout(2000)
-                    .findByCssSelector('div.modal-content')
-                        .end();
+                    .waitForCssSelector('div.modal-content', 2000);
             },
             checkTitle: function(expectedTitle) {
                 return this.remote
@@ -67,10 +65,8 @@ define([
                         });
             },
             waitToClose: function() {
-                var CommonPage = require('tests/functional/pages/common'),
-                    common = new CommonPage(this.remote);
-
-                return common.waitForElementDeletion('div.modal-content');
+                return this.remote
+                    .waitForElementDeletion('div.modal-content', 5000);
             }
         };
         return ModalWindow;

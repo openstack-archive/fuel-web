@@ -56,55 +56,33 @@ define([
                     });
             },
             '"Show" button availability and logs displaying': function() {
-                var showLogsButton;
+                var showLogsButtonSelector = '.sticker button';
                 return this.remote
                     .setFindTimeout(5000)
                     .findByCssSelector('.sticker select[name=source] > option')
                         // Check if "Source" dropdown exist
                         .end()
-                    .findByCssSelector('.sticker button')
-                        .then(function(button) {
-                            showLogsButton = button;
-                            return showLogsButton
-                                .isEnabled()
-                                .then(function(isEnabled) {
-                                    assert.isFalse(isEnabled, '"Show" button is disabled until source change');
-                                });
-                        })
-                        .end()
-                    .findByCssSelector('.sticker select[name=source] option[value=api]')
-                        // Change the selected value for the "Source" dropdown to Rest API
-                        .click()
-                        .end()
-                    .findByCssSelector('.sticker select[name=level] option[value=DEBUG]')
-                        // Change the selected value for the "Level" dropdown to DEBUG
-                        .click()
-                        .end()
                     .then(function() {
-                        // It is possible to click "Show" button now
-                        return showLogsButton
-                            .isEnabled()
-                            .then(function(isEnabled) {
-                                assert.isTrue(isEnabled, '"Show" button is enabled after source change');
-                            });
+                        return common.assertElementDisabled(showLogsButtonSelector, '"Show" button is disabled until source change');
                     })
+                    // Change the selected value for the "Source" dropdown to Rest API
+                    .clickByCssSelector('.sticker select[name=source] option[value=api]')
+                    // Change the selected value for the "Level" dropdown to DEBUG
+                    .clickByCssSelector('.sticker select[name=level] option[value=DEBUG]')
                     .then(function() {
-                        return showLogsButton.click();
+                        return common.assertElementEnabled(showLogsButtonSelector, '"Show" button is enabled after source change');
                     })
-                    .then(function() {
-                        // Wait till Progress bar disappears
-                        return common.waitForElementDeletion('.logs-tab div.progress');
-                    })
+                    .clickByCssSelector(showLogsButtonSelector)
+                    // Wait till Progress bar disappears
+                    .waitForElementDeletion('.logs-tab div.progress', 5000)
                     .setFindTimeout(10000)
                     .findAllByCssSelector('.log-entries > tbody > tr')
                         .then(function(elements) {
                             assert.ok(elements.length, 'Log tab entries are present');
                         })
                         .end()
-                    .findByCssSelector('.sticker select[name=type] > option[value=remote]')
-                        // "Other servers" option is present in "Logs" dropdown
-                        .click()
-                        .end()
+                    // "Other servers" option is present in "Logs" dropdown
+                    .clickByCssSelector('.sticker select[name=type] > option[value=remote]')
                     .findAllByCssSelector('.sticker select[name=node] > option')
                         .then(function(elements) {
                             assert.ok(elements.length, '"Node" dropdown is present');

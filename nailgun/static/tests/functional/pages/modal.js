@@ -15,9 +15,8 @@
  **/
 
 define([
-    'intern/chai!assert'
-],
-    function(assert) {
+    '../../helpers'
+], function() {
     'use strict';
         function ModalWindow(remote) {
             this.remote = remote;
@@ -27,24 +26,20 @@ define([
             constructor: ModalWindow,
             waitToOpen: function() {
                 return this.remote
-                    .setFindTimeout(2000)
-                    .findByCssSelector('div.modal-content')
-                        .end();
+                    .waitForCssSelector('div.modal-content', 2000);
             },
             checkTitle: function(expectedTitle) {
-                return this.remote
-                    .findByCssSelector('h4.modal-title')
-                        .getVisibleText()
-                        .then(function(title) {
-                            assert.equal(title, expectedTitle, 'Unexpected modal window title');
-                        })
-                        .end();
+                var Common = require('tests/functional/pages/common'),
+                    common = new Common(this.remote);
+                return common.assertElementContainsText('h4.modal-title', expectedTitle, 'Unexpected modal window title');
             },
             close: function() {
+                var self = this;
                 return this.remote
-                    .findByCssSelector('.modal-header button.close')
-                        .click()
-                        .end();
+                    .clickByCssSelector('.modal-header button.close')
+                    .then(function() {
+                        return self.waitToClose();
+                    });
             },
             clickFooterButton: function(buttonText) {
                 return this.remote
@@ -67,10 +62,8 @@ define([
                         });
             },
             waitToClose: function() {
-                var CommonPage = require('tests/functional/pages/common'),
-                    common = new CommonPage(this.remote);
-
-                return common.waitForElementDeletion('div.modal-content');
+                return this.remote
+                    .waitForElementDeletion('div.modal-content', 5000);
             }
         };
         return ModalWindow;

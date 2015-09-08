@@ -501,6 +501,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     }
                                     {nodes.hasChanges() &&
                                         <a
+                                            className='discard-changes'
                                             key='discard-changes'
                                             onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
                                         >
@@ -712,7 +713,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                             </div>
                             <div className='col-xs-2'>
-                                <div className='cluster-info-value pull-right'>
+                                <div className={'cluster-info-value pull-right ' + field}>
                                     {numberOfNodes}
                                 </div>
                             </div>

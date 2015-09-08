@@ -215,6 +215,15 @@ define([
                         })
                         .end();
             },
+            isIntegerContentPositive: function(cssSelector, attributeName) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                        .getVisibleText()
+                        .then(function(text) {
+                            return assert.isTrue(parseInt(text) > 0, attributeName + ' is greater than 0');
+                        })
+                        .end();
+            },
             isElementValueEqualTo: function(cssSelector, value, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
@@ -222,6 +231,17 @@ define([
                             return element.getAttribute('value')
                                 .then(function(elementValue) {
                                     assert.equal(elementValue, value, message);
+                                });
+                        })
+                        .end();
+            },
+            isElementTextEqualTo: function(cssSelector, value, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .then(function(element) {
+                            return element.getVisibleText()
+                                .then(function(text) {
+                                    assert.equal(text, value, message);
                                 });
                         })
                         .end();

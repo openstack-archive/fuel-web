@@ -65,10 +65,7 @@ define([
             'No deployment button when there are no nodes added': function() {
                 return this.remote
                     .then(function() {
-                        return dashboardPage.isDeploymentButtonVisible();
-                    })
-                    .then(function(isVisible) {
-                        assert.isFalse(isVisible, 'No deployment should be possible without nodes added');
+                        return common.elementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added');
                     });
             },
             'No controller warning': function() {
@@ -82,10 +79,7 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     })
                     .then(function() {
-                        return dashboardPage.isDeploymentButtonVisible();
-                    })
-                    .then(function(isVisible) {
-                        assert.isFalse(isVisible, 'No deployment should be possible without controller nodes added');
+                        return common.elementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added');
                     })
                     .findByCssSelector('div.instruction.invalid')
                         // Invalid configuration message is shown
@@ -166,6 +160,10 @@ define([
                             assert.equal(alertTitle, 'Success', 'Deployment successfully stopped alert is expected');
                         })
                         .end()
+                    //@todo: uncomment this after bug fix https://bugs.launchpad.net/fuel/+bug/1493291
+                    //.then(function() {
+                    //    return common.elementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy');
+                    //})
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);
@@ -197,9 +195,22 @@ define([
                         return dashboardPage.startDeployment();
                     })
                     .setFindTimeout(120000)
-                    // Deployment competed
-                    .findByCssSelector('div.horizon')
+                    // Deployment completed
+                    .then(function() {
+                        return common.elementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy');
+                    })
+                    .findByCssSelector('div.horizon a.btn-success')
+                        .getAttribute('href')
+                        .then(function(value) {
+                            return assert.isTrue(_.contains(value, 'htt'), 'Link to Horizon is formed');
+                        })
                         .end()
+                    .then(function() {
+                        return common.elementExists('.alert-success', 'Success message appears after deploy');
+                    })
+                    .then(function() {
+                        return common.isIntegerContentPositive('.cluster-info-value.ready', 'Deployed nodes are present');
+                    })
                     .then(function() {
                         return clusterPage.isTabLocked('Networks');
                     })

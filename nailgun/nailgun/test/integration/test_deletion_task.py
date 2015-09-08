@@ -38,8 +38,7 @@ class TestDeletionTask(BaseIntegrationTest):
             cluster_id=self.cluster_db.id,
             pending_deletion=True,
             status=status,
-            online=online,
-            meta=self.env.default_metadata())
+            online=online)
 
     def test_get_task_nodes(self):
         nodes = DeletionTask.get_task_nodes_for_cluster(self.cluster_db)

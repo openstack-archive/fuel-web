@@ -260,19 +260,30 @@ class EnvironmentManager(object):
             expected_error=None,
             **kwargs):
         # TODO(alekseyk) Simplify 'interfaces' and 'mac' manipulation logic
-        metadata = kwargs.get('meta')
+        metadata = kwargs.get('meta', {})
         default_metadata = self.default_metadata()
-        if metadata:
-            default_metadata.update(metadata)
-            meta_ifaces = 'interfaces' in metadata
+        default_metadata.update(metadata)
 
         mac = kwargs.get('mac', self.generate_random_mac())
         if default_metadata['interfaces']:
-            default_metadata['interfaces'][0]['mac'] = mac
-            if not metadata or not meta_ifaces:
+            if not metadata or 'interfaces' not in metadata:
+                default_metadata['interfaces'][0]['mac'] = mac
+                default_metadata['interfaces'][0]['pxe'] = True
                 for iface in default_metadata['interfaces'][1:]:
                     if 'mac' in iface:
                         iface['mac'] = self.generate_random_mac()
+            else:
+                for iface in default_metadata['interfaces']:
+                    if iface.get('pxe'):
+                        if not iface.get('mac'):
+                            iface['mac'] = mac
+                        elif 'mac' not in kwargs:
+                            mac = iface['mac']
+                    if iface.get('mac') == mac:
+                        break
+                else:
+                    default_metadata['interfaces'][0]['mac'] = mac
+                    default_metadata['interfaces'][0]['pxe'] = True
 
         node_data = {
             'mac': mac,
@@ -343,7 +354,8 @@ class EnvironmentManager(object):
                 for i in range(if_count)]
             if_list[0]['pxe'] = True
             self.set_interfaces_in_meta(meta, if_list)
-            nodes.append(self.create_node(meta=meta, **kwargs))
+            nodes.append(self.create_node(meta=meta, mac=if_list[0]['mac'],
+                                          **kwargs))
         return nodes
 
     def create_task(self, **kwargs):
@@ -422,7 +434,7 @@ class EnvironmentManager(object):
         item = self.find_item_by_pk_model(
             self.read_fixtures(("sample_environment",)),
             1, 'nailgun.node')
-        return item.get('fields').get('meta')
+        return item.get('fields').get('meta', {})
 
     def generate_random_mac(self):
         mac = [randint(0x00, 0x7f) for _ in xrange(6)]

@@ -18,25 +18,27 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
     'use strict';
 
     _.defaults(Command.prototype, {
-        clickLinkByText: function(cssSelector, linkText) {
+        clickLinkByText: function(text) {
             return new this.constructor(this, function() {
+                var self = this,
+                    currentTimeout = 0;
                 return this.parent
+                    .getFindTimeout()
+                    .then(function(value) {
+                        currentTimeout = value;
+                    })
                     .setFindTimeout(1000)
-                    .findAllByCssSelector(cssSelector)
-                    .then(function(links) {
-                        return links.reduce(function(matchFound, link) {
-                            return link.getVisibleText().then(function(text) {
-                                if (_.trim(text) == linkText) {
-                                    link.click();
-                                    return true;
-                                }
-                                return matchFound;
-                            });
-                        }, false);
-                    });
+                    .findByLinkText(text)
+                        .catch(function(error) {
+                            self.setFindTimeout(currentTimeout);
+                            throw error;
+                        })
+                        .click()
+                        .end()
+                    .setFindTimeout(currentTimeout);
             });
         },
-        clickOnElement: function(cssSelector) {
+        clickByCssSelector: function(cssSelector) {
             return new this.constructor(this, function() {
                 return this.parent
                     .findByCssSelector(cssSelector)
@@ -59,7 +61,6 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
             });
         },
         waitForCssSelector: function(cssSelector, timeout) {
-            // used to wait until the element will appear with custom timeout
             return new this.constructor(this, function() {
                 var self = this,
                     currentTimeout = 0;
@@ -70,12 +71,43 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                     })
                     .setFindTimeout(timeout)
                     .findByCssSelector(cssSelector)
+                        .catch(function(error) {
+                            self.setFindTimeout(currentTimeout);
+                            throw error;
+                        })
                         .end()
-                    .catch(function(error) {
-                        self.setFindTimeout(currentTimeout);
-                        throw error;
-                    })
                     .setFindTimeout(currentTimeout);
+            });
+        },
+        setInputValue: function(cssSelector, value) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .clearValue()
+                        .type(value)
+                        .end();
+            });
+        },
+        waitForElementDeletion: function(cssSelector, timeout) {
+            return new this.constructor(this, function() {
+                var currentTimeout = 0;
+                return this.parent
+                    .getFindTimeout()
+                    .then(function(value) {
+                        currentTimeout = value;
+                    })
+                    .setFindTimeout(timeout)
+                    .waitForDeletedByCssSelector(cssSelector)
+                    // For cases when element is destroyed already
+                    .catch(function(error) {
+                        if (error.name != 'Timeout') throw error;
+                    })
+                    .setFindTimeout(currentTimeout)
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            if (elements.length) throw new Error('Element ' + cssSelector + ' was not destroyed');
+                        })
+                        .end();
             });
         }
     });

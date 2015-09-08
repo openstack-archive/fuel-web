@@ -14,7 +14,6 @@
 from collections import namedtuple
 import os
 import random
-import six
 
 from contextlib import contextmanager
 
@@ -116,7 +115,7 @@ def set_proxy(proxy):
         'https_proxy': os.environ.get('https_proxy')
     }
     for variable_name, variable_value in variable_values.items():
-        if os.environ.get(variable_name):
+        if variable_value:
             logger.warning("{0} variable is already set with "
                            "value: {1}. Changing to {2}. Old value "
                            "will be restored after exit from script's "
@@ -126,9 +125,6 @@ def set_proxy(proxy):
 
     try:
         yield
-    except Exception as e:
-        logger.exception("Error while talking to proxy. Details: {0}"
-                         .format(six.text_type(e)))
     finally:
         for variable_name, variable_value in variable_values.items():
             if variable_value:

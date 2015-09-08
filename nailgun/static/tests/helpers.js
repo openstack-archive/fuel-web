@@ -18,10 +18,9 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
     'use strict';
 
     _.defaults(Command.prototype, {
-        clickLinkByText: function(cssSelector, linkText) {
+        clickByLinkText: function(cssSelector, linkText) {
             return new this.constructor(this, function() {
                 return this.parent
-                    .setFindTimeout(1000)
                     .findAllByCssSelector(cssSelector)
                     .then(function(links) {
                         return links.reduce(function(matchFound, link) {
@@ -36,12 +35,19 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                     });
             });
         },
-        clickOnElement: function(cssSelector) {
+        clickByCssSelector: function(cssSelector) {
             return new this.constructor(this, function() {
+                var currentTimeout = 0;
                 return this.parent
+                    .getFindTimeout()
+                    .then(function(value) {
+                        currentTimeout = value;
+                    })
+                    .setFindTimeout(1000)
                     .findByCssSelector(cssSelector)
                         .click()
-                        .end();
+                        .end()
+                    .setFindTimeout(currentTimeout);
             });
         },
         takeScreenshotAndSave: function(filename) {
@@ -70,10 +76,31 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                     })
                     .setFindTimeout(timeout)
                     .findByCssSelector(cssSelector)
+                        .catch(function(error) {
+                            self.setFindTimeout(currentTimeout);
+                            throw error;
+                        })
                         .end()
+                    .setFindTimeout(currentTimeout);
+            });
+        },
+        waitForElementDeletion: function(cssSelector, timeout) {
+            // used to wait until the element will disappear with custom timeout
+            return new this.constructor(this, function() {
+                var self = this,
+                    currentTimeout = 0;
+                return this.parent
+                    .getFindTimeout()
+                    .then(function(value) {
+                        currentTimeout = value;
+                    })
+                    .setFindTimeout(timeout)
+                    .waitForDeletedByCssSelector(cssSelector)
                     .catch(function(error) {
                         self.setFindTimeout(currentTimeout);
-                        throw error;
+                        // For cases when element is destroyed already
+                        if (error.name != 'Timeout')
+                            throw error;
                     })
                     .setFindTimeout(currentTimeout);
             });

@@ -90,8 +90,7 @@ define([
                             });
                         })
                         .end()
-                    .findByCssSelector('div.role-panel')
-                        .end()
+                    .waitForCssSelector('div.role-panel', 2000)
                     .then(function() {
                         return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
                     })

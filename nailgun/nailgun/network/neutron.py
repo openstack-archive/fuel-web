@@ -16,6 +16,7 @@
 
 import itertools
 import netaddr
+from ordereddict import OrderedDict
 import six
 
 from nailgun import consts
@@ -26,6 +27,8 @@ from nailgun.logger import logger
 
 from nailgun.network.manager import AllocateVIPs70Mixin
 from nailgun.network.manager import NetworkManager
+from nailgun import objects
+from nailgun.objects.serializers.node import NodeInterfacesSerializer
 
 
 class NeutronManager(NetworkManager):
@@ -306,3 +309,84 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
                     net_id, net_name, node_ids, ip_ranges)
 
         cls.assign_admin_ips(nodes)
+
+    @classmethod
+    def generate_transformations(cls, node):
+        """Overrides default transformation generation.
+        Transformations are taken verbatim from each role template's
+        transformations section.
+        """
+        txs = []
+        role_templates = OrderedDict()
+        template = node.network_template
+
+        roles = sorted(node.all_roles)
+
+        # We need a unique, ordered list of all role templates that
+        # apply to this node. The keys of an OrderedDict act as an
+        # ordered set. The order of transformations is important which
+        # is why we can't just use a set. The list needs to be unique
+        # because duplicated transformations will break deployment.
+        for role in roles:
+            for t in template['templates_for_node_role'][role]:
+                role_templates[t] = True
+
+        for t in role_templates:
+            txs.extend(template['templates'][t]['transformations'])
+
+        return txs
+
+    @classmethod
+    def get_template_network_nic_mapping(cls, node):
+        ifaces = {}
+        # Build list of interfaces by finding ports added to bridges
+        for tx in cls.generate_transformations(node):
+            if tx['action'] == 'add-port':
+                interface = tx['name'].split('.')[0]
+                ifaces.setdefault(interface, {})
+                ifaces[interface].setdefault('bridges', [])
+
+                # Only two possibilities, adding a port with or
+                # without a bridge (a bare interface).
+                bridge = tx.get('bridge', tx['name'])
+                ifaces[interface]['bridges'].append(bridge)
+
+        endpoint_mapping = cls.get_node_network_mapping(node)
+        nics = []
+
+        for nic in node.nic_interfaces:
+            nic_dict = NodeInterfacesSerializer.serialize(nic)
+            if 'interface_properties' in nic_dict:
+                nic_dict['interface_properties'] = \
+                    cls.get_default_interface_properties()
+            nic_dict['assigned_networks'] = []
+
+            for bridge in ifaces.get(nic.name, {}).get('bridges', []):
+                # Find the network mapped to this bridge
+                net = [x[0] for x in endpoint_mapping if x[1] == bridge]
+
+                # This bridge isn't mapped to an endpoint, e.g. br-aux
+                # so we can skip it
+                if not net:
+                    continue
+
+                net = net[0]
+
+                # Default admin network has no node group
+                if net == consts.NETWORKS.fuelweb_admin:
+                    net_db = cls.get_admin_network_group(node.id)
+                else:
+                    net_db = objects.NetworkGroup.get_from_node_group_by_name(
+                        node.group_id, net)
+
+                # Network is specfied in template but has not been created yet
+                if not net_db:
+                    logger.debug('Could not find network %s mapped to %s',
+                                 net, nic.name)
+                    continue
+
+                ng = {'id': net_db.id, 'name': net}
+                nic_dict['assigned_networks'].append(ng)
+
+            nics.append(nic_dict)
+        return nics

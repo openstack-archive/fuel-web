@@ -275,7 +275,7 @@ class Node(NailgunObject):
 
         # adding node into cluster
         if new_node_cluster_id:
-            cls.add_into_cluster(new_node, new_node_cluster_id)
+            cls.assign_to_cluster(new_node, new_node_cluster_id)
 
         # updating roles
         if roles is not None:
@@ -284,6 +284,9 @@ class Node(NailgunObject):
             cls.update_pending_roles(new_node, pending_roles)
         if primary_roles is not None:
             cls.update_primary_roles(new_node, primary_roles)
+
+        if new_node_cluster_id:
+            cls.add_into_cluster(new_node, new_node_cluster_id)
 
         # creating attributes
         cls.create_attributes(new_node)
@@ -728,6 +731,11 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
+    def assign_to_cluster(cls, instance, cluster_id):
+        instance.cluster_id = cluster_id
+        db().flush()
+
+    @classmethod
     def add_into_cluster(cls, instance, cluster_id):
         """Adds Node to Cluster by its ID.
         Also assigns networks by default for Node.
@@ -736,13 +744,12 @@ class Node(NailgunObject):
         :param cluster_id: Cluster ID
         :returns: None
         """
-        instance.cluster_id = cluster_id
-        db().flush()
+        cls.assign_to_cluster(instance, cluster_id)
         cls.assign_group(instance)
+        cls.set_network_template(instance)
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
-        cls.set_network_template(instance)
 
     @classmethod
     def set_network_template(cls, instance):

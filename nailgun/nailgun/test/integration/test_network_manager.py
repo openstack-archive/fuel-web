@@ -1035,3 +1035,50 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             assign_vip_mock.assert_called_once_with(
                 self.cluster, mock.ANY, vip_type='public')
             self.assertEqual(endpoint_ip, vip)
+
+
+class TestTemplateManager70(BaseNetworkManagerTest):
+    def setUp(self, *args):
+        super(TestTemplateManager70, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-7.0'},
+            cluster_kwargs={
+                'api': True,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            }
+        )
+        self.net_template = self.env.read_fixtures(['network_template'])[1]
+
+        cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
+        objects.Cluster.set_network_template(
+            cluster_db,
+            self.net_template
+        )
+
+    def test_template_nic_mapping(self):
+        expected_mapping = {
+            'eth0': ['fuelweb_admin'],
+            'eth1': ['public'],
+            'eth2': ['murano'],
+            'eth3': ['management', 'storage'],
+            'eth4': ['mongo', 'keystone'],
+            'eth5': [],
+        }
+        self.env._create_network_group(name='mongo')
+        self.env._create_network_group(name='keystone')
+        self.env._create_network_group(name='murano')
+        node = self.env.create_node(
+            roles=['controller'],
+            cluster_id=self.cluster['id'],
+            meta={'interfaces': [
+                {'name': 'eth0', 'mac': '00:00'},
+                {'name': 'eth1', 'mac': '00:11'},
+                {'name': 'eth2', 'mac': '00:22'},
+                {'name': 'eth3', 'mac': '00:33'},
+                {'name': 'eth4', 'mac': '00:44'},
+                {'name': 'eth5', 'mac': '00:55'}
+            ]}
+        )
+        for nic in node.nic_interfaces:
+            assigned_nets = [net['name'] for net in nic.assigned_networks]
+            self.assertItemsEqual(assigned_nets, expected_mapping[nic.name])

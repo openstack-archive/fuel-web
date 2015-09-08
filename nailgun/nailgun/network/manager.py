@@ -623,7 +623,7 @@ class NetworkManager(object):
         nics = []
         group_id = (node.group_id or
                     objects.Cluster.get_default_group(node.cluster).id)
-        node_group = db().query(NodeGroup).get(group_id)
+        node_group = objects.NodeGroup.get_by_uid(group_id)
 
         ngs = node_group.networks + [cls.get_admin_network_group(node.id)]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
@@ -701,7 +701,10 @@ class NetworkManager(object):
         cls.clear_assigned_networks(node)
 
         nics = dict((nic.id, nic) for nic in node.interfaces)
-        def_set = cls.get_default_interfaces_configuration(node)
+        if node.network_template:
+            def_set = cls.get_template_network_nic_mapping(node)
+        else:
+            def_set = cls.get_default_interfaces_configuration(node)
         for nic in def_set:
             if 'assigned_networks' in nic:
                 ng_ids = [ng['id'] for ng in nic['assigned_networks']]

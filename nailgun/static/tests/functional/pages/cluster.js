@@ -81,21 +81,41 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         checkNodes: function(amount) {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .setFindTimeout(1000)
                                 .findAllByCssSelector('.node.discover > label')
-                                .then(function(nodes) {
-                                    return nodes[index].click();
-                                })
-                                .catch(function() {
-                                    throw new Error('Failed to add ' + amount + ' nodes to the cluster');
-                                });
+                                    .then(function(nodes) {
+                                        return nodes[index].click();
+                                    })
+                                    .catch(function() {
+                                        throw new Error('Failed to add ' + amount + ' nodes to the cluster');
+                                    });
                         },
                         true);
+                });
+        },
+        checkErrorNode: function() {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.remote
+                        .clickOnElement('.node.error > label')
+                        .catch(function() {
+                            throw new Error('Failed to add error node to the cluster');
+                        });
+                });
+        },
+        checkOfflineNode: function() {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.remote
+                        .clickOnElement('.node.offline > label')
+                        .catch(function() {
+                            throw new Error('Failed to add offline node to the cluster');
+                        });
                 });
         },
         resetEnvironment: function(clusterName) {

@@ -19,25 +19,17 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
     function DashboardPage(remote) {
         this.remote = remote;
         this.modal = new ModalWindow(remote);
+        this.renameInputSelector = '.rename-block input[type=text]';
+        this.deployButtonSelector = 'button.deploy-btn';
+        this.nameSelector = '.cluster-info-value.name a';
     }
 
     DashboardPage.prototype = {
         constructor: DashboardPage,
-        isDeploymentButtonVisible: function() {
-            return this.remote
-                .setFindTimeout(100)
-                .findAllByCssSelector('button.deploy-btn')
-                .then(function(buttons) {
-                    return buttons.length > 0;
-                });
-        },
         startDeployment: function() {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
-                .findByCssSelector('div.deploy-block button.deploy-btn')
-                    .click()
-                    .end()
+                .clickOnElement(this.deployButtonSelector)
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
@@ -54,9 +46,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         stopDeployment: function() {
             var self = this;
             return this.remote
-                .findByCssSelector('button.stop-deployment-btn')
-                    .click()
-                    .end()
+                .clickOnElement('button.stop-deployment-btn')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
@@ -69,6 +59,37 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.modal.waitToClose();
                 });
+        },
+        startClusterRenaming: function() {
+            return this.remote
+                .clickOnElement('.cluster-info-value.name .glyphicon-pencil');
+        },
+        setClusterName: function(name) {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.startClusterRenaming();
+                })
+                .findByCssSelector('.rename-block input[type=text]')
+                    .clearValue()
+                    .type(name)
+                    // Enter
+                    .type('\uE007')
+                    .end();
+        },
+        discardChanges: function() {
+            var self = this;
+            return this.remote
+                .clickOnElement('a.discard-changes')
+                .then(function() {
+                    return self.modal.waitToOpen();
+                })
+                .then(function() {
+                    return self.modal.clickFooterButton('Discard');
+                })
+                .then(function() {
+                    return self.modal.waitToClose();
+                })
         }
     };
     return DashboardPage;

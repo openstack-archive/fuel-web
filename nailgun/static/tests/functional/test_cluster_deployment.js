@@ -65,10 +65,7 @@ define([
             'No deployment button when there are no nodes added': function() {
                 return this.remote
                     .then(function() {
-                        return dashboardPage.isDeploymentButtonVisible();
-                    })
-                    .then(function(isVisible) {
-                        assert.isFalse(isVisible, 'No deployment should be possible without nodes added');
+                        return common.elementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added');
                     });
             },
             'No controller warning': function() {
@@ -82,10 +79,7 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     })
                     .then(function() {
-                        return dashboardPage.isDeploymentButtonVisible();
-                    })
-                    .then(function(isVisible) {
-                        assert.isFalse(isVisible, 'No deployment should be possible without controller nodes added');
+                        return common.elementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added');
                     })
                     .findByCssSelector('div.instruction.invalid')
                         // Invalid configuration message is shown
@@ -93,10 +87,8 @@ define([
                     .then(function() {
                         return common.doesCssSelectorContainText(
                             'div.validation-result ul.danger li',
-                            'At least 1 Controller nodes are required (0 selected currently).');
-                    })
-                    .then(function(messageFound) {
-                        assert.isTrue(messageFound, 'No controllers added warning should be shown');
+                            'At least 1 Controller nodes are required (0 selected currently).',
+                            'No controllers added warning should be shown');
                     });
             },
             'Discard changes': function() {
@@ -116,10 +108,8 @@ define([
                         return modal.waitToOpen();
                     })
                     .then(function() {
-                        return common.doesCssSelectorContainText('h4.modal-title', 'Discard Changes');
-                    })
-                    .then(function(result) {
-                        assert.isTrue(result, 'Discard Changes confirmation modal expected');
+                        return common.doesCssSelectorContainText('h4.modal-title',
+                            'Discard Changes', 'Discard Changes confirmation modal expected');
                     })
                     .then(function() {
                         return modal.clickFooterButton('Discard');
@@ -166,6 +156,10 @@ define([
                             assert.equal(alertTitle, 'Success', 'Deployment successfully stopped alert is expected');
                         })
                         .end()
+                    //@todo: uncomment this after bug fix https://bugs.launchpad.net/fuel/+bug/1493291
+                    //.then(function() {
+                    //    return common.elementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy');
+                    //})
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);
@@ -197,9 +191,22 @@ define([
                         return dashboardPage.startDeployment();
                     })
                     .setFindTimeout(120000)
-                    // Deployment competed
-                    .findByCssSelector('div.horizon')
+                    // Deployment completed
+                    .then(function() {
+                        return common.elementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy');
+                    })
+                    .findByCssSelector('div.horizon a.btn-success')
+                        .getAttribute('href')
+                        .then(function(value) {
+                            return assert.isTrue(_.startsWith(value, 'http'), 'Link to Horizon is formed');
+                        })
                         .end()
+                    .then(function() {
+                        return common.elementExists('.alert-success', 'Success message appears after deploy');
+                    })
+                    .then(function() {
+                        return common.isIntegerContentPositive('.cluster-info-value.ready', 'Deployed nodes are present');
+                    })
                     .then(function() {
                         return clusterPage.isTabLocked('Networks');
                     })

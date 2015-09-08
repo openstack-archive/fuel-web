@@ -179,14 +179,8 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
-                    .findByCssSelector(networksPage.applyButtonSelector)
-                        .click()
-                        .end()
-                    .findAllByCssSelector('input:not(:disabled)')
-                        .then(function(elements) {
-                            assert.ok(elements.length, 'Inputs are not disabled');
-                        })
-                        .end()
+                    .clickByCssSelector(networksPage.applyButtonSelector)
+                    .waitForCssSelector('input:not(:disabled)', 2000)
                     .then(function() {
                         return common.elementNotExists('.alert-error',
                             'Correct settings were saved successfully');
@@ -197,10 +191,7 @@ define([
                     .findByCssSelector('.verify-networks-btn:not(:disabled)')
                         .click()
                         .end()
-                    .then(function() {
-                        return common.elementExists('.connect-3.error',
-                            'At least two nodes are required to be in the environment for network verification');
-                    })
+                    .waitForCssSelector('.connect-3.error', 1000)
                     // Testing cluster networks: verification task deletion
                     .then(function() {
                         return networksPage.switchNetworkManager();

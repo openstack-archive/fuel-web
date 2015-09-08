@@ -356,6 +356,18 @@ class TestNodeObject(BaseIntegrationTest):
         # only controllers should have public with IP address for DVR
         self.assertEqual(2, nodes_w_public_ip_count)
 
+    def test_keep_node_name_after_removing_from_cluster(self):
+        custom_node_name = 'my-super-name'
+        self.env.create(
+            nodes_kwargs=[
+                {"role": "controller", "name": custom_node_name}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        objects.Node.remove_from_cluster(node_db)
+
+        self.assertEqual(node_db.name, custom_node_name)
+
     def test_removing_from_cluster(self):
         self.env.create(
             cluster_kwargs={},

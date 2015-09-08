@@ -214,6 +214,17 @@ define([
                             return assert.equal(elements.length, 0, message);
                         })
                         .end();
+            },
+            isElementValueEqualTo: function(cssSelector, value, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .then(function(element) {
+                            return element.getAttribute('value')
+                                .then(function(elementValue) {
+                                    assert.equal(elementValue, value, message);
+                                });
+                        })
+                        .end();
             }
         };
         return CommonMethods;

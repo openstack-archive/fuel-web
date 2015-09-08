@@ -310,8 +310,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                     };
 
                                     return (
-                                        <div key={'edit_' + volumeName}>
-                                            <div className='form-group volume-group row' data-volume={volumeName}>
+                                        <div key={'edit_' + volumeName} data-volume={volumeName}>
+                                            <div className='form-group volume-group row'>
                                                 <label className='col-xs-4 volume-group-label'>
                                                     <span ref={'volume-group-flag ' + volumeName} className={'volume-type-' + (index + 1)}> &nbsp; </span>
                                                     {volume.get('label')}
@@ -326,6 +326,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                     />
                                                 </div>
                                                 <controls.Input {...props}
+                                                    key={value}
                                                     type='number'
                                                     wrapperClassName='col-xs-3 volume-group-input'
                                                     onChange={_.partialRight(this.updateDisk, true)}

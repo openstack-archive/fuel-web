@@ -72,14 +72,10 @@ define([
                                 });
                         })
                         .end()
-                    .findByCssSelector('.sticker select[name=source] option[value=api]')
-                        // Change the selected value for the "Source" dropdown to Rest API
-                        .click()
-                        .end()
-                    .findByCssSelector('.sticker select[name=level] option[value=DEBUG]')
-                        // Change the selected value for the "Level" dropdown to DEBUG
-                        .click()
-                        .end()
+                    // Change the selected value for the "Source" dropdown to Rest API
+                    .clickByCssSelector('.sticker select[name=source] option[value=api]')
+                    // Change the selected value for the "Level" dropdown to DEBUG
+                    .clickByCssSelector('.sticker select[name=level] option[value=DEBUG]')
                     .then(function() {
                         // It is possible to click "Show" button now
                         return showLogsButton
@@ -91,20 +87,16 @@ define([
                     .then(function() {
                         return showLogsButton.click();
                     })
-                    .then(function() {
-                        // Wait till Progress bar disappears
-                        return common.waitForElementDeletion('.logs-tab div.progress');
-                    })
+                    // Wait till Progress bar disappears
+                    .waitForElementDeletion('.logs-tab div.progress')
                     .setFindTimeout(10000)
                     .findAllByCssSelector('.log-entries > tbody > tr')
                         .then(function(elements) {
                             assert.ok(elements.length, 'Log tab entries are present');
                         })
                         .end()
-                    .findByCssSelector('.sticker select[name=type] > option[value=remote]')
-                        // "Other servers" option is present in "Logs" dropdown
-                        .click()
-                        .end()
+                    // "Other servers" option is present in "Logs" dropdown
+                    .clickByCssSelector('.sticker select[name=type] > option[value=remote]')
                     .findAllByCssSelector('.sticker select[name=node] > option')
                         .then(function(elements) {
                             assert.ok(elements.length, '"Node" dropdown is present');

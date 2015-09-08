@@ -78,9 +78,7 @@ define([
                         return common.goToEnvironment(clusterName);
                     })
                     .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
-                        .click()
-                        .end()
+                    .clickByCssSelector('a.btn-add-nodes')
                     .findByCssSelector('button.btn-apply')
                         .then(function(button) {
                             applyButton = button;

@@ -14,7 +14,11 @@
  * under the License.
  **/
 
-define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) {
+define([
+    'underscore',
+    '../../helpers',
+    'tests/functional/pages/modal'
+], function(_, helpers, ModalWindow) {
     'use strict';
     function DashboardPage(remote) {
         this.remote = remote;
@@ -35,9 +39,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
             var self = this;
             return this.remote
                 .setFindTimeout(2000)
-                .findByCssSelector('div.deploy-block button.deploy-btn')
-                    .click()
-                    .end()
+                .clickByCssSelector('div.deploy-block button.deploy-btn')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
@@ -54,9 +56,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         stopDeployment: function() {
             var self = this;
             return this.remote
-                .findByCssSelector('button.stop-deployment-btn')
-                    .click()
-                    .end()
+                .clickByCssSelector('button.stop-deployment-btn')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })

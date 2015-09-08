@@ -90,11 +90,10 @@ define([
                     .findByCssSelector('div.instruction.invalid')
                         // Invalid configuration message is shown
                         .end()
-                    .then(function() {
-                        return common.doesCssSelectorContainText(
-                            'div.validation-result ul.danger li',
-                            'At least 1 Controller nodes are required (0 selected currently).');
-                    })
+                    .doesElementContainText(
+                        'div.validation-result ul.danger li',
+                        'At least 1 Controller nodes are required (0 selected currently).'
+                    )
                     .then(function(messageFound) {
                         assert.isTrue(messageFound, 'No controllers added warning should be shown');
                     });
@@ -109,15 +108,11 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.clickLink('Discard Changes');
-                    })
+                    .clickLinkByText('Discard Changes')
                     .then(function() {
                         return modal.waitToOpen();
                     })
-                    .then(function() {
-                        return common.doesCssSelectorContainText('h4.modal-title', 'Discard Changes');
-                    })
+                    .doesElementContainText('h4.modal-title', 'Discard Changes')
                     .then(function(result) {
                         assert.isTrue(result, 'Discard Changes confirmation modal expected');
                     })
@@ -153,10 +148,7 @@ define([
                     .then(function() {
                         return dashboardPage.stopDeployment();
                     })
-                    .then(function() {
-                        // Progress bar disappears
-                        return common.waitForElementDeletion('div.deploy-process div.progress');
-                    })
+                    .waitForElementDeletion('div.deploy-process div.progress')
                     // Deployment button available
                     .findByCssSelector('div.deploy-block button.deploy-btn')
                         .end()

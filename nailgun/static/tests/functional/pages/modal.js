@@ -15,7 +15,8 @@
  **/
 
 define([
-    'intern/chai!assert'
+    'intern/chai!assert',
+    '../../helpers'
 ],
     function(assert) {
     'use strict';
@@ -42,9 +43,7 @@ define([
             },
             close: function() {
                 return this.remote
-                    .findByCssSelector('.modal-header button.close')
-                        .click()
-                        .end();
+                    .clickByCssSelector('.modal-header button.close');
             },
             clickFooterButton: function(buttonText) {
                 return this.remote
@@ -67,10 +66,8 @@ define([
                         });
             },
             waitToClose: function() {
-                var CommonPage = require('tests/functional/pages/common'),
-                    common = new CommonPage(this.remote);
-
-                return common.waitForElementDeletion('div.modal-content');
+                return this.remote
+                    .waitForElementDeletion('div.modal-content');
             }
         };
         return ModalWindow;

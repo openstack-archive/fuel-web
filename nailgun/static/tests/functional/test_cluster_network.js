@@ -50,9 +50,7 @@ define([
                                 Compute: function() {
                                     // Selecting VCenter
                                     return this.remote
-                                        .findByCssSelector('.custom-tumbler input[name=vcenter]')
-                                        .click()
-                                        .end();
+                                        .clickByCssSelector('.custom-tumbler input[name=vcenter]');
                                 }
                             }
                         );
@@ -63,9 +61,7 @@ define([
             },
             afterEach: function() {
                 return this.remote
-                    .findByCssSelector('.btn-revert-changes')
-                        .click()
-                        .end();
+                    .clickByCssSelector('.btn-revert-changes');
             },
             teardown: function() {
                 return this.remote
@@ -114,16 +110,12 @@ define([
                                 cidrInitialValue = initialValue;
                             })
                         .end()
-                    .then(function() {
-                        return common.setInputValue(cidrElementSelector, '240.0.1.0/25');
-                    })
+                    .setInputValue(cidrElementSelector, '240.0.1.0/25')
                     .then(function() {
                         return common.isElementEnabled(networksPage.applyButtonSelector,
                             'Save changes button is enabled if there are changes');
                     })
-                    .then(function() {
-                        return common.setInputValue(cidrElementSelector, cidrInitialValue);
-                    })
+                    .setInputValue(cidrElementSelector, cidrInitialValue)
                     .then(function() {
                         return common.isElementDisabled(networksPage.applyButtonSelector,
                             'Save changes button is disabled again if there are no changes');
@@ -179,9 +171,7 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
-                    .findByCssSelector(networksPage.applyButtonSelector)
-                        .click()
-                        .end()
+                    .clickByCssSelector(networksPage.applyButtonSelector)
                     .findAllByCssSelector('input:not(:disabled)')
                         .then(function(elements) {
                             assert.ok(elements.length, 'Inputs are not disabled');
@@ -194,9 +184,7 @@ define([
             },
             'Testing cluster networks: verification': function() {
                 return this.remote
-                    .findByCssSelector('.verify-networks-btn:not(:disabled)')
-                        .click()
-                        .end()
+                    .clickByCssSelector('.verify-networks-btn:not(:disabled)')
                     .then(function() {
                         return common.elementExists('.connect-3.error',
                             'At least two nodes are required to be in the environment for network verification');
@@ -226,9 +214,7 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
-                    .findByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
-                        .click()
-                        .end()
+                    .clickByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
@@ -242,9 +228,7 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
-                    .findByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
-                        .click()
-                        .end()
+                    .clickByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
                     .then(function() {
                         return common.elementNotExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
                             'Field validation works properly');

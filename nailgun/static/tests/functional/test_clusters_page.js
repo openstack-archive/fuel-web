@@ -59,9 +59,7 @@ define([
             'Attempt to create cluster with duplicate name': function() {
                 return this.remote
                     .setFindTimeout(1000)
-                    .then(function() {
-                        return common.clickLink('Environments')
-                    })
+                    .clickLinkByText('Environments')
                     .then(function() {
                         return common.createCluster(
                             clusterName,
@@ -98,9 +96,7 @@ define([
             'Testing cluster list page': function() {
                 return this.remote
                     .setFindTimeout(1000)
-                    .then(function() {
-                        return common.clickLink('Environments');
-                    })
+                    .clickLinkByText('Environments')
                     .setFindTimeout(2000)
                     //Cluster container exists
                     .findAllByCssSelector('.clusters-page .clusterbox')

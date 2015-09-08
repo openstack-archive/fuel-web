@@ -14,7 +14,9 @@
  * under the License.
  **/
 
-define([], function() {
+define([
+    '../../helpers'
+], function() {
     'use strict';
 
     function NetworksPage(remote) {
@@ -26,9 +28,7 @@ define([], function() {
         constructor: NetworksPage,
         switchNetworkManager: function() {
             return this.remote
-                .findByCssSelector('input[name=net_provider]:not(:checked)')
-                    .click()
-                    .end()
+                .clickByCssSelector('input[name=net_provider]:not(:checked)');
         }
     };
     return NetworksPage;

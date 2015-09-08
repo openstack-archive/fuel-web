@@ -29,9 +29,7 @@ define(['../../helpers'], function(Helpers) {
                     if (url == Helpers.serverUrl + '/#welcome') {
                         return this.parent
                             .setFindTimeout(2000)
-                            .findByCssSelector('.welcome-button-box button')
-                                .click()
-                                .end()
+                            .clickByCssSelector('.welcome-button-box button')
                             .waitForDeletedByCssSelector('.welcome-button-box button')
                             .then(
                                 function() {return true},

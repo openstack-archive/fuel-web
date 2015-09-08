@@ -81,13 +81,11 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         checkNodes: function(amount) {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .setFindTimeout(1000)
-                                .findAllByCssSelector('.node.discover > label')
+                                .findAllByCssSelector('.node > label')
                                 .then(function(nodes) {
                                     return nodes[index].click();
                                 })
@@ -96,6 +94,20 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                                 });
                         },
                         true);
+                });
+        },
+        checkErrorNode: function() {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.remote
+                        .findAllByCssSelector('.node.error > label')
+                            .then(function(nodes) {
+                                return nodes[0].click();
+                            })
+                            .catch(function() {
+                                throw new Error('Failed to add error node to the cluster');
+                            });
                 });
         },
         resetEnvironment: function(clusterName) {

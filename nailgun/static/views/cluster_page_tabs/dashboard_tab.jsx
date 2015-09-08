@@ -479,7 +479,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         (
                                             <button
                                                 key='provision-vms'
-                                                className='btn btn-primary deploy-btn'
+                                                className='btn btn-primary deploy-btn provision-vms'
                                                 onClick={_.partial(this.showDialog, dialogs.ProvisionVMsDialog)}
                                             >
                                                 <div className='deploy-icon'></div>
@@ -501,6 +501,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     }
                                     {nodes.hasChanges() &&
                                         <a
+                                            className='discard-changes'
                                             key='discard-changes'
                                             onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
                                         >
@@ -712,7 +713,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                             </div>
                             <div className='col-xs-2'>
-                                <div className='cluster-info-value pull-right'>
+                                <div className={'cluster-info-value pull-right ' + field}>
                                     {numberOfNodes}
                                 </div>
                             </div>

@@ -19,23 +19,17 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
     function DashboardPage(remote) {
         this.remote = remote;
         this.modal = new ModalWindow(remote);
+        this.addNodesButtonSelector = '.btn-add-nodes';
+        this.renameInputSelector = '.rename-block input[type=text]';
+        this.deployButtonSelector = 'button.deploy-btn';
     }
 
     DashboardPage.prototype = {
         constructor: DashboardPage,
-        isDeploymentButtonVisible: function() {
-            return this.remote
-                .setFindTimeout(100)
-                .findAllByCssSelector('button.deploy-btn')
-                .then(function(buttons) {
-                    return buttons.length > 0;
-                });
-        },
         startDeployment: function() {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
-                .findByCssSelector('div.deploy-block button.deploy-btn')
+                .findByCssSelector(this.deployButtonSelector)
                     .click()
                     .end()
                 .then(function() {
@@ -69,6 +63,51 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.modal.waitToClose();
                 });
+        },
+        startClusterRenaming: function() {
+            return this.remote
+                .setFindTimeout(100)
+                .findByCssSelector('.cluster-info-value.name .glyphicon-pencil')
+                    .click()
+                    .end();
+        },
+        getClusterName: function() {
+            return this.remote
+                .setFindTimeout(1000)
+                .findByCssSelector('.cluster-info-value.name a')
+                    .getVisibleText()
+                        .then(function(value) {
+                            return value;
+                        });
+        },
+        setClusterName: function(name) {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.startClusterRenaming();
+                })
+                .setFindTimeout(100)
+                .findByCssSelector('.rename-block input[type=text]')
+                    .clearValue()
+                    .type(name)
+                    .type('')
+                    .end();
+        },
+        discardChanges: function() {
+            var self = this;
+            return this.remote
+                .findByCssSelector('a.discard-changes')
+                    .click()
+                    .end()
+                .then(function() {
+                    return self.modal.waitToOpen();
+                })
+                .then(function() {
+                    return self.modal.clickFooterButton('Discard');
+                })
+                .then(function() {
+                    return self.modal.waitToClose();
+                })
         }
     };
     return DashboardPage;

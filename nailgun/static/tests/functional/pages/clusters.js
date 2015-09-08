@@ -14,7 +14,11 @@
  * under the License.
  **/
 
-define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) {
+define([
+    'underscore',
+    'tests/functional/pages/modal',
+    '../../helpers'
+], function(_, ModalWindow) {
     'use strict';
     function ClustersPage(remote) {
         this.remote = remote;
@@ -30,17 +34,12 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 };
             return this.remote
                 .setFindTimeout(1000)
-                .findByClassName('create-cluster')
-                    .click()
-                    .end()
+                .clickByCssSelector('.create-cluster')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
                 // Name and release
-                .findByName('name')
-                    .clearValue()
-                    .type(clusterName)
-                    .end()
+                .setInputValue('[name=name]', clusterName)
                 .then(stepMethod('Name and Release'))
                 .pressKeys('\uE007')
                 // Compute

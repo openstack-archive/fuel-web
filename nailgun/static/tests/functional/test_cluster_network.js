@@ -182,11 +182,7 @@ define([
                     .findByCssSelector(networksPage.applyButtonSelector)
                         .click()
                         .end()
-                    .findAllByCssSelector('input:not(:disabled)')
-                        .then(function(elements) {
-                            assert.ok(elements.length, 'Inputs are not disabled');
-                        })
-                        .end()
+                    .waitForCssSelector('input:not(:disabled)', 1000)
                     .then(function() {
                         return common.elementNotExists('.alert-error',
                             'Correct settings were saved successfully');

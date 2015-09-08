@@ -25,7 +25,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         constructor: ClusterPage,
         goToTab: function(tabName) {
             return this.remote
-                .clickLinkByText('.tabs-box .tabs a', tabName);
+                .clickByLinkText('.tabs-box .tabs a', tabName);
         },
         removeCluster: function(clusterName) {
             var self = this;
@@ -33,9 +33,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.goToTab('Dashboard');
                 })
-                .findByCssSelector('button.delete-environment-btn')
-                    .click()
-                    .end()
+                .clickByCssSelector('button.delete-environment-btn')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
@@ -58,7 +56,6 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         },
         checkNodeRoles: function(assignRoles) {
             return this.remote
-                .setFindTimeout(2000)
                 .findAllByCssSelector('div.role-panel label')
                 .then(function(roles) {
                     return roles.reduce(
@@ -81,12 +78,10 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         checkNodes: function(amount) {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .setFindTimeout(1000)
                                 .findAllByCssSelector('.node.discover > label')
                                 .then(function(nodes) {
                                     return nodes[index].click();
@@ -113,7 +108,6 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.modal.clickFooterButton('Reset');
                 })
-                .setFindTimeout(20000)
                 .findAllByCssSelector('div.confirm-reset-form input[type=text]')
                     .then(function(confirmationInputs) {
                         if (confirmationInputs.length)
@@ -127,8 +121,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.modal.waitToClose();
                 })
-                .setFindTimeout(10000)
-                .waitForDeletedByCssSelector('div.progress-bar');
+                .waitForElementDeletion('div.progress-bar', 10000);
         },
         isTabLocked: function(tabName) {
             var self = this;
@@ -136,6 +129,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.goToTab(tabName);
                 })
+                .waitForCssSelector('div.tab-content div.row.changes-locked', 2000)
                 .findByCssSelector('div.tab-content div.row.changes-locked')
                     .then(_.constant(true), _.constant(false));
         }

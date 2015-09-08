@@ -14,7 +14,11 @@
  * under the License.
  **/
 
-define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) {
+define([
+    'underscore',
+    'tests/functional/pages/modal',
+    '../../helpers'
+], function(_, ModalWindow) {
     'use strict';
     function ClusterPage(remote) {
         this.remote = remote;
@@ -25,7 +29,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         constructor: ClusterPage,
         goToTab: function(tabName) {
             return this.remote
-                .clickLinkByText('.tabs-box .tabs a', tabName);
+                .clickLinkByText(tabName);
         },
         removeCluster: function(clusterName) {
             var self = this;
@@ -33,9 +37,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                 .then(function() {
                     return self.goToTab('Dashboard');
                 })
-                .findByCssSelector('button.delete-environment-btn')
-                    .click()
-                    .end()
+                .clickByCssSelector('button.delete-environment-btn')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
@@ -101,9 +103,7 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
         resetEnvironment: function(clusterName) {
             var self = this;
             return this.remote
-                .findByCssSelector('button.reset-environment-btn')
-                    .click()
-                    .end()
+                .clickByCssSelector('button.reset-environment-btn')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })

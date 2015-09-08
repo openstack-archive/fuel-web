@@ -42,17 +42,16 @@ define([
                     .then(function() {
                         return loginPage.login('login', '*****');
                     })
-                    .findAllByCssSelector('div.login-error')
-                        .then(function(elements) {
-                            assert.ok(elements.length, 'Error message is expected to get displayed');
-                        });
+                    .then(function() {
+                        return common.assertElementExists('div.login-error', 'Error message is expected to get displayed');
+                    });
             },
             'Login with proper credentials': function() {
                 return this.remote
                     .then(function() {
                         return loginPage.login();
                     })
-                    .waitForDeletedByClassName('login-btn');
+                    .waitForElementDeletion('.login-btn', 2000);
             }
         };
     });

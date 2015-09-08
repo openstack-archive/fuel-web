@@ -623,9 +623,10 @@ class NetworkManager(object):
         nics = []
         group_id = (node.group_id or
                     objects.Cluster.get_default_group(node.cluster).id)
-        node_group = db().query(NodeGroup).get(group_id)
+        node_group = objects.NodeGroup.get_by_uid(group_id)
+        default_networks = objects.NodeGroup.get_default_networks(node_group)
 
-        ngs = node_group.networks + [cls.get_admin_network_group(node.id)]
+        ngs = default_networks + [cls.get_admin_network_group(node.id)]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(

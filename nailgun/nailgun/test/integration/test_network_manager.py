@@ -993,6 +993,17 @@ class TestNeutronManager70(BaseNetworkManagerTest):
         vips = self.net_manager.get_assigned_vips(self.cluster)
         self.assertEqual(vips_to_assign, vips)
 
+    def test_default_interfaces_addtl_networks(self):
+        self.env._create_network_group(name='net1')
+        self.env._create_network_group(name='net2')
+        node = self.env.create_node(cluster_id=self.cluster.id)
+
+        # With no template uploaded ONLY default networks should be
+        # assigned to nics
+        for nic in node.nic_interfaces:
+            for net in nic.assigned_networks:
+                self.assertIn(net['name'], list(consts.NETWORKS))
+
 
 class TestNovaNetworkManager70(TestNeutronManager70):
 

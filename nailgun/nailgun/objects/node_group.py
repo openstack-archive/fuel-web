@@ -15,10 +15,11 @@
 #    under the License.
 
 
+from nailgun import consts
 from nailgun.objects.serializers.node_group import NodeGroupSerializer
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NodeGroup as DBNodeGroup
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
@@ -27,7 +28,7 @@ from nailgun.objects import NailgunObject
 
 class NodeGroup(NailgunObject):
 
-    model = DBNodeGroup
+    model = models.NodeGroup
     serializer = NodeGroupSerializer
 
     schema = {
@@ -64,6 +65,21 @@ class NodeGroup(NailgunObject):
 
         db().flush()
         return new_group
+
+    @classmethod
+    def get_default_networks(cls, instance):
+        """Get all networks in the specfied node group
+        with names matching the default networks.
+
+        :param instance: NodeGroup instance
+        :returns: List of NetworkGroups
+        """
+        ngs = db().query(models.NetworkGroup).filter(
+            models.NetworkGroup.group_id == instance.id,
+            models.NetworkGroup.name.in_(consts.NETWORKS)
+        )
+
+        return ngs.all()
 
 
 class NodeGroupCollection(NailgunCollection):

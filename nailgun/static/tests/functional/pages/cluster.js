@@ -80,22 +80,20 @@ define([
                         );
                 });
         },
-        checkNodes: function(amount) {
+        checkNodes: function(amount, status) {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .setFindTimeout(1000)
-                                .findAllByCssSelector('.node.discover > label')
-                                .then(function(nodes) {
-                                    return nodes[index].click();
-                                })
-                                .catch(function() {
-                                    throw new Error('Failed to add ' + amount + ' nodes to the cluster');
-                                });
+                                .findAllByCssSelector('.node' + (status ? '.' + status : '.discover') + ' > label')
+                                    .then(function(nodes) {
+                                        return nodes[index].click();
+                                    })
+                                    .catch(function() {
+                                        throw new Error('Failed to add ' + amount + ' nodes to the cluster');
+                                    });
                         },
                         true);
                 });

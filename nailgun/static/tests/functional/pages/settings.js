@@ -15,25 +15,21 @@
  **/
 
 define([
-    'tests/functional/pages/common'
-], function(Common) {
+    '../../helpers'
+], function() {
     'use strict';
 
     function SettingsPage(remote) {
         this.remote = remote;
-        this.common = new Common(this.remote);
     }
 
     SettingsPage.prototype = {
         constructor: SettingsPage,
         waitForRequestCompleted: function() {
-            var self = this;
             return this.remote
-                .then(function() {
-                    // Load Defaults button is locked during any request is in progress on the tab
-                    // so this is a hacky way to track request state
-                    return self.common.waitForElementDeletion('.btn-load-defaults:disabled');
-                });
+                // Load Defaults button is locked during any request is in progress on the tab
+                // so this is a hacky way to track request state
+                .waitForElementDeletion('.btn-load-defaults:disabled', 2000);
         }
     };
     return SettingsPage;

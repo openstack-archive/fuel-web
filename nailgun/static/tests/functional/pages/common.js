@@ -99,7 +99,7 @@ define([
                                 )}, false);
                         });
             },
-            addNodesToCluster: function(nodesAmount, nodesRoles) {
+            addNodesToCluster: function(nodesAmount, nodesRoles, specificNodeStatuses) {
                 var self = this;
                 return this.remote
                     .then(function() {
@@ -111,6 +111,8 @@ define([
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
                     .then(function() {
+                        if (specificNodeStatuses && specificNodeStatuses.error) return self.clusterPage.checkErrorNode();
+                        if (specificNodeStatuses && specificNodeStatuses.offline) return self.clusterPage.checkOfflineNode();
                         return self.clusterPage.checkNodes(nodesAmount);
                     })
                     .clickByCssSelector('button.btn-apply')
@@ -118,12 +120,13 @@ define([
             },
             assertElementContainsText: function(cssSelector, searchedText, message) {
                 return this.remote
-                    .findByCssSelector(cssSelector)
-                        .then(function(element) {
-                            return element.getVisibleText()
-                                .then(function(visibleText) {
-                                    assert.isTrue(visibleText == searchedText, message);
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            return _.each(elements, function(element) {
+                                return element.getVisibleText().then(function(visibleText) {
+                                    return assert.isTrue(_.contains(visibleText, searchedText), message);
                                 });
+                            });
                         })
                         .end();
             },
@@ -161,16 +164,36 @@ define([
                         })
                         .end();
             },
+            isIntegerContentPositive: function(cssSelector, attributeName) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                        .getVisibleText()
+                        .then(function(text) {
+                            return assert.isTrue(parseInt(text) > 0, attributeName + ' is greater than 0');
+                        })
+                        .end();
+            },
             assertElementValueEqualTo: function(cssSelector, value, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
                         .then(function(element) {
                             return element.getAttribute('value')
                                 .then(function(elementValue) {
-                                    assert.equal(elementValue, value, message);
+                                    return assert.equal(elementValue, value, message);
                                 });
                         })
                         .end();
+            },
+            isElementTextEqualTo: function(cssSelector, value, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                    .then(function(element) {
+                        return element.getVisibleText()
+                            .then(function(text) {
+                                return assert.equal(text, value, message);
+                            });
+                    })
+                    .end();
             }
         };
         return CommonMethods;

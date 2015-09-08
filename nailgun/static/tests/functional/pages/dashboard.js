@@ -22,7 +22,10 @@ define([
     'use strict';
     function DashboardPage(remote) {
         this.remote = remote;
-        this.modal = new ModalWindow(this.remote);
+        this.modal = new ModalWindow(remote);
+        this.renameInputSelector = '.rename-block input[type=text]';
+        this.deployButtonSelector = 'button.deploy-btn';
+        this.nameSelector = '.cluster-info-value.name a';
     }
 
     DashboardPage.prototype = {
@@ -30,8 +33,7 @@ define([
         startDeployment: function() {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
-                .clickByCssSelector('.deploy-block button.deploy-btn')
+                .clickByCssSelector(this.deployButtonSelector)
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
@@ -61,6 +63,37 @@ define([
                 .then(function() {
                     return self.modal.waitToClose();
                 });
+        },
+        startClusterRenaming: function() {
+            return this.remote
+                .clickByCssSelector('.cluster-info-value.name .glyphicon-pencil');
+        },
+        setClusterName: function(name) {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.startClusterRenaming();
+                })
+                .findByCssSelector('.rename-block input[type=text]')
+                    .clearValue()
+                    .type(name)
+                    // Enter
+                    .type('\uE007')
+                    .end();
+        },
+        discardChanges: function() {
+            var self = this;
+            return this.remote
+                .clickByCssSelector('a.discard-changes')
+                .then(function() {
+                    return self.modal.waitToOpen();
+                })
+                .then(function() {
+                    return self.modal.clickFooterButton('Discard');
+                })
+                .then(function() {
+                    return self.modal.waitToClose();
+                })
         }
     };
     return DashboardPage;

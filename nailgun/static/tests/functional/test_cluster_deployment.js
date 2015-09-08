@@ -72,7 +72,6 @@ define([
                     });
             },
             'No controller warning': function() {
-                this.timeout = 120000;
                 return this.remote
                     .then(function() {
                         // Adding single compute
@@ -100,7 +99,6 @@ define([
                     });
             },
             'Discard changes': function() {
-                this.timeout = 120000;
                 return this.remote
                     .then(function() {
                         // Adding three controllers
@@ -133,7 +131,6 @@ define([
                         .end();
             },
             'Start/stop deployment': function() {
-                this.timeout = 120000;
                 return this.remote
                     .then(function() {
                         return common.addNodesToCluster(3, ['Controller']);
@@ -144,22 +141,13 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .setFindTimeout(2000)
-                    .findAllByCssSelector('div.deploy-process div.progress')
-                        .then(function(elements) {
-                            assert.ok(elements.length, 'Deployment progress bar expected to appear');
-                        })
-                        .end()
+                    .waitForCssSelector('div.deploy-process div.progress', 1000)
                     .then(function() {
                         return dashboardPage.stopDeployment();
                     })
-                    .then(function() {
-                        // Progress bar disappears
-                        return common.waitForElementDeletion('div.deploy-process div.progress');
-                    })
+                    .waitForElementDeletion('div.deploy-process div.progress', 10000)
                     // Deployment button available
-                    .findByCssSelector('div.deploy-block button.deploy-btn')
-                        .end()
+                    .waitForCssSelector('div.deploy-block button.deploy-btn', 1000)
                     .findByCssSelector('div.alert-warning strong')
                         .getVisibleText()
                         .then(function(alertTitle) {
@@ -169,10 +157,10 @@ define([
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);
-                    });
+                    })
             },
             'Test tabs locking after deployment completed': function() {
-                this.timeout = 120000;
+                this.timeout = 100000;
                 return this.remote
                     .then(function() {
                         // Adding single controller (enough for deployment)
@@ -196,10 +184,8 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .setFindTimeout(120000)
                     // Deployment competed
-                    .findByCssSelector('div.horizon')
-                        .end()
+                    .waitForCssSelector('div.horizon', 50000)
                     .then(function() {
                         return clusterPage.isTabLocked('Networks');
                     })
@@ -214,10 +200,7 @@ define([
                     })
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
-                    })
-                    .then(function() {
-                        return clusterPage.resetEnvironment(clusterName);
-                    })
+                    });
             }
         };
     });

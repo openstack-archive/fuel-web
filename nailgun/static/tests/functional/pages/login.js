@@ -32,14 +32,13 @@ define([
 
             return this.remote
                 .setWindowSize(1280, 1024)
-                .setTimeout('page load', 20000)
+                .setTimeout('page load', 2000)
                 .getCurrentUrl()
                 .then(function(url) {
                     if (url !== Helpers.serverUrl + '/#login') {
                         return self.logout();
                     }
                 })
-                .setFindTimeout(10000)
                 .findByName('username')
                     .clearValue()
                     .type(username)
@@ -48,9 +47,7 @@ define([
                     .clearValue()
                     .type(password)
                     .end()
-                .findByClassName('login-btn')
-                    .click()
-                    .end();
+                .clickByCssSelector('.login-btn');
         },
         logout: function() {
             return this.remote
@@ -59,20 +56,14 @@ define([
                     if (url.indexOf(Helpers.serverUrl) !== 0) {
                         return this.parent
                             .get(Helpers.serverUrl + '/#logout')
-                            .setFindTimeout(10000)
                             .findByClassName('login-btn')
                             .then(function() {
                                 return true;
                             });
                     }
                 })
-                .setFindTimeout(1000)
-                .findByCssSelector('li.user-icon')
-                    .click()
-                    .end()
-                .findByCssSelector('.user-popover button.btn-logout')
-                    .click()
-                    .end()
+                .clickByCssSelector('li.user-icon')
+                .clickByCssSelector('.user-popover button.btn-logout')
                 .findByCssSelector('.login-btn')
                 .then(
                     function() {return true},

@@ -77,10 +77,7 @@ define([
                     .then(function() {
                         return common.goToEnvironment(clusterName);
                     })
-                    .setFindTimeout(5000)
-                    .findByCssSelector('a.btn-add-nodes')
-                        .click()
-                        .end()
+                    .clickByCssSelector('a.btn-add-nodes')
                     .findByCssSelector('button.btn-apply')
                         .then(function(button) {
                             applyButton = button;
@@ -90,8 +87,7 @@ define([
                             });
                         })
                         .end()
-                    .findByCssSelector('div.role-panel')
-                        .end()
+                    .waitForCssSelector('div.role-panel', 2000)
                     .then(function() {
                         return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
                     })
@@ -107,10 +103,7 @@ define([
                     .then(function() {
                         applyButton.click();
                     })
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end()
-
+                    .waitForCssSelector('button.btn-add-nodes', 2000)
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {

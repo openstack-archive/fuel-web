@@ -64,7 +64,6 @@ define([
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.isElementEnabled('.btn-load-defaults', 'Load defaults button is enabled');
                     })
@@ -77,7 +76,6 @@ define([
             },
             'Check Save Settings button': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .findByCssSelector('input[type=checkbox]')
                         // introduce change
                         .click()
@@ -93,7 +91,6 @@ define([
             },
             'Check Cancel Changes button': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // introduce change
                     .findByCssSelector('input[type=checkbox]')
                         .click()
@@ -109,6 +106,9 @@ define([
                     .then(function() {
                         return modal.close();
                     })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
                     // reset changes
                     .findByCssSelector('.btn-revert-changes')
                         .click()
@@ -119,7 +119,6 @@ define([
             },
             'Check changes saving': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // introduce change
                     .findByCssSelector('input[type=checkbox]')
                         .click()
@@ -140,14 +139,11 @@ define([
             },
             'Check loading of defaults': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // load defaults
                     .findByCssSelector('.btn-load-defaults')
                         .click()
                         .end()
-                    .then(function() {
-                        return settingsPage.waitForRequestCompleted();
-                    })
+                    .waitForCssSelector('input:not(:disabled)', 2000)
                     .then(function() {
                         return common.isElementEnabled('.btn-apply-changes', 'Save Settings button is enabled after defaults were loaded');
                     })
@@ -161,7 +157,6 @@ define([
             },
             'The choice of subgroup is preserved when user navigates through the cluster tabs': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Syslog');
                     })
@@ -177,7 +172,6 @@ define([
             },
             'The page reacts on invalid input': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Access');
                     })
@@ -185,9 +179,7 @@ define([
                         // "nova" is forbidden username
                         return common.setInputValue('[type=text][name=user]', 'nova');
                     })
-                    .then(function() {
-                        return common.elementExists('.access .form-group.has-error', 'Invalid field marked as error');
-                    })
+                    .waitForCssSelector('.access .form-group.has-error', 1000)
                     .then(function() {
                         return common.elementExists('.subtab-link-access i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid');
                     })
@@ -208,7 +200,6 @@ define([
             'Test repositories custom control': function() {
                 var repoAmount;
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.clickLink('Repositories');
                     })

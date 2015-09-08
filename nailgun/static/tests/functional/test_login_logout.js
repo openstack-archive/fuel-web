@@ -52,7 +52,7 @@ define([
                     .then(function() {
                         return loginPage.login();
                     })
-                    .waitForDeletedByClassName('login-btn');
+                    .waitForElementDeletion('.login-btn', 2000);
             }
         };
     });

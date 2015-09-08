@@ -62,33 +62,10 @@ define([
                         return self.welcomePage.skip();
                     });
             },
-            clickLink: function(text) {
-                return this.remote
-                    .setFindTimeout(1000)
-                    .findByLinkText(text)
-                        .click()
-                        .end();
-            },
-            waitForElementDeletion: function(cssSelector) {
-                return this.remote
-                    .setFindTimeout(5000)
-                    .waitForDeletedByCssSelector(cssSelector)
-                    .catch(function(error) {
-                        if (error.name != 'Timeout')
-                            throw error;
-                    })   // For cases when element is destroyed already
-                    .findAllByCssSelector(cssSelector)
-                        .then(function(elements) {
-                            if (elements.length)
-                                throw new Error('Element ' + cssSelector + ' was not destroyed');
-                        });
-            },
             goToEnvironment: function(clusterName, tabName) {
                 var self = this;
                 return this.remote
-                    .then(function() {
-                        return self.clickLink('Environments');
-                    })
+                    .clickLinkByText('Environments')
                     .then(function() {
                         return self.clustersPage.goToEnvironment(clusterName);
                     })
@@ -99,9 +76,7 @@ define([
             createCluster: function(clusterName, stepsMethods) {
                 var self = this;
                 return this.remote
-                    .then(function() {
-                        return self.clickLink('Environments');
-                    })
+                    .clickLinkByText('Environments')
                     .then(function() {
                         return self.clustersPage.createCluster(clusterName, stepsMethods);
                     });
@@ -109,9 +84,7 @@ define([
             removeCluster: function(clusterName, suppressErrors) {
                 var self = this;
                 return this.remote
-                    .then(function() {
-                        return self.clickLink('Environments');
-                    })
+                    .clickLinkByText('Environments')
                     .then(function() {
                         return self.clustersPage.goToEnvironment(clusterName);
                     })
@@ -126,9 +99,7 @@ define([
                 var self = this;
                 return this.remote
                     .setFindTimeout(2000)
-                    .then(function() {
-                        return self.clickLink('Environments');
-                    })
+                    .clickLinkByText('Environments')
                     .findAllByCssSelector(self.clustersPage.clusterSelector)
                     .then(function(divs) {
                         return divs.reduce(function(matchFound, element) {
@@ -145,9 +116,7 @@ define([
                     .then(function() {
                         return self.clusterPage.goToTab('Nodes');
                     })
-                    .findByCssSelector('button.btn-add-nodes')
-                        .click()
-                        .end()
+                    .clickByCssSelector('button.btn-add-nodes')
                     .findByCssSelector('div.role-panel')
                         .end()
                     .then(function() {
@@ -156,32 +125,12 @@ define([
                     .then(function() {
                         return self.clusterPage.checkNodes(nodesAmount);
                     })
-                    .findByCssSelector('button.btn-apply')
-                        .click()
-                        .end()
+                    .clickByCssSelector('button.btn-apply')
                     .setFindTimeout(2000)
                     .findByCssSelector('button.btn-add-nodes')
                         .end();
             },
-            doesCssSelectorContainText: function(cssSelector, searchedText) {
-                return this.remote
-                    .findAllByCssSelector(cssSelector)
-                    .then(function(messages) {
-                        return messages.reduce(function(result, message) {
-                            return message.getVisibleText().then(function(visibleText) {
-                                return visibleText == searchedText || result;
-                            });
-                        }, false)
-                    });
-            },
-            setInputValue: function(cssSelector, value) {
-                return this.remote
-                    .findByCssSelector(cssSelector)
-                        .clearValue()
-                        .type(value)
-                        .end();
-            },
-            isElementEnabled: function(cssSelector, message) {
+            assertElementEnabled: function(cssSelector, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
                         .isEnabled()
@@ -190,7 +139,7 @@ define([
                         })
                         .end();
             },
-            isElementDisabled: function(cssSelector, message) {
+            assertElementDisabled: function(cssSelector, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
                         .isEnabled()
@@ -199,7 +148,7 @@ define([
                         })
                         .end();
             },
-            elementExists: function(cssSelector, message) {
+            assertElementExists: function(cssSelector, message) {
                 return this.remote
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
@@ -207,7 +156,7 @@ define([
                         })
                         .end();
             },
-            elementNotExists: function(cssSelector, message) {
+            assertElementNotExists: function(cssSelector, message) {
                 return this.remote
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
@@ -215,7 +164,7 @@ define([
                         })
                         .end();
             },
-            isElementValueEqualTo: function(cssSelector, value, message) {
+            assertElementValueEqualTo: function(cssSelector, value, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
                         .then(function(element) {

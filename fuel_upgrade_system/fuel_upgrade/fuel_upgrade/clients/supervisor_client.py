@@ -69,8 +69,6 @@ class SupervisorClient(object):
 
         self.supervisor_template_path = os.path.join(
             self.templates_dir, 'supervisor.conf')
-        self.supervisor_common_template_path = os.path.join(
-            self.templates_dir, 'common.conf')
         self.supervisor_config_dir = self.get_config_path(
             self.config.new_version)
         self.previous_supervisor_config_path = self.get_config_path(
@@ -78,6 +76,7 @@ class SupervisorClient(object):
 
         utils.create_dir_if_not_exists(self.supervisor_config_dir)
         self.supervisor = self.get_supervisor()
+        self.new_configs = []
 
     def get_config_path(self, version):
         """Creates path to supervisor config with
@@ -185,7 +184,7 @@ class SupervisorClient(object):
 
     def generate_config(self, config_name, service_name,
                         command, autostart=True):
-        """Generates config for each service
+        """Generates config for each service if it does not exist
 
         :param str config_name: is the name of the config
         :param str service_name: is the name of the service
@@ -195,6 +194,12 @@ class SupervisorClient(object):
         config_path = os.path.join(
             self.supervisor_config_dir,
             '{0}'.format('{0}.conf'.format(config_name)))
+
+        # if there is config for service, use existing
+        if os.path.exists(config_path):
+            return
+
+        self.new_configs.append(config_path)
 
         log_path = '/var/log/{0}.log'.format(service_name)
 
@@ -208,6 +213,10 @@ class SupervisorClient(object):
             self.supervisor_template_path, config_path, params)
 
     def remove_new_configs(self):
-        """Remove new version of configs from the filesystem.
+        """Remove only new version of configs from the filesystem.
         """
-        utils.remove(self.supervisor_config_dir)
+        for config_path in self.new_configs:
+            utils.remove(config_path)
+
+        if len(os.listdir(self.supervisor_config_dir)) == 0:
+            utils.remove(self.supervisor_config_dir)

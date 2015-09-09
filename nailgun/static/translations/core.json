@@ -819,7 +819,11 @@
                         "install_murano": "Install Murano",
                         "install_murano_description": "Murano is an application catalog, which allows application developers and cloud administrators to publish various cloud-ready applications in a browsable categorized catalog, which may be used by the cloud users (including the inexperienced ones) to pick-up the needed applications and services and composes the reliable environments out of them in a “push-the-button” manner.",
                         "install_ceilometer": "Install Ceilometer (OpenStack Telemetry)",
-                        "install_ceilometer_description": "Ceilometer provides metering and monitoring of an OpenStack cloud."
+                        "install_ceilometer_description": "Ceilometer provides metering and monitoring of an OpenStack cloud.",
+                        "install_ironic": "Install Ironic",
+                        "install_ironic_description": "Ironic enables baremetal provisioning.",
+                        "ironic_network_mode_alert": "Ironic requires Neutron with VLAN segmentation as a network option.",
+                        "ironic_storage_mode_alert": "Ironic requires Swift object storage as a backend for Glance image service."
                     },
                     "ready": {
                         "title": "Finish",

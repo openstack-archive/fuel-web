@@ -114,6 +114,18 @@
         restrictions:
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
+      ironic:
+        name: "Ironic"
+        description: "Ironic conductor"
+        weight: 100
+        limits:
+          min: 1
+          recommended: 3
+        conflicts:
+          - compute
+        restrictions:
+          - condition: "settings:additional_components.ironic.value == false"
+            message: "Ironic should be enabled."
 
     network_roles_metadata:
       -
@@ -476,6 +488,8 @@
           - {allocate_size: "all", id: "vm"}
         compute-vmware:
           - {allocate_size: "min", id: "os"}
+        ironic:
+          - {allocate_size: "all", id: "os"}
       volumes:
         - id: "os"
           type: "vg"
@@ -588,7 +602,7 @@
             weight: 10
             type: "text"
             regex:
-              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$)(?!.* +.*$).+'
+              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?!ironic$)(?![Gg]uest$)(?!.* +.*$).+'
               error: "Invalid username"
           email:
             value: "admin@localhost"
@@ -775,6 +789,15 @@
             type: "checkbox"
             restrictions:
               - "settings:additional_components.ceilometer.value == false"
+          ironic:
+            value: false
+            label: "Install Ironic"
+            description: "If selected, Ironic component will be installed"
+            weight: 50
+            type: "checkbox"
+            restrictions:
+              - "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
+              - "settings:storage.images_ceph.value == true": "Ironic requires Swift as a backend for Glance image service."
         common:
           metadata:
             label: "Common"
@@ -1196,6 +1219,13 @@
           metadata:
             metadata_proxy_shared_secret:
               generator: "password"
+        ironic:
+          user_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+          swift_tempurl_key:
+            generator: "password"
         puppet:
           manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
           modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"
@@ -1305,6 +1335,15 @@
           description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
+        ironic:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_ironic"
+          description: "dialog.create_cluster_wizard.additional.install_ironic_description"
+          bind: "settings:additional_components.ironic.value"
+          weight: 40
+          restrictions:
+            - "Network.manager != 'neutron-vlan'": "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+            - "Storage.ceph == 'enable'": "dialog.create_cluster_wizard.additional.ironic_storage_mode_alert"
       Ready: {}
     vmware_attributes_metadata:
       editable:

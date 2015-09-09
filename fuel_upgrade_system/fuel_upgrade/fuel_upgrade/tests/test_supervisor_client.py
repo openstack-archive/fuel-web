@@ -104,8 +104,14 @@ class TestSupervisorClient(BaseTestCase):
         config_path = '/config/path'
         with mock.patch('fuel_upgrade.clients.supervisor_client.os.path.join',
                         return_value=config_path):
-            self.supervisor.generate_config(
-                'confing_name1', 'docker-service_name1', 'command1')
+            with mock.patch(
+                'fuel_upgrade.clients.supervisor_client.os.path.exists',
+                return_value=False
+            ):
+                self.supervisor.generate_config(
+                    'confing_name1', 'docker-service_name1', 'command1')
+
+        self.assertEqual([config_path], self.supervisor.new_configs)
 
         self.utils_mock.render_template_to_file.assert_called_once_with(
             self.supervisor.supervisor_template_path,
@@ -116,5 +122,29 @@ class TestSupervisorClient(BaseTestCase):
              'autostart': 'true'})
 
     def test_remove_new_configs(self, _):
-        self.supervisor.remove_new_configs()
+        with mock.patch('fuel_upgrade.clients.supervisor_client.os.listdir',
+                        return_value=[]):
+            self.supervisor.remove_new_configs()
         self.utils_mock.remove.assert_called_with('/etc/supervisord.d/9999')
+
+    def test_config_file_is_not_overwritten(self, _):
+        config_path = '/config/path'
+        with mock.patch('fuel_upgrade.clients.supervisor_client.os.path.join',
+                        return_value=config_path):
+            with mock.patch(
+                'fuel_upgrade.clients.supervisor_client.os.path.exists',
+                return_value=True
+            ):
+                self.supervisor.generate_config(
+                    'confing_name1', 'docker-service_name1', 'command1')
+
+        self.assertFalse(self.utils_mock.render_template_to_file.called)
+
+    def test_existing_config_is_not_removed(self, _):
+        self.supervisor.new_configs = ["/config/path1"]
+
+        with mock.patch('fuel_upgrade.clients.supervisor_client.os.listdir',
+                        return_value=["/config/path2"]):
+            self.supervisor.remove_new_configs()
+
+        self.utils_mock.remove.assert_called_once_with('/config/path1')

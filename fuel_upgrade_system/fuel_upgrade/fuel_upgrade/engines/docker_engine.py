@@ -67,8 +67,8 @@ class DockerUpgrader(UpgradeEngine):
         """
         # Point to new supervisor configs and restart supervisor in
         # order to apply them
-        self.switch_to_new_configs()
-        self.supervisor.restart_and_wait()
+
+        self.supervisor.stop_all_services()
 
         # Stop docker containers (it's safe, since at this time supervisor's
         # configs are empty.
@@ -82,7 +82,8 @@ class DockerUpgrader(UpgradeEngine):
         # supervisor in order to apply them. Note, supervisor's processes
         # will be attached to running docker containers automatically.
         self.generate_configs(autostart=True)
-        self.supervisor.restart_and_wait()
+        self.switch_to_new_configs()
+        self.supervisor.start_all_services()
 
         # Verify that all services up and running
         self.upgrade_verifier.verify()
@@ -90,10 +91,10 @@ class DockerUpgrader(UpgradeEngine):
     def rollback(self):
         """Method which contains rollback logic
         """
-        self.supervisor.switch_to_previous_configs()
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
-        self.supervisor.restart_and_wait()
+        self.supervisor.switch_to_previous_configs()
+        self.supervisor.start_all_services()
         self.supervisor.remove_new_configs()
 
     @property

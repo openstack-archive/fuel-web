@@ -68,12 +68,11 @@ class TestDockerUpgrader(BaseTestCase):
         self.mock_methods(self.upgrader, mocked_methods)
         self.upgrader.upgrade()
 
-        self.assertEqual(
-            self.upgrader.generate_configs.call_args_list,
-            [mock.call(autostart=True)])
-
+        self.upgrader.generate_configs.assert_called_once_with(autostart=True)
+        self.called_once(self.upgrader.switch_to_new_configs)
         self.called_once(self.upgrader.stop_fuel_containers)
-        self.assertEqual(self.supervisor_mock.restart_and_wait.call_count, 2)
+        self.called_once(self.supervisor_mock.stop_all_services)
+        self.called_once(self.supervisor_mock.start_all_services)
         self.called_once(self.upgrader.upgrade_verifier.verify)
 
     def test_rollback(self):
@@ -83,7 +82,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_times(self.upgrader.stop_fuel_containers, 1)
         self.called_once(self.supervisor_mock.switch_to_previous_configs)
         self.called_once(self.supervisor_mock.stop_all_services)
-        self.called_once(self.supervisor_mock.restart_and_wait)
+        self.called_once(self.supervisor_mock.start_all_services)
         self.called_once(self.supervisor_mock.remove_new_configs)
 
     def test_stop_fuel_containers(self):

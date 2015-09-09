@@ -100,13 +100,13 @@ class TestSupervisorClient(BaseTestCase):
              mock.call('config_name2', 'service_name2',
                        'cmd2', autostart=False)])
 
-    def test_generate_config(self, _):
-        config_path = '/config/path'
-        with mock.patch('fuel_upgrade.clients.supervisor_client.os.path.join',
-                        return_value=config_path):
-            self.supervisor.generate_config(
-                'confing_name1', 'docker-service_name1', 'command1')
+    def test_generate_config(self, os_mock):
+        config_path = os_mock.path.join.return_value = '/config/path'
+        os_mock.path.exists.return_value = False
+        self.supervisor.generate_config(
+            'confing_name1', 'docker-service_name1', 'command1')
 
+        self.assertItemsEqual([config_path], self.supervisor.new_configs)
         self.utils_mock.render_template_to_file.assert_called_once_with(
             self.supervisor.supervisor_template_path,
             config_path,
@@ -115,6 +115,21 @@ class TestSupervisorClient(BaseTestCase):
              'log_path': '/var/log/docker-service_name1.log',
              'autostart': 'true'})
 
-    def test_remove_new_configs(self, _):
+    def test_config_file_is_not_overwritten(self, os_mock):
+        os_mock.path.join.return_value = '/config/path'
+        os_mock.path.exists.return_value = True
+        self.supervisor.generate_config(
+            'confing_name1', 'docker-service_name1', 'command1')
+
+        self.assertFalse(self.utils_mock.render_template_to_file.called)
+
+    def test_remove_new_configs(self, os_mock):
+        os_mock.listdir.return_value = []
         self.supervisor.remove_new_configs()
         self.utils_mock.remove.assert_called_with('/etc/supervisord.d/9999')
+
+    def test_existing_config_is_not_removed(self, os_mock):
+        self.supervisor.new_configs = ["/config/path1"]
+        os_mock.listdir.return_value = ["/config/path1"]
+        self.supervisor.remove_new_configs()
+        self.utils_mock.remove.assert_called_once_with('/config/path1')

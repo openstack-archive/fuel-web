@@ -445,14 +445,14 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 403)
 
     def test_reset_cluster_name_when_unassign_node(self):
+        node_name = 'new_node_name'
         self.env.create(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'pending_addition': True,
-                 'name': 'new_node'}])
+                 'name': node_name}])
 
         node = self.env.nodes[0]
-        default_name = 'Untitled ({0})'.format(node.mac[-5:])
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -463,7 +463,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(1, len(resp.json_body))
         self.assertEqual(node.id, resp.json_body[0]['id'])
-        self.assertEqual(node.name, default_name)
+        self.assertEqual(node.name, node_name)
         self.assertEqual(node.cluster, None)
         self.assertEqual(node.pending_roles, [])
 

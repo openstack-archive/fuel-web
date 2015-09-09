@@ -810,7 +810,6 @@ class Node(NailgunObject):
         instance.group_id = None
         instance.kernel_params = None
         instance.primary_roles = []
-        instance.reset_name_to_default()
         instance.hostname = cls.default_slave_name(instance)
         db().flush()
         db().refresh(instance)

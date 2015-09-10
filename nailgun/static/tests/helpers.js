@@ -65,7 +65,7 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                         .end()
                     .then(function() {
                         self.parent.setFindTimeout(currentTimeout);
-                    })
+                    });
             });
         },
         waitForElementDeletion: function(cssSelector, timeout) {
@@ -84,7 +84,7 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                     })
                     .then(function() {
                         self.parent.setFindTimeout(currentTimeout);
-                    })
+                    });
             });
         },
         setInputValue: function(cssSelector, value) {

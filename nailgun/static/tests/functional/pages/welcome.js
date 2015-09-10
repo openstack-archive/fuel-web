@@ -28,9 +28,8 @@ define(['../../helpers'], function(Helpers) {
                 .then(function(url) {
                     if (url == Helpers.serverUrl + '/#welcome') {
                         return this.parent
-                            .setFindTimeout(2000)
                             .clickByCssSelector('.welcome-button-box button')
-                            .waitForDeletedByCssSelector('.welcome-button-box button')
+                            .waitForDeletedByCssSelector('.welcome-button-box button', 2000)
                             .then(
                                 function() {return true},
                                 function() {return !strictCheck}

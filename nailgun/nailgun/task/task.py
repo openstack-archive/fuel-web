@@ -19,7 +19,6 @@ from copy import deepcopy
 import os
 
 import netaddr
-import requests
 import six
 
 from sqlalchemy import func
@@ -50,6 +49,7 @@ from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
+from nailgun.utils import http_get
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.zabbix import ZabbixManager
@@ -1410,13 +1410,17 @@ class GenerateCapacityLogTask(object):
 class CheckRepositoryConnectionFromMasterNodeTask(object):
     @classmethod
     def execute(cls, task):
-        failed_repositories = cls._get_failed_repositories(task)
+        failed_responses = cls._get_failed_repositories(task)
 
-        if len(failed_repositories) > 0:
-            error_message = ("Connection to following repositories"
-                             " could not be established: {0}").format(
-                                 ', '.join(failed_repositories))
-
+        if len(failed_responses) > 0:
+            error_message = (
+                "Connection to following repositories could not be "
+                "established: {0}".format(
+                    ', '.join(
+                        '<{0} [{1}]>'.format(r.url, r.status_code)
+                        for r in failed_responses
+                    )
+                ))
             raise errors.CheckBeforeDeploymentError(error_message)
 
         task.status = 'ready'
@@ -1427,12 +1431,17 @@ class CheckRepositoryConnectionFromMasterNodeTask(object):
     def _get_failed_repositories(cls, task):
         urls = objects.Cluster.get_repo_urls(task.cluster)
         responses = cls._get_responses(urls)
-        failed_responses = filter(lambda x: x.status_code != 200, responses)
-        return [r.url for r in failed_responses]
+        return filter(lambda x: x.status_code != 200, responses)
 
     @classmethod
     def _get_responses(cls, urls):
-        return map(requests.get, urls)
+        responses = []
+        for url in urls:
+            # sometimes mirrors are under heavy load, and may return 502.
+            # they also could be in "sync" state, and hence respond with
+            # 404 either. so let's do several attempts.
+            responses.append(http_get(url, retries_on=[404, 500, 502]))
+        return responses
 
 
 class CheckRepoAvailability(BaseNetworkVerification):

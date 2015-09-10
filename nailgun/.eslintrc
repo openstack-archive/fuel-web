@@ -98,6 +98,7 @@
     "env": {
         "browser": true,
         "node": true,
+        "mocha": true,
         "amd": true
     },
     "globals": {

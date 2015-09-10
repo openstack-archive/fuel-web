@@ -32,14 +32,12 @@ define([
 
             return this.remote
                 .setWindowSize(1280, 1024)
-                .setTimeout('page load', 20000)
                 .getCurrentUrl()
                 .then(function(url) {
                     if (url !== Helpers.serverUrl + '/#login') {
                         return self.logout();
                     }
                 })
-                .setFindTimeout(10000)
                 .setInputValue('[name=username]', username)
                 .setInputValue('[name=password]', password)
                 .clickByCssSelector('.login-btn');
@@ -51,14 +49,12 @@ define([
                     if (url.indexOf(Helpers.serverUrl) !== 0) {
                         return this.parent
                             .get(Helpers.serverUrl + '/#logout')
-                            .setFindTimeout(10000)
                             .findByClassName('login-btn')
                             .then(function() {
                                 return true;
                             });
                     }
                 })
-                .setFindTimeout(1000)
                 .clickByCssSelector('li.user-icon')
                 .clickByCssSelector('.user-popover button.btn-logout')
                 .findByCssSelector('.login-btn')

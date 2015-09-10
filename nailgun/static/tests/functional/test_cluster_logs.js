@@ -58,7 +58,6 @@ define([
             '"Show" button availability and logs displaying': function() {
                 var showLogsButtonSelector = '.sticker button';
                 return this.remote
-                    .setFindTimeout(5000)
                     .findByCssSelector('.sticker select[name=source] > option')
                         // Check if "Source" dropdown exist
                         .end()
@@ -75,18 +74,12 @@ define([
                     .clickByCssSelector(showLogsButtonSelector)
                     // Wait till Progress bar disappears
                     .waitForElementDeletion('.logs-tab div.progress', 5000)
-                    .setFindTimeout(10000)
-                    .findAllByCssSelector('.log-entries > tbody > tr')
-                        .then(function(elements) {
-                            assert.ok(elements.length, 'Log tab entries are present');
-                        })
-                        .end()
+                    .waitForCssSelector('.log-entries > tbody > tr', 5000)
                     // "Other servers" option is present in "Logs" dropdown
                     .clickByCssSelector('.sticker select[name=type] > option[value=remote]')
-                    .findAllByCssSelector('.sticker select[name=node] > option')
-                        .then(function(elements) {
-                            assert.ok(elements.length, '"Node" dropdown is present');
-                        });
+                    .then(function() {
+                        return common.assertElementExists('.sticker select[name=node] > option', '"Node" dropdown is present');
+                    });
             }
         };
     });

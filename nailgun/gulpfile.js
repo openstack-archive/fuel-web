@@ -76,6 +76,14 @@ gulp.task('selenium', ['selenium:fetch'], function(cb) {
     );
 });
 
+gulp.task('karma', function(cb) {
+    var Server = require('karma').Server;
+    new Server({
+        configFile: __dirname + '/karma.config.js',
+        browsers: [argv.browser || 'firefox']
+    }, cb).start();
+});
+
 function runIntern(params) {
     return function() {
         var baseDir = 'static';
@@ -103,11 +111,10 @@ function runIntern(params) {
     };
 }
 
-gulp.task('intern:unit', runIntern({suites: argv.suites || 'static/tests/unit/**/*.js', browser: 'phantomjs'}));
 gulp.task('intern:functional', runIntern({functionalSuites: argv.suites || 'static/tests/functional/**/test_*.js'}));
 
 gulp.task('unit-tests', function(cb) {
-    runSequence('selenium', 'intern:unit', function(err) {
+    runSequence('selenium', 'karma', function(err) {
         shutdownSelenium();
         cb(err);
     });

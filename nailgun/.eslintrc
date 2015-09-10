@@ -98,10 +98,12 @@
     "env": {
         "browser": true,
         "node": true,
+        "mocha": true,
         "amd": true
     },
     "globals": {
         "app": false,
-        "requirejs": false
+        "assert": false,
+        "sinon": false
     }
 }

@@ -66,9 +66,8 @@ define([
                 var nodeNewName = 'Node new name';
                 return this.remote
                     .setFindTimeout(2000)
-                    .findByCssSelector('label.standard')
-                        // Standard mode chosen
-                        .click()
+                    // Standard mode chosen by default
+                    .findByCssSelector('label.standard.active')
                         .end()
                     .findByClassName('node-box')
                         .click()
@@ -76,55 +75,40 @@ define([
                         .findByCssSelector('.checkbox-group input[type=checkbox]:checked')
                             .end()
                         .end()
+                    // Delete and
                     .findByCssSelector('button.btn-delete-nodes')
-                        // Delete and
                         .end()
+                    // ... Edit Roles buttons appear upon node selection
                     .findByCssSelector('button.btn-edit-roles')
-                        // ... Edit Roles buttons appear upon node selection
                         .end()
                     .findByCssSelector('.node.selected')
-                        .findByCssSelector('.name p')
-                            .click()
-                            .end()
+                        .clickByCssSelector('.name p')
                         .findByCssSelector('input.node-name-input')
                             // Node name gets editable upon clicking on it
                             .clearValue()
                             .type(nodeNewName)
                             .pressKeys('\uE007')
                             .end()
-                        .findByCssSelector('.name p')
-                            .getVisibleText()
-                            .then(function(nodeName) {
-                                assert.equal(nodeName, nodeNewName, 'Node name has been updated');
-                            })
-                            .end()
                         .end()
-                    .findByCssSelector('div.node-settings')
-                        .click()
-                        .end()
+                    .waitForCssSelector('.node.selected .name p', 500)
+                    .then(function() {
+                        return common.assertElementContainsText('.node.selected .name p', nodeNewName, 'Node name has been updated');
+                    })
+                    .clickByCssSelector('div.node-settings')
                     .then(function() {
                         return modal.waitToOpen();
                     })
-                    .findByCssSelector('.modal-header h4.modal-title')
-                        .getVisibleText()
-                        .then(function(nodeName) {
-                            assert.equal(nodeName, nodeNewName, 'Node pop-up has updated node name');
-                        })
-                        .end()
                     .then(function() {
-                        return modal.close();
+                        return common.assertElementContainsText('.modal-header h4.modal-title', nodeNewName, 'Node pop-up has updated node name');
                     })
                     .then(function() {
-                        return modal.waitToClose();
+                        return modal.close();
                     });
             },
             'Compact View Mode': function() {
                 return this.remote
                     .setFindTimeout(2000)
-                    .findByCssSelector('label.compact')
-                        // Standard mode chosen by default
-                        .click()
-                        .end()
+                    .clickByCssSelector('label.compact')
                     .findByCssSelector('div.compact-node')
                         // Find a node
                         .findByCssSelector('div.node-checkbox')
@@ -137,51 +121,27 @@ define([
             'Compact View Node Popover': function() {
                 return this.remote
                     .setFindTimeout(2000)
-                    .findByCssSelector('label.compact')
-                        // Standard mode chosen by default
-                        .click()
-                        .end()
-                    .findByCssSelector('div.compact-node')
-                        // Find a node
-                        .findByCssSelector('div.node-hardware p.btn')
-                            // Hardware pop-over
-                            .click()
-                            .end()
-                        .end()
-                    .findByCssSelector('div.node-popover')
-                        .findByCssSelector('button.node-details')
-                            // Open node extended view
-                            .click()
-                            .end()
-                        .end()
-                    .then(function() {
-                        return common.waitForElementDeletion('div.node-popover');
-                    })
+                    // Open node extended view
+                    .clickByCssSelector('div.compact-node div.node-hardware p.btn')
+                    // Open node pop-up
+                    .clickByCssSelector('div.node-popover button.node-details')
+                    .waitForElementDeletion('div.node-popover', 0)
                     .then(function() {
                         return modal.waitToOpen();
                     })
                     .then(function() {
                         return modal.close();
                     })
-                    .then(function() {
-                        return modal.waitToClose();
-                    })
-                    .findByCssSelector('div.compact-node div.node-hardware p.btn')
-                        // Open popover again
-                        .click()
-                        .end()
-                    .findByCssSelector('div.node-popover button.btn-discard')
-                        // Discarding node addition
-                        .click()
-                        .end()
+                    // open node extended view
+                    .clickByCssSelector('div.compact-node div.node-hardware p.btn')
+                    // discard node addition
+                    .clickByCssSelector('div.node-popover button.btn-discard')
                     .then(function() {
                         // Deletion confirmation shows up
                         return modal.waitToOpen();
                     })
-                    .findByCssSelector('div.modal-content button.btn-delete')
-                        // Confirm deletion
-                        .click()
-                        .end()
+                    // Confirm deletion
+                    .clickByCssSelector('div.modal-content button.btn-delete')
                     .then(function() {
                         return modal.waitToClose();
                     })

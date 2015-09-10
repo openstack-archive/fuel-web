@@ -65,14 +65,10 @@ define([
             'No deployment button when there are no nodes added': function() {
                 return this.remote
                     .then(function() {
-                        return dashboardPage.isDeploymentButtonVisible();
-                    })
-                    .then(function(isVisible) {
-                        assert.isFalse(isVisible, 'No deployment should be possible without nodes added');
+                        return common.assertElementNotExists('button.deploy-btn', 'No deployment should be possible without nodes added')
                     });
             },
             'No controller warning': function() {
-                this.timeout = 120000;
                 return this.remote
                     .then(function() {
                         // Adding single compute
@@ -82,21 +78,17 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     })
                     .then(function() {
-                        return dashboardPage.isDeploymentButtonVisible();
-                    })
-                    .then(function(isVisible) {
-                        assert.isFalse(isVisible, 'No deployment should be possible without controller nodes added');
+                        return common.assertElementNotExists('button.deploy-btn', 'No deployment should be possible without controller nodes added')
                     })
                     .findByCssSelector('div.instruction.invalid')
                         // Invalid configuration message is shown
                         .end()
                     .then(function() {
-                        return common.doesCssSelectorContainText(
+                        return common.assertElementContainsText(
                             'div.validation-result ul.danger li',
-                            'At least 1 Controller nodes are required (0 selected currently).');
-                    })
-                    .then(function(messageFound) {
-                        assert.isTrue(messageFound, 'No controllers added warning should be shown');
+                            'At least 1 Controller nodes are required (0 selected currently).',
+                            'No controllers added warning should be shown'
+                        );
                     });
             },
             'Discard changes': function() {
@@ -109,17 +101,12 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.clickLink('Discard Changes');
-                    })
+                    .clickLinkByText('Discard Changes')
                     .then(function() {
                         return modal.waitToOpen();
                     })
                     .then(function() {
-                        return common.doesCssSelectorContainText('h4.modal-title', 'Discard Changes');
-                    })
-                    .then(function(result) {
-                        assert.isTrue(result, 'Discard Changes confirmation modal expected');
+                        return common.assertElementContainsText('h4.modal-title', 'Discard Changes', 'Discard Changes confirmation modal expected');
                     })
                     .then(function() {
                         return modal.clickFooterButton('Discard');
@@ -141,6 +128,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
+                    .waitForCssSelector('.dashboard-tab', 2000)
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
@@ -153,19 +141,12 @@ define([
                     .then(function() {
                         return dashboardPage.stopDeployment();
                     })
-                    .then(function() {
-                        // Progress bar disappears
-                        return common.waitForElementDeletion('div.deploy-process div.progress');
-                    })
+                    .waitForElementDeletion('div.deploy-process div.progress', 5000)
                     // Deployment button available
-                    .findByCssSelector('div.deploy-block button.deploy-btn')
-                        .end()
-                    .findByCssSelector('div.alert-warning strong')
-                        .getVisibleText()
-                        .then(function(alertTitle) {
-                            assert.equal(alertTitle, 'Success', 'Deployment successfully stopped alert is expected');
-                        })
-                        .end()
+                    .waitForCssSelector('div.deploy-block button.deploy-btn', 1000)
+                    .then(function() {
+                        return common.assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected');
+                    })
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);

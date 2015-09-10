@@ -26,7 +26,7 @@ define([
             constructor: ModalWindow,
             waitToOpen: function() {
                 return this.remote
-                    .waitForCssSelector('div.modal-content', 2000);
+                    .waitForCssSelector('div.modal-content', 3000);
             },
             checkTitle: function(expectedTitle) {
                 var Common = require('tests/functional/pages/common'),

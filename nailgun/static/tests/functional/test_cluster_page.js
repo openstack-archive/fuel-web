@@ -76,27 +76,23 @@ define([
                     self = this,
                     applyButtonSelector = 'button.btn-apply';
                 return this.remote
-                    .setFindTimeout(5000)
+                    .waitForCssSelector('.dashboard-tab', 2000)
                     .clickByCssSelector('a.btn-add-nodes')
                     .then(function() {
                         return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen');
                     })
-                    .findByCssSelector('div.role-panel')
-                        .end()
+                    .waitForElementDeletion('.progress-bar', 2000)
                     .then(function() {
                         return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
                     })
                     .then(function() {
-                        return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen');
+                        return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen')
                     })
                     .then(function() {
                         return clusterPage.checkNodes(nodesAmount);
                     })
                     .clickByCssSelector(applyButtonSelector)
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end()
-
+                    .waitForElementDeletion(applyButtonSelector, 2000)
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {

@@ -65,15 +65,14 @@ define([
             'Standard View Mode': function() {
                 var nodeNewName = 'Node new name';
                 return this.remote
-                    .setFindTimeout(2000)
-                    // Standard mode chosen by default
                     .findByCssSelector('label.standard.active')
+                        // Standard mode chosen
+                        .click()
                         .end()
                     .findByClassName('node-box')
                         .click()
                         // Node gets selected upon clicking
-                        .findByCssSelector('.checkbox-group input[type=checkbox]:checked')
-                            .end()
+                        .waitForCssSelector('.checkbox-group input[type=checkbox]:checked', 1000)
                         .end()
                     // Delete and
                     .findByCssSelector('button.btn-delete-nodes')
@@ -107,7 +106,6 @@ define([
             },
             'Compact View Mode': function() {
                 return this.remote
-                    .setFindTimeout(2000)
                     .clickByCssSelector('label.compact')
                     .findByCssSelector('div.compact-node')
                         // Find a node
@@ -120,12 +118,11 @@ define([
             },
             'Compact View Node Popover': function() {
                 return this.remote
-                    .setFindTimeout(2000)
                     // Open node extended view
                     .clickByCssSelector('div.compact-node div.node-hardware p.btn')
                     // Open node pop-up
                     .clickByCssSelector('div.node-popover button.node-details')
-                    .waitForElementDeletion('div.node-popover', 0)
+                    .waitForElementDeletion('div.node-popover', 2000)
                     .then(function() {
                         return modal.waitToOpen();
                     })

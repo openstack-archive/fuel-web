@@ -33,7 +33,6 @@ define([
                     return _.bind(_.get(stepsMethods, stepName, _.noop), self);
                 };
             return this.remote
-                .setFindTimeout(1000)
                 .clickByCssSelector('.create-cluster')
                 .then(function() {
                     return self.modal.waitToOpen();
@@ -62,9 +61,10 @@ define([
         },
         clusterSelector: '.clusterbox div.name',
         goToEnvironment: function(clusterName) {
-            var self = this;
+            var self = this,
+                currentTimeout = 0;
             return this.remote
-                .setFindTimeout(5000)
+                .waitForCssSelector(self.clusterSelector, 5000)
                 .findAllByCssSelector(self.clusterSelector)
                 .then(function(divs) {
                     return divs.reduce(

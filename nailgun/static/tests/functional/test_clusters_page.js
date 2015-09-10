@@ -58,7 +58,6 @@ define([
             },
             'Attempt to create cluster with duplicate name': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .clickLinkByText('Environments')
                     .then(function() {
                         return common.createCluster(
@@ -69,7 +68,6 @@ define([
                                         modal = new ModalWindow(this.remote);
                                     return this.remote
                                         .pressKeys('\uE007')
-                                        .setFindTimeout(2000)
                                         .findAllByCssSelector('form.create-cluster-form span.help-block')
                                         .then(function(errorMessages) {
                                             assert.ok(errorMessages.length, 'Error message should be displayed if names are duplicated');
@@ -92,12 +90,9 @@ define([
             },
             'Testing cluster list page': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .clickLinkByText('Environments')
-                    .setFindTimeout(2000)
-                    .then(function() {
-                        return common.assertElementExists('.clusters-page .clusterbox', 'Cluster container exists');
-                    })
+                    //Cluster container exists
+                    .waitForCssSelector('.clusters-page .clusterbox', 2000)
                     .then(function() {
                         return common.assertElementExists('.create-cluster', 'Cluster creation control exists');
                     });

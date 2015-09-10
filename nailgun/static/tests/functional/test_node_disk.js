@@ -120,9 +120,6 @@ define([
                     .then(function() {
                         return common.assertElementEnabled(applyButtonSelector, 'Apply button is enabled');
                     })
-                    .then(function() {
-                        return common.assertElementEnabled(loadDefaultsButtonSelector, 'Load Defaults button is enabled');
-                    })
                     .clickByCssSelector(applyButtonSelector)
                     // wait for changes applied
                     .waitForElementDeletion('.btn-load-defaults:disabled', 2000)

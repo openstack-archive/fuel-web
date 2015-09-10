@@ -65,7 +65,6 @@ define([
             'Standard View Mode': function() {
                 var nodeNewName = 'Node new name';
                 return this.remote
-                    .setFindTimeout(2000)
                     // Standard mode chosen by default
                     .findByCssSelector('label.standard.active')
                         .end()
@@ -107,7 +106,6 @@ define([
             },
             'Compact View Mode': function() {
                 return this.remote
-                    .setFindTimeout(2000)
                     .clickByCssSelector('label.compact')
                     .findByCssSelector('div.compact-node')
                         // Find a node
@@ -120,7 +118,6 @@ define([
             },
             'Compact View Node Popover': function() {
                 return this.remote
-                    .setFindTimeout(2000)
                     // Open node extended view
                     .clickByCssSelector('div.compact-node div.node-hardware p.btn')
                     // Open node pop-up

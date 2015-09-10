@@ -57,15 +57,17 @@ define([
                     .then(function() {
                         return self.loginPage.login();
                     })
-                    .waitForDeletedByClassName('login-btn')
+                    .waitForElementDeletion('.login-btn', 2000)
                     .then(function() {
                         return self.welcomePage.skip();
-                    });
+                    })
+                    .waitForCssSelector('.navbar-nav', 1000);
             },
             createCluster: function(clusterName, stepsMethods) {
                 var self = this;
                 return this.remote
                     .clickLinkByText('Environments')
+                    .waitForCssSelector('.clusters-page', 2000)
                     .then(function() {
                         return self.clustersPage.createCluster(clusterName, stepsMethods);
                     });
@@ -74,6 +76,7 @@ define([
                 var self = this;
                 return this.remote
                     .clickLinkByText('Environments')
+                    .waitForCssSelector('.clusters-page', 2000)
                     .then(function() {
                         return self.clustersPage.goToEnvironment(clusterName);
                     })
@@ -87,8 +90,8 @@ define([
             doesClusterExist: function(clusterName) {
                 var self = this;
                 return this.remote
-                    .setFindTimeout(2000)
                     .clickLinkByText('Environments')
+                    .waitForCssSelector('.clusters-page', 2000)
                     .findAllByCssSelector(self.clustersPage.clusterSelector)
                         .then(function(divs) {
                             return divs.reduce(function(matchFound, element) {
@@ -105,6 +108,7 @@ define([
                     .then(function() {
                         return self.clusterPage.goToTab('Nodes');
                     })
+                    .waitForCssSelector('button.btn-add-nodes', 1000)
                     .clickByCssSelector('button.btn-add-nodes')
                     .waitForCssSelector('.node', 2000)
                     .then(function() {

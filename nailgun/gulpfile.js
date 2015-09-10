@@ -76,6 +76,14 @@ gulp.task('selenium', ['selenium:fetch'], function(cb) {
     );
 });
 
+gulp.task('karma', function(cb) {
+    var Server = require('karma').Server;
+    new Server({
+        configFile: __dirname + '/karma.config.js',
+        singleRun: true
+    }, cb).start();
+});
+
 function runIntern(params) {
     return function() {
         var baseDir = 'static';

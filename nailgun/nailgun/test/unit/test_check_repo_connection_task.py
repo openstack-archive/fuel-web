@@ -28,6 +28,9 @@ from nailgun.test.base import BaseTestCase
 
 class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
 
+    _response_error = mock.Mock(status_code=500, url='url1')
+    _response_ok = mock.Mock(status_code=200, url='url1')
+
     def setUp(self):
         super(CheckRepositoryConnectionFromMasterNodeTaskTest, self).setUp()
         self.env.create(
@@ -55,25 +58,25 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
         self.patcher.stop()
         super(CheckRepositoryConnectionFromMasterNodeTaskTest, self).tearDown()
 
-    @mock.patch('requests.get')
+    @mock.patch('requests.get', return_value=_response_ok)
     def test_execute_success(self, get_mock):
-        response_mock = mock.Mock()
-        response_mock.status_code = 200
-        response_mock.url = self.url
-        get_mock.return_value = response_mock
-
         CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
         self.mrepos.assert_called_with(self.task.cluster)
 
-    @mock.patch('requests.get')
+    @mock.patch('requests.get', return_value=_response_error)
     def test_execute_fail(self, get_mock):
-        response_mock = mock.Mock()
-        response_mock.status_code = 500
-        response_mock.url = self.url
-        get_mock.return_value = response_mock
-
-        with self.assertRaises(errors.CheckBeforeDeploymentError):
+        with self.assertRaises(errors.CheckBeforeDeploymentError) as cm:
             CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
+
+        self.assertEqual(
+            cm.exception.message,
+            'Connection to following repositories could not be established: '
+            '<url1 [500]>')
+
+    @mock.patch('requests.get', side_effect=[_response_error, _response_ok])
+    def test_execute_success_on_retry(self, get_mock):
+        CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
+        self.mrepos.assert_called_with(self.task.cluster)
 
 
 class TestRepoAvailability(BaseTestCase):

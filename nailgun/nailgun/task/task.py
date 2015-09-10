@@ -1410,13 +1410,17 @@ class GenerateCapacityLogTask(object):
 class CheckRepositoryConnectionFromMasterNodeTask(object):
     @classmethod
     def execute(cls, task):
-        failed_repositories = cls._get_failed_repositories(task)
+        failed_responses = cls._get_failed_repositories(task)
 
-        if len(failed_repositories) > 0:
-            error_message = ("Connection to following repositories"
-                             " could not be established: {0}").format(
-                                 ', '.join(failed_repositories))
-
+        if len(failed_responses) > 0:
+            error_message = (
+                "Connection to following repositories could not be "
+                "established: {0}".format(
+                    ', '.join(
+                        '<{0} [{1}]>'.format(r.url, r.status_code)
+                        for r in failed_responses
+                    )
+                ))
             raise errors.CheckBeforeDeploymentError(error_message)
 
         task.status = 'ready'
@@ -1427,12 +1431,20 @@ class CheckRepositoryConnectionFromMasterNodeTask(object):
     def _get_failed_repositories(cls, task):
         urls = objects.Cluster.get_repo_urls(task.cluster)
         responses = cls._get_responses(urls)
-        failed_responses = filter(lambda x: x.status_code != 200, responses)
-        return [r.url for r in failed_responses]
+        return filter(lambda x: x.status_code != 200, responses)
 
     @classmethod
     def _get_responses(cls, urls):
-        return map(requests.get, urls)
+        responses = []
+        for url in urls:
+            # sometimes mirrors are under heavy load, and may return 500
+            # for instance. let's do several attempts.
+            for _ in six.moves.range(3):
+                response = requests.get(url)
+                if response.status_code == 200:
+                    break
+            responses.append(response)
+        return responses
 
 
 class CheckRepoAvailability(BaseNetworkVerification):

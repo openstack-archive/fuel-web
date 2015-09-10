@@ -51,7 +51,7 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                     .then(function(buffer) {
                         var targetDir = process.env.ARTIFACTS || process.cwd();
                         if (!filename) filename = new Date().toTimeString();
-                        filename = filename.replace(/\s\*\?\\\//g, '_');
+                        filename = filename.replace(/[\s\*\?\\\/]/g, '_');
                         filename = targetDir + '/' + filename + '.png';
                         console.log('Saving screenshot to', filename); // eslint-disable-line no-console
                         fs.writeFileSync(filename, buffer);

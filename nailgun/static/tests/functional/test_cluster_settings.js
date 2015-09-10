@@ -62,7 +62,6 @@ define([
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .then(function() {
                         return common.assertElementEnabled('.btn-load-defaults', 'Load defaults button is enabled');
                     })
@@ -75,7 +74,6 @@ define([
             },
             'Check Save Settings button': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // introduce change
                     .clickByCssSelector('input[type=checkbox]')
                     .waitForCssSelector('.btn-apply-changes:not(:disabled)', 200)
@@ -107,7 +105,6 @@ define([
             },
             'Check changes saving': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // introduce change
                     .clickByCssSelector('input[type=checkbox]')
                     .waitForCssSelector('.btn-apply-changes:not(:disabled)', 200)
@@ -121,7 +118,6 @@ define([
             },
             'Check loading of defaults': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     // load defaults
                     .clickByCssSelector('.btn-load-defaults')
                     .then(function() {
@@ -138,7 +134,6 @@ define([
             },
             'The choice of subgroup is preserved when user navigates through the cluster tabs': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .clickLinkByText('Syslog')
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
@@ -152,7 +147,6 @@ define([
             },
             'The page reacts on invalid input': function() {
                 return this.remote
-                    .setFindTimeout(1000)
                     .clickLinkByText('Access')
                     // "nova" is forbidden username
                     .setInputValue('[type=text][name=user]', 'nova')
@@ -176,7 +170,6 @@ define([
             'Test repositories custom control': function() {
                 var repoAmount;
                 return this.remote
-                    .setFindTimeout(1000)
                     .clickLinkByText('Repositories')
                     // get amount of default repositories
                     .findAllByCssSelector('.repos .form-inline')

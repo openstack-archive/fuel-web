@@ -34,9 +34,7 @@ define([
         removeCluster: function(clusterName) {
             var self = this;
             return this.remote
-                .then(function() {
-                    return self.goToTab('Dashboard');
-                })
+                .clickLinkByText('Dashboard')
                 .clickByCssSelector('button.delete-environment-btn')
                 .then(function() {
                     return self.modal.waitToOpen();
@@ -60,7 +58,6 @@ define([
         },
         checkNodeRoles: function(assignRoles) {
             return this.remote
-                .setFindTimeout(2000)
                 .findAllByCssSelector('div.role-panel label')
                 .then(function(roles) {
                     return roles.reduce(
@@ -83,12 +80,10 @@ define([
         checkNodes: function(amount) {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .setFindTimeout(1000)
                                 .findAllByCssSelector('.node.discover > label')
                                 .then(function(nodes) {
                                     return nodes[index].click();
@@ -113,7 +108,6 @@ define([
                 .then(function() {
                     return self.modal.clickFooterButton('Reset');
                 })
-                .setFindTimeout(20000)
                 .findAllByCssSelector('div.confirm-reset-form input[type=text]')
                     .then(function(confirmationInputs) {
                         if (confirmationInputs.length)
@@ -127,8 +121,7 @@ define([
                 .then(function() {
                     return self.modal.waitToClose();
                 })
-                .setFindTimeout(10000)
-                .waitForDeletedByCssSelector('div.progress-bar');
+                .waitForElementDeletion('div.progress-bar', 10000);
         },
         isTabLocked: function(tabName) {
             var self = this;
@@ -136,7 +129,7 @@ define([
                 .then(function() {
                     return self.goToTab(tabName);
                 })
-                .findByCssSelector('div.tab-content div.row.changes-locked')
+                .waitForCssSelector('div.tab-content div.row.changes-locked', 2000)
                     .then(_.constant(true), _.constant(false));
         }
     };

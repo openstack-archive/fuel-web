@@ -76,13 +76,12 @@ define([
                     self = this,
                     applyButtonSelector = 'button.btn-apply';
                 return this.remote
-                    .setFindTimeout(5000)
+                    .waitForCssSelector('.dashboard-tab', 2000)
                     .clickByCssSelector('a.btn-add-nodes')
+                    .waitForCssSelector('div.role-panel', 2000)
                     .then(function() {
                         return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen');
                     })
-                    .findByCssSelector('div.role-panel')
-                        .end()
                     .then(function() {
                         return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
                     })
@@ -93,15 +92,11 @@ define([
                         return clusterPage.checkNodes(nodesAmount);
                     })
                     .clickByCssSelector(applyButtonSelector)
-                    .setFindTimeout(2000)
-                    .findByCssSelector('button.btn-add-nodes')
-                        .end()
-
+                    .waitForElementDeletion(applyButtonSelector, 2000)
                     .then(function() {
                         return _.range(1, 1 + nodesAmount).reduce(
                             function(nodesFound, index) {
                                 return self.remote
-                                    .setFindTimeout(1000)
                                     .findByCssSelector('div.node:nth-child(' + index + ')')
                                     .catch(function() {
                                         throw new Error('Unable to find ' + index + ' node in cluster');

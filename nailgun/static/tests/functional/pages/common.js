@@ -57,7 +57,7 @@ define([
                     .then(function() {
                         return self.loginPage.login();
                     })
-                    .waitForDeletedByClassName('login-btn')
+                    .waitForElementDeletion('.login-btn', 2000)
                     .then(function() {
                         return self.welcomePage.skip();
                     });
@@ -65,6 +65,7 @@ define([
             createCluster: function(clusterName, stepsMethods) {
                 var self = this;
                 return this.remote
+                    .waitForCssSelector('.navbar-nav', 1000)
                     .clickLinkByText('Environments')
                     .then(function() {
                         return self.clustersPage.createCluster(clusterName, stepsMethods);
@@ -77,6 +78,7 @@ define([
                     .then(function() {
                         return self.clustersPage.goToEnvironment(clusterName);
                     })
+                    .waitForCssSelector('.dashboard-tab', 1000)
                     .then(function() {
                         return self.clusterPage.removeCluster(clusterName);
                     })
@@ -105,8 +107,9 @@ define([
                     .then(function() {
                         return self.clusterPage.goToTab('Nodes');
                     })
+                    .waitForCssSelector('button.btn-add-nodes', 1000)
                     .clickByCssSelector('button.btn-add-nodes')
-                    .waitForCssSelector('.node', 2000)
+                    .waitForCssSelector('div.role-panel', 1000)
                     .then(function() {
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })

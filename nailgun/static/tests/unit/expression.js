@@ -1,16 +1,13 @@
 define([
-    'intern!object',
-    'intern/chai!assert',
-    'underscore',
+    'lodash',
     'models',
     'expression',
     'expression/objects'
-], function(registerSuite, assert, _, models, Expression, expressionObjects) {
+], function(_, models, Expression, expressionObjects) {
     'use strict';
 
-    registerSuite({
-        name: 'Expression',
-        'Expression parser test': function() {
+    suite('Expression', function() {
+        test('Expression parser test', function() {
             var hypervisor = 'kvm';
             var testModels = {
                 cluster: new models.Cluster({mode: 'ha_compact'}),
@@ -82,6 +79,6 @@ define([
                     assert.strictEqual(evaluate(expression, options), result, expression + ' evaluates correctly');
                 }
             }));
-        }
+        });
     });
 });

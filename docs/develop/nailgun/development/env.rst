@@ -160,13 +160,12 @@ Setup for Web UI Tests
 
     sudo apt-get remove --yes nodejs nodejs-legacy
     sudo apt-get install --yes software-properties-common
-    sudo apt-get install --yes libfontconfig # missing package required by phantomjs
     sudo add-apt-repository --yes ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install --yes nodejs
     sudo apt-get install --yes npm
     npm install >/dev/null 2>&1 || true  # To initialize $HOME/.npm
-    sudo npm install -g gulp phantomjs
+    sudo npm install -g gulp
     cd nailgun
     npm install
 

@@ -284,9 +284,11 @@ class DockerUpgrader(UpgradeEngine):
         def execute():
             self.exec_cmd_in_container(container['container_name'], command)
 
+        # FIXME: if FM has no internet access and trying to suck package
+        # from external repository
         self.exec_with_retries(
             execute, errors.ExecutedErrorNonZeroExitCode,
-            '', retries=30, interval=4)
+            '', retries=30, interval=30)
 
     def exec_cmd_in_container(self, container_name, cmd):
         """Execute command in running container

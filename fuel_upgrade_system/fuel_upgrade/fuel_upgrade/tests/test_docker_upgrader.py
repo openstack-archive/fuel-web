@@ -172,7 +172,7 @@ class TestDockerUpgrader(BaseTestCase):
         args, kwargs = self.upgrader.exec_with_retries.call_args
 
         self.assertEqual(args[1], errors.ExecutedErrorNonZeroExitCode)
-        self.assertEqual(kwargs, {'retries': 30, 'interval': 4})
+        self.assertEqual(kwargs, {'retries': 80, 'interval': 5})
 
     def test_create_container(self):
         self.upgrader.create_container(

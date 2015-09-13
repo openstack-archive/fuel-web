@@ -49,6 +49,10 @@
           # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder"
+          # NOTE: https://bugs.launchpad.net/fuel/+bug/1494643 - Cinder role is available when EMC plugin is chosen
+          - condition: "settings:emc_vnx.metadata.enabled == true"
+            strict: false
+            message: "Cinder cannot be used when EMC plugin is chosen"
       cinder-vmware:
         name: "Storage - Cinder Proxy to VMware Datastore"
         description: "Cinder-VMware provides scheduling of block storage resources delivered over VMWare vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
@@ -1047,6 +1051,10 @@
             type: "checkbox"
             restrictions:
               - "settings:storage.volumes_ceph.value == true"
+              # NOTE: https://bugs.launchpad.net/fuel/+bug/1494643 - Cinder role is available when EMC plugin is chosen
+              - condition: "settings:emc_vnx.metadata.enabled == true"
+                strict: false
+                message: "Cinder cannot be used when EMC plugin is chosen"
           iser:
             value: false
             label: "iSER protocol for volumes (Cinder)"

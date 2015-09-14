@@ -27,7 +27,9 @@ define([
     registerSuite(function() {
         var common,
             clusterPage,
-            clusterName;
+            clusterName,
+            nodesAmount = 3,
+            applyButtonSelector = 'button.btn-apply';
 
         return {
             name: 'Cluster page',
@@ -39,19 +41,96 @@ define([
                 return this.remote
                     .then(function() {
                         return common.getIn();
-                    });
-            },
-            beforeEach: function() {
-                return this.remote
+                    })
                     .then(function() {
                         return common.createCluster(clusterName);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Nodes');
                     });
             },
-            teardown: function() {
+            'Add Cluster Nodes': function() {
                 return this.remote
                     .then(function() {
-                        return common.removeCluster(clusterName, true);
-                    });
+                        return common.assertElementExists('.node-list .alert-warning', 'Node list shows warning if there are no nodes in environment');
+                    })
+                    .clickByCssSelector('.btn-add-nodes')
+                    // wait for unallocated nodes loaded
+                    .waitForCssSelector('.node', 2000)
+                    .then(function() {
+                        return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen');
+                    })
+                    .then(function() {
+                        return common.assertElementDisabled('.role-panel [type=checkbox][name=mongo]', 'Unavailable role has locked checkbox');
+                    })
+                    .then(function() {
+                        return common.assertElementExists('.role-panel .mongo i.tooltip-icon', 'Unavailable role has warning tooltip');
+                    })
+                    .then(function() {
+                        return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
+                    })
+                    .then(function() {
+                        return common.assertElementDisabled('.role-panel [type=checkbox][name=compute]', 'Compute role can not be added together with selected roles');
+                    })
+                    .then(function() {
+                        return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen');
+                    })
+                    .then(function() {
+                        return clusterPage.checkNodes(nodesAmount);
+                    })
+                    .clickByCssSelector(applyButtonSelector)
+                    .waitForElementDeletion(applyButtonSelector, 2000)
+                    // wait for cluster node list loaded
+                    .waitForCssSelector('.nodes-group', 2000)
+                    .findAllByCssSelector('.node-list')
+                        .findAllByCssSelector('.node')
+                            .then(function(elements) {
+                                return assert.equal(elements.length, nodesAmount, nodesAmount + ' nodes were successfully added to the cluster');
+                            })
+                            .end()
+                        .findAllByCssSelector('.nodes-group')
+                            .then(function(elements) {
+                                return assert.equal(elements.length, 1, 'One node group is present');
+                            })
+                            .end()
+                        .end();
+            },
+            'Edit cluster node roles': function() {
+                return this.remote
+                    .then(function() {
+                        return common.addNodesToCluster(1, ['Storage - Cinder']);
+                    })
+                    .findAllByCssSelector('.node-list .nodes-group')
+                        .then(function(elements) {
+                            return assert.equal(elements.length, 2, 'Two node groups are present');
+                        })
+                        .end()
+                    // select all nodes
+                    .clickByCssSelector('.select-all label')
+                    .clickByCssSelector('.btn-edit-roles')
+                    // wait for cluster nodes screen unmounted
+                    .waitForElementDeletion('.btn-edit-roles', 2000)
+                    .then(function() {
+                        return common.assertElementNotExists('.node-box [type=checkbox]:not(:disabled)', 'Node selection is locked on Edit Roles screen');
+                    })
+                    .then(function() {
+                        return common.assertElementNotExists('[name=select-all]:not(:disabled)', 'Select All checkboxes are locked on Edit Roles screen');
+                    })
+                    .then(function() {
+                        return common.assertElementExists('.role-panel [type=checkbox][name=controller]:indeterminate', 'Controller role checkbox has indeterminate state');
+                    })
+                    .then(function() {
+                        // uncheck Cinder role
+                        return clusterPage.checkNodeRoles(['Storage - Cinder', 'Storage - Cinder']);
+                    })
+                    .clickByCssSelector(applyButtonSelector)
+                    // wait for role editing screen unmounted
+                    .waitForElementDeletion('.btn-apply', 2000)
+                    .findAllByCssSelector('.node-list .node-box')
+                        .then(function(elements) {
+                            return assert.equal(elements.length, nodesAmount, 'One node was removed from cluster after editing roles');
+                        })
+                        .end();
             },
             'Remove Cluster': function() {
                 return this.remote
@@ -69,41 +148,6 @@ define([
                     })
                     .then(function(result) {
                         assert.notOk(result, 'Cluster removed successfully');
-                    });
-            },
-            'Add Cluster Nodes': function() {
-                var nodesAmount = 3,
-                    self = this,
-                    applyButtonSelector = 'button.btn-apply';
-                return this.remote
-                    .waitForCssSelector('.dashboard-tab', 2000)
-                    .clickByCssSelector('a.btn-add-nodes')
-                    .waitForCssSelector('div.role-panel', 2000)
-                    .then(function() {
-                        return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen');
-                    })
-                    .then(function() {
-                        return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
-                    })
-                    .then(function() {
-                        return common.assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen');
-                    })
-                    .then(function() {
-                        return clusterPage.checkNodes(nodesAmount);
-                    })
-                    .clickByCssSelector(applyButtonSelector)
-                    .waitForElementDeletion(applyButtonSelector, 2000)
-                    .then(function() {
-                        return _.range(1, 1 + nodesAmount).reduce(
-                            function(nodesFound, index) {
-                                return self.remote
-                                    .findByCssSelector('div.node:nth-child(' + index + ')')
-                                    .catch(function() {
-                                        throw new Error('Unable to find ' + index + ' node in cluster');
-                                    });
-                            },
-                            0
-                        );
                     });
             }
         };

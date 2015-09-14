@@ -65,30 +65,7 @@ define([
             'No deployment button when there are no nodes added': function() {
                 return this.remote
                     .then(function() {
-                        return common.assertElementNotExists('button.deploy-btn', 'No deployment should be possible without nodes added')
-                    });
-            },
-            'No controller warning': function() {
-                return this.remote
-                    .then(function() {
-                        // Adding single compute
-                        return common.addNodesToCluster(1, ['Compute']);
-                    })
-                    .then(function() {
-                        return clusterPage.goToTab('Dashboard');
-                    })
-                    .then(function() {
-                        return common.assertElementNotExists('button.deploy-btn', 'No deployment should be possible without controller nodes added')
-                    })
-                    .findByCssSelector('div.instruction.invalid')
-                        // Invalid configuration message is shown
-                        .end()
-                    .then(function() {
-                        return common.assertElementContainsText(
-                            'div.validation-result ul.danger li',
-                            'At least 1 Controller nodes are required (0 selected currently).',
-                            'No controllers added warning should be shown'
-                        );
+                        return common.assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added')
                     });
             },
             'Discard changes': function() {
@@ -100,7 +77,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .clickLinkByText('Discard Changes')
+                    .clickByCssSelector('.discard-changes')
                     .then(function() {
                         return modal.waitToOpen();
                     })
@@ -118,6 +95,7 @@ define([
                     .waitForCssSelector('div.deploy-readiness a.btn-add-nodes', 2000);
             },
             'Start/stop deployment': function() {
+                this.timeout = 60000;
                 return this.remote
                     .then(function() {
                         return common.addNodesToCluster(3, ['Controller']);
@@ -125,7 +103,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .waitForCssSelector('.dashboard-tab', 2000)
+                    .waitForCssSelector('.dashboard-tab', 200)
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
@@ -135,10 +113,14 @@ define([
                     })
                     .waitForElementDeletion('div.deploy-process div.progress', 5000)
                     // Deployment button available
-                    .waitForCssSelector('div.deploy-block button.deploy-btn', 1000)
+                    .waitForCssSelector(dashboardPage.deployButtonSelector, 1000)
                     .then(function() {
                         return common.assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected');
                     })
+                    //@todo: uncomment this after bug fix https://bugs.launchpad.net/fuel/+bug/1493291
+                    //.then(function() {
+                    //    return common.assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy');
+                    //})
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);
@@ -171,6 +153,15 @@ define([
                     })
                     // Deployment competed
                     .waitForCssSelector('div.horizon', 50000)
+                    .then(function() {
+                        return common.assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy');
+                    })
+                    .findByCssSelector('div.horizon a.btn-success')
+                        .getAttribute('href')
+                        .then(function(value) {
+                            return assert.isTrue(_.startsWith(value, 'http'), 'Link to Horizon is formed');
+                        })
+                        .end()
                     .then(function() {
                         return clusterPage.isTabLocked('Networks');
                     })

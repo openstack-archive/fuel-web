@@ -500,12 +500,13 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             )
                                     }
                                     {nodes.hasChanges() &&
-                                        <a
+                                        <button
+                                            className='btn-link discard-changes'
                                             key='discard-changes'
                                             onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
                                         >
                                             {i18n('cluster_page.discard_changes')}
-                                        </a>
+                                        </button>
                                     }
                                 </div>
                             }
@@ -712,7 +713,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                             </div>
                             <div className='col-xs-2'>
-                                <div className='cluster-info-value pull-right'>
+                                <div className={'cluster-info-value pull-right ' + field}>
                                     {numberOfNodes}
                                 </div>
                             </div>
@@ -788,9 +789,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         />
                                     :
                                         <div className='cluster-info-value name' onClick={this.startClusterRenaming}>
-                                            <a>
+                                            <button className='btn-link cluster-name'>
                                                 {cluster.get('name')}
-                                            </a>
+                                            </button>
                                             <i className='glyphicon glyphicon-pencil'></i>
                                         </div>
                                     }

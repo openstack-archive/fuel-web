@@ -102,7 +102,7 @@ define([
                                 )}, false);
                         });
             },
-            addNodesToCluster: function(nodesAmount, nodesRoles, nodeStatus) {
+            addNodesToCluster: function(nodesAmount, nodesRoles, nodeStatus, nodeNameFilter) {
                 var self = this;
                 return this.remote
                     .then(function() {
@@ -111,6 +111,9 @@ define([
                     .waitForCssSelector('button.btn-add-nodes', 1000)
                     .clickByCssSelector('button.btn-add-nodes')
                     .waitForCssSelector('.node', 2000)
+                    .then(function() {
+                        if (nodeNameFilter) return self.clusterPage.searchForNode(nodeNameFilter);
+                    })
                     .then(function() {
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })

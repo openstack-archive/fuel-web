@@ -620,8 +620,8 @@
                         "mac": "00:25:90:67:9f:b9",
                         "driver": "eth_ipoib",
                         "bus_info": "0000:08:00.0",
-                        "max_speed": 1000,
-                        "current_speed": 1000,
+                        "max_speed": 10000,
+                        "current_speed": 10000,
                         "pxe": false
                     },
                     {

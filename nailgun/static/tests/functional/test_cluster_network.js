@@ -32,7 +32,7 @@ define([
             clusterName;
 
         return {
-            name: 'Networks page',
+            name: 'Networks page Nova Network tests',
             setup: function() {
                 common = new Common(this.remote);
                 networksPage = new NetworksPage(this.remote);
@@ -226,6 +226,102 @@ define([
                     .then(function() {
                         return common.assertElementNotExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
                             'Field validation works properly');
+                    });
+            }
+        };
+    });
+
+    registerSuite(function() {
+        var common,
+            networksPage,
+            clusterPage,
+            clusterName;
+
+        return {
+            name: 'Networks page Neutron tests',
+            setup: function() {
+                common = new Common(this.remote);
+                networksPage = new NetworksPage(this.remote);
+                clusterPage = new ClusterPage(this.remote);
+                clusterName = common.pickRandomName('Test Cluster');
+
+                return this.remote
+                    .then(function() {
+                        return common.getIn();
+                    })
+                    .then(function() {
+                        return common.createCluster(
+                            clusterName,
+                            {
+                                'Networking Setup': function() {
+                                    return this.remote
+                                        .clickByCssSelector('input[name=manager][value=neutron-tun]');
+                                }
+                            }
+                        );
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    });
+            },
+            afterEach: function() {
+                return this.remote
+                    .clickByCssSelector('.btn-revert-changes');
+            },
+            'Add ranges manipulations': function() {
+                var rangeSelector = '.public .ip_ranges ';
+                return this.remote
+                    .clickByCssSelector(rangeSelector + '.ip-ranges-add')
+                    .findAllByCssSelector(rangeSelector + '.ip-ranges-delete')
+                        .then(function(elements) {
+                            return assert.equal(elements.length, 2, 'Remove ranges controls appear');
+                        })
+                        .end()
+                    .clickByCssSelector(networksPage.applyButtonSelector)
+                    .then(function() {
+                        return common.assertElementExists(rangeSelector + '.range-row',
+                            'Empty range row is removed after saving changes');
+                    })
+                    .then(function() {
+                        return common.assertElementNotExists(rangeSelector + '.ip-ranges-delete',
+                            'Remove button is absent for only one range');
+                    });
+            },
+            'DNS nameservers manipulations': function() {
+                var dnsNameserversSelector = '.dns_nameservers ';
+                return this.remote
+                    .clickByCssSelector(dnsNameserversSelector + '.ip-ranges-add')
+                    .then(function() {
+                        return common.assertElementExists(dnsNameserversSelector + '.range-row .has-error',
+                            'New nameserver is added and contains validation error');
+                    });
+            },
+            'Segmentation types differences': function() {
+                return this.remote
+                    // Tunneling segmentation tests
+                    .then(function() {
+                        return common.assertElementExists('.network-section-wrapper.private',
+                            'Private Network is visible for tunneling segmentation type');
+                    })
+                    .then(function() {
+                        return common.assertElementTextEqualTo('.segmentation-type', 'Neutron with tunneling segmentation',
+                            'Segmentation type is correct for tunneling segmentation');
+                    })
+                    // Vlan segmentation tests
+                    .clickLinkByText('Environments')
+                    .then(function() {
+                        return common.createCluster('Test vlan segmentation');
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    })
+                    .then(function() {
+                        return common.assertElementNotExists('.network-section-wrapper.private',
+                            'Private Network is not visible for vlan segmentation type');
+                    })
+                    .then(function() {
+                        return common.assertElementTextEqualTo('.segmentation-type', 'Neutron with VLAN segmentation',
+                            'Segmentation type is correct for VLAN segmentation');
                     });
             }
         };

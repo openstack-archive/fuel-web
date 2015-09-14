@@ -799,7 +799,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             />
                         </div>
                     :
-                        <div className='forms-box'>
+                        <div className='forms-box segmentation-type'>
                             <em>
                                 {i18n('common.network.neutron_' + networkingParameters.get('segmentation_type'))}
                             </em>

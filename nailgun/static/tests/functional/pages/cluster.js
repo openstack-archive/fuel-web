@@ -56,6 +56,16 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                     return self.modal.waitToClose();
                 });
         },
+        searchForNode: function(nodeName) {
+            return this.remote
+                .findByCssSelector('button.btn-search')
+                    .click()
+                    .end()
+                .findByCssSelector('input[name=search]')
+                    .click()
+                    .type(nodeName)
+                    .end();
+        },
         checkNodeRoles: function(assignRoles) {
             return this.remote
                 .setFindTimeout(2000)
@@ -87,11 +97,11 @@ define(['underscore', 'tests/functional/pages/modal'], function(_, ModalWindow) 
                         function(result, index) {
                             return self.remote
                                 .setFindTimeout(1000)
-                                .findAllByCssSelector('.node.discover > label')
-                                .then(function(nodes) {
-                                    return nodes[index].click();
-                                })
-                                .catch(function() {
+                                .findByCssSelector('.node.discover > label input[type=checkbox]:not(:checked)')
+                                    .click()
+                                    .end()
+                                .catch(function(e) {
+                                    throw e;
                                     throw new Error('Failed to add ' + amount + ' nodes to the cluster');
                                 });
                         },

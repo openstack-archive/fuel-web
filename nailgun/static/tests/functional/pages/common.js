@@ -139,7 +139,7 @@ define([
                             )}, false);
                     });
             },
-            addNodesToCluster: function(nodesAmount, nodesRoles) {
+            addNodesToCluster: function(nodesAmount, nodesRoles, nodeNameFilter) {
                 var self = this;
                 return this.remote
                     .then(function() {
@@ -150,6 +150,9 @@ define([
                         .end()
                     .findByCssSelector('div.role-panel')
                         .end()
+                    .then(function() {
+                        if (nodeNameFilter) return self.clusterPage.searchForNode(nodeNameFilter);
+                    })
                     .then(function() {
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })

@@ -58,9 +58,24 @@ class DockerUpgrader(UpgradeEngine):
         self.from_version = self.config.from_version
         self.supervisor = SupervisorClient(self.config, self.from_version)
 
+        self.repos_dir = '/etc/yum.repos.d'
+        self.repos_dir_backup = '{0}{1}'.format(self.repos_dir, '_origin')
+
     def backup(self):
         self.save_db()
         self.save_cobbler_configs()
+
+    def disable_origin_repos(self):
+        utils.copy(self.repos_dir, self.repos_dir_backup)
+        if os.path.exists(self.repos_dir_backup):
+            utils.remove(self.repos_dir)
+            utils.exec_cmd('yum clean all')
+
+    def restore_origin_repos(self):
+        if os.path.exists(self.repos_dir_backup):
+            utils.copy(self.repos_dir_backup, self.repos_dir)
+            utils.remove(self.repos_dir_backup)
+            utils.exec_cmd('yum clean all')
 
     def upgrade(self):
         """Method with upgarde logic
@@ -76,6 +91,11 @@ class DockerUpgrader(UpgradeEngine):
 
         # Upload new docker images and create containers
         self.upload_images()
+
+        # Disable repos before creating new containers
+        # Fix for https://bugs.launchpad.net/fuel/+bug/1494640
+        self.disable_origin_repos()
+
         self.create_and_start_new_containers()
 
         # Generate supervisor configs for new containers and restart
@@ -87,9 +107,17 @@ class DockerUpgrader(UpgradeEngine):
         # Verify that all services up and running
         self.upgrade_verifier.verify()
 
+        # Enable origin repos
+        # Fix for https://bugs.launchpad.net/fuel/+bug/1494640
+        self.restore_origin_repos()
+
     def rollback(self):
         """Method which contains rollback logic
         """
+        # Enable origin repos
+        # Fix for https://bugs.launchpad.net/fuel/+bug/1494640
+        self.restore_origin_repos()
+
         self.supervisor.switch_to_previous_configs()
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()

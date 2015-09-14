@@ -79,20 +79,21 @@ define([
                         );
                 });
         },
-        checkNodes: function(amount) {
+        checkNodes: function(amount, status) {
             var self = this;
+            status = status || 'discover';
             return this.remote
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .findAllByCssSelector('.node.discover > label')
-                                .then(function(nodes) {
-                                    return nodes[index].click();
-                                })
-                                .catch(function() {
-                                    throw new Error('Failed to add ' + amount + ' nodes to the cluster');
-                                });
+                                .findAllByCssSelector('.node' + '.' + status + ' > label')
+                                    .then(function(nodes) {
+                                        return nodes[index].click();
+                                    })
+                                    .catch(function() {
+                                        throw new Error('Failed to add ' + amount + ' nodes to the cluster');
+                                    });
                         },
                         true);
                 });

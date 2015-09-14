@@ -99,7 +99,7 @@ define([
                                 )}, false);
                         });
             },
-            addNodesToCluster: function(nodesAmount, nodesRoles) {
+            addNodesToCluster: function(nodesAmount, nodesRoles, nodeStatus) {
                 var self = this;
                 return this.remote
                     .then(function() {
@@ -111,7 +111,7 @@ define([
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
                     .then(function() {
-                        return self.clusterPage.checkNodes(nodesAmount);
+                        return self.clusterPage.checkNodes(nodesAmount, nodeStatus);
                     })
                     .clickByCssSelector('button.btn-apply')
                     .waitForCssSelector('button.btn-add-nodes', 2000);
@@ -122,7 +122,7 @@ define([
                         .then(function(element) {
                             return element.getVisibleText()
                                 .then(function(visibleText) {
-                                    assert.isTrue(visibleText == searchedText, message);
+                                    assert.isTrue(_.contains(visibleText, searchedText), message);
                                 });
                         })
                         .end();
@@ -171,6 +171,17 @@ define([
                                 });
                         })
                         .end();
+            },
+            assertIsElementTextEqualTo: function(cssSelector, value, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                    .then(function(element) {
+                        return element.getVisibleText()
+                            .then(function(text) {
+                                assert.equal(text, value, message);
+                            });
+                    })
+                    .end();
             }
         };
         return CommonMethods;

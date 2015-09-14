@@ -25,9 +25,11 @@ from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
+from sqlalchemy import sql
 
+from nailgun.db import deadlock_detector as dd
 from nailgun.db.deadlock_detector import clean_locks
-from nailgun.db.deadlock_detector import handle_lock
+from nailgun.db.deadlock_detector import register_lock
 from nailgun.db.sqlalchemy import utils
 from nailgun.settings import settings
 
@@ -35,7 +37,55 @@ from nailgun.settings import settings
 db_str = utils.make_dsn(**settings.DATABASE)
 engine = create_engine(db_str, client_encoding='utf8')
 
-class NoCacheQuery(Query):
+
+class DeadlocksSafeQueryMixin(object):
+    """Introduces ordered by id bulk deletes and updates into Query
+
+    """
+
+    def _get_tables(self):
+        """ Extracts table names from Query
+
+        :return: generator to collection of strings
+        """
+        for ent in self._entities:
+            yield '{0}'.format(ent.selectable)
+
+    def _trace_ids(self, *args, **kwargs):
+        """Bulk deletion with ascending order by id
+
+        Ordered by ids UPDATE and DELETE are not supported by SQL standard.
+        As workaround we just lock records before bulk deletion or updating
+        and add trace selected ids in the appropriate deadlock_detector.Lock
+        """
+
+        # Only one table is used for DELETE and UPDATE query
+        table = next(self._get_tables())
+        columns = ['id']
+        if self.whereclause is not None:
+            # Creating ordered by id select query with whereclause from
+            # origin query
+            query_select = sql.expression.select(
+                columns=columns, whereclause=self.whereclause)
+        else:
+            query_select = sql.expression.select(
+                columns=columns, from_obj=table)
+
+        query_select = query_select.order_by('id').with_for_update()
+        result = db().execute(query_select)
+        dd.handle_lock(
+            table, [row[0] for row in result.fetchall()])
+
+    def delete(self, *args, **kwargs):
+        self._trace_ids(*args, **kwargs)
+        super(DeadlocksSafeQueryMixin, self).delete(*args, **kwargs)
+
+    def update(self, *args, **kwargs):
+        self._trace_ids(*args, **kwargs)
+        super(DeadlocksSafeQueryMixin, self).update(*args, **kwargs)
+
+
+class NoCacheQuery(DeadlocksSafeQueryMixin, Query):
     """Override for common Query class.
     Needed for automatic refreshing objects
     from database during every query for evading
@@ -47,19 +97,50 @@ class NoCacheQuery(Query):
 
 
 class DeadlockDetectingQuery(NoCacheQuery):
+
     def with_lockmode(self, mode):
         """with_lockmode function wrapper for deadlock detection
         """
-        for ent in self._entities:
-            handle_lock('{0}'.format(ent.selectable))
+        for table in self._get_tables():
+            register_lock(table)
         return super(NoCacheQuery, self).with_lockmode(mode)
+
+    def with_for_update(self, *args, **kwargs):
+        for table in self._get_tables():
+            dd.register_lock(table)
+        return super(DeadlockDetectingQuery, self).with_for_update(*args, **kwargs)
+
+    def _is_locked_for_update(self):
+        return self._for_update_arg is not None \
+            and self._for_update_arg.read is False \
+            and self._for_update_arg.nowait is False
+
+    def all(self):
+        result = super(DeadlockDetectingQuery, self).all()
+        if self._is_locked_for_update():
+            for table in self._get_tables():
+                lock = dd.find_lock(table)
+                lock.add_ids(o.id for o in result)
+        return result
+
+    def first(self):
+        result = super(DeadlockDetectingQuery, self).first()
+        if result is not None and self._is_locked_for_update():
+            for table in self._get_tables():
+                lock = dd.find_lock(table)
+                lock.add_ids((result.id,))
+        return result
+
+    def get(self, ident):
+        result = super(DeadlockDetectingQuery, self).get(ident)
+        if self._is_locked_for_update():
+            for table in self._get_tables():
+                lock = dd.find_lock(table)
+                lock.add_ids((ident,))
+        return result
 
 
 class DeadlockDetectingSession(Session):
-    def flush(self):
-        clean_locks()
-        super(DeadlockDetectingSession, self).flush()
-
     def commit(self):
         clean_locks()
         super(DeadlockDetectingSession, self).commit()
@@ -67,6 +148,11 @@ class DeadlockDetectingSession(Session):
     def rollback(self):
         clean_locks()
         super(DeadlockDetectingSession, self).rollback()
+
+    def delete(self, instance):
+        super(DeadlockDetectingSession, self).delete(instance)
+        dd.handle_lock(instance.__tablename__,
+                       ids=(instance.id,))
 
 
 if settings.DEVELOPMENT:
@@ -144,6 +230,7 @@ def dropdb():
     migration.drop_migration_meta(engine)
     conn.close()
     engine.dispose()
+
 
 def flush():
     """Delete all data from all tables within nailgun metadata

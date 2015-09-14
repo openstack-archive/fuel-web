@@ -58,6 +58,16 @@ define([
                 .waitForCssSelector('.clusters-page', 2000)
                 .waitForDeletedByCssSelector('.clusterbox', 3000);
         },
+        searchForNode: function(nodeName) {
+            return this.remote
+                .findByCssSelector('button.btn-search')
+                    .click()
+                    .end()
+                .findByCssSelector('input[name=search]')
+                    .click()
+                    .type(nodeName)
+                    .end();
+        },
         checkNodeRoles: function(assignRoles) {
             return this.remote
                 .findAllByCssSelector('div.role-panel label')

@@ -102,7 +102,7 @@ define([
                                 )}, false);
                         });
             },
-            addNodesToCluster: function(nodesAmount, nodesRoles) {
+            addNodesToCluster: function(nodesAmount, nodesRoles, nodeStatus) {
                 var self = this;
                 return this.remote
                     .then(function() {
@@ -115,7 +115,7 @@ define([
                         return self.clusterPage.checkNodeRoles(nodesRoles);
                     })
                     .then(function() {
-                        return self.clusterPage.checkNodes(nodesAmount);
+                        return self.clusterPage.checkNodes(nodesAmount, nodeStatus);
                     })
                     .clickByCssSelector('.btn-apply')
                     .waitForElementDeletion('.btn-apply', 2000);
@@ -126,7 +126,7 @@ define([
                         .then(function(element) {
                             return element.getVisibleText()
                                 .then(function(visibleText) {
-                                    assert.isTrue(visibleText == searchedText, message);
+                                    assert.include(visibleText, searchedText, message);
                                 });
                         })
                         .end();

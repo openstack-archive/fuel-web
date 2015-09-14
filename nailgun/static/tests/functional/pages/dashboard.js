@@ -15,14 +15,15 @@
  **/
 
 define([
-    'underscore',
+    'intern/chai!assert',
     'tests/functional/pages/modal',
     '../../helpers'
-], function(_, ModalWindow) {
+], function(assert, ModalWindow) {
     'use strict';
     function DashboardPage(remote) {
         this.remote = remote;
-        this.modal = new ModalWindow(this.remote);
+        this.modal = new ModalWindow(remote);
+        this.deployButtonSelector = 'button.deploy-btn';
     }
 
     DashboardPage.prototype = {
@@ -30,8 +31,7 @@ define([
         startDeployment: function() {
             var self = this;
             return this.remote
-                .setFindTimeout(2000)
-                .clickByCssSelector('.deploy-block button.deploy-btn')
+                .clickByCssSelector(this.deployButtonSelector)
                 .then(function() {
                     return self.modal.waitToOpen();
                 })
@@ -61,6 +61,46 @@ define([
                 .then(function() {
                     return self.modal.waitToClose();
                 });
+        },
+        startClusterRenaming: function() {
+            return this.remote
+                .clickByCssSelector('.cluster-info-value.name .glyphicon-pencil');
+        },
+        setClusterName: function(name) {
+            var self = this;
+            return this.remote
+                .then(function() {
+                    return self.startClusterRenaming();
+                })
+                .findByCssSelector('.rename-block input[type=text]')
+                    .clearValue()
+                    .type(name)
+                    // Enter
+                    .type('\uE007')
+                    .end();
+        },
+        discardChanges: function() {
+            var self = this;
+            return this.remote
+                .clickByCssSelector('button.discard-changes')
+                .then(function() {
+                    return self.modal.waitToOpen();
+                })
+                .then(function() {
+                    return self.modal.clickFooterButton('Discard');
+                })
+                .then(function() {
+                    return self.modal.waitToClose();
+                });
+        },
+        assertIsIntegerContentPositive: function(cssSelector, attributeName) {
+            return this.remote
+                .findByCssSelector(cssSelector)
+                    .getVisibleText()
+                    .then(function(text) {
+                        return assert.isTrue(parseInt(text) > 0, attributeName + ' is greater than 0');
+                    })
+                    .end();
         }
     };
     return DashboardPage;

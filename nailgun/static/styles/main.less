@@ -997,6 +997,164 @@ input[type=range] {
   }
 }
 
+// FORMS
+
+.forms-box {
+  @base-indent: 20px;
+
+  margin-bottom: @base-indent * 1.5;
+  h3 {
+    padding-bottom: 6px;
+    margin: 0 0 @base-indent * 1.5;
+    border-bottom: 1px solid @gray + 50%;
+    color: @base-text-color + 10%;
+    box-sizing: border-box;
+    font-size: @base-font-size + 7px;
+    .font-normal;
+    .checkbox-group {
+      padding: 0;
+      label {
+        margin-bottom: -3px;
+        .custom-tumbler {
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+  h4 {
+    margin: @base-indent * 1.5 0 @base-indent;
+    font-size: @base-font-size + 5px;
+    .font-normal;
+  }
+  label {
+    color: @base-text-color;
+    cursor: pointer;
+    box-sizing: border-box;
+    line-height: 1.5;
+    .font-normal;
+  }
+  .help-block {
+    font-size: @base-font-size - 2px;
+    color: @gray + 25%;
+    padding: 0;
+    margin: 0;
+  }
+  .radio-group + .form-group, .radio-group + .checkbox-group {
+    margin-top: @base-indent * 2;
+  }
+  .form-group {
+    padding: 0 @base-indent / 2;
+    margin-bottom: @base-indent;
+    box-sizing: border-box;
+    label {
+      width: @default-label-width;
+      float: left;
+      padding: 6px 8px 0 0;
+    }
+    input, textarea, select {
+      float: left;
+    }
+    input[type=file] {
+      opacity: 0;
+      position: absolute;
+    }
+    &:not(.disabled) input.file-name[readonly] {
+      background-color: white;
+      cursor: pointer;
+    }
+    input, textarea, select {
+      max-width: @default-input-width;
+      width: @default-input-width;
+    }
+    textarea {
+      max-width: @default-input-width * 2;
+    }
+    .input-group {
+      float: left;
+      max-width: @default-input-width;
+      @input-addon-width: 40px;
+      input {
+        width: @default-input-width - @input-addon-width;
+      }
+      .input-group-addon {
+        width: @input-addon-width;
+        height: 34px;
+        cursor: pointer;
+        float: left;
+        padding: 8px;
+      }
+    }
+    .help-block {
+      max-width: @page-width - @default-input-width - @default-label-width - 280px;
+      float: left;
+      margin-left: 20px;
+      padding-top: 9px;
+      box-sizing: border-box;
+    }
+    &.has-error .help-block {
+      .text-danger;
+    }
+    &:after {
+      .clearfix;
+    }
+  }
+  .checkbox-group {
+    padding-left: @base-indent / 2;
+    margin-bottom: @base-indent;
+    .custom-tumbler {
+      margin-top: -1px;
+    }
+    .help-block {
+      display: block;
+      max-width: auto;
+      margin-top: -4px;
+      margin-left: 28px;
+    }
+  }
+  .tooltip-icon {
+    .text-warning;
+    margin-left: 5px;
+    font-size: @base-font-size + 2px;
+  }
+
+  // custom control styles
+  .repos {
+    margin-bottom: @base-indent;
+    > .help-block {
+      margin: 0 0 @base-indent @base-indent * 0.5;
+    }
+    .form-inline {
+      margin-bottom: 15px;
+      position: relative;
+      .form-group {
+        label {float:none;}
+      }
+    }
+    .form-group {
+      margin: 0;
+      .help-block {
+        position: absolute;
+        bottom: 10px;
+        left: @default-input-width * 2.5 + @base-indent * 4 + 20px;
+      }
+      &.repo-uri .form-control {
+        @repo-uri-width: @default-input-width * 1.1;
+        width: @repo-uri-width;
+        max-width: @repo-uri-width;
+      }
+      &.repo-priority .form-control {
+        width: @default-input-width * 0.5;
+      }
+      .form-control-static {
+        display: inline;
+      }
+    }
+    .buttons {
+      padding: 0 0 0 @base-indent * 0.5;
+    }
+  }
+}
+
 // PAGES
 
 .welcome-page {
@@ -2886,7 +3044,8 @@ input[type=range] {
 
 .change-password {
   .form-group .help-block {
-    margin-left: @default-label-width;
+    margin: 3px 0 0 @default-label-width;
+    padding: 0;
   }
 }
 
@@ -2944,164 +3103,6 @@ input[type=range] {
       textarea {
         min-height: 120px;
       }
-    }
-  }
-}
-
-// FORMS
-
-.forms-box {
-  @base-indent: 20px;
-
-  margin-bottom: @base-indent * 1.5;
-  h3 {
-    padding-bottom: 6px;
-    margin: 0 0 @base-indent * 1.5;
-    border-bottom: 1px solid @gray + 50%;
-    color: @base-text-color + 10%;
-    box-sizing: border-box;
-    font-size: @base-font-size + 7px;
-    .font-normal;
-    .checkbox-group {
-      padding: 0;
-      label {
-        margin-bottom: -3px;
-        .custom-tumbler {
-          margin-right: 8px;
-        }
-      }
-    }
-  }
-  h4 {
-    margin: @base-indent * 1.5 0 @base-indent;
-    font-size: @base-font-size + 5px;
-    .font-normal;
-  }
-  label {
-    color: @base-text-color;
-    cursor: pointer;
-    box-sizing: border-box;
-    line-height: 1.5;
-    .font-normal;
-  }
-  .help-block {
-    font-size: @base-font-size - 2px;
-    color: @gray + 25%;
-    padding: 0;
-    margin: 0;
-  }
-  .radio-group + .form-group, .radio-group + .checkbox-group {
-    margin-top: @base-indent * 2;
-  }
-  .form-group {
-    padding: 0 @base-indent / 2;
-    margin-bottom: @base-indent;
-    box-sizing: border-box;
-    label {
-      width: @default-label-width;
-      float: left;
-      padding: 6px 8px 0 0;
-    }
-    input, textarea, select {
-      float: left;
-    }
-    input[type=file] {
-      opacity: 0;
-      position: absolute;
-    }
-    &:not(.disabled) input.file-name[readonly] {
-      background-color: white;
-      cursor: pointer;
-    }
-    input, textarea, select {
-      max-width: @default-input-width;
-      width: @default-input-width;
-    }
-    textarea {
-      max-width: @default-input-width * 2;
-    }
-    .input-group {
-      float: left;
-      max-width: @default-input-width;
-      @input-addon-width: 40px;
-      input {
-        width: @default-input-width - @input-addon-width;
-      }
-      .input-group-addon {
-        width: @input-addon-width;
-        height: 34px;
-        cursor: pointer;
-        float: left;
-        padding: 8px;
-      }
-    }
-    .help-block {
-      max-width: @page-width - @default-input-width - @default-label-width - 280px;
-      float: left;
-      margin-left: 20px;
-      padding-top: 9px;
-      box-sizing: border-box;
-    }
-    &.has-error .help-block {
-      .text-danger;
-    }
-    &:after {
-      .clearfix;
-    }
-  }
-  .checkbox-group {
-    padding-left: @base-indent / 2;
-    margin-bottom: @base-indent;
-    .custom-tumbler {
-      margin-top: -1px;
-    }
-    .help-block {
-      display: block;
-      max-width: auto;
-      margin-top: -4px;
-      margin-left: 28px;
-    }
-  }
-  .tooltip-icon {
-    .text-warning;
-    margin-left: 5px;
-    font-size: @base-font-size + 2px;
-  }
-
-  // custom control styles
-  .repos {
-    margin-bottom: @base-indent;
-    > .help-block {
-      margin: 0 0 @base-indent @base-indent * 0.5;
-    }
-    .form-inline {
-      margin-bottom: 15px;
-      position: relative;
-      .form-group {
-        label {float:none;}
-      }
-    }
-    .form-group {
-      margin: 0;
-      .help-block {
-        position: absolute;
-        bottom: 10px;
-        left: @default-input-width * 2.5 + @base-indent * 4 + 20px;
-      }
-      &.repo-uri .form-control {
-        @repo-uri-width: @default-input-width * 1.1;
-        width: @repo-uri-width;
-        max-width: @repo-uri-width;
-      }
-      &.repo-priority .form-control {
-        width: @default-input-width * 0.5;
-      }
-      .form-control-static {
-        display: inline;
-      }
-    }
-    .buttons {
-      padding: 0 0 0 @base-indent * 0.5;
     }
   }
 }

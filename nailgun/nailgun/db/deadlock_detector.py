@@ -14,15 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
 import threading
 import traceback
 
+from nailgun.logger import logger
 
 ALLOWED_LOCKS_CHAINS = [
+    ('attributes', 'clusters'),
     ('clusters', 'nodes'),
     ('tasks', 'clusters'),
     ('tasks', 'clusters', 'nodes'),
     ('tasks', 'nodes'),
+    ('nodes', 'node_nic_interfaces'),
 ]
 
 
@@ -30,21 +34,84 @@ class Lock(object):
     """Locking table info. Includes traceback info of locking call
     """
 
+    @staticmethod
+    def _warnings_only():
+        """Policy of deadlock detector errors propagation
+
+        NOTE(akislitsky): Temporary function. Should be removed after
+        transactions scheme refactoring
+        """
+        return True
+
+    @staticmethod
+    def propagate_exception(exception):
+        """Raises or writes exception in dependency of Lock:warnings_only
+
+        :param exception: exception to be propagated
+        :return: raises exception or writes log
+        """
+        if Lock._warnings_only():
+            logger.warning("Possible deadlock found: {0}".format(exception))
+        else:
+            raise exception
+
     def __init__(self, table):
         self.trace_lst = traceback.extract_stack()
         self.table = table
+        self.table = six.text_type(table)
+        self.locked_ids = set()
+        self.last_locked_id = None
 
+    def add_ids(self, ids):
+        if ids is None:
+            return
+
+        for id_val in ids:
+            # Resource already locked. Has no influence to DB locks.
+            if id_val is None or id_val in self.locked_ids:
+                continue
+
+            if self.last_locked_id is not None \
+                    and self.last_locked_id > id_val:
+
+                exception = ObjectsLockingOrderViolation(
+                    self.table, id_val, self.last_locked_id)
+                Lock.propagate_exception(exception)
+
+            self.locked_ids.add(id_val)
+            self.last_locked_id = id_val
 
 context = threading.local()
 
 
-class LockTransitionNotAllowedError(Exception):
+class DeadlockDetectorError(Exception):
+    pass
+
+
+class LockNotFound(DeadlockDetectorError):
+    pass
+
+
+class TablesLockingOrderViolation(DeadlockDetectorError):
+    pass
+
+
+class ObjectsLockingOrderViolation(DeadlockDetectorError):
+    def __init__(self, table, obj_id, last_id):
+        super(ObjectsLockingOrderViolation, self).__init__(
+            "Trying to lock object id '{0}' in table '{1}'. "
+            "Last locked object id '{2}'".format(obj_id, table, last_id)
+
+        )
+
+
+class LockTransitionNotAllowedError(DeadlockDetectorError):
     def __init__(self):
         msg = "Possible deadlock found while attempting " \
               "to lock table: '{0}'. Lock transition is not allowed: {1}. " \
               "Traceback info: {2}".format(
                   context.locks[-1].table,
-                  ', '.join([lock.table for lock in context.locks]),
+                  ', '.join(lock.table for lock in context.locks),
                   self._get_locks_trace()
               )
         Exception.__init__(self, msg)
@@ -66,9 +133,11 @@ def clean_locks():
     context.locks = []
 
 
-def handle_lock(table):
-    """Storing table lock information into locks context.
+def register_lock(table):
+    """Registers locking operations on table
+
     :param table: locking table name string value
+    :return: returns registered lock
     """
     lock = Lock(table)
 
@@ -77,16 +146,61 @@ def handle_lock(table):
 
     # If locking the same table lock is already registered
     if len(context.locks) > 0 and context.locks[-1].table == lock.table:
-        return
+        return lock
 
     # Registering locked table
     context.locks.append(lock)
 
     # Nothing to check if only one table locked
     if len(context.locks) == 1:
-        return
+        return lock
 
     # Checking lock transition is allowed
-    transition = (context.locks[-2].table, context.locks[-1].table)
+    transition = tuple(l.table for l in context.locks)
     if transition not in ALLOWED_LOCKS_CHAINS:
-        raise LockTransitionNotAllowedError()
+        Lock.propagate_exception(LockTransitionNotAllowedError())
+
+    return lock
+
+
+def handle_lock(table, ids=None):
+    """Traces table and objects ids on modification or locking operations
+
+    :param table: locking table name string value
+    :param ids: ids of locking objects
+    """
+
+    if not hasattr(context, 'locks'):
+        context.locks = []
+
+    lock = find_lock(table, strict=False)
+    if lock is None:
+        lock = register_lock(table)
+    else:
+        if lock != context.locks[-1]:
+            # Lock is already acquired
+            for id_val in ids:
+                # Rising error if trying to lock new ids in non last lock
+                if id_val not in lock.locked_ids:
+                    lock_chain = ', '.join(l.table for l in context.locks)
+                    exception = TablesLockingOrderViolation(
+                        "Trying to lock {0} in {1}. "
+                        "Current locks chain: {2}. "
+                        "Already locked ids for {1}: {3}".format(
+                            id_val, table, lock_chain, lock.locked_ids
+                        ))
+                    Lock.propagate_exception(exception)
+    lock.add_ids(ids)
+
+
+def find_lock(table, strict=True):
+    """Finds lock for table
+
+    :param table: table name
+    :param strict: raise error if lock is not found
+    :return: lock info for table
+    """
+    lock = next((l for l in context.locks if l.table == table), None)
+    if lock is None and strict:
+        raise LockNotFound("Lock for '{0}' not found".format(table))
+    return lock

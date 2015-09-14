@@ -21,13 +21,27 @@ from sqlalchemy import DateTime
 from sqlalchemy import Integer
 
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.base import object_state
 
+from nailgun.db import deadlock_detector as dd
 from nailgun.db.sqlalchemy.models.fields import JSON
-
 from nailgun.openstack.common.db.sqlalchemy import models
+from nailgun.settings import settings
 
 
-Base = declarative_base(cls=models.ModelBase)
+class ObserverModelBase(models.ModelBase):
+
+    def __setattr__(self, key, value):
+        super(ObserverModelBase, self).__setattr__(key, value)
+        state = object_state(self)
+        if self.id is not None and state.session_id is not None:
+            dd.handle_lock_on_modification(self.__tablename__, ids=(self.id,))
+
+
+if settings.DEVELOPMENT:
+    Base = declarative_base(cls=ObserverModelBase)
+else:
+    Base = declarative_base(cls=models.ModelBase)
 
 
 class CapacityLog(Base):

@@ -56,7 +56,7 @@ define([
                     return self.modal.waitToClose();
                 })
                 .waitForCssSelector('.clusters-page', 2000)
-                .waitForDeletedByCssSelector('.clusterbox', 3000);
+                .waitForDeletedByCssSelector('.clusterbox', 5000);
         },
         searchForNode: function(nodeName) {
             return this.remote

@@ -547,7 +547,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 };
             }, this);
 
-            var classNames = {'btn-group multiselect': true, open: this.props.isOpen};
+            var classNames = {
+                'btn-group multiselect': true,
+                open: this.props.isOpen,
+                'more-control': this.props.dynamicValues
+            };
             if (this.props.className) classNames[this.props.className] = true;
 
             return (
@@ -850,7 +854,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         renderDeleteFilterButton: function(filter) {
             if (!filter.isLabel && _.contains(_.keys(this.props.defaultFilters), filter.name)) return null;
             return (
-                <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeFilter, filter)} />
+                <i className='btn btn-link glyphicon glyphicon-minus-sign btn-remove-filter' onClick={_.partial(this.removeFilter, filter)} />
             );
         },
         toggleLabelsPanel: function() {
@@ -863,7 +867,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         renderDeleteSorterButton: function(sorter) {
             return (
-                <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeSorting, sorter)} />
+                <i className='btn btn-link glyphicon glyphicon-minus-sign btn-remove-sorting' onClick={_.partial(this.removeSorting, sorter)} />
             );
         },
         render: function() {
@@ -944,7 +948,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <button
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleSorters}
-                                        className={utils.classNames(managementButtonClasses(this.state.areSortersVisible))}
+                                        className={utils.classNames(managementButtonClasses(this.state.areSortersVisible, 'btn-sorters'))}
                                     >
                                         <i className='glyphicon glyphicon-sort' />
                                     </button>
@@ -953,7 +957,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <button
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleFilters}
-                                        className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible))}
+                                        className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible, 'btn-filters'))}
                                     >
                                         <i className='glyphicon glyphicon-filter' />
                                     </button>
@@ -1076,7 +1080,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         <div className='well-heading'>
                                             <i className='glyphicon glyphicon-sort' /> {i18n(ns + 'sort_by')}
                                             {canResetSorters &&
-                                                <button className='btn btn-link pull-right' onClick={this.resetSorters}>
+                                                <button className='btn btn-link pull-right btn-reset-sorting' onClick={this.resetSorters}>
                                                     <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'reset')}
                                                 </button>
                                             }
@@ -1084,7 +1088,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         {this.props.activeSorters.map(function(sorter) {
                                             var asc = sorter.order == 'asc';
                                             return (
-                                                <div key={'sort_by-' + sorter.name + (sorter.isLabel && '-label')} className='sorter-control pull-left'>
+                                                <div
+                                                    key={'sort_by-' + sorter.name + (sorter.isLabel && '-label')}
+                                                    className={'sorter-control pull-left sort-by-' + sorter.name + '-' + sorter.order}
+                                                >
                                                     <button className='btn btn-default' onClick={_.partial(this.props.changeSortingOrder, sorter)}>
                                                         {sorter.title}
                                                         <i
@@ -1117,7 +1124,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         <div className='well-heading'>
                                             <i className='glyphicon glyphicon-filter' /> {i18n(ns + 'filter_by')}
                                             {!!appliedFilters.length &&
-                                                <button className='btn btn-link pull-right' onClick={this.resetFilters}>
+                                                <button className='btn btn-link pull-right btn-reset-filters' onClick={this.resetFilters}>
                                                     <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'reset')}
                                                 </button>
                                             }
@@ -1128,7 +1135,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 ref: filter.name,
                                                 name: filter.name,
                                                 values: filter.values,
-                                                className: 'filter-control',
+                                                className: 'filter-control filter-by-' + filter.name,
                                                 label: filter.title,
                                                 extraContent: this.renderDeleteFilterButton(filter),
                                                 onChange: _.partial(this.props.changeFilter, filter),
@@ -1185,7 +1192,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         );
                                                     }, this)}
                                                 </div>
-                                                <button className='btn btn-link' onClick={this.resetFilters}>
+                                                <button className='btn btn-link btn-reset-filters' onClick={this.resetFilters}>
                                                     <i className='glyphicon glyphicon-remove-sign' />
                                                 </button>
                                             </div>
@@ -1212,7 +1219,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     }, this)}
                                                 </div>
                                                 {canResetSorters &&
-                                                    <button className='btn btn-link' onClick={this.resetSorters}>
+                                                    <button className='btn btn-link btn-reset-sorting' onClick={this.resetSorters}>
                                                         <i className='glyphicon glyphicon-remove-sign' />
                                                     </button>
                                                 }

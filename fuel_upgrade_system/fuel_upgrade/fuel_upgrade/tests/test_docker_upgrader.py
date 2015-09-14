@@ -63,7 +63,10 @@ class TestDockerUpgrader(BaseTestCase):
             'upload_images',
             'create_and_start_new_containers',
             'generate_configs',
-            'switch_to_new_configs']
+            'switch_to_new_configs',
+            'disable_origin_repos',
+            'restore_origin_repos'
+        ]
 
         self.mock_methods(self.upgrader, mocked_methods)
         self.upgrader.upgrade()
@@ -75,8 +78,12 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.upgrader.stop_fuel_containers)
         self.assertEqual(self.supervisor_mock.restart_and_wait.call_count, 2)
         self.called_once(self.upgrader.upgrade_verifier.verify)
+        self.called_once(self.upgrader.disable_origin_repos)
+        self.called_once(self.upgrader.restore_origin_repos)
 
     def test_rollback(self):
+        mocked_methods = ['restore_origin_repos']
+        self.mock_methods(self.upgrader, mocked_methods)
         self.upgrader.stop_fuel_containers = mock.MagicMock()
         self.upgrader.rollback()
 
@@ -85,6 +92,8 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
         self.called_once(self.supervisor_mock.remove_new_configs)
+
+        self.called_once(self.upgrader.restore_origin_repos)
 
     def test_stop_fuel_containers(self):
         non_fuel_images = [

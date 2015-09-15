@@ -24,10 +24,60 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from nailgun.utils.migration import upgrade_enum
+
+
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'dump',
+    'capacity_log',
+    'create_stats_user',
+    'remove_stats_user',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+)
+task_names_new = task_names_old + (
+    'update_dnsmasq'
+)
+
 
 def upgrade():
-    pass
+    task_names_upgrade()
 
 
 def downgrade():
-    pass
+    task_names_downgrade()
+
+
+def task_names_upgrade():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_old,             # old options
+        task_names_new              # new options
+    )
+
+
+def task_names_downgrade():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_new,             # old options
+        task_names_old              # new options
+    )

@@ -45,6 +45,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.manager import CheckNetworksTaskManager
+from nailgun.task.manager import UpdateDnsmasqTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
@@ -128,9 +129,11 @@ class ProviderHandler(BaseHandler):
         task = task_manager.execute(data)
 
         if task.status != consts.TASK_STATUSES.error:
-            objects.Cluster.get_network_manager(
-                cluster
-            ).update(cluster, data)
+            nm = objects.Cluster.get_network_manager(cluster)
+            admin_nets = nm.get_admin_networks()
+            nm.update(cluster, data)
+            if cmp(admin_nets, nm.get_admin_networks()):
+                UpdateDnsmasqTaskManager().execute()
 
         # TODO(pkaminski): this is synchronous, no task needed here
         self.raise_task(task)

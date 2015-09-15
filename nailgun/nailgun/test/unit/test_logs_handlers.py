@@ -470,7 +470,7 @@ class TestLogs(BaseIntegrationTest):
     def test_snapshot_task_manager_already_running(self):
         self.env.create_task(name="dump")
         tm = DumpTaskManager()
-        self.assertRaises(errors.DumpRunning, tm.execute)
+        self.assertRaises(errors.TaskAlreadyRunning, tm.execute)
 
     def test_log_package_handler_ok(self):
         task = {
@@ -519,7 +519,7 @@ class TestLogs(BaseIntegrationTest):
         """400 status when errors with uncompleted models in session occur"""
 
         def dump_task_with_bad_model(*args, **kwargs):
-            raise errors.DumpRunning()
+            raise errors.TaskAlreadyRunning()
 
         dump_manager().execute.side_effect = dump_task_with_bad_model
 

@@ -14,6 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""
+Handlers dealing with node groups
+"""
+
+import six
 import web
 
 from nailgun.api.v1.handlers.base import CollectionHandler
@@ -22,13 +27,12 @@ from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.node_group import NodeGroupValidator
 
+from nailgun import consts
 from nailgun.db import db
 
+from nailgun.errors import errors
 from nailgun import objects
-
-"""
-Handlers dealing with node groups
-"""
+from nailgun.task.manager import UpdateDnsmasqTaskManager
 
 
 class NodeGroupHandler(SingleHandler):
@@ -37,9 +41,22 @@ class NodeGroupHandler(SingleHandler):
     validator = NodeGroupValidator
 
     def DELETE(self, group_id):
+        """:returns: {}
+
+        :http: * 204 (object successfully deleted)
+               * 404 (cluster not found in db)
+               * 409 (previous dsnmasq setup is not finished yet)
+               * 500 (dsnmasq setup task failed)
+        """
         node_group = self.get_object_or_404(objects.NodeGroup, group_id)
         db().delete(node_group)
-        db().commit()
+        db().flush()
+        try:
+            task = UpdateDnsmasqTaskManager().execute()
+        except errors.TaskAlreadyRunning as exc:
+            raise self.http(409, six.text_type(exc))
+        if task.status == consts.TASK_STATUSES.error:
+            raise self.http(500, task.message)
         raise web.webapi.HTTPError(
             status="204 No Content",
             data=""

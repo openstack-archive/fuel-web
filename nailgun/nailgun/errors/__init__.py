@@ -20,7 +20,7 @@ default_messages = {
     # common errors
     "InvalidData": "Invalid data received",
     "AlreadyExists": "Object already exists",
-    "DumpRunning": "Dump already running",
+    "TaskAlreadyRunning": "Task is already running",
 
     # REST errors
     "CannotDelete": "Can't delete object",

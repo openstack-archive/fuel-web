@@ -181,6 +181,7 @@ class ClusterAttributesHandler(BaseHandler):
                         "Environment attribute '{0}' couldn't be changed "
                         "after or during deployment.".format(group_name)))
 
+        objects.Cluster.patch_baremetal_network(cluster, data)
         objects.Cluster.patch_attributes(cluster, data)
         return objects.Cluster.get_editable_attributes(cluster)
 

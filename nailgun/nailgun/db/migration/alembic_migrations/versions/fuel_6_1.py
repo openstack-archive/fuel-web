@@ -135,10 +135,13 @@ task_names_old = (
     'dump',
     'capacity_log'
 )
-task_names_new = task_names_old + ('create_stats_user',
-                                   'remove_stats_user',
-                                   'check_repo_availability',
-                                   'check_repo_availability_with_setup')
+task_names_new = task_names_old + (
+    'create_stats_user',
+    'remove_stats_user',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'update_dnsmasq'
+)
 
 
 def upgrade():

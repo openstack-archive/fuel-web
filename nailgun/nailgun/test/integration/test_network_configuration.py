@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+
 from mock import patch
 
 from oslo_serialization import jsonutils
@@ -432,6 +434,65 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         publ_ng = filter(lambda ng: ng.name == 'public',
                          self.cluster.network_groups)[0]
         self.assertEqual(publ_ng.cidr, '199.61.0.0/24')
+
+    def test_update_ranges_gateways(self):
+        data = self.env.neutron_networks_get(self.cluster.id).json_body
+        publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
+        mgmt = filter(lambda ng: ng['name'] == 'management',
+                      data['networks'])[0]
+
+        publ['cidr'] = '199.61.0.0/24'
+        publ['gateway'] = '199.61.0.199'
+        publ['ip_ranges'] = [['199.61.0.11', '199.61.0.33'],
+                             ['199.61.0.55', '199.61.0.99']]
+        data['networking_parameters']['floating_ranges'] = \
+            [['199.61.0.111', '199.61.0.122']]
+
+        mgmt['meta']['notation'] = 'ip_ranges'
+        mgmt['cidr'] = '192.71.0.0/24'
+        mgmt['gateway'] = '192.71.0.225'
+        mgmt['ip_ranges'] = [['192.71.0.25', '192.71.0.52'],
+                             ['192.71.0.111', '192.71.0.222']]
+
+        resp = self.env.neutron_networks_put(self.cluster.id, data)
+        self.assertEqual(200, resp.status_code)
+        task = resp.json_body
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
+
+        data = self.env.neutron_networks_get(self.cluster.id).json_body
+        publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
+        mgmt = filter(lambda ng: ng['name'] == 'management',
+                      data['networks'])[0]
+
+        self.assertEqual(publ['cidr'], '199.61.0.0/24')
+        self.assertEqual(publ['gateway'], '199.61.0.199')
+        self.assertEqual(
+            publ['ip_ranges'],
+            [['199.61.0.11', '199.61.0.33'], ['199.61.0.55', '199.61.0.99']])
+
+        self.assertEqual(mgmt['cidr'], '192.71.0.0/24')
+        self.assertEqual(mgmt['gateway'], '192.71.0.225')
+        self.assertEqual(
+            mgmt['ip_ranges'],
+            [['192.71.0.25', '192.71.0.52'], ['192.71.0.111', '192.71.0.222']])
+
+    def test_admin_range_update(self):
+        data = self.env.neutron_networks_get(self.cluster.id).json_body
+        admin = filter(lambda ng: ng['name'] == 'fuelweb_admin',
+                       data['networks'])[0]
+
+        orig_range = netaddr.IPRange(admin['ip_ranges'][0][0],
+                                     admin['ip_ranges'][0][1])
+        admin['ip_ranges'][0] = [str(orig_range[1]), str(orig_range[-2])]
+        new_range = admin['ip_ranges'][0]
+
+        resp = self.env.neutron_networks_put(self.cluster.id, data)
+        self.assertEqual(resp.json_body['status'], 'ready')
+
+        data = self.env.neutron_networks_get(self.cluster.id).json_body
+        admin = filter(lambda ng: ng['name'] == 'fuelweb_admin',
+                       data['networks'])[0]
+        self.assertEqual(new_range, admin['ip_ranges'][0])
 
     def test_set_ip_range(self):
         ng_names = (consts.NETWORKS.management,

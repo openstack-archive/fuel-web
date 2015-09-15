@@ -27,6 +27,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.errors import errors
 from nailgun import objects
 
@@ -85,13 +86,20 @@ class NetworkConfigurationValidator(BasicValidator):
                 raise errors.InvalidData(
                     "No CIDR was specified for network "
                     "{0}".format(ng_db.id))
-        if cluster.is_locked and cls._check_for_ip_conflicts(
-                ng_data, cluster, notation, use_gateway):
-
+        nm = objects.Cluster.get_network_manager(cluster)
+        if ng_db.name == consts.NETWORKS.fuelweb_admin and \
+                cls._check_for_ip_conflicts(
+                    ng_data, ng_db, nm, notation, True):
             raise errors.InvalidData(
-                "New IP ranges for network '{0}' conflict "
-                "with already allocated IPs.".format(ng_data['name'])
-            )
+                "New IP ranges for network '{0}'({1}) conflict "
+                "with nodes' IPs.".format(
+                    ng_data['name'], ng_data['id']))
+        elif cluster.is_locked and cls._check_for_ip_conflicts(
+                ng_data, ng_db, nm, notation, use_gateway):
+            raise errors.InvalidData(
+                "New IP ranges for network '{0}'({1}) conflict "
+                "with already allocated IPs.".format(
+                    ng_data['name'], ng_data['id']))
 
         return ng_data
 
@@ -121,20 +129,12 @@ class NetworkConfigurationValidator(BasicValidator):
         return data
 
     @classmethod
-    def _check_for_ip_conflicts(cls, network, cluster, notation, use_gateway):
-        """Will there be ip confclicts after networks update?
-
-        This method checks if any of already allocated IPs will be
+    def _check_for_ip_conflicts(cls, network, ng_db, nm, notation,
+                                use_gateway):
+        """This method checks if any of already allocated IPs will be
         out of all ip-ranges after networks update.
         """
-        # skip admin network
-        manager = objects.Cluster.get_network_manager(cluster)
-        if network['id'] == manager.get_admin_network_group_id():
-            return False
-
-        ng_db = db().query(NetworkGroup).get(network['id'])
-
-        ips = manager.get_assigned_ips_by_network_id(network['id'])
+        ips = nm.get_assigned_ips_by_network_id(network['id'])
         ranges = []
         if notation == consts.NETWORK_NOTATION.ip_ranges:
             ranges = network.get('ip_ranges',
@@ -143,8 +143,22 @@ class NetworkConfigurationValidator(BasicValidator):
             cidr = network.get('cidr', ng_db.cidr)
             ip_network = IPNetwork(cidr)
             first_index = 2 if use_gateway else 1
-            ranges = [(ip_network[first_index], ip_network[-1])]
-        return not manager.check_ips_belong_to_ranges(ips, ranges)
+            ranges = [(ip_network[first_index], ip_network[-2])]
+
+        # check IPs of bootstrap nodes in Admin network
+        if ng_db.name == consts.NETWORKS.fuelweb_admin:
+            nodes = db().query(Node.ip).filter_by(group_id=ng_db.group_id)
+            node_ips = [x[0] for x in nodes]
+            if ng_db.group_id is None:
+                # shared admin network. get nodes from all default groups
+                nodes = db().query(Node.ip).join(NodeGroup).filter(
+                    NodeGroup.name == consts.NODE_GROUPS.default
+                )
+                node_ips.extend(x[0] for x in nodes)
+            if not nm.check_ips_belong_to_ranges(node_ips, ranges):
+                return True
+
+        return not nm.check_ips_belong_to_ranges(ips, ranges)
 
     @classmethod
     def prepare_data(cls, data):

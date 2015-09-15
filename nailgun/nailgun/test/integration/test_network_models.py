@@ -103,6 +103,9 @@ class TestNetworkModels(BaseIntegrationTest):
         test_network_name = consts.NETWORKS.management
         mgmt_net = filter(lambda x: x['name'] == test_network_name,
                           test_nets['networks'])[0]
+        admin_net = filter(
+            lambda x: x['name'] == consts.NETWORKS.fuelweb_admin,
+            test_nets['networks'])[0]
 
         mgmt_net['cidr'] = u'1.1.1.0/24'
 
@@ -118,8 +121,9 @@ class TestNetworkModels(BaseIntegrationTest):
         self.assertEqual(consts.TASK_STATUSES.error,
                          resp_neutron_net.json_body['status'])
         self.assertEqual(
-            "New IP ranges for network '{0}' conflict "
-            "with already allocated IPs.".format(test_network_name),
+            "New IP ranges for network '{0}'({1}) conflict "
+            "with already allocated IPs.".format(test_network_name,
+                                                 mgmt_net['id']),
             resp_neutron_net.json_body['message'])
 
         mgmt_net['cidr'] = u'192.168.0.0/30'
@@ -127,8 +131,32 @@ class TestNetworkModels(BaseIntegrationTest):
         resp_neutron_net = self.env.neutron_networks_put(
             self.env.clusters[0].id,
             test_nets)
-
         self.assertEqual(200, resp_neutron_net.status_code)
+        self.assertEqual(consts.TASK_STATUSES.ready,
+                         resp_neutron_net.json_body['status'],
+                         "Task error message: {0}".format(
+                             resp_neutron_net.json_body['message']))
+
+        admin_net['cidr'] = u'191.111.0.0/26'
+        admin_net['ip_ranges'] = [[u'191.111.0.5', u'191.111.0.62']]
+
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            test_nets)
+        self.assertEqual(200, resp_neutron_net.status_code)
+        self.assertEqual(consts.TASK_STATUSES.error,
+                         resp_neutron_net.json_body['status'])
+        self.assertEqual(
+            "New IP ranges for network '{0}'({1}) conflict "
+            "with nodes' IPs.".format(admin_net['name'], admin_net['id']),
+            resp_neutron_net.json_body['message'])
+
+        for node in self.env.nodes:
+            self.db.delete(node)
+        self.db.commit()
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            test_nets)
         self.assertEqual(consts.TASK_STATUSES.ready,
                          resp_neutron_net.json_body['status'],
                          "Task error message: {0}".format(

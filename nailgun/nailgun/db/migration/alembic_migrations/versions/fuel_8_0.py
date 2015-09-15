@@ -27,12 +27,46 @@ down_revision = '1e50a4903910'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.utils.migration import upgrade_enum
+
+
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'spawn_vms',
+    'node_deletion',
+    'cluster_deletion',
+    'remove_images',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'dump',
+    'capacity_log',
+    'create_stats_user',
+    'remove_stats_user',
+)
+task_names_new = task_names_old + (
+    'update_dnsmasq',
+)
+
 
 def upgrade():
     upgrade_nodegroups_name_cluster_constraint()
+    task_names_upgrade()
 
 
 def downgrade():
+    task_names_downgrade()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
 
 
@@ -57,4 +91,24 @@ def upgrade_nodegroups_name_cluster_constraint():
             'cluster_id',
             'name'
         ]
+    )
+
+
+def task_names_upgrade():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_old,             # old options
+        task_names_new              # new options
+    )
+
+
+def task_names_downgrade():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_new,             # old options
+        task_names_old              # new options
     )

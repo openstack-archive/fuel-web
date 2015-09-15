@@ -863,6 +863,54 @@ class TestNeutronManager(BaseIntegrationTest):
 
         self.check_networks_assignment(self.env.nodes[0])
 
+    def test_admin_networks_serialization(self):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'}
+        )
+        ng = self.env.create_node_group().json_body
+        admin_nets = self.db.query(NetworkGroup).filter_by(
+            name='fuelweb_admin'
+        )
+        admin_def = admin_nets.filter_by(group_id=None).first()
+        admin_ng = admin_nets.filter_by(group_id=ng['id']).first()
+
+        expected = [
+            {
+                'id': admin_def.id,
+                'cidr': '10.20.0.0/24',
+                'gateway': '10.20.0.1',
+                'ip_ranges': [['10.20.0.129', '10.20.0.254']]
+            },
+            {
+                'id': admin_ng.id,
+                'cidr': '9.9.9.0/24',
+                'gateway': '9.9.9.1',
+                'ip_ranges': [['9.9.9.2', '9.9.9.254']]
+            }
+        ]
+
+        nm = objects.Cluster.get_network_manager()
+        admin_nets = nm.get_admin_networks()
+        self.assertEqual(admin_nets, expected)
+
+        expected[0].update({
+            'node_group_id': None,
+            'node_group_name': None,
+            'cluster_id': None,
+            'cluster_name': None
+        })
+        expected[1].update({
+            'node_group_id': ng['id'],
+            'node_group_name': ng['name'],
+            'cluster_id': cluster['id'],
+            'cluster_name': cluster['name']
+        })
+
+        admin_nets = nm.get_admin_networks(True)
+        self.assertEqual(admin_nets, expected)
+
     def test_check_admin_network_mapping(self):
         self.env.create(
             cluster_kwargs={

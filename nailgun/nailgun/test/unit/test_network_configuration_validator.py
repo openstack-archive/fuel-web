@@ -22,7 +22,7 @@ from nailgun.api.v1.validators.network import NovaNetworkConfigurationValidator
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
-from nailgun.network.neutron import NeutronManager
+from nailgun import objects
 from nailgun.test import base
 
 
@@ -325,31 +325,33 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
             "'use_gateway' cannot be provided without gateway")
 
     def test_check_ip_conflicts(self):
-        mgmt = self.find_net_by_name(consts.NETWORKS.management)
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        mgmt = self.find_net_by_name('management')
+        mgmt_db = self.db.query(NetworkGroup).get(mgmt['id'])
 
         # firstly check default IPs from management net assigned to nodes
-        ips = NeutronManager.get_assigned_ips_by_network_id(mgmt['id'])
-        self.assertListEqual(['192.168.0.1', '192.168.0.2'], sorted(ips),
+        ips = nm.get_assigned_ips_by_network_id(mgmt['id'])
+        self.assertListEqual(['192.168.0.2', '192.168.0.3'], sorted(ips),
                              "Default IPs were changed for some reason.")
 
         mgmt['cidr'] = '10.101.0.0/24'
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.cidr, False)
+            mgmt, mgmt_db, nm, 'cidr', False)
         self.assertTrue(result)
 
         mgmt['cidr'] = '192.168.0.0/28'
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.cidr, False)
+            mgmt, mgmt_db, nm, 'cidr', False)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['192.168.0.1', '192.168.0.15']]
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.ip_ranges, False)
+            mgmt, mgmt_db, nm, 'ip_ranges', False)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['10.101.0.1', '10.101.0.255']]
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.ip_ranges, False)
+            mgmt, mgmt_db, nm, 'ip_ranges', False)
         self.assertTrue(result)
 
 

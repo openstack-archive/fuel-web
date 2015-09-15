@@ -25,6 +25,7 @@ from nailgun.api.v1.validators.node_group import NodeGroupValidator
 from nailgun.db import db
 
 from nailgun import objects
+from nailgun.task.manager import UpdateDnsmasqTaskManager
 
 """
 Handlers dealing with node groups
@@ -40,6 +41,7 @@ class NodeGroupHandler(SingleHandler):
         node_group = self.get_object_or_404(objects.NodeGroup, group_id)
         db().delete(node_group)
         db().commit()
+        UpdateDnsmasqTaskManager().execute()
         raise web.webapi.HTTPError(
             status="204 No Content",
             data=""

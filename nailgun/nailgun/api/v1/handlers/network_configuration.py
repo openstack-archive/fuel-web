@@ -45,6 +45,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.manager import CheckNetworksTaskManager
+from nailgun.task.manager import UpdateDnsmasqTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
@@ -66,10 +67,10 @@ class ProviderHandler(BaseHandler):
             raise self.http(403, "Network configuration cannot be changed "
                                  "during deployment and after upgrade.")
 
-    def _raise_error_task(self, cluster, exc):
+    def _raise_error_task(self, cluster, task_name, exc):
         # set task status to error and update its corresponding data
         task = Task(
-            name=consts.TASK_NAMES.check_networks,
+            name=task_name,
             cluster=cluster,
             status=consts.TASK_STATUSES.error,
             progress=100,
@@ -109,7 +110,6 @@ class ProviderHandler(BaseHandler):
         """:returns: JSONized network configuration for cluster.
 
         :http: * 200 (task successfully executed)
-               * 202 (network checking task scheduled for execution)
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
@@ -128,9 +128,17 @@ class ProviderHandler(BaseHandler):
         if task.status == consts.TASK_STATUSES.error:
             raise self.http(400, task.message, err_list=task.result)
 
-        objects.Cluster.get_network_manager(
-            cluster
-        ).update(cluster, data)
+        nm = objects.Cluster.get_network_manager(cluster)
+        admin_nets = nm.get_admin_networks()
+        nm.update(cluster, data)
+        if cmp(admin_nets, nm.get_admin_networks()):
+            try:
+                task = UpdateDnsmasqTaskManager().execute()
+            except Exception as exc:
+                raise self.http(409, str(exc))
+            if task.status == consts.TASK_STATUSES.error:
+                raise self.http(400, task.message)
+
         return self.serializer.serialize_for_cluster(cluster)
 
 
@@ -219,7 +227,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         try:
             data = self.validator.validate_networks_data(web.data(), cluster)
         except Exception as exc:
-            self._raise_error_task(cluster, exc)
+            self._raise_error_task(
+                cluster, consts.TASK_NAMES.verify_networks, exc)
 
         vlan_ids = [{
             'name': n['name'],

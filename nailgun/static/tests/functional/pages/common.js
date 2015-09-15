@@ -153,7 +153,7 @@ define([
                 return this.remote
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
-                            return assert.equal(elements.length, 1, message);
+                            return assert.ok(elements.length, message);
                         })
                         .end();
             },

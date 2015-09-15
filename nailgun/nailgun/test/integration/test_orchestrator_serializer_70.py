@@ -981,29 +981,34 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
 
     def create_env(self, segment_type):
-        return self.env.create(
+        cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'api': False,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': segment_type},
-            nodes_kwargs=[
-                {'roles': ['controller'],
-                 'pending_addition': True,
-                 'name': self.node_name},
-                {'roles': ['compute', 'cinder'],
-                 'pending_addition': True,
-                 'name': self.node_name}
-            ])
+        )
+        nodes_kwargs = {
+            'roles': ['controller'],
+            'pending_addition': True,
+            'name': self.node_name,
+            'cluster_id': cluster['id']
+        }
+        self.env.create_nodes_w_interfaces_count(1, 4, **nodes_kwargs)
+        nodes_kwargs['roles'] = ['compute', 'cinder']
+        self.env.create_nodes_w_interfaces_count(1, 4, **nodes_kwargs)
 
-    def create_more_nodes(self):
-        self.env.create_node(
-            roles=['cinder'], cluster_id=self.cluster.id)
-        self.env.create_node(
+        return cluster
+
+    def create_more_nodes(self, iface_count=2):
+        self.env.create_nodes_w_interfaces_count(
+            1, iface_count, roles=['cinder'], cluster_id=self.cluster.id)
+        self.env.create_nodes_w_interfaces_count(
+            1, iface_count,
             roles=['cinder', 'controller'], cluster_id=self.cluster.id)
-        self.env.create_node(
-            roles=['compute'], cluster_id=self.cluster.id)
+        self.env.create_nodes_w_interfaces_count(
+            1, iface_count, roles=['compute'], cluster_id=self.cluster.id)
 
     def check_node_ips_on_certain_networks(self, node, net_names):
         ips = db().query(models.IPAddr).filter_by(node=node.id)
@@ -1024,7 +1029,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         self.assertIs(net_serializer, NeutronNetworkTemplateSerializer70)
 
     def test_ip_assignment_according_to_template(self):
-        self.create_more_nodes()
+        self.create_more_nodes(iface_count=4)
         # according to the template different node roles have different sets of
         # networks
         node_roles_vs_net_names = [
@@ -1276,12 +1281,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
     def test_multiple_node_roles_network_metadata(self):
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        ip_by_net = {
-            'fuelweb_admin': None,
-            'storage': None,
-            'management': None,
-            'public': None
-        }
+        ip_by_net = {}
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
@@ -1294,7 +1294,9 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 )
                 node = objects.Node.get_by_uid(node_attrs['uid'])
                 networks = nm.get_node_networks(node)
-                for net in ip_by_net:
+                node_nets = [n['name'] for n in networks]
+
+                for net in node_nets:
                     netgroup = nm.get_network_by_netname(net, networks)
                     if netgroup.get('ip'):
                         ip_by_net[net] = netgroup['ip'].split('/')[0]

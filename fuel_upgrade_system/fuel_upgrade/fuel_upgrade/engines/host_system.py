@@ -92,6 +92,12 @@ class HostSystemUpgrader(UpgradeEngine):
         # [1]: https://bugs.launchpad.net/fuel/+bug/1455419
         self.supervisor.stop_all_services()
 
+        # The workaround we need in order to fix [1]. In few words,
+        # when the repositories is being installed, auxiliary repo is removed,
+        # the config should be removed as well.
+        #
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1495481
+        self.remove_repo_config()
         self.install_repos()
         self.update_repo()
         self.install_packages()

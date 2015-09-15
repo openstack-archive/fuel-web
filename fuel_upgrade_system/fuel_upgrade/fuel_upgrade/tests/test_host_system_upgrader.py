@@ -29,21 +29,21 @@ class TestHostSystemUpgrader(BaseTestCase):
             self.upgrader = HostSystemUpgrader(self.fake_config)
         self.upgrader.supervisor = mock.Mock()
 
-    @mock.patch(
-        'fuel_upgrade.engines.host_system.HostSystemUpgrader.install_repos')
-    @mock.patch(
-        'fuel_upgrade.engines.host_system.HostSystemUpgrader.update_repo')
-    @mock.patch(
-        'fuel_upgrade.engines.host_system.HostSystemUpgrader.run_puppet')
-    @mock.patch(
-        'fuel_upgrade.engines.host_system.utils')
-    def test_upgrade(self, mock_utils, run_puppet_mock, update_repo_mock,
-                     install_repos_mock):
+    @mock.patch.multiple(
+        'fuel_upgrade.engines.host_system.HostSystemUpgrader',
+        install_repos=mock.DEFAULT,
+        update_repo=mock.DEFAULT,
+        run_puppet=mock.DEFAULT,
+        remove_repo_config=mock.DEFAULT
+    )
+    @mock.patch('fuel_upgrade.engines.host_system.utils')
+    def test_upgrade(self, mock_utils, install_repos, update_repo,
+                     run_puppet, remove_repo_config):
         self.upgrader.upgrade()
-
-        self.called_once(install_repos_mock)
-        self.called_once(run_puppet_mock)
-        self.called_once(update_repo_mock)
+        self.called_once(install_repos)
+        self.called_once(run_puppet)
+        self.called_once(update_repo)
+        self.called_once(remove_repo_config)
         self.called_once(self.upgrader.supervisor.stop_all_services)
         mock_utils.exec_cmd.assert_called_with(
             'yum install -v -y fuel-9999.0.0')
@@ -72,15 +72,15 @@ class TestHostSystemUpgrader(BaseTestCase):
             '/host-upgrade.pp '
             '--modulepath=/etc/puppet/2014.1.1-5.1/modules')
 
-    @mock.patch(
-        'fuel_upgrade.engines.host_system.HostSystemUpgrader.remove_repos')
-    @mock.patch(
-        'fuel_upgrade.engines.host_system.'
-        'HostSystemUpgrader.remove_repo_config')
-    def test_rollback(self, remove_repo_config_mock, remove_repos_mock):
+    @mock.patch.multiple(
+        'fuel_upgrade.engines.host_system.HostSystemUpgrader',
+        remove_repos=mock.DEFAULT,
+        remove_repo_config=mock.DEFAULT,
+    )
+    def test_rollback(self, remove_repos, remove_repo_config):
         self.upgrader.rollback()
-        self.called_once(remove_repo_config_mock)
-        self.called_once(remove_repos_mock)
+        self.called_once(remove_repos)
+        self.called_once(remove_repo_config)
         self.called_once(self.upgrader.supervisor.start_all_services)
 
     @mock.patch('fuel_upgrade.engines.host_system.utils.remove_if_exists')

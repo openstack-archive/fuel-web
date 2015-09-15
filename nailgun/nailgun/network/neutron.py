@@ -16,16 +16,19 @@
 
 import itertools
 import netaddr
+from ordereddict import OrderedDict
 import six
 
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.errors import errors
 
 from nailgun.logger import logger
 
 from nailgun.network.manager import AllocateVIPs70Mixin
 from nailgun.network.manager import NetworkManager
+from nailgun import objects
 
 
 class NeutronManager(NetworkManager):
@@ -306,3 +309,114 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
                     net_id, net_name, node_ids, ip_ranges)
 
         cls.assign_admin_ips(nodes)
+
+    @classmethod
+    def _split_iface_name(cls, iface):
+        try:
+            iface, vlan = iface.split('.')
+        except ValueError:
+            vlan = None
+
+        return (iface, vlan)
+
+    @classmethod
+    def generate_transformations(cls, node):
+        """Overrides default transformation generation.
+        Transformations are taken verbatim from each role template's
+        transformations section.
+        """
+        txs = []
+        role_templates = OrderedDict()
+        template = node.network_template
+
+        roles = sorted(node.all_roles)
+
+        # We need a unique, ordered list of all role templates that
+        # apply to this node. The keys of an OrderedDict act as an
+        # ordered set. The order of transformations is important which
+        # is why we can't just use a set. The list needs to be unique
+        # because duplicated transformations will break deployment.
+        for role in roles:
+            if role not in template['templates_for_node_role']:
+                raise errors.NetworkTemplateMissingRoles(
+                    'Role %s not found in network template' % role
+                )
+            for t in template['templates_for_node_role'][role]:
+                role_templates[t] = True
+
+        for t in role_templates:
+            txs.extend(template['templates'][t]['transformations'])
+
+        return txs
+
+    @classmethod
+    def get_interfaces_from_template(cls, node):
+        transformations = cls.generate_transformations(node)
+
+        interfaces = {}
+        for tx in transformations:
+            if tx['action'] == 'add-port':
+                key = tx.get('bridge', tx['name'])
+                interfaces[key] = {
+                    'name': tx['name'],
+                    'type': consts.NETWORK_INTERFACE_TYPES.ether,
+                    'interface_properties': tx.get('interface_properties', {}),
+                    'offloading_modes': tx.get('offloading_modes', []),
+                }
+
+            if tx['action'] == 'add-bond':
+                key = tx.get('bridge', tx['name'])
+                interfaces[key] = {
+                    'name': tx['name'],
+                    'slaves': [{'name': cls._split_iface_name(i)[0]}
+                               for i in tx['interfaces']],
+                    'type': consts.NETWORK_INTERFACE_TYPES.bond,
+                    'bond_properties': tx.get('bond_properties', {}),
+                    'offloading_modes': tx.get('offloading_modes', []),
+                }
+
+        return interfaces
+
+    @classmethod
+    def assign_networks_by_template(cls, node):
+        interfaces = cls.get_interfaces_from_template(node)
+
+        endpoint_mapping = cls.get_node_network_mapping(node)
+        em = dict((reversed(ep) for ep in endpoint_mapping))
+
+        node_ifaces = {}
+        for bridge, values in interfaces.items():
+            network = em.get(bridge)
+            # There is no network associated with this bridge (e.g. br-aux)
+            if not network:
+                continue
+
+            iface, vlan = cls._split_iface_name(values['name'])
+
+            node_ifaces.setdefault(iface, values)
+            node_ifaces[iface].setdefault('assigned_networks', [])
+
+            # Default admin network has no node group
+            if network == consts.NETWORKS.fuelweb_admin:
+                net_db = cls.get_admin_network_group(node.id)
+            else:
+                net_db = objects.NetworkGroup.get_from_node_group_by_name(
+                    node.group_id, network)
+
+            if vlan != net_db.vlan_start:
+                net_db.vlan_start = vlan
+                db().add(net_db)
+                db().flush()
+
+            ng = {'id': net_db.id}
+            node_ifaces[iface]['assigned_networks'].append(ng)
+
+            if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
+                nic = objects.Node.get_nic_by_name(node, iface)
+                node_ifaces[iface]['id'] = nic.id
+
+        node_data = {
+            'id': node.id,
+            'interfaces': node_ifaces.values()
+        }
+        cls._update_attrs(node_data)

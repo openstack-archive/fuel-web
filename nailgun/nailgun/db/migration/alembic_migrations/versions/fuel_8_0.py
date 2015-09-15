@@ -19,6 +19,10 @@ Revises: 1e50a4903910
 Create Date: 2015-09-03 12:28:11.132934
 
 """
+from alembic import op
+import sqlalchemy as sa
+
+from nailgun.db.sqlalchemy.models import fields
 
 # revision identifiers, used by Alembic.
 revision = '43b2cb64dae6'
@@ -26,8 +30,13 @@ down_revision = '1e50a4903910'
 
 
 def upgrade():
-    pass
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'serialized_interface_config', fields.JSON(), nullable=True,
+            server_default=None)
+    )
 
 
 def downgrade():
-    pass
+    op.drop_column('nodes', 'serialized_interface_config')

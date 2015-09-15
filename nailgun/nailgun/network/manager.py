@@ -23,6 +23,7 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 
+from oslo_serialization import jsonutils
 import six
 
 from sqlalchemy.orm import joinedload
@@ -815,6 +816,8 @@ class NetworkManager(object):
     @classmethod
     def _update_attrs(cls, node_data):
         node_db = db().query(Node).get(node_data['id'])
+        if not node_db.network_template:
+            node_db.serialized_interface_config = jsonutils.dumps(node_data)
         is_ether = lambda x: x['type'] == consts.NETWORK_INTERFACE_TYPES.ether
         is_bond = lambda x: x['type'] == consts.NETWORK_INTERFACE_TYPES.bond
         interfaces = filter(is_ether, node_data['interfaces'])

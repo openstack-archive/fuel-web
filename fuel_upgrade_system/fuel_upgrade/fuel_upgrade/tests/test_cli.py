@@ -19,6 +19,7 @@ import mock
 from fuel_upgrade import errors
 from fuel_upgrade import messages
 
+from fuel_upgrade.cli import get_non_unique
 from fuel_upgrade.cli import parse_args
 from fuel_upgrade.cli import run_upgrade
 from fuel_upgrade.tests.base import BaseTestCase
@@ -66,3 +67,42 @@ class TestAdminPassword(BaseTestCase):
                                      messages.no_password_provided):
             args = self.get_args(self.default_args)
             run_upgrade(args)
+
+
+class TestArgumentsParser(BaseTestCase):
+    default_args = ['--src', '/path']
+
+    def test_parse_list_of_systems(self):
+        systems = ['host-system', 'docker']
+        args = parse_args(systems + self.default_args)
+        self.assertEqual(systems, args.systems)
+
+    @mock.patch('argparse.ArgumentParser.error')
+    def test_error_if_systems_have_duplicates(self, error_mock):
+        parse_args(
+            ['host-system', 'docker', 'openstack', 'openstack', 'docker'] +
+            self.default_args
+        )
+        self.assertEqual(1, error_mock.call_count)
+        self.assertEqual(1, len(error_mock.call_args[0]))
+        self.assertIn('"docker, openstack"', error_mock.call_args[0][0])
+
+    @mock.patch('argparse.ArgumentParser.error')
+    def test_error_if_systems_are_incompatible(self, error_mock):
+        parse_args(
+            ['docker', 'docker-init'] + self.default_args
+        )
+        self.assertEqual(1, error_mock.call_count)
+        self.assertEqual(1, len(error_mock.call_args[0]))
+        self.assertIn('"docker-init, docker"', error_mock.call_args[0][0])
+
+
+class TestGetNonUnique(BaseTestCase):
+    def test_get_duplicates(self):
+        self.assertEqual([2, 3], list(get_non_unique([2, 2, 2, 3, 3, 1])))
+
+    def test_empty_if_no_duplicates(self):
+        self.assertEqual([], list(get_non_unique(xrange(3))))
+
+    def test_empty_if_empty_input(self):
+        self.assertEqual([], list(get_non_unique([])))

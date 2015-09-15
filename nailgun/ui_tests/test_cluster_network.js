@@ -50,7 +50,7 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing cluster networks: VLAN range fields');
     this.click('input[name=net_provider]:not(:checked)');
-    this.test.assertExists('.network-section-wrapper input[name=range-end_fixed_networks_vlan_start]', 'VLAN range is displayed');
+    this.test.assertExists('input[name=range-end_fixed_networks_vlan_start]', 'VLAN range is displayed');
     this.click('input[name=net_provider]:not(:checked)');
 });
 
@@ -93,13 +93,13 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: data validation');
-    this.click('.network-section-wrapper input[name=fixed_networks_vlan_start]');
+    this.click('input[name=fixed_networks_vlan_start]');
     this.click('input[name=net_provider]:not(:checked)');
-    this.test.assertExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation has worked');
+    this.test.assertExists('.has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation has worked');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled if there is validation error');
     this.click('input[name=net_provider]:not(:checked)');
-    this.click('.network-section-wrapper input[name=fixed_networks_vlan_start]');
-    this.test.assertDoesntExist('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation works properly');
+    this.click('input[name=fixed_networks_vlan_start]');
+    this.test.assertDoesntExist('.has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation works properly');
 });
 
 /*

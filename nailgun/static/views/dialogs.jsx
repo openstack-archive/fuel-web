@@ -471,50 +471,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         }
     });
 
-    dialogs.UpdateEnvironmentDialog = React.createClass({
-        mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.update_environment.title')};},
-        updateEnvironment: function() {
-            this.setState({actionInProgress: true});
-            var cluster = this.props.cluster;
-            cluster.save({pending_release_id: this.props.pendingReleaseId || cluster.get('release_id')}, {patch: true, wait: true})
-                .fail(this.showError)
-                .done(function() {
-                    this.close();
-                    dispatcher.trigger('deploymentTasksUpdated');
-                    (new models.Task()).save({}, {url: _.result(cluster, 'url') + '/update', type: 'PUT'})
-                        .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'));
-                }.bind(this));
-        },
-        renderBody: function() {
-            var action = this.props.action;
-            return (
-                <div>
-                    {action == 'update' && this.props.isDowngrade ?
-                        <div className='text-danger'>
-                            {this.renderImportantLabel()}
-                            {i18n('dialog.' + action + '_environment.downgrade_warning')}
-                        </div>
-                    :
-                        <div>{i18n('dialog.' + action + '_environment.text')}</div>
-                    }
-                </div>
-            );
-        },
-        renderFooter: function() {
-            var action = this.props.action,
-                classes = utils.classNames({
-                    'btn update-environment-btn': true,
-                    'btn-success': action == 'update',
-                    'btn-danger': action != 'update'
-                });
-            return ([
-                <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
-                <button key='reset' className={classes} onClick={this.updateEnvironment} disabled={this.state.actionInProgress}>{i18n('common.' + action + '_button')}</button>
-            ]);
-        }
-    });
-
     dialogs.ShowNodeInfoDialog = React.createClass({
         mixins: [
             dialogMixin,

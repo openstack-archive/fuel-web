@@ -30,14 +30,48 @@ from sqlalchemy.dialects import postgresql as psql
 
 from nailgun.utils.migration import drop_enum
 
+from nailgun.utils.migration import upgrade_enum
+
+
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'spawn_vms',
+    'node_deletion',
+    'cluster_deletion',
+    'remove_images',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'dump',
+    'capacity_log',
+    'create_stats_user',
+    'remove_stats_user',
+)
+task_names_new = task_names_old + (
+    'update_dnsmasq',
+)
+
 
 def upgrade():
     create_components_table()
     create_release_components_table()
     upgrade_nodegroups_name_cluster_constraint()
+    task_names_upgrade()
 
 
 def downgrade():
+    task_names_downgrade()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
     op.drop_table('release_components')
     op.drop_table('components')
@@ -104,3 +138,23 @@ def create_release_components_table():
                         ['release_id'], ['releases.id'], ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id')
                     )
+
+
+def task_names_upgrade():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_old,             # old options
+        task_names_new              # new options
+    )
+
+
+def task_names_downgrade():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_new,             # old options
+        task_names_old              # new options
+    )

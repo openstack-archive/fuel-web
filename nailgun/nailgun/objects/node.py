@@ -430,6 +430,7 @@ class Node(NailgunObject):
                 cls.update_interfaces(instance, update_by_agent)
 
         cluster_changed = False
+        add_to_cluster = False
         if "cluster_id" in data:
             new_cluster_id = data.pop("cluster_id")
             if instance.cluster_id:
@@ -447,7 +448,8 @@ class Node(NailgunObject):
                 if new_cluster_id is not None:
                     # assigning node to cluster
                     cluster_changed = True
-                    cls.add_into_cluster(instance, new_cluster_id)
+                    add_to_cluster = True
+                    cls.set_cluster_id(instance, new_cluster_id)
 
         if "group_id" in data:
             new_group_id = data.pop("group_id")
@@ -456,7 +458,8 @@ class Node(NailgunObject):
                 nm.clear_assigned_networks(instance)
                 nm.clear_bond_configuration(instance)
             instance.group_id = new_group_id
-            cls.add_into_cluster(instance, instance.cluster_id)
+            add_to_cluster = True
+            cls.set_cluster_id(instance, instance.cluster_id)
 
         # calculating flags
         roles_changed = (
@@ -473,6 +476,9 @@ class Node(NailgunObject):
             cls.update_roles(instance, roles)
         if pending_roles_changed:
             cls.update_pending_roles(instance, pending_roles)
+
+        if add_to_cluster:
+            cls.add_into_cluster(instance, instance.cluster_id)
 
         if any((
             roles_changed,
@@ -686,6 +692,11 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
+    def set_cluster_id(cls, instance, cluster_id):
+        instance.cluster_id = cluster_id
+        db().flush()
+
+    @classmethod
     def add_into_cluster(cls, instance, cluster_id):
         """Adds Node to Cluster by its ID.
         Also assigns networks by default for Node.
@@ -694,8 +705,8 @@ class Node(NailgunObject):
         :param cluster_id: Cluster ID
         :returns: None
         """
-        instance.cluster_id = cluster_id
-        db().flush()
+        if instance.cluster_id != cluster_id:
+            cls.set_cluster_id(instance, cluster_id)
         cls.assign_group(instance)
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
@@ -863,6 +874,11 @@ class Node(NailgunObject):
                 output['roles'][role] = ep
 
         instance.network_template = output
+        db().flush()
+
+        if instance.cluster:
+            nm = Cluster.get_network_manager(instance.cluster)
+            nm.assign_networks_by_template(instance)
 
     @classmethod
     def get_unique_hostname(cls, node, cluster_id):
@@ -874,6 +890,16 @@ class Node(NailgunObject):
         if cls.get_by_hostname(hostname, cluster_id):
             hostname = 'node-{0}'.format(node.uuid)
         return hostname
+
+    @classmethod
+    def get_nic_by_name(cls, instance, iface_name):
+        nic = db().query(models.NodeNICInterface).filter_by(
+            name=iface_name
+        ).filter_by(
+            node_id=instance.id
+        ).first()
+
+        return nic
 
 
 class NodeCollection(NailgunCollection):

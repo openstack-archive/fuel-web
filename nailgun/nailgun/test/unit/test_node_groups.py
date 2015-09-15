@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 import json
 
 from nailgun import consts
@@ -100,7 +102,8 @@ class TestNodeGroups(BaseIntegrationTest):
         nets = db().query(NetworkGroup).filter_by(group_id=response['id'])
         self.assertEquals(nets.count(), 5)
 
-    def test_nodegroup_deletion(self):
+    @patch('nailgun.task.task.rpc.cast')
+    def test_nodegroup_deletion(self, _):
         resp = self.env.create_node_group()
         response = resp.json_body
         group_id = response['id']

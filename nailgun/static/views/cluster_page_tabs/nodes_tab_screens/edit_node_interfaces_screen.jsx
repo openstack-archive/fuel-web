@@ -168,7 +168,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             var nodes = this.props.nodes,
                 interfaces = this.props.interfaces,
-                bonds = interfaces.filter(function(ifc) {return ifc.isBond();});
+                bonds = interfaces.filter(function(ifc) {return ifc.isBond();}),
+                bondsByName = bonds.reduce(function(result, bond) {
+                        result[bond.get('name')] = bond;
+                        return result;
+                    }, {});
 
             // bonding map contains indexes of slave interfaces
             // it is needed to build the same configuration for all the nodes
@@ -198,7 +202,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
                 // Assigning networks according to user choice and interface properties
                 node.interfaces.each(function(ifc, index) {
-                    var updatedIfc = interfaces.at(index);
+                    var updatedIfc = ifc.isBond() ? bondsByName[ifc.get('name')] : interfaces.at(index);
                     ifc.set({
                         assigned_networks: new models.InterfaceNetworks(updatedIfc.get('assigned_networks').toJSON()),
                         interface_properties: updatedIfc.get('interface_properties')

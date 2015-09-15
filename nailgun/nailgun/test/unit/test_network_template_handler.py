@@ -60,7 +60,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(template, resp.json_body)
 
     def test_network_template_upload_on_multi_group_cluster(self):
-        cluster = self.env.create_cluster(api=False)
+        cluster = self.env.create_cluster(api=False, net_provider='neutron')
+        cluster.release.version = '1111-7.0'
 
         custom_group_name = 'group-custom-1'
         custom_group = NodeGroup(name=custom_group_name, cluster_id=cluster.id)

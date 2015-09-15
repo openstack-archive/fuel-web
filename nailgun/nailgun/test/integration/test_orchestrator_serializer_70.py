@@ -981,21 +981,25 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
 
     def create_env(self, segment_type):
-        return self.env.create(
+        cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'api': False,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': segment_type},
-            nodes_kwargs=[
-                {'roles': ['controller'],
-                 'pending_addition': True,
-                 'name': self.node_name},
-                {'roles': ['compute', 'cinder'],
-                 'pending_addition': True,
-                 'name': self.node_name}
-            ])
+        )
+        nodes_kwargs = {
+            'roles': ['controller'],
+            'pending_addition': True,
+            'name': self.node_name,
+            'cluster_id': cluster['id']
+        }
+        self.env.create_nodes_w_interfaces_count(1, 4, **nodes_kwargs)
+        nodes_kwargs['roles'] = ['compute', 'cinder']
+        self.env.create_nodes_w_interfaces_count(1, 4, **nodes_kwargs)
+
+        return cluster
 
     def create_more_nodes(self):
         self.env.create_node(

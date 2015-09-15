@@ -24,10 +24,24 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from alembic import op
+from nailgun.db.sqlalchemy.models import fields
+import sqlalchemy as sa
+
 
 def upgrade():
-    pass
+    add_baremetal_net_upgrade()
 
 
 def downgrade():
-    pass
+    add_baremetal_net_downgrade()
+
+
+def add_baremetal_net_upgrade():
+    op.add_column('networking_configs',
+                  sa.Column('baremetal_ranges', fields.JSON(), nullable=True,
+                            server_default=None))
+
+
+def add_baremetal_net_downgrade():
+    op.drop_column('networking_configs', 'baremetal_ranges')

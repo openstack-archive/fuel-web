@@ -172,23 +172,29 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                             {i18n('cluster_page.nodes_tab.configure_disks.' + (locked ? 'read_only_' : '') + 'title', {count: this.props.nodes.length, name: this.props.nodes.length && this.props.nodes.at(0).get('name')})}
                         </div>
                         <div className='col-xs-12 node-disks'>
-                            {this.props.disks.map(function(disk, index) {
-                                return (<NodeDisk
-                                    disk={disk}
-                                    key={index}
-                                    disabled={locked || this.state.actionInProgress}
-                                    volumes={this.props.volumes}
-                                    volumesInfo={this.getVolumesInfo(disk)}
-                                    diskMetaData={this.getDiskMetaData(disk)}
-                                />);
-                            }, this)}
+                            {this.props.disks.length ?
+                                    this.props.disks.map(function(disk, index) {
+                                        return (<NodeDisk
+                                            disk={disk}
+                                            key={index}
+                                            disabled={locked || this.state.actionInProgress}
+                                            volumes={this.props.volumes}
+                                            volumesInfo={this.getVolumesInfo(disk)}
+                                            diskMetaData={this.getDiskMetaData(disk)}
+                                        />);
+                                    }, this)
+                                :
+                                    <div className='alert alert-warning'>
+                                        {i18n('cluster_page.nodes_tab.configure_disks.no_disks', {count: this.props.nodes.length})}
+                                    </div>
+                            }
                         </div>
                         <div className='col-xs-12 page-buttons content-elements'>
                             <div className='well clearfix'>
                                 <div className='btn-group'>
                                     {this.renderBackToNodeListButton()}
                                 </div>
-                                {!locked &&
+                                {!locked && !!this.props.disks.length &&
                                     <div className='btn-group pull-right'>
                                         <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={loadDefaultsDisabled}>{i18n('common.load_defaults_button')}</button>
                                         <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={revertChangesDisabled}>{i18n('common.cancel_changes_button')}</button>

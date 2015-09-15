@@ -40,7 +40,8 @@ define(function() {
             i18next: 'vendor/npm/i18next/lib/dep/i18next-1.7.1',
             deepModel: 'vendor/custom/deep-model',
             lessLibrary: 'vendor/npm/less/dist/less',
-            'require-css': 'vendor/npm/require-css'
+            'require-css': 'vendor/npm/require-css',
+            sinon: 'vendor/npm/sinon/lib/sinon'
         },
         shim: {
             'expression/parser': {

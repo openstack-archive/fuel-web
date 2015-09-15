@@ -6,12 +6,12 @@
             "status": "discover",
             "name": "Supermicro X9DRW",
             "hostname": "node-1",
-            "ip": "172.18.67.168",
+            "ip": "10.20.0.168",
             "online": true,
             "labels": {},
             "pending_addition": false,
             "platform_name": "X9DRW",
-            "mac": "00:25:90:6a:b1:10",
+            "mac": "00:25:90:6a:b1:11",
             "meta": {
                 "cpu": {
                     "real": 2,
@@ -158,7 +158,7 @@
                         "max_speed": 1000,
                         "name": "eth1",
                         "current_speed": null,
-                        "ip": "10.20.0.3",
+                        "ip": "10.20.0.168",
                         "driver": "igb",
                         "bus_info": "0000:02:00.0",
                         "offloading_modes":[
@@ -344,7 +344,7 @@
             "status": "discover",
             "name": "Dell Inspiron",
             "hostname": "node-2",
-            "ip": "10.20.0.1",
+            "ip": "10.20.0.133",
             "online": true,
             "labels": {},
             "pending_addition": false,
@@ -370,7 +370,7 @@
                 },
                 "interfaces": [
                     {
-                        "ip": "10.20.0.4",
+                        "ip": "10.20.0.133",
                         "mac": "58:91:cF:2a:c4:1b",
                         "netmask": "255.255.255.0",
                         "driver": "igb",
@@ -556,12 +556,12 @@
             "status": "discover",
             "name": "Supermicro X9SCD",
             "hostname": "node-3",
-            "ip": "172.18.67.167",
+            "ip": "10.20.0.167",
             "online": true,
             "labels": {},
             "pending_addition": false,
             "platform_name": "X9SCD",
-            "mac": "00:25:90:23:9f:b7",
+            "mac": "00:25:90:23:9f:b6",
             "meta": {
                 "memory": {
                     "slots": 4,
@@ -625,7 +625,7 @@
                         "pxe": false
                     },
                     {
-                        "ip": "10.20.0.5",
+                        "ip": "10.20.0.167",
                         "mac": "00:25:90:67:9f:b6",
                         "max_speed": 1000,
                         "name": "eth0",
@@ -675,7 +675,7 @@
                         "current_speed": 1000,
                         "driver": "igb",
                         "bus_info": "0000:09:00.0",
-                        "pxe": true
+                        "pxe": false
                     }
                 ],
                 "disks": [
@@ -753,7 +753,7 @@
             "status": "discover",
             "name": "Supermicro X9SCD (offline)",
             "hostname": "node-4",
-            "ip": "172.18.67.173",
+            "ip": "10.20.0.173",
             "online": false,
             "labels": {},
             "pending_addition": false,
@@ -799,7 +799,7 @@
                     },
                     {
                         "name": "eth0",
-                        "ip": "10.20.0.6",
+                        "ip": "10.20.0.173",
                         "netmask": "255.255.255.240",
                         "driver": "igb",
                         "bus_info": "0000:11:00.0",
@@ -885,12 +885,12 @@
             "error_msg": "You need more money",
             "name": "Supermicro X9SCD (error)",
             "hostname": "node-5",
-            "ip": "172.18.82.135",
+            "ip": "10.20.0.135",
             "online": true,
             "labels": {},
             "pending_addition": false,
             "platform_name": "X9SCD",
-            "mac": "00:25:90:67:9c:9c",
+            "mac": "00:25:90:67:9c:9d",
             "meta": {
                 "memory": {
                     "slots": 4,
@@ -925,7 +925,7 @@
                         "max_speed": 1000,
                         "name": "eth1",
                         "current_speed": null,
-                        "ip": "10.20.0.7",
+                        "ip": "10.20.0.135",
                         "driver": "igb",
                         "bus_info": "0000:12:00.0",
                         "pxe": true
@@ -1016,7 +1016,7 @@
             "status": "discover",
             "name": "VirtualBox",
             "hostname": "node-6",
-            "ip": "10.20.0.63",
+            "ip": "10.20.0.163",
             "online": true,
             "labels": {},
             "pending_addition": false,
@@ -1028,7 +1028,7 @@
                 "interfaces": [
                     {
                         "name": "eth0",
-                        "ip": "10.20.0.63",
+                        "ip": "10.20.0.163",
                         "netmask": "255.255.255.0",
                         "mac": "08:00:27:22:ab:aa",
                         "driver": "e1000",
@@ -1217,12 +1217,12 @@
             "status": "discover",
             "name": "Supermicro X9DRW (srv07)",
             "hostname": "node-8",
-            "ip": "172.18.67.170",
+            "ip": "10.20.0.170",
             "online": true,
             "labels": {},
             "pending_addition": false,
             "platform_name": "X9DRW",
-            "mac": "00:25:90:6a:b1:84",
+            "mac": "00:25:90:6a:b1:b5",
             "meta": {
                 "cpu": {
                     "real": 2,
@@ -1339,7 +1339,7 @@
                         "pxe": false
                     },
                     {
-                        "ip": "10.20.0.7",
+                        "ip": "10.20.0.170",
                         "mac": "00:25:90:6a:b1:b5",
                         "max_speed": 1000,
                         "name": "p2p2",

@@ -196,9 +196,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var node = this.props.node;
             return (
                 <div className='node-hardware'>
-                    <span>{i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})</span>
-                    <span>{i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}</span>
-                    <span>{i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}</span>
+                    <span>{i18n('node_details.cpu')}: {node.resource('cores')} ({node.resource('ht_cores')})</span>
+                    <span>{i18n('node_details.hdd')}: {utils.showDiskSize(node.resource('hdd')) + i18n('common.size.gb')}</span>
+                    <span>{i18n('node_details.ram')}: {utils.showMemorySize(node.resource('ram')) + i18n('common.size.gb')}</span>
                 </div>
             );
         },

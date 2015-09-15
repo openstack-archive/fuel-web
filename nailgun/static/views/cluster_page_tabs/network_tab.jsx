@@ -56,7 +56,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         composeProps: function(attribute, isRange, isInteger) {
             var network = this.props.network,
                 isFloatingIPRange = attribute == 'floating_ranges',
-                ns = 'cluster_page.network_tab.' + (network && !isFloatingIPRange ?
+                isBaremetalIPRange = attribute == 'baremetal_ranges',
+                ns = 'cluster_page.network_tab.' + (network && !(isFloatingIPRange || isBaremetalIPRange) ?
                         'network' : 'networking_parameters') + '.',
                 error = this.getError(attribute) || null;
 
@@ -72,7 +73,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 name: attribute,
                 label: i18n(ns + attribute),
                 value: this.getModel().get(attribute),
-                network: isFloatingIPRange ? null : network,
+                network: isFloatingIPRange || isBaremetalIPRange ? null : network,
                 networkConfiguration: this.props.networkConfiguration,
                 wrapperClassName: isRange ? attribute : false,
                 error: error
@@ -92,7 +93,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             var network = this.props.network,
                 errors;
 
-            if (network && attribute != 'floating_ranges') {
+            if (network && (attribute != 'floating_ranges' || attribute != 'baremetal_ranges')) {
                 errors = validationErrors.networks && validationErrors.networks[network.id];
                 return errors && errors[attribute] || null;
             }
@@ -613,6 +614,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             if (floatingRanges) {
                 this.props.networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
             }
+            var baremetalRanges = this.props.networkConfiguration.get('networking_parameters').get('baremetal_ranges');
+            if (baremetalRanges) {
+                this.props.networkConfiguration.get('networking_parameters').set({baremetal_ranges: removeEmptyRanges(baremetalRanges)});
+            }
         },
         onManagerChange: function(name, value) {
             var networkingParams = this.props.networkConfiguration.get('networking_parameters'),
@@ -760,7 +765,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         validationErrors={(this.props.networkConfiguration.validationError || {}).networks}
                         disabled={this.isLocked()}
                         verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
-                        netProvider={network.get('name') == 'public' && this.props.cluster.get('net_provider')}
+                        netProvider={(network.get('name') == 'public' || network.get('name') == 'baremetal') && this.props.cluster.get('net_provider')}
                     />
                 );
             }, this);
@@ -847,6 +852,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 {...this.composeProps(ipRangesLabel, true)}
                                 rowsClassName='ip-ranges-rows'
                                 verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
+                            />
+                        }
+                        {network.get('name') == 'baremetal' &&
+                            <Range
+                                {...this.composeProps('baremetal_ranges', true)}
+                                rowsClassName='baremetal-ranges-rows'
+                                hiddenControls={this.props.netProvider == 'neutron'}
                             />
                         }
                         {this.renderInput('cidr')}

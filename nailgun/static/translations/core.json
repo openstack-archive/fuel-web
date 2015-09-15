@@ -104,7 +104,8 @@
                 "floating": "Floating",
                 "management": "Management",
                 "storage": "Storage",
-                "private": "Private"
+                "private": "Private",
+                "baremetal": "Baremetal"
             },
             "login_page": {
                 "username": "Username",
@@ -630,7 +631,8 @@
                         "ip_ranges": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
-                        "use_vlan_tagging": "Use VLAN tagging"
+                        "use_vlan_tagging": "Use VLAN tagging",
+                        "baremetal_ranges": "Baremetal IP ranges"
                     },
                     "networking_parameters": {
                         "fixed_networks_cidr": "Fixed network CIDR",
@@ -647,7 +649,8 @@
                         "base_mac": "Base MAC address",
                         "internal_cidr": "Internal network CIDR",
                         "internal_gateway": "Internal network gateway",
-                        "floating_ranges": "Floating IP ranges"
+                        "floating_ranges": "Floating IP ranges",
+                        "baremetal_ranges": "Baremetal IP ranges"
                     },
                     "validation": {
                         "large_network": "Network is too large",

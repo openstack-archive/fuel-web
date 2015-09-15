@@ -22,7 +22,7 @@ from nailgun.api.v1.validators.network import NovaNetworkConfigurationValidator
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
-from nailgun.network.neutron import NeutronManager
+from nailgun import objects
 from nailgun.test import base
 
 
@@ -333,31 +333,33 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
             "'use_gateway' cannot be provided without gateway")
 
     def test_check_ip_conflicts(self):
+        nm = objects.Cluster.get_network_manager(self.cluster)
         mgmt = self.find_net_by_name(consts.NETWORKS.management)
+        mgmt_db = self.db.query(NetworkGroup).get(mgmt['id'])
 
         # firstly check default IPs from management net assigned to nodes
-        ips = NeutronManager.get_assigned_ips_by_network_id(mgmt['id'])
+        ips = nm.get_assigned_ips_by_network_id(mgmt['id'])
         self.assertListEqual(['192.168.0.1', '192.168.0.2'], sorted(ips),
                              "Default IPs were changed for some reason.")
 
         mgmt['cidr'] = '10.101.0.0/24'
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.cidr, False)
+            mgmt, mgmt_db, nm, 'cidr', False)
         self.assertTrue(result)
 
         mgmt['cidr'] = '192.168.0.0/28'
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.cidr, False)
+            mgmt, mgmt_db, nm, 'cidr', False)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['192.168.0.1', '192.168.0.15']]
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.ip_ranges, False)
+            mgmt, mgmt_db, nm, 'ip_ranges', False)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['10.101.0.1', '10.101.0.255']]
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, self.cluster, consts.NETWORK_NOTATION.ip_ranges, False)
+            mgmt, mgmt_db, nm, 'ip_ranges', False)
         self.assertTrue(result)
 
 
@@ -628,18 +630,18 @@ class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):
                              roles=["compute"],
                              group_id=node_group.id)
 
-    def check_no_admin_network_in_validated_data(self):
+    def check_admin_network_in_validated_data(self):
         default_admin = self.db.query(
             NetworkGroup).filter_by(group_id=None).first()
         validated_data = self.validator.prepare_data(self.config)
-        self.assertNotIn(
+        self.assertIn(
             default_admin.id,
             [ng['id'] for ng in validated_data['networks']]
         )
 
-    def test_fuelweb_admin_removed(self):
-        self.check_no_admin_network_in_validated_data()
+    def test_fuelweb_admin_present(self):
+        self.check_admin_network_in_validated_data()
 
-    def test_fuelweb_admin_removed_w_additional_node_group(self):
+    def test_fuelweb_admin_present_w_additional_node_group(self):
         self.create_additional_node_group()
-        self.check_no_admin_network_in_validated_data()
+        self.check_admin_network_in_validated_data()

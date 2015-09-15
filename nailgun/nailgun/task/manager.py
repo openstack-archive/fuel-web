@@ -1263,3 +1263,19 @@ class RemoveStatsUserTaskManager(BaseStatsUserTaskManager):
     task_name = consts.TASK_NAMES.remove_stats_user
 
     task_cls = tasks.RemoveStatsUserTask
+
+
+class UpdateDnsmasqTaskManager(TaskManager):
+
+    def execute(self):
+        logger.info("Starting update_dnsmasq task")
+        self.check_running_task(consts.TASK_NAMES.update_dnsmasq)
+
+        task = Task(name=consts.TASK_NAMES.update_dnsmasq)
+        db().add(task)
+        db().flush()
+        self._call_silently(
+            task,
+            tasks.UpdateDnsmasqTask
+        )
+        return task

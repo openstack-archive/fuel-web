@@ -3585,162 +3585,58 @@ input[type=range] {
 .network-tab {
   @base-indent: 10px;
   .forms-box {
-    margin-left: 16px;
+    margin-left: 15px;
     margin-right: 15px;
-  }
-  .network-section-wrapper {
-    margin-left: -@base-indent;
+    .form-group {
+      padding: 0;
+      .help-block { max-width: none; }
+    }
   }
   .nova-managers {
     margin: @base-indent * 2 0 @base-indent * 2 -@base-indent;
   }
-  .network-sub-wrapper {
-    margin-bottom: @base-indent * 1.5;
-  }
 
-  // range
-  .range,
-  .multiple-values {
-    .rows-container {
-      margin-top: -@base-indent;
-    }
+  // range control
+  .range, .multiple-values {
     .range-row-header {
-      .font-bold;
-      font-size: @base-font-size - 2;
-      padding-left: @default-label-width + 29;
-      div {
-        float: left;
-        // needed here to place label on correct places over ranges
-        width: @default-input-width + 20;
-      }
-    }
-    label {
-      // needed here to control the situation with looooooong label
-      width: @default-label-width;
-      padding-top: @base-indent;
-    }
-    &.form-group {
       margin-bottom: @base-indent / 2;
-    }
-    &.mini {
-      @mini-width: 125px;
-      .range-row-header {
-        div {
-          // needed here to place label on correct places over ranges
-          width: @mini-width + 30;
-        }
-      }
-      .range-row {
-        margin-top: -@base-indent * 5;
-        padding-left: 0;
-        &.offset-left {
-          margin-left: @default-label-width - 5;
-        }
-        input {
-          // mini range requires special style
-          width: @mini-width;
-        }
-        .validation-error {
-          margin-top: 9px;
-          span {
-            margin-left: -5px;
-          }
-        }
-        .form-group {
-          margin-top: 0;
-          // mini range requires special style
-          width: @mini-width + 15;
-          margin-left: @base-indent / 2;
-        }
-      }
-    }
-    &.dns_nameservers {
-      margin-bottom: 0;
-      padding-left: 0;
-      margin-left: 0;
-      margin-top: -@base-indent * 3;
-      label {
-        margin-left: 0;
-      }
-      .dns_nameservers-row {
-        .range-row {
-          &.first {
-            .form-group {
-              margin-top: -@base-indent;
-              padding-left: 0;
-            }
-            .validation-error {
-              margin-top: -5px;
-            }
-          }
-          .form-group {
-            margin-bottom: 0;
-            padding-left: @base-indent;
-          }
-          .glyphicon {
-            margin-top: @base-indent + 5;
-          }
-          &.offset-left {
-            margin-left: @default-label-width - 10;
-          }
-        }
-        .validation-error {
-          margin-top: 5px;
-          span {
-            font-size: @base-font-size - 2;
-            margin-left: 10px;
-          }
-        }
-        .ip-ranges-control {
-          margin-top: -@base-indent * 1.5;
-        }
-      }
+      font-size: @base-font-size - 2;
+      .font-bold;
+      div { float: left; }
+      // place labels on correct places over ranges
+      padding-left: @default-label-width + 29;
+      div { width: @default-input-width + 10; }
     }
     .range-row {
-      .glyphicon {
-        margin-left: -7px;
-        margin-right: -3px;
-      }
+      margin-left: @default-label-width;
+      margin-bottom: @base-indent;
       .form-group {
-        margin-bottom: @base-indent;
         float: left;
-      }
-      &.offset-bottom {
-        margin-bottom: @base-indent;
-      }
-      &.offset-left {
-        margin-left: @default-label-width;
-      }
-      &.padding-left {
-        padding-left: 12px;
+        margin: 0 10px 0 0;
+        padding: 0;
+        .help-block { display: none; }
       }
       .validation-error {
-        margin-top: 9px;
-        span {
-          font-size: @base-font-size - 2;
-        }
+        margin: 8px 0 0 10px;
+        font-size: @base-font-size - 2;
       }
       .ip-ranges-control {
         float: left;
-        .ip-ranges-add {
-          margin-left: @base-indent;
-        }
+        padding-left: @base-indent;
+        button { padding: 7px 5px; }
       }
     }
-  }
-  .range {
-    .range-row {
-      .form-group {
-        margin-top: 5px;
-        padding-left: 0;
-        margin-right: 10px;
-      }
-    }
-    .no-controls {
-      // to pull validation error closer to inputs
-      width: 330px;
+    &.mini {
+      @mini-width: 135px;
+      .range-row input { width: @mini-width; }
+      // place labels on correct places over ranges
+      .range-row-header div { width: @mini-width + 10; }
     }
   }
+  .multiple-values.dns_nameservers {
+    margin-top: -@base-indent;
+  }
+
   //vlan tag control
   .vlan-tagging {
     height: 40px;
@@ -3772,9 +3668,6 @@ input[type=range] {
         }
       }
     }
-  }
-  .neutron-l2-3-config {
-    margin-bottom: @base-indent * 3;
   }
 
   // Verification Block

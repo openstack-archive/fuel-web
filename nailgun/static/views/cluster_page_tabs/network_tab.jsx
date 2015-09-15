@@ -208,9 +208,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         <i className='glyphicon glyphicon-plus-sign'></i>
                     </button>
                     {(length > 1) &&
-                        <button className='btn btn-link ip-ranges-delete'
-                                disabled={this.props.disabled}
-                                onClick={_.partial(this.removeRange, attributeName, index)}
+                        <button
+                            className='btn btn-link ip-ranges-delete'
+                            disabled={this.props.disabled}
+                            onClick={_.partial(this.removeRange, attributeName, index)}
                         >
                             <i className='glyphicon glyphicon-minus-sign'></i>
                         </button>
@@ -229,67 +230,55 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     'form-group range row': true,
                     mini: this.props.mini
                 },
-                rowsContainerClasses = {
-                    'rows-container range-group': true
-                },
                 verificationError = this.props.verificationError || null,
                 ns = 'cluster_page.network_tab.',
                 startInputError = error && error[0],
                 endInputError = error && error[1];
             wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
-            rowsContainerClasses[this.props.rowsClassName] = this.props.rowsClassName;
             return (
                 <div className={utils.classNames(wrapperClasses)}>
                     {!this.props.hiddenHeader &&
                         <div className='range-row-header col-xs-12'>
-                            <div className='pull-left'>{i18n(ns + 'range_start')}</div>
+                            <div>{i18n(ns + 'range_start')}</div>
                             <div>{i18n(ns + 'range_end')}</div>
                         </div>
                     }
                     <div className='col-xs-12'>
-                        <label>
-                            {this.props.label}
-                        </label>
+                        <label>{this.props.label}</label>
                         {this.props.extendable ?
-                            <div className='rows-container range-group'>
-                                {_.map(ranges, function(range, index) {
-                                    var rangeError = _.findWhere(error, {index: index}) || {},
-                                        rowClasses = utils.classNames({
-                                            'range-row autocomplete offset-left': true
-                                        });
-                                    return (
-                                        <div className={rowClasses} key={index}>
-                                            <controls.Input
-                                                {...this.getRangeProps()}
-                                                error={(rangeError.start || verificationError) ? '' : null}
-                                                value={range[0]}
-                                                onChange={_.partialRight(this.onRangeChange, attributeName, index)}
-                                                ref={'start' + index}
-                                                inputClassName='start'
-                                                placeholder={rangeError.start ? '' : this.props.placeholder}
-                                            />
-                                            <controls.Input
-                                                {...this.getRangeProps(true)}
-                                                error={rangeError.end ? '' : null}
-                                                value={range[1]}
-                                                onChange={_.partialRight(this.onRangeChange, attributeName, index)}
-                                                onFocus={_.partial(this.autoCompleteIPRange, rangeError && rangeError.start, range[0])}
-                                                disabled={this.props.disabled || !!this.props.autoIncreaseWith}
-                                                placeholder={rangeError.end ? '' : this.props.placeholder}
-                                                wrapperClassName={this.props.hiddenControls && 'no-controls'}
-                                                extraContent={!this.props.hiddenControls && this.renderRangeControls(attributeName, index, ranges.length)}
-                                            />
-                                            <div className='validation-error text-danger pull-left'>
-                                                <span className='help-inline'>
-                                                    {rangeError.start || rangeError.end}
-                                                </span>
-                                            </div>
+                            _.map(ranges, function(range, index) {
+                                var rangeError = _.findWhere(error, {index: index}) || {};
+                                return (
+                                    <div className='range-row clearfix' key={index}>
+                                        <controls.Input
+                                            {...this.getRangeProps()}
+                                            error={(rangeError.start || verificationError) ? '' : null}
+                                            value={range[0]}
+                                            onChange={_.partialRight(this.onRangeChange, attributeName, index)}
+                                            ref={'start' + index}
+                                            inputClassName='start'
+                                            placeholder={rangeError.start ? '' : this.props.placeholder}
+                                        />
+                                        <controls.Input
+                                            {...this.getRangeProps(true)}
+                                            error={rangeError.end ? '' : null}
+                                            value={range[1]}
+                                            onChange={_.partialRight(this.onRangeChange, attributeName, index)}
+                                            onFocus={_.partial(this.autoCompleteIPRange, rangeError && rangeError.start, range[0])}
+                                            disabled={this.props.disabled || !!this.props.autoIncreaseWith}
+                                            placeholder={rangeError.end ? '' : this.props.placeholder}
+                                            extraContent={!this.props.hiddenControls && this.renderRangeControls(attributeName, index, ranges.length)}
+                                        />
+                                        <div className='validation-error text-danger pull-left'>
+                                            <span className='help-inline'>
+                                                {rangeError.start || rangeError.end}
+                                            </span>
                                         </div>
-                                    );
-                                }, this)}
-                            </div>
+                                    </div>
+                                );
+                            }, this)
                         :
-                            <div className='range-row col-xs-10 offset-left'>
+                            <div className='range-row clearfix'>
                                 <controls.Input
                                     {...this.getRangeProps()}
                                     value={ranges[0]}
@@ -369,8 +358,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             name: React.PropTypes.string,
             placeholder: React.PropTypes.string,
             label: React.PropTypes.string,
-            rowsClassName: React.PropTypes.node,
-            wrapperClassName: React.PropTypes.node,
             value: React.PropTypes.array
         },
         getInitialState: function() {
@@ -414,58 +401,43 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         disabled={this.props.disabled}
                         onClick={_.partial(this.addValue, attributeName, index)}
                     >
-                        <i className='glyphicon glyphicon-plus-sign'></i>
+                        <i className='glyphicon glyphicon-plus-sign' />
                     </button>
-                    {(length > 1) &&
-                        <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
-                                onClick={_.partial(this.removeValue, attributeName, index)}
+                    {length > 1 &&
+                        <button
+                            className='btn btn-link ip-ranges-delete'
+                            disabled={this.props.disabled}
+                            onClick={_.partial(this.removeValue, attributeName, index)}
                         >
-                            <i className='glyphicon glyphicon-minus-sign'></i>
+                            <i className='glyphicon glyphicon-minus-sign' />
                         </button>
                     }
                 </div>
             );
         },
         render: function() {
-            var values = this.props.value,
-                errors = this.props.error || null,
-                verificationError = this.props.verificationError || null,
-                attributeName = this.props.name,
-                wrapperClasses = {
-                    'form-group multiple-values dns_nameservers': true
-                };
-            wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
+            var attributeName = this.props.name,
+                values = this.props.value;
             return (
-                <div className={utils.classNames(wrapperClasses)}>
-                    <label>
-                        {this.props.label}
-                    </label>
-                    <div className={this.props.rowsClassName}>
+                <div className={'form-group row multiple-values ' + attributeName}>
+                    <div className='col-xs-12'>
+                        <label>{this.props.label}</label>
                         {_.map(values, function(value, index) {
-                            var inputError = errors && errors[index],
-                                classes = utils.classNames({
-                                    'range-row row offset-left': true,
-                                    first: index == 0
-                                });
+                            var inputError = (this.props.error || {})[index];
                             return (
-                                <div className={classes} key={this.props.name + index}>
+                                <div className='range-row clearfix' key={attributeName + index}>
                                     <controls.Input
                                         type='text'
                                         disabled={this.props.disabled}
                                         name={attributeName}
-                                        error={(inputError || verificationError) && ''}
+                                        error={(inputError || this.props.verificationError) && ''}
                                         value={value}
                                         onChange={_.partialRight(this.onChange, index)}
                                         ref={'row' + index}
                                         placeholder={inputError ? '' : this.props.placeholder}
                                         extraContent={this.renderControls(attributeName, index, values.length)}
                                     />
-
-                                    <div className='validation-error text-danger pull-left'>
-                                        <span className='help-inline'>
-                                            {inputError}
-                                        </span>
-                                    </div>
+                                    <div className='validation-error text-danger pull-left'>{inputError}</div>
                                 </div>
                             );
                         }, this)}
@@ -832,6 +804,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         ],
         render: function() {
             var network = this.props.network,
+                networkName = network.get('name'),
                 networkConfig = network.get('meta');
             if (!networkConfig.configurable) return null;
             var vlanTagging = network.get('vlan_start'),
@@ -839,33 +812,31 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 ns = 'cluster_page.network_tab.network.';
 
             return (
-                <div className='forms-box'>
-                    <h3 className='networks'>{i18n('network.' + network.get('name'))}</h3>
-                    <div className={'network-section-wrapper row ' + network.get('name')}>
-                        {(networkConfig.notation == ipRangesLabel) &&
-                            <Range
-                                {...this.composeProps(ipRangesLabel, true)}
-                                rowsClassName='ip-ranges-rows'
-                                verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
-                            />
-                        }
-                        {this.renderInput('cidr')}
-                        <VlanTagInput
-                            {...this.composeProps('vlan_start')}
-                            label={i18n(ns + 'use_vlan_tagging')}
-                            value={vlanTagging}
+                <div className={'forms-box ' + networkName}>
+                    <h3 className='networks'>{i18n('network.' + networkName)}</h3>
+                    {(networkConfig.notation == ipRangesLabel) &&
+                        <Range
+                            {...this.composeProps(ipRangesLabel, true)}
+                            rowsClassName='ip-ranges-rows'
+                            verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
                         />
-                        {networkConfig.use_gateway &&
-                            this.renderInput('gateway')
-                        }
-                        {network.get('name') == 'public' &&
-                            <Range
-                                {...this.composeProps('floating_ranges', true)}
-                                rowsClassName='floating-ranges-rows'
-                                hiddenControls={this.props.netProvider == 'neutron'}
-                            />
-                        }
-                    </div>
+                    }
+                    {this.renderInput('cidr')}
+                    <VlanTagInput
+                        {...this.composeProps('vlan_start')}
+                        label={i18n(ns + 'use_vlan_tagging')}
+                        value={vlanTagging}
+                    />
+                    {networkConfig.use_gateway &&
+                        this.renderInput('gateway')
+                    }
+                    {networkName == 'public' &&
+                        <Range
+                            {...this.composeProps('floating_ranges', true)}
+                            rowsClassName='floating-ranges-rows'
+                            hiddenControls={this.props.netProvider == 'neutron'}
+                        />
+                    }
                 </div>
             );
         }
@@ -889,10 +860,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 <div>
                     {manager ?
                         <div className='forms-box'>
-                            <h3 className='networks'>
-                                {i18n(ns + 'nova_configuration')}
-                            </h3>
-                            <div className='network-section-wrapper row'>
+                            <h3 className='networks'>{i18n(ns + 'nova_configuration')}</h3>
+                            <div>
                                 {this.renderInput('fixed_networks_cidr')}
                                 {(manager == 'VlanManager') ?
                                     <div>
@@ -925,13 +894,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             </div>
                         </div>
                     :
-                        <div className='neutron-l2-3-config'>
-                            <div className='forms-box'>
+                        [
+                            <div className='forms-box' key='neutron-l2'>
                                 <h3 className='networks'>{i18n(ns + 'l2_configuration')}</h3>
-                                <div className='network-section-wrapper row'>
+                                <div>
                                     <Range
                                         {...this.composeProps(idRangePrefix + '_range', true)}
-                                        wrapperClassName='clearfix'
                                         extendable={false}
                                         placeholder=''
                                         integerValue={true}
@@ -939,22 +907,18 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                     />
                                     {this.renderInput('base_mac')}
                                 </div>
-                            </div>
-                            <div className='forms-box network-sub-wrapper'>
+                            </div>,
+                            <div className='forms-box' key='neutron-l3'>
                                 <h3 className='networks'>{i18n(ns + 'l3_configuration')}</h3>
-                                <div className='network-section-wrapper row'>
+                                <div>
                                     {this.renderInput('internal_cidr')}
                                     {this.renderInput('internal_gateway')}
                                 </div>
                             </div>
-                        </div>
+                        ]
                     }
                     <div className='forms-box'>
-                        <MultipleValuesInput
-                            {...this.composeProps('dns_nameservers', true)}
-                            rowsClassName='dns_nameservers-row'
-                            wrapperClassName='forms-box row'
-                        />
+                        <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
                     </div>
                 </div>
             );

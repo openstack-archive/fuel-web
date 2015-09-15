@@ -176,8 +176,13 @@ class NailgunReceiver(object):
             map(db().delete, ips)
             db().flush()
 
+            nm = objects.Cluster.get_network_manager(cluster)
+            admin_nets = nm.get_admin_networks()
             objects.Cluster.delete(cluster)
-            db().flush()
+            if admin_nets != nm.get_admin_networks():
+                # import it here due to cyclic dependencies problem
+                from nailgun.task.manager import UpdateDnsmasqTaskManager
+                UpdateDnsmasqTaskManager().execute()
 
             notifier.notify(
                 "done",
@@ -1161,3 +1166,25 @@ class NailgunReceiver(object):
 
         objects.Task.update_verify_networks(
             task, status, progress, msg, {})
+
+    @classmethod
+    def update_dnsmasq_resp(cls, **kwargs):
+        logger.info("RPC method update_dnsmasq_resp received: %s",
+                    jsonutils.dumps(kwargs))
+
+        task_uuid = kwargs.get('task_uuid')
+        status = kwargs.get('status')
+        error = kwargs.get('error', '')
+        message = kwargs.get('msg', '')
+
+        task = objects.Task.get_by_uuid(
+            task_uuid, fail_if_not_found=True, lock_for_update=True)
+
+        data = {'status': status, 'progress': 100, 'message': message}
+        if status == consts.TASK_STATUSES.error:
+            logger.error("Task %s, id: %s failed: %s",
+                         task.name, task.id, error)
+            data['message'] = error
+
+        objects.Task.update(task, data)
+        cls._update_action_log_entry(status, task.name, task_uuid, [])

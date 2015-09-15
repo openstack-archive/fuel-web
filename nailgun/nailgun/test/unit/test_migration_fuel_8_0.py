@@ -277,3 +277,22 @@ class TestReleaseMigrations(base.BaseAlembicMigrationTest):
 
         for state in states:
             self.assertEqual(state, 'manageonly')
+
+
+class TestTaskNameMigration(base.BaseAlembicMigrationTest):
+
+    def test_task_name_enum(self):
+        added_task_names = ('update_dnsmasq',)
+        tasks_table = self.meta.tables['tasks']
+        for name in added_task_names:
+            insert_table_row(tasks_table,
+                             {'name': name,
+                              'uuid': str(uuid.uuid4()),
+                              'status': 'running'})
+
+        with self.assertRaisesRegexp(DataError, 'invalid input value for '
+                                                'enum task_name'):
+            insert_table_row(tasks_table,
+                             {'name': 'wrong_task_name',
+                              'uuid': str(uuid.uuid4()),
+                              'status': 'running'})

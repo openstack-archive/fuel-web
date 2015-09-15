@@ -404,9 +404,24 @@ class EnvironmentManager(object):
             ng = resp
         else:
             ng = NodeGroup.create(ng_data)
-            db().commit()
+            db().flush()
 
         return ng
+
+    def delete_node_group(self, ng_id, api=True):
+        if api:
+            return self.app.delete(
+                reverse(
+                    'NodeGroupHandler',
+                    kwargs={'obj_id': ng_id}
+                ),
+                headers=self.default_headers,
+                expect_errors=False
+            )
+        else:
+            ng = db().query(NodeGroup).get(ng_id)
+            db().delete(ng)
+            db().flush()
 
     def create_plugin(self, api=False, cluster=None, **kwargs):
         plugin_data = self.get_default_plugin_metadata(**kwargs)

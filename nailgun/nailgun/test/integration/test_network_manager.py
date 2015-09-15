@@ -22,6 +22,7 @@ from mock import patch
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
+from oslo_serialization import jsonutils
 import six
 from sqlalchemy import not_
 
@@ -42,6 +43,7 @@ from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.network.nova_network import NovaNetworkManager70
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.utils import reverse
 
 
 class BaseNetworkManagerTest(BaseIntegrationTest):
@@ -1094,3 +1096,189 @@ class TestNovaNetworkManager70(TestNeutronManager70):
                 objects.Cluster.get_controllers_node_group(self.cluster),
                 mock.ANY, vip_type='public')
             self.assertEqual(endpoint_ip, vip)
+
+
+class TestTemplateManager70(BaseNetworkManagerTest):
+    def setUp(self):
+        super(TestTemplateManager70, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-7.0'},
+            cluster_kwargs={
+                'api': True,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            }
+        )
+        self.cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
+        self.nm = objects.Cluster.get_network_manager(self.cluster_db)
+        self.net_template = self.env.read_fixtures(['network_template'])[1]
+        self.env.create_nodes_w_interfaces_count(
+            1, 5,
+            roles=['controller'],
+            cluster_id=self.cluster['id']
+        )
+        self.env._create_network_group(name='mongo', vlan_start=None)
+        self.env._create_network_group(name='keystone', vlan_start=None)
+        self.env._create_network_group(name='murano', vlan_start=None)
+        objects.Cluster.set_network_template(
+            self.cluster_db,
+            self.net_template
+        )
+
+    def _check_nic_mapping(self, node, expected_mapping):
+        for nic in node.nic_interfaces + node.bond_interfaces:
+            assigned_nets = [net['name'] for net in nic.assigned_networks]
+            self.assertItemsEqual(assigned_nets, expected_mapping[nic.name])
+
+    def test_assign_networks_based_on_template(self):
+        expected_mapping = {
+            'eth0': ['fuelweb_admin'],
+            'eth1': ['public', 'storage'],
+            'eth2': ['murano'],
+            'eth3': [],
+            'eth4': ['mongo', 'keystone'],
+            'eth5': [],
+            'lnxbond0': ['management']
+        }
+        node = self.env.nodes[0]
+        self._check_nic_mapping(node, expected_mapping)
+
+        # Network groups should have their vlan updated to match what
+        # is defined in the template.
+        node_networks = self.nm.get_node_networks(node)
+        keystone_ng = self.nm.get_network_by_netname('keystone', node_networks)
+        self.assertEqual(keystone_ng['vlan'], 202)
+
+    def test_get_interfaces_from_template(self):
+        expected_interfaces = {
+            'br-aux': {
+                'interface_properties': {},
+                'name': 'eth3.103',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-ex': {
+                'interface_properties': {},
+                'name': 'eth1',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-fw-admin': {
+                'interface_properties': {},
+                'name': 'eth0',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-keystone': {
+                'interface_properties': {},
+                'name': 'eth4.202',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-mgmt': {
+                'bond_properties': {'mode': u'active-backup'},
+                'name': u'lnxbond0',
+                'offloading_modes': [],
+                'slaves': [{'name': u'eth3'}, {'name': u'eth4'}],
+                'type': 'bond'
+            },
+            'br-mongo': {
+                'interface_properties': {},
+                'name': u'eth4.201',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-storage': {
+                'interface_properties': {},
+                'name': 'eth1.102',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'eth2': {
+                'interface_properties': {},
+                'name': 'eth2',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'eth3.101': {
+                'interface_properties': {},
+                'name': u'eth3.101',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'eth4.101': {
+                'interface_properties': {},
+                'name': u'eth4.101',
+                'offloading_modes': [],
+                'type': 'ether'
+            }
+        }
+
+        interfaces = self.nm.get_interfaces_from_template(self.env.nodes[0])
+        self.assertItemsEqual(interfaces, expected_interfaces)
+
+    def test_interface_configuration_restored_to_default(self):
+        expected_mapping = {
+            'eth0': ['fuelweb_admin', 'keystone', 'storage', 'mongo'],
+            'eth1': ['public'],
+            'eth2': ['murano'],
+            'eth3': ['management'],
+            'eth4': [],
+        }
+
+        objects.Cluster.set_network_template(self.cluster_db, None)
+
+        # When removing the network template AND the previous network mapping
+        # was the default we should go back to the default
+        node = self.env.nodes[0]
+        self._check_nic_mapping(node, expected_mapping)
+
+    def test_interface_configuration_restored_non_default(self):
+        expected_mapping = {
+            'eth0': ['fuelweb_admin', 'keystone', 'storage', 'mongo'],
+            'eth1': ['murano'],
+            'eth2': ['public'],
+            'eth3': ['management'],
+            'eth4': [],
+        }
+        objects.Cluster.set_network_template(self.cluster_db, None)
+        node = self.env.nodes[0]
+
+        # If the network mapping has been changed prior to uploading
+        # a network template it will be stored in
+        # node.serialized_interface_config and that mapping should be
+        # recreated when deleting the cluster's network template.
+        resp = self.app.get(
+            reverse(
+                'NodeNICsHandler',
+                kwargs={'node_id': node.id}
+            ),
+            headers=self.default_headers
+        )
+        interfaces = resp.json_body
+        eth1 = [i for i in interfaces if i['name'] == 'eth1'][0]
+        eth2 = [i for i in interfaces if i['name'] == 'eth2'][0]
+
+        # Make a non-default layout by swapping assigned networks
+        # for two NICs
+        eth1['assigned_networks'], eth2['assigned_networks'] = \
+            eth2['assigned_networks'], eth1['assigned_networks']
+
+        resp = self.app.put(
+            reverse(
+                'NodeNICsHandler',
+                kwargs={'node_id': node.id}
+            ),
+            jsonutils.dumps(interfaces),
+            headers=self.default_headers
+        )
+        self.assertIsNotNone(node.serialized_interface_config)
+        self.assertEqual(200, resp.status_code)
+
+        # After uploading and subsequently deleting a network template
+        # the layout should return to the previous one, not the default.
+        objects.Cluster.set_network_template(
+            self.cluster_db,
+            self.net_template
+        )
+        objects.Cluster.set_network_template(self.cluster_db, None)
+        self._check_nic_mapping(node, expected_mapping)

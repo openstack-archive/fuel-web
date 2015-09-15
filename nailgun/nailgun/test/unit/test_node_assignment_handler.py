@@ -282,7 +282,8 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             }
         }
 
-        cluster = self.env.create_cluster(api=False)
+        cluster = self.env.create_cluster(api=False, net_provider='neutron')
+        cluster.release.version = '1111-7.0'
         cluster.network_config.configuration_template = net_template
 
         node = self.env.create_node()

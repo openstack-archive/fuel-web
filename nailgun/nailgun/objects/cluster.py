@@ -985,6 +985,16 @@ class Cluster(NailgunObject):
         instance.network_config.configuration_template = template
         cls.update_nodes_network_template(instance, instance.nodes)
         db().flush()
+        # If we're removing the template we should attempt to restore
+        # the nic_mapping to what it was before the template was applied
+        if template is None:
+            net_manager = cls.get_network_manager(instance)
+            for node in instance.nodes:
+                if node.serialized_interface_config:
+                    net_manager._update_attrs(node.serialized_interface_config)
+                else:
+                    net_manager.clear_bond_configuration(node)
+                    net_manager.assign_networks_by_default(node)
 
     @classmethod
     def update_nodes_network_template(cls, instance, nodes):

@@ -114,6 +114,8 @@ class Node(Base):
                               nullable=True)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    serialized_interface_config = Column(JSON, default=None,
+                                         server_default=None, nullable=True)
 
     @property
     def interfaces(self):

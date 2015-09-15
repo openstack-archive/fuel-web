@@ -1155,19 +1155,12 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 transformations
             )
 
-    def test_gre_with_multi_groups(self):
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_gre_with_multi_groups(self, mocked_rpc):
         cluster = self.create_env(segment_type='gre', ctrl_count=3)
 
         resp = self.env.create_node_group()
         group_id = resp.json_body['id']
-
-        self.env.create_nodes_w_interfaces_count(
-            nodes_count=3,
-            if_count=2,
-            roles=['compute'],
-            pending_addition=True,
-            cluster_id=cluster.id,
-            group_id=group_id)
 
         nets = self.env.neutron_networks_get(cluster.id).json_body
         nets_w_gw = {'management': '199.99.20.0/24',
@@ -1179,18 +1172,34 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             if net['name'] in nets_w_gw.keys():
                 if net['group_id'] == group_id:
                     net['cidr'] = nets_w_gw[net['name']]
-                # IP ranges for networks in default nodegroup must
-                # be updated as well to exclude gateway address.
-                # Use first 126 addresses to avoid clashing
-                # with floating range.
-                net['ip_ranges'] = [[
-                    str(IPAddress(IPNetwork(net['cidr']).first + 2)),
-                    str(IPAddress(IPNetwork(net['cidr']).first + 127)),
-                ]]
+                    if net['meta']['notation'] == 'ip_ranges':
+                        net['ip_ranges'] = [[
+                            str(IPAddress(IPNetwork(net['cidr']).first + 2)),
+                            str(IPAddress(IPNetwork(net['cidr']).first + 126)),
+                        ]]
+                if not net['meta']['use_gateway']:
+                    # IP ranges for networks in default nodegroup must
+                    # be updated as well to exclude gateway address.
+                    # Do not use first address to avoid clashing
+                    # with floating range.
+                    net['ip_ranges'] = [[
+                        str(IPAddress(IPNetwork(net['cidr']).first + 2)),
+                        str(IPAddress(IPNetwork(net['cidr']).first + 254)),
+                    ]]
+                    net['meta']['use_gateway'] = True
                 net['gateway'] = str(
                     IPAddress(IPNetwork(net['cidr']).first + 1))
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(mocked_rpc.call_count, 1)
+
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=3,
+            if_count=2,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=cluster.id,
+            group_id=group_id)
 
         self.prepare_for_deployment(cluster.nodes, 'gre')
         serializer = get_serializer_for_cluster(cluster)
@@ -1846,7 +1855,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             test_gateway
         )
 
-    def test_neutron_l3_floating_w_multiple_node_groups(self):
+    @mock.patch('nailgun.rpc.cast')
+    def test_neutron_l3_floating_w_multiple_node_groups(self, _):
 
         self.new_env_release_version = '1111-7.0'
         self.prepare_for_deployment = \

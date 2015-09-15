@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+import yaml
 
 import nailgun
 import nailgun.rpc as rpc
@@ -35,7 +37,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
-from nailgun.task.task import DeletionTask
+from nailgun.task import task
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -591,7 +593,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks()
-    @mock.patch.object(DeletionTask, 'execute')
+    @mock.patch.object(task.DeletionTask, 'execute')
     def test_deletion_task_called(self, mdeletion_execute):
         cluster = self.env.create_cluster()
         cluster_id = cluster['id']
@@ -607,19 +609,21 @@ class TestTaskManagers(BaseIntegrationTest):
         manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
-        task, nodes = mdeletion_execute.call_args[0]
+        nodes = mdeletion_execute.call_args[0][1]
         # unfortunately assertItemsEqual does not recurse into dicts
         self.assertItemsEqual(
             nodes['nodes_to_delete'],
-            DeletionTask.prepare_nodes_for_task([node_db])['nodes_to_delete']
+            task.DeletionTask.prepare_nodes_for_task(
+                [node_db])['nodes_to_delete']
         )
         self.assertItemsEqual(
             nodes['nodes_to_restore'],
-            DeletionTask.prepare_nodes_for_task([node_db])['nodes_to_restore']
+            task.DeletionTask.prepare_nodes_for_task(
+                [node_db])['nodes_to_restore']
         )
 
     @fake_tasks()
-    @mock.patch.object(DeletionTask, 'execute')
+    @mock.patch.object(task.DeletionTask, 'execute')
     def test_deletion_task_w_check_ceph(self, mdeletion_execute):
         cluster = self.env.create_cluster()
         cluster_id = cluster['id']
@@ -979,3 +983,179 @@ class TestTaskManagers(BaseIntegrationTest):
             self.env.nodes)[0]
 
         self.assertNotEqual(primary_node.id, new_primary.id)
+
+
+class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
+
+    def tearDown(self):
+        self._wait_for_threads()
+        super(TestUpdateDnsmasqTaskManagers, self).tearDown()
+
+    def setUp(self):
+        super(TestUpdateDnsmasqTaskManagers, self).setUp()
+        cluster = self.env.create(
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre},
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True}
+            ]
+        )
+        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
+
+    def change_ip_range(self, net_name='fuelweb_admin', status_code=200):
+        data = self.env.neutron_networks_get(self.cluster['id']).json_body
+        admin = filter(lambda ng: ng['name'] == net_name,
+                       data['networks'])[0]
+
+        orig_range = netaddr.IPRange(admin['ip_ranges'][0][0],
+                                     admin['ip_ranges'][0][1])
+        admin['ip_ranges'][0] = [str(orig_range[0]), str(orig_range[-2])]
+
+        resp = self.env.neutron_networks_put(
+            self.cluster['id'], data, expect_errors=(status_code != 200))
+        self.assertEqual(resp.status_code, status_code)
+
+    def test_update_dnsmasq_is_started_with_correct_message(self):
+        message = {
+            'api_version': '1',
+            'method': 'execute_tasks',
+            'respond_to': 'update_dnsmasq_resp',
+            'args': {
+                'task_uuid': '',
+                'tasks': [{
+                    'type': consts.ORCHESTRATOR_TASK_TYPES.upload_file,
+                    'uids': ['master'],
+                    'parameters': {
+                        'path': '/etc/hiera/networks.yaml',
+                        'data': ''}
+                }, {
+                    'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+                    'uids': ['master'],
+                    'parameters': {
+                        'puppet_modules': '/etc/puppet/modules',
+                        'puppet_manifest': '/etc/puppet/modules/nailgun/'
+                                           'examples/dhcp-ranges.pp',
+                        'timeout': 300,
+                        'cwd': '/'}
+                }, {
+                    'type': 'cobbler_sync',
+                    'uids': ['master'],
+                    'parameters': {
+                        'provisioning_info': {
+                            'engine': {
+                                'url': 'http://localhost/cobbler_api',
+                                'username': 'cobbler',
+                                'password': 'cobbler',
+                                'master_ip': '127.0.0.1'
+                            }
+                        }
+                    }
+                }]
+            }
+        }
+
+        with mock.patch('nailgun.task.task.rpc.cast') as \
+                mocked_task:
+            self.change_ip_range()
+
+            message['args']['tasks'][0]['parameters']['data'] = yaml.safe_dump(
+                task.UpdateDnsmasqTask.get_admin_networks_data())
+            update_task = self.db.query(models.Task).filter_by(
+                name=consts.TASK_NAMES.update_dnsmasq).first()
+            message['args']['task_uuid'] = update_task.uuid
+
+            self.assertEqual(mocked_task.call_count, 1)
+            self.assertEqual(mocked_task.call_args[0][1], message)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_update_dnsmasq_started_and_completed(self, mocked_rpc):
+        self.change_ip_range()
+        self.assertEqual(mocked_rpc.call_count, 1)
+        update_task = self.db.query(models.Task).filter_by(
+            name=consts.TASK_NAMES.update_dnsmasq).first()
+        self.assertEqual(update_task.status, consts.TASK_STATUSES.running)
+
+        update_dnsmasq_msg = {
+            "status": "ready",
+            "task_uuid": update_task.uuid,
+            "error": "",
+            "msg": "Everything went fine."}
+
+        rpc.receiver.NailgunReceiver.update_dnsmasq_resp(**update_dnsmasq_msg)
+        self.db.refresh(update_task)
+        self.assertEqual(update_task.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(update_task.message, update_dnsmasq_msg['msg'])
+
+        # run it one more time
+        self.change_ip_range()
+        # rpc.cast was called one more time
+        self.assertEqual(mocked_rpc.call_count, 2)
+        update_tasks = self.db.query(models.Task).filter_by(
+            name=consts.TASK_NAMES.update_dnsmasq)
+        new_tasks = update_tasks.filter_by(status=consts.TASK_STATUSES.running)
+        self.assertEqual(new_tasks.count(), 1)
+        # old task was deleted
+        self.assertEqual(update_tasks.count(), 1)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_update_dnsmasq_started_and_failed(self, mocked_rpc):
+        self.change_ip_range()
+        self.assertEqual(mocked_rpc.call_count, 1)
+        update_task = self.db.query(models.Task).filter_by(
+            name=consts.TASK_NAMES.update_dnsmasq).first()
+        self.assertEqual(update_task.status, consts.TASK_STATUSES.running)
+
+        update_dnsmasq_msg = {
+            "status": "error",
+            "task_uuid": update_task.uuid,
+            "error": "Something went wrong.",
+            "msg": ""}
+
+        rpc.receiver.NailgunReceiver.update_dnsmasq_resp(**update_dnsmasq_msg)
+        self.db.refresh(update_task)
+        self.assertEqual(update_task.status, consts.TASK_STATUSES.error)
+        self.assertEqual(update_task.message, update_dnsmasq_msg['error'])
+
+        # run it one more time
+        self.change_ip_range()
+        # rpc.cast was called one more time
+        self.assertEqual(mocked_rpc.call_count, 2)
+        update_tasks = self.db.query(models.Task).filter_by(
+            name=consts.TASK_NAMES.update_dnsmasq)
+        new_tasks = update_tasks.filter_by(status=consts.TASK_STATUSES.running)
+        self.assertEqual(new_tasks.count(), 1)
+        # old task was deleted
+        self.assertEqual(update_tasks.count(), 1)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_update_admin_failed_while_previous_in_progress(self, mocked_rpc):
+        self.change_ip_range()
+        self.assertEqual(mocked_rpc.call_count, 1)
+        update_task = self.db.query(models.Task).filter_by(
+            name=consts.TASK_NAMES.update_dnsmasq).first()
+        self.assertEqual(update_task.status, consts.TASK_STATUSES.running)
+
+        # change of other network works as it does not require to run
+        # update_dnsmasq
+        self.change_ip_range(net_name='public')
+        # no more calls were made
+        self.assertEqual(mocked_rpc.call_count, 1)
+
+        # request was rejected as previous update_dnsmasq task is still
+        # in progress
+        self.change_ip_range(status_code=409)
+        # no more calls were made
+        self.assertEqual(mocked_rpc.call_count, 1)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_update_dnsmasq_started_on_node_group_deletion(self, mocked_rpc):
+        ng = self.env.create_node_group().json_body
+        self.assertEqual(mocked_rpc.call_count, 0)
+
+        self.env.delete_node_group(ng['id'])
+        self.assertEqual(mocked_rpc.call_count, 1)
+        update_task = self.db.query(models.Task).filter_by(
+            name=consts.TASK_NAMES.update_dnsmasq).first()
+        self.assertEqual(update_task.status, consts.TASK_STATUSES.running)

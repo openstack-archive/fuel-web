@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+
 from mock import patch
 
 from oslo_serialization import jsonutils
@@ -421,6 +423,24 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                          self.cluster.network_groups)[0]
         self.assertEqual(publ_ng.cidr, '199.61.0.0/24')
 
+    def test_admin_range_update(self):
+        data = self.env.neutron_networks_get(self.cluster.id).json_body
+        admin = filter(lambda ng: ng['name'] == 'fuelweb_admin',
+                       data['networks'])[0]
+
+        orig_range = netaddr.IPRange(admin['ip_ranges'][0][0],
+                                     admin['ip_ranges'][0][1])
+        admin['ip_ranges'][0] = [str(orig_range[1]), str(orig_range[-2])]
+        new_range = admin['ip_ranges'][0]
+
+        resp = self.env.neutron_networks_put(self.cluster.id, data)
+        self.assertEqual(resp.json_body['status'], 'ready')
+
+        data = self.env.neutron_networks_get(self.cluster.id).json_body
+        admin = filter(lambda ng: ng['name'] == 'fuelweb_admin',
+                       data['networks'])[0]
+        self.assertEqual(new_range, admin['ip_ranges'][0])
+
     def test_set_ip_range(self):
         ng_names = (consts.NETWORKS.management,
                     consts.NETWORKS.storage,
@@ -628,10 +648,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
             cluster_kwargs={
                 "api": True,
                 "net_provider": consts.CLUSTER_NET_PROVIDERS.nova_network,
-            },
-            nodes_kwargs=[
-                {"pending_addition": True, "api": True}
-            ]
+            }
         )
 
     def test_netconfig_error_when_admin_cidr_match_other_network_cidr(self):
@@ -646,6 +663,8 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
                       task['message'])
 
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
+        self.env.create_node(cluster_id=self.cluster['id'],
+                             pending_addition=True)
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)
         self.assertEqual(resp.status_code, 200)

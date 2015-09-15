@@ -1161,14 +1161,6 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         resp = self.env.create_node_group()
         group_id = resp.json_body['id']
 
-        self.env.create_nodes_w_interfaces_count(
-            nodes_count=3,
-            if_count=2,
-            roles=['compute'],
-            pending_addition=True,
-            cluster_id=cluster.id,
-            group_id=group_id)
-
         nets = self.env.neutron_networks_get(cluster.id).json_body
         nets_w_gw = {'management': '199.99.20.0/24',
                      'storage': '199.98.20.0/24',
@@ -1191,6 +1183,15 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                     IPAddress(IPNetwork(net['cidr']).first + 1))
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
+
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=3,
+            if_count=2,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=cluster.id,
+            group_id=group_id)
 
         self.prepare_for_deployment(cluster.nodes, 'gre')
         serializer = get_serializer_for_cluster(cluster)

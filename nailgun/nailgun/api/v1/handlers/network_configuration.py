@@ -45,6 +45,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.manager import CheckNetworksTaskManager
+from nailgun.task.manager import UpdateDnsmasqTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
@@ -66,10 +67,10 @@ class ProviderHandler(BaseHandler):
             raise self.http(403, "Network configuration cannot be changed "
                                  "during deployment and after upgrade.")
 
-    def _raise_error_task(self, cluster, exc):
+    def _raise_error_task(self, cluster, task_name, exc):
         # set task status to error and update its corresponding data
         task = Task(
-            name=consts.TASK_NAMES.check_networks,
+            name=task_name,
             cluster=cluster,
             status=consts.TASK_STATUSES.error,
             progress=100,
@@ -122,15 +123,22 @@ class ProviderHandler(BaseHandler):
             data = self.validator.validate_networks_data(
                 web.data(), cluster, networks_required=False)
         except Exception as exc:
-            self._raise_error_task(cluster, exc)
+            self._raise_error_task(
+                cluster, consts.TASK_NAMES.check_networks, exc)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
         if task.status != consts.TASK_STATUSES.error:
-            objects.Cluster.get_network_manager(
-                cluster
-            ).update(cluster, data)
+            nm = objects.Cluster.get_network_manager(cluster)
+            admin_nets = nm.get_admin_networks()
+            nm.update(cluster, data)
+            if cmp(admin_nets, nm.get_admin_networks()):
+                try:
+                    UpdateDnsmasqTaskManager().execute()
+                except Exception as exc:
+                    self._raise_error_task(
+                        cluster, consts.TASK_NAMES.update_dnsmasq, exc)
 
         # TODO(pkaminski): this is synchronous, no task needed here
         self.raise_task(task)

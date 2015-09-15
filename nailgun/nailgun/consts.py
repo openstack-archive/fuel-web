@@ -262,7 +262,10 @@ TASK_NAMES = Enum(
 
     # statistics
     'create_stats_user',
-    'remove_stats_user'
+    'remove_stats_user',
+
+    # setup dhcp via dnsmasq for multi-node-groups
+    'update_dnsmasq'
 )
 
 NOTIFICATION_STATUSES = Enum(

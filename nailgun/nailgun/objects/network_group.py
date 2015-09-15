@@ -143,7 +143,19 @@ class NetworkGroup(NailgunObject):
         data_meta = data.get('meta', {})
         # if notation data is present change ip ranges and remove
         # stalled ip addresses for the network group
-        if notation and not instance.nodegroup.cluster.is_locked:
+        if instance.nodegroup:
+            is_locked = instance.nodegroup.cluster.is_locked
+        else:
+            # default Admin network
+            ngs = db().query(models.NodeGroup).filter_by(
+                name=consts.NODE_GROUPS.default
+            ).all()
+            is_locked = False
+            for ng in ngs:
+                if ng.cluster.is_locked and ng.nodes:
+                    is_locked = True
+                    break
+        if notation and not is_locked:
             cls._delete_ips(instance)
 
         notation = data_meta.get('notation', notation)

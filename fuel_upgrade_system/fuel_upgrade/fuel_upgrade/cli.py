@@ -78,6 +78,18 @@ def handle_exception(exc):
     sys.exit(-1)
 
 
+def get_non_unique(iterable):
+    """returns the non unique items without keeping the order."""
+    it = iter(sorted(iterable))
+    seen = it
+    prev = next(it)
+    for i in it:
+        if i == prev and i != seen:
+            yield i
+            seen = i
+        prev = i
+
+
 def parse_args(args):
     """Parse arguments and return them
     """
@@ -109,6 +121,13 @@ def parse_args(args):
                     ', '.join(uncompatible_systems)
                 )
             )
+
+    # check input systems have no duplicates
+    if len(rv.systems) != len(set(rv.systems)):
+        parser.error(
+            'the following systems are listed more than one times: "{0}"'
+            .format(', '.join(get_non_unique(rv.systems)))
+        )
 
     return rv
 

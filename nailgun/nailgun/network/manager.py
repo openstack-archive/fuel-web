@@ -1258,7 +1258,23 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def create_network_groups(cls, cluster, neutron_segment_type, gid=None):
+    def delete_network_group_from_cluster(cls, cluster, network_name,
+                                          gid=None):
+        """Method for deleting network group specified by name from cluster.
+
+        :param cluster: Cluster instance.
+        :param network_name: Network name.
+        :param gid: Node group ID (optional).
+        :returns: None
+        """
+        group_id = gid or objects.Cluster.get_default_group(cluster).id
+        nw_group = objects.NetworkGroup.get_from_node_group_by_name(group_id, network_name)
+        cls.cleanup_network_group(nw_group)
+        db().delete(nw_group)
+        db().flush()
+
+    @classmethod
+    def create_network_group(cls, cluster, net, gid=None):
         """Method for creation of network groups for cluster.
 
         :param cluster: Cluster instance.
@@ -1266,8 +1282,8 @@ class NetworkManager(object):
         :returns: None
         """
         group_id = gid or objects.Cluster.get_default_group(cluster).id
-        networks_metadata = cluster.release.networks_metadata
-        networks_list = networks_metadata[cluster.net_provider]["networks"]
+        vlan_start = net.get("vlan_start")
+        cidr, gw, cidr_gw = None, None, None
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
 
         def check_range_in_use_already(cidr_range):
@@ -1278,51 +1294,64 @@ class NetworkManager(object):
                     break
             used_nets.append(cidr_range)
 
+        if net.get("notation"):
+            if net.get("cidr"):
+                cidr = IPNetwork(net["cidr"]).cidr
+                cidr_gw = str(cidr[1])
+            if net["notation"] == 'cidr' and cidr:
+                new_ip_range = IPAddrRange(
+                    first=str(cidr[2]),
+                    last=str(cidr[-2])
+                )
+                if net.get('use_gateway'):
+                    gw = cidr_gw
+                else:
+                    new_ip_range.first = cidr_gw
+                check_range_in_use_already(cidr)
+            elif net["notation"] == 'ip_ranges' and net.get("ip_range"):
+                new_ip_range = IPAddrRange(
+                    first=net["ip_range"][0],
+                    last=net["ip_range"][1]
+                )
+                gw = net.get('gateway') or cidr_gw \
+                    if net.get('use_gateway') else None
+                check_range_in_use_already(IPRange(new_ip_range.first,
+                                                   new_ip_range.last))
+
+        nw_group = NetworkGroup(
+            release=cluster.release.id,
+            name=net['name'],
+            cidr=str(cidr) if cidr else None,
+            gateway=gw,
+            group_id=group_id,
+            vlan_start=vlan_start,
+            meta=net
+        )
+        db().add(nw_group)
+        db().flush()
+        if net.get("notation"):
+            nw_group.ip_ranges.append(new_ip_range)
+            db().flush()
+            cls.cleanup_network_group(nw_group)
+
+    @classmethod
+    def create_network_groups(cls, cluster, neutron_segment_type, gid=None):
+        """Method for creation of network groups for cluster.
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        :returns: None
+        """
+        networks_metadata = cluster.release.networks_metadata
+        networks_list = networks_metadata[cluster.net_provider]["networks"]
+
         for net in networks_list:
             if "seg_type" in net \
                     and neutron_segment_type != net['seg_type']:
                 continue
-            vlan_start = net.get("vlan_start")
-            cidr, gw, cidr_gw = None, None, None
-            if net.get("notation"):
-                if net.get("cidr"):
-                    cidr = IPNetwork(net["cidr"]).cidr
-                    cidr_gw = str(cidr[1])
-                if net["notation"] == 'cidr' and cidr:
-                    new_ip_range = IPAddrRange(
-                        first=str(cidr[2]),
-                        last=str(cidr[-2])
-                    )
-                    if net.get('use_gateway'):
-                        gw = cidr_gw
-                    else:
-                        new_ip_range.first = cidr_gw
-                    check_range_in_use_already(cidr)
-                elif net["notation"] == 'ip_ranges' and net.get("ip_range"):
-                    new_ip_range = IPAddrRange(
-                        first=net["ip_range"][0],
-                        last=net["ip_range"][1]
-                    )
-                    gw = net.get('gateway') or cidr_gw \
-                        if net.get('use_gateway') else None
-                    check_range_in_use_already(IPRange(new_ip_range.first,
-                                                       new_ip_range.last))
-
-            nw_group = NetworkGroup(
-                release=cluster.release.id,
-                name=net['name'],
-                cidr=str(cidr) if cidr else None,
-                gateway=gw,
-                group_id=group_id,
-                vlan_start=vlan_start,
-                meta=net
-            )
-            db().add(nw_group)
-            db().flush()
-            if net.get("notation"):
-                nw_group.ip_ranges.append(new_ip_range)
-                db().flush()
-                cls.cleanup_network_group(nw_group)
+            if net.get('optional'):
+                continue
+            cls.create_network_group(cluster, net, gid)
 
     @classmethod
     def update_networks(cls, network_configuration):
@@ -1558,6 +1587,9 @@ class AllocateVIPs70Mixin(object):
         for role in net_roles:
             properties = role.get('properties', {})
             net_group = cls.get_network_group_for_role(role, net_group_mapping)
+            if not filter(lambda net: net.name == net_group,
+                          cluster.network_groups):
+                continue
             for vip_info in properties.get('vip', ()):
                 vip_name = vip_info['name']
                 vip_addr = cls.assign_vip(

@@ -143,10 +143,27 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }
         },
         getInitialState: function() {
+            // FIXME(vkramskikh): we need to get rid of log_options - there
+            // should be single source of truth: tabOptions/URL parameters
+            var logOptions = this.props.tabOptions[0] ?
+                    utils.deserializeTabOptions(_.compact(this.props.tabOptions).join('/'))
+                :
+                    this.props.cluster.get('log_options') || {};
             return {
                 activeGroupName: this.pickDefaultSettingGroup(),
-                selectedNodeIds: {}
+                selectedNodeIds: {},
+                selectedLogs: {
+                    type: logOptions.type || 'local',
+                    node: logOptions.node || null,
+                    source: logOptions.source || null,
+                    level: logOptions.level ? logOptions.level.toUpperCase() : 'INFO'
+                }
             };
+        },
+        changeLogSelection: function(selectedLogs) {
+            this.setState({
+                selectedLogs: _.extend({}, this.state.selectedLogs, selectedLogs)
+            });
         },
         removeFinishedNetworkTasks: function(callback) {
             var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
@@ -263,9 +280,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             cluster={cluster}
                             tabOptions={this.props.tabOptions}
                             setActiveGroupName={this.setActiveSettingsGroupName}
-                            activeGroupName={this.state.activeGroupName}
-                            selectedNodeIds={this.state.selectedNodeIds}
                             selectNodes={this.selectNodes}
+                            changeLogSelection={this.changeLogSelection}
+                            {...this.state}
                             {...this.props.tabData} />
                     </div>
                 </div>

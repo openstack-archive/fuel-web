@@ -24,6 +24,7 @@ from fuel_upgrade.logger import configure_logger
 
 from fuel_upgrade import errors
 from fuel_upgrade import messages
+from fuel_upgrade import utils
 
 from fuel_upgrade.checker_manager import CheckerManager
 from fuel_upgrade.config import build_config
@@ -109,6 +110,13 @@ def parse_args(args):
                     ', '.join(uncompatible_systems)
                 )
             )
+
+    # check input systems have no duplicates
+    if len(rv.systems) != len(set(rv.systems)):
+        parser.error(
+            'the following systems are listed more than one times: "{0}"'
+            .format(', '.join(sorted(utils.get_non_unique(rv.systems))))
+        )
 
     return rv
 

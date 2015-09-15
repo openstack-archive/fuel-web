@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 from fnmatch import fnmatch
 import functools
 import glob
@@ -33,6 +34,7 @@ from distutils.version import StrictVersion
 
 from mako.template import Template
 import requests
+import six
 from six.moves import range
 import yaml
 
@@ -863,3 +865,12 @@ class http_retry(object):
                 time.sleep(self._interval)
 
         return _wrapped
+
+
+def get_non_unique(iterable):
+    """returns the non unique items without keeping the order."""
+
+    counter = collections.defaultdict(int)
+    for i in iterable:
+        counter[i] += 1
+    return [k for k, v in six.iteritems(counter) if v > 1]

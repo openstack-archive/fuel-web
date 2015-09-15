@@ -61,11 +61,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             var options = {
                 url: '/api/logs',
                 dataType: 'json',
-                data: {
-                    node: this.state.selectedNodeId,
-                    source: this.state.selectedSourceId,
-                    level: this.state.selectedLevelId
-                },
+                data: _.omit(this.props.selectedLogs, 'type'),
                 headers: {
                     'X-Auth-Token': app.keystoneClient.token
                 }
@@ -74,9 +70,9 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             _.extend(options.data, data);
             return $.ajax(options);
         },
-        showLogs: function(params) {
+        showLogs: function(selectedLogs, params) {
             params = params || {};
-            var options = this.composeOptions();
+            var options = this.composeOptions(selectedLogs);
             this.stopPolling();
             this.props.cluster.set({log_options: options}, {silent: true});
             app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
@@ -100,19 +96,19 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     });
                 }, this));
         },
-        composeOptions: function() {
-            var options = {
-                type: this.state.selectedType,
-                source: this.state.selectedSourceId,
-                level: this.state.selectedLevelId ? this.state.selectedLevelId.toLowerCase() : null
-            };
-            if (options.type == 'remote') options.node = this.state.selectedNodeId;
+        composeOptions: function(selectedLogs) {
+            var options = _.omit(selectedLogs, 'node');
+            if (options.level) {
+                options.level = options.level.toLowerCase();
+            }
+            if (options.type == 'remote') {
+                options.node = selectedLogs.node;
+            }
             return options;
         },
         onShowButtonClick: function(states) {
-            this.setState(_.extend(states, {loading: 'loading'}), _.bind(function() {
-                this.showLogs();
-            }, this));
+            if (states) this.props.changeLogSelection(states);
+            this.setState({loading: 'loading'}, _.partial(this.showLogs, states || this.props.selectedLogs));
         },
         onShowMoreClick: function(value) {
             var options = {
@@ -120,7 +116,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 fetch_older: true,
                 from: this.state.from
             };
-            this.showLogs(options);
+            this.showLogs(this.props.selectedLogs, options);
         },
         render: function() {
             return (
@@ -129,7 +125,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     <div className='col-xs-12 content-elements'>
                         <LogFilterBar
                             cluster={this.props.cluster}
-                            tabOptions={this.props.tabOptions}
+                            selectedLogs={this.props.selectedLogs}
                             onShowButtonClick={this.onShowButtonClick} />
                         {this.state.loading == 'fail' &&
                             <div className='logs-fetch-error alert alert-danger'>
@@ -151,14 +147,11 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
 
     var LogFilterBar = React.createClass({
         getInitialState: function() {
-            // FIXME(vkramskikh): we need to get rid of log_options - there
-            // should be single source of truth: tabOptions/URL parameters
-            var options = this.props.tabOptions[0] ? utils.deserializeTabOptions(_.compact(this.props.tabOptions).join('/')) : this.props.cluster.get('log_options') || {};
             return {
-                chosenType: options.type || 'local',
-                chosenNodeId: options.node || null,
-                chosenSourceId: options.source || null,
-                chosenLevelId: options.level ? options.level.toUpperCase() : 'INFO',
+                chosenType: this.props.selectedLogs.type,
+                chosenNodeId: this.props.selectedLogs.node,
+                chosenSourceId: this.props.selectedLogs.source,
+                chosenLevelId: this.props.selectedLogs.level,
                 sourcesLoadingState: 'loading',
                 sources: [],
                 locked: false
@@ -260,13 +253,13 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             }
             return options;
         },
-        handleShowButtonClick: function() {
+        handleShowButtonClick: function(updateStates) {
             this.setState({locked: true});
-            this.props.onShowButtonClick({
-                selectedType: this.state.chosenType,
-                selectedNodeId: this.state.chosenNodeId,
-                selectedSourceId: this.state.chosenSourceId,
-                selectedLevelId: this.state.chosenLevelId
+            this.props.onShowButtonClick(updateStates && {
+                type: this.state.chosenType,
+                node: this.state.chosenNodeId,
+                source: this.state.chosenSourceId,
+                level: this.state.chosenLevelId
             });
         },
         render: function() {
@@ -297,7 +290,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 <label />
                 <button
                     className='btn btn-default pull-right'
-                    onClick={this.handleShowButtonClick}
+                    onClick={_.partial(this.handleShowButtonClick, true)}
                     disabled={!this.state.chosenSourceId || this.state.locked}
                 >
                     {i18n('cluster_page.logs_tab.show')}

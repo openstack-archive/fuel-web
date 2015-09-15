@@ -59,11 +59,6 @@
                             "action": "add-port",
                             "bridge": "br-storage",
                             "name": "<% if3 %>"
-                        },
-                        {
-                            "action": "add-port",
-                            "bridge": "br-mgmt",
-                            "name": "<% if4 %>"
                         }
                     ],
                     "roles": {
@@ -95,7 +90,7 @@
                         {
                             "action": "add-port",
                             "bridge": "br-mgmt",
-                            "name": "<% if2 %>"
+                            "name": "<% if2 %>.104"
                         }
                     ],
                     "roles": {

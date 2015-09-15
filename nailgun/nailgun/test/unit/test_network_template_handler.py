@@ -60,18 +60,26 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(template, resp.json_body)
 
     def test_network_template_upload_on_multi_group_cluster(self):
-        cluster = self.env.create_cluster(api=False)
+        cluster = self.env.create_cluster(api=False, net_provider='neutron')
+        cluster.release.version = '1111-7.0'
 
         custom_group_name = 'group-custom-1'
-        custom_group = NodeGroup(name=custom_group_name, cluster_id=cluster.id)
-        self.env.db.add(custom_group)
-        self.env.db.flush()
+        resp = self.env.create_node_group(
+            name=custom_group_name, cluster_id=cluster.id
+        )
+        custom_group = resp.json_body
 
-        node1 = self.env.create_node(cluster_id=cluster.id,
-                                     roles=["controller"])
-        node2 = self.env.create_node(cluster_id=cluster.id,
-                                     roles=["compute"],
-                                     group_id=custom_group.id)
+        node1 = self.env.create_nodes_w_interfaces_count(
+            1, 5,
+            cluster_id=cluster.id,
+            roles=["controller"],
+        )[0]
+        node2 = self.env.create_nodes_w_interfaces_count(
+            1, 5,
+            cluster_id=cluster.id,
+            roles=["compute"],
+            group_id=custom_group['id'],
+        )[0]
 
         template = self.env.read_fixtures(['network_template'])[0]
         template.pop('pk')  # PK is not needed

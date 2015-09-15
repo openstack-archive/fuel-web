@@ -497,17 +497,20 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
         self.env.set_interfaces_in_meta(meta1, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"},
-            {"name": "eth2", "mac": "00:00:00:00:00:88"}]
+            {"name": "eth2", "mac": "00:00:00:00:00:88"},
+            {"name": "eth3", "mac": "00:00:00:00:00:99"}]
         )
         self.env.set_interfaces_in_meta(meta2, [
             {"name": "eth0", "mac": "00:00:00:00:11:66"},
             {"name": "eth1", "mac": "00:00:00:00:11:77"},
-            {"name": "eth2", "mac": "00:00:00:00:11:88"}]
+            {"name": "eth2", "mac": "00:00:00:00:11:88"},
+            {"name": "eth3", "mac": "00:00:00:00:11:99"}]
         )
         self.env.set_interfaces_in_meta(meta3, [
             {"name": "eth0", "mac": "00:00:00:00:22:66"},
             {"name": "eth1", "mac": "00:00:00:00:22:77"},
-            {"name": "eth2", "mac": "00:00:00:00:22:88"}]
+            {"name": "eth2", "mac": "00:00:00:00:22:88"},
+            {"name": "eth3", "mac": "00:00:00:00:22:99"}]
         )
         self.cluster = self.env.create(
             release_kwargs={'version': '2015.1.0-7.0'},
@@ -554,15 +557,15 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
     def expected_networks_on_undeployed_node(self):
         compute_networks = [
             {u'vlans': [0], u'iface': u'eth0'},
-            {u'vlans': [0], u'iface': u'eth1'},
+            {u'vlans': [104], u'iface': u'eth1'},
             {u'vlans': [0], u'iface': u'eth2'},
-            {u'vlans': [0, 101] + self.private_vlan_ids, u'iface': u'eth3'},
+            {u'vlans': [101] + self.private_vlan_ids, u'iface': u'eth3'},
         ]
 
         return [
             [
                 {u'vlans': [0], u'iface': u'eth0'},
-                {u'vlans': [0], u'iface': u'eth1'},
+                {u'vlans': [104], u'iface': u'eth1'},
             ],
             compute_networks,
             compute_networks,
@@ -572,16 +575,16 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
     def expected_networks_on_deployed_node(self):
         compute_networks = [
             {u'vlans': [0], u'iface': u'eth0'},
-            {u'vlans': [0], u'iface': u'eth1'},
+            {u'vlans': [104], u'iface': u'eth1'},
             {u'vlans': [0], u'iface': u'eth2'},
-            {u'vlans': [0, 101] + self.private_vlan_ids,
+            {u'vlans': [101] + self.private_vlan_ids,
              u'iface': u'eth3'},
         ]
 
         return [
             [
                 {u'vlans': [0], u'iface': u'eth0'},
-                {u'vlans': [0], u'iface': u'eth1'},
+                {u'vlans': [104], u'iface': u'eth1'},
             ],
             compute_networks,
             compute_networks,

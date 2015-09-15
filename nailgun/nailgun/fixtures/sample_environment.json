@@ -561,7 +561,7 @@
             "labels": {},
             "pending_addition": false,
             "platform_name": "X9SCD",
-            "mac": "00:25:90:67:9f:b7",
+            "mac": "00:25:90:23:9f:b7",
             "meta": {
                 "memory": {
                     "slots": 4,
@@ -595,7 +595,7 @@
                         "name": "eth1",
                         "ip": "172.18.67.167",
                         "netmask": "255.255.255.240",
-                        "mac": "00:25:90:67:9f:b7",
+                        "mac": "00:aa:90:67:9f:b7",
                         "driver": "igb",
                         "bus_info": "0000:06:00.0",
                         "max_speed": 1000,
@@ -620,8 +620,8 @@
                         "mac": "00:25:90:67:9f:b9",
                         "driver": "eth_ipoib",
                         "bus_info": "0000:08:00.0",
-                        "max_speed": 56000,
-                        "current_speed": 56000,
+                        "max_speed": 1000,
+                        "current_speed": 1000,
                         "pxe": false
                     },
                     {
@@ -629,7 +629,50 @@
                         "mac": "00:25:90:67:9f:b6",
                         "max_speed": 1000,
                         "name": "eth0",
-                        "current_speed": null,
+                        "current_speed": 1000,
+                        "driver": "igb",
+                        "bus_info": "0000:09:00.0",
+                        "pxe": true
+                    },
+                    {
+                        "name": "eth5",
+                        "ip": "172.18.67.170",
+                        "netmask": "255.255.255.240",
+                        "mac": "00:25:90:67:9f:d7",
+                        "driver": "igb",
+                        "bus_info": "0000:06:00.0",
+                        "max_speed": 1000,
+                        "current_speed": 1000,
+                        "pxe": false
+                    },
+                    {
+                        "name": "eth6",
+                        "ip": "172.18.167.171",
+                        "netmask": "255.255.255.240",
+                        "mac": "00:25:90:67:9f:d8",
+                        "driver": "igb",
+                        "bus_info": "0000:07:00.0",
+                        "max_speed": 1000,
+                        "current_speed": 1000,
+                        "pxe": false
+                    },
+                    {
+                        "name": "eth7",
+                        "ip": "172.18.167.172",
+                        "netmask": "255.255.255.240",
+                        "mac": "00:25:90:67:9f:d9",
+                        "driver": "eth_ipoib",
+                        "bus_info": "0000:08:00.0",
+                        "max_speed": 1000,
+                        "current_speed": 1000,
+                        "pxe": false
+                    },
+                    {
+                        "ip": "10.20.0.8",
+                        "mac": "00:25:90:67:9f:d6",
+                        "max_speed": 1000,
+                        "name": "eth8",
+                        "current_speed": 1000,
                         "driver": "igb",
                         "bus_info": "0000:09:00.0",
                         "pxe": true

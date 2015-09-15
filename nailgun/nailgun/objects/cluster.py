@@ -957,6 +957,9 @@ class Cluster(NailgunObject):
         instance.network_config.configuration_template = template
         cls.update_nodes_network_template(instance, instance.nodes)
         db().flush()
+        if template is None:
+            net_manager = cls.get_network_manager(instance)
+            map(net_manager.assign_networks_by_default, instance.nodes)
 
     @classmethod
     def update_nodes_network_template(cls, instance, nodes):

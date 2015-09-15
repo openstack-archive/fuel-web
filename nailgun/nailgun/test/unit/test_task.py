@@ -269,6 +269,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
     def setUp(self):
         super(TestCheckBeforeDeploymentTask, self).setUp()
         self.env.create(
+            release_kwargs={'version': '1111-7.0'},
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'

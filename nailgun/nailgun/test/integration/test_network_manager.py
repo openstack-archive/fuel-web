@@ -1035,3 +1035,119 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             assign_vip_mock.assert_called_once_with(
                 self.cluster, mock.ANY, vip_type='public')
             self.assertEqual(endpoint_ip, vip)
+
+
+class TestTemplateManager70(BaseNetworkManagerTest):
+    def setUp(self):
+        super(TestTemplateManager70, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-7.0'},
+            cluster_kwargs={
+                'api': True,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            }
+        )
+        self.cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
+        self.nm = objects.Cluster.get_network_manager(self.cluster_db)
+        self.net_template = self.env.read_fixtures(['network_template'])[1]
+        self.env.create_nodes_w_interfaces_count(
+            1, 5,
+            roles=['controller'],
+            cluster_id=self.cluster['id']
+        )
+        self.env._create_network_group(name='mongo')
+        self.env._create_network_group(name='keystone')
+        self.env._create_network_group(name='murano')
+        objects.Cluster.set_network_template(
+            self.cluster_db,
+            self.net_template
+        )
+
+    def test_assign_networks_based_on_template(self):
+        expected_mapping = {
+            'eth0': ['fuelweb_admin'],
+            'eth1': ['public', 'storage'],
+            'eth2': ['murano'],
+            'eth3': [],
+            'eth4': ['mongo', 'keystone'],
+            'eth5': [],
+            'lnxbond0': ['management']
+        }
+        node = self.env.nodes[0]
+        for nic in node.nic_interfaces + node.bond_interfaces:
+            assigned_nets = [net['name'] for net in nic.assigned_networks]
+            self.assertItemsEqual(assigned_nets, expected_mapping[nic.name])
+
+        # Network groups should have their vlan updated to match what
+        # is defined in the template.
+        node_networks = self.nm.get_node_networks(node)
+        keystone_ng = self.nm.get_network_by_netname('keystone', node_networks)
+        self.assertEqual(keystone_ng['vlan'], 202)
+
+    def test_get_interfaces_from_template(self):
+        expected_interfaces = {
+            'br-aux': {
+                'interface_properties': {},
+                'name': 'eth3.103',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-ex': {
+                'interface_properties': {},
+                'name': 'eth1',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-fw-admin': {
+                'interface_properties': {},
+                'name': 'eth0',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-keystone': {
+                'interface_properties': {},
+                'name': 'eth4.202',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-mgmt': {
+                'bond_properties': {'mode': u'active-backup'},
+                'name': u'lnxbond0',
+                'offloading_modes': [],
+                'slaves': [{'name': u'eth3'}, {'name': u'eth4'}],
+                'type': 'bond'
+            },
+            'br-mongo': {
+                'interface_properties': {},
+                'name': u'eth4.201',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'br-storage': {
+                'interface_properties': {},
+                'name': 'eth1.102',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'eth2': {
+                'interface_properties': {},
+                'name': 'eth2',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'eth3.101': {
+                'interface_properties': {},
+                'name': u'eth3.101',
+                'offloading_modes': [],
+                'type': 'ether'
+            },
+            'eth4.101': {
+                'interface_properties': {},
+                'name': u'eth4.101',
+                'offloading_modes': [],
+                'type': 'ether'
+            }
+        }
+
+        interfaces = self.nm.get_interfaces_from_template(self.env.nodes[0])
+        self.assertItemsEqual(interfaces, expected_interfaces)

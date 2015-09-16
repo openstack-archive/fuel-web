@@ -14,7 +14,13 @@
  * under the License.
  **/
 
-define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'], function(_, fs, Command) {
+define([
+    'underscore',
+    'intern/chai!assert',
+    'intern/dojo/node!fs',
+    'intern/dojo/node!leadfoot/Command',
+    'intern/dojo/node!leadfoot/Element'
+], function(_, assert, fs, Command, Element) {
     'use strict';
 
     _.defaults(Command.prototype, {
@@ -97,6 +103,58 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
             });
         }
     });
+
+    var assertionHelpers = {
+        enabled: function(message) {
+            return this.isEnabled()
+                .then(function(isEnabled) {
+                    return assert.isTrue(isEnabled, message);
+                });
+        },
+        disabled: function(message) {
+            return this.isEnabled()
+                .then(function(isEnabled) {
+                    return assert.isFalse(isEnabled, message);
+                });
+        },
+        textEquals: function(text, message) {
+            return this.getVisibleText()
+                .then(function(visibleText) {
+                    assert.equal(visibleText, text, message);
+                });
+        },
+        containsText: function(text, message) {
+            return this.getVisibleText()
+                .then(function(visibleText) {
+                    assert.include(visibleText, text, message);
+                });
+        },
+        valueEquals: function(text, message) {
+            return this.getAttribute('value')
+                .then(function(visibleText) {
+                    assert.equal(visibleText, text, message);
+                });
+        },
+        valueContains: function(text, message) {
+            return this.getAttribute('value')
+                .then(function(visibleText) {
+                    assert.include(visibleText, text, message);
+                });
+        }
+    };
+
+    Object.defineProperty(Command.prototype, 'assert', {get: function() {
+        return new this.constructor(this, function() {
+            return this.parent.then(function(element) {
+                if (!(element instanceof Element)) {
+                    throw new TypeError('assert can be used only with elements');
+                }
+                return _.mapValues(assertionHelpers, function(helper) {
+                    return helper.bind(element);
+                });
+            });
+        });
+    }});
 
     var serverHost = '127.0.0.1',
         serverPort = process.env.SERVER_PORT || 5544,

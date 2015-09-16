@@ -1720,10 +1720,15 @@ input[type=range] {
 
   .active-sorters-filters {
     border-radius: @management-panel-indent;
-    border: 1px solid @gray + 80%;
+    /* .btn-default border color from Bootstrap */
+    border: 1px solid #ccc;
     padding: @management-panel-indent * 2;
     margin-bottom: @management-panel-indent * 3;
     cursor: pointer;
+    &:hover {
+      /* .btn-default:hover background color from Bootstrap */
+      background: #e6e6e6;
+    }
     .active-sorters, .active-filters {
       position: relative;
       > div {
@@ -1742,9 +1747,9 @@ input[type=range] {
         top: 0;
         right: @management-panel-indent * 3;
       }
-      &.active-filters {
-        margin-bottom: @management-panel-indent * 2;
-      }
+    }
+    .active-filters + .active-sorters {
+      margin-top: @management-panel-indent * 2;
     }
   }
 

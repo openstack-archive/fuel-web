@@ -78,6 +78,20 @@ class TestNodeGroups(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 200)
         self.assertEquals(node.group_id, ng_id)
 
+    def test_assign_invalid_nodegroup(self):
+        node = self.env.create_node()
+        invalid_ng_id = -1
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node['id']}),
+            json.dumps({'group_id': invalid_ng_id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        message = resp.json_body['message']
+        self.assertEquals(resp.status_code, 400)
+        self.assertRegexpMatches(message, 'Invalid node group')
+
     def test_nodegroup_create_network(self):
         resp = self.env.create_node_group()
         response = resp.json_body

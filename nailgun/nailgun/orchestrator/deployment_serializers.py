@@ -1025,7 +1025,7 @@ class DeploymentMultinodeSerializer(object):
                 'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
             })
             glance_properties.append('--property vmware_disktype=sparse')
-            glance_properties.append('--property vmware_adaptertype=lsilogic')
+            glance_properties.append('--property vmware_adaptertype=lsiLogic')
             glance_properties.append('--property hypervisor_type=vmware')
 
         image_data['glance_properties'] = ' '.join(glance_properties)

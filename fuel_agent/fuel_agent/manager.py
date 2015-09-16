@@ -19,6 +19,7 @@ import tempfile
 import yaml
 
 from oslo.config import cfg
+import six
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
@@ -331,6 +332,76 @@ class Manager(object):
                 LOG.debug('Extending %s %s' %
                           (image.format, image.target_device))
                 fu.extend_fs(image.format, image.target_device)
+        self.move_files_to_their_places()
+
+    def move_files_to_their_places(self, preremove_dst=True):
+        """Move files from mount points to where those files should be.
+
+        :param preremove_dst: Remove destination file if True. Default True.
+        """
+
+        # NOTE(kozhukalov): The thing is that sometimes we
+        # have file system images and mount point hierachies
+        # which are not aligned. Let's say, we have root file system
+        # image, while partition scheme says that two file systems should
+        # be created on the node: / and /var.
+        # In this case root image has /var directory with a set of files.
+        # Obviously, we need to move all these files from /var directory
+        # on the root file system to /var file system because /var
+        # directory will be used as mount point.
+        # In order to achieve this we mount all existent file
+        # systems into a flat set of temporary directories. We then
+        # try to find specific paths which correspond to mount points
+        # and move all files from these paths to corresponding file systems.
+
+        mount_map = self.mount_target_flat()
+        for fs_mount in sorted(mount_map):
+            head, tail = os.path.split(fs_mount)
+            while head != fs_mount:
+                LOG.debug('Trying to move files for %s file system', fs_mount)
+                if head in mount_map:
+                    LOG.debug('File system %s is mounted into %s',
+                              head, mount_map[head])
+                    check_path = os.path.join(mount_map[head], tail)
+                    LOG.debug('Trying to check if path %s exists', check_path)
+                    if os.path.exists(check_path):
+                        LOG.debug('Path %s exists. Trying to sync all files '
+                                  'from there to %s', mount_map[fs_mount])
+                        utils.execute('rsync', '-avH', '--delete', check_path,
+                                      mount_map[fs_mount])
+                        shutil.rmtree(check_path)
+                        break
+                if head == '/':
+                    break
+                head, _tail = os.path.split(head)
+                tail = os.path.join(_tail, tail)
+        self.umount_target_flat(mount_map)
+
+    def mount_target_flat(self):
+        """Mount a set of file systems into a set of temporary directories
+
+        :returns: Mount map dict
+        """
+
+        LOG.debug('Mounting target file systems into a flat set '
+                  'of temporary directories')
+        mount_map = {}
+        for fs in self.driver.partition_scheme.fss:
+            if fs.mount == 'swap':
+                continue
+            mount_map[fs.mount] = fu.mount_fs_temp(fs.type, str(fs.device))
+        LOG.debug('Flat mount map: %s', mount_map)
+        return mount_map
+
+    def umount_target_flat(self, mount_map):
+        """Umount file systems previously mounted into temporary directories.
+
+        :param mount_map: Mount map dict
+        """
+
+        for mount_point in six.itervalues(mount_map):
+            fu.umount_fs(mount_point)
+            shutil.rmtree(mount_point)
 
     # TODO(kozhukalov): write tests
     def mount_target(self, chroot, treat_mtab=True, pseudo=True):

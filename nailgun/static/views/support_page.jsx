@@ -107,7 +107,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     text={i18n(ns + 'text')}
                 >
                     <p>
-                        <a className='btn btn-default' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
+                        <a className='btn btn-default documentation-link' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
                             {i18n('support_page.documentation_link')}
                         </a>
                     </p>
@@ -296,7 +296,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     text={i18n('support_page.capacity_audit_text')}
                 >
                     <p>
-                        <a className='btn btn-default' href='#capacity'>
+                        <a className='btn btn-default capacity-audit' href='#capacity'>
                             {i18n('support_page.view_capacity_audit')}
                         </a>
                     </p>

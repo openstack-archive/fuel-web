@@ -42,16 +42,14 @@ define([
                     .then(function() {
                         return loginPage.login('login', '*****');
                     })
-                    .then(function() {
-                        return common.assertElementExists('div.login-error', 'Error message is expected to get displayed');
-                    });
+                    .assertElementExists('div.login-error', 'Error message is expected to get displayed');
             },
             'Login with proper credentials': function() {
                 return this.remote
                     .then(function() {
                         return loginPage.login();
                     })
-                    .waitForElementDeletion('.login-btn', 2000);
+                    .assertElementDisappears('.login-btn', 2000, 'Login button disappears after successful login');
             }
         };
     });

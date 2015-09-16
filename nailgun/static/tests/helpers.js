@@ -14,7 +14,12 @@
  * under the License.
  **/
 
-define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'], function(_, fs, Command) {
+define([
+    'underscore',
+    'intern/chai!assert',
+    'intern/dojo/node!fs',
+    'intern/dojo/node!leadfoot/Command'
+], function(_, assert, fs, Command) {
     'use strict';
 
     _.defaults(Command.prototype, {
@@ -96,9 +101,10 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                         .end();
             });
         },
-    /**
-     * Taken from not yet accepted pull request to leadfoot from https://github.com/theintern/leadfoot/pull/16
-     */
+        /**
+         * Drag-n-drop helpers
+         * Taken from not yet accepted pull request to leadfoot from https://github.com/theintern/leadfoot/pull/16
+         */
         dragFrom: function(element, x, y) {
             if (typeof element === 'number') {
                 y = x;
@@ -284,6 +290,115 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
                         throw error;
                     }
                 });
+            });
+        },
+        // assertion helpers
+        assertElementsExist: function(cssSelector, amount, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            if (!_.isNumber(amount)) {
+                                // no amount given - check if any amount of such elements exist
+                                message = amount;
+                                return assert.ok(elements.length, message);
+                            } else {
+                                return assert.equal(elements.length, amount, message);
+                            }
+                        })
+                        .end();
+            });
+        },
+        assertElementExists: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent.assertElementsExist(cssSelector, 1, message);
+            });
+        },
+        assertElementNotExists: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent.assertElementsExist(cssSelector, 0, message);
+            });
+        },
+        assertElementAppears: function(cssSelector, timeout, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .waitForCssSelector(cssSelector, timeout)
+                    .catch(_.constant(true))
+                    .assertElementExists(cssSelector, message);
+            });
+        },
+        assertElementDisappears: function(cssSelector, timeout, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .waitForElementDeletion(cssSelector, timeout)
+                    .catch(_.constant(true))
+                    .assertElementNotExists(cssSelector, message);
+            });
+        },
+        assertElementEnabled: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .isEnabled()
+                        .then(function(isEnabled) {
+                            return assert.isTrue(isEnabled, message);
+                        })
+                        .end();
+            });
+        },
+        assertElementDisabled: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .isEnabled()
+                        .then(function(isEnabled) {
+                            return assert.isFalse(isEnabled, message);
+                        })
+                        .end();
+            });
+        },
+        assertElementTextEquals: function(cssSelector, expectedText, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .getVisibleText()
+                        .then(function(actualText) {
+                            assert.equal(actualText, expectedText, message);
+                        })
+                        .end();
+            });
+        },
+        assertElementContainsText: function(cssSelector, text, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .getVisibleText()
+                        .then(function(actualText) {
+                            assert.include(actualText, text, message);
+                        })
+                        .end();
+            });
+        },
+        assertElementAttributeEquals: function(cssSelector, attribute, expectedText, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .getAttribute(attribute)
+                        .then(function(actualText) {
+                            assert.equal(actualText, expectedText, message);
+                        })
+                        .end();
+            });
+        },
+        assertElementAttributeContains: function(cssSelector, attribute, text, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .getAttribute(attribute)
+                        .then(function(actualText) {
+                            assert.include(actualText, text, message);
+                        })
+                        .end();
             });
         }
     });

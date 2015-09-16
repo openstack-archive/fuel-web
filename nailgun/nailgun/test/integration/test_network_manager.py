@@ -619,7 +619,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
         for net_name, net_changes in six.iteritems(updates):
             ng = self.get_net_by_name(nets["networks"], net_name)
-            ng.update(net_changes)
+            ng['meta'].update(net_changes['meta'])
 
         self.env.network_manager.update_networks(nets)
         nets_updated = get_network_config(cluster)

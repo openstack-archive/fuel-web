@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import mock
 import netaddr
 import six
@@ -140,14 +141,14 @@ class TestDeploymentAttributesSerialization70(
     def test_non_default_bridge_mapping(self):
         expected_mapping = {
             u'test': u'br-test',
-            u'testnetwork1': u'br-testnetwork1',
-            u'testnetwork13': u'br-testnetwork2',
+            u'testnetwork1': u'br-testnetwork',
+            u'testnetwork13': u'br-testnetwork',
             u'my-super-network': u'br-my-super-net',
-            u'uplink-network-east': u'br-uplink-netw2',
-            u'uplink-network-west': u'br-uplink-netwo',
-            u'uplink-network-south': u'br-uplink-netw1',
-            u'12345uplink-network-south': u'br-12345uplink1',
-            u'fw-admin': u'br-fw-admi1'
+            u'uplink-network-east': u'br-uplink-netw',
+            u'uplink-network-west': u'br-uplink-netw',
+            u'uplink-network-south': u'br-uplink-netw',
+            u'12345uplink-network-south': u'br-12345uplink',
+            u'fw-admin': u'br-fw-admi'
         }
         cluster = self.env.create(
             cluster_kwargs={
@@ -169,7 +170,27 @@ class TestDeploymentAttributesSerialization70(
         self.prepare_for_deployment(self.cluster_db.nodes)
         mapping = net_serializer.get_node_non_default_bridge_mapping(
             self.cluster_db.nodes[0])
-        self.assertDictEqual(mapping, expected_mapping)
+
+        # since we have a suffix generation for bridges, they may have
+        # different suffix based on PYTHONHASHSEED. hence, we can't
+        # come up with a normal dictionary comparison. so let's
+        # compare that all bridges are unique, and they are unique
+        # for networks which may have bridge collision.
+        br_collision = collections.defaultdict(list)
+        self.assertEqual(len(mapping), len(expected_mapping))
+        self.assertEqual(len(expected_mapping), len(set(mapping.values())))
+
+        for netname in expected_mapping:
+            # check that bridge name has been generated from the network
+            self.assertTrue(
+                mapping[netname].startswith(expected_mapping[netname]))
+
+            br_collision[expected_mapping[netname]].append(netname)
+
+        # check that there's no collision between networks
+        for bridge, netnames in six.iteritems(br_collision):
+            bridges = set((mapping[netname] for netname in netnames))
+            self.assertEqual(len(bridges), len(netnames))
 
     def test_network_scheme_custom_networks(self):
         cluster = self.env.create(

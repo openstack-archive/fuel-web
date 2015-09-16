@@ -60,6 +60,7 @@ class CheckerManager(object):
             CheckFreeSpace,
             CheckNoRunningTasks],
         HostSystemUpgrader: [
+            CheckUpgradeVersions,
             CheckFreeSpace],
         DockerInitializer: []}
 

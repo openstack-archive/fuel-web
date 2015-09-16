@@ -1030,7 +1030,7 @@
             label: "Kernel parameters"
             weight: 40
           kernel:
-            value: "console=ttyS0,9600 console=tty0 biosdevname=0 rootdelay=90 nomodeset"
+            value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset"
             label: "Initial parameters"
             description: "Default kernel parameters"
             weight: 45
@@ -1488,7 +1488,7 @@
       editable:
         kernel_params:
           kernel:
-            value: "console=ttyS0,9600 console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset"
+            value: "console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset"
         use_fedora_lt:
           metadata:
             label: "Use Fedora longterm kernel"
@@ -1560,7 +1560,7 @@
       editable:
         kernel_params:
           kernel:
-            value: "console=ttyS0,9600 console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
+            value: "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
         repo_setup:
           metadata:
             label: "Repositories"

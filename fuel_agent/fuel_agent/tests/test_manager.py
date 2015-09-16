@@ -329,6 +329,110 @@ class TestManager(test_base.BaseTestCase):
         self.assertRaises(errors.ImageChecksumMismatchError,
                           self.mgr.do_copyimage)
 
+    @mock.patch('fuel_agent.utils.fs.mount_fs_temp')
+    def test_mount_target_flat(self, mock_mfst):
+        def mfst_side_effect(*args, **kwargs):
+            if '/dev/fake1' in args:
+                return '/tmp/dir1'
+            elif '/dev/fake2' in args:
+                return '/tmp/dir2'
+        mock_mfst.side_effect = mfst_side_effect
+        self.mgr.driver._partition_scheme = objects.PartitionScheme()
+        self.mgr.driver.partition_scheme.add_fs(
+            device='/dev/fake1', mount='/', fs_type='ext4')
+        self.mgr.driver.partition_scheme.add_fs(
+            device='/dev/fake2', mount='/var/lib', fs_type='ext4')
+        self.assertEqual({'/': '/tmp/dir1', '/var/lib': '/tmp/dir2'},
+                         self.mgr.mount_target_flat())
+        self.assertEqual([mock.call('ext4', '/dev/fake1'),
+                          mock.call('ext4', '/dev/fake2')],
+                         mock_mfst.call_args_list)
+
+    @mock.patch('fuel_agent.manager.shutil.rmtree')
+    @mock.patch('fuel_agent.utils.fs.umount_fs')
+    def test_umount_target_flat(self, mock_umfs, mock_rmtree):
+        mount_map = {'/': '/tmp/dir1', '/var/lib': '/tmp/dir2'}
+        self.mgr.umount_target_flat(mount_map)
+        mock_umfs.assert_has_calls(
+            [mock.call('/tmp/dir1'), mock.call('/tmp/dir2')],
+            any_order=True)
+
+    @mock.patch('fuel_agent.manager.shutil.rmtree')
+    @mock.patch('fuel_agent.manager.os.rename')
+    @mock.patch('fuel_agent.manager.os.listdir')
+    @mock.patch('fuel_agent.manager.os.path.isdir')
+    @mock.patch('fuel_agent.manager.os.path.exists')
+    @mock.patch('fuel_agent.manager.Manager.umount_target_flat')
+    @mock.patch('fuel_agent.manager.Manager.mount_target_flat')
+    def test_move_files_to_their_places(self, mock_mtf, mock_utf,
+                                        mock_ope, mock_isd, mock_old,
+                                        mock_rename, mock_shrmt):
+
+        def ope_side_effect(path):
+            if path == '/tmp/dir1/var/lib':
+                return True
+
+        def isd_side_effect(path):
+            if path == '/tmp/dir2/file':
+                return False
+            elif path == '/tmp/dir2/dir':
+                return True
+
+        def old_side_effect(path):
+            if path == '/tmp/dir1/var/lib':
+                return ('file', 'dir')
+
+        mock_ope.side_effect = ope_side_effect
+        mock_isd.side_effect = isd_side_effect
+        mock_old.side_effect = old_side_effect
+        mock_mtf.return_value = {'/': '/tmp/dir1', '/var/lib': '/tmp/dir2'}
+        self.mgr.move_files_to_their_places()
+        self.assertEqual(
+            [mock.call('/tmp/dir1/var/lib/file', '/tmp/dir2/file'),
+             mock.call('/tmp/dir1/var/lib/dir', '/tmp/dir2/dir')],
+            mock_rename.call_args_list)
+        self.assertEqual(
+            [mock.call('/tmp/dir2/dir')],
+            mock_shrmt.call_args_list)
+
+    @mock.patch('fuel_agent.manager.shutil.rmtree')
+    @mock.patch('fuel_agent.manager.os.rename')
+    @mock.patch('fuel_agent.manager.os.listdir')
+    @mock.patch('fuel_agent.manager.os.path.isdir')
+    @mock.patch('fuel_agent.manager.os.path.exists')
+    @mock.patch('fuel_agent.manager.Manager.umount_target_flat')
+    @mock.patch('fuel_agent.manager.Manager.mount_target_flat')
+    def test_move_files_to_their_places_not_preremove(
+            self, mock_mtf, mock_utf, mock_ope, mock_isd, mock_old,
+            mock_rename, mock_shrmt):
+
+        def ope_side_effect(path):
+            if path == '/tmp/dir1/var/lib':
+                return True
+
+        def isd_side_effect(path):
+            if path == '/tmp/dir2/file':
+                return False
+            elif path == '/tmp/dir2/dir':
+                return True
+
+        def old_side_effect(path):
+            if path == '/tmp/dir1/var/lib':
+                return ('file', 'dir')
+
+        def rename_side_effect(src, dst):
+            if dst == '/tmp/dir2/dir':
+                raise OSError()
+
+        mock_ope.side_effect = ope_side_effect
+        mock_isd.side_effect = isd_side_effect
+        mock_old.side_effect = old_side_effect
+        mock_rename.side_effect = rename_side_effect
+        mock_mtf.return_value = {'/': '/tmp/dir1', '/var/lib': '/tmp/dir2'}
+        self.assertRaises(
+            OSError, self.mgr.move_files_to_their_places, preremove_dst=False)
+        self.assertFalse(mock_shrmt.called)
+
     @mock.patch('fuel_agent.manager.bu', create=True)
     @mock.patch('fuel_agent.manager.fu', create=True)
     @mock.patch('fuel_agent.manager.utils', create=True)

@@ -56,15 +56,15 @@ define([
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
-                    .then(function() {
-                        return common.assertElementEnabled('.btn-load-defaults', 'Load defaults button is enabled');
-                    })
-                    .then(function() {
-                        return common.assertElementDisabled('.btn-revert-changes', 'Cancel Changes button is disabled');
-                    })
-                    .then(function() {
-                        return common.assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled');
-                    });
+                    .findByCssSelector('.btn-load-defaults')
+                        .assertElementEnabled('Load defaults button is enabled')
+                        .end()
+                    .findByCssSelector('.btn-revert-changes')
+                        .assertElementDisabled('Cancel Changes button is disabled')
+                        .end()
+                    .findByCssSelector('.btn-apply-changes')
+                        .assertElementDisabled('Save Settings button is disabled')
+                        .end();
             },
             'Check Save Settings button': function() {
                 return this.remote

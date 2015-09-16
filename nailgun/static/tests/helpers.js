@@ -14,7 +14,12 @@
  * under the License.
  **/
 
-define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'], function(_, fs, Command) {
+define([
+    'underscore',
+    'intern/chai!assert',
+    'intern/dojo/node!fs',
+    'intern/dojo/node!leadfoot/Command'
+], function(_, assert, fs, Command) {
     'use strict';
 
     _.defaults(Command.prototype, {
@@ -287,6 +292,56 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
             });
         }
     });
+
+    var assertionHelpers = {
+        assertElementEnabled: function(message) {
+            return this.isEnabled()
+                .then(function(isEnabled) {
+                    return assert.isTrue(isEnabled, message);
+                });
+        },
+        assertElementDisabled: function(message) {
+            return this.isEnabled()
+                .then(function(isEnabled) {
+                    return assert.isFalse(isEnabled, message);
+                });
+        },
+        assertElementTextEquals: function(expectedText, message) {
+            return this.getVisibleText()
+                .then(function(actualText) {
+                    assert.equal(actualText, expectedText, message);
+                });
+        },
+        assertElementContainsText: function(expectedText, message) {
+            return this.getVisibleText()
+                .then(function(actualText) {
+                    assert.include(actualText, expectedText, message);
+                });
+        },
+        assertElementAttributeEquals: function(attribute, expectedText, message) {
+            return this.getAttribute(attribute)
+                .then(function(actualText) {
+                    assert.equal(actualText, expectedText, message);
+                });
+        },
+        assertElementAttributeContains: function(attribute, text, message) {
+            return this.getAttribute(attribute)
+                .then(function(actualText) {
+                    assert.include(actualText, text, message);
+                });
+        }
+    };
+
+    _.defaults(Command.prototype, _.mapValues(assertionHelpers, function(helper) {
+        return function() {
+            return new this.constructor(this, function() {
+                var args = arguments;
+                return this.parent.then(function(element) {
+                    return helper.apply(element, args);
+                });
+            });
+        };
+    }));
 
     var serverHost = '127.0.0.1',
         serverPort = process.env.SERVER_PORT || 5544,

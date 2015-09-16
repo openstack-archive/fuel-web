@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import tempfile
+
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import utils
@@ -76,3 +78,9 @@ def umount_fs(fs_mount, try_lazy_umount=False):
                 utils.execute('umount', '-l', fs_mount, check_exit_code=[0])
             else:
                 raise
+
+
+def mount_fs_temp(fs_type, fs_dev, tmpdir=None, suffix=''):
+    mount_point = tempfile.mkdtemp(dir=tmpdir, suffix=suffix)
+    mount_fs(fs_type, fs_dev, mount_point)
+    return mount_point

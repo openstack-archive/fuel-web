@@ -14,7 +14,13 @@
  * under the License.
  **/
 
-define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'], function(_, fs, Command) {
+define([
+    'underscore',
+    'intern/chai!assert',
+    'intern/dojo/node!fs',
+    'intern/dojo/node!leadfoot/Command',
+    'intern/dojo/node!leadfoot/Element'
+], function(_, assert, fs, Command, Element) {
     'use strict';
 
     _.defaults(Command.prototype, {
@@ -97,6 +103,48 @@ define(['underscore', 'intern/dojo/node!fs', 'intern/dojo/node!leadfoot/Command'
             });
         }
     });
+
+    Object.defineProperty(Element.prototype, 'assert', {get: function() {
+        var self = this;
+        return {
+            enabled: function(message) {
+                return self.isEnabled()
+                    .then(function(isEnabled) {
+                        return assert.isTrue(isEnabled, message);
+                    });
+            },
+            disabled: function(message) {
+                return self.isEnabled()
+                    .then(function(isEnabled) {
+                        return assert.isFalse(isEnabled, message);
+                    });
+            },
+            textEquals: function(text, message) {
+                return self.getVisibleText()
+                    .then(function(visibleText) {
+                        assert.equal(visibleText, text, message);
+                    });
+            },
+            containsText: function(text, message) {
+                return self.getVisibleText()
+                    .then(function(visibleText) {
+                        assert.include(visibleText, text, message);
+                    });
+            },
+            valueEquals: function(text, message) {
+                return self.getAttribute('value')
+                    .then(function(visibleText) {
+                        assert.equal(visibleText, text, message);
+                    });
+            },
+            valueContains: function(text, message) {
+                return self.getAttribute('value')
+                    .then(function(visibleText) {
+                        assert.include(visibleText, text, message);
+                    });
+            }
+        };
+    }});
 
     var serverHost = '127.0.0.1',
         serverPort = process.env.SERVER_PORT || 5544,

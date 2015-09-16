@@ -1592,6 +1592,18 @@ class BaseValidatorTest(TestCase):
             "{0} has non-unique elements".format(stringified_values),
             context.exception.message)
 
+    def assertRaisesLessThanMinimum(self, obj, stringified_values):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "{0} is less than the minimum".format(stringified_values),
+            context.exception.message)
+
+    def assertRaisesGreaterThanMaximum(self, obj, stringified_values):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "{0} is greater than the maximum".format(stringified_values),
+            context.exception.message)
+
     def assertRaisesNotMatchPattern(self, obj, stringified_values):
         context = self.get_invalid_data_context(obj)
         self.assertIn(

@@ -105,18 +105,26 @@ class TestDeleteIBPImagesTask(BaseTestCase):
         fake_image_data = {'/': {'uri': 'http://a.b/fake.img'},
                            '/boot': {'uri': 'http://c.d/fake-boot.img'}}
         task.DeleteIBPImagesTask.message(task_mock, fake_image_data)
+
+        rpc_message = mock_astute.call_args[0][3]
+        rm_cmd = rpc_message['tasks'][0]['parameters'].pop('cmd')
+
         mock_astute.assert_called_once_with(
-            mock.ANY, 'execute_tasks', 'remove_images_resp', {
-                'tasks': [{
-                    'type': 'shell',
-                    'uids': [consts.MASTER_ROLE],
-                    'parameters': {
-                        'retries': 3,
-                        'cmd': 'rm -f /fake/path/fake-boot.img '
-                        '/fake/path/fake.img',
-                        'cwd': '/',
-                        'timeout': 'fake_timeout',
-                        'interval': 1}}]})
+            mock.ANY, 'execute_tasks', 'remove_images_resp', mock.ANY)
+
+        self.assertEqual(rpc_message, {
+            'tasks': [{
+                'type': 'shell',
+                'uids': [consts.MASTER_ROLE],
+                'parameters': {
+                    'retries': 3,
+                    'cwd': '/',
+                    'timeout': 'fake_timeout',
+                    'interval': 1}}]})
+
+        self.assertTrue(rm_cmd.startswith('rm -f'))
+        self.assertIn('/fake/path/fake-boot.img', rm_cmd)
+        self.assertIn('/fake/path/fake.img', rm_cmd)
 
 
 class TestHelperUpdateClusterStatus(BaseTestCase):

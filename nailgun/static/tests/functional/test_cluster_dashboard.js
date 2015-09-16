@@ -156,13 +156,13 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     })
                     .then(function() {
-                        return dashboardPage.assertIsIntegerContentPositive('.capacity-items .cpu .capacity-value', 'CPU');
+                        return common.assertIsIntegerContentPositive('.capacity-items .cpu .capacity-value', 'CPU');
                     })
                     .then(function() {
-                        return dashboardPage.assertIsIntegerContentPositive('.capacity-items .hdd .capacity-value', 'HDD');
+                        return common.assertIsIntegerContentPositive('.capacity-items .hdd .capacity-value', 'HDD');
                     })
                     .then(function() {
-                        return dashboardPage.assertIsIntegerContentPositive('.capacity-items .ram .capacity-value', 'RAM');
+                        return common.assertIsIntegerContentPositive('.capacity-items .ram .capacity-value', 'RAM');
                     })
                     .then(function() {
                         return dashboardPage.discardChanges();

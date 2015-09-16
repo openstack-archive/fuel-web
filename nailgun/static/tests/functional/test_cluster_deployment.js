@@ -56,12 +56,6 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     });
             },
-            teardown: function() {
-                return this.remote
-                    .then(function() {
-                        return common.removeCluster(clusterName);
-                    });
-            },
             'No deployment button when there are no nodes added': function() {
                 return this.remote
                     .then(function() {

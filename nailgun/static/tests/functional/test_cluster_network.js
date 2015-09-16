@@ -67,12 +67,6 @@ define([
                 return this.remote
                     .clickByCssSelector('.btn-revert-changes');
             },
-            teardown: function() {
-                return this.remote
-                    .then(function() {
-                        return common.removeCluster(clusterName);
-                    });
-            },
             'Network Tab is rendered correctly': function() {
                 return this.remote
                     .findByCssSelector('.network-tab')

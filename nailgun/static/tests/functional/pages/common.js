@@ -186,6 +186,14 @@ define([
                                 });
                         })
                         .end()
+            },
+            assertIsIntegerContentPositive: function(cssSelector, attributeName) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .getVisibleText().then(function(text) {
+                            return assert.isTrue(parseInt(text) > 0, attributeName + ' is greater than 0');
+                        })
+                        .end();
             }
         };
         return CommonMethods;

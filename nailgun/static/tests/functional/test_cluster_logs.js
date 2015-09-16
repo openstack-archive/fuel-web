@@ -49,12 +49,6 @@ define([
                         return clusterPage.goToTab('Logs');
                     });
             },
-            teardown: function() {
-                return this.remote
-                    .then(function() {
-                        return common.removeCluster(clusterName);
-                    });
-            },
             '"Show" button availability and logs displaying': function() {
                 var showLogsButtonSelector = '.sticker button';
                 return this.remote

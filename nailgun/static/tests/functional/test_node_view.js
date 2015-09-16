@@ -50,12 +50,6 @@ define([
                         return common.createCluster(clusterName);
                     });
             },
-            teardown: function() {
-                return this.remote
-                    .then(function() {
-                        return common.removeCluster(clusterName);
-                    });
-            },
             'Standard node panel': function() {
                 return this.remote
                     .then(function() {

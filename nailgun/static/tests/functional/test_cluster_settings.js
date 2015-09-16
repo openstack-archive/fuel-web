@@ -54,12 +54,6 @@ define([
                     // go to Common subtab to use checkboxes for tests
                     .clickLinkByText('Common');
             },
-            teardown: function() {
-                return this.remote
-                    .then(function() {
-                        return common.removeCluster(clusterName);
-                    });
-            },
             'Settings tab is rendered correctly': function() {
                 return this.remote
                     .then(function() {

@@ -51,7 +51,7 @@
             message: "Ceph RBD cannot be used with Cinder"
       cinder-vmware:
         name: "Storage - Cinder Proxy to VMware Datastore"
-        description: "Cinder-VMware provides scheduling of block storage resources delivered over VMWare vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+        description: "Cinder-VMware provides scheduling of block storage resources delivered over VMware vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
         weight: 40
         limits:
           recommended: 1
@@ -1075,7 +1075,7 @@
               - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
           images_vcenter:
             value: false
-            label: "VMWare vCenter/ESXi datastore for images (Glance)"
+            label: "VMware vCenter/ESXi datastore for images (Glance)"
             description: "Configures Glance to use the vCenter/ESXi backend to store images. If enabled, this option will prevent Swift from installing."
             weight: 35
             type: "checkbox"

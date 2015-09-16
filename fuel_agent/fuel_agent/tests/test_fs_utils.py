@@ -120,3 +120,11 @@ class TestFSUtils(test_base.BaseTestCase):
             mock.call('umount', '-l', '/fake', check_exit_code=[0])
         ]
         self.assertEqual(expected_calls, mock_exec.call_args_list)
+
+    @mock.patch.object(fu, 'mount_fs')
+    @mock.patch.object(fu, 'tempfile.mkdtemp')
+    def test_mount_fs_temp(self, mock_mkdtemp, mock_mount, mock_exec):
+        mock_mkdtemp.return_value = '/tmp/dir'
+        self.assertEqual('/tmp/dir', fu.mount_fs_temp('ext4', '/dev/fake'))
+        mock_mkdtemp.assert_called_once_with(dir=None, suffix='')
+        mock_mount.assert_called_once_with('ext4', '/dev/fake', '/tmp/dir')

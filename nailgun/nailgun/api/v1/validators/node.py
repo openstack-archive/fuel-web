@@ -23,6 +23,7 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 
@@ -267,6 +268,12 @@ class NodeValidator(BasicValidator):
 
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])
+
+        if "group_id" in d:
+            ng = db().query(NodeGroup).get(d["group_id"])
+            if not ng:
+                raise errors.InvalidData("Invalid node group specified.")
+
         return d
 
     @classmethod

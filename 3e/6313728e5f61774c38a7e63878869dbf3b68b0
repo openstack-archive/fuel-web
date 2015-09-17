@@ -1,0 +1,15 @@
+Verified+2: Jenkins
+Code-Review+1: Vladimir Kozhukalov <vkozhukalov@mirantis.com>
+Code-Review+1: Igor Marnat <imarnat@mirantis.com>
+Code-Review+1: Vladimir Kuklin <vkuklin@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Sebastian Kalinowski <skalinowski@mirantis.com>
+Workflow+1: Sebastian Kalinowski <skalinowski@mirantis.com>
+Code-Review+1: Pavel Boldin <pboldin@mirantis.com>
+Code-Review+1: Dmitry Klenov <dklenov@mirantis.com>
+Code-Review+1: Andrew Maksimov <amaksimov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 17 Sep 2015 10:32:39 +0000
+Reviewed-on: https://review.openstack.org/224182
+Project: stackforge/fuel-web
+Branch: refs/heads/stable/7.0

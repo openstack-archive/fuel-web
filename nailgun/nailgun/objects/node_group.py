@@ -17,8 +17,9 @@
 
 from nailgun.objects.serializers.node_group import NodeGroupSerializer
 
+from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NodeGroup as DBNodeGroup
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
@@ -27,7 +28,7 @@ from nailgun.objects import NailgunObject
 
 class NodeGroup(NailgunObject):
 
-    model = DBNodeGroup
+    model = models.NodeGroup
     serializer = NodeGroupSerializer
 
     @classmethod

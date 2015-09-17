@@ -625,22 +625,21 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
                              self.nics_w_nets[0]['id'])
         )
 
-    def test_assignment_change_failed_node_has_unassigned_network(self):
-        unassigned_id = self.nics_w_nets[0]["assigned_networks"][0]["id"]
-        self.nics_w_nets[0]["assigned_networks"] = \
-            self.nics_w_nets[0]["assigned_networks"][1:]
-
+    def test_assignment_change_failed_network_not_in_node_group(self):
+        net_id = 1234567
+        self.nics_w_nets[0]["assigned_networks"].append({"id": net_id})
         self.node_nics_put_check_error(
-            "Node '{0}': '{1}' network(s) are left unassigned".format(
-            self.env.nodes[0]["id"], unassigned_id)
+            "Node '{0}': networks with IDs '{1}' cannot be used "
+            "because they are not in node group '{2}'"
+            .format(self.env.nodes[0]["id"], net_id, 'default')
         )
 
-    def test_assignment_change_failed_node_has_unknown_network(self):
-        self.nics_w_nets[0]["assigned_networks"].append({"id": 1234567})
-
+    def test_assignment_change_failed_network_left_unassigned(self):
+        net_id = self.nics_w_nets[0]['assigned_networks'][1]['id']
+        del self.nics_w_nets[0]['assigned_networks'][1]
         self.node_nics_put_check_error(
-            "Network '1234567' doesn't exist for node {0}".format(
-            self.env.nodes[0]["id"])
+            "Node '{0}': {1} network(s) are left unassigned"
+            .format(self.env.nodes[0]['id'], net_id)
         )
 
     def test_nic_change_failed_node_has_unknown_interface(self):

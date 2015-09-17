@@ -1010,7 +1010,7 @@
           cert_data:
             value: ""
             label: "Certificate"
-            description: "Certificate and private key data, placed one after another"
+            description: "Certificate and private key data, concatenated into a single file"
             weight: 40
             type: "file"
             restrictions:

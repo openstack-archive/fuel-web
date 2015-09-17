@@ -161,7 +161,7 @@ define([
                         return networksPage.switchNetworkManager();
                     })
                     .then(function() {
-                        return common.assertElementExists('.network-section-wrapper input[name=range-end_fixed_networks_vlan_start]',
+                        return common.assertElementExists('input[name=range-end_fixed_networks_vlan_start]',
                             'VLAN range is displayed');
                     });
             },
@@ -208,12 +208,12 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
-                    .clickByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
+                    .clickByCssSelector('input[name=fixed_networks_vlan_start][type=checkbox]')
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
                     .then(function() {
-                        return common.assertElementExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
+                        return common.assertElementExists('.has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
                             'Field validation has worked');
                     })
                     .then(function() {
@@ -222,9 +222,9 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
-                    .clickByCssSelector('.network-section-wrapper input[name=fixed_networks_vlan_start][type=checkbox]')
+                    .clickByCssSelector('input[name=fixed_networks_vlan_start][type=checkbox]')
                     .then(function() {
-                        return common.assertElementNotExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
+                        return common.assertElementNotExists('.has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
                             'Field validation works properly');
                     });
             }

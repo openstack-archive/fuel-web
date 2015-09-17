@@ -64,6 +64,12 @@ define([
                         })
                         .end();
             },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return common.removeCluster(clusterName, true);
+                    });
+            },
             'Testing nodes disks layout': function() {
                 return this.remote
                     .then(function() {

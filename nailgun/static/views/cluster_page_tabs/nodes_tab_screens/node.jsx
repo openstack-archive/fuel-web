@@ -314,7 +314,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             if (this.props.viewMode == 'compact') return (
                 <div className='compact-node'>
-                    <div className={utils.classNames(nodePanelClasses)}>
+                    <div className={utils.classNames(nodePanelClasses)} data-node-id={node.id}>
                         <label className='node-box'>
                             <div
                                 className='node-box-inner clearfix'

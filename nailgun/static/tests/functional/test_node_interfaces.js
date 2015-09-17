@@ -42,7 +42,7 @@ define([
                         return common.createCluster(clusterName);
                     })
                     .then(function() {
-                        return common.addNodesToCluster(1, 'Controller', null, 'Supermicro X9SCD');
+                        return common.addNodesToCluster(1, 'Controller', null, 3);
                     })
                     .clickByCssSelector('.node.pending_addition input[type=checkbox]:not(:checked)')
                     .clickByCssSelector('button.btn-configure-interfaces')
@@ -55,7 +55,7 @@ define([
             teardown: function() {
                 return this.remote
                     .then(function() {
-                        return common.removeCluster(clusterName, true);
+                        return common.removeCluster(clusterName);
                     });
             },
             'Untagged networks error': function() {

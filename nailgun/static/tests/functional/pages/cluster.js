@@ -56,12 +56,7 @@ define([
                     return self.modal.waitToClose();
                 })
                 .waitForCssSelector('.clusters-page', 2000)
-                .waitForDeletedByCssSelector('.clusterbox', 3000);
-        },
-        searchForNode: function(nodeName) {
-            return this.remote
-                .clickByCssSelector('button.btn-search')
-                .setInputValue('input[name=search]', nodeName);
+                .waitForDeletedByCssSelector('.clusterbox.cluster-disabled', 10000);
         },
         checkNodeRoles: function(assignRoles) {
             return this.remote
@@ -84,7 +79,7 @@ define([
                         );
                 });
         },
-        checkNodes: function(amount, status) {
+        checkNodes: function(amount, status, id) {
             var self = this;
             status = status || 'discover';
             return this.remote
@@ -92,7 +87,7 @@ define([
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .findAllByCssSelector('.node' + '.' + status + ' > label')
+                                .findAllByCssSelector('.node.' + status + (id ? '[data-node-id=' + id + ']') + ' > label')
                                     .then(function(nodes) {
                                         return nodes[index].click();
                                     })

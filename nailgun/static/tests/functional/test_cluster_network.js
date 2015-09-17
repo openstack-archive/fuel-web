@@ -67,6 +67,12 @@ define([
                 return this.remote
                     .clickByCssSelector('.btn-revert-changes');
             },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return common.removeCluster(clusterName);
+                    });
+            },
             'Network Tab is rendered correctly': function() {
                 return this.remote
                     .findByCssSelector('.network-tab')
@@ -268,6 +274,15 @@ define([
                 return this.remote
                     .clickByCssSelector('.btn-revert-changes');
             },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return common.removeCluster(clusterName);
+                    })
+                    .then(function() {
+                        return common.removeCluster('Test vlan segmentation');
+                    });
+            },
             'Add ranges manipulations': function() {
                 var rangeSelector = '.public .ip_ranges ';
                 return this.remote
@@ -291,16 +306,14 @@ define([
                 var dnsNameserversSelector = '.dns_nameservers ';
                 return this.remote
                     .clickByCssSelector(dnsNameserversSelector + '.ip-ranges-add')
-                    .then(function() {
-                        return common.assertElementExists(dnsNameserversSelector + '.range-row .has-error',
-                            'New nameserver is added and contains validation error');
-                    });
+                    // New nameserver is added and contains validation error
+                    .waitForCssSelector(dnsNameserversSelector + '.range-row .has-error', 500);
             },
             'Segmentation types differences': function() {
                 return this.remote
                     // Tunneling segmentation tests
                     .then(function() {
-                        return common.assertElementExists('.network-section-wrapper.private',
+                        return common.assertElementExists('.private',
                             'Private Network is visible for tunneling segmentation type');
                     })
                     .then(function() {
@@ -316,7 +329,7 @@ define([
                         return clusterPage.goToTab('Networks');
                     })
                     .then(function() {
-                        return common.assertElementNotExists('.network-section-wrapper.private',
+                        return common.assertElementNotExists('.private',
                             'Private Network is not visible for vlan segmentation type');
                     })
                     .then(function() {

@@ -120,32 +120,27 @@ define([
                     .clickByCssSelector('.btn-apply')
                     .waitForElementDeletion('.btn-apply', 2000);
             },
-            assertElementContainsText: function(cssSelector, searchedText, message) {
+            assertElementContainsText: function(cssSelector, text, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
-                        .then(function(element) {
-                            return element.getVisibleText()
-                                .then(function(visibleText) {
-                                    assert.include(visibleText, searchedText, message);
-                                });
+                        .getVisibleText().then(function(elementText) {
+                            assert.include(elementText, text, message);
                         })
                         .end();
             },
             assertElementEnabled: function(cssSelector, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
-                        .isEnabled()
-                        .then(function(isEnabled) {
-                            return assert.isTrue(isEnabled, message);
+                        .isEnabled().then(function(isEnabled) {
+                            assert.isTrue(isEnabled, message);
                         })
                         .end();
             },
             assertElementDisabled: function(cssSelector, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
-                        .isEnabled()
-                        .then(function(isEnabled) {
-                            return assert.isFalse(isEnabled, message);
+                        .isEnabled().then(function(isEnabled) {
+                            assert.isFalse(isEnabled, message);
                         })
                         .end();
             },
@@ -153,7 +148,7 @@ define([
                 return this.remote
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
-                            return assert.equal(elements.length, 1, message);
+                            assert.equal(elements.length, 1, message);
                         })
                         .end();
             },
@@ -161,7 +156,7 @@ define([
                 return this.remote
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
-                            return assert.equal(elements.length, 0, message);
+                            assert.equal(elements.length, 0, message);
                         })
                         .end();
             },
@@ -179,11 +174,8 @@ define([
             assertElementTextEqualTo: function(cssSelector, text, message) {
                 return this.remote
                     .findByCssSelector(cssSelector)
-                        .then(function(element) {
-                            return element.getVisibleText()
-                                .then(function(elementText) {
-                                    assert.equal(elementText, text, message);
-                                });
+                        .getVisibleText().then(function(elementText) {
+                            assert.equal(elementText, text, message);
                         })
                         .end()
             },
@@ -191,7 +183,7 @@ define([
                 return this.remote
                     .findByCssSelector(cssSelector)
                         .getVisibleText().then(function(text) {
-                            return assert.isTrue(parseInt(text) > 0, attributeName + ' is greater than 0');
+                            assert.isTrue(parseInt(text) > 0, attributeName + ' is greater than 0');
                         })
                         .end();
             }

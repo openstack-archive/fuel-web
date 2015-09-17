@@ -197,7 +197,7 @@ class interfaces(urwid.WidgetWrap):
                                  "center"))
                 dhcp_info.append(
                     widget.TextLabel(
-                        "Unable to detect DHCP server" +
+                        "Unable to detect DHCP server " +
                         "on interface %s." % (self.activeiface) +
                         "\nDHCP will be set up in the background, " +
                         "but may not receive an IP address. You may " +

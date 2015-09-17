@@ -449,7 +449,12 @@ class TestHandlers(BaseIntegrationTest):
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
              'pxe': True, 'state': 'up'}])
-        node = self.env.create_node(api=True, meta=meta)
+        self.env.create(
+            nodes_kwargs=[
+                {"api": True, 'meta': meta}
+            ]
+        )
+        node = self.env.nodes[0]
         node_data = {'mac': node['mac'], 'meta': meta}
         # check default interface_properties values
         resp = self.app.get(

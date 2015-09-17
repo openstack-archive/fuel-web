@@ -16,6 +16,7 @@
 
 from copy import deepcopy
 from netaddr import IPNetwork
+import uuid
 
 from oslo_serialization import jsonutils
 
@@ -600,6 +601,8 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
                                   self.data)
         self.assertGreater(len(self.nics_w_nets), 0)
 
+        self.random_uuid = uuid.uuid4().get_hex()
+
     def put_single(self):
         return self.env.node_nics_put(self.env.nodes[0]["id"], self.data,
                                       expect_errors=True)
@@ -625,30 +628,29 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
                              self.nics_w_nets[0]['id'])
         )
 
-    def test_assignment_change_failed_node_has_unassigned_network(self):
-        unassigned_id = self.nics_w_nets[0]["assigned_networks"][0]["id"]
-        self.nics_w_nets[0]["assigned_networks"] = \
-            self.nics_w_nets[0]["assigned_networks"][1:]
-
+    def test_assignment_change_failed_network_not_in_node_group(self):
+        net_id = self.random_uuid
+        self.nics_w_nets[0]["assigned_networks"].append({"id": net_id})
         self.node_nics_put_check_error(
-            "Node '{0}': '{1}' network(s) are left unassigned".format(
-            self.env.nodes[0]["id"], unassigned_id)
+            "Node '{0}': networks with IDs '{1}' cannot be used "
+            "because they are not in node group '{2}'"
+            .format(self.env.nodes[0]["id"], net_id, 'default')
         )
 
-    def test_assignment_change_failed_node_has_unknown_network(self):
-        self.nics_w_nets[0]["assigned_networks"].append({"id": 1234567})
-
+    def test_assignment_change_failed_network_left_unassigned(self):
+        net_id = self.nics_w_nets[0]['assigned_networks'][1]['id']
+        del self.nics_w_nets[0]['assigned_networks'][1]
         self.node_nics_put_check_error(
-            "Network '1234567' doesn't exist for node {0}".format(
-            self.env.nodes[0]["id"])
+            "Node '{0}': {1} network(s) are left unassigned"
+            .format(self.env.nodes[0]['id'], net_id)
         )
 
     def test_nic_change_failed_node_has_unknown_interface(self):
-        self.nics_w_nets[0]["id"] = 1234567
+        self.nics_w_nets[0]["id"] = self.random_uuid
 
         self.node_nics_put_check_error(
-            "Node '{0}': there is no interface with ID '1234567'"
-            " in DB".format(self.env.nodes[0]["id"])
+            "Node '{0}': there is no interface with ID '{1}'"
+            " in DB".format(self.env.nodes[0]["id"], self.random_uuid)
         )
 
     def test_nic_assignment_failed_assign_admin_net_to_non_pxe_iface(self):
@@ -659,3 +661,16 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
             "Node '{0}': admin network can not be assigned to non-pxe"
             " interface eth1".format(self.env.nodes[0]["id"])
         )
+
+    def test_try_net_assignment_for_node_not_in_cluster(self):
+        node = self.env.create_node()
+
+        resp = self.env.node_nics_put(
+            node.id,
+            self.data,
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("node is not added to any cluster",
+                      resp.json_body['message'])

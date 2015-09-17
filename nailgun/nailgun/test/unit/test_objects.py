@@ -1239,3 +1239,7 @@ class TestNetworkGroup(BaseTestCase):
         ip_range = ng.ip_ranges[0]
         self.assertEqual("192.168.10.2", ip_range.first)
         self.assertEqual("192.168.10.254", ip_range.last)
+
+    def test_get_default_networkgroup(self):
+        ng = objects.NetworkGroup.get_default_admin_network()
+        self.assertIsNotNone(ng)

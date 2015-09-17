@@ -76,7 +76,8 @@ define([
                     .type(name)
                     // Enter
                     .type('\uE007')
-                    .end();
+                    .end()
+                .waitForCssSelector('.cluster-info-value.name .btn-link', 1000);
         },
         discardChanges: function() {
             var self = this;

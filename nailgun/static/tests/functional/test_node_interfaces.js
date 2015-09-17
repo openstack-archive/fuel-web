@@ -55,7 +55,7 @@ define([
             teardown: function() {
                 return this.remote
                     .then(function() {
-                        return common.removeCluster(clusterName, true);
+                        return common.removeCluster(clusterName);
                     });
             },
             'Untagged networks error': function() {

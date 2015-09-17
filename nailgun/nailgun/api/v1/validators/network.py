@@ -356,6 +356,7 @@ class NetAssignmentValidator(BasicValidator):
                         log_message=True
                     )
                 net_ids.add(net['id'])
+
         return node
 
     @classmethod
@@ -366,11 +367,6 @@ class NetAssignmentValidator(BasicValidator):
         if 'mode' in iface.get('bond_properties', {}):
             bond_mode = iface['bond_properties']['mode']
         return bond_mode
-
-    @classmethod
-    def validate_structure(cls, webdata):
-        node_data = cls.validate_json(webdata)
-        return cls.validate(node_data)
 
     @classmethod
     def validate_collection_structure_and_data(cls, webdata):
@@ -408,7 +404,6 @@ class NetAssignmentValidator(BasicValidator):
         interfaces = node['interfaces']
         db_interfaces = db_node.nic_interfaces
         net_manager = objects.Cluster.get_network_manager(db_node.cluster)
-        network_group_ids = net_manager.get_node_networkgroups_ids(db_node)
 
         bonded_eth_ids = set()
         pxe_iface_name = net_manager._get_pxe_iface_name(db_node)
@@ -422,6 +417,19 @@ class NetAssignmentValidator(BasicValidator):
         for iface in interfaces:
             iface_nets = [n.get('name')
                           for n in iface.get('assigned_networks')]
+
+            # networks can be assigned only to nodes added
+            # into cluster
+            if iface_nets and not db_node.cluster:
+                raise errors.InvalidData(
+                    "Node '{0}': networks {1} cannot be assigned "
+                    "as the node is not added to any cluster"
+                    .format(
+                        node['id'],
+                        ", ".join(iface_nets)
+                    )
+                )
+
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 db_iface = next(six.moves.filter(
                     lambda i: i.id == iface['id'],
@@ -485,24 +493,6 @@ class NetAssignmentValidator(BasicValidator):
                             log_message=True
                         )
 
-            for net in iface['assigned_networks']:
-                if net['id'] not in network_group_ids:
-                    raise errors.InvalidData(
-                        "Network '{0}' doesn't exist for node {1}".format(
-                            net['id'], node['id']),
-                        log_message=True
-                    )
-                network_group_ids.remove(net['id'])
-
-        if network_group_ids:
-            str_ng_ids = ["'" + str(ng_id) + "'"
-                          for ng_id in network_group_ids]
-            raise errors.InvalidData(
-                "Node '{0}': {1} network(s) are left unassigned".format(
-                    node['id'], ",".join(str_ng_ids)),
-                log_message=True
-            )
-
         for iface in interfaces:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
                     and iface['id'] in bonded_eth_ids \
@@ -513,6 +503,57 @@ class NetAssignmentValidator(BasicValidator):
                     "bond".format(node['id'], iface['id']),
                     log_message=True
                 )
+
+        cls.check_networks_are_acceptable_for_node_to_assign(interfaces,
+                                                             node['id'])
+
+    @classmethod
+    def check_networks_are_acceptable_for_node_to_assign(cls, interfaces,
+                                                         node_id):
+        # get list of available networks for the node via nodegroup
+        node_db = objects.Node.get_by_uid(node_id)
+        node_group_db = node_db.nodegroup
+        net_group_ids = set(n.id for n in node_group_db.networks)
+
+        # NOTE(aroma): fuelweb_admin network is shared between
+        # default nodegroups of clusters hence holds no value
+        # in 'group_id' field yet still must be included into list
+        # of networks available for assignment
+        if node_group_db.name == consts.NODE_GROUPS.default:
+            fuelweb_admin_net = \
+                objects.NetworkGroup.get_default_admin_network()
+            net_group_ids.add(fuelweb_admin_net.id)
+
+        net_ids = set()
+        for iface in interfaces:
+            net_ids.update(
+                set(net['id'] for net in iface['assigned_networks'])
+            )
+
+        if net_ids:
+            if not net_ids.issubset(net_group_ids):
+                invalid_ids = net_ids - net_group_ids
+                raise errors.InvalidData(
+                    "Node '{0}': networks with IDs '{1}' cannot be used "
+                    "because they are not in node group '{2}'".format(
+                        node_db.id,
+                        ', '.join(six.text_type(n) for n in invalid_ids),
+                        node_group_db.name
+                    ),
+                    log_message=True
+                )
+            else:
+                unassigned_net_ids = net_group_ids - net_ids
+                if unassigned_net_ids:
+                    raise errors.InvalidData(
+                        "Node '{0}': {1} network(s) are left unassigned"
+                        .format(
+                            node_db.id,
+                            ",".join(six.text_type(n) for n
+                                     in unassigned_net_ids)
+                        ),
+                        log_message=True
+                    )
 
 
 class NetworkGroupValidator(NetworkConfigurationValidator):

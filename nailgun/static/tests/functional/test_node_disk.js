@@ -64,6 +64,12 @@ define([
                         })
                         .end();
             },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return common.removeCluster(clusterName);
+                    });
+            },
             'Testing nodes disks layout': function() {
                 return this.remote
                     .then(function() {
@@ -118,6 +124,7 @@ define([
                     // wait for changes applied
                     .waitForElementDeletion('.btn-load-defaults:disabled', 2000)
                     .clickByCssSelector(loadDefaultsButtonSelector)
+                    .waitForCssSelector(loadDefaultsButtonSelector + ':not(:disabled)', 2000)
                     .then(function() {
                         return common.assertElementValueEqualTo(sdaDisk + ' input[type=number][name=image]', initialImageSize, 'Image Storage size restored to default');
                     })

@@ -27,7 +27,8 @@ define([
         var common,
             clusterPage,
             dashboardPage,
-            clusterName;
+            clusterName,
+            vCenterClusterName = 'VCenter test';
 
         return {
             name: 'Dashboard tab',
@@ -51,9 +52,17 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     });
             },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return common.removeCluster(clusterName);
+                    })
+                    .then(function() {
+                        return common.removeCluster(vCenterClusterName);
+                    });
+            },
             'Renaming cluster works': function() {
-                var initialName = clusterName,
-                    newName = clusterName + '!!!',
+                var newName = clusterName + '!!!',
                     renameInputSelector = '.rename-block input[type=text]',
                     nameSelector = '.cluster-info-value.name .btn-link';
                 return this.remote
@@ -68,7 +77,7 @@ define([
                         return common.assertElementNotExists(renameInputSelector, 'Rename control disappears');
                     })
                     .then(function() {
-                        return common.assertElementTextEqualTo(nameSelector, initialName,
+                        return common.assertElementTextEqualTo(nameSelector, clusterName,
                             'Switching rename control does not change cluster name');
                     })
                     .then(function() {
@@ -78,7 +87,7 @@ define([
                         return common.assertElementTextEqualTo(nameSelector, newName, 'New name is applied');
                     })
                     .then(function() {
-                        return dashboardPage.setClusterName(initialName);
+                        return dashboardPage.setClusterName(clusterName);
                     });
             },
             'Provision button availability': function() {
@@ -270,7 +279,6 @@ define([
                     });
             },
             'VCenter warning appears': function() {
-                var vCenterClusterName = clusterName + 'VCenter test';
                 return this.remote
                     .clickLinkByText('Environments')
                     // needed here to wait for transition

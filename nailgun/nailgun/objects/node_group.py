@@ -18,7 +18,7 @@
 from nailgun.objects.serializers.node_group import NodeGroupSerializer
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NodeGroup as DBNodeGroup
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
@@ -27,7 +27,7 @@ from nailgun.objects import NailgunObject
 
 class NodeGroup(NailgunObject):
 
-    model = DBNodeGroup
+    model = models.NodeGroup
     serializer = NodeGroupSerializer
 
     schema = {
@@ -64,6 +64,17 @@ class NodeGroup(NailgunObject):
 
         db().flush()
         return new_group
+
+    @classmethod
+    def get_by_node_id(cls, node_uid):
+        """Get NodeGroup instance by corresponding node ID.
+
+        :param node_uid: Node ID
+        :returns: NodeGroup instance
+        """
+        node_db = db().query(models.Node).get(node_uid)
+        node_group_db = db().query(models.NodeGroup).get(node_db.group_id)
+        return node_group_db
 
 
 class NodeGroupCollection(NailgunCollection):

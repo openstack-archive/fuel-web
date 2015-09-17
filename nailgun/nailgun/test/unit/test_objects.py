@@ -1239,3 +1239,17 @@ class TestNetworkGroup(BaseTestCase):
         ip_range = ng.ip_ranges[0]
         self.assertEqual("192.168.10.2", ip_range.first)
         self.assertEqual("192.168.10.254", ip_range.last)
+
+
+class TestNodeGroup(BaseTestCase):
+
+    def test_get_by_node_id(self):
+        cluster = self.env.create_cluster()
+        node_group = NodeGroup(cluster_id=cluster['id'], name='test')
+        self.db.add(node_group)
+        self.db.flush()
+
+        node = self.env.create_node(group_id=node_group.id)
+
+        node_gr_db = objects.NodeGroup.get_by_node_id(node.id)
+        self.assertEqual(node_group.id, node_gr_db.id)

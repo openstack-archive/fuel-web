@@ -386,7 +386,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .clamp {
   width: 100%;
   max-width: @page-width;
-  min-width: @page-width;
   margin-left: auto;
   margin-right: auto;
   height: auto !important;
@@ -394,6 +393,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   &:after {
     .clearfix;
   }
+  &.fixed-width-layout {min-width: @page-width;}
 }
 
 .content-elements:last-child::after {

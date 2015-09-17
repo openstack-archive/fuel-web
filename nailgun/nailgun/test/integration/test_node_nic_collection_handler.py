@@ -113,9 +113,8 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         meta = self.env.default_metadata()
         meta['interfaces'] = [{'name': 'eth0', 'pxe': True},
                               {'name': 'eth1'}]
-        self.env.create_node(
-            roles=['controller'],
-            meta=meta
+        self.env.create(
+            nodes_kwargs=[{'roles': ['controller'], 'meta': meta}]
         )
         node = self.env.nodes[0]
         for status, lock in six.iteritems(lock_vs_status):

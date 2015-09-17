@@ -38,6 +38,13 @@ class NetworkGroup(NailgunObject):
         return ng.first() if ng else None
 
     @classmethod
+    def get_default_admin_network(cls):
+        return db().query(models.NetworkGroup)\
+            .filter_by(name=consts.NETWORKS.fuelweb_admin)\
+            .filter_by(group_id=None)\
+            .first()
+
+    @classmethod
     def create(cls, data):
         """Create NetworkGroup instance with specified parameters in DB.
 

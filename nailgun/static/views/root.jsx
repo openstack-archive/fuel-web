@@ -17,11 +17,12 @@ define([
     'underscore',
     'i18n',
     'react',
+    'utils',
     'jsx!views/layout',
     'dispatcher',
     'jsx!component_mixins',
     'react-dnd'
-], function(_, i18n, React, layoutComponents, dispatcher, componentMixins, DND) {
+], function(_, i18n, React, utils, layoutComponents, dispatcher, componentMixins, DND) {
     'use strict';
 
     var RootComponent = React.createClass({
@@ -57,9 +58,13 @@ define([
         render: function() {
             var Page = this.state.Page;
             if (!Page) return null;
+            var layoutClasses = {
+                clamp: true,
+                'fixed-width-layout': !Page.hiddenLayout
+            };
             return (
                 <div id='content-wrapper'>
-                    <div className='clamp'>
+                    <div className={utils.classNames(layoutClasses)}>
                         {!Page.hiddenLayout && [
                             <layoutComponents.Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
                             <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,

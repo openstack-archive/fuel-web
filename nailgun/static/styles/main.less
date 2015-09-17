@@ -386,7 +386,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .clamp {
   width: 100%;
   max-width: @page-width;
-  min-width: @page-width;
   margin-left: auto;
   margin-right: auto;
   height: auto !important;
@@ -394,6 +393,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   &:after {
     .clearfix;
   }
+  &.fixed-width-layout {min-width: @page-width;}
 }
 
 .content-elements:last-child::after {
@@ -2574,48 +2574,48 @@ input[type=range] {
 
 .login-page {
   @login-indent: 20px;
-  .login-box {
-    position: relative;
-    background-color: @white;
-    color: @base-text-color;
-    border-radius: 18px;
-    margin-top: 10%;
-    box-shadow: 0 1px 1px @shadow-color;
-  }
-
-  .login-logo-circle {
-    @logo-circle-size: 160px;
-    background-color: @white;
-    position: relative;
-    width: @logo-circle-size;
-    height: @logo-circle-size;
-    top: -@logo-circle-size / 2;
-    border-radius: @logo-circle-size / 2;
-    margin: 0 auto;
-  }
-
-  .login-logo {
-    @logo-width: 200px;
-    @logo-height: 260px;
-    background: url(../img/fuel-big-logo.svg) repeat scroll 0 0 rgba(0, 0, 0, 0);
-    position: relative;
-    top: -@logo-height + @login-indent;
-    width: @logo-width;
-    height: @logo-height;
-    margin: 0 auto -(@logo-height - 40px) auto;
-  }
-
-  .login-fields-box {
-    overflow: hidden;
-    padding-top: 10px;
-    form {
-      label {
-        font-size: @base-font-size + 1;
-        padding-top: 6px;
-        padding-right: 0;
-        text-align: right;
-        .glyphicon {
-          color: @gray;
+  @logo-circle-size: 160px;
+  .container {
+    margin-top: @logo-circle-size / 2;
+    .box {
+      position: relative;
+      background-color: @white;
+      color: @base-text-color;
+      border-radius: 18px;
+      margin-top: 10%;
+      box-shadow: 0 1px 1px @shadow-color;
+      .logo-circle {
+        background-color: @white;
+        position: relative;
+        width: @logo-circle-size;
+        height: @logo-circle-size;
+        top: -@logo-circle-size / 2;
+        border-radius: @logo-circle-size / 2;
+        margin: 0 auto;
+      }
+      .logo {
+        @logo-width: 200px;
+        @logo-height: 260px;
+        background: url(../img/fuel-big-logo.svg) repeat scroll 0 0 rgba(0, 0, 0, 0);
+        position: relative;
+        top: -@logo-height + @login-indent;
+        width: @logo-width;
+        height: @logo-height;
+        margin: 0 auto -(@logo-height - 40px) auto;
+      }
+      .fields-box {
+        overflow: hidden;
+        padding-top: 10px;
+        form {
+          label {
+            font-size: @base-font-size + 1;
+            padding-top: 6px;
+            padding-right: 0;
+            text-align: right;
+            .glyphicon {
+              color: @gray;
+            }
+          }
         }
       }
     }
@@ -2645,7 +2645,7 @@ input[type=range] {
     padding-right: @login-indent;
   }
 
-  .login-footer {
+  .footer {
     margin-top: @login-indent;
     font-size: 12px;
     color: @base-dark-color + 60%;

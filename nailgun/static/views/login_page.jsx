@@ -33,14 +33,16 @@ function($, _, i18n, React, dispatcher, utils) {
         render: function() {
             return (
                 <div className='login-page'>
-                    <div className='login-box col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
-                        <div className='login-logo-circle'></div>
-                        <div className='login-logo'></div>
-                        <div className='login-fields-box'>
-                            <LoginForm />
+                    <div className='container col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
+                        <div className='box'>
+                            <div className='logo-circle'></div>
+                            <div className='logo'></div>
+                            <div className='fields-box'>
+                                <LoginForm />
+                            </div>
                         </div>
                     </div>
-                    <div className='login-footer col-xs-12'>
+                    <div className='footer col-xs-12'>
                         {_.contains(app.version.get('feature_groups'), 'mirantis') &&
                             <p className='text-center'>{i18n('common.copyright')}</p>
                         }

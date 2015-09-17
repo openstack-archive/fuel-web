@@ -319,13 +319,13 @@ function run_ui_func_tests {
   local result=0
   local pid
 
+  dropdb $config
+  syncdb $config true
+
+  run_server $SERVER_PORT $server_log $config || \
+    { echo 'Failed to start Nailgun'; return 1; }
+
   for testcase in $TESTS; do
-
-    dropdb $config
-    syncdb $config true
-
-    run_server $SERVER_PORT $server_log $config || \
-      { echo 'Failed to start Nailgun'; return 1; }
 
     SERVER_PORT=$SERVER_PORT \
     ARTIFACTS=$artifacts \
@@ -335,9 +335,9 @@ function run_ui_func_tests {
       break
     fi
 
-    kill_server $SERVER_PORT
-
   done
+
+  kill_server $SERVER_PORT
 
   rm $server_log
   popd >> /dev/null

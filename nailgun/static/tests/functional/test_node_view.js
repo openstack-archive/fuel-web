@@ -50,6 +50,12 @@ define([
                         return common.createCluster(clusterName);
                     });
             },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return common.removeCluster(clusterName);
+                    });
+            },
             'Standard node panel': function() {
                 return this.remote
                     .then(function() {
@@ -118,6 +124,7 @@ define([
                         .type(newHostname)
                         .pressKeys('\uE007')
                         .end()
+                    .waitForCssSelector('span.node-hostname', 1000)
                     .then(function() {
                         return common.assertElementTextEqualTo('span.node-hostname', newHostname, 'Node hostname has been updated');
                     })

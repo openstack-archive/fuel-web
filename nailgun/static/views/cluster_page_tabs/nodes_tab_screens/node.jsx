@@ -290,6 +290,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 'col-xs-12': this.props.viewMode != 'compact',
                 unavailable: !isSelectable
             };
+            nodePanelClasses['id-' + node.id] = true;
             nodePanelClasses[status] = status;
 
             var manufacturer = node.get('manufacturer') || '',

@@ -202,7 +202,6 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(
             objects.Node.get_kernel_params(node_db),
             (
-                'console=ttyS0,9600 '
                 'console=tty0 '
                 'biosdevname=0 '
                 'crashkernel=none '
@@ -220,7 +219,6 @@ class TestNodeObject(BaseIntegrationTest):
                         "kernel_params": {
                             "kernel": {
                                 "value": (
-                                    "console=ttyS0,9600 "
                                     "console=tty0 "
                                     "rootdelay=90 "
                                     "nomodeset"
@@ -239,7 +237,6 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(
             objects.Node.get_kernel_params(node_db),
             (
-                'console=ttyS0,9600 '
                 'console=tty0 '
                 'rootdelay=90 '
                 'nomodeset'

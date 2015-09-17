@@ -301,7 +301,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
                 'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
             })
             glance_properties.append('--property vmware_disktype=sparse')
-            glance_properties.append('--property vmware_adaptertype=lsilogic')
+            glance_properties.append('--property vmware_adaptertype=lsiLogic')
             glance_properties.append('--property hypervisor_type=vmware')
 
         image_data['glance_properties'] = ' '.join(glance_properties)
@@ -487,7 +487,7 @@ class DeploymentHASerializer61(DeploymentHASerializer,
             })
             image_vmdk_data['glance_properties'] = ' '.join([
                 '--property vmware_disktype=sparse',
-                '--property vmware_adaptertype=lsilogic',
+                '--property vmware_adaptertype=lsiLogic',
                 '--property hypervisor_type=vmware'])
             images_data['test_vm_image'].append(image_vmdk_data)
             images_data['test_vm_image'].append(image_data['test_vm_image'])

@@ -152,6 +152,24 @@ define([
                         })
                         .end();
             },
+            assertElementDisplayed: function(cssSelector, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .isDisplayed()
+                            .then(function(isDisplayed) {
+                                assert.isTrue(isDisplayed, message);
+                            })
+                        .end();
+            },
+            assertElementNotDisplayed: function(cssSelector, message) {
+                return this.remote
+                    .findByCssSelector(cssSelector)
+                        .isDisplayed()
+                            .then(function(isDisplayed) {
+                                assert.isFalse(isDisplayed, message);
+                            })
+                        .end();
+            },
             assertElementExists: function(cssSelector, message) {
                 return this.remote
                     .findAllByCssSelector(cssSelector)

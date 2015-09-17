@@ -27,6 +27,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.errors import errors
 from nailgun import objects
 
@@ -357,6 +358,22 @@ class NetAssignmentValidator(BasicValidator):
                         log_message=True
                     )
                 net_ids.add(net['id'])
+
+                node_group = db().query(NodeGroup).get(node['id']).first()
+                network_group_ids = set([net.id for net in node_group.networks])
+                if net_ids not in network_group_ids:
+                    invalid_ids = ', '.join(
+                        str(x) for x in net_ids - network_group_ids)
+                    raise errors.InvalidData(
+                        "Node '{0}': networks with IDs '{1}' cannot be used "
+                        "because of they are not in node group '{2}'".format(
+                            node['id'],
+                            invalid_ids,
+                            node_group.name
+                        ),
+                        log_message=True
+                    )
+
         return node
 
     @classmethod

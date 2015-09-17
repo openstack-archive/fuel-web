@@ -300,7 +300,7 @@ define([
                 return this.remote
                     // Tunneling segmentation tests
                     .then(function() {
-                        return common.assertElementExists('.network-section-wrapper.private',
+                        return common.assertElementExists('.private',
                             'Private Network is visible for tunneling segmentation type');
                     })
                     .then(function() {
@@ -316,7 +316,7 @@ define([
                         return clusterPage.goToTab('Networks');
                     })
                     .then(function() {
-                        return common.assertElementNotExists('.network-section-wrapper.private',
+                        return common.assertElementNotExists('.private',
                             'Private Network is not visible for vlan segmentation type');
                     })
                     .then(function() {

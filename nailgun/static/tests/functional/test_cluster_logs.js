@@ -49,6 +49,12 @@ define([
                         return clusterPage.goToTab('Logs');
                     });
             },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return common.removeCluster(clusterName);
+                    });
+            },
             '"Show" button availability and logs displaying': function() {
                 var showLogsButtonSelector = '.sticker button';
                 return this.remote
@@ -71,9 +77,8 @@ define([
                     .waitForCssSelector('.log-entries > tbody > tr', 5000)
                     // "Other servers" option is present in "Logs" dropdown
                     .clickByCssSelector('.sticker select[name=type] > option[value=remote]')
-                    .then(function() {
-                        return common.assertElementExists('.sticker select[name=node] > option', '"Node" dropdown is present');
-                    });
+                    // "Node" dropdown is present
+                    .waitForCssSelector('.sticker select[name=node] > option', 1000);
             }
         };
     });

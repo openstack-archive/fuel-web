@@ -33,11 +33,13 @@ function($, _, i18n, React, dispatcher, utils) {
         render: function() {
             return (
                 <div className='login-page'>
-                    <div className='login-box col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
-                        <div className='login-logo-circle'></div>
-                        <div className='login-logo'></div>
-                        <div className='login-fields-box'>
-                            <LoginForm />
+                    <div className='login-container col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
+                        <div className='login-box'>
+                            <div className='login-logo-circle'></div>
+                            <div className='login-logo'></div>
+                            <div className='login-fields-box'>
+                                <LoginForm />
+                            </div>
                         </div>
                     </div>
                     <div className='login-footer col-xs-12'>

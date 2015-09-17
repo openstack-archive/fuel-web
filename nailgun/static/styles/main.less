@@ -386,7 +386,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .clamp {
   width: 100%;
   max-width: @page-width;
-  min-width: @page-width;
   margin-left: auto;
   margin-right: auto;
   height: auto !important;
@@ -394,6 +393,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   &:after {
     .clearfix;
   }
+  &.fixed-width-layout {min-width: @page-width;}
 }
 
 .content-elements:last-child::after {
@@ -2574,6 +2574,8 @@ input[type=range] {
 
 .login-page {
   @login-indent: 20px;
+  @logo-circle-size: 160px;
+  .login-container {margin-top: @logo-circle-size / 2;}
   .login-box {
     position: relative;
     background-color: @white;
@@ -2584,7 +2586,6 @@ input[type=range] {
   }
 
   .login-logo-circle {
-    @logo-circle-size: 160px;
     background-color: @white;
     position: relative;
     width: @logo-circle-size;

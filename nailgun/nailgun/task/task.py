@@ -1286,7 +1286,7 @@ class CreateStatsUserTask(object):
                         'puppet_modules': '/etc/puppet/modules',
                         'puppet_manifest': '/etc/puppet/modules/osnailyfacter'
                                            '/modular/keystone'
-                                           '/workloads_collector.pp',
+                                           '/workloads_collector_add.pp',
                         'cwd': '/',
                     }
                 }]
@@ -1318,7 +1318,7 @@ class RemoveStatsUserTask(object):
                         'puppet_modules': '/etc/puppet/modules',
                         'puppet_manifest': '/etc/puppet/modules/osnailyfacter'
                                            '/modular/keystone'
-                                           '/remove_workloads_collector.pp',
+                                           '/workloads_collector_remove.pp',
                         'cwd': '/',
                     }
                 }]

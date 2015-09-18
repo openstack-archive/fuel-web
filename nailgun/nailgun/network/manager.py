@@ -475,6 +475,25 @@ class NetworkManager(object):
                     yield ip_str
 
     @classmethod
+    def check_ips_belong_to_admin_ranges(cls, ips):
+        """
+        Returns *True* if every provided IP belongs to any
+        Admin networks' IP range.
+
+        :param ips: list of IPs (e.g. ['192.168.1.1', '127.0.0.1'], ...)
+        :return: *True* if all IPs belong to Admin ranges or *False* otherwise
+        """
+        admin_ranges_db = db().query(
+            IPAddrRange.first,
+            IPAddrRange.last
+        ).join(
+            NetworkGroup
+        ).filter(
+            NetworkGroup.name == consts.NETWORKS.fuelweb_admin
+        )
+        return cls.check_ips_belong_to_ranges(ips, admin_ranges_db)
+
+    @classmethod
     def get_free_ips_from_ranges(cls, net_name, ip_ranges, ips_in_use, count):
         """Returns list of free IP addresses for given IP ranges. Required
         quantity of IPs is set in "count". IP addresses which exist in

@@ -13,6 +13,7 @@
 #    under the License.
 
 import alembic
+from datetime import datetime
 import six
 import sqlalchemy as sa
 from sqlalchemy.exc import DataError
@@ -296,3 +297,33 @@ class TestTaskNameMigration(base.BaseAlembicMigrationTest):
                              {'name': 'wrong_task_name',
                               'uuid': str(uuid.uuid4()),
                               'status': 'running'})
+
+
+class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
+
+    def test_node_error_type_enum(self):
+        added_error_types = ('discover',)
+        nodes_table = self.meta.tables['nodes']
+        for error_type in added_error_types:
+            insert_table_row(nodes_table,
+                             {'name': 'node1',
+                              'status': 'error',
+                              'error_type': error_type,
+                              'uuid': str(uuid.uuid4()),
+                              'mac': '00:00:00:00:00:00',
+                              'timestamp': datetime.now()})
+            inserted_count = db.execute(
+                sa.select([sa.func.count(nodes_table.c.error_type)]).
+                where(sa.and_(nodes_table.c.error_type == error_type))
+            ).fetchone()[0]
+            self.assertEqual(inserted_count, 1)
+
+        with self.assertRaisesRegexp(DataError, 'invalid input value for '
+                                                'enum node_error_type'):
+            insert_table_row(nodes_table,
+                             {'name': 'node1',
+                              'status': 'error',
+                              'error_type': 'wrong_error_type',
+                              'uuid': str(uuid.uuid4()),
+                              'mac': '00:00:00:00:00:00',
+                              'timestamp': datetime.now()})

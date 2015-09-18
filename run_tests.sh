@@ -283,16 +283,10 @@ function run_ui_unit_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_ui_func_tests {
   local SERVER_PORT=$UI_SERVER_PORT
-  local TESTS_DIR=$ROOT/nailgun/static/tests/functional
-  local TESTS=$TESTS_DIR/test_*.js
   local artifacts=$ARTIFACTS/ui_func
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config
   local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
-
-  if [ $# -ne 0 ]; then
-    TESTS=$@
-  fi
 
   pushd $ROOT/nailgun >> /dev/null
 
@@ -325,17 +319,21 @@ function run_ui_func_tests {
   run_server $SERVER_PORT $server_log $config || \
     { echo 'Failed to start Nailgun'; return 1; }
 
-  for testcase in $TESTS; do
-
+  if [ $# -ne 0 ]; then
     SERVER_PORT=$SERVER_PORT \
     ARTIFACTS=$artifacts \
-    ${GULP} functional-tests --suites=$testcase
+    ${GULP} functional-tests --suites=$@
     if [ $? -ne 0 ]; then
       result=1
-      break
     fi
-
-  done
+  else
+    SERVER_PORT=$SERVER_PORT \
+    ARTIFACTS=$artifacts \
+    ${GULP} functional-tests
+    if [ $? -ne 0 ]; then
+      result=1
+    fi
+  fi
 
   kill_server $SERVER_PORT
 

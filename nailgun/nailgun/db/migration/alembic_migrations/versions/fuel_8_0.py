@@ -60,12 +60,27 @@ task_names_new = task_names_old + (
 )
 
 
+node_errors_old = (
+    'deploy',
+    'provision',
+    'deletion',
+)
+node_errors_new = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+)
+
+
 def upgrade():
     upgrade_nodegroups_name_cluster_constraint()
     task_names_upgrade()
+    add_node_discover_error_upgrade()
 
 
 def downgrade():
+    add_node_discover_error_downgrade()
     task_names_downgrade()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
 
@@ -111,4 +126,24 @@ def task_names_downgrade():
         "task_name",                # ENUM name
         task_names_new,             # old options
         task_names_old              # new options
+    )
+
+
+def add_node_discover_error_upgrade():
+    upgrade_enum(
+        "nodes",                    # table
+        "error_type",               # column
+        "node_error_type",          # ENUM name
+        node_errors_old,          # old options
+        node_errors_new           # new options
+    )
+
+
+def add_node_discover_error_downgrade():
+    upgrade_enum(
+        "nodes",                    # table
+        "error_type",               # column
+        "node_error_type",          # ENUM name
+        node_errors_new,          # old options
+        node_errors_old           # new options
     )

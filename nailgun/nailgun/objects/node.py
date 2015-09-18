@@ -248,9 +248,71 @@ class Node(NailgunObject):
         cls.create_attributes(new_node)
         cls.create_discover_notification(new_node)
 
+        if new_node.ip:
+            cls.check_ip_belongs_to_any_admin_network(new_node)
+
         fire_callback_on_node_create(new_node)
 
         return new_node
+
+    @classmethod
+    def set_error_status_and_file_notification(cls, instance, etype, emessage):
+        instance.status = consts.NODE_STATUSES.error
+        instance.error_type = etype
+        instance.error_msg = emessage
+        db().flush()
+        Notification.create({
+            "topic": consts.NOTIFICATION_TOPICS.error,
+            "message": instance.error_msg,
+            "node_id": instance.id
+        })
+
+    @classmethod
+    def check_ip_belongs_to_any_admin_network(cls, instance, new_ip=None):
+        """Checks that node's IP belongs to any of Admin networks IP ranges.
+
+        Node can be inside or out of a cluster. Set node to error and file a
+        notification if node's IP does not belong to any of Admin networks.
+
+        :param instance: node instance
+        :param new_ip:   new IP for a node (got from Nailgun agent)
+        :return:         True if IP belongs to any of Admin networks
+        """
+        ip = new_ip or instance.ip
+        nm = Cluster.get_network_manager(instance.cluster)
+        match = nm.check_ips_belong_to_admin_ranges([ip])
+        if not match:
+            cls.set_error_status_and_file_notification(
+                instance,
+                consts.NODE_ERRORS.discover,
+                "Node '{0}' has IP '{1}' that does not match any Admin "
+                "network".format(instance.hostname, ip)
+            )
+        return match
+
+    @classmethod
+    def check_ip_belongs_to_own_admin_network(cls, instance, new_ip=None):
+        """Checks that node's IP belongs to node's Admin network IP ranges.
+
+        Node should be inside a cluster. Set node to error and file a
+        notification if node's IP does not belong to its Admin network.
+
+        :param instance: node instance
+        :param new_ip:   new IP for a node (got from Nailgun agent)
+        :return:         True if IP belongs to node's Admin network
+        """
+        ip = new_ip or instance.ip
+        nm = Cluster.get_network_manager(instance.cluster)
+        admin_ng = nm.get_admin_network_group(instance.id)
+        match = nm.is_same_network(ip, admin_ng.cidr)
+        if not match:
+            cls.set_error_status_and_file_notification(
+                instance,
+                consts.NODE_ERRORS.discover,
+                "Node '{0}' has IP '{1}' that does not match its own Admin "
+                "network '{2}'".format(instance.hostname, ip, admin_ng.cidr)
+            )
+        return match
 
     @classmethod
     def assign_group(cls, instance):
@@ -565,6 +627,7 @@ class Node(NailgunObject):
         :returns: Node instance
         """
         # don't update provisioning and error back to discover
+        data_status = data.get('status')
         if instance.status in ('provisioning', 'error'):
             if data.get('status', 'discover') == 'discover':
                 logger.debug(
@@ -574,7 +637,7 @@ class Node(NailgunObject):
                     )
                 )
 
-                data['status'] = instance.status
+                data.pop('status', None)
 
         meta = data.get('meta', {})
         # don't update volume information, if agent has sent an empty array
@@ -596,14 +659,24 @@ class Node(NailgunObject):
 
         # (dshulyak) change this verification to NODE_STATUSES.deploying
         # after we will reuse ips from dhcp range
-        netmanager = Cluster.get_network_manager()
-        admin_ng = netmanager.get_admin_network_group(instance.id)
-        if data.get('ip') and not netmanager.is_same_network(data['ip'],
-                                                             admin_ng.cidr):
-            logger.debug(
-                'Corrupted network data %s, skipping update',
-                instance.id)
-            return instance
+        if data.get('ip'):
+            if instance.cluster_id:
+                update_status = cls.check_ip_belongs_to_own_admin_network(
+                    instance, data['ip'])
+            else:
+                update_status = cls.check_ip_belongs_to_any_admin_network(
+                    instance, data['ip'])
+            if update_status:
+                if instance.status == consts.NODE_STATUSES.error and \
+                        instance.error_type == consts.NODE_ERRORS.discover:
+                    # accept the status from agent if the node had wrong IP
+                    # previously
+                    if data_status:
+                        instance.status = data_status
+                    else:
+                        instance.status = consts.NODE_STATUSES.discover
+            else:
+                data.pop('status', None)
         return cls.update(instance, data)
 
     @classmethod

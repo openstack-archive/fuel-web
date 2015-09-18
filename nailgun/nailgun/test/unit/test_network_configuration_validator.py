@@ -13,6 +13,8 @@
 #    under the License.
 
 import mock
+import netaddr
+
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
@@ -324,6 +326,47 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         self.assertRaisesInvalidData(
             "'use_gateway' cannot be provided without gateway")
 
+    @mock.patch('nailgun.rpc.cast')
+    def test_validate_admin_ips(self, _):
+        node_ip = self.env.nodes[0].ip
+        admin = self.find_net_by_name('fuelweb_admin')
+        admin['ip_ranges'] = [[str(netaddr.IPAddress(node_ip) + 1),
+                               str(netaddr.IPAddress(node_ip) + 10)]]
+
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            self.config,
+            expect_errors=True)
+        self.assertEqual(400, resp_neutron_net.status_code)
+        # check for node in cluster failed
+        self.assertEqual(
+            "New IP ranges for network '{0}'({1}) conflict "
+            "with nodes' IPs.".format(admin['name'], admin['id']),
+            resp_neutron_net.json_body['message'])
+
+        admin['ip_ranges'] = [[str(netaddr.IPAddress(node_ip)),
+                               str(netaddr.IPAddress(node_ip) + 10)]]
+
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            self.config)
+        self.assertEqual(200, resp_neutron_net.status_code)
+
+        self.env.create_node(api=True, ip=str(netaddr.IPAddress(node_ip) + 10))
+
+        admin['ip_ranges'] = [[str(netaddr.IPAddress(node_ip)),
+                               str(netaddr.IPAddress(node_ip) + 9)]]
+
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            self.config,
+            expect_errors=True)
+        self.assertEqual(400, resp_neutron_net.status_code)
+        # check for node outside cluster failed
+        self.assertEqual("New IP ranges for Admin networks conflict with "
+                         "bootstrap nodes' IPs.",
+                         resp_neutron_net.json_body['message'])
+
     def test_check_ip_conflicts(self):
         nm = objects.Cluster.get_network_manager(self.cluster)
         mgmt = self.find_net_by_name('management')
@@ -335,23 +378,31 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
                              "Default IPs were changed for some reason.")
 
         mgmt['cidr'] = '10.101.0.0/24'
+        ranges = NetworkConfigurationValidator._get_network_ip_ranges(
+            mgmt, mgmt_db, 'cidr', False)
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, mgmt_db, nm, 'cidr', False)
+            mgmt, mgmt_db, nm, ranges)
         self.assertTrue(result)
 
         mgmt['cidr'] = '192.168.0.0/28'
+        ranges = NetworkConfigurationValidator._get_network_ip_ranges(
+            mgmt, mgmt_db, 'cidr', False)
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, mgmt_db, nm, 'cidr', False)
+            mgmt, mgmt_db, nm, ranges)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['192.168.0.1', '192.168.0.15']]
+        ranges = NetworkConfigurationValidator._get_network_ip_ranges(
+            mgmt, mgmt_db, 'ip_ranges', False)
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, mgmt_db, nm, 'ip_ranges', False)
+            mgmt, mgmt_db, nm, ranges)
         self.assertFalse(result)
 
         mgmt['ip_ranges'] = [['10.101.0.1', '10.101.0.255']]
+        ranges = NetworkConfigurationValidator._get_network_ip_ranges(
+            mgmt, mgmt_db, 'ip_ranges', False)
         result = NetworkConfigurationValidator._check_for_ip_conflicts(
-            mgmt, mgmt_db, nm, 'ip_ranges', False)
+            mgmt, mgmt_db, nm, ranges)
         self.assertTrue(result)
 
 

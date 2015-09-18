@@ -15,11 +15,13 @@
 #    under the License.
 
 from oslo_serialization import jsonutils
+import netaddr
 
 from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Notification
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -319,12 +321,23 @@ class TestHandlers(BaseIntegrationTest):
         self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps({'id': node.id,
-                             'ip': ipaddress}),
+                             'ip': ipaddress,
+                             'status': consts.NODE_STATUSES.discover}),
             headers=self.default_headers)
 
-        self.assertNotEqual(node.ip, ipaddress)
+        self.assertEqual(node.ip, ipaddress)
+        self.assertEqual(node.status, consts.NODE_STATUSES.error)
+        notif = self.db.query(Notification).filter_by(
+            node_id=node.id,
+            topic='error'
+        ).first()
+        self.assertRegexpMatches(notif.message,
+                                 "that does not match any Admin network")
 
-        ipaddress = '10.20.0.25'
+        nm = objects.Cluster.get_network_manager(node.cluster)
+        admin_ng = nm.get_admin_network_group(node.id)
+        ipaddress = str(netaddr.IPRange(admin_ng.ip_ranges[0].first,
+                                        admin_ng.ip_ranges[0].last)[1])
         self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps({'id': node.id,
@@ -332,6 +345,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(node.ip, ipaddress)
+        self.assertEqual(node.status, consts.NODE_STATUSES.discover)
 
     def test_update_node_with_none_ip(self):
         node = self.env.create_node(api=False, ip='10.20.0.2')

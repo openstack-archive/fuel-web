@@ -116,6 +116,19 @@ node_statuses_new = (
 )
 
 
+node_errors_old = (
+    'deploy',
+    'provision',
+    'deletion',
+)
+node_errors_new = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+)
+
+
 task_names_old = (
     'super',
     'deploy',
@@ -340,8 +353,28 @@ def upgrade_schema():
         task_names_new              # new options
     )
 
+    # Add node discover error
+    upgrade_enum(
+        "nodes",                    # table
+        "error_type",               # column
+        "node_error_type",          # ENUM name
+        node_errors_old,          # old options
+        node_errors_new           # new options
+    )
+    # Add node discover error =end=
+
 
 def downgrade_schema():
+    # Add node discover error
+    upgrade_enum(
+        "nodes",                    # table
+        "error_type",               # column
+        "node_error_type",          # ENUM name
+        node_errors_new,          # old options
+        node_errors_old           # new options
+    )
+    # Add node discover error =end=
+
     upgrade_enum(
         "tasks",                    # table
         "name",                     # column

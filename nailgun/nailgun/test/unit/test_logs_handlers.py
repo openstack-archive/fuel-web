@@ -116,7 +116,7 @@ class TestLogs(BaseIntegrationTest):
         self.assertEqual(resp.json_body, settings.LOGS)
 
     def test_log_source_by_node_collection_handler(self):
-        node_ip = '40.30.20.10'
+        node_ip = '10.20.0.130'
         node = self.env.create_node(api=False, ip=node_ip)
 
         resp = self.app.get(
@@ -139,7 +139,7 @@ class TestLogs(BaseIntegrationTest):
         self.assertEqual(resp.json_body, [settings.LOGS[1]])
 
     def test_log_entry_collection_handler(self):
-        node_ip = '10.20.30.40'
+        node_ip = '10.20.0.130'
         log_entries = [
             [
                 time.strftime(settings.UI_LOG_DATE_FORMAT),

@@ -122,9 +122,8 @@ class TestNetworkModels(BaseIntegrationTest):
 
         self.assertEqual(400, resp_neutron_net.status_code)
         self.assertEqual(
-            "New IP ranges for network '{0}'({1}) conflict "
-            "with already allocated IPs.".format(test_network_name,
-                                                 mgmt_net['id']),
+            "New IP ranges for network '{0}'({1}) do not cover already "
+            "allocated IPs.".format(test_network_name, mgmt_net['id']),
             resp_neutron_net.json_body['message'])
 
         mgmt_net['cidr'] = u'192.168.0.0/30'
@@ -164,8 +163,8 @@ class TestNetworkModels(BaseIntegrationTest):
             self.env.clusters[0].id, test_nets, expect_errors=True)
         self.assertEqual(400, resp_neutron_net.status_code)
         self.assertEqual(
-            "New IP ranges for network '{0}'({1}) conflict "
-            "with nodes' IPs.".format(admin_net['name'], admin_net['id']),
+            "New IP ranges for network '{0}'({1}) do not cover already "
+            "allocated IPs.".format(admin_net['name'], admin_net['id']),
             resp_neutron_net.json_body['message'])
 
         for node in self.env.nodes:

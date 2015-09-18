@@ -272,11 +272,9 @@ define([
                 var rangeSelector = '.public .ip_ranges ';
                 return this.remote
                     .clickByCssSelector(rangeSelector + '.ip-ranges-add')
-                    .findAllByCssSelector(rangeSelector + '.ip-ranges-delete')
-                        .then(function(elements) {
-                            return assert.equal(elements.length, 2, 'Remove ranges controls appear');
-                        })
-                        .end()
+                    .then(function() {
+                        return common.assertElementsLength(rangeSelector + '.ip-ranges-delete', 2, 'Remove ranges controls appear');
+                    })
                     .clickByCssSelector(networksPage.applyButtonSelector)
                     .then(function() {
                         return common.assertElementExists(rangeSelector + '.range-row',

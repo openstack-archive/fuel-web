@@ -52,7 +52,7 @@ define([
             'Add Cluster Nodes': function() {
                 return this.remote
                     .then(function() {
-                        return common.assertElementExists('.node-list .alert-warning', 'Node list shows warning if there are no nodes in environment');
+                        return common.assertElementsLength('.node-list .alert-warning', 1, 'Node list shows warning if there are no nodes in environment');
                     })
                     .clickByCssSelector('.btn-add-nodes')
                     // wait for unallocated nodes loaded
@@ -83,16 +83,12 @@ define([
                     // wait for cluster node list loaded
                     .waitForCssSelector('.nodes-group', 2000)
                     .findAllByCssSelector('.node-list')
-                        .findAllByCssSelector('.node')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, nodesAmount, nodesAmount + ' nodes were successfully added to the cluster');
-                            })
-                            .end()
-                        .findAllByCssSelector('.nodes-group')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 1, 'One node group is present');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node', nodesAmount, nodesAmount + ' nodes were successfully added to the cluster');
+                        })
+                        .then(function() {
+                            return common.assertElementsLength('.nodes-group', 1, 'One node group is present');
+                        })
                         .end();
             },
             'Edit cluster node roles': function() {
@@ -100,11 +96,9 @@ define([
                     .then(function() {
                         return common.addNodesToCluster(1, ['Storage - Cinder']);
                     })
-                    .findAllByCssSelector('.node-list .nodes-group')
-                        .then(function(elements) {
-                            return assert.equal(elements.length, 2, 'Two node groups are present');
-                        })
-                        .end()
+                    .then(function() {
+                        return common.assertElementsLength('.node-list .nodes-group', 2, 'Two node groups are present');
+                    })
                     // select all nodes
                     .clickByCssSelector('.select-all label')
                     .clickByCssSelector('.btn-edit-roles')
@@ -126,11 +120,9 @@ define([
                     .clickByCssSelector(applyButtonSelector)
                     // wait for role editing screen unmounted
                     .waitForElementDeletion('.btn-apply', 2000)
-                    .findAllByCssSelector('.node-list .node-box')
-                        .then(function(elements) {
-                            return assert.equal(elements.length, nodesAmount, 'One node was removed from cluster after editing roles');
-                        })
-                        .end();
+                    .then(function() {
+                        return common.assertElementsLength('.node-list .node-box', nodesAmount, 'One node was removed from cluster after editing roles');
+                    });
             },
             'Remove Cluster': function() {
                 return this.remote

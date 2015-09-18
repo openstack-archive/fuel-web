@@ -96,21 +96,17 @@ define([
                         .setInputValue(searchInputSelector, 'Super')
                         // need to wait debounced search input
                         .sleep(200)
-                        .findAllByCssSelector('.node-list .node')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 3, 'Search was successfull');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .node', 3, 'Search was successfull');
+                        })
                         .clickByCssSelector('.node-list')
                         .then(function() {
                             return common.assertElementNotExists(searchButtonSelector, 'Active search control remains open when clicking outside the input');
                         })
                         .clickByCssSelector('.node-management-panel .btn-clear-search')
-                        .findAllByCssSelector('.node-list .node')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 4, 'Search was reset');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .node', 4, 'Search was reset');
+                        })
                         .then(function() {
                             return common.assertElementNotExists(searchButtonSelector, 'Search input is still shown after search reset');
                         })
@@ -131,11 +127,9 @@ define([
                             return common.assertElementNotExists(activeSortersPanelSelector + '.btn-reset-sorting', 'Default sorting can not be reset from active sorters panel');
                         })
                         .clickByCssSelector(sortingButtonSelector)
-                        .findAllByCssSelector('.sorters .sorter-control')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 1, 'Cluster node list has one sorting by default');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.sorters .sorter-control', 1, 'Cluster node list has one sorting by default');
+                        })
                         .then(function() {
                             return common.assertElementExists('.sorters .sort-by-roles-asc', 'Check default sorting by roles');
                         })
@@ -161,33 +155,25 @@ define([
                             return common.assertElementTextEqualTo('.node-list .node-name .name p', firstNodeName, 'Order of sorting by roles was changed to asc (default)');
                         })
                         .clickByCssSelector(moreControlSelector + ' button')
-                        .findAllByCssSelector(moreControlSelector + ' .popover .checkbox-group')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 11, 'Standard node sorters are presented');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength(moreControlSelector + ' .popover .checkbox-group', 11, 'Standard node sorters are presented');
+                        })
                         // add sorting by CPU (real)
                         .clickByCssSelector(moreControlSelector + ' .popover [name=cores]')
                         // add sorting by manufacturer
                         .clickByCssSelector(moreControlSelector + ' .popover [name=manufacturer]')
-                        .findAllByCssSelector('.node-list .nodes-group')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 4, 'New sorting was applied and nodes were grouped');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .nodes-group', 4, 'New sorting was applied and nodes were grouped');
+                        })
                         // remove sorting by manufacturer
                         .clickByCssSelector('.sorters .sort-by-manufacturer-asc .btn-remove-sorting')
-                        .findAllByCssSelector('.node-list .nodes-group')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 3, 'Particular sorting removal works');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .nodes-group', 3, 'Particular sorting removal works');
+                        })
                         .clickByCssSelector('.sorters .btn-reset-sorting')
-                        .findAllByCssSelector('.node-list .nodes-group')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 2, 'Sorting was successfully reset to default');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .nodes-group', 2, 'Sorting was successfully reset to default');
+                        })
                         .clickByCssSelector(sortingButtonSelector)
                         .clickByCssSelector(activeSortersPanelSelector)
                         // check active sorters panel is clickable and opens sorters panel
@@ -202,11 +188,9 @@ define([
                             return common.assertElementNotExists(activeFiltersPanelSelector , 'Environment has no active filters by default');
                         })
                         .clickByCssSelector(filtersButtonSelector)
-                        .findAllByCssSelector('.filters .filter-control')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 2, 'Filters panel has 2 default filters');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.filters .filter-control', 2, 'Filters panel has 2 default filters');
+                        })
                         .clickByCssSelector('.filter-by-roles')
                         .then(function() {
                             return common.assertElementNotExists('.filter-by-roles [type=checkbox]:checked' , 'There are no active options in Roles filter');
@@ -218,61 +202,45 @@ define([
                             return common.assertElementNotExists('.filters .btn-reset-filters', 'No filters to be reset');
                         })
                         .clickByCssSelector(moreControlSelector + ' button')
-                        .findAllByCssSelector(moreControlSelector + ' .popover .checkbox-group')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 7, 'Standard node filters are presented');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength(moreControlSelector + ' .popover .checkbox-group', 7, 'Standard node filters are presented');
+                        })
                         .clickByCssSelector(moreControlSelector + ' [name=cores]')
-                        .findAllByCssSelector('.filters .filter-control')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 3, 'New Cores (real) filter was added');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.filters .filter-control', 3, 'New Cores (real) filter was added');
+                        })
                         // check new filter is open
                         .findByCssSelector('.filter-by-cores .popover-content')
                             .end()
                         .clickByCssSelector('.filters .filter-by-cores .btn-remove-filter')
-                        .findAllByCssSelector('.filters .filter-control')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 2, 'Particular filter removal works');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.filters .filter-control', 2, 'Particular filter removal works');
+                        })
                         .clickByCssSelector(moreControlSelector + ' button')
                         .clickByCssSelector(moreControlSelector + ' [name=disks_amount]')
-                        .findAllByCssSelector('.filters .filter-by-disks_amount input[type=number]:not(:disabled)')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 2, 'Number filter has 2 fields to set min and max value');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.filters .filter-by-disks_amount input[type=number]:not(:disabled)', 2, 'Number filter has 2 fields to set min and max value');
+                        })
                         // set min value more than max value
                         .setInputValue('.filters .filter-by-disks_amount input[type=number][name=start]', '100')
                         // validation works for Number range filter
                         .waitForCssSelector('.filters .filter-by-disks_amount .form-group.has-error', 2000)
-                        .findAllByCssSelector('.node-list .node')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 0, 'No nodes match invalid filter');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .node', 0, 'No nodes match invalid filter');
+                        })
                         .clickByCssSelector('.filters .btn-reset-filters')
-                        .findAllByCssSelector('.node-list .node')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 4, 'Node filtration was successfully reset');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .node', 4, 'Node filtration was successfully reset');
+                        })
                         .clickByCssSelector('.filters .filter-by-status button')
                         .clickByCssSelector('.filters .filter-by-status [name=error]')
-                        .findAllByCssSelector('.node-list .node')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 1, 'Node with error status successfully filtered');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .node', 1, 'Node with error status successfully filtered');
+                        })
                         .clickByCssSelector('.filters .filter-by-status [name=pending_addition]')
-                        .findAllByCssSelector('.node-list .node')
-                            .then(function(elements) {
-                                return assert.equal(elements.length, 4, 'All nodes shown');
-                            })
-                            .end()
+                        .then(function() {
+                            return common.assertElementsLength('.node-list .node', 4, 'All nodes shown');
+                        })
                         .clickByCssSelector(filtersButtonSelector)
                         .then(function() {
                             return common.assertElementExists(activeFiltersPanelSelector , 'Applied filter is reflected in active filters panel');

@@ -176,18 +176,14 @@ define([
                     })
                     // delete some repo
                     .clickByCssSelector('.repos .form-inline .btn-link')
-                    .findAllByCssSelector('.repos .form-inline')
-                        .then(function(elements) {
-                            assert.equal(elements.length, repoAmount - 1, 'Repo was deleted');
-                        })
-                        .end()
+                    .then(function() {
+                        return common.assertElementsLength('.repos .form-inline', repoAmount - 1, 'Repo was deleted');
+                    })
                     // add new repo
                     .clickByCssSelector('.btn-add-repo')
-                    .findAllByCssSelector('.repos .form-inline')
-                        .then(function(elements) {
-                            assert.equal(elements.length, repoAmount, 'New repo placeholder was added');
-                        })
-                        .end()
+                    .then(function() {
+                        return common.assertElementsLength('.repos .form-inline', repoAmount, 'New repo placeholder was added');
+                    })
                     .then(function() {
                         return common.assertElementExists('.repos .form-inline .repo-name.has-error', 'Empty repo marked as imnvalid');
                     })

@@ -156,7 +156,7 @@ define([
                 return this.remote
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
-                            return assert.equal(elements.length, 1, message);
+                            return assert.ok(elements.length, message);
                         })
                         .end();
             },
@@ -165,6 +165,14 @@ define([
                     .findAllByCssSelector(cssSelector)
                         .then(function(elements) {
                             return assert.equal(elements.length, 0, message);
+                        })
+                        .end();
+            },
+            assertElementsLength: function(cssSelector, length, message) {
+                return this.remote
+                    .findAllByCssSelector(cssSelector)
+                        .then(function(elements) {
+                            return assert.equal(elements.length, length, message);
                         })
                         .end();
             },

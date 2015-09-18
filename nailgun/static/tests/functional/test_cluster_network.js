@@ -80,11 +80,9 @@ define([
                         return common.assertElementExists('.nova-managers .radio-group',
                             'Nova Network manager radiogroup is present');
                     })
-                    .findAllByCssSelector('.checkbox-group input[name=net_provider]')
-                        .then(function(radioGroup) {
-                            assert.equal(radioGroup.length, 2, 'Network manager options are present');
-                        })
-                        .end()
+                    .then(function() {
+                        return common.assertElementsLength('.checkbox-group input[name=net_provider]', 2, 'Network manager options are present');
+                    })
                     .findByCssSelector('input[value=FlatDHCPManager]')
                         .then(function(flatDHCPManager) {
                             flatDHCPManager.isSelected().then(function(isSelected) {
@@ -92,11 +90,9 @@ define([
                             })
                         })
                         .end()
-                    .findAllByCssSelector('.network-tab h3')
-                        .then(function(networkSections) {
-                            assert.equal(networkSections.length, 4, 'All networks are present');
-                        })
-                        .end();
+                    .then(function() {
+                        return common.assertElementsLength('.network-tab h3', 4, 'All networks are present');
+                    });
             },
             'Testing cluster networks: Save button interactions': function() {
                 var self = this,
@@ -272,11 +268,9 @@ define([
                 var rangeSelector = '.public .ip_ranges ';
                 return this.remote
                     .clickByCssSelector(rangeSelector + '.ip-ranges-add')
-                    .findAllByCssSelector(rangeSelector + '.ip-ranges-delete')
-                        .then(function(elements) {
-                            return assert.equal(elements.length, 2, 'Remove ranges controls appear');
-                        })
-                        .end()
+                    .then(function() {
+                        return common.assertElementsLength(rangeSelector + '.ip-ranges-delete', 2, 'Remove ranges controls appear');
+                    })
                     .clickByCssSelector(networksPage.applyButtonSelector)
                     .then(function() {
                         return common.assertElementExists(rangeSelector + '.range-row',

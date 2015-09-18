@@ -76,7 +76,7 @@ define([
                         return interfacesPage.selectInterface('eth3');
                     })
                     .then(function() {
-                        return common.assertElementExists('div.alert.alert-warning', 'Interfaces with different speeds bonding not recommended message should appear');
+                        return common.assertElementsLength('div.alert.alert-warning', 1, 'Interfaces with different speeds bonding not recommended message should appear');
                     })
                     .then(function() {
                         return common.assertElementEnabled('.btn-bond', 'Bonding button should still be enabled');

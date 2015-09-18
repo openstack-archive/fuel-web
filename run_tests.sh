@@ -325,17 +325,12 @@ function run_ui_func_tests {
   run_server $SERVER_PORT $server_log $config || \
     { echo 'Failed to start Nailgun'; return 1; }
 
-  for testcase in $TESTS; do
-
-    SERVER_PORT=$SERVER_PORT \
-    ARTIFACTS=$artifacts \
-    ${GULP} functional-tests --suites=$testcase
-    if [ $? -ne 0 ]; then
-      result=1
-      break
-    fi
-
-  done
+  SERVER_PORT=$SERVER_PORT \
+  ARTIFACTS=$artifacts \
+  ${GULP} functional-tests --suites=$TESTS
+  if [ $? -ne 0 ]; then
+    result=1
+  fi
 
   kill_server $SERVER_PORT
 

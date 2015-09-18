@@ -31,12 +31,6 @@ define([
                 loginPage = new LoginPage(this.remote);
                 common = new Common(this.remote);
             },
-            beforeEach: function() {
-                this.remote
-                    .then(function() {
-                        return common.getOut();
-                    });
-            },
             'Login with incorrect credentials': function() {
                 return this.remote
                     .then(function() {

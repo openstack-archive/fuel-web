@@ -1,0 +1,22 @@
+---
+description:
+  For Fuel team structure and contribution policy, see [1].
+
+  For contributions into this folder or its subfolders,
+  it is mandatory to get +1 from one or more maintainers listed below,
+  before asking Core Reviewers [2] for review/merge in order to decrease
+  a load on Core Reviewers [3].
+  Exceptions are when maintainers are actually cores, or when maintainers
+  are not available for some reason (e.g. on vacation).
+
+  [1] https://review.openstack.org/#/c/225376/ (to be replaced by html link once merged)
+  [2] https://review.openstack.org/#/admin/groups/664,members
+  [3] http://lists.openstack.org/pipermail/openstack-dev/2015-August/072406.html
+
+  Please keep this file in YAML format in order to allow helper scripts
+  to read this as a configuration data.
+
+maintainers:
+- name:   'Matthew Mosesohn'
+  email:  'mmosesohn@mirantis.com'
+  IRC:    '#mattymo'

@@ -152,3 +152,13 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         self.assertEquals(resp.status_code, 403)
+
+    def test_nodegroup_invalid_cluster_id(self):
+        resp = self.app.post(
+            reverse('NodeGroupCollectionHandler'),
+            json.dumps({'cluster_id': 0, 'name': 'test_ng'}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEquals(resp.status_code, 404)

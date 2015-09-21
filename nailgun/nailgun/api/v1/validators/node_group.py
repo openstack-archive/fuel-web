@@ -28,7 +28,9 @@ class NodeGroupValidator(BasicValidator):
     @classmethod
     def validate(cls, data):
         data = cls.validate_json(data)
-        cluster = objects.Cluster.get_by_uid(data['cluster_id'])
+        cluster = objects.Cluster.get_by_uid(
+            data['cluster_id'], fail_if_not_found=True)
+
         if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
             raise errors.NotAllowed(
                 "Node groups can only be created when using Neutron."

@@ -18,6 +18,7 @@ import mock
 from mock import mock_open
 from mock import patch
 import os
+import shutil
 import tempfile
 
 import requests
@@ -30,6 +31,7 @@ from nailgun.utils import flatten
 from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import grouper
 from nailgun.utils import http_get
+from nailgun.utils import remove_dangling_symlinks
 from nailgun.utils import traverse
 
 from nailgun.utils.debian import get_apt_preferences_line
@@ -105,6 +107,31 @@ class TestUtils(base.BaseIntegrationTest):
 
         self.assertEqual(
             list(grouper([0, 1, 2, 3, 4], 3, 'x')), [(0, 1, 2), (3, 4, 'x')])
+
+    def test_remove_dangling_symlinks(self):
+        test_directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, test_directory)
+
+        retained_file = os.path.join(test_directory, 'retained')
+        deleted_file = os.path.join(test_directory, 'test-deleted')
+
+        proper_symlink = os.path.join(test_directory,
+                                      retained_file + '.symlink')
+        dangling_symlink = os.path.join(test_directory,
+                                        deleted_file + '.symlink')
+
+        open(retained_file, 'a').close()
+        open(deleted_file, 'a').close()
+
+        os.symlink(retained_file, proper_symlink)
+        os.symlink(deleted_file, dangling_symlink)
+
+        os.unlink(deleted_file)
+
+        remove_dangling_symlinks(test_directory)
+
+        self.assertTrue(os.path.islink(proper_symlink))
+        self.assertFalse(os.path.islink(dangling_symlink))
 
 
 class TestTraverse(base.BaseUnitTest):

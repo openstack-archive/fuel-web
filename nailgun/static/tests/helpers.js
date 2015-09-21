@@ -365,6 +365,28 @@ define([
                         .end();
             });
         },
+        assertElementDisplayed: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .isDisplayed()
+                        .then(function(isDisplayed) {
+                            return assert.isTrue(isDisplayed, message);
+                        })
+                        .end();
+            });
+        },
+        assertElementNotDisplayed: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .isDisplayed()
+                        .then(function(isDisplayed) {
+                            return assert.isFalse(isDisplayed, message);
+                        })
+                        .end();
+            });
+        },
         assertElementTextEquals: function(cssSelector, expectedText, message) {
             return new this.constructor(this, function() {
                 return this.parent

@@ -327,6 +327,14 @@ define([
                     .assertElementExists(cssSelector, message);
             });
         },
+        assertElementsAppear: function(cssSelector, timeout, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .waitForCssSelector(cssSelector, timeout)
+                    .catch(_.constant(true))
+                    .assertElementsExist(cssSelector, message);
+            });
+        },
         assertElementDisappears: function(cssSelector, timeout, message) {
             return new this.constructor(this, function() {
                 return this.parent

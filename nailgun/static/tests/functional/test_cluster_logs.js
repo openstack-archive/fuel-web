@@ -42,6 +42,7 @@ define([
                     .then(function() {
                         return common.createCluster(clusterName);
                     })
+                    .createNode()
                     .then(function() {
                         return common.addNodesToCluster(1, ['Controller']);
                     })

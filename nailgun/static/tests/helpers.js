@@ -101,6 +101,39 @@ define([
                         .end();
             });
         },
+        createNodes: function(amount, options) {
+            // the method assumes user is logged in in Fuel
+            return new this.constructor(this, function() {
+                var nodeAmount = _.isNumber(amount) ? amount : 1,
+                    nodeOptions = _.isPlainObject(amount) ? amount : (options || {});
+
+                var data = _.extend({
+                        status: 'discover',
+                        //manufacturer: 'Dell',
+                        mac: '52:54:00:96:81:6E'
+                    }, nodeOptions);
+
+                // disks
+                // interfaces
+                // different mac
+
+                return this.parent
+                    .execute(function(nodeAmount, data) {
+                        return _.times(nodeAmount, function() {
+                            $.ajax({
+                                method: 'POST',
+                                url: '/api/nodes',
+                                data: JSON.stringify(data)
+                            });
+                        });
+                    }, [nodeAmount, data]);
+            });
+        },
+        createNode: function(options) {
+            return new this.constructor(this, function() {
+                return this.parent.createNodes(1, options);
+            });
+        },
         /**
          * Drag-n-drop helpers
          * Taken from not yet accepted pull request to leadfoot from https://github.com/theintern/leadfoot/pull/16

@@ -43,6 +43,7 @@ define([
                     .then(function() {
                         return common.getIn();
                     })
+                    .createNode({disks: 2})
                     .then(function() {
                         return common.createCluster(clusterName);
                     })

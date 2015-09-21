@@ -41,6 +41,9 @@ define([
                     .then(function() {
                         return common.getIn();
                     })
+                    .createNodes(6)
+                    .createNode({status: 'error'})
+                    .createNode({status: 'offline'})
                     .then(function() {
                         return common.createCluster(clusterName);
                     });

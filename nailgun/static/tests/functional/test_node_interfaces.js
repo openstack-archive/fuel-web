@@ -38,11 +38,12 @@ define([
                     .then(function() {
                         return common.getIn();
                     })
+                    .createNode({interfaces: 8})
                     .then(function() {
                         return common.createCluster(clusterName);
                     })
                     .then(function() {
-                        return common.addNodesToCluster(1, 'Controller', null, 'Supermicro X9SCD');
+                        return common.addNodesToCluster(1, 'Controller');
                     })
                     .clickByCssSelector('.node.pending_addition input[type=checkbox]:not(:checked)')
                     .clickByCssSelector('button.btn-configure-interfaces')

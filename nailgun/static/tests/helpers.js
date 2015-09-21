@@ -404,7 +404,7 @@ define([
     });
 
     var serverHost = '127.0.0.1',
-        serverPort = process.env.SERVER_PORT || 5544,
+        serverPort = process.env.NAILGUN_PORT || 5544,
         serverUrl = 'http://' + serverHost + ':' + serverPort,
         username = 'admin',
         password = 'admin';

@@ -41,7 +41,8 @@ function usage {
   echo "      --no-ui-unit            Don't run UI unit tests"
   echo "      --ui-func               Run UI functional tests"
   echo "      --no-ui-func            Don't run UI functional tests"
-  echo "      --no-ui-compression     Skip UI compression"
+  echo "      --no-ui-compression     Skip UI compression for UI functional tests"
+  echo "      --no-nailgun-start      Skip Nailgun start for UI functional tests"
   echo ""
   echo "Note: with no options specified, the script will try to run all available"
   echo "      tests with all available checks."
@@ -73,6 +74,7 @@ function process_options {
       --ui-func) ui_func_tests=1;;
       --no-ui-func) no_ui_func_tests=1;;
       --no-ui-compression) no_ui_compression=1;;
+      --no-nailgun-start) no_nailgun_start=1;;
       -t|--tests) certain_tests=1;;
       -*) testropts="$testropts $arg";;
       *) testrargs="$testrargs $arg"
@@ -99,8 +101,7 @@ NAILGUN_XUNIT=${NAILGUN_XUNIT:-"$ROOT/nailgun.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 EXTENSIONS_XUNIT=${EXTENSIONS_XUNIT:-"$ROOT/extensions.xml"}
-UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
-NAILGUN_PORT=${NAILGUN_PORT:-8003}
+NAILGUN_PORT=${NAILGUN_PORT:-5544}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
 NAILGUN_CHECK_PATH=${NAILGUN_CHECK_PATH:-"/api/version"}
 NAILGUN_STARTUP_TIMEOUT=${NAILGUN_STARTUP_TIMEOUT:-10}
@@ -130,6 +131,7 @@ extensions_tests=0
 no_extensions_tests=0
 certain_tests=0
 no_ui_compression=0
+no_nailgun_start=0
 
 function run_tests {
   run_cleanup
@@ -282,7 +284,6 @@ function run_ui_unit_tests {
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_ui_func_tests {
-  local SERVER_PORT=$UI_SERVER_PORT
   local TESTS_DIR=$ROOT/nailgun/static/tests/functional
   local TESTS=$TESTS_DIR/test_*.js
   local artifacts=$ARTIFACTS/ui_func
@@ -320,14 +321,15 @@ function run_ui_func_tests {
   local pid
 
   for testcase in $TESTS; do
+    if [ $no_nailgun_start -ne 1 ]; then
+      dropdb $config
+      syncdb $config true
 
-    dropdb $config
-    syncdb $config true
+      run_server $NAILGUN_PORT $server_log $config || \
+        { echo 'Failed to start Nailgun'; return 1; }
+    fi
 
-    run_server $SERVER_PORT $server_log $config || \
-      { echo 'Failed to start Nailgun'; return 1; }
-
-    SERVER_PORT=$SERVER_PORT \
+    SERVER_PORT=$NAILGUN_PORT \
     ARTIFACTS=$artifacts \
     ${GULP} functional-tests --suites=$testcase
     if [ $? -ne 0 ]; then
@@ -335,8 +337,9 @@ function run_ui_func_tests {
       break
     fi
 
-    kill_server $SERVER_PORT
-
+    if [ $no_nailgun_start -ne 1 ]; then
+      kill_server $NAILGUN_PORT
+    fi
   done
 
   rm $server_log

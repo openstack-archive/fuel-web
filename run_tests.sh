@@ -325,7 +325,7 @@ function run_ui_func_tests {
   for testcase in $TESTS; do
     if [ $no_nailgun_start -ne 1 ]; then
       dropdb $config
-      syncdb $config true
+      syncdb $config false
 
       run_server $NAILGUN_PORT $server_log $config || \
         { echo 'Failed to start Nailgun'; return 1; }
@@ -469,11 +469,11 @@ function run_cleanup {
 function syncdb {
   pushd $ROOT/nailgun >> /dev/null
   local config=$1
-  local defaults=$2
+  local load_sample_data=$2
   NAILGUN_CONFIG=$config tox -evenv -- python manage.py syncdb > /dev/null
+  NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddefault > /dev/null
 
-  if [[ $# -ne 0 && $defaults = true ]]; then
-    NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddefault > /dev/null
+  if [[ $# -ne 0 && $load_sample_data = true ]]; then
     NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddata nailgun/fixtures/sample_environment.json > /dev/null
   fi
 

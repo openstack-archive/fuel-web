@@ -61,6 +61,10 @@ define([
             'Test management controls behaviour': {
                 setup: function() {
                     dashboardPage = new DashboardPage(this.remote);
+
+                    return this.remote
+                        .createNodes(3)
+                        .createNode({status: 'error'});
                 },
                 beforeEach: function() {
                     return this.remote

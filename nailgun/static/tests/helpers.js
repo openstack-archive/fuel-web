@@ -15,11 +15,12 @@
  **/
 
 define([
+    'jquery',
     'underscore',
     'intern/chai!assert',
     'intern/dojo/node!fs',
     'intern/dojo/node!leadfoot/Command'
-], function(_, assert, fs, Command) {
+], function($, _, assert, fs, Command) {
     'use strict';
 
     _.defaults(Command.prototype, {
@@ -99,6 +100,127 @@ define([
                         .clearValue()
                         .type(value)
                         .end();
+            });
+        },
+        createNodes: function(amount, options) {
+            // the method assumes user is logged in in Fuel
+            return new this.constructor(this, function() {
+                var nodeAmount = _.isNumber(amount) ? amount : 1,
+                    nodeOptions = _.isPlainObject(amount) ? amount : (options || {}),
+                    hardwareData = ['disks', 'interfaces', 'cpu', 'memory'];
+
+                var composeNodeData = function(nodeIndex) {
+                    var mac = 'C8:0A:A9:A6:FF:' + ('00' + nodeIndex).slice(-2),
+                        data = _.extend({
+                            status: 'discover',
+                            mac: mac,
+                            meta: {
+                                disks: [
+                                    {
+                                        model: 'TOSHIBA MK3259GS',
+                                        disk: 'sda',
+                                        name: 'sda',
+                                        size: 100010485760
+                                    },
+                                    {
+                                        model: 'TOSHIBA',
+                                        disk: 'vda',
+                                        name: 'vda',
+                                        size: 80010485760
+                                    }
+                                ],
+                                interfaces: [
+                                    {
+                                        mac: mac,
+                                        name: 'eth0',
+                                        max_speed: 1000,
+                                        current_speed: 100
+                                    },
+                                    {
+                                        ip: '10.20.0.3',
+                                        mac: 'C3:0A:A9:A6:FF:28',
+                                        name: 'eth1',
+                                        max_speed: 1000,
+                                        current_speed: 1000,
+                                        pxe: true
+                                    },
+                                    {
+                                        mac: 'D4:56:C3:88:99:DF',
+                                        name: 'eth0:1',
+                                        max_speed: 2000,
+                                        current_speed: null
+                                    }
+                                ],
+                                cpu: {
+                                    real: 0,
+                                    0: {
+                                        family: '6',
+                                        vendor_id: 'GenuineIntel',
+                                        mhz: '3192.766',
+                                        stepping: '3',
+                                        cache_size: '4096 KB',
+                                        flags: ['fpu', 'lahf_lm'],
+                                        model: '2',
+                                        model_name: 'QEMU Virtual CPU version 0.14.1'
+                                    },
+                                    total: 1
+                                },
+                                memory: {
+                                    slots: 6,
+                                    total: 4294967296,
+                                    maximum_capacity: 8589934592,
+                                    devices: [
+                                        {size: 1073741824},
+                                        {size: 1073741824},
+                                        {size: 1073741824},
+                                        {size: 1073741824}
+                                    ]
+                                }
+                            }
+                        }, _.omit(nodeOptions, hardwareData));
+                    data.meta = _.extend(data.meta, _.pick(nodeOptions, hardwareData));
+
+                    if (_.isNumber(data.meta.disks)) {
+                        data.meta.disks = _.times(data.meta.disks, function(index) {
+                            return {
+                                model: 'TOSHIBA MK3259GS',
+                                disk: 'sda' + index,
+                                name: 'sda' + index,
+                                size: 1000104857 * index
+                            };
+                        });
+                    }
+                    if (_.isNumber(data.meta.interfaces)) {
+                        data.meta.interfaces = _.times(data.meta.interfaces, function(index) {
+                            return {
+                                ip: '10.20.0.' + index,
+                                mac: index == 0 ? mac : ('D4:56:C3:88:99:' + ('00' + index).slice(-2)),
+                                name: 'eth' + index,
+                                max_speed: 1000 * index,
+                                current_speed: 1000 * index
+                                //pxe: true
+                            };
+                        });
+                    }
+
+                    return data;
+                }
+
+                return this.parent
+                    .execute(function(nodeAmount, composeNodeData) {
+                        return _.times(nodeAmount, function(index) {
+                            return $.ajax({
+                                method: 'POST',
+                                url: '/api/nodes',
+                                data: JSON.stringify(composeNodeData(index))
+                            });
+                        });
+                    }, [nodeAmount, composeNodeData]);
+            });
+        },
+        createNode: function(options) {
+            return new this.constructor(this, function() {
+                return this.parent.createNodes(1, options);
             });
         },
         /**

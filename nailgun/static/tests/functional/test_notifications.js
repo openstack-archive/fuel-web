@@ -35,6 +35,7 @@ define([
                     .then(function() {
                         return common.getIn();
                     })
+                    .createNode();
             },
             'Notification Page': function() {
                 return this.remote

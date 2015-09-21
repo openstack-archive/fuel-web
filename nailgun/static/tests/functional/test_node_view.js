@@ -46,6 +46,7 @@ define([
                     .then(function() {
                         return common.getIn();
                     })
+                    .createNode()
                     .then(function() {
                         return common.createCluster(clusterName);
                     });

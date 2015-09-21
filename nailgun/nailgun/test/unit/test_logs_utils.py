@@ -64,7 +64,8 @@ class TestNodeLogsUtils(BaseTestCase):
                 node_fqdn=fqdn),
             log_paths['bak'])
 
-    def test_delete_node_logs(self):
+    @mock.patch('nailgun.utils.logs.remove_dangling_symlinks')
+    def test_delete_node_logs(self, mock_rds):
         prefix = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, prefix)
 
@@ -84,6 +85,10 @@ class TestNodeLogsUtils(BaseTestCase):
             f.write("RANDOMCONTENT")
 
         logs_utils.delete_node_logs(node, prefix)
+
+        paths = log_paths.pop('links') + log_paths.values()
+        for log_path in paths:
+            mock_rds.assert_any_call(log_path)
 
         self.assertTrue(
             all(not os.path.exists(path) for path in [link, folder, file_]))

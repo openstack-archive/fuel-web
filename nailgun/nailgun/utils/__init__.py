@@ -274,3 +274,11 @@ def http_get(url, retries_on=[500, 502], retries=3, timeout=2):
         time.sleep(timeout)
 
     return response
+
+
+def remove_dangling_symlinks(path):
+    for root, dirs, files in os.walk(path, followlinks=True):
+        for p in chain(dirs, files):
+            full_path = os.path.join(root, p)
+            if os.path.islink(full_path) and not os.path.exists(full_path):
+                os.unlink(full_path)

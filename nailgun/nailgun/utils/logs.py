@@ -25,6 +25,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.settings import settings
+from nailgun.utils import remove_dangling_symlinks
 from nailgun.utils import remove_silently
 
 
@@ -113,3 +114,4 @@ def delete_node_logs(node, prefix=settings.SYSLOG_DIR):
         if os.path.exists(log_path):
             logger.debug('delete_node_logs log_path="%s"', log_path)
             remove_silently(log_path)
+        remove_dangling_symlinks(log_path)

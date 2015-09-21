@@ -38,7 +38,7 @@ class TestRpcAcknowledge(base.BaseTestCase):
         self.assertEqual(self.receiver.test.call_count, 1)
 
     def test_message_acked_if_no_task_found(self):
-        self.receiver.test.side_effect = errors.NoTaskFound
+        self.receiver.test.side_effect = errors.CannotFindTask
         self.consumer.consume_msg(self.body, self.msg)
         self.assertEqual(self.receiver.test.call_count, 1)
         self.assertEqual(self.msg.ack.call_count, 1)

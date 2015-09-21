@@ -267,6 +267,16 @@ class NodeValidator(BasicValidator):
 
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])
+
+        if "group_id" in d:
+            ng = objects.NodeGroup.get_by_uid(d["group_id"])
+            if not ng:
+                raise errors.InvalidData(
+                    "Cannot assign node group (ID={0}) to node {1}. "
+                    "The specified node group does not exist."
+                    .format(d["group_id"], d.get("id"))
+                )
+
         return d
 
     @classmethod

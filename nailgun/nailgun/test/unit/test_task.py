@@ -408,7 +408,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         )
 
         self.assertNotRaises(
-            errors.NetworktemplateMissingRoles,
+            errors.NetworkTemplateMissingRoles,
             task.CheckBeforeDeploymentTask._validate_network_template,
             self.task)
 

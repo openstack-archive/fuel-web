@@ -610,14 +610,15 @@ EOL
 #
 #   $1 -- path to the test file
 function guess_test_run {
+
   if [[ $1 == *functional* && $1 == *.js ]]; then
-    run_ui_func_tests $1 || echo "ERROR: $1"
+    run_ui_func_tests $1
   elif [[ $1 == *fuel_upgrade_system* ]]; then
-    run_upgrade_system_tests $1 || echo "ERROR: $1"
+    run_upgrade_system_tests $1
   elif [[ $1 == *shotgun* ]]; then
-    run_shotgun_tests $1 || echo "ERROR: $1"
+    run_shotgun_tests $1
   else
-    run_nailgun_tests $1 || echo "ERROR: $1"
+    run_nailgun_tests $1
   fi
 }
 

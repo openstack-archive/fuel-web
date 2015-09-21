@@ -193,12 +193,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             );
         },
         renderNodeHardwareSummary: function() {
-            var node = this.props.node;
+            var htCores = this.props.node.resource('ht_cores'),
+                hdd = this.props.node.resource('hdd'),
+                ram = this.props.node.resource('ram');
             return (
                 <div className='node-hardware'>
-                    <span>{i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})</span>
-                    <span>{i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}</span>
-                    <span>{i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}</span>
+                    <span>{i18n('node_details.cpu')}: {this.props.node.resource('cores') || '0'} ({_.isUndefined(htCores) ? '?' : htCores})</span>
+                    <span>{i18n('node_details.hdd')}: {(_.isUndefined(hdd) ? '?' : utils.showDiskSize(hdd)) + i18n('common.size.gb')}</span>
+                    <span>{i18n('node_details.ram')}: {(_.isUndefined(ram) ? '?' : utils.showMemorySize(ram)) + i18n('common.size.gb')}</span>
                 </div>
             );
         },

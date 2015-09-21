@@ -404,6 +404,8 @@
                         "mtu_placeholder": "Default"
                     },
                     "configure_disks": {
+                        "no_disks": "The node has no disks to configure.",
+                        "no_disks_plural": "The nodes has no disks to configure.",
                         "title": "Configure disks on __name__",
                         "title_plural": "Configure disks on __count__ nodes",
                         "read_only_title": "Disks configuration of __name__",

@@ -121,8 +121,5 @@ class ErrorFactory(object):
             }
         )
 
-    def __getattr__(self, name):
-        return self._build_exc(name, default_messages["UnknownError"])
-
 
 errors = ErrorFactory()

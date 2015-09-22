@@ -52,27 +52,6 @@ class NailgunObject(object):
     #: SQLAlchemy model for object
     model = None
 
-    #: JSON schema for object
-    schema = {
-        "properties": {}
-    }
-
-    @classmethod
-    def check_field(cls, field):
-        """Check if field is described in object's JSON schema
-
-        :param field: name of the field as string
-        :returns: None
-        :raises: errors.InvalidField
-        """
-        if field not in cls.schema["properties"]:
-            raise errors.InvalidField(
-                u"Invalid field '{0}' for object '{1}'".format(
-                    field,
-                    cls.__name__
-                )
-            )
-
     @classmethod
     def get_by_uid(cls, uid, fail_if_not_found=False, lock_for_update=False):
         """Get instance by it's uid (PK in case of SQLAlchemy)
@@ -267,7 +246,6 @@ class NailgunCollection(object):
             else asc.
         :returns: filtered iterable (SQLAlchemy query)
         """
-        map(cls.single.check_field, kwargs.iterkeys())
         if iterable is not None:
             use_iterable = iterable
         else:
@@ -292,7 +270,6 @@ class NailgunCollection(object):
         :param iterable: iterable (SQLAlchemy query)
         :returns: filtered iterable (SQLAlchemy query)
         """
-        map(cls.single.check_field, kwargs.iterkeys())
         use_iterable = iterable or cls.all()
         if cls._is_query(use_iterable):
             conditions = []

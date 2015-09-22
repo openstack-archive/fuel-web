@@ -58,58 +58,49 @@ Requires:    python-ordereddict >= 1.1
 # Workaroud for babel bug
 Requires:    pytz
 
-BuildRequires: nodejs-bower
+BuildRequires: nodejs-backbone
+BuildRequires: nodejs-backbone.stickit
+BuildRequires: nodejs-bootstrap
 BuildRequires: nodejs-casperjs
+BuildRequires: nodejs-classnames
+BuildRequires: nodejs-es5-shim
+BuildRequires: nodejs-eslint
+BuildRequires: nodejs-eslint-plugin-react
 BuildRequires: nodejs-esprima-fb
 BuildRequires: nodejs-event-stream
 BuildRequires: nodejs-glob
 BuildRequires: nodejs-gulp
 BuildRequires: nodejs-gulp-autoprefixer
-BuildRequires: nodejs-gulp-bower
+BuildRequires: nodejs-gulp-eslint
 BuildRequires: nodejs-gulp-filter
 BuildRequires: nodejs-gulp-intermediate
 BuildRequires: nodejs-gulp-jison
 BuildRequires: nodejs-gulp-jscs
-BuildRequires: nodejs-gulp-jshint
 BuildRequires: nodejs-gulp-less
 BuildRequires: nodejs-gulp-lintspaces
 BuildRequires: nodejs-gulp-react
 BuildRequires: nodejs-gulp-replace
 BuildRequires: nodejs-gulp-shell
 BuildRequires: nodejs-gulp-util
+BuildRequires: nodejs-i18next
 BuildRequires: nodejs-intern
-BuildRequires: nodejs-jshint-stylish
-BuildRequires: nodejs-lodash-node
-BuildRequires: nodejs-main-bower-files
+BuildRequires: nodejs-jquery
+BuildRequires: nodejs-js-cookie
+BuildRequires: nodejs-less
+BuildRequires: nodejs-lodash
 BuildRequires: nodejs-minimist
+BuildRequires: nodejs-open-sans-fontface
 BuildRequires: nodejs-phantomjs
+BuildRequires: nodejs-react
+BuildRequires: nodejs-react-dnd
+BuildRequires: nodejs-require-css
 BuildRequires: nodejs-requirejs
+BuildRequires: nodejs-requirejs-plugins
 BuildRequires: nodejs-rimraf
 BuildRequires: nodejs-run-sequence
 BuildRequires: nodejs-selenium-standalone
+BuildRequires: nodejs-sinon
 BuildRequires: nodejs-uglify-js
-BuildRequires: nodejs-libjs-jquery
-BuildRequires: nodejs-libjs-js-cookie
-BuildRequires: nodejs-libjs-classnames
-BuildRequires: nodejs-libjs-react
-BuildRequires: nodejs-libjs-requirejs
-BuildRequires: nodejs-libjs-requirejs-plugins
-BuildRequires: nodejs-libjs-requirejs-text
-BuildRequires: nodejs-libjs-require-css
-BuildRequires: nodejs-libjs-jsx-requirejs-plugin
-BuildRequires: nodejs-libjs-routefilter
-BuildRequires: nodejs-libjs-lodash
-BuildRequires: nodejs-libjs-autoNumeric
-BuildRequires: nodejs-libjs-backbone
-BuildRequires: nodejs-libjs-backbone.stickit
-BuildRequires: nodejs-libjs-i18next
-BuildRequires: nodejs-libjs-less
-BuildRequires: nodejs-libjs-bootstrap
-BuildRequires: nodejs-libjs-open-sans-fontface
-BuildRequires: nodejs-libjs-react-dnd
-BuildRequires: nodejs-libjs-es5-shim
-BuildRequires: nodejs-libjs-sinon
-BuildRequires: nodejs-libjs-underscore
 
 %description
 Nailgun package
@@ -118,7 +109,6 @@ Nailgun package
 %setup -cq -n %{name}-%{version}
 
 cp -R /usr/lib/node_modules/ %{_builddir}/%{name}-%{version}/nailgun/node_modules/
-cp -R /usr/lib/bower_components/ %{_builddir}/%{name}-%{version}/nailgun/bower_components/
 
 %build
 cd %{_builddir}/%{name}-%{version}/nailgun && %{_builddir}/%{name}-%{version}/nailgun/node_modules/gulp/bin/gulp.js build --static-dir=compressed_static

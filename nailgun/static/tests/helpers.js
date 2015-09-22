@@ -442,6 +442,17 @@ define([
                         .end();
             });
         },
+        assertElementNotSelected: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .isSelected()
+                            .then(function(isSelected) {
+                                assert.isFalse(isSelected, message);
+                            })
+                        .end();
+            });
+        },
         assertIsIntegerContentPositive: function(cssSelector, attributeName) {
             return new this.constructor(this, function() {
                 return this.parent

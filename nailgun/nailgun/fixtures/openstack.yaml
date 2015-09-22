@@ -1556,7 +1556,7 @@
 - pk: 2
   extend: *base_release
   fields:
-    name: "Kilo on Ubuntu 14.04.1"
+    name: "Kilo on Ubuntu 14.04"
     version: "2015.1.0-8.0"
     can_update_from_versions: []
     operating_system: "Ubuntu"

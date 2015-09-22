@@ -41,9 +41,7 @@ define([
                 .then(function() {
                     return welcomePage.skip(true);
                 })
-                .then(function(result) {
-                    assert.ok(result, 'Start using fuel button is present');
-                });
+                .assertElementExists('.welcome-button-box button', 'Start using fuel button is present');
             }
         };
     });

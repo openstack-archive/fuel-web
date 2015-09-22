@@ -71,22 +71,14 @@ define([
                                         modal = new ModalWindow(this.remote);
                                     return this.remote
                                         .pressKeys('\uE007')
-                                        .findAllByCssSelector('form.create-cluster-form span.help-block')
-                                        .then(function(errorMessages) {
-                                            assert.ok(errorMessages.length, 'Error message should be displayed if names are duplicated');
-                                            return errorMessages[0]
-                                                .getVisibleText()
-                                                .then(function(errorMessage) {
-                                                    assert.equal(
-                                                        errorMessage,
-                                                        'Environment with name "' + clusterName + '" already exists',
-                                                        'Error message should say that environment with that name already exists'
-                                                    );
-                                                })
-                                                .then(function() {
-                                                    return modal.close();
-                                                });
-                                        })
+                                        .assertElementTextEquals(
+                                            'form.create-cluster-form span.help-block',
+                                            'Environment with name "' + clusterName + '" already exists',
+                                            'Error message should say that environment with that name already exists'
+                                        )
+                                        .then(function() {
+                                            return modal.close();
+                                        });
                                 }}
                             );
                 });
@@ -94,11 +86,8 @@ define([
             'Testing cluster list page': function() {
                 return this.remote
                     .clickLinkByText('Environments')
-                    //Cluster container exists
-                    .waitForCssSelector('.clusters-page .clusterbox', 2000)
-                    .then(function() {
-                        return common.assertElementExists('.create-cluster', 'Cluster creation control exists');
-                    });
+                    .assertElementAppears('.clusters-page .clusterbox', 2000, 'Cluster container exists')
+                    .assertElementExists('.create-cluster', 'Cluster creation control exists');
             }
         };
     });

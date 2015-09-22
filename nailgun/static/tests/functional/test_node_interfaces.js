@@ -46,7 +46,7 @@ define([
                     })
                     .clickByCssSelector('.node.pending_addition input[type=checkbox]:not(:checked)')
                     .clickByCssSelector('button.btn-configure-interfaces')
-                    .waitForCssSelector('div.ifc-list', 2000);
+                    .assertElementAppears('div.ifc-list', 2000, 'Node interfaces loaded');
             },
             afterEach: function() {
                 return this.remote
@@ -63,9 +63,7 @@ define([
                     .then(function() {
                         return interfacesPage.assignNetworkToInterface('Public', 'eth0');
                     })
-                    .then(function() {
-                        return common.assertElementExists('div.ifc-error', 'Untagged networks can not be assigned to the same interface message should appear');
-                    });
+                    .assertElementExists('div.ifc-error', 'Untagged networks can not be assigned to the same interface message should appear');
             },
             'Bond interfaces with different speeds': function() {
                 return this.remote
@@ -75,12 +73,8 @@ define([
                     .then(function() {
                         return interfacesPage.selectInterface('eth3');
                     })
-                    .then(function() {
-                        return common.assertElementExists('div.alert.alert-warning', 'Interfaces with different speeds bonding not recommended message should appear');
-                    })
-                    .then(function() {
-                        return common.assertElementEnabled('.btn-bond', 'Bonding button should still be enabled');
-                    });
+                    .assertElementExists('div.alert.alert-warning', 'Interfaces with different speeds bonding not recommended message should appear')
+                    .assertElementEnabled('.btn-bond', 'Bonding button should still be enabled');
             },
             'Interfaces bonding': function() {
                 return this.remote
@@ -134,13 +128,8 @@ define([
                     .then(function() {
                         return interfacesPage.bondInterfaces('bond0', 'bond1');
                     })
-                    .then(function() {
-                        // Making sure bond button is disabled
-                        return common.assertElementDisabled('.btn-bond');
-                    })
-                    .then(function() {
-                        return common.assertElementContainsText('.alert.alert-warning', 'Bonds cannot be bonded', 'Warning message should appear when intended to bond bonds');
-                    })
+                    .assertElementDisabled('.btn-bond', 'Making sure bond button is disabled')
+                    .assertElementContainsText('.alert.alert-warning', 'Bonds cannot be bonded', 'Warning message should appear when intended to bond bonds');
             }
         }
     });

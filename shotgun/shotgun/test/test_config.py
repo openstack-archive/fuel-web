@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
 import re
 import time
+
+import mock
 
 from shotgun.config import Config
 from shotgun.test import base
@@ -24,7 +25,7 @@ class TestConfig(base.BaseTestCase):
 
     def test_timestamp(self):
         t = time.localtime()
-        with patch('shotgun.config.time') as MockedTime:
+        with mock.patch('shotgun.config.time') as MockedTime:
             MockedTime.localtime.return_value = t
             MockedTime.strftime.side_effect = time.strftime
             conf = Config({})
@@ -46,3 +47,15 @@ class TestConfig(base.BaseTestCase):
                 conf.target
             )
         )
+
+    @mock.patch('shotgun.config.settings')
+    def test_timeout(self, m_settings):
+        conf = Config({})
+        assert conf.timeout is m_settings.DEFAULT_TIMEOUT
+
+    def test_pass_default_timeout(self):
+        timeout = 1345
+        conf = Config({
+            'timeout': timeout,
+        })
+        assert conf.timeout == timeout

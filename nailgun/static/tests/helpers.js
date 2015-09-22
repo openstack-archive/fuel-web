@@ -430,6 +430,17 @@ define([
                         })
                         .end();
             });
+        },
+        assertElementSelected: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .isSelected()
+                            .then(function(isSelected) {
+                                assert.isTrue(isSelected, message);
+                            })
+                        .end();
+            });
         }
     });
 

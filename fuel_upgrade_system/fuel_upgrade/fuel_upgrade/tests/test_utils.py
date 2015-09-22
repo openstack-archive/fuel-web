@@ -22,6 +22,7 @@ import textwrap
 import urllib2
 
 import requests
+import six
 import yaml
 
 import mock
@@ -774,3 +775,14 @@ class TestHttpRetry(BaseTestCase):
         self.assertEqual(result, 'return value')
         self.called_times(method, 2)
         self.called_once(msleep)
+
+
+class TestGetNonUnique(BaseTestCase):
+    def test_get_duplicates(self):
+        self.assertItemsEqual([2, 3], utils.get_non_unique([2, 2, 2, 3, 3, 1]))
+
+    def test_empty_if_no_duplicates(self):
+        self.assertEqual([], list(utils.get_non_unique(six.moves.range(3))))
+
+    def test_empty_if_empty_input(self):
+        self.assertEqual([], list(utils.get_non_unique([])))

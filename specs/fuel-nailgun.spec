@@ -1,4 +1,4 @@
-%define name nailgun
+%define name fuel-nailgun
 %{!?version: %define version 8.0.0}
 %{!?release: %define release 1}
 

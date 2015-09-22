@@ -55,25 +55,18 @@ define([
                     .findByCssSelector('.sticker select[name=source] > option')
                         // Check if "Source" dropdown exist
                         .end()
-                    .then(function() {
-                        return common.assertElementDisabled(showLogsButtonSelector, '"Show" button is disabled until source change');
-                    })
+                    .assertElementDisabled(showLogsButtonSelector, '"Show" button is disabled until source change')
                     // Change the selected value for the "Source" dropdown to Rest API
                     .clickByCssSelector('.sticker select[name=source] option[value=api]')
                     // Change the selected value for the "Level" dropdown to DEBUG
                     .clickByCssSelector('.sticker select[name=level] option[value=DEBUG]')
-                    .then(function() {
-                        return common.assertElementEnabled(showLogsButtonSelector, '"Show" button is enabled after source change');
-                    })
+                    .assertElementEnabled(showLogsButtonSelector, '"Show" button is enabled after source change')
                     .clickByCssSelector(showLogsButtonSelector)
-                    // Wait till Progress bar disappears
-                    .waitForElementDeletion('.logs-tab div.progress', 5000)
-                    .waitForCssSelector('.log-entries > tbody > tr', 5000)
+                    .assertElementDisappears('.logs-tab div.progress', 5000, 'Wait till Progress bar disappears')
+                    .assertElementsAppear('.log-entries > tbody > tr', 5000, 'Log entries are loaded')
                     // "Other servers" option is present in "Logs" dropdown
                     .clickByCssSelector('.sticker select[name=type] > option[value=remote]')
-                    .then(function() {
-                        return common.assertElementExists('.sticker select[name=node] > option', '"Node" dropdown is present');
-                    });
+                    .assertElementExists('.sticker select[name=node] > option', '"Node" dropdown is present');
             }
         };
     });

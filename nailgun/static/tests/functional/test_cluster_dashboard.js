@@ -64,19 +64,13 @@ define([
                         // Escape
                         .type('\uE00C')
                         .end()
-                    .then(function() {
-                        return common.assertElementNotExists(renameInputSelector, 'Rename control disappears');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(nameSelector, initialName,
-                            'Switching rename control does not change cluster name');
-                    })
+                    .assertElementNotExists(renameInputSelector, 'Rename control disappears')
+                    .assertElementTextEquals(nameSelector, initialName,
+                            'Switching rename control does not change cluster name')
                     .then(function() {
                         return dashboardPage.setClusterName(newName);
                     })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(nameSelector, newName, 'New name is applied');
-                    })
+                    .assertElementTextEquals(nameSelector, newName, 'New name is applied')
                     .then(function() {
                         return dashboardPage.setClusterName(initialName);
                     });
@@ -89,10 +83,8 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(dashboardPage.deployButtonSelector, 'Provision VMs',
-                            'After adding Virtual node deploy button has appropriate text');
-                    })
+                    .assertElementTextEquals(dashboardPage.deployButtonSelector, 'Provision VMs',
+                            'After adding Virtual node deploy button has appropriate text')
                     .then(function() {
                         return dashboardPage.discardChanges();
                     });
@@ -106,14 +98,12 @@ define([
                         return clusterPage.goToTab('Networks');
                     })
                     .clickByCssSelector('.verify-networks-btn')
-                    .waitForCssSelector('.verification-box .alert-danger', 200)
+                    .assertElementAppears('.verification-box .alert-danger', 200, 'Network verification warning appears if only one node added')
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.assertElementContainsText('.warnings-block',
-                            'Networks verification', 'Network verification warning is shown');
-                    })
+                    .assertElementContainsText('.warnings-block',
+                            'Networks verification', 'Network verification warning is shown')
                     .then(function() {
                         return dashboardPage.discardChanges();
                     });
@@ -127,19 +117,11 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added');
-                    })
-                    .findByCssSelector('div.instruction.invalid')
-                        // Invalid configuration message is shown
-                        .end()
-                    .then(function() {
-                        return common.assertElementContainsText(
-                            'div.validation-result ul.danger li',
+                    .assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added')
+                    .assertElementExists('div.instruction.invalid', 'Invalid configuration message is shown')
+                    .assertElementContainsText('div.validation-result ul.danger li',
                             'At least 1 Controller nodes are required (0 selected currently).',
-                            'No controllers added warning should be shown'
-                        );
-                    })
+                            'No controllers added warning should be shown')
                     .then(function() {
                         return dashboardPage.discardChanges();
                     });
@@ -155,15 +137,9 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.assertIsIntegerContentPositive('.capacity-items .cpu .capacity-value', 'CPU');
-                    })
-                    .then(function() {
-                        return common.assertIsIntegerContentPositive('.capacity-items .hdd .capacity-value', 'HDD');
-                    })
-                    .then(function() {
-                        return common.assertIsIntegerContentPositive('.capacity-items .ram .capacity-value', 'RAM');
-                    })
+                    .assertIsIntegerContentPositive('.capacity-items .cpu .capacity-value', 'CPU')
+                    .assertIsIntegerContentPositive('.capacity-items .hdd .capacity-value', 'HDD')
+                    .assertIsIntegerContentPositive('.capacity-items .ram .capacity-value', 'RAM')
                     .then(function() {
                         return dashboardPage.discardChanges();
                     });
@@ -196,46 +172,22 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.total',
-                            total,
-                            'The number of Total nodes in statistics is updated according to added nodes');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.controller',
-                            controllerNodes,
-                            'The number of controllerNodes nodes in statistics is updated according to added nodes');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.compute',
-                            computeNodes,
-                            'The number of Compute nodes in statistics is updated according to added nodes');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.base-os',
-                            operatingSystemNodes,
-                            'The number of Operating Systems nodes in statistics is updated according to added nodes');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.virt',
-                            virtualNodes,
-                            'The number of Virtual nodes in statistics is updated according to added nodes');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.offline',
-                            1,
-                            'The number of Offline nodes in statistics is updated according to added nodes');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.error',
-                            1,
-                            'The number of Error nodes in statistics is updated according to added nodes');
-                    })
-                    .then(function() {
-                        return common.assertElementTextEqualTo(valueSelector + '.pending_addition',
-                            total,
-                            'The number of Pending Addition nodes in statistics is updated according to added nodes');
-                    })
+                    .assertElementTextEquals(valueSelector + '.total', total,
+                            'The number of Total nodes in statistics is updated according to added nodes')
+                    .assertElementTextEquals(valueSelector + '.controller', controllerNodes,
+                            'The number of controllerNodes nodes in statistics is updated according to added nodes')
+                    .assertElementTextEquals(valueSelector + '.compute', computeNodes,
+                            'The number of Compute nodes in statistics is updated according to added nodes')
+                    .assertElementTextEquals(valueSelector + '.base-os', operatingSystemNodes,
+                            'The number of Operating Systems nodes in statistics is updated according to added nodes')
+                    .assertElementTextEquals(valueSelector + '.virt', virtualNodes,
+                            'The number of Virtual nodes in statistics is updated according to added nodes')
+                    .assertElementTextEquals(valueSelector + '.offline', 1,
+                            'The number of Offline nodes in statistics is updated according to added nodes')
+                    .assertElementTextEquals(valueSelector + '.error', 1,
+                            'The number of Error nodes in statistics is updated according to added nodes')
+                    .assertElementTextEquals(valueSelector + '.pending_addition', total,
+                            'The number of Pending Addition nodes in statistics is updated according to added nodes')
                     .then(function() {
                         return dashboardPage.discardChanges();
                     });
@@ -249,19 +201,15 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.assertElementTextEqualTo('.statistics-block .cluster-info-value.error',
-                            1, 'Error node is reflected in Statistics block');
-                    })
+                    .assertElementTextEquals('.statistics-block .cluster-info-value.error', 1,
+                        'Error node is reflected in Statistics block')
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .waitForElementDeletion('.deploy-block .progress', 10000)
-                    .waitForCssSelector('.dashboard-tab .alert strong', 1000)
-                    .then(function() {
-                        return common.assertElementTextEqualTo('.dashboard-tab .alert strong', 'Error',
-                            'Deployment failed in case of adding offline nodes');
-                    })
+                    .assertElementDisappears('.deploy-block .progress', 10000, 'Progress bar disappears after deployment')
+                    .assertElementAppears('.dashboard-tab .alert strong', 1000, 'Error message is shown when adding error node')
+                    .assertElementTextEquals('.dashboard-tab .alert strong', 'Error',
+                            'Deployment failed in case of adding offline nodes')
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);
                     })
@@ -273,8 +221,7 @@ define([
                 var vCenterClusterName = clusterName + 'VCenter test';
                 return this.remote
                     .clickLinkByText('Environments')
-                    // needed here to wait for transition
-                    .waitForCssSelector('a.clusterbox', 2000)
+                    .assertElementAppears('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
                     .then(function() {
                         return common.createCluster(
                             vCenterClusterName,
@@ -298,10 +245,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .then(function() {
-                        return common.assertElementContainsText('.warnings-block',
-                            'VMware settings are invalid', 'VMware warning is shown');
-                    });
+                    .assertElementContainsText('.warnings-block', 'VMware settings are invalid', 'VMware warning is shown');
             }
         };
     });

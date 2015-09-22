@@ -52,9 +52,7 @@ define([
             },
             'Test steps manipulations': function() {
                 return this.remote
-                    .then(function() {
-                        return common.assertElementExists('.wizard-step.active', 'There is only one active and available step at the beginning');
-                    })
+                    .assertElementExists('.wizard-step.active', 'There is only one active and available step at the beginning')
                     // Compute
                     .pressKeys('\uE007')
                     // Network
@@ -65,24 +63,14 @@ define([
                     .pressKeys('\uE007')
                     // Finish
                     .pressKeys('\uE007')
-                    .findAllByCssSelector('.wizard-step.available')
-                        .then(function(elements) {
-                            return assert.isTrue(elements.length == 5, 'All steps are available at the end');
-                        })
-                        .end()
+                    .assertElementsExist('.wizard-step.available', 5, 'All steps are available at the end')
                     .clickLinkByText('Compute')
                     .clickByCssSelector('input[value=kvm]')
-                    .findAllByCssSelector('.wizard-step.available')
-                        .then(function(elements) {
-                            return assert.isTrue(elements.length == 5, 'All steps are available if no changes to restrictions are made');
-                        })
-                        .end()
+                    .assertElementsExist('.wizard-step.available', 5,
+                        'All steps are available if no changes to restrictions are made')
                     .clickByCssSelector('input[type=checkbox]')
-                    .findAllByCssSelector('.wizard-step.available')
-                        .then(function(elements) {
-                            return assert.isTrue(elements.length == 1, 'Only one step is available after changing hypervisor');
-                        })
-                        .end();
+                    .assertElementExists('.wizard-step.available', 1,
+                        'Only one step is available after changing hypervisor')
             }
         };
     });

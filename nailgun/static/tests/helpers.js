@@ -430,6 +430,27 @@ define([
                         })
                         .end();
             });
+        },
+        assertElementSelected: function(cssSelector, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .isSelected()
+                            .then(function(isSelected) {
+                                assert.isTrue(isSelected, message);
+                            })
+                        .end();
+            });
+        },
+        assertIsIntegerContentPositive: function(cssSelector, attributeName) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                    .getVisibleText().then(function(text) {
+                        return assert.isTrue(parseInt(text) > 0, attributeName + ' is greater than 0');
+                    })
+                    .end();
+            });
         }
     });
 

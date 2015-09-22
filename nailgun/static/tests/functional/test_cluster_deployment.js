@@ -58,9 +58,7 @@ define([
             },
             'No deployment button when there are no nodes added': function() {
                 return this.remote
-                    .then(function() {
-                        return common.assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added')
-                    });
+                    .assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added')
             },
             'Discard changes': function() {
                 return this.remote
@@ -75,18 +73,14 @@ define([
                     .then(function() {
                         return modal.waitToOpen();
                     })
-                    .then(function() {
-                        return common.assertElementContainsText('h4.modal-title', 'Discard Changes', 'Discard Changes confirmation modal expected');
-                    })
+                    .assertElementContainsText('h4.modal-title', 'Discard Changes', 'Discard Changes confirmation modal expected')
                     .then(function() {
                         return modal.clickFooterButton('Discard');
                     })
                     .then(function() {
                         return modal.waitToClose();
                     })
-                    // All changes discarded, add nodes button gets visible
-                    // in deploy readiness block
-                    .waitForCssSelector('div.deploy-readiness a.btn-add-nodes', 2000);
+                    .assertElementAppears('div.deploy-readiness a.btn-add-nodes', 2000, 'All changes discarded, add nodes button gets visible in deploy readiness block');
             },
             'Start/stop deployment': function() {
                 this.timeout = 60000;
@@ -97,24 +91,19 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .waitForCssSelector('.dashboard-tab', 200)
+                    .assertElementAppears('.dashboard-tab', 200, 'Dashboard tab opened')
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .waitForCssSelector('div.deploy-process div.progress', 2000)
+                    .assertElementAppears('div.deploy-process div.progress', 2000, 'Deployment started')
                     .then(function() {
                         return dashboardPage.stopDeployment();
                     })
-                    .waitForElementDeletion('div.deploy-process div.progress', 5000)
-                    // Deployment button available
-                    .waitForCssSelector(dashboardPage.deployButtonSelector, 1000)
-                    .then(function() {
-                        return common.assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected');
-                    })
+                    .assertElementDisappears('div.deploy-process div.progress', 5000, 'Deployment stopped')
+                    .assertElementAppears(dashboardPage.deployButtonSelector, 1000, 'Deployment button available')
+                    .assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected')
                     //@todo: uncomment this after bug fix https://bugs.launchpad.net/fuel/+bug/1493291
-                    //.then(function() {
-                    //    return common.assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy');
-                    //})
+                    //.assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy')
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);
@@ -145,11 +134,8 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    // Deployment competed
-                    .waitForCssSelector('div.horizon', 50000)
-                    .then(function() {
-                        return common.assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy');
-                    })
+                    .assertElementAppears('div.horizon', 50000, 'Deployment competed')
+                    .assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy')
                     .findByCssSelector('div.horizon a.btn-success')
                         .getAttribute('href')
                         .then(function(value) {

@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
-import re
 import time
+
+import mock
 
 from shotgun.config import Config
 from shotgun.test import base
@@ -24,7 +24,7 @@ class TestConfig(base.BaseTestCase):
 
     def test_timestamp(self):
         t = time.localtime()
-        with patch('shotgun.config.time') as MockedTime:
+        with mock.patch('shotgun.config.time') as MockedTime:
             MockedTime.localtime.return_value = t
             MockedTime.strftime.side_effect = time.strftime
             conf = Config({})
@@ -39,10 +39,20 @@ class TestConfig(base.BaseTestCase):
             "target": "/tmp/sample",
             "timestamp": True
         })
-        assert bool(
-            re.search(
-                ur"\/tmp\/sample\-[\d]{4}\-[\d]{2}\-[\d]{2}_"
-                "([\d]{2}\-){2}[\d]{2}",
-                conf.target
-            )
+        self.assertRegex(
+            conf.target,
+            ur"\/tmp\/sample\-[\d]{4}\-[\d]{2}\-[\d]{2}_"
+            "([\d]{2}\-){2}[\d]{2}",
         )
+
+    @mock.patch('shotgun.config.settings')
+    def test_timeout(self, m_settings):
+        conf = Config({})
+        self.assertIs(conf.timeout, m_settings.DEFAULT_TIMEOUT)
+
+    def test_pass_default_timeout(self):
+        timeout = 1345
+        conf = Config({
+            'timeout': timeout,
+        })
+        self.assertEqual(conf.timeout, timeout)

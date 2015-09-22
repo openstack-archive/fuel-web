@@ -62,3 +62,8 @@ class Config(object):
                 for object_ in properties.get("objects", []):
                     object_["host"] = host
                     yield object_
+
+    @property
+    def timeout(self):
+        """Timeout for executing commands."""
+        return self.data.get("timeout", settings.DEFAULT_TIMEOUT)

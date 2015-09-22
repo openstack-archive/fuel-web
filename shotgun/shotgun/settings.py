@@ -17,3 +17,4 @@ LASTDUMP = "/tmp/snapshot_last"
 TIMESTAMP = True
 COMPRESSION_LEVEL = 3
 LOG_FILE = "/var/log/shotgun.log"
+DEFAULT_TIMEOUT = 10

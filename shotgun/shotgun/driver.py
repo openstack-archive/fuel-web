@@ -45,6 +45,7 @@ class CommandOut(object):
 
 
 class Driver(object):
+
     @classmethod
     def getDriver(cls, data, conf):
         driver_type = data["type"]
@@ -65,6 +66,7 @@ class Driver(object):
         self.ssh_key = self.data.get("host", {}).get("ssh-key")
         self.local = utils.is_local(self.host)
         self.conf = conf
+        self.timeout = self.data.get("timeout", self.conf.timeout)
 
     def snapshot(self):
         raise NotImplementedError
@@ -79,7 +81,7 @@ class Driver(object):
                     host_string=self.host,      # destination host
                     key_filename=self.ssh_key,  # a path to ssh key
                     timeout=2,                  # a network connection timeout
-                    command_timeout=10,         # a command execution timeout
+                    command_timeout=self.timeout,  # command execution timeout
                     warn_only=True,             # don't exit on error
                     abort_on_prompts=True,      # non-interactive mode
                 ):
@@ -302,6 +304,7 @@ class XmlRpc(Driver):
 
 
 class Command(Driver):
+
     def __init__(self, data, conf):
         super(Command, self).__init__(data, conf)
         self.cmdname = self.data["command"]

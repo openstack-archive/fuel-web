@@ -529,26 +529,33 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
                     d.get('group_id'))
             )
 
-        if objects.NetworkGroup.get_from_node_group_by_name(
-                node_group.id, d.get('name')):
-            raise errors.AlreadyExists(
-                "Network with name {0} already exists "
-                "in node group {1}".format(d['name'], node_group.name)
-            )
+        cls._check_duplicate_network_name(node_group, d.get('name'))
 
         return d
 
     @classmethod
     def validate_update(cls, data, **kwargs):
-        valid_data = cls.validate(data)
-        ng_db = db().query(NetworkGroup).get(valid_data['id'])
+        d = cls.validate_json(data)
+
+        # Can't change node group of an existing network group
+        d.pop('group_id', None)
+
+        net_id = d.get('id') or kwargs['instance'].id
+        ng_db = db().query(NetworkGroup).get(net_id)
         if not ng_db.group_id:
             # Only default Admin-pxe network doesn't have group_id.
             # It cannot be changed.
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be changed")
+
+        # If name is being changed then we should make sure it does
+        # not conflict with an existing network. Otherwise it's fine to
+        # send the current name as part of the PUT request.
+        if d.get('name') and ng_db.name != d['name']:
+            cls._check_duplicate_network_name(ng_db.nodegroup, d['name'])
+
         return cls.validate_network_group(
-            valid_data, ng_db, ng_db.nodegroup.cluster)
+            d, ng_db, ng_db.nodegroup.cluster)
 
     @classmethod
     def validate_delete(cls, data, instance, force=False):
@@ -561,6 +568,14 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
             raise errors.InvalidData(
                 "Networks cannot be deleted after deployment")
 
+    @classmethod
+    def _check_duplicate_network_name(cls, node_group, network_name):
+        if objects.NetworkGroup.get_from_node_group_by_name(
+                node_group.id, network_name):
+            raise errors.AlreadyExists(
+                "Network with name {0} already exists "
+                "in node group {1}".format(network_name, node_group.name)
+            )
 
 class NetworkTemplateValidator(BasicValidator):
 

@@ -18,95 +18,93 @@ import StringIO
 
 import mock
 
-from shotgun.test import base
 from shotgun import utils
 
 
-class TestUtils(base.BaseTestCase):
+@mock.patch('shotgun.utils.execute')
+def test_remove_subdir(mexecute):
+    utils.remove('/', ['good', '**/*.py'])
+    mexecute.assert_has_calls([
+        mock.call('shopt -s globstar; rm -rf /good', shell=True),
+        mock.call('shopt -s globstar; rm -rf /**/*.py', shell=True)])
 
-    @mock.patch('shotgun.utils.execute')
-    def test_remove_subdir(self, mexecute):
-        utils.remove('/', ['good', '**/*.py'])
-        mexecute.assert_has_calls([
-            mock.call('shopt -s globstar; rm -rf /good', shell=True),
-            mock.call('shopt -s globstar; rm -rf /**/*.py', shell=True)])
 
-    @mock.patch('shotgun.utils.os.walk')
-    def test_iterfiles(self, mwalk):
-        path = '/root'
-        mwalk.return_value = [
-            (path, '', ('file1', 'file2')),
-            (path + '/sub', '', ('file3',))]
+@mock.patch('shotgun.utils.os.walk')
+def test_iterfiles(mwalk):
+    path = '/root'
+    mwalk.return_value = [
+        (path, '', ('file1', 'file2')),
+        (path + '/sub', '', ('file3',))]
 
-        result = list(utils.iterfiles(path))
+    result = list(utils.iterfiles(path))
 
-        mwalk.assert_called_once_with(path, topdown=True)
-        self.assertEqual(
-            result, ['/root/file1', '/root/file2', '/root/sub/file3'])
+    mwalk.assert_called_once_with(path, topdown=True)
+    assert result == ['/root/file1', '/root/file2', '/root/sub/file3']
 
-    @mock.patch('shotgun.utils.execute')
-    def test_compress(self, mexecute):
-        target = '/path/target'
-        level = '-3'
 
-        utils.compress(target, level)
+@mock.patch('shotgun.utils.execute')
+def test_compress(mexecute):
+    target = '/path/target'
+    level = '-3'
 
-        compress_call = mexecute.call_args_list[0]
-        rm_call = mexecute.call_args_list[1]
+    utils.compress(target, level)
 
-        compress_env = compress_call[1]['env']
-        self.assertEqual(compress_env['XZ_OPT'], level)
-        self.assertEqual(
-            compress_call[0][0],
+    compress_call = mexecute.call_args_list[0]
+    rm_call = mexecute.call_args_list[1]
+
+    compress_env = compress_call[1]['env']
+    assert compress_env['XZ_OPT'] == level
+    assert (compress_call[0][0] ==
             'tar cJvf /path/target.tar.xz -C /path target')
+    assert rm_call[0][0] == 'rm -r /path/target'
 
-        self.assertEqual(rm_call[0][0], 'rm -r /path/target')
+
+def test_ccstring_no_writers():
+    test_string = 'some_string'
+
+    ccstring = utils.CCStringIO()
+    ccstring.write(test_string)
+
+    assert ccstring.getvalue() == test_string
 
 
-class TestCCStringIO(base.BaseTestCase):
+def test_ccstring_with_one_writer():
+    test_string = 'some_string'
 
-    def test_no_writers(self):
-        test_string = 'some_string'
+    writer = StringIO.StringIO()
+    ccstring = utils.CCStringIO(writers=writer)
+    ccstring.write(test_string)
 
-        ccstring = utils.CCStringIO()
-        ccstring.write(test_string)
+    assert ccstring.getvalue() == test_string
+    assert writer.getvalue() == test_string
 
-        self.assertEqual(ccstring.getvalue(), test_string)
 
-    def test_with_one_writer(self):
-        test_string = 'some_string'
+def test_ccstring_with_multiple_writers():
+    test_string = 'some_string'
 
-        writer = StringIO.StringIO()
-        ccstring = utils.CCStringIO(writers=writer)
-        ccstring.write(test_string)
+    writer_a = StringIO.StringIO()
+    writer_b = StringIO.StringIO()
+    ccstring = utils.CCStringIO(writers=[writer_a, writer_b])
+    ccstring.write(test_string)
 
-        self.assertEqual(ccstring.getvalue(), test_string)
-        self.assertEqual(writer.getvalue(), test_string)
+    assert ccstring.getvalue() == test_string
+    assert writer_a.getvalue() == test_string
+    assert writer_b.getvalue() == test_string
 
-    def test_with_multiple_writers(self):
-        test_string = 'some_string'
 
-        writer_a = StringIO.StringIO()
-        writer_b = StringIO.StringIO()
-        ccstring = utils.CCStringIO(writers=[writer_a, writer_b])
-        ccstring.write(test_string)
+def test_ccstring_with_writer_and_buffer():
+    buffer = 'I am here already'
 
-        self.assertEqual(ccstring.getvalue(), test_string)
-        self.assertEqual(writer_a.getvalue(), test_string)
-        self.assertEqual(writer_b.getvalue(), test_string)
+    writer = StringIO.StringIO()
+    ccstring = utils.CCStringIO(buffer, writers=writer)
 
-    def test_with_writer_and_buffer(self):
-        buffer = 'I am here already'
+    assert ccstring.getvalue() == buffer
+    assert writer.getvalue() == ''
 
-        writer = StringIO.StringIO()
-        ccstring = utils.CCStringIO(buffer, writers=writer)
 
-        self.assertEqual(ccstring.getvalue(), buffer)
-        self.assertEqual(writer.getvalue(), '')
+def test_ccstring_non_ascii_output_with_unicode():
+    ccstring = utils.CCStringIO()
+    ccstring.write('привет')
+    ccstring.write(u'test')
 
-    def test_non_ascii_output_with_unicode(self):
-        ccstring = utils.CCStringIO()
-        ccstring.write('привет')
-        ccstring.write(u'test')
-
-        self.assertEqual(ccstring.getvalue(), 'приветtest')
+    assert ccstring.getvalue() == 'приветtest'

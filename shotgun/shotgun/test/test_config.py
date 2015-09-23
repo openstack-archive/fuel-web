@@ -18,44 +18,40 @@ import time
 import mock
 
 from shotgun.config import Config
-from shotgun.test import base
 
 
-class TestConfig(base.BaseTestCase):
-
-    def test_timestamp(self):
-        t = time.localtime()
-        with mock.patch('shotgun.config.time') as MockedTime:
-            MockedTime.localtime.return_value = t
-            MockedTime.strftime.side_effect = time.strftime
-            conf = Config({})
-            stamped = conf._timestamp("sample")
-        self.assertEqual(
-            stamped,
-            "sample-{0}".format(time.strftime('%Y-%m-%d_%H-%M-%S', t))
-        )
-
-    def test_target_timestamp(self):
-        conf = Config({
-            "target": "/tmp/sample",
-            "timestamp": True
-        })
-        assert bool(
-            re.search(
-                ur"\/tmp\/sample\-[\d]{4}\-[\d]{2}\-[\d]{2}_"
-                "([\d]{2}\-){2}[\d]{2}",
-                conf.target
-            )
-        )
-
-    @mock.patch('shotgun.config.settings')
-    def test_timeout(self, m_settings):
+def test_timestamp():
+    t = time.localtime()
+    with mock.patch('shotgun.config.time.localtime', return_value=t):
         conf = Config({})
-        assert conf.timeout is m_settings.DEFAULT_TIMEOUT
+        stamped = conf._timestamp("sample")
 
-    def test_pass_default_timeout(self):
-        timeout = 1345
-        conf = Config({
-            'timeout': timeout,
-        })
-        assert conf.timeout == timeout
+    assert stamped == "sample-{0}".format(
+        time.strftime('%Y-%m-%d_%H-%M-%S', t))
+
+
+def test_target_timestamp():
+    conf = Config({
+        "target": "/tmp/sample",
+        "timestamp": True
+    })
+
+    assert re.search(
+        ur"\/tmp\/sample\-[\d]{4}\-[\d]{2}\-[\d]{2}_"
+        "([\d]{2}\-){2}[\d]{2}",
+        conf.target
+    )
+
+
+@mock.patch('shotgun.config.settings')
+def test_timeout(m_settings):
+    conf = Config({})
+    assert conf.timeout is m_settings.DEFAULT_TIMEOUT
+
+
+def test_pass_default_timeout():
+    timeout = 1345
+    conf = Config({
+        'timeout': timeout,
+    })
+    assert conf.timeout == timeout

@@ -12,32 +12,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import tempfile
-
 import mock
 
 from shotgun.manager import Manager
-from shotgun.test import base
 
 
-class TestManager(base.BaseTestCase):
-
-    @mock.patch('shotgun.manager.Driver.getDriver')
-    @mock.patch('shotgun.manager.utils.execute')
-    @mock.patch('shotgun.manager.utils.compress')
-    def test_snapshot(self, mcompress, mexecute, mget):
-        data = {
-            "type": "file",
-            "path": "/remote_dir/remote_file",
-            "host": {
-                "address": "remote_host",
-            },
-        }
-        conf = mock.MagicMock()
-        conf.target = "/target/data"
-        conf.objects = [data]
-        conf.lastdump = tempfile.mkstemp()[1]
-        manager = Manager(conf)
-        manager.snapshot()
-        mget.assert_called_once_with(data, conf)
-        mexecute.assert_called_once_with('rm -rf /target')
+@mock.patch('shotgun.manager.Driver.getDriver')
+@mock.patch('shotgun.manager.utils.execute')
+@mock.patch('shotgun.manager.utils.compress')
+def test_snapshot(mcompress, mexecute, mget, fake_conf, tmpdir):
+    data = {
+        "type": "file",
+        "path": "/remote_dir/remote_file",
+        "host": {
+            "address": "remote_host",
+        },
+    }
+    fake_conf.target = "/target/data"
+    fake_conf.objects = [data]
+    fake_conf.lastdump = tmpdir.join("last_snapshot").strpath
+    manager = Manager(fake_conf)
+    manager.snapshot()
+    mget.assert_called_once_with(data, fake_conf)
+    mexecute.assert_called_once_with('rm -rf /target')

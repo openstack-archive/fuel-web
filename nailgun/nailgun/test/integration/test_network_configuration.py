@@ -27,9 +27,10 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
 
-class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
+class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
+
     def setUp(self):
-        super(TestNovaNetworkConfigurationHandlerMultinode, self).setUp()
+        super(TestNovaNetworkConfigurationHandler, self).setUp()
         cluster = self.env.create_cluster(api=True)
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
@@ -250,9 +251,10 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 self.assertIsNone(n['gateway'])
 
 
-class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
+class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
+
     def setUp(self):
-        super(TestNeutronNetworkConfigurationHandlerMultinode, self).setUp()
+        super(TestNeutronNetworkConfigurationHandler, self).setUp()
         cluster = self.env.create_cluster(api=True,
                                           net_provider='neutron',
                                           net_segment_type='gre',
@@ -500,8 +502,26 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                       data['networks'])[0]
         self.assertIsNone(strg['gateway'])
 
+    def test_admin_vip_reservation(self):
+        self.cluster.release.network_roles_metadata.append({
+            'id': 'admin/vip',
+            'default_mapping': 'fuelweb_admin',
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': [{
+                    'name': 'my-vip',
+                }]
+            }
+        })
+        self.cluster.release.version = '2015.1-7.0'
+        self.db.flush()
+
+        self.env.neutron_networks_get(self.cluster.id)
+
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
+
     def setUp(self):
         super(TestNovaNetworkConfigurationHandlerHA, self).setUp()
         cluster = self.env.create_cluster(api=True, mode='ha_compact')

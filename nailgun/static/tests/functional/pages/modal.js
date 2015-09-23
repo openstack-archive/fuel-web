@@ -29,9 +29,8 @@ define([
                     .waitForCssSelector('div.modal-content', 2000);
             },
             checkTitle: function(expectedTitle) {
-                var Common = require('tests/functional/pages/common'),
-                    common = new Common(this.remote);
-                return common.assertElementContainsText('h4.modal-title', expectedTitle, 'Unexpected modal window title');
+                return this.remote
+                    .assertElementContainsText('h4.modal-title', expectedTitle, 'Unexpected modal window title');
             },
             close: function() {
                 var self = this;

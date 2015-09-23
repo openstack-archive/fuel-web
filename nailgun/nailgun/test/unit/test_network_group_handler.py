@@ -312,19 +312,15 @@ class TestHandlers(BaseIntegrationTest):
         self.assertRegexpMatches(resp.json_body["message"],
                                  'Network with name .* already exists')
 
-    def test_invalid_group_id_on_creation(self):
-        resp = self.env._create_network_group(expect_errors=True, group_id=-1)
-        self.assertEqual(400, resp.status_code)
-        self.assertRegexpMatches(resp.json_body["message"],
-                                 'Node group with ID -1 does not exist')
-
-    def test_invalid_group_id_on_change(self):
+    def test_update_same_name(self):
         resp = self.env._create_network_group(name='test')
         new_ng = resp.json_body
 
-        new_ng['group_id'] = -1
+        resp = self.env._update_network_group(new_ng, expect_errors=False)
+        self.assertEqual(200, resp.status_code)
 
-        resp = self.env._update_network_group(new_ng, expect_errors=True)
+    def test_invalid_group_id_on_creation(self):
+        resp = self.env._create_network_group(expect_errors=True, group_id=-1)
         self.assertEqual(400, resp.status_code)
         self.assertRegexpMatches(resp.json_body["message"],
                                  'Node group with ID -1 does not exist')

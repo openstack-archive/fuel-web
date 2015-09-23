@@ -321,6 +321,14 @@ class NetworkManager(object):
         network = db().query(NetworkGroup).\
             filter_by(name=network_name, group_id=group_id).first()
 
+        # FIXME:
+        #   Built-in fuelweb_admin network doesn't belong to any node
+        #   group, since it's shared between all clusters. So we need
+        #   to handle this very special case if we want to be able
+        #   to allocate VIP in default admin network.
+        if not network and network_name == consts.NETWORKS.fuelweb_admin:
+            network = cls.get_admin_network_group()
+
         if not network:
             raise Exception(u"Network '%s' for cluster_id=%s not found." %
                             (network_name, cluster.id))

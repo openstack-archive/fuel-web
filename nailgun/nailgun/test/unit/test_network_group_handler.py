@@ -312,19 +312,40 @@ class TestHandlers(BaseIntegrationTest):
         self.assertRegexpMatches(resp.json_body["message"],
                                  'Network with name .* already exists')
 
-    def test_invalid_group_id_on_creation(self):
-        resp = self.env._create_network_group(expect_errors=True, group_id=-1)
-        self.assertEqual(400, resp.status_code)
-        self.assertRegexpMatches(resp.json_body["message"],
-                                 'Node group with ID -1 does not exist')
-
-    def test_invalid_group_id_on_change(self):
+    def test_update_same_name(self):
         resp = self.env._create_network_group(name='test')
         new_ng = resp.json_body
 
-        new_ng['group_id'] = -1
+        resp = self.env._update_network_group(new_ng, expect_errors=False)
+        self.assertEqual(200, resp.status_code)
 
-        resp = self.env._update_network_group(new_ng, expect_errors=True)
+    def test_update_doesnt_require_group_id(self):
+        resp = self.env._create_network_group(name='test')
+        new_ng = resp.json_body
+        del new_ng['group_id']
+
+        resp = self.env._update_network_group(new_ng, expect_errors=False)
+        self.assertEqual(200, resp.status_code)
+
+    def test_update_doesnt_require_id_in_data(self):
+        ng_id = self.env._create_network_group(name='test').json_body['id']
+
+        update_data = {'name': 'test2'}
+
+        update_resp = self.app.put(
+            reverse(
+                'NetworkGroupHandler',
+                kwargs={'obj_id': ng_id}
+            ),
+            jsonutils.dumps(update_data),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(200, update_resp.status_code)
+        self.assertEqual(update_resp.json_body['name'], 'test2')
+
+    def test_invalid_group_id_on_creation(self):
+        resp = self.env._create_network_group(expect_errors=True, group_id=-1)
         self.assertEqual(400, resp.status_code)
         self.assertRegexpMatches(resp.json_body["message"],
                                  'Node group with ID -1 does not exist')

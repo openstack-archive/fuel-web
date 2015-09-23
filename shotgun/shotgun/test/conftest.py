@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,12 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-try:
-    from unittest.case import TestCase
-except ImportError:
-    # Runing unit-tests in production environment
-    from unittest2.case import TestCase
+import mock
+import pytest
+
+from shotgun import config
 
 
-class BaseTestCase(TestCase):
-    """Base unit test case for shotgun tests."""
+@pytest.fixture
+def fake_conf():
+    return mock.Mock(
+        target="/target",
+        spec=config.Config,
+    )

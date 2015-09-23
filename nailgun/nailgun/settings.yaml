@@ -437,6 +437,30 @@ LOGS:
     <<: *remote_openstack_log_format
     <<: *os_log_group
     path: "keystone-manage.log"
+  - id: 'os/keystone_wsgi_admin_access'
+    name: "keystone_wsgi_admin_access"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "keystone_wsgi_admin_access.log"
+  - id: 'os/keystone_wsgi_admin_error'
+    name: "keystone_wsgi_admin_error"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "keystone_wsgi_admin_error.log"
+  - id: 'os/keystone_wsgi_main_access'
+    name: "keystone_wsgi_main_access"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "keystone_wsgi_main_access.log"
+  - id: 'os/keystone_wsgi_main_error'
+    name: "keystone_wsgi_main_error"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "keystone_wsgi_main_error.log"
   - id: 'os/cinder-api'
     name: "cinder-api"
     <<: *remote_openstack_log_type

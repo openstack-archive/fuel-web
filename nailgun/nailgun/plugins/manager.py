@@ -85,19 +85,32 @@ class PluginManager(object):
         return cluster_plugins
 
     @classmethod
-    def get_network_roles(cls, cluster):
-        core_roles = cluster.release.network_roles_metadata
-        known_roles = set(role['id'] for role in core_roles)
+    def get_network_roles(cls, cluster, merge_policy):
+        """Returns the network roles from plugins.
 
-        plugin_roles = []
-        conflict_roles = {}
+        The roles cluster and plugins will be mixed
+        according to merge policy.
+        """
+
+        instance_roles = cluster.release.network_roles_metadata
+        all_roles = dict((role['id'], role) for role in instance_roles)
+        conflict_roles = dict()
+
         for plugin in cluster.plugins:
             for role in plugin.network_roles_metadata:
                 role_id = role['id']
-                if role_id in known_roles:
-                    conflict_roles[role_id] = plugin.name
-                known_roles.add(role_id)
-            plugin_roles.extend(plugin.network_roles_metadata)
+                if role_id in all_roles:
+                    try:
+                        merge_policy.apply_patch(
+                            all_roles[role_id],
+                            role
+                        )
+                    except errors.UnresolvableConflict as e:
+                        logger.error("cannot merge plugin {0}: {1}"
+                                     .format(plugin.name, e))
+                        conflict_roles[role_id] = plugin.name
+                else:
+                    all_roles[role_id] = role
 
         if conflict_roles:
             raise errors.NetworkRoleConflict(
@@ -106,7 +119,7 @@ class PluginManager(object):
                     ', '.join(conflict_roles),
                     ', '.join(set(conflict_roles.values()))))
 
-        return plugin_roles
+        return list(all_roles.values())
 
     @classmethod
     def get_plugins_deployment_tasks(cls, cluster):

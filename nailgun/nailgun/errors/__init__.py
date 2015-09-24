@@ -107,7 +107,10 @@ default_messages = {
     "CannotFindExtension": "Cannot find extension",
 
     # unknown
-    "UnknownError": "Unknown error"
+    "UnknownError": "Unknown error",
+
+    # unresolved conflict
+    "UnresolvableConflict": "Unresolvable conflict"
 }
 
 

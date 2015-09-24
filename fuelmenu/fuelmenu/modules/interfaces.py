@@ -79,7 +79,7 @@ class interfaces(urwid.WidgetWrap):
                 "bootproto": {"label": "Configuration via DHCP:",
                               "tooltip": "",
                               "value": "radio",
-                              "choices": ["DHCP", "Static"]},
+                              "choices": ["Static", "DHCP"]},
                 "ipaddr": {"label": "IP address:",
                            "tooltip": "Manual IP address (example \
 192.168.1.2)",
@@ -141,9 +141,9 @@ class interfaces(urwid.WidgetWrap):
             elif fieldname == "bootproto":
                 rb_group = self.edits[index].rb_group
                 if rb_group[0].state:
-                    responses["bootproto"] = "dhcp"
-                else:
                     responses["bootproto"] = "none"
+                else:
+                    responses["bootproto"] = "dhcp"
             elif fieldname == "onboot":
                 rb_group = self.edits[index].rb_group
                 if rb_group[0].state:
@@ -286,7 +286,8 @@ class interfaces(urwid.WidgetWrap):
                       'class': "l23network::l3::ifconfig",
                       'name': self.activeiface}
         if responses["onboot"].lower() == "no":
-            params = {"ipaddr": "none"}
+            params = {"ipaddr": "none",
+                      "gateway": ""}
         elif responses["bootproto"] == "dhcp":
             self.unset_gateway()
             if "dhcp_nowait" in responses.keys():

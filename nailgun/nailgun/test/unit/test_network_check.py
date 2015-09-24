@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from mock import MagicMock
 from mock import patch
 
@@ -600,25 +601,61 @@ class TestCheckVIPsNames(BaseIntegrationTest):
         )
 
         self.cluster = self.env.clusters[0]
+        self.plugin = self.env.create_plugin(cluster=self.cluster)
         self.task = Task(cluster_id=self.cluster.id)
         self.db.add(self.task)
         self.db.flush()
 
-    def test_check_vip_names(self):
-        # in order VIPAssigningConflict error to be raised within
-        # 'check_before_deployment' VIP names introduced by plugins
-        # for the cluster must overlap with those in network configuration
-        # of the cluster itself, so we make here such overlapping
+    def test_fail_if_vips_for_cluster_are_not_unique(self):
         cluster_net_roles = self.cluster.release.network_roles_metadata
-
-        with patch(
-                'nailgun.objects.cluster.PluginManager.get_network_roles',
-                new=MagicMock(return_value=cluster_net_roles)
-        ):
-
-            with self.assertRaises(errors.CheckBeforeDeploymentError) as exc:
-                ApplyChangesTaskManager(self.cluster.id)\
-                    .check_before_deployment(self.task)
+        cluster_net_roles[1]["properties"]["vip"].append({
+            "name": "vip1"
+        })
+        cluster_net_roles[0]["properties"]["vip"].append({
+            "name": "vip1"
+        })
+        self.db.flush()
+        with self.assertRaises(errors.CheckBeforeDeploymentError) as exc:
+            ApplyChangesTaskManager(self.cluster.id)\
+                .check_before_deployment(self.task)
 
             self.assertIn('Duplicate VIP names found in network configuration',
                           exc.exception.message)
+
+    def test_check_vip_names_is_merged(self):
+        cluster_net_roles = self.cluster.release.network_roles_metadata
+        cluster_net_roles[0]["properties"]["vip"].append({
+            "name": "vip1", "namespace": "vip_ns1"
+        })
+        plugin_net_roles = [copy.deepcopy(cluster_net_roles[0])]
+        plugin_net_roles[0]["properties"]["vip"] = [{
+            "name": "vip1", "namespace": "vip_ns1"
+        }]
+        self.plugin.network_roles_metadata = plugin_net_roles
+        self.db.flush()
+        self.assertNotRaises(
+            errors.CheckBeforeDeploymentError,
+            ApplyChangesTaskManager(self.cluster.id)
+            .check_before_deployment,
+            self.task
+        )
+
+    def test_fail_if_vips_cannot_be_merged(self):
+        cluster_net_roles = self.cluster.release.network_roles_metadata
+        cluster_net_roles[0]["properties"]["vip"].append({
+            "name": "vip1", "namespace": "vip_ns1"
+        })
+        plugin_net_roles = [copy.deepcopy(cluster_net_roles[0])]
+        plugin_net_roles[0]["properties"]["vip"] = [{
+            "name": "vip1", "namespace": "vip_ns2"
+        }]
+        self.plugin.network_roles_metadata = plugin_net_roles
+        self.db.flush()
+        with self.assertRaises(errors.CheckBeforeDeploymentError) as exc:
+            ApplyChangesTaskManager(self.cluster.id)\
+                .check_before_deployment(self.task)
+
+            self.assertIn(
+                'Cannot override existing network roles',
+                exc.exception.message
+            )

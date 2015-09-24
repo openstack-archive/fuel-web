@@ -38,6 +38,7 @@ from nailgun.objects import NailgunObject
 from nailgun.objects import Release
 from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.plugins.manager import PluginManager
+from nailgun.plugins.merge_policies import NetworkRoleMergePolicy
 from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
@@ -191,9 +192,8 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_default_kernel_params(cls, instance):
-        kernel_params = instance.attributes.editable.get("kernel_params")
-        if kernel_params and kernel_params.get("kernel"):
-            return kernel_params.get("kernel").get("value")
+        kernel_params = instance.attributes.editable.get("kernel_params", {})
+        return kernel_params.get("kernel", {}).get("value")
 
     @classmethod
     def create_attributes(cls, instance):
@@ -787,8 +787,8 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_default_group(cls, instance):
-        return [g for g in instance.node_groups
-                if g.name == consts.NODE_GROUPS.default][0]
+        default = consts.NODE_GROUPS.default
+        return next(g for g in instance.node_groups if g.name == default)
 
     @classmethod
     def create_default_group(cls, instance):
@@ -967,14 +967,15 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def get_network_roles(cls, instance):
+    def get_network_roles(
+            cls, instance, merge_policy=NetworkRoleMergePolicy()):
         """Method for receiving network roles for particular cluster
 
         :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :param merge_policy: the policy to merge same roles
         :returns: List of network roles' descriptions
         """
-        return (instance.release.network_roles_metadata +
-                PluginManager.get_network_roles(instance))
+        return PluginManager.get_network_roles(instance, merge_policy)
 
     @classmethod
     def set_network_template(cls, instance, template):

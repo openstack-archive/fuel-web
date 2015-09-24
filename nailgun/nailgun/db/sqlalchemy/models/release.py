@@ -49,7 +49,7 @@ class Release(Base):
         nullable=False,
         default=consts.RELEASE_STATES.unavailable
     )
-    networks_metadata = Column(JSON, default=[])
+    networks_metadata = Column(JSON, default={})
     attributes_metadata = Column(JSON, default={})
     volumes_metadata = Column(JSON, default={})
     modes_metadata = Column(JSON, default={})

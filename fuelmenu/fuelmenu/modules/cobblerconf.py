@@ -250,7 +250,12 @@ interface first.")
 
                 self.parent.footer.set_text("Scanning for duplicate IP address"
                                             "es. Please wait...")
-                if network.duplicateIPExists(mgmt_if_ipaddr, self.activeiface):
+                # Bind arping to mgmt_if_ipaddr if it assigned
+                assigned_ips = [v.get('addr') for _, v in
+                                self.netsettings.iteritems()]
+                arping_bind = mgmt_if_ipaddr in assigned_ips
+                if network.duplicateIPExists(mgmt_if_ipaddr, self.activeiface,
+                                             arping_bind):
                     errors.append("Duplicate host found with IP {0}.".format(
                         mgmt_if_ipaddr))
 

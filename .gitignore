@@ -31,6 +31,7 @@ nailgun/static/vendor/npm/*
 .idea
 .DS_Store
 test_run/*
+.cache
 
 *.egg-info
 

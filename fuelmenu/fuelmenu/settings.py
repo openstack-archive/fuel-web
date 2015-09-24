@@ -13,11 +13,9 @@
 # under the License.
 
 import collections
-try:
-    from collections import OrderedDict
-except Exception:
-    # python 2.6 or earlier use backport
-    from ordereddict import OrderedDict
+import logging
+
+from ordereddict import OrderedDict
 import yaml
 
 
@@ -77,9 +75,7 @@ yaml.representer.Representer.add_representer(OrderedDict, yaml.representer.
                                              SafeRepresenter.represent_dict)
 
 
-class Settings():
-    def __init__(self):
-        pass
+class Settings(object):
 
     def read(self, yamlfile):
         try:
@@ -88,8 +84,7 @@ class Settings():
             return settings
         except Exception:
             if yamlfile is not None:
-                import logging
-                logging.error("Unable to read YAML: %s" % yamlfile)
+                logging.error("Unable to read YAML: %s", yamlfile)
             return OrderedDict()
 
     def write(self, newvalues, tree=None, defaultsfile='settings.yaml',
@@ -101,25 +96,3 @@ class Settings():
         yaml.dump(settings, outfile, default_style='"',
                   default_flow_style=False)
         return True
-
-if __name__ == '__main__':
-
-    sample = """
-    one:
-        two: fish
-        red: fish
-        blue: fish
-    two:
-        a: yes
-        b: no
-        c: null
-    """
-    infile = file('settings.yaml', 'r')
-    data = yaml.load(infile)
-    #data = yaml.load(infile, OrderedDictYAMLLoader)
-    #data = yaml.load(textwrap.dedent(sample), OrderedDictYAMLLoader)
-    outfile = file("testout", 'w')
-    yaml.dump(data, outfile, default_flow_style=False)
-
-    #assert type(data) is OrderedDict
-    print(data.items())

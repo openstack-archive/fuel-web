@@ -251,8 +251,8 @@ class interfaces(urwid.WidgetWrap):
                                       "duplicate IP.".format(self.activeiface))
 
                 # Bind arping to requested IP if it's already assigned
-                assigned_ips = [v.get('addr') for _, v in
-                                self.netsettings.iteritems()]
+                assigned_ips = [v.get('addr') for v in
+                                self.netsettings.itervalues()]
                 arping_bind = responses["ipaddr"] in assigned_ips
 
                 if network.duplicateIPExists(responses["ipaddr"],

@@ -53,6 +53,7 @@ from nailgun.network.neutron import NeutronManager70
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
 from nailgun.test import base
+from nailgun.utils import dict_merge
 
 
 class TestObjects(BaseIntegrationTest):
@@ -938,8 +939,8 @@ class TestClusterObject(BaseTestCase):
                 ]
             }
         }
-        network_role.update(kwargs)
-        return network_role
+
+        return dict_merge(network_role, kwargs)
 
     def test_network_defaults(self):
         cluster = objects.Cluster.get_by_uid(self.env.create(api=True)['id'])
@@ -1064,7 +1065,7 @@ class TestClusterObject(BaseTestCase):
 
     def test_get_network_roles(self):
         cluster = self.env.clusters[0]
-        self.assertEqual(
+        self.assertItemsEqual(
             objects.Cluster.get_network_roles(cluster),
             cluster.release.network_roles_metadata)
 
@@ -1118,6 +1119,23 @@ class TestClusterObject(BaseTestCase):
             cluster.release.network_roles_metadata + network_roles)
 
     def test_get_plugin_network_roles_fail(self):
+        plugins_kw_list = [
+            self.env.get_default_plugin_metadata(
+                name='test_plugin_{0}'.format(idx),
+                network_roles_metadata=[
+                    self._get_network_role_metadata(
+                        properties={'gateway': bool(idx)}
+                    )
+                ]
+            ) for idx in six.moves.range(2)
+        ]
+
+        cluster = self._create_cluster_with_plugins(plugins_kw_list)
+        self.assertRaises(
+            errors.NetworkRoleConflict,
+            objects.Cluster.get_network_roles, cluster)
+
+    def test_merge_network_roles(self):
         network_roles = [self._get_network_role_metadata()]
         plugins_kw_list = [
             self.env.get_default_plugin_metadata(
@@ -1127,9 +1145,10 @@ class TestClusterObject(BaseTestCase):
         ]
 
         cluster = self._create_cluster_with_plugins(plugins_kw_list)
-        self.assertRaises(
-            errors.NetworkRoleConflict,
-            objects.Cluster.get_network_roles, cluster)
+        self.assertItemsEqual(
+            cluster.release.network_roles_metadata + network_roles,
+            objects.Cluster.get_network_roles(cluster)
+        )
 
     def test_get_volumes_metadata_when_plugins_are_enabled(self):
         plugin_volumes_metadata = {

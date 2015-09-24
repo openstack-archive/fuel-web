@@ -423,7 +423,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             # example, enabled plugins contain conflicting network
             # configuration
             network_info = self.serialize_network_cfg(self.cluster)
-        except errors.DuplicatedVIPNames as e:
+        except (errors.DuplicatedVIPNames, errors.NetworkRoleConflict) as e:
             raise errors.CheckBeforeDeploymentError(e.message)
 
         logger.info(

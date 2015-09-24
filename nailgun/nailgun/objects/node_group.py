@@ -43,8 +43,7 @@ class NodeGroup(NailgunObject):
         except (
             errors.OutOfVLANs,
             errors.OutOfIPs,
-            errors.NoSuitableCIDR,
-            errors.InvalidNetworkPool
+            errors.NoSuitableCIDR
         ) as exc:
             db().delete(new_group)
             raise errors.CannotCreate(exc.message)

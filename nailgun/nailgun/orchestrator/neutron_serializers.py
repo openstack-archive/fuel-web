@@ -1278,3 +1278,72 @@ class NeutronNetworkTemplateSerializer70(
             [n.update(addresses) for n in nodes
              if n['uid'] == str(node.uid)]
         return nodes
+
+
+class NeutronNetworkDeploymentSerializer80(
+    NeutronNetworkDeploymentSerializer70
+):
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer80, cls).\
+            generate_l2(cluster)
+        if filter(lambda net: net.name == 'baremetal',
+                  cluster.network_groups):
+            l2["phys_nets"]["physnet-ironic"] = {
+                "bridge": "br-ironic",
+                "vlan_range": None
+            }
+        return l2
+
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = super(NeutronNetworkDeploymentSerializer80, cls).\
+            generate_transformations(node, nm, nets_by_ifaces, is_public,
+                                     prv_base_ep)
+
+        if filter(lambda net: net['name'] == 'baremetal',
+                  node.network_data):
+            transformations.insert(0, cls.add_bridge('br-baremetal'))
+            transformations.insert(1, cls.add_bridge('br-ironic',
+                                                     provider='ovs'))
+            transformations.insert(2, cls.add_patch(
+                bridges=['br-ironic', 'br-baremetal'],
+                provider='ovs'))
+        return transformations
+
+    @classmethod
+    def _generate_baremetal_network(cls, cluster):
+        cidr, gateway = db().query(
+            NetworkGroup.cidr,
+            NetworkGroup.gateway
+        ).filter_by(
+            group_id=Cluster.get_default_group(cluster).id,
+            name='baremetal'
+        ).first()
+        return {
+            "L3": {
+                "subnet": cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_ranges[0]),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": Cluster.get_creds(cluster)['tenant']['value'],
+            "shared": True
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = super(NeutronNetworkDeploymentSerializer80, cls).\
+            generate_predefined_networks(cluster)
+        nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets

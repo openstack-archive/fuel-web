@@ -41,6 +41,8 @@ NETWORK_META = {
         "map_priority": {"type": "integer"},
         "configurable": {"type": "boolean"},
         "floating_range_var": {"type": "string"},
+        "baremetal_range_var": {"type": "string"},
+        "optional": {"type": "boolean"},
         "ext_net_data": {"type": "array"},
         "vips": {
             "type": "array",
@@ -127,6 +129,10 @@ NEUTRON_NETWORK_CONFIGURATION = {
                 },
                 "dns_nameservers": base_types.IP_ADDRESS_LIST,
                 "floating_ranges": {
+                    "type": "array",
+                    "items": base_types.IP_ADDRESS_RANGE
+                },
+                "baremetal_ranges": {
                     "type": "array",
                     "items": base_types.IP_ADDRESS_RANGE
                 },

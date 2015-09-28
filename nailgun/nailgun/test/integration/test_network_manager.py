@@ -196,6 +196,14 @@ class TestNetworkManager(BaseNetworkManagerTest):
         )
         self.assertEqual(vip, vip2)
 
+    def test_assign_vip_for_admin_network(self):
+        self.env.create_cluster(api=True)
+        self.assertNotRaises(
+            Exception,  # make sure there's no exceptions at all
+            self.env.network_manager.assign_vip,
+            self.env.clusters[0],
+            consts.NETWORKS.fuelweb_admin)
+
     def test_get_node_networks_for_vlan_manager(self):
         cluster = self.env.create(
             cluster_kwargs={},

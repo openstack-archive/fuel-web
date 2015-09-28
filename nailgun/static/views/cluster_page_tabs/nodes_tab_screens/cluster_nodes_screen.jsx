@@ -17,12 +17,24 @@ define(
 [
     'underscore',
     'react',
+    'models',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function(_, React, NodeListScreen) {
+function(_, React, models, NodeListScreen) {
     'use strict';
 
     var ClusterNodesScreen = React.createClass({
+        statics: {
+            fetchData: function(options) {
+                var networkGroups = new models.NodeNetworkGroups();
+                networkGroups.fetch = function() {
+                    return this.constructor.__super__.fetch.call(this, {data: {cluster_id: options.cluster.id}});
+                };
+                return networkGroups.fetch().then(function() {
+                    return {networkGroups: networkGroups};
+                });
+            }
+        },
         render: function() {
             return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
                 ref='screen'
@@ -40,7 +52,8 @@ function(_, React, NodeListScreen) {
                     'hdd',
                     'disks',
                     'ram',
-                    'interfaces'
+                    'interfaces',
+                    'group_id'
                 ]}
                 defaultSorting={[{roles: 'asc'}]}
                 filters={[
@@ -52,7 +65,8 @@ function(_, React, NodeListScreen) {
                     'hdd',
                     'disks_amount',
                     'ram',
-                    'interfaces'
+                    'interfaces',
+                    'group_id'
                 ]}
                 statusesToFilter={[
                     'ready',

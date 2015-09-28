@@ -51,7 +51,8 @@ function($, _, React, models, NodeListScreen) {
                     'hdd',
                     'disks',
                     'ram',
-                    'interfaces'
+                    'interfaces',
+                    'group_id'
                 ]}
                 defaultSorting={[{status: 'asc'}]}
                 filters={[
@@ -62,7 +63,8 @@ function($, _, React, models, NodeListScreen) {
                     'hdd',
                     'disks_amount',
                     'ram',
-                    'interfaces'
+                    'interfaces',
+                    'group_id'
                 ]}
                 statusesToFilter={[
                     'discover',

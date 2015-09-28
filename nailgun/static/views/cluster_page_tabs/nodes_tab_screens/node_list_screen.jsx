@@ -58,7 +58,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         this.values = values;
         this.title = isLabel ? this.name : i18n('cluster_page.nodes_tab.filters.' + this.name, {defaultValue: this.name});
         this.isLabel = isLabel;
-        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer'], this.name)
+        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id'], this.name)
         return this;
     }
     _.extend(Filter, {
@@ -325,6 +325,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 case 'roles':
                     options = this.props.cluster.get('roles').invoke('pick', 'name', 'label');
                     break;
+                case 'group_id':
+                    options = _.uniq(this.props.nodes.pluck('group_id')).map(function(groupId) {
+                        return {
+                            name: groupId,
+                            label: groupId || i18n('common.not_specified')
+                        };
+                    });
+                    break;
             }
             return options;
         },
@@ -416,8 +424,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     if (filter.name == 'status') {
                         return _.contains(filter.values, node.getStatusSummary());
                     }
-                    if (filter.name == 'manufacturer') {
-                        return _.contains(filter.values, node.get('manufacturer'));
+                    if (filter.name == 'manufacturer' || filter.name == 'group_id') {
+                        return _.contains(filter.values, node.get(filter.name));
                     }
 
                     // handle number ranges
@@ -1618,6 +1626,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     if (sorter.name == 'manufacturer') {
                         return node.get('manufacturer') || i18n('common.not_specified');
+                    }
+                    if (sorter.name == 'group_id') {
+                        var groupId = node.get('group_id');
+                        return groupId ? i18n('cluster_page.nodes_tab.node.group', {group: groupId}) : i18n('cluster_page.nodes_tab.node.no_group');
                     }
                     if (sorter.name == 'hdd') {
                         return i18n('node_details.total_hdd', {

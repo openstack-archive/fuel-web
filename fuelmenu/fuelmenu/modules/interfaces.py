@@ -79,7 +79,7 @@ class interfaces(urwid.WidgetWrap):
                 "bootproto": {"label": "Configuration via DHCP:",
                               "tooltip": "",
                               "value": "radio",
-                              "choices": ["DHCP", "Static"]},
+                              "choices": ["Static", "DHCP"]},
                 "ipaddr": {"label": "IP address:",
                            "tooltip": "Manual IP address (example \
 192.168.1.2)",
@@ -141,9 +141,9 @@ class interfaces(urwid.WidgetWrap):
             elif fieldname == "bootproto":
                 rb_group = self.edits[index].rb_group
                 if rb_group[0].state:
-                    responses["bootproto"] = "dhcp"
-                else:
                     responses["bootproto"] = "none"
+                else:
+                    responses["bootproto"] = "dhcp"
             elif fieldname == "onboot":
                 rb_group = self.edits[index].rb_group
                 if rb_group[0].state:
@@ -286,7 +286,8 @@ class interfaces(urwid.WidgetWrap):
                       'class': "l23network::l3::ifconfig",
                       'name': self.activeiface}
         if responses["onboot"].lower() == "no":
-            params = {"ipaddr": "none"}
+            params = {"ipaddr": "none",
+                      "gateway": ""}
         elif responses["bootproto"] == "dhcp":
             self.unset_gateway()
             if "dhcp_nowait" in responses.keys():
@@ -298,9 +299,9 @@ class interfaces(urwid.WidgetWrap):
             cidr = network.netmaskToCidr(responses["netmask"])
             params = {"ipaddr": "{0}/{1}".format(responses["ipaddr"], cidr),
                       "check_by_ping": "none"}
-        if len(responses["gateway"]) > 1:
-            params["gateway"] = responses["gateway"]
-            self.unset_gateway()
+            if len(responses["gateway"]) > 1:
+                params["gateway"] = responses["gateway"]
+                self.unset_gateway()
         l3ifconfig['params'] = params
         puppetclasses.append(l3ifconfig)
         self.log.info("Puppet data: %s" % (puppetclasses))

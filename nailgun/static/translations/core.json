@@ -318,7 +318,8 @@
                         "hdd": "HDD total size",
                         "disks": "Number and size of disks",
                         "ram": "RAM total size",
-                        "interfaces": "Number of interfaces"
+                        "interfaces": "Number of interfaces",
+                        "group_id": "Node network group"
                     },
                     "filters": {
                         "roles": "Roles",
@@ -330,6 +331,7 @@
                         "disks_amount": "Number of disks",
                         "ram": "RAM total size (GB)",
                         "interfaces": "Number of interfaces",
+                        "group_id": "Node network group",
                         "prefixes": {
                             "cores": "CPU (real)",
                             "ht_cores": "CPU (total)",
@@ -492,7 +494,8 @@
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",
                         "edit_name": "Edit Name",
-                        "more_info": "More Info"
+                        "more_info": "More Info",
+                        "node_network_group": "Node network group \"__group__\""
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
@@ -899,7 +902,8 @@
                     "total": "total",
                     "bytes": "bytes",
                     "drive": "drive",
-                    "drive_plural": "drives"
+                    "drive_plural": "drives",
+                    "node_network_group": "Node network group"
                 },
                 "delete_nodes": {
                     "title": "Delete Nodes",

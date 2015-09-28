@@ -141,7 +141,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showNodeDetails: function(e) {
             e.preventDefault();
             if (this.state.extendedView) this.toggleExtendedNodePanel();
-            dialogs.ShowNodeInfoDialog.show({node: this.props.node});
+            var nodeNetworkGroupId = this.props.node.get('group_id');
+            dialogs.ShowNodeInfoDialog.show({
+                node: this.props.node,
+                nodeNetworkGroupName: nodeNetworkGroupId && this.props.nodeNetworkGroups.get(nodeNetworkGroupId).get('name')
+            });
         },
         toggleExtendedNodePanel: function() {
             var states = this.state.extendedView ? {extendedView: false, renaming: false} : {extendedView: true};

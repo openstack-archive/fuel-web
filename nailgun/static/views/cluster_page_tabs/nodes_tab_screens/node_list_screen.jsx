@@ -58,7 +58,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         this.values = values;
         this.title = isLabel ? this.name : i18n('cluster_page.nodes_tab.filters.' + this.name, {defaultValue: this.name});
         this.isLabel = isLabel;
-        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer'], this.name)
+        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id'], this.name);
         return this;
     }
     _.extend(Filter, {
@@ -325,7 +325,23 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 case 'roles':
                     options = this.props.cluster.get('roles').invoke('pick', 'name', 'label');
                     break;
+                case 'group_id':
+                    options = _.uniq(this.props.nodes.pluck('group_id')).map(function(groupId) {
+                        return {
+                            name: groupId,
+                            label: app.nodeNetworkGroups.get(groupId).get('name')
+                        };
+                    });
+                    break;
             }
+
+            // sort option list
+            options.sort(_.bind(function(option1, option2) {
+                // sort Node Network Group filter options by node network group id
+                if (this.props.name == 'group_id') return option1.name - option2.name;
+                return utils.natsort(option1.label, option2.label, {insensitive: true});
+            }, this));
+
             return options;
         },
         addFilter: function(filter) {
@@ -410,22 +426,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
                     if (!filter.values.length) return true;
 
-                    if (filter.name == 'roles') {
-                        return _.any(filter.values, function(role) {return node.hasRole(role);});
+                    var result;
+                    switch (filter.name) {
+                        case 'roles':
+                            result = _.any(filter.values, function(role) {return node.hasRole(role);});
+                            break;
+                        case 'status':
+                            result = _.contains(filter.values, node.getStatusSummary());
+                            break;
+                        case 'manufacturer':
+                        case 'group_id':
+                            result = _.contains(filter.values, node.get(filter.name));
+                            break;
+                        default:
+                            // handle number ranges
+                            var currentValue = node.resource(filter.name);
+                            if (filter.name == 'hdd' || filter.name == 'ram') currentValue = currentValue / Math.pow(1024, 3);
+                            result = currentValue >= filter.values[0] && (_.isUndefined(filter.values[1]) || currentValue <= filter.values[1]);
+                            break;
                     }
-                    if (filter.name == 'status') {
-                        return _.contains(filter.values, node.getStatusSummary());
-                    }
-                    if (filter.name == 'manufacturer') {
-                        return _.contains(filter.values, node.get('manufacturer'));
-                    }
-
-                    // handle number ranges
-                    var currentValue = node.resource(filter.name);
-                    if (filter.name == 'hdd' || filter.name == 'ram') {
-                        currentValue = currentValue / Math.pow(1024, 3);
-                    }
-                    return currentValue >= filter.values[0] && (_.isUndefined(filter.values[1]) || currentValue <= filter.values[1]);
+                    return result;
                 }, this);
             }, this);
 
@@ -526,16 +546,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             var attributes, labels;
             if (this.props.dynamicValues) {
-                this.props.options.sort(function(option1, option2) {
-                    return utils.natsort(option1.title, option2.title, {insensitive: true});
-                });
                 var groupedOptions = _.groupBy(this.props.options, 'isLabel');
                 attributes = groupedOptions.false || [];
                 labels = groupedOptions.true || [];
-            } else {
-                this.props.options.sort(function(option1, option2) {
-                    return utils.natsort(option1.label, option2.label, {insensitive: true});
-                });
             }
 
             var optionProps = _.bind(function(option) {
@@ -895,13 +908,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 var checkSorter = _.bind(function(sorter, isLabel) {
                     return !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
                 }, this);
-                inactiveSorters = _.union(_.filter(this.props.availableSorters, _.partial(checkSorter, _, false)), _.filter(this.props.labelSorters, _.partial(checkSorter, _, true)));
+                inactiveSorters = _.union(_.filter(this.props.availableSorters, _.partial(checkSorter, _, false)), _.filter(this.props.labelSorters, _.partial(checkSorter, _, true)))
+                    .sort(function(sorter1, sorter2) {
+                        return utils.natsort(sorter1.title, sorter2.title, {insensitive: true});
+                    });
                 canResetSorters = _.any(this.props.activeSorters, {isLabel: true}) || !_(this.props.activeSorters).where({isLabel: false}).map(Sorter.toObject).isEqual(this.props.defaultSorting);
 
                 var checkFilter = _.bind(function(filter, isLabel) {
                     return !_.any(this.props.activeFilters, {name: filter.name, isLabel: isLabel});
                 }, this);
-                inactiveFilters = _.union(_.filter(this.props.availableFilters, _.partial(checkFilter, _, false)), _.filter(this.props.labelFilters, _.partial(checkFilter, _, true)));
+                inactiveFilters = _.union(_.filter(this.props.availableFilters, _.partial(checkFilter, _, false)), _.filter(this.props.labelFilters, _.partial(checkFilter, _, true)))
+                    .sort(function(filter1, filter2) {
+                        return utils.natsort(filter1.title, filter2.title, {insensitive: true});
+                    });
                 appliedFilters = _.reject(this.props.activeFilters, function(filter) {
                     return !filter.isLabel && !filter.values.length;
                 });
@@ -1605,36 +1624,42 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return _.compact(_.map(this.props.activeSorters, function(sorter) {
                     if (_.contains(uniqValueSorters, sorter.name)) return;
 
-                    if (sorter.isLabel) {
-                        return getLabelValue(node, sorter.name);
-                    }
+                    if (sorter.isLabel) return getLabelValue(node, sorter.name);
 
-                    if (sorter.name == 'roles') {
-                        return node.getRolesSummary(roles);
+                    var result;
+                    switch (sorter.name) {
+                        case 'roles':
+                            result = node.getRolesSummary(roles);
+                            break;
+                        case 'status':
+                            result = i18n('cluster_page.nodes_tab.node.status.' + node.getStatusSummary(), {
+                                os: this.props.cluster.get('release').get('operating_system') || 'OS'
+                            });
+                            break;
+                        case 'manufacturer':
+                            result = node.get('manufacturer') || i18n('common.not_specified');
+                            break;
+                        case 'group_id':
+                            result = i18n('cluster_page.nodes_tab.node.node_network_group', {
+                                group: app.nodeNetworkGroups.get(node.get('group_id')).get('name')
+                            });
+                            break;
+                        case 'hdd':
+                            result = i18n('node_details.total_hdd', {total: utils.showDiskSize(node.resource('hdd'))});
+                            break;
+                        case 'disks':
+                            result = composeNodeDiskSizesLabel(node);
+                            break;
+                        case 'ram':
+                            result = i18n('node_details.total_ram', {total: utils.showMemorySize(node.resource('ram'))});
+                            break;
+                        case 'interfaces':
+                            result = i18n('node_details.interfaces_amount', {count: node.resource('interfaces')});
+                            break;
+                        default:
+                            result = i18n('node_details.' + sorter.name, {count: node.resource(sorter.name)});
                     }
-                    if (sorter.name == 'status') {
-                        return i18n('cluster_page.nodes_tab.node.status.' + node.getStatusSummary(), {
-                            os: this.props.cluster.get('release').get('operating_system') || 'OS'
-                        });
-                    }
-                    if (sorter.name == 'manufacturer') {
-                        return node.get('manufacturer') || i18n('common.not_specified');
-                    }
-                    if (sorter.name == 'hdd') {
-                        return i18n('node_details.total_hdd', {
-                            total: utils.showDiskSize(node.resource('hdd'))
-                        });
-                    }
-                    if (sorter.name == 'disks') {
-                        return composeNodeDiskSizesLabel(node);
-                    }
-                    if (sorter.name == 'ram') {
-                        return i18n('node_details.total_ram', {
-                            total: utils.showMemorySize(node.resource('ram'))
-                        });
-                    }
-
-                    return i18n('node_details.' + (sorter.name == 'interfaces' ? 'interfaces_amount' : sorter.name), {count: node.resource(sorter.name)});
+                    return result;
                 }, this)).join('; ');
             }, this);
             var groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
@@ -1683,7 +1708,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 result = _.indexOf(this.props.statusesToFilter, node1.getStatusSummary()) - _.indexOf(this.props.statusesToFilter, node2.getStatusSummary());
                                 break;
                             case 'manufacturer':
-                                result = utils.compare(node1, node2, {attr: 'manufacturer'});
+                            case 'group_id':
+                                result = utils.compare(node1, node2, {attr: sorter.name});
                                 break;
                             case 'disks':
                                 result = utils.natsort(composeNodeDiskSizesLabel(node1), composeNodeDiskSizesLabel(node2));

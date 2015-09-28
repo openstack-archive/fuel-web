@@ -1141,5 +1141,18 @@ define([
         nailgunUrl: 'api/tracking/restore_password'
     });
 
+    models.NodeNetworkGroup = BaseModel.extend({
+        constructorName: 'NodeNetworkGroup',
+        urlRoot: '/api/nodegroups'
+    });
+
+    models.NodeNetworkGroups = BaseCollection.extend(cacheMixin).extend({
+        constructorName: 'NodeNetworkGroups',
+        cacheFor: 60 * 1000,
+        model: models.NodeNetworkGroup,
+        url: '/api/nodegroups',
+        comparator: 'id'
+    });
+
     return models;
 });

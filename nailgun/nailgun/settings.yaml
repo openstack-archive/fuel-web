@@ -369,7 +369,7 @@ LOGS:
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *bootstrap_log_group
-    path: 'bootstrap/agent.log'
+    path: 'bootstrap/nailgun-agent.log'
 # Openstack logs
   - id: 'os/nova-cert'
     name: "nova-cert"

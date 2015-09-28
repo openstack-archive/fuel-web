@@ -52,7 +52,6 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_network_group(cls, ng_data, ng_db, cluster):
-        net_id = ng_data['id']
         cidr = ng_data.get('cidr', ng_db.cidr)
         ip_ranges = ng_data.get(
             'ip_ranges',
@@ -78,14 +77,14 @@ class NetworkConfigurationValidator(BasicValidator):
         if not ip_ranges and notation == consts.NETWORK_NOTATION.ip_ranges:
             raise errors.InvalidData(
                 "No IP ranges were specified for network "
-                "{0}".format(net_id))
+                "{0}".format(ng_db.id))
 
         if notation in (consts.NETWORK_NOTATION.cidr,
                         consts.NETWORK_NOTATION.ip_ranges):
             if not cidr and not ng_db.cidr:
                 raise errors.InvalidData(
                     "No CIDR was specified for network "
-                    "{0}".format(net_id))
+                    "{0}".format(ng_db.id))
         if cluster.is_locked and cls._check_for_ip_conflicts(
                 ng_data, cluster, notation, use_gateway):
 

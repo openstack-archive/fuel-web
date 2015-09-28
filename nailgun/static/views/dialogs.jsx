@@ -630,12 +630,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 };
             if (this.state.VMsConf) groups.push('config');
 
+            var nodeNetworkGroup = app.nodeNetworkGroups.get(node.get('group_id'));
+
             return (
                 <div className='node-details-popup'>
                     <div className='row'>
                         <div className='col-xs-5'><div className='node-image-outline' /></div>
                         <div className='col-xs-7'>
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
+                            {nodeNetworkGroup &&
+                                <div>
+                                    <strong>{i18n('dialog.show_node.node_network_group')}: </strong>
+                                    {nodeNetworkGroup.get('name')}
+                                </div>
+                            }
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
                             <div className='change-hostname'>

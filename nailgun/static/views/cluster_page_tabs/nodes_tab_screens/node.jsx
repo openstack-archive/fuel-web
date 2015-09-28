@@ -120,7 +120,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showNodeDetails: function(e) {
             e.preventDefault();
             if (this.state.extendedView) this.toggleExtendedNodePanel();
-            dialogs.ShowNodeInfoDialog.show({node: this.props.node});
+            dialogs.ShowNodeInfoDialog.show(_.pick(this.props, 'node', 'nodeNetworkGroupName'));
         },
         toggleExtendedNodePanel: function() {
             var states = this.state.extendedView ? {extendedView: false, isRenaming: false} : {extendedView: true};

@@ -148,7 +148,8 @@ NODE_LIST_FILTERS = Enum(
     'hdd',
     'disks_amount',
     'ram',
-    'interfaces'
+    'interfaces',
+    'group_id'
 )
 
 NETWORK_INTERFACE_TYPES = Enum(

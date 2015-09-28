@@ -64,7 +64,7 @@ class NodeGroupCollectionHandler(CollectionHandler):
 
         if user_data.cluster_id is not None:
             return self.collection.to_json(
-                query=self.collection.get_by_cluster_id(
+                self.collection.get_by_cluster_id(
                     user_data.cluster_id
                 )
             )

@@ -162,39 +162,47 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         this.user = new models.User();
         this.statistics = new models.NodesStatistics();
         this.notifications = new models.Notifications();
+        this.nodeNetworkGroups = new models.NodeNetworkGroups();
 
         this.fetchData();
     }
 
     _.extend(App.prototype, {
         fetchData: function() {
-            this.version.fetch().then(_.bind(function() {
-                this.user.set({authenticated: !this.version.get('auth_required')});
-                this.patchBackboneSync();
-                if (this.version.get('auth_required')) {
-                    _.extend(this.keystoneClient, this.user.pick('token'));
-                    return this.keystoneClient.authenticate()
-                        .done(_.bind(function() {
-                            this.user.set({authenticated: true});
-                        }, this));
-                }
-                return $.Deferred().resolve();
-            }, this)).then(_.bind(function() {
-                return this.settings.fetch();
-            }, this)).then(null, _.bind(function() {
-                if (this.version.get('auth_required') && !this.user.get('authenticated')) {
+            this.version.fetch()
+                .then(_.bind(function() {
+                    this.user.set({authenticated: !this.version.get('auth_required')});
+                    this.patchBackboneSync();
+                    if (this.version.get('auth_required')) {
+                        _.extend(this.keystoneClient, this.user.pick('token'));
+                        return this.keystoneClient.authenticate()
+                            .done(_.bind(function() {
+                                this.user.set({authenticated: true});
+                            }, this));
+                    }
                     return $.Deferred().resolve();
-                } else {
-                    utils.showErrorDialog({
-                        message: i18n('common.loading_error'),
-                        keyboard: false,
-                        backdrop: false
-                    });
-                    this.mountNode.remove();
-                }
-            }, this)).done(function() {
-                Backbone.history.start();
-            });
+                }, this))
+                .then(_.bind(function() {
+                    return $.when(
+                        this.settings.fetch(),
+                        this.nodeNetworkGroups.fetch()
+                    );
+                }, this))
+                .then(null, _.bind(function() {
+                    if (this.version.get('auth_required') && !this.user.get('authenticated')) {
+                        return $.Deferred().resolve();
+                    } else {
+                        utils.showErrorDialog({
+                            message: i18n('common.loading_error'),
+                            keyboard: false,
+                            backdrop: false
+                        });
+                        this.mountNode.remove();
+                    }
+                }, this))
+                .done(function() {
+                    Backbone.history.start();
+                });
         },
         renderLayout: function() {
             var wrappedRootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), this.mountNode);

@@ -31,6 +31,13 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
     var ReactTransitionGroup = React.addons.TransitionGroup;
 
     var NodesTab = React.createClass({
+        statics: {
+            fetchData: function() {
+                return app.nodeNetworkGroups.fetch({cache: true}).then(function() {
+                    return {};
+                });
+            }
+        },
         getInitialState: function() {
             var screen = this.getScreen();
             return {

@@ -84,7 +84,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 ];
             },
             fetchData: function(id, activeTab) {
-                var cluster, promise, currentClusterId;
+                var cluster, promise, currentClusterId, nodeNetworkGroups;
                 var tab = _.find(this.getTabs(), {url: activeTab}).tab,
                     tabOptions = _.toArray(arguments).slice(2);
                 try {
@@ -106,10 +106,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     roles.url = _.result(cluster, 'url') + '/roles';
                     cluster.set({roles: roles});
 
+                    nodeNetworkGroups = new models.NodeNetworkGroups();
+                    nodeNetworkGroups.fetch = function() {
+                        return this.constructor.__super__.fetch.call(this, {data: {cluster_id: id}});
+                    };
+
                     cluster.get('nodes').fetch = function(options) {
                         return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
                     };
-                    promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.get('roles').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'))
+                    promise = $.when(
+                            cluster.fetch(),
+                            cluster.get('settings').fetch(),
+                            cluster.get('roles').fetch(),
+                            cluster.fetchRelated('nodes'),
+                            cluster.fetchRelated('tasks'),
+                            nodeNetworkGroups.fetch()
+                        )
                         .then(function() {
                             var networkConfiguration = new models.NetworkConfiguration();
                             networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
@@ -135,6 +147,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return promise.then(function(data) {
                     return {
                         cluster: cluster,
+                        nodeNetworkGroups: nodeNetworkGroups,
                         activeTab: activeTab,
                         tabOptions: tabOptions,
                         tabData: data
@@ -281,13 +294,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
                         <Tab
                             ref='tab'
-                            cluster={cluster}
-                            tabOptions={this.props.tabOptions}
+                            {...this.state}
+                            {... _.pick(this.props, 'cluster', 'tabOptions', 'nodeNetworkGroups')}
+                            {...this.props.tabData}
                             setActiveGroupName={this.setActiveSettingsGroupName}
                             selectNodes={this.selectNodes}
                             changeLogSelection={this.changeLogSelection}
-                            {...this.state}
-                            {...this.props.tabData} />
+                        />
                     </div>
                 </div>
             );

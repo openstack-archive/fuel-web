@@ -126,7 +126,7 @@ define([
                             return self.remote.assertElementTextEquals('.node-list .node-name .name p', firstNodeName, 'Order of sorting by roles was changed to asc (default)');
                         })
                         .clickByCssSelector(moreControlSelector + ' button')
-                        .assertElementsExist(moreControlSelector + ' .popover .checkbox-group', 11, 'Standard node sorters are presented')
+                        .assertElementsExist(moreControlSelector + ' .popover .checkbox-group', 12, 'Standard node sorters are presented')
                         // add sorting by CPU (real)
                         .clickByCssSelector(moreControlSelector + ' .popover [name=cores]')
                         // add sorting by manufacturer
@@ -155,7 +155,7 @@ define([
                         .assertElementNotExists('.filters .filter-control .btn-remove-filter', 'Default filters can not be deleted from filters panel')
                         .assertElementNotExists('.filters .btn-reset-filters', 'No filters to be reset')
                         .clickByCssSelector(moreControlSelector + ' button')
-                        .assertElementsExist(moreControlSelector + ' .popover .checkbox-group', 7, 'Standard node filters are presented')
+                        .assertElementsExist(moreControlSelector + ' .popover .checkbox-group', 8, 'Standard node filters are presented')
                         .clickByCssSelector(moreControlSelector + ' [name=cores]')
                         .assertElementsExist('.filters .filter-control', 3, 'New Cores (real) filter was added')
                         .assertElementExists('.filter-by-cores .popover-content', 'New filter is open')

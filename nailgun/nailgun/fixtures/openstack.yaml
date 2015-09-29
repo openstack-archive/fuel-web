@@ -1371,7 +1371,7 @@
                     label: "Service name"
                     description: "Service name"
                     regex:
-                      source: '^\w+$'
+                      source: '^\w[\w\-]+$'
                       error: "Invalid service name"
                   -
                     name: "datastore_regex"

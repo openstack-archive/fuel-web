@@ -398,6 +398,8 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
         log.error("Duplicate host found with IP {0}".format(ip))
         print("ERROR: Duplicate host found with IP {0}".format(ip))
 
+    defaultsettingsfile = "%s/settings.yaml" \
+        % (os.path.dirname(__file__))
     newsettings = Settings().read(settingsfile)
     settings = \
         {
@@ -453,7 +455,7 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
                 newsettings[setting] = settings[setting]
 
     #Write astute.yaml
-    Settings().write(newsettings, defaultsfile=None,
+    Settings().write(newsettings, defaultsfile=defaultsettingsfile,
                      outfn=settingsfile)
 
 

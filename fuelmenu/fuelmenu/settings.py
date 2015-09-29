@@ -85,7 +85,10 @@ class Settings():
         try:
             infile = file(yamlfile, 'r')
             settings = yaml.load(infile)
-            return settings
+            if not settings:
+                return OrderedDict()
+            else:
+                return settings
         except Exception:
             if yamlfile is not None:
                 import logging

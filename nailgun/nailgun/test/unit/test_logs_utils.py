@@ -86,7 +86,7 @@ class TestNodeLogsUtils(BaseTestCase):
         logs_utils.delete_node_logs(node, prefix)
 
         self.assertTrue(
-            all(not os.path.exists(path) for path in [link, folder, file_]))
+            all(not os.path.lexists(path) for path in [link, folder, file_]))
 
     @mock.patch('os.path.islink', side_effect=OSError)
     def test_delete_node_no_existing_logs(self, _):

@@ -18,10 +18,44 @@
 Network template
 """
 
-from string import Template
+import re
+import six
 
 
-class NetworkTemplate(Template):
+class BaseTemplate(object):
+
+    idpattern = None        # a regex pattern of the identifier
+    braces = (None, None)   # a pair of open/closing braces
+
+    def __init__(self, template):
+        self.template = template
+        self.pattern = re.compile(
+            r'{0}\s*(?P<id>{2})\s*{1}'.format(
+                self.braces[0], self.braces[1], self.idpattern
+            ),
+            re.IGNORECASE | re.VERBOSE)
+
+    def substitute(self, data={}, **kwargs):
+        def convert(mo):
+            key = mo.group('id')
+            val = kwargs[key] if key in kwargs else data[key]
+            return six.text_type(val)
+        return self.pattern.sub(convert, self.template)
+
+    def safe_substitute(self, data={}, **kwargs):
+        def convert(mo):
+            key = mo.group('id')
+            if key in kwargs:
+                val = kwargs[key]
+            elif key in data:
+                val = data[key]
+            else:
+                val = mo.group()
+            return six.text_type(val)
+        return self.pattern.sub(convert, self.template)
+
+
+class NetworkTemplate(BaseTemplate):
     """NetworkTemplate object provides string substitution
     NetworkTemplate substitutes <% key %> to value
     for key=value
@@ -33,12 +67,5 @@ class NetworkTemplate(Template):
     -> "a: aaa b: bbb"
     """
 
-    delimiter = '<%'
-    pattern = r"""
-    <%\s*(?:
-      (?P<escaped><%\s*)                 |
-      (?P<named>[_a-z][_a-z0-9]*)\s*%>   |
-      (?P<braced>[_a-z][_a-z0-9]*)\s*%>  |
-      (?P<invalid>)
-    )
-    """
+    idpattern = r'[_a-z][_a-z0-9]*'
+    braces = ('<%', '%>')

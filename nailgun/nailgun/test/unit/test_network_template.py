@@ -39,7 +39,7 @@ class TestNetworkTemplate(TestCase):
         template = NetworkTemplate("a: <%a b: <% b % >")
         substituted_string = template.safe_substitute(a='aaa', b='bbb')
 
-        self.assertEqual(substituted_string, "a: <%a b: <%b % >")
+        self.assertEqual(substituted_string, "a: <%a b: <% b % >")
 
     def test_substitution_with_extra_keys(self):
         template = NetworkTemplate("a: <%a%>")
@@ -54,7 +54,7 @@ class TestNetworkTemplate(TestCase):
         template = NetworkTemplate("a: <%a%>")
         substituted_string = template.safe_substitute(b='bbb')
 
-        self.assertEqual(substituted_string, "a: <%a")
+        self.assertEqual(substituted_string, "a: <%a%>")
         self.assertRaises(KeyError,
                           template.substitute,
-                          dict(b='bbb'))
+                          b='bbb')

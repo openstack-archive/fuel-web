@@ -98,8 +98,7 @@ class Settings():
         settings.update(self.read(outfn))
         settings.update(newvalues)
         outfile = file(outfn, 'w')
-        yaml.dump(settings, outfile, default_style='"',
-                  default_flow_style=False)
+        yaml.safe_dump(settings, outfile, default_flow_style=False)
         return True
 
 if __name__ == '__main__':
@@ -119,7 +118,7 @@ if __name__ == '__main__':
     #data = yaml.load(infile, OrderedDictYAMLLoader)
     #data = yaml.load(textwrap.dedent(sample), OrderedDictYAMLLoader)
     outfile = file("testout", 'w')
-    yaml.dump(data, outfile, default_flow_style=False)
+    yaml.safe_dump(data, outfile, default_flow_style=False)
 
     #assert type(data) is OrderedDict
     print(data.items())

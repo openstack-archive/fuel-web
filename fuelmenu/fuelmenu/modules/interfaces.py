@@ -94,22 +94,6 @@ class interfaces(urwid.WidgetWrap):
                             "value": ""},
             }
 
-    def fixDnsmasqUpstream(self):
-        #check upstream dns server
-        with open('/etc/dnsmasq.upstream', 'r') as f:
-            dnslines = f.readlines()
-        nameservers = dnslines[0].split(" ")[1:]
-        #for nameserver in nameservers:
-        #    if not self.checkDNS(nameserver):
-        #        nameservers.remove(nameserver)
-        if nameservers == []:
-            #Write dnsmasq upstream server to default if it's not readable
-            with open('/etc/dnsmasq.upstream', 'w') as f:
-                nameservers = self.defaults['DNS_UPSTREAM']['value'].replace(
-                    ',', ' ')
-                f.write("nameserver %s\n" % nameservers)
-                f.close()
-
     def fixEtcHosts(self):
         #replace ip for env variable HOSTNAME in /etc/hosts
         if self.netsettings[self.parent.managediface]["addr"] != "":

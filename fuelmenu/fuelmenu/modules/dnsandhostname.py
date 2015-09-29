@@ -75,31 +75,7 @@ is accessible"}
 
         self.oldsettings = self.load()
         self.screen = None
-        self.fixDnsmasqUpstream()
         self.fixEtcHosts()
-
-    def fixDnsmasqUpstream(self):
-        '''Called on init to apply default DNS settings.'''
-        #check upstream dns server
-        with open('/etc/dnsmasq.upstream', 'r') as f:
-            dnslines = f.readlines()
-        f.close()
-        if len(dnslines) > 0:
-            nameservers = dnslines[0].split(" ")[1:]
-            for nameserver in nameservers:
-                if not self.checkDNS(nameserver):
-                    nameservers.remove(nameserver)
-        else:
-            nameservers = []
-        if nameservers == []:
-            #Write dnsmasq upstream server to default if it's not readable
-            with open('/etc/dnsmasq.upstream', 'w') as f:
-                nameservers = self.defaults['DNS_UPSTREAM'][
-                    'value'].replace(',', ' ')
-                f.write("search {0}\n".format(self.defaults['DNS_SEARCH']))
-                f.write("domain {0}\n".format(self.defaults['DNS_DOMAIN']))
-                f.write("nameserver {0}\n".format(nameservers))
-                f.close()
 
     def fixEtcHosts(self):
         #replace ip for env variable HOSTNAME in /etc/hosts
@@ -278,8 +254,6 @@ is accessible"}
                 for upstream_dns in responses['DNS_UPSTREAM'].split(','):
                     f.write("nameserver %s\n" % upstream_dns)
 
-        #Write dnsmasq upstream server
-        make_resolv_conf('/etc/dnsmasq.upstream')
         # Create a temporary resolv.conf so DNS works before the cobbler
         # container is up and running.
         # TODO(asheplyakov): puppet does a similar thing, perhaps we can

@@ -110,6 +110,6 @@ def delete_node_logs(node, prefix=settings.SYSLOG_DIR):
     logger.debug("Deleting logs for removed environment's nodes")
 
     for log_path in log_paths:
-        if os.path.exists(log_path):
+        if os.path.lexists(log_path):
             logger.debug('delete_node_logs log_path="%s"', log_path)
             remove_silently(log_path)

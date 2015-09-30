@@ -224,6 +224,7 @@ BOND_TYPES = Enum(
 TASK_STATUSES = Enum(
     'ready',
     'running',
+    'sent_to_orchestrator',
     'error'
 )
 

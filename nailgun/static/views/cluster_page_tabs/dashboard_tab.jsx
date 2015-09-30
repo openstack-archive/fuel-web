@@ -189,7 +189,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                                 <controls.ProgressBar
                                     progress={!isInfiniteTask && taskProgress}
-                                    wrapperClassName={isInfiniteTask ? '' : 'has-progress'}
+                                    wrapperClassName={isInfiniteTask || !stoppableTask ? '' : 'has-progress'}
                                 />
                                 {stoppableTask &&
                                     <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>

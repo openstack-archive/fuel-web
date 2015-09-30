@@ -302,6 +302,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             task_weight = 0.4
             task_provision = supertask.create_subtask(
                 consts.TASK_NAMES.provision,
+                status=consts.TASK_STATUSES.sent_to_orchestrator,
                 weight=task_weight)
 
             # we should have task committed for processing in other threads
@@ -335,7 +336,9 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                          " ".join([objects.Node.get_node_fqdn(n)
                                    for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(
-                name=consts.TASK_NAMES.deployment)
+                name=consts.TASK_NAMES.deployment,
+                status=consts.TASK_STATUSES.sent_to_orchestrator
+            )
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -372,7 +375,9 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 "No nodes to deploy, just update nodes.yaml everywhere.")
 
             task_deployment = supertask.create_subtask(
-                name=consts.TASK_NAMES.deployment)
+                name=consts.TASK_NAMES.deployment,
+                status=consts.TASK_STATUSES.sent_to_orchestrator
+            )
             task_message = tasks.UpdateNodesInfoTask.message(task_deployment)
             task_deployment.cache = task_message
             task_messages.append(task_message)
@@ -521,6 +526,7 @@ class ProvisioningTaskManager(TaskManager):
                       for n in nodes_to_provision])))
 
         task_provision = Task(name=consts.TASK_NAMES.provision,
+                              status=consts.TASK_STATUSES.sent_to_orchestrator,
                               cluster=self.cluster)
         db().add(task_provision)
         db().commit()
@@ -561,7 +567,9 @@ class DeploymentTaskManager(TaskManager):
             ' '.join([objects.Node.get_node_fqdn(n)
                       for n in nodes_to_deployment])))
         task_deployment = Task(
-            name=consts.TASK_NAMES.deployment, cluster=self.cluster)
+            name=consts.TASK_NAMES.deployment, cluster=self.cluster,
+            status=consts.TASK_STATUSES.sent_to_orchestrator
+        )
         db().add(task_deployment)
 
         deployment_message = self._call_silently(
@@ -613,14 +621,16 @@ class StopDeploymentTaskManager(TaskManager):
         stop_running = objects.TaskCollection.filter_by(
             None,
             cluster_id=self.cluster.id,
-            name=consts.TASK_NAMES.stop_deployment,
+            name=consts.TASK_NAMES.stop_deployment
         )
         stop_running = objects.TaskCollection.order_by(
             stop_running, 'id'
         ).first()
 
         if stop_running:
-            if stop_running.status == consts.TASK_STATUSES.running:
+            if stop_running.status in (
+                    consts.TASK_STATUSES.running,
+                    consts.TASK_STATUSES.sent_to_orchestrator):
                 raise errors.StopAlreadyRunning(
                     "Stopping deployment task "
                     "is already launched"
@@ -634,6 +644,9 @@ class StopDeploymentTaskManager(TaskManager):
             cluster_id=self.cluster.id,
             name=consts.TASK_NAMES.deployment,
         )
+        deployment_task = deployment_task.filter(
+            Task.status != consts.TASK_STATUSES.sent_to_orchestrator
+        )
         deployment_task = objects.TaskCollection.order_by(
             deployment_task, '-id'
         ).first()
@@ -642,6 +655,9 @@ class StopDeploymentTaskManager(TaskManager):
             None,
             cluster_id=self.cluster.id,
             name=consts.TASK_NAMES.provision,
+        )
+        provisioning_task = provisioning_task.filter(
+            Task.status != consts.TASK_STATUSES.sent_to_orchestrator
         )
         provisioning_task = objects.TaskCollection.order_by(
             provisioning_task, '-id'

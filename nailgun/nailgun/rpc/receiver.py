@@ -26,6 +26,7 @@ from oslo_serialization import jsonutils
 from sqlalchemy import or_
 
 from nailgun import consts
+from nailgun.errors import errors as nailgun_errors
 from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings
@@ -1160,3 +1161,24 @@ class NailgunReceiver(object):
 
         objects.Task.update_verify_networks(
             task, status, progress, msg, {})
+
+    @classmethod
+    def task_in_orchestrator(cls, **kwargs):
+        logger.info("RPC method task_in_orchestrator received: %s",
+                    jsonutils.dumps(kwargs))
+
+        task_uuid = kwargs.get('task_uuid')
+
+        try:
+            task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
+                                            lock_for_update=True)
+            if task.status == consts.TASK_STATUSES.sent_to_orchestrator:
+                task.status = consts.TASK_STATUSES.running
+                logger.debug("Task %s is acknowledged sent to orchestrator",
+                             task_uuid)
+            else:
+                logger.debug("Task %s in status %s. Nothing to acknowledge "
+                             "sent to orchestrator", task_uuid, task.status)
+        except nailgun_errors.ObjectNotFound:
+            logger.warning("Task '%s' is in orchestrator, "
+                           "but doesn't exist in DB", task_uuid)

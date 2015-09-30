@@ -669,6 +669,12 @@ class FakeCheckRepositories(FakeAmpqThread):
         }]
 
 
+class FakeTaskInOrchestrator(FakeAmpqThread):
+    def message_gen(self):
+        self.sleep(self.tick_interval)
+        return [{'task_uuid': self.task_uuid}]
+
+
 FAKE_THREADS = {
     'native_provision': FakeProvisionThread,
     'image_provision': FakeProvisionThread,
@@ -685,4 +691,5 @@ FAKE_THREADS = {
     'execute_tasks': FakeExecuteTasksThread,
     'check_repositories': FakeCheckRepositories,
     'check_repositories_with_setup': FakeCheckRepositories,
+    'task_in_orchestrator': FakeTaskInOrchestrator
 }

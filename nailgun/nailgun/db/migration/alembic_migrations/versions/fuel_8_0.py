@@ -42,15 +42,27 @@ release_states_new = (
     'manageonly',
 )
 
+task_statuses_old = (
+    'ready',
+    'running',
+    'error'
+)
+
+task_statuses_new = task_statuses_old + (
+    'pending',
+)
+
 
 def upgrade():
     create_components_table()
     create_release_components_table()
     upgrade_nodegroups_name_cluster_constraint()
     upgrade_release_state()
+    task_statuses_upgrade()
 
 
 def downgrade():
+    task_statuses_downgrade()
     downgrade_release_state()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
     op.drop_table('release_components')
@@ -158,3 +170,13 @@ def downgrade_release_state():
         release_states_new,
         release_states_old,
     )
+
+
+def task_statuses_upgrade():
+    upgrade_enum('tasks', 'status', 'task_status',
+                 task_statuses_old, task_statuses_new)
+
+
+def task_statuses_downgrade():
+    upgrade_enum('tasks', 'status', 'task_status',
+                 task_statuses_new, task_statuses_old)

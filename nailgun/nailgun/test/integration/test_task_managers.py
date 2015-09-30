@@ -64,7 +64,8 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(supertask.name, TASK_NAMES.deploy)
         self.assertIn(
             supertask.status,
-            (TASK_STATUSES.running, TASK_STATUSES.ready)
+            (TASK_STATUSES.pending, TASK_STATUSES.running,
+             TASK_STATUSES.ready)
         )
         # we have three subtasks here
         # repository check
@@ -263,23 +264,26 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         # First node with status ready
         # should not be readeployed
-        self.env.nodes[0].status = 'ready'
+        self.env.nodes[0].status = consts.TASK_STATUSES.ready
         self.env.nodes[0].pending_addition = False
         self.db.commit()
 
         objects.Cluster.clear_pending_changes(cluster_db)
 
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.name, 'deploy')
-        self.assertIn(supertask.status, ('running', 'ready'))
+        self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
+        self.assertIn(supertask.status, (consts.TASK_STATUSES.pending,
+                                         consts.TASK_STATUSES.running,
+                                         consts.TASK_STATUSES.ready))
 
-        self.assertEqual(self.env.nodes[0].status, 'ready')
-        self.env.wait_for_nodes_status([self.env.nodes[1]], 'provisioning')
+        self.assertEqual(self.env.nodes[0].status, consts.TASK_STATUSES.ready)
+        self.env.wait_for_nodes_status([self.env.nodes[1]],
+                                       consts.NODE_STATUSES.provisioning)
         self.env.wait_ready(supertask)
 
         self.env.refresh_nodes()
 
-        self.assertEqual(self.env.nodes[1].status, 'ready')
+        self.assertEqual(self.env.nodes[1].status, consts.NODE_STATUSES.ready)
         self.assertEqual(self.env.nodes[1].progress, 100)
 
     @fake_tasks()
@@ -901,10 +905,11 @@ class TestTaskManagers(BaseIntegrationTest):
 
         with mock.patch('nailgun.task.task.DeploymentTask.message') as \
                 mocked_task:
-            self.env.launch_deployment()
-            _, actual_nodes_to_deploy = mocked_task.call_args[0]
-            self.assertItemsEqual(expected_nodes_to_deploy,
-                                  actual_nodes_to_deploy)
+            with mock.patch('nailgun.rpc.cast'):
+                self.env.launch_deployment()
+                _, actual_nodes_to_deploy = mocked_task.call_args[0]
+                self.assertItemsEqual(expected_nodes_to_deploy,
+                                      actual_nodes_to_deploy)
 
     @fake_tasks()
     def test_deployment_on_controller_removal_via_node_deletion(self):

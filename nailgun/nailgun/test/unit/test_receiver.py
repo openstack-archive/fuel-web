@@ -18,6 +18,7 @@ from mock import ANY
 from mock import patch
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun.objects import Plugin
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test import base
@@ -128,3 +129,28 @@ class TestNailgunReceiver(base.BaseTestCase):
             actual_msg,
             r'These nodes: "1" failed to '
             'connect to some of these repositories: .*')
+
+    def test_task_in_orchestrator_task_not_found(self):
+        resp = {'task_uuid': 'fake_uuid'}
+        old_status = self.task.status
+        self.assertNotRaises(errors.ObjectNotFound,
+                             NailgunReceiver.task_in_orchestrator, **resp)
+        self.db.flush()
+        self.assertEqual(old_status, self.task.status)
+
+    def test_task_in_orchestrator(self):
+        resp = {'task_uuid': self.task.uuid}
+        self.task.status = consts.TASK_STATUSES.sent_to_orchestrator
+        self.db.flush()
+        NailgunReceiver.task_in_orchestrator(**resp)
+        self.assertEqual(consts.TASK_STATUSES.running, self.task.status)
+
+    def test_task_in_orchestrator_status_not_changed(self):
+        resp = {'task_uuid': self.task.uuid}
+        for status in (consts.TASK_STATUSES.error,
+                       consts.TASK_STATUSES.running,
+                       consts.TASK_STATUSES.ready):
+            self.task.status = status
+            self.db.flush()
+            NailgunReceiver.task_in_orchestrator(**resp)
+            self.assertEqual(status, self.task.status)

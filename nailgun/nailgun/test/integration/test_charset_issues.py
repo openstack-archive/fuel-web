@@ -16,6 +16,7 @@
 
 import time
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -39,17 +40,18 @@ class TestCharsetIssues(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.name, 'deploy')
-        self.assertIn(supertask.status, ('running', 'ready'))
+        self.env.wait_until_task_pending(supertask)
+
+        self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
+        self.assertIn(supertask.status, (consts.TASK_STATUSES.running,
+                                         consts.TASK_STATUSES.ready))
         # we have three subtasks here
         # repo connectivity check
         # deletion
         # provision
         # deployment
         self.assertEqual(len(supertask.subtasks), 4)
-
-        self.env.wait_for_nodes_status(self.env.nodes, 'provisioning')
-        self.env.wait_ready(supertask, 60)
+        self.env.wait_ready(supertask)
 
     @fake_tasks()
     def test_deletion_during_deployment(self):

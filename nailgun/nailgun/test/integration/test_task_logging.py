@@ -158,7 +158,8 @@ class TestTasksLogging(BaseIntegrationTest):
                 {"pending_addition": True, "pending_roles": ["compute"]},
             ]
         )
-        self.env.launch_deployment()
+        deploy = self.env.launch_deployment()
+        self.env.wait_until_task_pending(deploy)
         self.env.stop_deployment()
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)

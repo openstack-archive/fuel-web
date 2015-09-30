@@ -51,10 +51,11 @@ def forbid_client_caching(handler):
 
 
 def load_db_driver(handler):
-    """Wrap all handlers calls in a special construction, that's call
+    """Wrap all handlers calls so transaction is handled accordingly
+
     rollback if something wrong or commit changes otherwise. Please note,
-    only HTTPError should be rised up from this function. All another
-    possible errors should be handle.
+    only HTTPError should be raised up from this function. All another
+    possible errors should be handled.
     """
     try:
         # execute handler and commit changes if all is ok
@@ -99,7 +100,9 @@ class BaseHandler(object):
 
     @classmethod
     def http(cls, status_code, msg="", err_list=None, headers=None):
-        """Raise an HTTP status code, as specified. Useful for returning status
+        """Raise an HTTP status code.
+
+        Useful for returning status
         codes like 401 Unauthorized or 403 Forbidden.
 
         :param status_code: the HTTP status code as an integer
@@ -318,7 +321,9 @@ def content_json(func, cls, *args, **kwargs):
 
 
 def content(*args, **kwargs):
-    """This decorator checks Accept header received from client
+    """Set context-type of response based on Accept header
+
+    This decorator checks Accept header received from client
     and returns corresponding wrapper (only JSON is currently
     supported). It can be used as is:
 
@@ -369,6 +374,7 @@ class SingleHandler(BaseHandler):
     @content
     def GET(self, obj_id):
         """:returns: JSONized REST object.
+
         :http: * 200 (OK)
                * 404 (object not found in db)
         """
@@ -378,6 +384,7 @@ class SingleHandler(BaseHandler):
     @content
     def PUT(self, obj_id):
         """:returns: JSONized REST object.
+
         :http: * 200 (OK)
                * 404 (object not found in db)
         """
@@ -393,6 +400,7 @@ class SingleHandler(BaseHandler):
     @content
     def DELETE(self, obj_id):
         """:returns: Empty string
+
         :http: * 204 (object successfully deleted)
                * 404 (object not found in db)
         """
@@ -419,6 +427,7 @@ class CollectionHandler(BaseHandler):
     @content
     def GET(self):
         """:returns: Collection of JSONized REST objects.
+
         :http: * 200 (OK)
         """
         q = self.collection.eager(None, self.eager)
@@ -427,6 +436,7 @@ class CollectionHandler(BaseHandler):
     @content
     def POST(self):
         """:returns: JSONized REST object.
+
         :http: * 201 (object successfully created)
                * 400 (invalid object data specified)
                * 409 (object with such parameters already exists)
@@ -443,9 +453,7 @@ class CollectionHandler(BaseHandler):
 
 
 class DBSingletonHandler(BaseHandler):
-    """Manages an object that is supposed to have only one entry in the DB
-    (a DB singleton).
-    """
+    """Manages an object that is supposed to have only one entry in the DB"""
 
     single = None
     validator = BasicValidator
@@ -462,6 +470,7 @@ class DBSingletonHandler(BaseHandler):
     @content
     def GET(self):
         """Get singleton object from DB
+
         :http: * 200 (OK)
                * 404 (Object not found in DB)
         """
@@ -472,6 +481,7 @@ class DBSingletonHandler(BaseHandler):
     @content
     def PUT(self):
         """Change object in DB
+
         :http: * 200 (OK)
                * 400 (Invalid data)
                * 404 (Object not present in DB)
@@ -487,10 +497,10 @@ class DBSingletonHandler(BaseHandler):
     @content
     def PATCH(self):
         """Update object
+
         :http: * 200 (OK)
                * 400 (Invalid data)
                * 404 (Object not present in DB)
-
         """
         data = self.checked_data(self.validator.validate_update)
 
@@ -506,8 +516,7 @@ class DBSingletonHandler(BaseHandler):
 # TODO(enchantner): rewrite more handlers to inherit from this
 # and move more common code here
 class DeferredTaskHandler(BaseHandler):
-    """Abstract Deferred Task Handler
-    """
+    """Abstract Deferred Task Handler"""
 
     validator = BaseDefferedTaskValidator
     single = objects.Task
@@ -519,6 +528,7 @@ class DeferredTaskHandler(BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
+
         :http: * 202 (task successfully executed)
                * 400 (invalid object data specified)
                * 404 (environment is not found)
@@ -573,6 +583,7 @@ class DeploymentTasksHandler(SingleHandler):
     @content
     def GET(self, obj_id):
         """:returns: Deployment tasks
+
         :http: * 200 OK
                * 404 (release object not found)
         """
@@ -591,6 +602,7 @@ class DeploymentTasksHandler(SingleHandler):
     @content
     def PUT(self, obj_id):
         """:returns:  Deployment tasks
+
         :http: * 200 (OK)
                * 400 (invalid data specified)
                * 404 (object not found in db)

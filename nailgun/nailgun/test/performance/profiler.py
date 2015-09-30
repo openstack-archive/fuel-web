@@ -52,8 +52,7 @@ class ProfilerMiddleware(object):
 
 
 class Profiler(object):
-    """Run profiler and save profile
-    """
+    """Run profiler and save profile"""
     def __init__(self, method='', handler_name=''):
         self.method = method
         self.handler_name = handler_name

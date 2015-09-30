@@ -536,8 +536,7 @@ class NailgunReceiver(object):
 
     @classmethod
     def _make_plugins_success_message(cls, plugins):
-        """Makes plugins installation message
-        """
+        """Makes plugins installation message"""
         msg = 'Plugin {0} is deployed. {1}'
         return '\n'.join(
             map(lambda p: msg.format(p.name, p.description), plugins))
@@ -876,6 +875,7 @@ class NailgunReceiver(object):
     @classmethod
     def multicast_verification_resp(cls, **kwargs):
         """Receiver for verification of multicast packages
+
         data - {1: response, 2: response}
         """
         logger.info(
@@ -930,6 +930,7 @@ class NailgunReceiver(object):
     @classmethod
     def check_dhcp_resp(cls, **kwargs):
         """Receiver method for check_dhcp task
+
         For example of kwargs check FakeCheckingDhcpThread
         """
         logger.info(

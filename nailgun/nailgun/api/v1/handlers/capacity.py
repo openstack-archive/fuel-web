@@ -70,8 +70,7 @@ class UnicodeWriter(object):
 
 
 class CapacityLogHandler(BaseHandler):
-    """Task single handler
-    """
+    """Task single handler"""
 
     fields = (
         "id",

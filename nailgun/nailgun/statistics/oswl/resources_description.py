@@ -17,8 +17,9 @@ from nailgun.statistics.utils import WhiteListRule
 
 
 def volume_attachments_transform_func(attachments_list):
-    """Transformation func for attachment attribute of the volume
-    oswl resource. Filter each element (which is dict itself) of
+    """Transformation func for attachment attribute of the volume oswl resource
+
+    Filter each element (which is dict itself) of
     attachments list.
 
     :param attachments_list: list of dicts which keys describes attachment

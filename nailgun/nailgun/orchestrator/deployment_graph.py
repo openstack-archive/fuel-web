@@ -32,8 +32,7 @@ from nailgun.orchestrator.tasks_serializer import TaskSerializers
 
 
 class DeploymentGraph(nx.DiGraph):
-    """DirectedGraph that is used to generate configuration for speficific
-    orchestrators.
+    """DirectedGraph used to generate configs for speficific orchestrators
 
     In case of astute - we are working with priorities
     In - mistral - we will serialize workbook from this graph
@@ -116,6 +115,7 @@ class DeploymentGraph(nx.DiGraph):
 
     def get_next_groups(self, processed_nodes):
         """Get nodes that have predecessors in processed_nodes list.
+
         All predecessors should be taken into account, not only direct
         parents
 
@@ -152,8 +152,8 @@ class DeploymentGraph(nx.DiGraph):
         return rst
 
     def should_exclude_task(self, task):
-        """Stores all conditions when task should be excluded from
-        execution.
+        """Stores all conditions when task should be excluded from execution.
+
         :param task: task name
         """
         if self.node[task]['type'] in consts.INTERNAL_TASKS:
@@ -230,6 +230,7 @@ class DeploymentGraph(nx.DiGraph):
 
     def filter_subgraph(self, start=None, end=None, include=()):
         """Exclude tasks that is not meant to be executed
+
         :param include: container with task names
         """
         wgraph = self.find_subgraph(start=start, end=end)
@@ -240,9 +241,7 @@ class DeploymentGraph(nx.DiGraph):
 
 
 class AstuteGraph(object):
-    """This object stores logic that required for working with astute
-    orchestrator.
-    """
+    """This object stores logic that required for working with astute"""
 
     def __init__(self, cluster):
         self.cluster = cluster
@@ -280,7 +279,9 @@ class AstuteGraph(object):
         return result
 
     def assign_parallel_nodes(self, priority, nodes):
-        """It is possible that same node have 2 or more roles that can be
+        """Assign parallel nodes
+
+        It is possible that same node have 2 or more roles that can be
         deployed in parallel. We can not allow it. That is why priorities
         will be assigned in chunks
 

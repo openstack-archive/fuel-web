@@ -248,17 +248,21 @@ class TestDataMigration(BaseTestCase):
 
         self.assertTrue('depends' not in roles_metadata_60["mongo"])
         self.assertTrue('depends' not in roles_metadata_60["test"])
-        self.assertEqual(roles_metadata_60['mongo']['restrictions'],
-                         [
-                             new_operational_restriction,
-                             new_ceilometer_restriction
-                         ])
-        self.assertEqual(roles_metadata_60['test']['restrictions'],
-                         [
-                             false_restriction,
-                             new_operational_restriction,
-                             new_ceilometer_restriction
-                         ])
+        self.assertEqual(
+            roles_metadata_60['mongo']['restrictions'],
+            [
+                new_operational_restriction,
+                new_ceilometer_restriction
+            ]
+        )
+        self.assertEqual(
+            roles_metadata_60['test']['restrictions'],
+            [
+                false_restriction,
+                new_operational_restriction,
+                new_ceilometer_restriction
+            ]
+        )
 
     def test_upgrade_attributes_metadata_from_6_0_to_6_1(self):
         attributes_original = {

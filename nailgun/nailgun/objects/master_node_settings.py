@@ -51,8 +51,9 @@ class MasterNodeSettings(NailgunObject):
 
     @classmethod
     def update(cls, instance, data):
-        """Update MasterNodeSettings object instance with specified parameters
-        in DB. master_node_uid cannot be changed so it's ignored.
+        """Update MasterNodeSettings instance with specified parameters in DB.
+
+        master_node_uid cannot be changed so it's ignored.
 
         :param instance: MasterNodeSettings instance
         :param data: dictionary of key-value pairs as object fields

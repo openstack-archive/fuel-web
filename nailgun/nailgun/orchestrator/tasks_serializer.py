@@ -119,8 +119,7 @@ class ExpressionBasedTask(DeploymentHook):
 
 
 class GenericNodeHook(ExpressionBasedTask):
-    """Should be used for node serialization.
-    """
+    """Should be used for node serialization."""
 
     hook_type = abc.abstractproperty
 
@@ -364,7 +363,9 @@ class TaskSerializers(object):
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):
-        """Task serializers for stage (pre/post) are different from
+        """TaskSerializers initializer
+
+        Task serializers for stage (pre/post) are different from
         serializers used for main deployment.
 
         This should be considered as limitation of current architecture,

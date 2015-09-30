@@ -40,6 +40,7 @@ class RoleHandler(base.SingleHandler):
     @content
     def GET(self, release_id, role_name):
         """:http:
+
             * 200 (OK)
             * 404 (no such object found)
         """
@@ -49,6 +50,7 @@ class RoleHandler(base.SingleHandler):
     @content
     def PUT(self, release_id, role_name):
         """:http:
+
             * 200 (OK)
             * 404 (no such object found)
         """
@@ -60,6 +62,7 @@ class RoleHandler(base.SingleHandler):
 
     def DELETE(self, release_id, role_name):
         """:http:
+
             * 204 (object successfully deleted)
             * 400 (cannot delete object)
             * 404 (no such object found)
@@ -82,6 +85,7 @@ class RoleCollectionHandler(base.CollectionHandler):
     @content
     def POST(self, release_id):
         """:http:
+
             * 201 (object successfully created)
             * 400 (invalid object data specified)
             * 409 (object with such parameters already exists)
@@ -104,9 +108,6 @@ class RoleCollectionHandler(base.CollectionHandler):
 
     @content
     def GET(self, release_id):
-        """:http:
-            * 200 (OK)
-        """
         release = self.get_object_or_404(objects.Release, release_id)
         role_names = six.iterkeys(release.roles_metadata)
         return [RoleSerializer.serialize_from_release(release, name)
@@ -123,6 +124,7 @@ class ClusterRolesHandler(base.BaseHandler):
     @content
     def GET(self, cluster_id, role_name):
         """:returns: JSON-ed metadata for the role
+
             :http:
             * 200 (OK)
             * 404 (no such object found)
@@ -137,6 +139,7 @@ class ClusterRolesCollectionHandler(base.BaseHandler):
     @content
     def GET(self, cluster_id):
         """:returns: collection of JSON-ed cluster roles metadata
+
             :http:
             * 200 (OK)
             * 404 (no such object found)

@@ -21,7 +21,9 @@ from nailgun.utils import reverse
 
 
 class TestTracking(BaseIntegrationTest):
-    """This set of tests checks fake behaviour
+    """Test fake behaviour for tracking and proper exception handling
+
+    This set of tests checks fake behaviour
     for tracking and proper handling of exceptions
     if using real requests
     """

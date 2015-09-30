@@ -73,6 +73,7 @@ def oswl_data_checksum(data):
 
 def oswl_statistics_save(cluster_id, resource_type, data):
     """Save OSWL statistics data for given cluster and resource_type to DB.
+
     DB changes are not committed here.
     """
     dt = datetime.utcnow()

@@ -214,6 +214,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
     def _execute_async(self, supertask_id, deployment_tasks=None,
                        nodes_to_provision_deploy=None):
         """Function for execute task in the mule
+
         :param supertask_id: id of parent task
         """
         logger.info(u"ApplyChangesTask: execute async starting for task %s",
@@ -253,6 +254,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
     def _execute_async_content(self, supertask, deployment_tasks=None,
                                nodes_to_provision_deploy=None):
         """Processes supertask async in mule
+
         :param supertask: SqlAlchemy task object
         """
 
@@ -424,6 +426,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
     def check_before_deployment(self, supertask):
         """Performs checks before deployment
+
         :param supertask: task SqlAlchemy object
         """
         # checking admin intersection with untagged
@@ -505,8 +508,7 @@ class SpawnVMsTaskManager(ApplyChangesTaskManager):
 class ProvisioningTaskManager(TaskManager):
 
     def execute(self, nodes_to_provision):
-        """Run provisioning task on specified nodes
-        """
+        """Run provisioning task on specified nodes"""
         # locking nodes
         nodes_ids = [node.id for node in nodes_to_provision]
         nodes = objects.NodeCollection.filter_by_list(

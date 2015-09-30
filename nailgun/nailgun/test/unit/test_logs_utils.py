@@ -90,7 +90,8 @@ class TestNodeLogsUtils(BaseTestCase):
 
     @mock.patch('os.path.islink', side_effect=OSError)
     def test_delete_node_no_existing_logs(self, _):
-        """Only checks whether errors are passing silently.
+        """Only checks whether errors are passing silently
+
         That's why there's no assertions, just expecting no errors.
         """
         prefix = tempfile.mkdtemp()

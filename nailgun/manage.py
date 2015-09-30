@@ -105,6 +105,11 @@ def load_db_parsers(subparsers):
         '-o', '--offline-nodes', dest='offline_nodes', action='store', type=int,
         help='offline nodes count to generate'
     )
+    generate_parser.add_argument(
+        '-i', '--min-ifaces-num', dest='min_ifaces_num', action='store',
+        type=int, default=1,
+        help='minimal number of ethernet interfaces for node'
+    )
     subparsers.add_parser(
         'loaddefault',
         help='load data from default fixtures (settings.FIXTURES_TO_UPLOAD) '
@@ -199,8 +204,10 @@ def action_generate_nodes_fixture(params):
         '{0}_fake_nodes_environment.json'.format(total_nodes_count)
     )
     generator = fake_generator.FakeNodesGenerator()
-    res = generator.generate_fake_nodes(total_nodes_count, params.error_nodes,
-                                        params.offline_nodes)
+    res = generator.generate_fake_nodes(
+        total_nodes_count, error_nodes_count=params.error_nodes,
+        offline_nodes_count=params.offline_nodes,
+        min_ifaces_num=params.min_ifaces_num)
 
     with open(file_path, 'w') as file_to_write:
         jsonutils.dump(res, file_to_write, indent=4)

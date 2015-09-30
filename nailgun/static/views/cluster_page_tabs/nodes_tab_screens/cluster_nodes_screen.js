@@ -17,56 +17,24 @@ define(
 [
     'underscore',
     'react',
+    'models',
     'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function(_, React, NodeListScreen) {
+function(_, React, models, NodeListScreen) {
     'use strict';
 
     var ClusterNodesScreen = React.createClass({
         render: function() {
+            var nodes = this.props.cluster.get('nodes');
             return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
                 ref='screen'
                 mode='list'
-                nodes={this.props.cluster.get('nodes')}
-                sorters={[
-                    'roles',
-                    'status',
-                    'name',
-                    'mac',
-                    'ip',
-                    'manufacturer',
-                    'cores',
-                    'ht_cores',
-                    'hdd',
-                    'disks',
-                    'ram',
-                    'interfaces',
-                    'group_id'
-                ]}
+                nodes={nodes}
+                roles={this.props.cluster.get('roles')}
+                sorters={_.without(models.Nodes.prototype.sorters, 'cluster')}
                 defaultSorting={[{roles: 'asc'}]}
-                filters={[
-                    'roles',
-                    'status',
-                    'manufacturer',
-                    'cores',
-                    'ht_cores',
-                    'hdd',
-                    'disks_amount',
-                    'ram',
-                    'interfaces',
-                    'group_id'
-                ]}
-                statusesToFilter={[
-                    'ready',
-                    'pending_addition',
-                    'pending_deletion',
-                    'provisioned',
-                    'provisioning',
-                    'deploying',
-                    'error',
-                    'offline',
-                    'removing'
-                ]}
+                filters={_.without(models.Nodes.prototype.filters, 'cluster')}
+                statusesToFilter={_.without(models.Node.prototype.statuses, 'discover')}
                 defaultFilters={{roles: [], status: []}}
             />;
         }

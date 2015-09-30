@@ -638,6 +638,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     <div className='row'>
                         <div className='col-xs-5'><div className='node-image-outline' /></div>
                         <div className='col-xs-7'>
+                            {this.props.cluster &&
+                                <div><strong>{i18n('dialog.show_node.cluster')}: </strong>{this.props.cluster.get('name')}</div>
+                            }
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
                             {nodeNetworkGroup &&
                                 <div>
@@ -763,7 +766,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var isConfigurable = this.props.node.isConfigurable();
             return (
                 <div>
-                    {this.props.node.get('cluster') &&
+                    {this.props.renderConfigurationButtons && this.props.node.get('cluster') &&
                         <div className='btn-group' role='group'>
                             <button className='btn btn-default btn-edit-disks' onClick={_.partial(this.goToConfigurationScreen, 'disks')}>
                                 {i18n('dialog.show_node.disk_configuration' + (isConfigurable ? '_action' : ''))}

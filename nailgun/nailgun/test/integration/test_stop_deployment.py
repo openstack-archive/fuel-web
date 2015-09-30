@@ -51,6 +51,7 @@ class TestStopDeployment(BaseIntegrationTest):
     def test_stop_deployment(self):
         supertask = self.env.launch_deployment()
         deploy_task_uuid = supertask.uuid
+        self.env.wait_until_task_pending(supertask)
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.assertIsNone(
@@ -58,7 +59,7 @@ class TestStopDeployment(BaseIntegrationTest):
                 uuid=deploy_task_uuid
             ).first()
         )
-        self.assertEqual(self.cluster.status, "stopped")
+        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
         self.assertEqual(stop_task.progress, 100)
 
         for n in self.cluster.nodes:
@@ -79,7 +80,12 @@ class TestStopDeployment(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_admin_ip_in_args(self, mocked_rpc):
-        self.env.launch_deployment()
+        deploy_task = self.env.launch_deployment()
+        provision_task = objects.TaskCollection.filter_by(
+            None, name=consts.TASK_NAMES.provision,
+            parent_id=deploy_task.id).first()
+        provision_task.status = consts.TASK_STATUSES.running
+        self.env.db.flush()
         self.env.stop_deployment()
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         for n in args[1]["args"]["nodes"]:
@@ -98,6 +104,7 @@ class TestStopDeployment(BaseIntegrationTest):
             self.node_uids
         )
         provision_task_uuid = provision_task.uuid
+        self.env.wait_until_task_pending(provision_task)
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.assertIsNone(
@@ -105,7 +112,7 @@ class TestStopDeployment(BaseIntegrationTest):
                 uuid=provision_task_uuid
             ).first()
         )
-        self.assertEqual(self.cluster.status, "stopped")
+        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
         self.assertEqual(stop_task.progress, 100)
 
     @patch('nailgun.rpc.cast')

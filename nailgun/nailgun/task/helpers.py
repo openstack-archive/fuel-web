@@ -433,6 +433,7 @@ class TaskHelper(object):
 
     @classmethod
     def set_ready_if_not_finished(cls, task):
-        if task.status == consts.TASK_STATUSES.running:
+        if task.status in (consts.TASK_STATUSES.pending,
+                           consts.TASK_STATUSES.running):
             task.status = consts.TASK_STATUSES.ready
         cls.update_action_log(task)

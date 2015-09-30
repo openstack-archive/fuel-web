@@ -24,10 +24,15 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from alembic import op
+import sqlalchemy as sa
+
 
 def upgrade():
-    pass
+    op.add_column('tasks', sa.Column('in_orchestrator', sa.Boolean,
+                                     nullable=False, default=False,
+                                     server_default='FALSE', index=True))
 
 
 def downgrade():
-    pass
+    op.drop_column('tasks', 'in_orchestrator')

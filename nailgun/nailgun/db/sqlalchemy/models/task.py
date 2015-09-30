@@ -16,6 +16,7 @@
 
 import uuid
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import Float
@@ -65,6 +66,8 @@ class Task(Base):
     # sum([t.progress * t.weight for t in supertask.subtasks]) /
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
+    in_orchestrator = Column(Boolean, default=False, nullable=False,
+                             server_default='FALSE', index=True)
 
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(

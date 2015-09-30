@@ -49,7 +49,8 @@ class TestSpawnVMs(BaseIntegrationTest):
         self.assertEqual(task_deploy.name, consts.TASK_NAMES.spawn_vms)
         self.assertIn(
             task_deploy.status,
-            (consts.TASK_STATUSES.running, consts.TASK_STATUSES.ready)
+            (consts.TASK_STATUSES.pending, consts.TASK_STATUSES.running,
+             consts.TASK_STATUSES.ready)
         )
         self.assertEqual(len(task_deploy.subtasks), 2)
 

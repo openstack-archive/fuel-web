@@ -223,6 +223,7 @@ BOND_TYPES = Enum(
 )
 
 TASK_STATUSES = Enum(
+    'pending',
     'ready',
     'running',
     'error'

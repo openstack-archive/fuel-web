@@ -960,9 +960,9 @@ class EnvironmentManager(object):
             except Exception:
                 self.nodes.remove(n)
 
-    def _wait_task(self, task, timeout, message):
+    def _wait_task_status(self, task, timeout, wait_until_in_statuses):
         timer = time.time()
-        while task.status == 'running':
+        while task.status in wait_until_in_statuses:
             self.db.refresh(task)
             if time.time() - timer > timeout:
                 raise Exception(
@@ -971,6 +971,11 @@ class EnvironmentManager(object):
                     )
                 )
             time.sleep(1)
+
+    def _wait_task(self, task, timeout, message):
+        wait_until_in_statuses = (consts.TASK_STATUSES.running,
+                                  consts.TASK_STATUSES.pending)
+        self._wait_task_status(task, timeout, wait_until_in_statuses)
         self.tester.assertEqual(task.progress, 100)
         if isinstance(message, type(re.compile("regexp"))):
             self.tester.assertIsNotNone(re.match(message, task.message))
@@ -979,11 +984,17 @@ class EnvironmentManager(object):
 
     def wait_ready(self, task, timeout=60, message=None):
         self._wait_task(task, timeout, message)
-        self.tester.assertEqual(task.status, 'ready')
+        self.tester.assertEqual(task.status, consts.TASK_STATUSES.ready)
+
+    def wait_until_task_pending(self, task, timeout=60):
+        wait_until_in_statuses = (consts.TASK_STATUSES.pending,)
+        self._wait_task_status(task, timeout,
+                               wait_until_in_statuses=wait_until_in_statuses)
+        self.tester.assertNotEqual(task.status, consts.TASK_STATUSES.pending)
 
     def wait_error(self, task, timeout=60, message=None):
         self._wait_task(task, timeout, message)
-        self.tester.assertEqual(task.status, 'error')
+        self.tester.assertEqual(task.status, consts.TASK_STATUSES.error)
 
     def wait_for_nodes_status(self, nodes, status):
         def check_statuses():

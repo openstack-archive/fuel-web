@@ -522,7 +522,8 @@ define([
             return _.contains(['stop_deployment', 'reset_environment'], this.get('name'));
         },
         isStoppableTask: function() {
-            return !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], this.get('name'));
+            return !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], this.get('name')) &&
+                this.get('status') != 'pending';
         }
     });
 

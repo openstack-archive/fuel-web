@@ -565,3 +565,70 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             task.CheckBeforeDeploymentTask.\
                 _check_deployment_graph_for_correctness(
                     self.task)
+
+
+class TestDeployTask(BaseTestCase):
+
+    def create_deploy_tasks(self):
+        self.env.create()
+        cluster = self.env.clusters[0]
+
+        deploy_task = Task(name=consts.TASK_NAMES.deploy,
+                           cluster_id=cluster.id,
+                           status=consts.TASK_STATUSES.pending)
+        self.db.add(deploy_task)
+        self.db.flush()
+        provision_task = Task(name=consts.TASK_NAMES.provision,
+                              status=consts.TASK_STATUSES.pending,
+                              parent_id=deploy_task.id, cluster_id=cluster.id)
+        self.db.add(provision_task)
+        deployment_task = Task(name=consts.TASK_NAMES.deployment,
+                               status=consts.TASK_STATUSES.pending,
+                               parent_id=deploy_task.id, cluster_id=cluster.id)
+        self.db.add(deployment_task)
+        self.db.flush()
+
+        return deploy_task, provision_task, deployment_task
+
+    def test_running_status_bubble_for_deploy_task(self):
+        deploy_task, provision_task, deployment_task = \
+            self.create_deploy_tasks()
+
+        objects.Task.update(provision_task,
+                            {'status': consts.TASK_STATUSES.running})
+
+        # Only deploy and provision tasks are running now
+        self.assertEqual(consts.TASK_STATUSES.running, deploy_task.status)
+        self.assertEqual(consts.TASK_STATUSES.running, provision_task.status)
+        self.assertEqual(consts.TASK_STATUSES.pending, deployment_task.status)
+
+    def test_error_status_bubble_for_deploy_task(self):
+        deploy_task, provision_task, deployment_task = \
+            self.create_deploy_tasks()
+
+        objects.Task.update(provision_task,
+                            {'status': consts.TASK_STATUSES.error})
+
+        # All tasks have error status
+        self.assertEqual(consts.TASK_STATUSES.error, deploy_task.status)
+        self.assertEqual(consts.TASK_STATUSES.error, provision_task.status)
+        self.assertEqual(consts.TASK_STATUSES.error, deployment_task.status)
+
+    def test_ready_status_bubble_for_deploy_task(self):
+        deploy_task, provision_task, deployment_task = \
+            self.create_deploy_tasks()
+
+        objects.Task.update(provision_task,
+                            {'status': consts.TASK_STATUSES.ready})
+
+        # Not all child bugs in ready state
+        self.assertEqual(consts.TASK_STATUSES.running, deploy_task.status)
+        self.assertEqual(consts.TASK_STATUSES.ready, provision_task.status)
+        self.assertEqual(consts.TASK_STATUSES.pending, deployment_task.status)
+
+        # All child bugs in ready state
+        objects.Task.update(deployment_task,
+                            {'status': consts.TASK_STATUSES.ready})
+        self.assertEqual(consts.TASK_STATUSES.ready, deploy_task.status)
+        self.assertEqual(consts.TASK_STATUSES.ready, provision_task.status)
+        self.assertEqual(consts.TASK_STATUSES.ready, deployment_task.status)

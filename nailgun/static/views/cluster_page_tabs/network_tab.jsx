@@ -653,21 +653,17 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
                 return Backbone.sync('update', this.props.networkConfiguration)
                     .then(_.bind(function(response) {
-                        if (response.status != 'error') {
-                            this.props.updateInitialConfiguration();
-                            result.resolve(response);
-                        } else {
-                            result.reject(response);
-                            // FIXME(vkramskikh): the same hack for check_networks task:
-                            // remove failed tasks immediately, so they won't be taken into account
-                            this.props.cluster.fetchRelated('tasks')
-                                .done(_.bind(function() {
-                                    this.props.cluster.get('tasks')
-                                        .get(response.id)
-                                        .set('unsaved', true);
-                                }, this));
-                        }
-                    }, this), result.reject)
+                        this.props.updateInitialConfiguration();
+                        result.resolve(response);
+                    }, this), _.bind(function() {
+                        result.reject();
+                        // FIXME(vkramskikh): the same hack for check_networks task:
+                        // remove failed tasks immediately, so they won't be taken into account
+                        return this.props.cluster.fetchRelated('tasks')
+                            .done(_.bind(function() {
+                                this.props.cluster.task('check_networks').set('unsaved', true);
+                            }, this));
+                    }, this))
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));

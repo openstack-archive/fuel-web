@@ -27,12 +27,27 @@ down_revision = '1e50a4903910'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.utils.migration import upgrade_enum
+
+
+task_statuses_old = (
+    'ready',
+    'running',
+    'error'
+)
+
+task_statuses_new = task_statuses_old + (
+    'pending',
+)
+
 
 def upgrade():
     upgrade_nodegroups_name_cluster_constraint()
+    task_statuses_upgrade()
 
 
 def downgrade():
+    task_statuses_downgrade()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
 
 
@@ -58,3 +73,13 @@ def upgrade_nodegroups_name_cluster_constraint():
             'name'
         ]
     )
+
+
+def task_statuses_upgrade():
+    upgrade_enum('tasks', 'status', 'task_status',
+                 task_statuses_old, task_statuses_new)
+
+
+def task_statuses_downgrade():
+    upgrade_enum('tasks', 'status', 'task_status',
+                 task_statuses_new, task_statuses_old)

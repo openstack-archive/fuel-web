@@ -74,16 +74,14 @@ class NodeHandler(SingleHandler):
 
 
 class NodeCollectionHandler(CollectionHandler):
-    """Node collection handler
-    """
+    """Node collection handler"""
 
     validator = NodeValidator
     collection = objects.NodeCollection
 
     @content
     def GET(self):
-        """May receive cluster_id parameter to filter list
-        of nodes
+        """May receive cluster_id parameter to filter list of nodes
 
         :returns: Collection of JSONized Node objects.
         :http: * 200 (OK)
@@ -101,6 +99,7 @@ class NodeCollectionHandler(CollectionHandler):
     @content
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
+
         :http: * 200 (nodes are successfully updated)
                * 400 (data validation failed)
         """
@@ -165,6 +164,7 @@ class NodeAgentHandler(BaseHandler):
     @content
     def PUT(self):
         """:returns: node id.
+
         :http: * 200 (node are successfully updated)
                * 304 (node data not changed since last request)
                * 400 (data validation failed)
@@ -198,8 +198,7 @@ class NodeAgentHandler(BaseHandler):
 
 
 class NodeNICsHandler(BaseHandler):
-    """Node network interfaces handler
-    """
+    """Node network interfaces handler"""
 
     model = NodeNICInterface
     validator = NetAssignmentValidator
@@ -208,6 +207,7 @@ class NodeNICsHandler(BaseHandler):
     @content
     def GET(self, node_id):
         """:returns: Collection of JSONized Node interfaces.
+
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
@@ -217,6 +217,7 @@ class NodeNICsHandler(BaseHandler):
     @content
     def PUT(self, node_id):
         """:returns: Collection of JSONized Node objects.
+
         :http: * 200 (nodes are successfully updated)
                * 400 (data validation failed)
         """
@@ -234,8 +235,7 @@ class NodeNICsHandler(BaseHandler):
 
 
 class NodeCollectionNICsHandler(BaseHandler):
-    """Node collection network interfaces handler
-    """
+    """Node collection network interfaces handler"""
 
     model = NetworkGroup
     validator = NetAssignmentValidator
@@ -244,6 +244,7 @@ class NodeCollectionNICsHandler(BaseHandler):
     @content
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
+
         :http: * 200 (nodes are successfully updated)
                * 400 (data validation failed)
         """
@@ -266,12 +267,12 @@ class NodeCollectionNICsHandler(BaseHandler):
 
 
 class NodeNICsDefaultHandler(BaseHandler):
-    """Node default network interfaces handler
-    """
+    """Node default network interfaces handler"""
 
     @content
     def GET(self, node_id):
         """:returns: Collection of default JSONized interfaces for node.
+
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
@@ -286,15 +287,13 @@ class NodeNICsDefaultHandler(BaseHandler):
 
 
 class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
-    """Node collection default network interfaces handler
-    """
+    """Node collection default network interfaces handler"""
 
     validator = NetAssignmentValidator
 
     @content
     def GET(self):
-        """May receive cluster_id parameter to filter list
-        of nodes
+        """May receive cluster_id parameter to filter list of nodes
 
         :returns: Collection of JSONized Nodes interfaces.
         :http: * 200 (OK)
@@ -311,12 +310,12 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
 
 
 class NodesAllocationStatsHandler(BaseHandler):
-    """Node allocation stats handler
-    """
+    """Node allocation stats handler"""
 
     @content
     def GET(self):
         """:returns: Total and unallocated nodes count.
+
         :http: * 200 (OK)
         """
         unallocated_nodes = db().query(Node).filter_by(cluster_id=None).count()

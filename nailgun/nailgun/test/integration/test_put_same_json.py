@@ -74,8 +74,9 @@ class TestPutSameJson(base.BaseIntegrationTest):
             )
 
     def http_get(self, name, arguments):
-        """Makes a GET request to a resource with `name`.
-        Returns a deserialized dict.
+        """Makes a GET request to a resource with `name`
+
+        Returns a deserialized dict
         """
         resp = self.app.get(
             base.reverse(name, kwargs=arguments),

@@ -24,10 +24,6 @@ from nailgun.test.base import BaseUnitTest
 
 @mock.patch('nailgun.middleware.keystone.public_urls')
 class AuthMiddlewareTestBase(object):
-    """Base Test class that holds common tests for
-    NailgunKeystoneAuthMiddleware and NailgunFakeKeystoneAuthMiddleware
-    """
-
     MiddlewareClass = None
 
     def setUp(self):

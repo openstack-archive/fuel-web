@@ -35,8 +35,7 @@ class TestTasksLogging(BaseIntegrationTest):
         super(TestTasksLogging, self).tearDown()
 
     def check_keys_included(self, keys, data):
-        """Check that only values with keys from 'keys' are present in 'data'
-        """
+        """Check that only values with keys from keys are present in data"""
         if isinstance(data, list):
             for d in data:
                 self.check_keys_included(keys, d)
@@ -53,8 +52,10 @@ class TestTasksLogging(BaseIntegrationTest):
 
     def check_task_name_and_sanitized_data(self, pos, logger, task_name,
                                            one_parameter=False):
-        """Test task name against known value and check sanitized data doesn't
-        contain keys which are absent in white_list.
+        """Test task name against known value
+
+        Check sanitized data doesn't contain keys which are absent in
+        white_list
 
         :param pos: position of call parameters inside logger.call_args_list,
                     (negative value: -1 - last call, -2 - pre-last call, etc.)
@@ -248,8 +249,8 @@ class TestTasksLogging(BaseIntegrationTest):
                                consts.TASK_NAMES.check_before_deployment))
 
     def simulate_running_deployment(self, deploy_task, progress=42):
-        """To exclude race condition errors in the tests we simulate
-        running process of deployment
+        """To exclude race condition errors in the tests we simulate deployment
+
         :param deploy_task: deploy task object
         :param progress: task progress value
         """

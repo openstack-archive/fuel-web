@@ -25,14 +25,14 @@ from nailgun import utils
 
 
 class VersionHandler(BaseHandler):
-    """Version info handler
-    """
+    """Version info handler"""
 
     release_versions = "/etc/fuel/release_versions/*.yaml"
 
     @content
     def GET(self):
         """:returns: FUEL/FUELWeb commit SHA, release version.
+
         :http: * 200 (OK)
         """
         version = settings.VERSION

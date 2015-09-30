@@ -61,9 +61,10 @@ def get_online_controller(cluster):
 
 
 def get_attr_value(path, func, attrs):
-    """Gets attribute value from 'attrs' by specified
-    'path'. In case of nested list - list of
-    of found values will be returned
+    """Gets attribute value from 'attrs' by specified path
+
+    In case of nested list - list of found values will be returned
+
     :param path: list of keys for accessing the attribute value
     :param func: if not None - will be applied to the value
     :param attrs: attributes data
@@ -104,9 +105,9 @@ def get_nested_attr(obj, attr_path):
 
 @contextmanager
 def set_proxy(proxy):
-    """Replace http_proxy environment variable for the scope
-    of context execution. After exit from context old proxy value
-    (if any) is restored
+    """Replace http_proxy environment var for the scope of context execution
+
+    After exit from context old proxy value (if any) is restored
 
     :param proxy: - proxy url
     """

@@ -32,8 +32,7 @@ Handlers dealing with node groups
 
 
 class NodeGroupHandler(SingleHandler):
-    """NodeGroup single handler
-    """
+    """NodeGroup single handler"""
     single = objects.NodeGroup
     validator = NodeGroupValidator
 
@@ -48,16 +47,14 @@ class NodeGroupHandler(SingleHandler):
 
 
 class NodeGroupCollectionHandler(CollectionHandler):
-    """NodeGroup collection handler
-    """
+    """NodeGroup collection handler"""
 
     collection = objects.NodeGroupCollection
     validator = NodeGroupValidator
 
     @content
     def GET(self):
-        """May receive cluster_id parameter to filter list
-        of groups
+        """May receive cluster_id parameter to filter list of groups
 
         :returns: Collection of JSONized Task objects.
         :http: * 200 (OK)

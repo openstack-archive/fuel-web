@@ -38,6 +38,7 @@ class PluginCollectionHandler(base.CollectionHandler):
     @content
     def POST(self):
         """:returns: JSONized REST object.
+
         :http: * 201 (object successfully created)
                * 400 (invalid object data specified)
                * 409 (object with such parameters already exists)
@@ -57,6 +58,7 @@ class PluginSyncHandler(base.BaseHandler):
     @content
     def POST(self):
         """:returns: JSONized REST object.
+
         :http: * 200 (plugins successfully synced)
                * 404 (plugin not found in db)
                * 400 (problem with parsing metadata file)

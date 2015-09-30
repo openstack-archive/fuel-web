@@ -18,6 +18,7 @@ from mock import ANY
 from mock import patch
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun.objects import Plugin
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test import base
@@ -128,3 +129,13 @@ class TestNailgunReceiver(base.BaseTestCase):
             actual_msg,
             r'These nodes: "1" failed to '
             'connect to some of these repositories: .*')
+
+    def test_task_in_orchestrator_task_not_found(self):
+        resp = {'task_uuid': 'fake_uuid'}
+        self.assertNotRaises(errors.ObjectNotFound, NailgunReceiver.task_in_orchestrator, **resp)
+        self.assertFalse(self.task.is_in_orchestrator)
+
+    def test_task_in_orchestrator(self):
+        resp = {'task_uuid': self.task.uuid}
+        NailgunReceiver.task_in_orchestrator(**resp)
+        self.assertTrue(self.task.is_in_orchestrator)

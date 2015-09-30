@@ -115,11 +115,9 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                     >
                         <Screen
                             {...this.state.screenData}
+                            {... _.pick(this.props, 'cluster', 'nodeNetworkGroups', 'selectedNodeIds', 'selectNodes')}
                             ref='screen'
-                            cluster={this.props.cluster}
                             screenOptions={this.state.screenOptions}
-                            selectedNodeIds={this.props.selectedNodeIds}
-                            selectNodes={this.props.selectNodes}
                         />
                     </ScreenTransitionWrapper>
                 </ReactTransitionGroup>

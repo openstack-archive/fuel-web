@@ -30,7 +30,9 @@ define([
         constructor: ClusterPage,
         goToTab: function(tabName) {
             return this.remote
-                .clickLinkByText(tabName)
+                .findByCssSelector('.cluster-page .tabs')
+                    .clickLinkByText(tabName)
+                    .end()
                 .then(pollUntil(function(textToFind) {
                     return $('.cluster-tab.active').text() == textToFind ? true : null; // eslint-disable-line no-undef
                 }, [tabName], 3000));

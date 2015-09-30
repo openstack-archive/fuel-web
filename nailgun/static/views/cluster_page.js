@@ -85,6 +85,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             },
             fetchData: function(id, activeTab) {
                 var cluster, promise, currentClusterId;
+                var nodeNetworkGroups = app.nodeNetworkGroups;
                 var tab = _.find(this.getTabs(), {url: activeTab}).tab,
                     tabOptions = _.toArray(arguments).slice(2);
                 try {
@@ -115,7 +116,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             cluster.get('roles').fetch(),
                             cluster.fetchRelated('nodes'),
                             cluster.fetchRelated('tasks'),
-                            app.nodeNetworkGroups.fetch({cache: true})
+                            nodeNetworkGroups.fetch({cache: true})
                         )
                         .then(function() {
                             var networkConfiguration = new models.NetworkConfiguration();
@@ -142,6 +143,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return promise.then(function(data) {
                     return {
                         cluster: cluster,
+                        nodeNetworkGroups: nodeNetworkGroups,
                         activeTab: activeTab,
                         tabOptions: tabOptions,
                         tabData: data
@@ -291,6 +293,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         <Tab
                             ref='tab'
                             cluster={cluster}
+                            nodeNetworkGroups={this.props.nodeNetworkGroups}
                             tabOptions={this.props.tabOptions}
                             setActiveGroupName={this.setActiveSettingsGroupName}
                             selectNodes={this.selectNodes}

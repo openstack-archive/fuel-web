@@ -40,36 +40,18 @@ function($, _, React, models, NodeListScreen) {
             return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
                 ref='screen'
                 mode='add'
-                sorters={[
-                    'status',
-                    'name',
-                    'mac',
-                    'ip',
-                    'manufacturer',
-                    'cores',
-                    'ht_cores',
-                    'hdd',
-                    'disks',
-                    'ram',
-                    'interfaces'
-                ]}
+                roles={this.props.cluster.get('roles')}
+                sorters={_.without(models.Nodes.prototype.sorters, 'cluster', 'roles', 'group_id')}
                 defaultSorting={[{status: 'asc'}]}
-                filters={[
-                    'status',
-                    'manufacturer',
-                    'cores',
-                    'ht_cores',
-                    'hdd',
-                    'disks_amount',
-                    'ram',
-                    'interfaces'
-                ]}
-                statusesToFilter={[
-                    'discover',
-                    'error',
-                    'offline',
-                    'removing'
-                ]}
+                filters={_.without(models.Nodes.prototype.filters, 'cluster', 'roles', 'group_id')}
+                statusesToFilter={_.without(models.Node.prototype.statuses,
+                    'ready',
+                    'pending_addition',
+                    'pending_deletion',
+                    'provisioned',
+                    'provisioning',
+                    'deploying'
+                )}
                 defaultFilters={{status: []}}
             />;
         }

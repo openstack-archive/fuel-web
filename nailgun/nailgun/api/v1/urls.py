@@ -300,9 +300,7 @@ _locals = locals()
 
 
 def get_extensions_urls():
-    """Method is used to retrieve the data about
-    handlers and urls from extensions and convert
-    them into web.py consumable format.
+    """Get handlers and urls from extensions, convert them into web.py format
 
     :returns: dict in the next format:
       {'urls': (r'/url/', 'ClassName'),
@@ -331,8 +329,10 @@ def get_extensions_urls():
 
 
 def get_feature_groups_urls():
-    """Method is used to retrieve urls depended on feature groups like
-    'experimental' or 'advanced' which should be enable only for this modes.
+    """Method for retrieving urls dependant on feature groups
+
+    Feature groups can be 'experimental' or 'advanced' which should be
+    enable only for this modes.
 
     :returns: list of urls
     """
@@ -344,9 +344,7 @@ def get_feature_groups_urls():
 
 
 def get_all_urls():
-    """Merges urls and handlers from core with
-    urls and handlers from extensions
-    """
+    """Merges urls and handlers from core and from extensions"""
     ext_urls = get_extensions_urls()
     all_urls = list(urls)
     all_urls.extend(get_feature_groups_urls())

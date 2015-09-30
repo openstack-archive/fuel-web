@@ -17,7 +17,7 @@
 #    under the License.
 
 
-import commands
+import commands  # noqa
 import ConfigParser
 import os
 import urlparse

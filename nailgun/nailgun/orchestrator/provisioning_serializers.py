@@ -215,6 +215,7 @@ class ProvisioningSerializer(object):
     @classmethod
     def interfaces_mapping_for_udev(cls, node):
         """Serialize interfaces mapping for cobbler
+
         :param node: node model
         :returns: returns string, example:
                   00:02:03:04:04_eth0,00:02:03:04:05_eth1

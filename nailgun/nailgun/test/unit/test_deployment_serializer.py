@@ -20,8 +20,7 @@ from nailgun.orchestrator import deployment_serializers as ds
 
 
 class TestGetSerializer(BaseUnitTest):
-    """Test cases for `get_serializer_for_cluster` function.
-    """
+    """Test cases for `get_serializer_for_cluster` function"""
 
     def test_retreiving_ha_for_5_0(self):
         cluster = mock.MagicMock(is_ha_mode=True)

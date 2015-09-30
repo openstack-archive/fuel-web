@@ -23,9 +23,10 @@ from nailgun import objects
 
 
 def check_received_data(cached, received):
-    """Check data received from net_probe (received) against data from
-    task (cached) for one node. Assemble connectivity errors description and
-    return it to the caller.
+    """Check data received from net_probe (received)
+
+    Received data is checked against data from task (cached) for one node.
+    Assemble connectivity errors description and return it to the caller.
 
     :param   cached: data for one node from task.cache
     :type    cached: dict
@@ -104,7 +105,8 @@ def check_received_data(cached, received):
 
 
 def append_message(original, appendix):
-    """Append message to output string with a delimiter.
+    """Append message to output string with a delimiter
+
     No delimiter is added if any of strings is empty.
     """
     return '\n'.join(filter(None, (original, appendix)))

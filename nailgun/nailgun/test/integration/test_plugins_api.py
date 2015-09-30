@@ -376,10 +376,10 @@ class TestPrePostHooks(BasePluginTest):
         self.assertEqual(len(rsync), 1)
         self.assertEqual(len(cmd_tasks), 2)
         for t in plugins_tasks:
-            #shoud uid be a string
+            # should uid be a string
             self.assertEqual(
                 sorted(t['uids']), sorted([n.uid for n in self.cluster.nodes]))
-            #diagnostic name is present only for plugin tasks
+            # diagnostic name is present only for plugin tasks
             self.assertEqual(t['diagnostic_name'], self.plugin.full_name)
         apt_update = [t for t in cmd_tasks
                       if u'apt-get update' in t['parameters']['cmd']]

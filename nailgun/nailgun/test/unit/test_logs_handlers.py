@@ -213,8 +213,7 @@ class TestLogs(BaseIntegrationTest):
         self.assertEqual(response['entries'], log_entries)
 
     def test_incremental_older_fetch(self):
-        """Older entries should be fetched incrementally.
-        """
+        """Older entries should be fetched incrementally."""
         log_entries = [
             [
                 time.strftime(settings.UI_LOG_DATE_FORMAT),
@@ -519,9 +518,7 @@ class TestLogs(BaseIntegrationTest):
     @mock.patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
     def test_log_package_handler_with_dump_task_manager_error(self,
                                                               dump_manager):
-        """Test verifies that 400 status would be returned in case of errors
-        with uncompleted models in session
-        """
+        """400 status when errors with uncompleted models in session occur"""
 
         def dump_task_with_bad_model(*args, **kwargs):
             raise errors.DumpRunning()

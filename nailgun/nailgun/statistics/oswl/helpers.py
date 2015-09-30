@@ -30,9 +30,7 @@ from nailgun.statistics import utils
 
 
 class ClientProvider(object):
-    """Initialize clients for OpenStack components
-    and expose them as attributes
-    """
+    """Initialize clients for OpenStack component and expose them as attrs"""
 
     clients_version_attr_path = {
         "nova": ["client", "version"],
@@ -88,8 +86,7 @@ class ClientProvider(object):
         return self._keystone
 
     def _get_keystone_client(self, auth_creds):
-        """Instantiate client based on returned from keystone
-        server version data.
+        """Create client based on returned from keystone server version data.
 
         :param auth_creds: credentials for authentication which also are
         parameters for client's instance initialization
@@ -145,7 +142,9 @@ class ClientProvider(object):
 
 
 def get_info_from_os_resource_manager(client_provider, resource_name):
-    """Utilize clients provided by client_provider instance to retrieve
+    """Use OpenStack resource manager to retrieve information about resource
+
+    Utilize clients provided by client_provider instance to retrieve
     data for resource_name, description of which is stored in
     resources_description data structure.
 

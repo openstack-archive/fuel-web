@@ -32,9 +32,11 @@ class BaseNetworkConfigurationValidatorProtocolTest(base.BaseValidatorTest):
                 new_callable=mock.PropertyMock,
                 return_value=False)
     def get_invalid_data_context(self, data, *args):
-        """The method is used by assertRaises* methods of base class
-           and should be overridden because of 'models.Cluster.is_locked'
-           should be mocked.
+        """Get invalid data context for assertRaises
+
+        The method is used by assertRaises* methods of base class
+        and should be overridden because of 'models.Cluster.is_locked'
+        should be mocked.
         """
         return super(BaseNetworkConfigurationValidatorProtocolTest, self).\
             get_invalid_data_context(data, args[0])
@@ -376,8 +378,9 @@ class TestNovaNetworkConfigurationValidatorProtocol(
         }
 
     def serialize(self, data):
-        """Overloading the method, since 'additional_network_validation' method
-        accepts object as is.
+        """'additional_network_validation' method accepts object as is
+
+        No need to serialize data
         """
         return data
 
@@ -470,8 +473,9 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         }
 
     def serialize(self, data):
-        """Overloading the method, since 'additional_network_validation' method
-        accepts object as is.
+        """'additional_network_validation' method accepts object as is
+
+        No need for serialization
         """
         return data
 

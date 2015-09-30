@@ -43,8 +43,7 @@ IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
 
 
 class NailgunObject(object):
-    """Base class for objects
-    """
+    """Base class for objects"""
 
     #: Serializer class for object
     serializer = BasicSerializer
@@ -114,6 +113,7 @@ class NailgunObject(object):
     @classmethod
     def save(cls, instance=None):
         """Save current changes for instance in DB.
+
         Current transaction will be commited
         (in case of SQLAlchemy).
 
@@ -148,8 +148,7 @@ class NailgunObject(object):
 
 
 class NailgunCollection(object):
-    """Base class for object collections
-    """
+    """Base class for object collections"""
 
     #: Single object class
     single = NailgunObject
@@ -238,6 +237,7 @@ class NailgunCollection(object):
     @classmethod
     def filter_by(cls, iterable, **kwargs):
         """Filter given iterable by specified kwargs.
+
         In case if iterable=None filters all object instances
 
         :param iterable: iterable (SQLAlchemy query)
@@ -265,7 +265,8 @@ class NailgunCollection(object):
     @classmethod
     def filter_by_not(cls, iterable, **kwargs):
         """Filter given iterable by specified kwargs with negation.
-        In case of `iterable` is `None` filters all object instances.
+
+        In case if `iterable` is `None` filters all object instances.
 
         :param iterable: iterable (SQLAlchemy query)
         :returns: filtered iterable (SQLAlchemy query)
@@ -291,6 +292,7 @@ class NailgunCollection(object):
     @classmethod
     def lock_for_update(cls, iterable):
         """Use SELECT FOR UPDATE on a given iterable (query).
+
         In case if iterable=None returns all object instances
 
         :param iterable: iterable (SQLAlchemy query)
@@ -310,6 +312,7 @@ class NailgunCollection(object):
     def filter_by_list(cls, iterable, field_name, list_of_values,
                        order_by=()):
         """Filter given iterable by list of list_of_values.
+
         In case if iterable=None filters all object instances
 
         :param iterable: iterable (SQLAlchemy query)
@@ -336,6 +339,7 @@ class NailgunCollection(object):
     @classmethod
     def filter_by_id_list(cls, iterable, uid_list):
         """Filter given iterable by list of uids.
+
         In case if iterable=None filters all object instances
 
         :param iterable: iterable (SQLAlchemy query)
@@ -351,6 +355,7 @@ class NailgunCollection(object):
     @classmethod
     def eager_base(cls, iterable, options):
         """Eager load linked object instances (SQLAlchemy FKs).
+
         In case if iterable=None applies to all object instances
 
         :param iterable: iterable (SQLAlchemy query)
@@ -365,6 +370,7 @@ class NailgunCollection(object):
     @classmethod
     def eager(cls, iterable, fields):
         """Eager load linked object instances (SQLAlchemy FKs).
+
         By default joinedload will be applied to every field.
         If you want to use custom eagerload method - use eager_base
         In case if iterable=None applies to all object instances
@@ -389,6 +395,7 @@ class NailgunCollection(object):
     @classmethod
     def to_list(cls, iterable=None, fields=None):
         """Serialize iterable to list of dicts
+
         In case if iterable=None serializes all object instances
 
         :param iterable: iterable (SQLAlchemy query)
@@ -404,6 +411,7 @@ class NailgunCollection(object):
     @classmethod
     def to_json(cls, iterable=None, fields=None):
         """Serialize iterable to JSON
+
         In case if iterable=None serializes all object instances
 
         :param iterable: iterable (SQLAlchemy query)

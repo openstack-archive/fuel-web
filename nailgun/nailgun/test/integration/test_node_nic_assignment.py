@@ -632,7 +632,7 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': '{1}' network(s) are left unassigned".format(
-            self.env.nodes[0]["id"], unassigned_id)
+                self.env.nodes[0]["id"], unassigned_id)
         )
 
     def test_assignment_change_failed_node_has_unknown_network(self):
@@ -640,7 +640,7 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Network '1234567' doesn't exist for node {0}".format(
-            self.env.nodes[0]["id"])
+                self.env.nodes[0]["id"])
         )
 
     def test_nic_change_failed_node_has_unknown_interface(self):

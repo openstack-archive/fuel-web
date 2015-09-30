@@ -30,8 +30,7 @@ from nailgun.settings import settings
 class MuranoMetadataSerializerMixin(object):
 
     def generate_test_vm_image_data(self, node):
-        """Adds murano metadata to the test image
-        """
+        """Adds murano metadata to the test image"""
         image_data = super(
             MuranoMetadataSerializerMixin,
             self).generate_test_vm_image_data(node)
@@ -48,8 +47,7 @@ class MuranoMetadataSerializerMixin(object):
 class VmwareDeploymentSerializerMixin(object):
 
     def generate_vmware_data(self, node):
-        """Extend serialize data with vmware attributes
-        """
+        """Extend serialize data with vmware attributes"""
         vmware_data = {}
         allowed_roles = [
             'controller',
@@ -139,7 +137,9 @@ class VmwareDeploymentSerializerMixin(object):
 
     @staticmethod
     def escape_dollar(data):
-        """In order to disable variable interpolation in
+        """Escape dollar symbol
+
+        In order to disable variable interpolation in
         values that we write to configuration files during
         deployment we must replace all $ (dollar sign) occurrences.
         """
@@ -209,6 +209,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def network_ranges(cls, group_id):
         """Returns ranges for network groups
+
         except range for public network for each node
         """
         ng_db = db().query(NetworkGroup).filter_by(group_id=group_id).all()
@@ -223,8 +224,7 @@ class NetworkDeploymentSerializer(object):
 
     @classmethod
     def get_ip_ranges_first_last(cls, network_group):
-        """Get all ip ranges in "10.0.0.0-10.0.0.255" format
-        """
+        """Get all ip ranges in "10.0.0.0-10.0.0.255" format"""
         return [
             "{0}-{1}".format(ip_range.first, ip_range.last)
             for ip_range in network_group.ip_ranges
@@ -232,8 +232,7 @@ class NetworkDeploymentSerializer(object):
 
     @classmethod
     def get_addr_mask(cls, network_data, net_name, render_name):
-        """Get addr for network by name
-        """
+        """Get addr for network by name"""
         nets = filter(
             lambda net: net['name'] == net_name,
             network_data)
@@ -266,6 +265,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def add_bridge(cls, name, provider=None):
         """Add bridge to schema
+
         It will take global provider if it is omitted here
         """
         bridge = {
@@ -279,6 +279,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def add_port(cls, name, bridge, provider=None):
         """Add port to schema
+
         Bridge name may be None, port will not be connected to any bridge then
         It will take global provider if it is omitted here
         Port name can be in form "XX" or "XX.YY", where XX - NIC name,
@@ -298,6 +299,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def add_bond(cls, iface, parameters):
         """Add bond to schema
+
         All required parameters should be inside parameters dict. (e.g.
         bond_properties, interface_properties, provider, bridge).
         bond_properties is obligatory, others are optional.
@@ -319,6 +321,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def add_patch(cls, bridges, provider=None, mtu=None):
         """Add patch to schema
+
         Patch connects two bridges listed in 'bridges'.
         OVS bridge must go first in 'bridges'.
         It will take global provider if it is omitted here

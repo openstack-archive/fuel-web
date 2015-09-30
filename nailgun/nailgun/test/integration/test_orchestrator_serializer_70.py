@@ -203,8 +203,9 @@ class TestDeploymentAttributesSerialization70(
         self.env._create_network_group(cluster=self.cluster_db,
                                        name=self.custom_network['name'],
                                        cidr=self.custom_network['cidr'],
-                                       vlan_start=
-                                       self.custom_network['vlan_start'])
+                                       vlan_start=self.custom_network[
+                                           'vlan_start'
+                                       ])
         self._add_plugin_network_roles()
         self.env.create_node(
             api=True,
@@ -277,8 +278,7 @@ class TestDeploymentAttributesSerialization70(
         for interface in meta['interfaces']:
             changed_offloading_modes[interface['name']] = \
                 NetworkManager._get_modified_offloading_modes(
-                    interface.get('offloading_modes')
-                )
+                    interface.get('offloading_modes'))
 
         for node in self.serialized_for_astute:
             interfaces = node['network_scheme']['interfaces']

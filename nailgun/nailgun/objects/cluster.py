@@ -46,16 +46,14 @@ from nailgun.utils import traverse
 
 
 class Attributes(NailgunObject):
-    """Cluster attributes object
-    """
+    """Cluster attributes object"""
 
     #: SQLAlchemy model for Cluster attributes
     model = models.Attributes
 
     @classmethod
     def generate_fields(cls, instance):
-        """Generate field values for Cluster attributes using
-        generators.
+        """Generate field values for Cluster attributes using generators.
 
         :param instance: Attributes instance
         :returns: None
@@ -77,9 +75,10 @@ class Attributes(NailgunObject):
 
     @classmethod
     def merged_attrs(cls, instance):
-        """Generates merged dict which includes generated Cluster
-        attributes recursively updated by new values from editable
-        attributes.
+        """Generates merged dict of attributes
+
+        Result includes generated Cluster attributes recursively updated
+        by new values from editable attributes
 
         :param instance: Attributes instance
         :returns: dict of merged attributes
@@ -91,8 +90,11 @@ class Attributes(NailgunObject):
 
     @classmethod
     def merged_attrs_values(cls, instance):
-        """Transforms raw dict of attributes returned by :func:`merged_attrs`
-        into dict of facts for sending to orchestrator.
+        """Transforms raw dict of attributes into dict of facts
+
+        Raw dict is taken from :func:`merged_attrs`
+        The result of this function is a dict of facts that wil be sent to
+        orchestrator
 
         :param instance: Attributes instance
         :returns: dict of merged attributes
@@ -116,8 +118,7 @@ class Attributes(NailgunObject):
 
 
 class Cluster(NailgunObject):
-    """Cluster object
-    """
+    """Cluster object"""
 
     #: SQLAlchemy model for Cluster
     model = models.Cluster
@@ -128,8 +129,8 @@ class Cluster(NailgunObject):
     @classmethod
     def create(cls, data):
         """Create Cluster instance with specified parameters in DB.
-        This includes:
 
+        This includes:
         * creating Cluster attributes and generating default values \
         (see :func:`create_attributes`)
         * creating NetworkGroups for Cluster
@@ -198,8 +199,8 @@ class Cluster(NailgunObject):
 
     @classmethod
     def create_attributes(cls, instance):
-        """Create attributes for current Cluster instance and
-        generate default values for them
+        """Create attributes for Cluster instance, generate their values
+
         (see :func:`Attributes.generate_fields`)
 
         :param instance: Cluster instance
@@ -297,6 +298,7 @@ class Cluster(NailgunObject):
     @classmethod
     def get_network_manager(cls, instance=None):
         """Get network manager for Cluster instance.
+
         If instance is None then the default NetworkManager is returned
 
         :param instance: Cluster instance
@@ -323,6 +325,7 @@ class Cluster(NailgunObject):
     @classmethod
     def add_pending_changes(cls, instance, changes_type, node_id=None):
         """Add pending changes for current Cluster.
+
         If node_id is specified then links created changes with node.
 
         :param instance: Cluster instance
@@ -369,6 +372,7 @@ class Cluster(NailgunObject):
     @classmethod
     def clear_pending_changes(cls, instance, node_id=None):
         """Clear pending changes for current Cluster.
+
         If node_id is specified then only clears changes connected
         to this node.
 
@@ -392,7 +396,8 @@ class Cluster(NailgunObject):
 
     @classmethod
     def update(cls, instance, data):
-        """Update Cluster object instance with specified parameters in DB.
+        """Update Cluster object instance with specified parameters in DB
+
         If "nodes" are specified in data then they will replace existing ones
         (see :func:`update_nodes`)
 
@@ -415,7 +420,8 @@ class Cluster(NailgunObject):
 
     @classmethod
     def update_nodes(cls, instance, nodes_ids):
-        """Update Cluster nodes by specified node IDs.
+        """Update Cluster nodes by specified node IDs
+
         Nodes with specified IDs will replace existing ones in Cluster
 
         :param instance: Cluster instance
@@ -481,10 +487,8 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def get_ifaces_for_network_in_cluster(
-            cls, instance, net):
-        """Method for receiving node_id:iface pairs for all nodes in
-        specific cluster
+    def get_ifaces_for_network_in_cluster(cls, instance, net):
+        """Method for receiving node_id:iface pairs for all nodes in cluster
 
         :param instance: Cluster instance
         :param net: Nailgun specific network name
@@ -561,8 +565,7 @@ class Cluster(NailgunObject):
 
     @classmethod
     def should_assign_public_to_all_nodes(cls, instance):
-        """Determine whether Public network is to be assigned to all nodes in
-        this cluster.
+        """Check if Public network be assigned to all nodes in cluster
 
         :param instance: cluster instance
         :returns: True when Public network is to be assigned to all nodes
@@ -600,15 +603,16 @@ class Cluster(NailgunObject):
     @classmethod
     def set_primary_role(cls, instance, nodes, role_name):
         """Method for assigning primary attribute for specific role.
+
         - verify that there is no primary attribute of specific role
-        assigned to cluster nodes with this role in role list
-        or pending role list, and this node is not marked for deletion
+          assigned to cluster nodes with this role in role list
+          or pending role list, and this node is not marked for deletion
         - if there is no primary role assigned, filter nodes which have current
-        role in roles or pending_roles
+          role in roles or pending_roles
         - if there is nodes with ready state - they should have higher priority
         - if role was in primary_role_list - change primary attribute
-        for that association, same for role_list, this is required
-        because deployment_serializer used by cli to generate deployment info
+          for that association, same for role_list, this is required
+          because deployment_serializer used by cli to generate deployment info
 
         :param instance: Cluster db objects
         :param nodes: list of Node db objects
@@ -643,8 +647,9 @@ class Cluster(NailgunObject):
 
     @classmethod
     def set_primary_roles(cls, instance, nodes):
-        """Idempotent method for assignment of all primary attribute
-        for all roles that requires it.
+        """Assignment of all primary attribute for all roles that requires it.
+
+        This method is idempotent
         To mark role as primary add has_primary: true attribute to release
 
         :param instance: Cluster db object
@@ -682,9 +687,11 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_primary_node(cls, instance, role_name):
-        """Get primary node for role_name. If primary node is not
-        found None will be returned. Pending roles and roles are
-        used in search.
+        """Get primary node for role_name
+
+        If primary node is not found None will be returned
+        Pending roles and roles are used in search
+
         :param instance: cluster db object
         :type: python object
         :param role_name: node role name
@@ -790,9 +797,10 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_volumes_metadata(cls, instance):
-        """Return proper volumes metadata for cluster and consists
-        with general volumes metadata from release and volumes
-        metadata from plugins which releated to this cluster
+        """Return proper volumes metadata for cluster
+
+        Metadata consists of with general volumes metadata from release
+        and volumes metadata from plugins which releated to this cluster
 
         :param instance: Cluster DB instance
         :returns: dict -- object with merged volumes metadata
@@ -809,8 +817,7 @@ class Cluster(NailgunObject):
 
     @classmethod
     def create_vmware_attributes(cls, instance):
-        """Store VmwareAttributes instance into DB.
-        """
+        """Store VmwareAttributes instance into DB."""
         vmware_metadata = instance.release.vmware_attributes_metadata
         if vmware_metadata:
             return VmwareAttributes.create(
@@ -844,8 +851,9 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_vmware_attributes(cls, instance):
-        """Get VmwareAttributes instance from DB. Now we have
-        relation with cluster 1:1.
+        """Get VmwareAttributes instance from DB.
+
+        Now we have relation with cluster 1:1.
         """
         return db().query(models.VmwareAttributes).filter(
             models.VmwareAttributes.cluster_id == instance.id
@@ -853,8 +861,7 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_default_vmware_attributes(cls, instance):
-        """Get metadata from release with empty value section.
-        """
+        """Get metadata from release with empty value section."""
         editable = instance.release.vmware_attributes_metadata.get("editable")
         editable = traverse(editable, AttributesGenerator, {
             'cluster': instance,
@@ -864,8 +871,9 @@ class Cluster(NailgunObject):
 
     @classmethod
     def update_vmware_attributes(cls, instance, data):
-        """Update Vmware attributes. Actually we allways update only
-        value section in editable.
+        """Update Vmware attributes.
+
+        Actually we allways update only value section in editable.
         """
         metadata = instance.vmware_attributes.editable['metadata']
         value = data.get('editable', {}).get('value')
@@ -882,16 +890,15 @@ class Cluster(NailgunObject):
 
     @classmethod
     def is_vmware_enabled(cls, instance):
-        """Check if current cluster support vmware configuration
-        """
+        """Check if current cluster support vmware configuration"""
         attributes = cls.get_attributes(instance).editable
         return attributes.get('common', {}).get('use_vcenter', {}).get('value')
 
     @staticmethod
     def adjust_nodes_lists_on_controller_removing(instance, nodes_to_delete,
                                                   nodes_to_deploy):
-        """In case of deleting controller(s) adds other controller(s)
-        to nodes_to_deploy
+        """Adds controllers to nodes_to_deploy if deleting other controllers
+
         :param instance: instance of SqlAlchemy cluster
         :param nodes_to_delete: list of nodes to be deleted
         :param nodes_to_deploy: list of nodes to be deployed
@@ -967,8 +974,7 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_assigned_roles(cls, instance):
-        """Get list of all roles currently assigned to nodes
-        in the specified cluster
+        """Get list of all roles currently assigned to nodes in cluster
 
         :param instance: nailgun.db.sqlalchemy.models.Cluster instance
         :returns: List of node roles currently assigned
@@ -991,8 +997,9 @@ class Cluster(NailgunObject):
 
     @classmethod
     def is_network_modification_locked(cls, instance):
-        """Checks whether network settings can be modified or
-        deleted with current status of cluster.
+        """Checks whether network settings can be modified or deleted.
+
+        The result depends on the current status of cluster.
         """
         allowed = [consts.CLUSTER_STATUSES.new,
                    consts.CLUSTER_STATUSES.stopped,
@@ -1002,8 +1009,7 @@ class Cluster(NailgunObject):
 
 
 class ClusterCollection(NailgunCollection):
-    """Cluster collection
-    """
+    """Cluster collection"""
 
     #: Single Cluster object class
     single = Cluster

@@ -20,8 +20,9 @@ from nailgun.test.base import BaseAuthenticationIntegrationTest
 
 
 class TestAuthToken(BaseAuthenticationIntegrationTest):
-    """Test the authentication tokens -- using X-Auth-Token header
-    and the token=xxx cookie.
+    """Test the authentication tokens
+
+    using X-Auth-Token header and the token=xxx cookie.
     The header has priority over cookie.
     """
 
@@ -31,8 +32,7 @@ class TestAuthToken(BaseAuthenticationIntegrationTest):
         self.headers = copy.deepcopy(self.default_headers)
 
     def test_no_token_error(self):
-        """Make sure that 401 is raised when no token is provided.
-        """
+        """Make sure that 401 is raised when no token is provided."""
         resp = self.app.get(
             '/api/nodes/allocation/stats',
             headers=self.default_headers,
@@ -41,8 +41,7 @@ class TestAuthToken(BaseAuthenticationIntegrationTest):
         self.assertEqual(401, resp.status_code)
 
     def test_x_auth_token_header(self):
-        """Check that X-Auth-Token header authentication works.
-        """
+        """Check that X-Auth-Token header authentication works."""
         self.headers['X-Auth-Token'] = self.token
 
         resp = self.app.get(
@@ -52,8 +51,7 @@ class TestAuthToken(BaseAuthenticationIntegrationTest):
         self.assertEqual(200, resp.status_code)
 
     def test_cookie_token(self):
-        """Make sure that Cookie authentication works.
-        """
+        """Make sure that Cookie authentication works."""
         self.headers['Cookie'] = 'token=%s' % self.token
 
         resp = self.app.get(
@@ -63,9 +61,7 @@ class TestAuthToken(BaseAuthenticationIntegrationTest):
         self.assertEqual(200, resp.status_code)
 
     def test_x_auth_token_header_has_priority_over_cookie(self):
-        """Make sure that X-Auth-Token header has priority over the
-        Cookie token.
-        """
+        """X-Auth-Token header has priority over the Cookie token."""
         self.headers['X-Auth-Token'] = self.token
         self.headers['Cookie'] = 'token=xxx'
 

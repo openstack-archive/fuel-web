@@ -66,14 +66,12 @@ def convert_condition_value(val):
 
 
 def negate_condition(condition):
-    """Negates condition.
-    """
+    """Negates condition."""
     return "not ({0})".format(condition)
 
 
 def remove_question_operator(expression):
-    """Removes '?' operator from expressions, it was deprecated in 6.0
-    """
+    """Removes '?' operator from expressions, it was deprecated in 6.0"""
     return re.sub(r'(:[\w\.\-]+)\?', '\\1', expression)
 
 
@@ -108,8 +106,7 @@ def upgrade_release_attributes_50_to_51(attrs_meta):
 
 
 def upgrade_release_attributes_51_to_60(attrs_meta):
-    """Remove '?' operator from expressions
-    """
+    """Remove '?' operator from expressions"""
     if not attrs_meta.get('editable'):
         return attrs_meta
 
@@ -151,9 +148,7 @@ def upgrade_release_roles_50_to_51(roles_meta):
 
 
 def upgrade_release_roles_51_to_60(roles_meta, add_meta=None):
-    """Convert all role_metadata.depends values into
-    roles_metadata.restrictions.
-    """
+    """Convert role_metadata.depends values into roles_metadata.restrictions"""
     add_meta = add_meta or {}
     for role_name, role in six.iteritems(roles_meta):
         for depend in role.get('depends', []):
@@ -457,7 +452,9 @@ def downgrade_vip_types_6_1_to_6_0(connection):
 
 
 def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):
-    """In Fuel 6.0 we had plugin version in cluster attributes
+    """Convert plugin version mapping to plugin ids
+
+    In Fuel 6.0 we had plugin version in cluster attributes
     to identify which plugin should be enabled or disabled.
     In 6.1 release we have plugins updates feature, it means
     that a single plugin can be updated/overwritten with newer

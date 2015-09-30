@@ -45,15 +45,13 @@ class NodesFilterMixin(object):
     validator = NodesFilterValidator
 
     def get_default_nodes(self, cluster):
-        """Method should be overriden and
-        return list of nodes
-        """
+        """Method should be overriden and return list of nodes"""
         raise NotImplementedError('Please Implement this method')
 
     def get_nodes(self, cluster):
-        """If nodes selected in filter
-        then returns them, else returns
-        default nodes.
+        """If nodes selected in filter then return them
+
+        else return default nodes
         """
         nodes = web.input(nodes=None).nodes
         if nodes:
@@ -67,13 +65,15 @@ class NodesFilterMixin(object):
 
 
 class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
-    """Base class for default orchestrator data.
+    """Base class for default orchestrator data
+
     Need to redefine serializer variable
     """
 
     @content
     def GET(self, cluster_id):
         """:returns: JSONized default data which will be passed to orchestrator
+
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
@@ -90,20 +90,17 @@ class OrchestratorInfo(BaseHandler):
     """Base class for replaced data."""
 
     def get_orchestrator_info(self, cluster):
-        """Method should return data
-        which will be passed to orchestrator
-        """
+        """Method should return data which will be passed to orchestrator"""
         raise NotImplementedError('Please Implement this method')
 
     def update_orchestrator_info(self, cluster, data):
-        """Method should override data which
-        will be passed to orchestrator
-        """
+        """Method should override data which will be passed to orchestrator"""
         raise NotImplementedError('Please Implement this method')
 
     @content
     def GET(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
+
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
@@ -113,6 +110,7 @@ class OrchestratorInfo(BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
+
         :http: * 200 (OK)
                * 400 (wrong data specified)
                * 404 (cluster not found in db)
@@ -128,6 +126,7 @@ class OrchestratorInfo(BaseHandler):
     @content
     def DELETE(self, cluster_id):
         """:returns: {}
+
         :http: * 202 (orchestrator data deletion process launched)
                * 400 (failed to execute orchestrator data deletion process)
                * 404 (cluster not found in db)
@@ -218,6 +217,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
+
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
@@ -239,6 +239,7 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
+
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
@@ -288,6 +289,7 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
+
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
@@ -304,6 +306,7 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
+
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
@@ -322,6 +325,7 @@ class TaskDeployGraph(BaseHandler):
 
     def GET(self, cluster_id):
         """:returns: DOT representation of deployment graph.
+
         :http: * 200 (graph returned)
                * 404 (cluster not found in db)
                * 400 (failed to get graph)

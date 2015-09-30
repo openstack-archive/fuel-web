@@ -80,7 +80,8 @@ class TestPluginBase(base.BaseTestCase):
     @mock.patch('nailgun.plugins.adapters.os.access')
     @mock.patch('nailgun.plugins.adapters.os.path.exists')
     def test_get_plugin_attributes(self, mexists, maccess, mopen):
-        """Should load attributes from environment_config.
+        """Should load attributes from environment_config
+
         Attributes should contain provided attributes by plugin and
         also generated metadata
         """
@@ -96,9 +97,7 @@ class TestPluginBase(base.BaseTestCase):
             self.plugin_adapter.default_metadata)
 
     def test_plugin_release_versions(self):
-        """Helper should return set of all release versions this plugin
-           is applicable to.
-        """
+        """Should return set of all versions this plugin is applicable to"""
         self.assertEqual(
             self.plugin_adapter.plugin_release_versions, set(['2014.2-6.0']))
 
@@ -109,9 +108,7 @@ class TestPluginBase(base.BaseTestCase):
             '{0}-{1}'.format(self.plugin.name, self.plugin.version))
 
     def test_get_release_info(self):
-        """Should return 1st plugin release info which matches
-           provided release.
-        """
+        """Should return 1st plugin release info which matches release"""
         self.cluster.release.version = '2014.2.2-6.0.1'
         release = self.plugin_adapter.get_release_info(self.cluster.release)
         self.assertEqual(release, self.plugin_metadata['releases'][0])

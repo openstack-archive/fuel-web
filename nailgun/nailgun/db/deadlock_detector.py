@@ -27,8 +27,7 @@ ALLOWED_LOCKS_CHAINS = [
 
 
 class Lock(object):
-    """Locking table info. Includes traceback info of locking call
-    """
+    """Locking table info. Includes traceback info of locking call"""
 
     def __init__(self, table):
         self.trace_lst = traceback.extract_stack()
@@ -61,13 +60,13 @@ class LockTransitionNotAllowedError(Exception):
 
 
 def clean_locks():
-    """Context must be cleaned when transaction ends
-    """
+    """Context must be cleaned when transaction ends"""
     context.locks = []
 
 
 def handle_lock(table):
-    """Storing table lock information into locks context.
+    """Storing table lock information into locks context
+
     :param table: locking table name string value
     """
     lock = Lock(table)

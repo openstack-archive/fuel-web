@@ -27,7 +27,8 @@ from nailgun import utils
 
 class InstallationInfo(object):
     """Collects info about Fuel installation
-    Master nodes, clusters, networks, e.t.c.
+
+    Includes master nodes, clusters, networks, e.t.c.
     Used for collecting info for fuel statistics
     """
 

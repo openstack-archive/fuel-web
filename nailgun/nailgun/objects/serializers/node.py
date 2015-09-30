@@ -111,6 +111,7 @@ class NodeInterfacesSerializer(BasicSerializer):
     @classmethod
     def _get_env_version(cls, instance):
         """Returns environment's version.
+
         Returns current Fuel version by default.
         """
         if instance.node.cluster:

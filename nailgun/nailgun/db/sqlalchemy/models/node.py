@@ -271,8 +271,9 @@ class NodeNICInterface(Base):
     # TODO(fzhadaev): move to object
     @classmethod
     def offloading_modes_as_flat_dict(cls, modes):
-        """Represents multilevel structure of offloading modes
-        as flat dictionary for easy merging.
+        """Represents multilevel structure of offloading modes as flat dict
+
+        This is done to ease merging
         :param modes: list of offloading modes
         :return: flat dictionary {mode['name']: mode['state']}
         """

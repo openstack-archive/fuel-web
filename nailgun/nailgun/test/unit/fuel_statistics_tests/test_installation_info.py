@@ -371,6 +371,7 @@ class TestInstallationInfo(BaseTestCase):
 
     def _find_leafs_paths(self, structure, leafs_names=('value',)):
         """Finds paths to leafs
+
         :param structure: structure for searching
         :param leafs_names: leafs names
         :return: list of tuples of dicts keys to leafs
@@ -395,6 +396,7 @@ class TestInstallationInfo(BaseTestCase):
 
     def _remove_private_leafs_paths(self, leafs_paths):
         """Removes paths to private information
+
         :return: leafs paths without paths to private information
         """
         private_paths = (

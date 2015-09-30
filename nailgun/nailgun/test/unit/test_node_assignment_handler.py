@@ -84,7 +84,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertEqual(node.cluster, None)
         self.assertEqual(node.pending_roles, [])
 
-        #Test with invalid node ids
+        # Test with invalid node ids
         for node_id in (0, node.id + 50):
             resp = self.app.post(
                 reverse(
@@ -96,7 +96,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 expect_errors=True
             )
             self.assertEqual(400, resp.status_code)
-        #Test with invalid cluster id
+        # Test with invalid cluster id
         resp = self.app.post(
             reverse(
                 'NodeUnassignmentHandler',
@@ -315,6 +315,7 @@ class TestClusterStateUnassignment(BaseIntegrationTest):
 
     def test_delete_bond_and_networks_state_on_unassignment(self):
         """Test verifies that
+
         1. bond configuration will be deleted
         2. network unassigned from node interfaces
         when node unnasigned from cluster

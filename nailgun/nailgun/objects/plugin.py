@@ -40,7 +40,8 @@ class PluginCollection(base.NailgunCollection):
 
     @classmethod
     def all_newest(cls):
-        """Returns new plugins.
+        """Returns plugins in most recent versions
+
         Example:
         There are 4 plugins:
         - name: plugin_name, version: 1.0.0
@@ -68,6 +69,7 @@ class PluginCollection(base.NailgunCollection):
     @classmethod
     def get_by_uids(cls, plugin_ids):
         """Returns plugins by given ids.
+
         :param plugin_ids: list of plugin ids
         :type plugin_ids: list
 

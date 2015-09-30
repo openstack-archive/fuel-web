@@ -26,14 +26,13 @@ from nailgun import objects
 
 
 class NodeDisksHandler(BaseHandler):
-    """Node disks handler
-    """
 
     validator = NodeDisksValidator
 
     @content
     def GET(self, node_id):
         """:returns: JSONized node disks.
+
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
@@ -46,6 +45,7 @@ class NodeDisksHandler(BaseHandler):
     @content
     def PUT(self, node_id):
         """:returns: JSONized node disks.
+
         :http: * 200 (OK)
                * 400 (invalid disks data specified)
                * 404 (node not found in db)
@@ -73,12 +73,11 @@ class NodeDisksHandler(BaseHandler):
 
 
 class NodeDefaultsDisksHandler(BaseHandler):
-    """Node default disks handler
-    """
 
     @content
     def GET(self, node_id):
         """:returns: JSONized node disks.
+
         :http: * 200 (OK)
                * 404 (node or its attributes not found in db)
         """
@@ -93,12 +92,11 @@ class NodeDefaultsDisksHandler(BaseHandler):
 
 
 class NodeVolumesInformationHandler(BaseHandler):
-    """Node volumes information handler
-    """
 
     @content
     def GET(self, node_id):
         """:returns: JSONized volumes info for node.
+
         :http: * 200 (OK)
                * 404 (node not found in db)
         """

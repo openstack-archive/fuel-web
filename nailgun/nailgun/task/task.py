@@ -89,38 +89,42 @@ def fake_cast(queue, messages, **kwargs):
 
 
 class DeploymentTask(object):
-# LOGIC
-# Use cases:
-# 1. Cluster exists, node(s) added
-#   If we add one node to existing OpenStack cluster, other nodes may require
-#   updates (redeployment), but they don't require full system reinstallation.
-#   How to: run deployment for all nodes which system type is target.
-#   Run provisioning first and then deployment for nodes which are in
-#   discover system type.
-#   Q: Should we care about node status (provisioning, error, deploying)?
-#   A: offline - when node doesn't respond (agent doesn't run, not
-#                implemented); let's say user should remove this node from
-#                cluster before deployment.
-#      ready - target OS is loaded and node is Ok, we redeploy
-#              ready nodes only if cluster has pending changes i.e.
-#              network or cluster attrs were changed
-#      discover - in discovery mode, provisioning is required
-#      provisioning - at the time of task execution there should not be such
-#                     case. If there is - previous provisioning has failed.
-#                     Possible solution would be to try again to provision
-#      deploying - the same as provisioning, but stucked in previous deploy,
-#                  solution - try to deploy. May loose some data if reprovis.
-#      error - recognized error in deployment or provisioning... We have to
-#              know where the error was. If in deployment - reprovisioning may
-#              not be a solution (can loose data). If in provisioning - can do
-#              provisioning & deployment again
-# 2. New cluster, just added nodes
-#   Provision first, and run deploy as second
-# 3. Remove some and add some another node
-#   Deletion task will run first and will actually remove nodes, include
-#   removal from DB.. however removal from DB happens when remove_nodes_resp
-#   is ran. It means we have to filter nodes and not to run deployment on
-#   those which are prepared for removal.
+    """Task for applying changes to cluster
+
+    LOGIC
+    Use cases:
+    1. Cluster exists, node(s) added
+      If we add one node to existing OpenStack cluster, other nodes may require
+      updates (redeployment), but they don't require full system
+      reinstallation.
+      How to: run deployment for all nodes which system type is target.
+      Run provisioning first and then deployment for nodes which are in
+      discover system type.
+      Q: Should we care about node status (provisioning, error, deploying)?
+      A: offline - when node doesn't respond (agent doesn't run, not
+                   implemented); let's say user should remove this node from
+                   cluster before deployment.
+         ready - target OS is loaded and node is Ok, we redeploy
+                 ready nodes only if cluster has pending changes i.e.
+                 network or cluster attrs were changed
+         discover - in discovery mode, provisioning is required
+         provisioning - at the time of task execution there should not be such
+                        case. If there is - previous provisioning has failed.
+                        Possible solution would be to try again to provision
+         deploying - the same as provisioning, but stucked in previous deploy,
+                     solution - try to deploy. May loose some data if reprovis.
+         error - recognized error in deployment or provisioning... We have to
+                 know where the error was. If in deployment - reprovisioning
+                 may not be a solution (can loose data).
+                 If in provisioning - can do provisioning & deployment again
+    2. New cluster, just added nodes
+      Provision first, and run deploy as second
+    3. Remove some and add some another node
+      Deletion task will run first and will actually remove nodes, include
+      removal from DB.. however removal from DB happens when remove_nodes_resp
+      is ran. It means we have to filter nodes and not to run deployment on
+      those which are prepared for removal.
+    """
 
     @classmethod
     def _get_deployment_method(cls, cluster):
@@ -188,7 +192,9 @@ class DeploymentTask(object):
 
 
 class UpdateNodesInfoTask(object):
-    """The task is intended to be used in order to update both nodes.yaml and
+    """Task for updating nodes.yaml and /etc/hosts on all slaves
+
+    The task is intended to be used in order to update both nodes.yaml and
     /etc/hosts on all slaves. This task aren't going to manage node or cluster
     statuses, and should be used only in one case - when we remove some node
     and don't add anything new (if some new node is added, these tasks will
@@ -808,9 +814,7 @@ class BaseNetworkVerification(object):
 
     @classmethod
     def enabled(cls, cluster):
-        """Should be used to verify that subtask is enabled based on
-        cluster configuration
-        """
+        """Verify that subtask is enabled based on cluster configuration"""
         return True
 
 
@@ -886,7 +890,8 @@ class VerifyNetworksForTemplateMixin(object):
     @classmethod
     def get_ifaces_from_template_on_undeployed_node(cls, node, node_json):
         """Retrieves list of network interfaces on the undeployed node
-        from the network template.
+
+        List is retrieved from the network template.
         """
         bonds = collections.defaultdict(list)
         ifaces = collections.defaultdict(set)
@@ -916,7 +921,8 @@ class VerifyNetworksForTemplateMixin(object):
     @classmethod
     def get_ifaces_from_template_on_deployed_node(cls, node, node_json):
         """Retrieves list of network interfaces on the deployed node
-        from the network template.
+
+        List is retrieved from the network template.
         """
         ifaces = collections.defaultdict(set)
         for transformation, vlan_ids in cls._get_transformations(node):
@@ -949,8 +955,7 @@ class VerifyNetworksForTemplateMixin(object):
               ).get_ifaces_on_undeployed_node(node, node_json, has_public)
 
     def get_ifaces_on_deployed_node(self, node, node_json, has_public):
-        """Retrieves list of network interfaces on the deployed node.
-        """
+        """Retrieves list of network interfaces on the deployed node."""
         if node.network_template:
             self.get_ifaces_from_template_on_deployed_node(node, node_json)
             return
@@ -977,8 +982,7 @@ class VerifyNetworksTask(VerifyNetworksForTemplateMixin,
 
 class CheckDhcpTask(VerifyNetworksForTemplateMixin,
                     BaseNetworkVerification):
-    """Task for dhcp verification
-    """
+    """Task for dhcp verification"""
 
 
 class MulticastVerificationTask(BaseNetworkVerification):
@@ -1002,11 +1006,13 @@ class MulticastVerificationTask(BaseNetworkVerification):
 
     @classmethod
     def enabled(cls, cluster):
-        """Multicast should be enabled only in case 'corosync' section
+        """Checks whether task is enabled
+
+        Multicast should be enabled only in case 'corosync' section
         is present in editable attributes, which is not the case if cluster
         was upgraded from 5.0
         """
-        #TODO(dshulyak) enable it, when it will be possible to upgrade
+        # TODO(dshulyak) enable it, when it will be possible to upgrade
         # mcagent and network checker for old envs
         return False
 
@@ -1136,8 +1142,7 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _is_disk_checking_required(cls, node):
-        """Disk checking required in case if node is not provisioned.
-        """
+        """Disk checking required in case if node is not provisioned."""
         if node.status in ('ready', 'deploying', 'provisioned') or \
            (node.status == 'error' and node.error_type != 'provision'):
             return False
@@ -1201,9 +1206,7 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_mongo_nodes(cls, task):
-        """Mongo nodes shouldn't be present in environment
-        if external mongo is chosen.
-        """
+        """Check for mongo nodes presence in env with external mongo"""
         components = objects.Attributes.merged_attrs(
             task.cluster.attributes).get("additional_components", None)
         if (components and components["ceilometer"]["value"]
@@ -1219,8 +1222,7 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_vmware_consistency(cls, task):
-        """Checks vmware attributes consistency and proper values
-        """
+        """Checks vmware attributes consistency and proper values"""
         attributes = task.cluster.attributes.editable
         vmware_attributes = task.cluster.vmware_attributes
         # Old(< 6.1) clusters haven't vmware support
@@ -1284,8 +1286,9 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_deployment_graph_for_correctness(self, task):
-        """Check that deployment graph hasn't not existing dependencies(
-        such as requires|required_for|tasks|groups)
+        """Check that deployment graph doesn't have existing dependencies
+
+        example dependencies are: requires|required_for|tasks|groups
         """
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         graph_validator = deployment_graph.DeploymentGraphValidator(

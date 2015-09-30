@@ -42,8 +42,7 @@ class Priority(object):
 
 
 class PriorityStrategy(object):
-    """Set priorities for sequence of tasks using some strategy.
-    """
+    """Set priorities for sequence of tasks using some strategy"""
 
     def __init__(self):
         #: priority sequence generator

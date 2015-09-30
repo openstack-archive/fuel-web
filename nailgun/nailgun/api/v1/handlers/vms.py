@@ -65,6 +65,7 @@ class SpawnVmsHandler(BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
+
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
@@ -76,12 +77,12 @@ class SpawnVmsHandler(BaseHandler):
 
 
 class NodeVMsHandler(BaseHandler):
-    """Node vms handler
-    """
+    """Node vms handler"""
 
     @content
     def GET(self, node_id):
         """:returns: JSONized node vms_conf.
+
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
@@ -92,6 +93,7 @@ class NodeVMsHandler(BaseHandler):
     @content
     def PUT(self, node_id):
         """:returns: JSONized node vms_conf.
+
         :http: * 200 (OK)
                * 400 (invalid vmsdata specified)
                * 404 (node not found in db)

@@ -122,7 +122,9 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def _check_for_ip_conflicts(cls, network, cluster, notation, use_gateway):
-        """This method checks if any of already allocated IPs will be \
+        """Will there be ip confclicts after networks update?
+
+        This method checks if any of already allocated IPs will be
         out of all ip-ranges after networks update.
         """
         # skip admin network
@@ -208,9 +210,7 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
     def _check_multiple_floating_ip_ranges(cls, net_params):
-        """Check that there is only one floating IP range
-        in the input data.
-        """
+        """Check that there is only one floating IP range in the input data"""
         # TODO(aroma): if only one IP range is supported
         # by the protocol we should get rid of the nested
         # list then

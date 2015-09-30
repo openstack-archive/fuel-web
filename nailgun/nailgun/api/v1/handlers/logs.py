@@ -193,8 +193,7 @@ def read_log(
 
 
 class LogEntryCollectionHandler(BaseHandler):
-    """Log entry collection handler
-    """
+    """Log entry collection handler"""
 
     @content
     def GET(self):
@@ -377,11 +376,11 @@ class LogEntryCollectionHandler(BaseHandler):
 
 
 class LogPackageHandler(BaseHandler):
-    """Log package handler
-    """
+    """Log package handler"""
     @content
     def PUT(self):
         """:returns: JSONized Task object.
+
         :http: * 200 (task successfully executed)
                * 400 (data validation failed)
                * 404 (cluster not found in db)
@@ -403,18 +402,19 @@ class LogPackageDefaultConfig(BaseHandler):
     @content
     def GET(self):
         """Generates default config for snapshot
+
         :http: * 200
         """
         return DumpTask.conf()
 
 
 class LogSourceCollectionHandler(BaseHandler):
-    """Log source collection handler
-    """
+    """Log source collection handler"""
 
     @content
     def GET(self):
         """:returns: Collection of log sources (from settings)
+
         :http: * 200 (OK)
         """
         return settings.LOGS
@@ -424,6 +424,7 @@ class SnapshotDownloadHandler(BaseHandler):
 
     def GET(self, snapshot_name):
         """:returns: empty response
+
         :resheader X-Accel-Redirect: snapshot_name
         :http: * 200 (OK)
                * 401 (Unauthorized)
@@ -435,12 +436,12 @@ class SnapshotDownloadHandler(BaseHandler):
 
 
 class LogSourceByNodeCollectionHandler(BaseHandler):
-    """Log source by node collection handler
-    """
+    """Log source by node collection handler"""
 
     @content
     def GET(self, node_id):
         """:returns: Collection of log sources by node (from settings)
+
         :http: * 200 (OK)
                * 404 (node not found in db)
         """

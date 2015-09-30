@@ -14,9 +14,7 @@
 
 
 class StatsException(Exception):
-    """Base class exception for all statistic related
-    custom exceptions
-    """
+    """Base class exception for all statistic related custom exceptions"""
     pass
 
 

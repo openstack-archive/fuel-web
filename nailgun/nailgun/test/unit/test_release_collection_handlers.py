@@ -77,7 +77,7 @@ class TestHandlers(BaseIntegrationTest):
                                 ],
                                 "vlan_start": 103,
                             }
-                            ]
+                        ]
                     }
                 }
             }),
@@ -105,7 +105,7 @@ class TestHandlers(BaseIntegrationTest):
                                 ],
                                 "vlan_start": 103,
                             }
-                            ]
+                        ]
                     }
                 }
             }),
@@ -155,7 +155,7 @@ class TestHandlers(BaseIntegrationTest):
                                 ],
                                 "vlan_start": 103,
                             }
-                            ]
+                        ]
                     }
                 }
             }),
@@ -183,7 +183,7 @@ class TestHandlers(BaseIntegrationTest):
                                 ],
                                 "vlan_start": 103,
                             }
-                            ]
+                        ]
                     }
                 }
             }),

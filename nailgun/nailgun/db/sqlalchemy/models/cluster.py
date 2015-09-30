@@ -135,11 +135,11 @@ class Cluster(Base):
 
     @property
     def is_locked(self):
-        if self.status in ("new", "stopped") and not \
-                db().query(Node).filter_by(
-                    cluster_id=self.id,
-                    status="ready"
-                ).count():
+        N = Node
+        if self.status in ("new", "stopped") and not db().query(N).filter_by(
+            cluster_id=self.id,
+            status="ready"
+        ).count():
             return False
         return True
 

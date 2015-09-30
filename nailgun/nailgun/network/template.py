@@ -23,6 +23,7 @@ from string import Template
 
 class NetworkTemplate(Template):
     """NetworkTemplate object provides string substitution
+
     NetworkTemplate substitutes <% key %> to value
     for key=value
     Spaces inside <%...%> block are ignored

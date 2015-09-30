@@ -71,7 +71,9 @@ class DBAPI(object):
 
     @lockutils.synchronized('dbapi_backend', 'nailgun-')
     def __get_backend(self):
-        """Get the actual backend.  May be a module or an instance of
+        """Get the actual backend
+
+        May be a module or an instance of
         a class.  Doesn't matter to us.  We do this synchronized as it's
         possible multiple greenthreads started very quickly trying to do
         DB calls and eventlet can switch threads before self.__backend gets

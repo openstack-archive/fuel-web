@@ -294,8 +294,7 @@ def upgrade_node_groups(connection):
 
 
 def dump_master_node_settings(connection):
-    """Generate uuid for master node installation and update
-    master_node_settings table by generated value
+    """Update master_node_settings table with new uuid for master node
 
     Arguments:
     connection - a database connection

@@ -89,7 +89,8 @@ class BasePluginDeploymentHooksSerializer(object):
             self._set_task_defaults(plugin, task), task)
 
     def _sort_by_stage_postfix(self, tasks):
-        """Sorts tasks in the correct order by task postfixes,
+        """Sorts tasks in the correct order by task postfixes
+
         for example here are several tasks' stages:
 
         stage: post_deployment/100

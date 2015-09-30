@@ -75,7 +75,9 @@ class TaskHelper(object):
     # TODO(aroma): move it to utils module
     @classmethod
     def before_deployment_error(cls, task):
-        """Returns True in case of check_before_deployment
+        """Checks if there was an error before deployment
+
+        Returns True in case of check_before_deployment
         or check_networks error and if cluster wasn't
         deployed yet
         """
@@ -235,6 +237,7 @@ class TaskHelper(object):
     @classmethod
     def nodes_to_deploy_ha(cls, cluster, nodes):
         """Get nodes for deployment for ha mode
+
         * in case of failed controller should be redeployed
           all controllers
         * in case of failed non-controller should be
@@ -262,9 +265,7 @@ class TaskHelper(object):
 
     @classmethod
     def __has_controller_nodes(cls, nodes):
-        """Returns True if list of nodes has
-        at least one controller.
-        """
+        """Returns True if list of nodes has at least one controller."""
         for node in nodes:
             if 'controller' in set(node.roles + node.pending_roles):
                 return True
@@ -282,6 +283,7 @@ class TaskHelper(object):
     @classmethod
     def prepare_action_log_kwargs(cls, task):
         """Prepares kwargs dict for ActionLog db model class
+
         :param task: task instance to be processed
         :returns: kwargs dict for action log creation
         """
@@ -360,6 +362,7 @@ class TaskHelper(object):
     @classmethod
     def create_action_log(cls, task):
         """Creates action log
+
         :param task: SqlAlchemy task object
         :return: SqlAlchemy action_log object
         """

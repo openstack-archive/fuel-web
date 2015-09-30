@@ -32,8 +32,7 @@ Handlers dealing with tasks
 
 
 class TaskHandler(SingleHandler):
-    """Task single handler
-    """
+    """Task single handler"""
 
     single = objects.Task
     validator = TaskValidator
@@ -41,6 +40,7 @@ class TaskHandler(SingleHandler):
     @content
     def DELETE(self, obj_id):
         """:returns: Empty string
+
         :http: * 204 (object successfully deleted)
                * 404 (object not found in db)
         """
@@ -61,16 +61,14 @@ class TaskHandler(SingleHandler):
 
 
 class TaskCollectionHandler(CollectionHandler):
-    """Task collection handler
-    """
+    """Task collection handler"""
 
     collection = objects.TaskCollection
     validator = TaskValidator
 
     @content
     def GET(self):
-        """May receive cluster_id parameter to filter list
-        of tasks
+        """May receive cluster_id parameter to filter list of tasks
 
         :returns: Collection of JSONized Task objects.
         :http: * 200 (OK)

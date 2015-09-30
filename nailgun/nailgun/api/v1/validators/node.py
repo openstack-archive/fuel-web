@@ -314,6 +314,7 @@ class NodesFilterValidator(BasicValidator):
     @classmethod
     def validate(cls, nodes):
         """Used for filtering nodes
+
         :param nodes: list of ids in string representation.
                       Example: "1,99,3,4"
 
@@ -347,8 +348,7 @@ class DeploySelectedNodesValidator(NodesFilterValidator):
 
     @classmethod
     def validate_nodes_to_deploy(cls, data, nodes, cluster_id):
-        """Check whether nodes that scheduled for deployment are
-        in proper state
+        """Check if nodes scheduled for deployment are in proper state
 
         :param data: raw json data, usually web.data(). Is not used here
         and is needed for maintaining consistency of data validating logic

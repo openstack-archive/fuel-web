@@ -299,7 +299,9 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.message, '')
 
     def test_verify_networks_with_dhcp_subtask(self):
-        """Test verifies that when dhcp subtask is ready and
+        """verify_networks status depends on dhcp subtask
+
+        Test verifies that when dhcp subtask is ready and
         verify_networks errored - verify_networks will be in error
         """
         self.env.create(
@@ -492,9 +494,7 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertItemsEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_incomplete_network_data_on_first_node(self):
-        """Test verifies that when network data is incomplete on first node
-        task would not fail and be erred as expected
-        """
+        """First node network data incompletion causes task fail"""
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -539,8 +539,9 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_without_vlans_only(self):
-        """Verify that network verification without vlans passes
-        when there only iface without vlans configured
+        """Net verification without vlans
+
+        Passes when only iface without vlans configured
         """
         self.env.create(
             cluster_kwargs={},
@@ -576,9 +577,7 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.status, "ready")
 
     def test_verify_networks_resp_without_vlans_only_erred(self):
-        """Verify that network verification without vlans fails
-        when not all sended info received
-        """
+        """Net verification without vlans fails when not all info received"""
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -624,8 +623,7 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_partially_without_vlans(self):
-        """Verify that network verification partially without vlans passes
-        """
+        """Verify that network verification partially without vlans passes"""
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -660,8 +658,7 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.status, "ready")
 
     def test_verify_networks_with_excluded_networks(self):
-        """Verify that network verification can exclude interfaces
-        """
+        """Verify that network verification can exclude interfaces"""
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[

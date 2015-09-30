@@ -88,7 +88,9 @@ precedence = (
 
 
 def p_expression_binop(p):
-    """expression : expression EQUALS expression
+    """Binary operation expression
+
+       expression : expression EQUALS expression
                   | expression NOT_EQUALS expression
                   | expression OR expression
                   | expression AND expression
@@ -109,20 +111,20 @@ def p_expression_binop(p):
 
 
 def p_not_expression(p):
-    """expression : NOT expression
-    """
+    """expression : NOT expression"""
     subexpression = p[2]
     p[0] = SubexpressionWrapper(lambda: not subexpression())
 
 
 def p_expression_group(p):
-    """expression : LPAREN expression RPAREN
-    """
+    """expression : LPAREN expression RPAREN"""
     p[0] = p[2]
 
 
 def p_expression_scalar(p):
-    """expression : NUMBER
+    """Scalar expression
+
+       expression : NUMBER
                   | STRING
                   | NULL
                   | TRUE
@@ -132,8 +134,7 @@ def p_expression_scalar(p):
 
 
 def p_expression_modelpath(p):
-    """expression : MODELPATH
-    """
+    """expression : MODELPATH"""
     p[0] = ModelPathWrapper(p[1], expression)
 
 

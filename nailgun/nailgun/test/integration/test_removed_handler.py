@@ -14,6 +14,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from six import add_metaclass
+
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -62,8 +64,9 @@ class RemovedResourcesMeta(BaseTestDataProviderMeta):
     methods = ('get', 'head', 'post', 'put', 'delete')
 
 
+@add_metaclass(RemovedResourcesMeta)
 class TestRemovedResources(BaseTestRemovedResources):
-    __metaclass__ = RemovedResourcesMeta
+    pass
 
 
 class RemovedIn51HandlerMeta(BaseTestDataProviderMeta):

@@ -66,9 +66,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
 
     def serialize(self, cluster, nodes, ignore_customized=False):
-        """Method generates facts which
-        through an orchestrator passes to puppet
-        """
+        """Method generates facts which are passed to puppet"""
         def keyfunc(node):
             return bool(node.replaced_deployment_info)
 
@@ -154,7 +152,9 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         return None
 
     def set_storage_parameters(self, cluster, attrs):
-        """Generate pg_num as the number of OSDs across the cluster
+        """Generate pg_num
+
+        pg_num is generated as the number of OSDs across the cluster
         multiplied by 100, divided by Ceph replication factor, and
         rounded up to the nearest power of 2.
         """
@@ -193,9 +193,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
     @classmethod
     def node_list(cls, nodes):
-        """Generate nodes list. Represents
-        as "nodes" parameter in facts.
-        """
+        """Generate nodes list. Represents as "nodes" parameter in facts."""
         node_list = []
 
         for node in nodes:
@@ -220,14 +218,13 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         return filter(lambda node: node['role'] not in roles, nodes)
 
     def set_critical_nodes(self, nodes):
-        """Set behavior on nodes deployment error
-        during deployment process.
-        """
+        """Set behavior on nodes deployment error during deployment process."""
         for n in nodes:
             n['fail_if_error'] = n['role'] in self.critical_roles
 
     def serialize_nodes(self, nodes):
         """Serialize node for each role.
+
         For example if node has two roles then
         in orchestrator will be passed two serialized
         nodes.
@@ -239,9 +236,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         return serialized_nodes
 
     def serialize_node(self, node, role):
-        """Serialize node, then it will be
-        merged with common attributes
-        """
+        """Serialize node, then it will be merged with common attributes"""
         node_attrs = {
             # Yes, uid is really should be a string
             'uid': node.uid,
@@ -249,8 +244,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             'status': node.status,
             'role': role,
             'vms_conf': node.attributes.vms_conf,
-            # TODO (eli): need to remove, requried
-            # for the fake thread only
+            # TODO(eli): need to remove, requried for the fake thread only
             'online': node.online
         }
 
@@ -344,8 +338,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
     @classmethod
     def node_list(cls, nodes):
-        """Node list
-        """
+        """Node list"""
         node_list = super(
             DeploymentHASerializer,
             cls
@@ -357,8 +350,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         return node_list
 
     def get_common_attrs(self, cluster):
-        """Common attributes for all facts
-        """
+        """Common attributes for all facts"""
         common_attrs = super(
             DeploymentHASerializer,
             self
@@ -376,8 +368,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         return common_attrs
 
     def get_assigned_vips(self, cluster):
-        """Assign and get vips for net groups
-        """
+        """Assign and get vips for net groups"""
         return objects.Cluster.get_network_manager(cluster).\
             assign_vips_for_net_groups(cluster)
 
@@ -555,8 +546,7 @@ def get_serializer_for_cluster(cluster):
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
-    """Serialization depends on deployment mode
-    """
+    """Serialization depends on deployment mode"""
     objects.Cluster.set_primary_roles(cluster, nodes)
     env_version = cluster.release.environment_version
 

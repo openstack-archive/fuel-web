@@ -129,7 +129,7 @@ attribute_schema = {
                 'file',
             ]
         },
-        #'value': None,  # custom validation depending on type
+        # 'value': None,  # custom validation depending on type
         'restrictions': role.RESTRICTIONS,
         'weight': {
             'type': 'integer',

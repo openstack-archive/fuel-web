@@ -29,8 +29,7 @@ formatter = logging.Formatter(LOGFORMAT, DATEFORMAT)
 
 
 def make_nailgun_logger():
-    """Make logger for nailgun app writes logs to stdout
-    """
+    """Make logger for nailgun app writes logs to stdout"""
     logger = logging.getLogger("nailgun")
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
@@ -40,8 +39,7 @@ def make_nailgun_logger():
 
 
 def make_api_logger():
-    """Make logger for REST API writes logs to the file
-    """
+    """Make logger for REST API writes logs to the file"""
     # Circular import dependency problem
     # we import logger module in settings
     from nailgun.settings import settings

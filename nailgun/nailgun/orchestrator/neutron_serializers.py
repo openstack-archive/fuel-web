@@ -55,9 +55,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
-        """Serialize node, then it will be
-        merged with common attributes
-        """
+        """Serialize node, then it will be merged with common attributes"""
         nm = Cluster.get_network_manager(cluster)
         networks = nm.get_node_networks(node)
         node_attrs = {
@@ -68,7 +66,9 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def mellanox_settings(cls, node_attrs, cluster, networks):
-        """Serialize mellanox node attrs, then it will be
+        """Mellanox settings
+
+        Serialize mellanox node attrsthen it will be
         merged with common attributes, if mellanox plugin or iSER storage
         enabled.
         """
@@ -101,8 +101,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def set_mellanox_ml2_config(cls, node_attrs, nm, networks):
-        """Change the yaml file to include the required configurations
+        """Set config for ml2 mellanox mechanism driver
+
+        Change the yaml file to include the required configurations
         for ml2 mellanox mechanism driver.
+
         should be called only in case of mellanox SR-IOV plugin usage.
         """
         # Set physical port for SR-IOV virtual functions
@@ -119,7 +122,9 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def fix_iser_port(cls, node_attrs, nm, networks):
-        """Change the iser port to eth_iser probed (VF on the HV) interface
+        """Fix iser port
+
+        Change the iser port to eth_iser probed (VF on the HV) interface
         instead of br-storage. that change is made due to RDMA
         (Remote Direct Memory Access) limitation of working with physical
         interfaces.
@@ -170,8 +175,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def neutron_attrs(cls, cluster):
-        """Network configuration for Neutron
-        """
+        """Network configuration for Neutron"""
         attrs = {}
         attrs['L3'] = cls.generate_l3(cluster)
         attrs['L2'] = cls.generate_l2(cluster)
@@ -834,16 +838,14 @@ class NeutronNetworkDeploymentSerializer70(
 
     @classmethod
     def get_node_non_default_networks(cls, node):
-        """Returns list of non-default networks assigned to node.
-        """
+        """Returns list of non-default networks assigned to node."""
         nm = Cluster.get_network_manager(node.cluster)
         return filter(lambda net: net['name'] not in consts.NETWORKS,
                       nm.get_node_networks(node))
 
     @classmethod
     def get_bridge_name(cls, name, suffix=0):
-        """Generates linux bridge name based on network name and suffix.
-        """
+        """Generates linux bridge name based on network name and suffix."""
         if not name.startswith('br-'):
             name = 'br-' + name
         if suffix:
@@ -854,16 +856,16 @@ class NeutronNetworkDeploymentSerializer70(
 
     @classmethod
     def is_valid_non_default_bridge_name(cls, name):
-        """Validate bridge name for non-default network.
-        """
+        """Validate bridge name for non-default network."""
         if name in consts.DEFAULT_BRIDGES_NAMES:
             return False
         return bool(cls.RE_BRIDGE_NAME.match(name))
 
     @classmethod
     def get_node_non_default_bridge_mapping(cls, node):
-        """Returns dict of non-default networks assigned to node with
-        generated bridges names.
+        """Non-default networks assigned to node with generated bridges names
+
+        Returns dict
         """
         mapping = {}
         for net in cls.get_node_non_default_networks(node):
@@ -910,8 +912,11 @@ class NeutronNetworkDeploymentSerializer70(
 
     @classmethod
     def _get_network_role_mapping(cls, node, mapping):
-        """Aggregates common logic for methods 'get_network_role_mapping_to_ip'
-        and 'get_network_role_mapping_to_interfaces'.
+        """Aggregates common logic for mapping retrieval methods
+
+        these methods are:
+        - 'get_network_role_mapping_to_ip'
+        - 'get_network_role_mapping_to_interfaces'.
         """
         roles = dict()
         for role in Cluster.get_network_roles(node.cluster):
@@ -1122,9 +1127,7 @@ class NeutronNetworkTemplateSerializer70(
 
     @classmethod
     def _get_network_roles(cls, node):
-        """Returns network roles for the specified node based
-        on the node's assigned roles.
-        """
+        """Returns network roles for the node based on the assigned roles."""
         roles = {}
         template = node.network_template
         for node_role in node.all_roles:
@@ -1138,7 +1141,8 @@ class NeutronNetworkTemplateSerializer70(
 
     @classmethod
     def generate_transformations(cls, node, *args):
-        """Overrides default transformation generation.
+        """Overrides default transformation generation
+
         Transformations are taken verbatim from each role template's
         transformations section.
         """
@@ -1258,6 +1262,7 @@ class NeutronNetworkTemplateSerializer70(
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node.
+
         This info is deprecated in 7.0 and should be removed in later version.
         """
         nm = Cluster.get_network_manager(cluster)

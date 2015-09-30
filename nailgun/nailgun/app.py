@@ -37,8 +37,7 @@ from nailgun.urls import urls
 
 
 def build_app(db_driver=None):
-    """Build app and disable debug mode in case of production
-    """
+    """Build app and disable debug mode in case of production"""
     web.config.debug = bool(int(settings.DEVELOPMENT))
     app = web.application(urls(), locals(),
                           autoreload=bool(int(settings.AUTO_RELOAD)))
@@ -70,7 +69,9 @@ def build_middleware(app):
 
 
 def run_server(func, server_address=('0.0.0.0', 8080)):
-    """This function same as runsimple from web/httpserver
+    """Run server
+
+    This function is the same as runsimple from web/httpserver
     except removed LogMiddleware because we use
     HTTPLoggerMiddleware instead
     """

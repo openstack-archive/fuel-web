@@ -130,9 +130,7 @@ class BaseExtension(object):
 
     @classmethod
     def alembic_migrations_path(cls):
-        """If extension provides database migrations,
-        the method should return path to alembic migrations
-        """
+        """Path to alembic migrations (if extension provides any)"""
         return None
 
     @abc.abstractproperty
@@ -141,14 +139,14 @@ class BaseExtension(object):
 
     @abc.abstractproperty
     def version(self):
-        """Version of the extension, follow semantic
-        versioning schema (http://semver.org/)
+        """Version of the extension
+
+        Follows semantic versioning schema (http://semver.org/)
         """
 
     @classmethod
     def full_name(cls):
-        """Returns extension's name and version in human readable format
-        """
+        """Returns extension's name and version in human readable format"""
         return '{0}-{1}'.format(cls.name, cls.version)
 
     @classmethod
@@ -161,30 +159,24 @@ class BaseExtension(object):
 
     @classmethod
     def on_node_create(cls, node):
-        """Callback which gets executed when node is created
-        """
+        """Callback which gets executed when node is created"""
 
     @classmethod
     def on_node_update(cls, node):
-        """Callback which gets executed when node is updated
-        """
+        """Callback which gets executed when node is updated"""
 
     @classmethod
     def on_node_reset(cls, node):
-        """Callback which gets executed when node is reseted
-        """
+        """Callback which gets executed when node is reseted"""
 
     @classmethod
     def on_node_delete(cls, node):
-        """Callback which gets executed when node is deleted
-        """
+        """Callback which gets executed when node is deleted"""
 
     @classmethod
     def on_node_collection_delete(cls, node_ids):
-        """Callback which gets executed when node collection is deleted
-        """
+        """Callback which gets executed when node collection is deleted"""
 
     @classmethod
     def on_cluster_delete(cls, cluster):
-        """Callback which gets executed when cluster is deleted
-        """
+        """Callback which gets executed when cluster is deleted"""

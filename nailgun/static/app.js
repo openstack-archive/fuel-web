@@ -30,6 +30,7 @@ define(
     'views/welcome_page',
     'views/cluster_page',
     'views/clusters_page',
+    'views/nodes_page',
     'views/releases_page',
     'views/plugins_page',
     'views/notifications_page',
@@ -41,7 +42,7 @@ define(
     'bootstrap',
     './styles/main.less'
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, NodesPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var Router = Backbone.Router.extend({
@@ -51,6 +52,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
             welcome: 'welcome',
             clusters: 'listClusters',
             'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
+            nodes: 'listNodes',
             releases: 'listReleases',
             plugins: 'listPlugins',
             notifications: 'showNotifications',
@@ -121,6 +123,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
         },
         listClusters: function() {
             app.loadPage(ClustersPage);
+        },
+        listNodes: function() {
+            app.loadPage(NodesPage);
         },
         listReleases: function() {
             app.loadPage(ReleasesPage);

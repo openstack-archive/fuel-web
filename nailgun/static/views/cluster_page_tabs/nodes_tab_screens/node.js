@@ -40,7 +40,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             };
         },
         componentDidUpdate: function() {
-            if (!this.props.node.get('cluster') && !this.props.checked) this.props.node.set({pending_roles: []}, {assign: true});
+            if (!this.props.node.get('cluster') && !this.props.checked) {
+                this.props.node.set({pending_roles: []}, {assign: true});
+            }
         },
         getNodeLogsLink: function() {
             var status = this.props.node.get('status'),
@@ -53,7 +55,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
                 options.source = 'install/puppet';
             }
-            return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
+            return '#cluster/' + this.props.node.get('cluster') + '/logs/' + utils.serializeTabOptions(options);
         },
         applyNewNodeName: function(newName) {
             if (newName && newName != this.props.node.get('name')) {
@@ -79,7 +81,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 data = nodeWillBeRemoved ? {cluster_id: null, pending_addition: false, pending_roles: []} : {pending_deletion: false};
             node.save(data, {patch: true})
                 .done(_.bind(function() {
-                    this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
+                    this.props.nodeCluster.fetchRelated('nodes').done(_.bind(function() {
                         if (!nodeWillBeRemoved) this.setState({actionInProgress: false});
                     }, this));
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
@@ -112,7 +114,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         this.props.node.trigger('destroy', this.props.node);
                         return;
                     }
-                    this.props.cluster.get('tasks').add(new models.Task(task), {parse: true});
+                    this.props.nodeCluster.get('tasks').add(new models.Task(task), {parse: true});
                     this.props.node.set('status', 'removing');
                 }, this)
             );
@@ -120,7 +122,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showNodeDetails: function(e) {
             e.preventDefault();
             if (this.state.extendedView) this.toggleExtendedNodePanel();
-            dialogs.ShowNodeInfoDialog.show({node: this.props.node});
+            dialogs.ShowNodeInfoDialog.show({
+                node: this.props.node,
+                cluster: this.props.nodeCluster
+            });
         },
         toggleExtendedNodePanel: function() {
             var states = this.state.extendedView ? {extendedView: false, isRenaming: false} : {extendedView: true};
@@ -153,7 +158,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <span>
                     {i18n('cluster_page.nodes_tab.node.status.' + status, {
-                        os: this.props.cluster.get('release').get('operating_system') || 'OS'
+                        os: this.props.nodeCluster && this.props.nodeCluster.get('release').get('operating_system') || 'OS'
                     })}
                 </span>
             );
@@ -233,7 +238,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
             dialogs.DeleteNodesDialog.show({
                 nodes: new models.Nodes(this.props.node),
-                cluster: this.props.cluster
+                cluster: this.props.nodeCluster
             })
             .done(this.props.onNodeSelection);
         },
@@ -263,7 +268,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 node = this.props.node,
                 isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
                 status = node.getStatusSummary(),
-                roles = node.sortedRoles(this.props.cluster.get('roles').pluck('name'));
+                roles = this.props.nodeCluster ? node.sortedRoles(this.props.nodeCluster.get('roles').pluck('name')) : [];
 
             // compose classes
             var nodePanelClasses = {
@@ -369,10 +374,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 {this.renderStatusLabel(status)}
                                                 <div className='node-buttons'>
                                                     {status == 'offline' && this.renderRemoveButton()}
-                                                    {!!node.get('cluster') &&
+                                                    {this.props.isClusterPage &&
                                                         [
-                                                            this.renderLogsLink(),
-                                                            node.hasChanges() &&
+                                                            node.get('cluster') && this.renderLogsLink(),
+                                                            node.hasChanges() && !this.props.locked &&
                                                                 <button className='btn btn-discard' key='btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
                                                                     {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
                                                                 </button>
@@ -423,9 +428,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             }
                         </div>
                         <div className='node-action'>
-                            {!!node.get('cluster') &&
+                            {this.props.isClusterPage &&
                                 [
-                                    this.renderLogsLink(true),
+                                    node.get('cluster') && this.renderLogsLink(true),
                                     node.hasChanges() && !this.props.locked &&
                                         <controls.Tooltip key={'pending_addition_' + node.id} text={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}>
                                             <div

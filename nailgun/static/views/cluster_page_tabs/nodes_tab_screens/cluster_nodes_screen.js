@@ -24,49 +24,15 @@ function(_, React, NodeListScreen) {
 
     var ClusterNodesScreen = React.createClass({
         render: function() {
+            var nodes = this.props.cluster.get('nodes');
             return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
                 ref='screen'
                 mode='list'
-                nodes={this.props.cluster.get('nodes')}
-                sorters={[
-                    'roles',
-                    'status',
-                    'name',
-                    'mac',
-                    'ip',
-                    'manufacturer',
-                    'cores',
-                    'ht_cores',
-                    'hdd',
-                    'disks',
-                    'ram',
-                    'interfaces',
-                    'group_id'
-                ]}
+                nodes={nodes}
+                sorters={_.without(nodes.sorters, 'cluster')}
                 defaultSorting={[{roles: 'asc'}]}
-                filters={[
-                    'roles',
-                    'status',
-                    'manufacturer',
-                    'cores',
-                    'ht_cores',
-                    'hdd',
-                    'disks_amount',
-                    'ram',
-                    'interfaces',
-                    'group_id'
-                ]}
-                statusesToFilter={[
-                    'ready',
-                    'pending_addition',
-                    'pending_deletion',
-                    'provisioned',
-                    'provisioning',
-                    'deploying',
-                    'error',
-                    'offline',
-                    'removing'
-                ]}
+                filters={_.without(nodes.filters, 'cluster')}
+                statusesToFilter={_.without((nodes.at(0) || {}).statuses, 'discover')}
                 defaultFilters={{roles: [], status: []}}
             />;
         }

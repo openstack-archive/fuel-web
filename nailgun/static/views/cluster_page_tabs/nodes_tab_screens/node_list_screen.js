@@ -58,7 +58,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         this.values = values;
         this.title = isLabel ? this.name : i18n('cluster_page.nodes_tab.filters.' + this.name, {defaultValue: this.name});
         this.isLabel = isLabel;
-        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id'], this.name);
+        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id', 'cluster'], this.name);
         return this;
     }
     _.extend(Filter, {
@@ -97,7 +97,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin('nodes', 'update change'),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster.get('tasks');},
+                modelOrCollection: function(props) {return props.cluster && props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
             componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters')
@@ -110,7 +110,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         getInitialState: function() {
             var cluster = this.props.cluster,
-                settings = cluster.get('settings'),
+                activeFilters;
+
+            // Nodes page states
+            if (!cluster) {
+                activeFilters = Filter.fromObject(this.props.defaultFilters, false);
+                _.invoke(activeFilters, 'updateLimits', this.props.nodes, false);
+                return {
+                    search: '',
+                    activeSorters: _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false)),
+                    activeFilters: activeFilters,
+                    availableSorters: this.props.sorters.map(function(name) {return new Sorter(name, 'asc', false);}),
+                    availableFilters: this.props.filters.map(function(name) {
+                        var filter = new Filter(name, [], false);
+                        filter.updateLimits(this.props.nodes, true);
+                        return filter;
+                    }, this),
+                    viewMode: 'standard',
+                    isLabelsPanelOpen: false
+                };
+            }
+
+            // Nodes tab of Cluster page states
+            var settings = cluster.get('settings'),
                 uiSettings = cluster.get('ui_settings'),
                 roles = cluster.get('roles'),
                 selectedRoles = this.props.nodes.length ? _.compact(roles.map(function(role) {
@@ -119,7 +141,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         return roleName;
                     }
                 }, this)) : [];
-            var activeFilters = this.props.mode == 'add' ?
+            activeFilters = this.props.mode == 'add' ?
                     Filter.fromObject(this.props.defaultFilters, false)
                 :
                     _.union(
@@ -302,10 +324,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 });
             }
 
-            var options;
+            var options,
+                isClusterPage = !!this.props.cluster;
             switch (filter.name) {
                 case 'status':
-                    var os = this.props.cluster.get('release').get('operating_system') || 'OS';
+                    var os = isClusterPage && this.props.cluster.get('release').get('operating_system') || 'OS';
                     options = this.props.statusesToFilter.map(function(status) {
                         return {
                             name: status,
@@ -323,15 +346,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     });
                     break;
                 case 'roles':
-                    options = this.props.cluster.get('roles').invoke('pick', 'name', 'label');
+                    options = isClusterPage ?
+                            this.props.cluster.get('roles').invoke('pick', 'name', 'label')
+                        :
+                            _.chain(this.props.clusters.map(function(cluster) {
+                                return cluster.get('roles').invoke('pick', 'name', 'label');
+                            })).flatten().uniq().value();
                     break;
                 case 'group_id':
                     options = _.uniq(this.props.nodes.pluck('group_id')).map(function(groupId) {
+                        var nodeNetworkGroup = app.nodeNetworkGroups.get(groupId);
                         return {
                             name: groupId,
-                            label: app.nodeNetworkGroups.get(groupId).get('name')
+                            label: nodeNetworkGroup && nodeNetworkGroup.get('name') || i18n('common.not_specified')
                         };
                     });
+                    break;
+                case 'cluster':
+                    options = _.map(_.uniq(this.props.nodes.pluck('cluster')), function(clusterId) {
+                        return {
+                            name: clusterId,
+                            label: clusterId ? this.props.clusters.get(clusterId).get('name') : i18n('cluster_page.nodes_tab.node.unallocated')
+                        };
+                    }, this);
                     break;
             }
 
@@ -368,9 +405,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.changeUISettings('view_mode', value);
         },
         changeUISettings: function(name, value) {
-            var uiSettings = this.props.cluster.get('ui_settings');
-            uiSettings[name] = value;
-            this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
+            //TODO(jkirnosova): Nodes page settings should be also stored in DB
+            if (this.props.cluster) {
+                var uiSettings = this.props.cluster.get('ui_settings');
+                uiSettings[name] = value;
+                this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
+            }
         },
         revertChanges: function() {
             this.props.nodes.each(function(node) {
@@ -396,9 +436,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         render: function() {
             var cluster = this.props.cluster,
-                locked = !!cluster.task({group: 'deployment', active: true}),
+                isClusterPage = !!cluster,
+                locked = isClusterPage && !!cluster.task({group: 'deployment', active: true}),
                 nodes = this.props.nodes,
-                processedRoleData = this.processRoleLimits();
+                processedRoleData = isClusterPage ? this.processRoleLimits() : {};
 
             // labels to manage in labels panel
             var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
@@ -435,6 +476,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             result = _.contains(filter.values, node.getStatusSummary());
                             break;
                         case 'manufacturer':
+                        case 'cluster':
                         case 'group_id':
                             result = _.contains(filter.values, node.get(filter.name));
                             break;
@@ -476,7 +518,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         revertChanges={this.revertChanges}
                         selectNodes={this.selectNodes}
                     />
-                    {this.props.mode != 'list' &&
+                    {isClusterPage && this.props.mode != 'list' &&
                         <RolePanel
                             {... _.pick(this.state, 'selectedRoles', 'indeterminateRoles', 'configModels')}
                             {... _.pick(this.props, 'cluster', 'mode', 'nodes', 'selectedNodeIds')}
@@ -486,7 +528,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     <NodeList
                         {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedRoles')}
-                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'selectedNodeIds')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'selectedNodeIds', 'clusters', 'releases')}
                         {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
                         nodes={filteredNodes}
                         totalNodesLength={nodes.length}
@@ -884,7 +926,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             );
         },
         render: function() {
-            var ns = 'cluster_page.nodes_tab.node_management_panel.';
+            var ns = 'cluster_page.nodes_tab.node_management_panel.',
+                isClusterPage = !!this.props.cluster;
 
             var configurationAvailable = _.all(this.props.nodes.invoke('isConfigurable')),
                 disksConflict, interfaceConflict;
@@ -934,7 +977,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         <div className='node-list-management-buttons col-xs-5'>
                             <div className='view-mode-switcher'>
                                 <div className='btn-group' data-toggle='buttons'>
-                                    {_.map(this.props.cluster.viewModes(), function(mode) {
+                                    {_.map(this.props.nodes.viewModes, function(mode) {
                                         return (
                                             <controls.Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                                                 <label
@@ -1013,28 +1056,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             ]}
                         </div>
                         <div className='control-buttons-box col-xs-7 text-right'>
-                            {this.props.mode != 'list' ?
-                                <div className='btn-group' role='group'>
-                                    <button
-                                        className='btn btn-default'
-                                        disabled={this.state.actionInProgress}
-                                        onClick={_.bind(function() {
-                                            this.props.revertChanges();
-                                            this.changeScreen();
-                                        }, this)}
-                                    >
-                                        {i18n('common.cancel_button')}
-                                    </button>
-                                    <button
-                                        className='btn btn-success btn-apply'
-                                        disabled={!this.isSavingPossible()}
-                                        onClick={this.applyAndRedirect}
-                                    >
-                                        {i18n('common.apply_changes_button')}
-                                    </button>
-                                </div>
-                            :
-                                [
+                            {isClusterPage && (
+                                this.props.mode != 'list' ?
+                                    <div className='btn-group' role='group'>
+                                        <button
+                                            className='btn btn-default'
+                                            disabled={this.state.actionInProgress}
+                                            onClick={_.bind(function() {
+                                                this.props.revertChanges();
+                                                this.changeScreen();
+                                            }, this)}
+                                        >
+                                            {i18n('common.cancel_button')}
+                                        </button>
+                                        <button
+                                            className='btn btn-success btn-apply'
+                                            disabled={!this.isSavingPossible()}
+                                            onClick={this.applyAndRedirect}
+                                        >
+                                            {i18n('common.apply_changes_button')}
+                                        </button>
+                                    </div>
+                                :
+                                    [
                                     <div className='btn-group' role='group' key='configuration-buttons'>
                                         <button
                                             className='btn btn-default btn-configure-disks'
@@ -1085,7 +1129,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             </button>
                                         </div>
                                 ]
-                            }
+                            )}
                         </div>
                         {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
                             this.props.isLabelsPanelOpen &&
@@ -1595,7 +1639,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     NodeList = React.createClass({
         mixins: [SelectAllMixin],
         groupNodes: function() {
-            var roles = this.props.cluster.get('roles');
+            var isClusterPage = !!this.props.cluster,
+                roles = isClusterPage ?
+                        this.props.cluster.get('roles').models
+                    :
+                        _.flatten(this.props.clusters.map(function(cluster) {
+                            return cluster.get('roles').models;
+                        }));
+
             var uniqValueSorters = ['name', 'mac', 'ip'];
 
             var composeNodeDiskSizesLabel = function(node) {
@@ -1626,23 +1677,30 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
                     if (sorter.isLabel) return getLabelValue(node, sorter.name);
 
-                    var result;
+                    var result,
+                        ns = 'cluster_page.nodes_tab.node.',
+                        nodeCluster = isClusterPage ? this.props.cluster : this.props.clusters.get(node.get('cluster'));
                     switch (sorter.name) {
                         case 'roles':
-                            result = node.getRolesSummary(roles);
+                            result = node.getRolesSummary(roles) || i18n(ns + 'no_roles');
                             break;
                         case 'status':
-                            result = i18n('cluster_page.nodes_tab.node.status.' + node.getStatusSummary(), {
-                                os: this.props.cluster.get('release').get('operating_system') || 'OS'
+                            result = i18n(ns + 'status.' + node.getStatusSummary(), {
+                                os: nodeCluster && nodeCluster.get('release').get('operating_system') || 'OS'
                             });
                             break;
                         case 'manufacturer':
                             result = node.get('manufacturer') || i18n('common.not_specified');
                             break;
                         case 'group_id':
-                            result = i18n('cluster_page.nodes_tab.node.node_network_group', {
-                                group: app.nodeNetworkGroups.get(node.get('group_id')).get('name')
-                            });
+                            var nodeNetworkGroup = app.nodeNetworkGroups.get(node.get('group_id'));
+                            result = nodeNetworkGroup && i18n(ns + 'node_network_group', {group: nodeNetworkGroup.get('name')})
+                                || i18n(ns + 'no_node_network_group');
+                            break;
+                        case 'cluster':
+                            result = nodeCluster ? i18n(ns + 'cluster', {
+                                    cluster: nodeCluster.get('name')
+                                }) : i18n(ns + 'unallocated');
                             break;
                         case 'hdd':
                             result = i18n('node_details.total_hdd', {total: utils.showDiskSize(node.resource('hdd'))});
@@ -1679,7 +1737,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
 
             // sort grouped nodes by other applied sorters
-            var preferredRolesOrder = roles.pluck('name');
+            var preferredRolesOrder = _.pluck(roles, 'name');
             return groups.sort(_.bind(function(group1, group2) {
                 var result;
                 _.each(this.props.activeSorters, function(sorter) {
@@ -1708,11 +1766,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 result = _.indexOf(this.props.statusesToFilter, node1.getStatusSummary()) - _.indexOf(this.props.statusesToFilter, node2.getStatusSummary());
                                 break;
                             case 'manufacturer':
-                            case 'group_id':
                                 result = utils.compare(node1, node2, {attr: sorter.name});
                                 break;
                             case 'disks':
                                 result = utils.natsort(composeNodeDiskSizesLabel(node1), composeNodeDiskSizesLabel(node2));
+                                break;
+                            case 'group_id':
+                                var nodeGroup1 = node1.get('group_id'),
+                                    nodeGroup2 = node2.get('group_id');
+                                result = nodeGroup1 == nodeGroup2 ? 0 :
+                                    !nodeGroup1 ? 1 : !nodeGroup2 ? -1 : nodeGroup1 - nodeGroup2;
+                                break;
+                            case 'cluster':
+                                var cluster1 = node1.get('cluster'),
+                                    cluster2 = node2.get('cluster');
+                                result = cluster1 == cluster2 ? 0 :
+                                    !cluster1 ? 1 : !cluster2 ? -1 : utils.natsort(this.props.clusters.get(cluster1).get('name'), this.props.clusters.get(cluster2).get('name'));
                                 break;
                             default:
                                 result = node1.resource(sorter.name) - node2.resource(sorter.name);
@@ -1770,7 +1839,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     NodeGroup = React.createClass({
         mixins: [SelectAllMixin],
         render: function() {
-            var availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
+            var isClusterPage = !!this.props.cluster,
+                availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
                 nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, function(node) {
                     return _.any(this.props.rolesWithLimitReached, function(role) {return !node.hasRole(role);}, this);
                 }, this), 'id');
@@ -1787,9 +1857,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     <div className='row'>
                         {this.props.nodes.map(function(node) {
                             return <Node
-                                {... _.pick(this.props, 'cluster', 'mode', 'viewMode')}
+                                {... _.pick(this.props, 'mode', 'viewMode')}
                                 key={node.id}
                                 node={node}
+                                isClusterPage={isClusterPage}
+                                nodeCluster={isClusterPage ? this.props.cluster : this.props.clusters.get(node.get('cluster'))}
                                 checked={this.props.mode == 'edit' || this.props.selectedNodeIds[node.id]}
                                 locked={this.props.locked || _.contains(nodesWithRestrictionsIds, node.id)}
                                 onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}

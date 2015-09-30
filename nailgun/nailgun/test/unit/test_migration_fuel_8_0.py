@@ -14,10 +14,12 @@
 
 import alembic
 from oslo_serialization import jsonutils
+import six
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 import uuid
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -150,4 +152,32 @@ class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):
                        self.meta.tables['nodegroups'].c.name])).fetchone()
         db.execute(self.meta.tables['nodegroups'].insert(),
                    [{'cluster_id': nodegroup['cluster_id'],
-                     'name': uuid.uuid4()}])
+                     'name': six.text_type(uuid.uuid4())}])
+
+
+class TestTaskStatusSentToOrchestrator(base.BaseAlembicMigrationTest):
+
+    def test_status_saving(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'cluster_id': None,
+                    'uuid': 'fake_task_uuid_0',
+                    'name': consts.TASK_NAMES.node_deletion,
+                    'message': None,
+                    'status': consts.TASK_STATUSES.pending,
+                    'progress': 0,
+                    'cache': None,
+                    'result': None,
+                    'parent_id': None,
+                    'weight': 1
+                }
+            ])
+
+        result = db.execute(
+            sa.select([self.meta.tables['tasks'].c.status]))
+
+        for row in result.fetchall():
+            status = row[0]
+            self.assertEqual(status, consts.TASK_STATUSES.pending)

@@ -685,11 +685,18 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
     @fake_tasks()
     def test_verify_networks_after_stop(self):
-        self.cluster = self.env.clusters[0]
-        self.env.launch_deployment()
+        cluster = self.env.clusters[0]
+        deploy_task = self.env.launch_deployment()
+        self.env.wait_until_task_pending(deploy_task)
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
-        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
+        self.db.refresh(cluster)
+        self.assertEqual(cluster.status, consts.CLUSTER_STATUSES.stopped)
+        # TODO(akislitsky): Moving nodes online by hands. Our fake threads
+        # do this with random success
+        for node in sorted(cluster.nodes, key=lambda n: n.id):
+            node.online = True
+        self.db.commit()
         verify_task = self.env.launch_verify_networks()
         self.env.wait_ready(verify_task, 60)
 

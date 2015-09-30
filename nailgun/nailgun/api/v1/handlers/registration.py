@@ -35,6 +35,7 @@ class FuelRegistrationForm(BaseHandler):
     @content
     def GET(self):
         """Returns Fuel registration form
+
         :returns: JSON representation of registration form
         :http: * 200 (OK)
         """
@@ -60,6 +61,7 @@ class FuelLoginForm(BaseHandler):
     @content
     def GET(self):
         """Returns Fuel login form
+
         :returns: JSON representation of login form
         :http: * 200 (OK)
         """
@@ -85,6 +87,7 @@ class FuelRestorePasswordForm(BaseHandler):
     @content
     def GET(self):
         """Returns Fuel restore password form
+
         :returns: JSON representation of restore password form
         :http: * 200 (OK)
         """

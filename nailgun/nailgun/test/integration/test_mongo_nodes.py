@@ -23,8 +23,9 @@ from nailgun.test import base
 class TestMongoNodes(base.BaseTestCase):
 
     def get_custom_meta(self, ceilometer_enabled, ext_mongo_enabled):
-        """This method sets values for metadata parameters:
-        ceilometer and ext_mongo (enabled or not).
+        """This method sets values for metadata parameters
+
+        parameteres are ceilometer and ext_mongo (enabled or not)
         """
         attr_meta = self.env.get_default_attributes_metadata()
         attr_meta['editable']['additional_components'].update({

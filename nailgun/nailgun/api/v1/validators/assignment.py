@@ -56,13 +56,15 @@ class AssignmentValidator(BasicValidator):
     @classmethod
     def check_unique_hostnames(cls, nodes, cluster_id):
         hostnames = [node.hostname for node in nodes]
-        conflicting_hostnames = [x[0] for x in db.query(
-            Node.hostname).filter(
-                sa.and_(
+        conflicting_hostnames = [
+            x[0] for x in
+            db.query(
+                Node.hostname).filter(sa.and_(
                     Node.hostname.in_(hostnames),
                     Node.cluster_id == cluster_id,
                 )
-            ).all()]
+            ).all()
+        ]
         if conflicting_hostnames:
             raise errors.AlreadyExists(
                 "Nodes with hostnames [{0}] already exist in cluster {1}."

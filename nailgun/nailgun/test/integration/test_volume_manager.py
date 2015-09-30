@@ -63,9 +63,7 @@ class TestVolumeManagerHelpers(base.BaseIntegrationTest):
 class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
 
     def test_no_glance_partition_when_ceph_used_for_images(self):
-        """Verifies that no partition with id image is not present when
-        images_ceph used
-        """
+        """No partition with id image is not present when images_ceph used"""
         cluster = self.env.create(
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.multinode},

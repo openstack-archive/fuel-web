@@ -53,8 +53,8 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
             jsonutils.dumps({'id': node_id,
-                            'mac': self.env.generate_random_mac(),
-                            'status': 'discover'}),
+                             'mac': self.env.generate_random_mac(),
+                             'status': 'discover'}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(400, resp.status_code)

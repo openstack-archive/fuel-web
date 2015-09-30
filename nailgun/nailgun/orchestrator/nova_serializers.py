@@ -56,8 +56,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def novanetwork_attrs(cls, cluster):
-        """Network configuration
-        """
+        """Network configuration"""
         attrs = {'network_manager': cluster.network_config.net_manager}
 
         # network_size is required for all managers, otherwise
@@ -81,6 +80,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     @classmethod
     def add_vlan_interfaces(cls, node):
         """Assign fixed_interfaces and vlan_interface.
+
         They should be equal.
         """
         net_manager = Cluster.get_network_manager(node.cluster)
@@ -93,8 +93,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def configure_interfaces(cls, node):
-        """Configure interfaces
-        """
+        """Configure interfaces"""
         network_data = node.network_data
         interfaces = {}
 
@@ -125,15 +124,16 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def __make_interface_name(cls, name, vlan):
-        """Make interface name
-        """
+        """Make interface name"""
         if name and vlan:
             return '.'.join([name, str(vlan)])
         return name
 
     @classmethod
     def __add_hw_interfaces(cls, interfaces, hw_interfaces):
-        """Add interfaces which not represents in
+        """Add hardware interfaces
+
+        Add interfaces which not represents in
         interfaces list but they are represented on node
         """
         for hw_interface in hw_interfaces:
@@ -145,8 +145,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def interfaces_list(cls, network_data):
-        """Generate list of interfaces
-        """
+        """Generate list of interfaces"""
         interfaces = {}
         for network in network_data:
             if_name = cls.__make_interface_name(
@@ -312,9 +311,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
 
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
-        """Serialize node, then it will be
-        merged with common attributes
-        """
+        """Serialize node, then it will be merged with common attributes"""
         node_attrs = super(NovaNetworkDeploymentSerializer70,
                            cls).network_provider_node_attrs(cluster, node)
         node_attrs['network_metadata'] = cls.generate_network_metadata(cluster)

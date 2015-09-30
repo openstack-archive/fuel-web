@@ -153,9 +153,8 @@ NETWORK_1 = '10.20.0.0/16'
 NETWORK_2 = '172.18.67.0/24'
 
 
-class FakeNodesGenerator:
-    """This class uses to generate fake nodes
-    """
+class FakeNodesGenerator(object):
+    """This class uses to generate fake nodes"""
 
     def __init__(self):
         self.net1 = IPNetwork(NETWORK_1)
@@ -311,6 +310,7 @@ class FakeNodesGenerator:
     def generate_fake_node(self, pk, is_online=True, is_error=False,
                            use_offload_iface=False, min_ifaces_num=1):
         """Generate one fake node
+
         :param int pk: node's database primary key
         :param bool is_online: node's online status
         :param bool is_error: node's error status
@@ -365,6 +365,7 @@ class FakeNodesGenerator:
                             offloading_ifaces_nodes_count=None,
                             min_ifaces_num=1):
         """Generate list of fake nodes
+
         :param int total_nodes_count: total count of nodes to generate
         :param int error_nodes_count: count of error nodes (optional)
         :param int offline_nodes_count: count of offline nodes (optional)

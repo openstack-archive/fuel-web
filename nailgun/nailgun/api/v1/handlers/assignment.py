@@ -28,13 +28,13 @@ from nailgun import objects
 
 
 class NodeAssignmentHandler(BaseHandler):
-    """Node assignment handler
-    """
+    """Node assignment handler"""
     validator = NodeAssignmentValidator
 
     @content
     def POST(self, cluster_id):
         """:returns: Empty string
+
         :http: * 200 (nodes are successfully assigned)
                * 400 (invalid nodes data specified)
                * 404 (cluster/node not found in db)
@@ -59,13 +59,13 @@ class NodeAssignmentHandler(BaseHandler):
 
 
 class NodeUnassignmentHandler(BaseHandler):
-    """Node assignment handler
-    """
+    """Node assignment handler"""
     validator = NodeUnassignmentValidator
 
     @content
     def POST(self, cluster_id):
         """:returns: Empty string
+
         :http: * 200 (node successfully unassigned)
                * 404 (cluster/node not found in db)
                * 400 (invalid data specified)

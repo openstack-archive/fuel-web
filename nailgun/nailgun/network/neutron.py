@@ -73,8 +73,9 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def build_role_to_network_group_mapping(cls, cluster, node_group_name):
-        """Builds network role to network map according to template data if
-        template is loaded. Otherwise, empty map is returned.
+        """Build network role to network map according to template data
+
+        If template is not loaded, empty map is returned.
 
         :param cluster: Cluster instance
         :type cluster: Cluster model
@@ -103,7 +104,8 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def get_network_group_for_role(cls, network_role, net_group_mapping):
-        """Returns network group to which network role is associated.
+        """Returns network group to which network role is associated
+
         If networking template is set first lookup happens in the
         template. Otherwise the default network group from
         the network role is returned.
@@ -120,9 +122,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def get_node_networks_with_ips(cls, node):
-        """Returns node's IP and network's data (meta, gateway) for
-        each network of particular node.
-        """
+        """Returns IP and network data (meta, gateway) for each node network"""
         if not node.group_id:
             return {}
 
@@ -152,8 +152,9 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def get_node_endpoints(cls, node):
-        """Returns a set of endpoints for particular node for the case when
-        template is loaded. Endpoints are taken from 'endpoints' field
+        """Get a set of endpoints for node for the case when template is loaded
+
+        Endpoints are taken from 'endpoints' field
         of templates for every node role.
         """
         endpoints = set()
@@ -169,7 +170,9 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def get_node_network_mapping(cls, node):
-        """Returns a list of pairs (network, endpoint) for particular node
+        """Get (network, endpoint) mappings for node with loaded template
+
+        Returns a list of pairs (network, endpoint) for particular node
         for the case when template is loaded. Networks are aggregated for all
         node roles assigned to node. Endpoints are taken from 'endpoints' field
         of templates for every node role and they are mapped to networks from
@@ -187,8 +190,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def get_network_name_to_endpoint_mappings(cls, cluster):
-        """Returns dict of endpoint-to-network mappings for every node group
-        of the cluster::
+        """Returns endpoint-to-network mappings for node groups in cluster
 
             {
                 "node_group1": {
@@ -215,9 +217,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
     @classmethod
     def assign_ips_in_node_group(
             cls, net_id, net_name, node_ids, ip_ranges):
-        """Assigns IP addresses for nodes with IDs listed in "node_ids" in
-        given network.
-        """
+        """Assigns IP addresses for nodes in given network"""
         ips_by_node_id = db().query(
             models.IPAddr.ip_addr,
             models.IPAddr.node
@@ -254,9 +254,10 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def assign_ips_for_nodes_w_template(cls, cluster, nodes):
-        """Assign IPs for the case when network template is applied. IPs for
-        every node are allocated only for networks which are mapped to the
-        particular node according to the template.
+        """Assign IPs for the case when network template is applied
+
+        IPs for every node are allocated only for networks which are mapped
+        to the particular node according to the template.
         """
         network_by_group = db().query(
             models.NetworkGroup.id,

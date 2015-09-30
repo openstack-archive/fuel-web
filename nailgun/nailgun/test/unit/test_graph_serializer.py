@@ -517,9 +517,9 @@ class TestFindGraph(base.BaseTestCase):
             ['pre_d', 'pre_b', 'pre_a', 'pre_deployment_start'])
 
     def test_end_at_deploy(self):
-        """All tasks should be included because deploy is last node
-        in this graph.
-        All tasks from pre_deployment and deploy stage will be added.
+        """All tasks should be included because deploy is last node in graph
+
+        All tasks from pre_deployment and deploy stage will be added
         post_a not included
         """
         subgraph = self.graph.find_subgraph(end="deploy_end")
@@ -539,7 +539,9 @@ class TestFindGraph(base.BaseTestCase):
             [t['id'] for t in self.tasks])
 
     def test_end_at_group(self):
-        """In general end_at group should be used only when tasks that are
+        """end_at group should be used in certain conditions
+
+        these condistions are: when tasks that are
         specific for that group, and there is no deps between those groups
 
         In current graph only task_a and task_b will be present, because
@@ -553,8 +555,9 @@ class TestFindGraph(base.BaseTestCase):
              'group_c', 'task_a', 'task_b'])
 
     def test_end_at_task_that_has_two_parents(self):
-        """Both parents should be in the graph.
-        Parents are task_b and task_c, the only absent task is post_a.
+        """Both parents should be in the graph
+
+        Parents are task_b and task_c, the only absent task is post_a
         """
         subgraph = self.graph.find_subgraph(end="task_d")
         self.assertItemsEqual(
@@ -599,9 +602,7 @@ class TestFindGraph(base.BaseTestCase):
             ['post_deployment', 'post_a'])
 
     def test_start_pre_a_end_at_pre_d(self):
-        """pre_c will not be included, because this is not a dependency
-        for pre_d.
-        """
+        """pre_c will not be included, not a dependency for pre_d"""
         subgraph = self.graph.find_subgraph(start="pre_a", end="pre_d")
         self.assertItemsEqual(
             subgraph.nodes(),

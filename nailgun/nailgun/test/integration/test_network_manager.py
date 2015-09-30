@@ -84,13 +84,12 @@ class TestNetworkManager(BaseNetworkManagerTest):
             consts.NETWORKS.management
         )
 
-        management_net = self.db.query(NetworkGroup).\
-            filter(
-                NetworkGroup.group_id ==
-                objects.Cluster.get_default_group(self.env.clusters[0]).id
-            ).filter_by(
-                name=consts.NETWORKS.management
-            ).first()
+        management_net = self.db.query(NetworkGroup).filter(
+            NetworkGroup.group_id ==
+            objects.Cluster.get_default_group(self.env.clusters[0]).id
+        ).filter_by(
+            name=consts.NETWORKS.management
+        ).first()
 
         assigned_ips = []
         for node in self.env.nodes:
@@ -314,12 +313,11 @@ class TestNetworkManager(BaseNetworkManagerTest):
         node_group = self.env.create_node_group()
         self.env.nodes[1].group_id = node_group.json_body['id']
         self.db().flush()
-        mgmt_net = self.db.query(NetworkGroup).\
-            filter(
-                NetworkGroup.group_id == node_group.json_body["id"]
-            ).filter_by(
-                name=consts.NETWORKS.management
-            ).first()
+        mgmt_net = self.db.query(NetworkGroup).filter(
+            NetworkGroup.group_id == node_group.json_body["id"]
+        ).filter_by(
+            name=consts.NETWORKS.management
+        ).first()
 
         mock_range = IPAddrRange(
             first='9.9.9.1',
@@ -333,12 +331,11 @@ class TestNetworkManager(BaseNetworkManagerTest):
                                             consts.NETWORKS.management)
 
         for n in self.env.nodes:
-            mgmt_net = self.db.query(NetworkGroup).\
-                filter(
-                    NetworkGroup.group_id == n.group_id
-                ).filter_by(
-                    name=consts.NETWORKS.management
-                ).first()
+            mgmt_net = self.db.query(NetworkGroup).filter(
+                NetworkGroup.group_id == n.group_id
+            ).filter_by(
+                name=consts.NETWORKS.management
+            ).first()
             ip = self.db.query(IPAddr).\
                 filter_by(network=mgmt_net.id).\
                 filter_by(node=n.id).first()

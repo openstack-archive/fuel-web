@@ -49,8 +49,7 @@ from nailgun.task.manager import VerifyNetworksTaskManager
 
 
 class ProviderHandler(BaseHandler):
-    """Base class for network configuration handlers
-    """
+    """Base class for network configuration handlers"""
 
     provider = None
 
@@ -86,6 +85,7 @@ class ProviderHandler(BaseHandler):
     @content
     def GET(self, cluster_id):
         """:returns: JSONized network configuration for cluster.
+
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
@@ -107,6 +107,7 @@ class ProviderHandler(BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
+
         :http: * 200 (task successfully executed)
                * 202 (network checking task scheduled for execution)
                * 400 (data validation failed)
@@ -136,8 +137,7 @@ class ProviderHandler(BaseHandler):
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):
-    """Network configuration handler
-    """
+    """Network configuration handler"""
 
     validator = NovaNetworkConfigurationValidator
     serializer = NovaNetworkConfigurationSerializer
@@ -145,8 +145,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
-    """Neutron Network configuration handler
-    """
+    """Neutron Network configuration handler"""
 
     validator = NeutronNetworkConfigurationValidator
     serializer = NeutronNetworkConfigurationSerializer
@@ -154,8 +153,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
 
 class TemplateNetworkConfigurationHandler(BaseHandler):
-    """Neutron Network configuration handler
-    """
+    """Neutron Network configuration handler"""
     validator = NetworkTemplateValidator
 
     def check_if_template_modification_locked(self, cluster):
@@ -166,6 +164,7 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
     @content
     def GET(self, cluster_id):
         """:returns: network template for cluster (json format)
+
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
@@ -175,6 +174,7 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: {}
+
         :http: * 200 (OK)
                * 400 (invalid object data specified)
                * 403 (change of configuration is forbidden)
@@ -189,6 +189,7 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
 
     def DELETE(self, cluster_id):
         """:returns: {}
+
         :http: * 204 (object successfully deleted)
                * 403 (change of configuration is forbidden)
                * 404 (cluster not found in db)
@@ -200,8 +201,7 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):
-    """Network configuration verify handler base
-    """
+    """Network configuration verify handler base"""
 
     validator = NetworkConfigurationValidator
 
@@ -243,8 +243,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
 
 
 class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):
-    """Nova-Network configuration verify handler
-    """
+    """Nova-Network configuration verify handler"""
 
     validator = NovaNetworkConfigurationValidator
     provider = consts.CLUSTER_NET_PROVIDERS.nova_network
@@ -252,8 +251,7 @@ class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):
 
 class NeutronNetworkConfigurationVerifyHandler(
         NetworkConfigurationVerifyHandler):
-    """Neutron network configuration verify handler
-    """
+    """Neutron network configuration verify handler"""
 
     validator = NeutronNetworkConfigurationValidator
     provider = consts.CLUSTER_NET_PROVIDERS.neutron

@@ -57,6 +57,7 @@ class BaseTemplate(object):
 
 class NetworkTemplate(BaseTemplate):
     """NetworkTemplate object provides string substitution
+
     NetworkTemplate substitutes <% key %> to value
     for key=value
     Spaces inside <%...%> block are ignored

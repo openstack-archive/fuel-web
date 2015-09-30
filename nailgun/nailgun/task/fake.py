@@ -528,8 +528,7 @@ class FakeVerificationThread(FakeThread):
 
 
 class FakeMulticastVerifications(FakeAmpqThread):
-    """network verifications will be as single dispatcher method in naily
-    """
+    """Network verifications will be as single dispatcher method in naily"""
 
     def ready_multicast(self):
         response = {
@@ -591,12 +590,10 @@ class FakeMulticastVerifications(FakeAmpqThread):
 
 
 class FakeCheckingDhcpThread(FakeAmpqThread):
-    """Thread to be used with test_task_managers.py
-    """
+    """Thread to be used with test_task_managers.py"""
 
     def _get_message(self, mac):
-        """Example of message with discovered dhcp server
-        """
+        """Example of message with discovered dhcp server"""
         nodes = [{'uid': '90',
                   'status': 'ready',
                   'data': [{'mac': mac,

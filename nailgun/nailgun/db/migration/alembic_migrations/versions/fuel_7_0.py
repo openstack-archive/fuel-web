@@ -240,7 +240,7 @@ def extend_ip_addrs_model_upgrade():
     op.alter_column('ip_addrs', 'vip_type',
                     type_=sa.String(length=50),
                     existing_type=sa.Enum('haproxy', 'vrouter',
-                    name='network_vip_types'))
+                                          name='network_vip_types'))
     drop_enum('network_vip_types')
 
 
@@ -446,9 +446,10 @@ def upgrade_node_roles_metadata():
 
 
 def migrate_volumes_into_extension_upgrade():
-    """Migrate data into intermediate table, from
-    which specific extensions will be able to retrieve
-    the data. It allows us not to hardcode extension
+    """Migrate data into intermediate table
+
+    Specific extensions will be able to retrieve
+    the data from this table. It allows us not to hardcode extension
     tables in core migrations.
     """
     connection = op.get_bind()

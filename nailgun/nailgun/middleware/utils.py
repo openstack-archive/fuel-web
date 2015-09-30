@@ -17,9 +17,7 @@ import six
 
 
 def get_body_from_env(env):
-    """Exctracts request body from wsgi
-    environment variable
-    """
+    """Exctracts request body from wsgi environment variable"""
     content_length = env.get('CONTENT_LENGTH')
     body = ''
 
@@ -39,9 +37,7 @@ def compile_mapping_keys(mapping):
 
 
 def get_group_from_matcher(matcher_obj, string_to_match, group_name):
-    """Returns value corresponding to given group_name if it is present in
-    matcher_obj
-    """
+    """Get value corresponding to group_name if it's present in matcher_obj"""
     matched = matcher_obj.match(string_to_match)
     if matched:
         groups_dictionary = matched.groupdict()

@@ -21,8 +21,7 @@ from nailgun.api.v1.handlers.base import content
 
 
 class BaseRemovedInHandler(BaseHandler):
-    """Removed resource base handler
-    """
+    """Removed resource base handler"""
 
     @property
     def fuel_version(self):
@@ -43,8 +42,7 @@ class BaseRemovedInHandler(BaseHandler):
 
 
 class RemovedIn51Handler(BaseRemovedInHandler):
-    """Removed resource handler for Fuel 5.1
-    """
+    """Removed resource handler for Fuel 5.1"""
     fuel_version = "5.1"
 
 

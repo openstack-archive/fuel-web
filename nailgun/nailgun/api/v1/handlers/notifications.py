@@ -29,8 +29,7 @@ from nailgun.api.v1.validators.notification import NotificationValidator
 
 
 class NotificationHandler(SingleHandler):
-    """Notification single handler
-    """
+    """Notification single handler"""
 
     single = objects.Notification
     validator = NotificationValidator
@@ -44,6 +43,7 @@ class NotificationCollectionHandler(CollectionHandler):
     @content
     def PUT(self):
         """:returns: Collection of JSONized Notification objects.
+
         :http: * 200 (OK)
                * 400 (invalid data specified for collection update)
         """

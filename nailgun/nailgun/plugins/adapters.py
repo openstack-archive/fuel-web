@@ -31,8 +31,8 @@ from nailgun.settings import settings
 
 @six.add_metaclass(abc.ABCMeta)
 class PluginAdapterBase(object):
-    """Implements wrapper for plugin db model to provide
-    logic related to configuration files.
+    """Implements wrapper for plugin db model configuration files logic
+
     1. Uploading plugin provided cluster attributes
     2. Uploading tasks
     3. Enabling/Disabling of plugin based on cluster attributes
@@ -55,13 +55,10 @@ class PluginAdapterBase(object):
 
     @abc.abstractmethod
     def path_name(self):
-        """A name which is used to create path to
-        plugin related scripts and repositories
-        """
+        """A name which is used to create path to plugin scripts and repos"""
 
     def sync_metadata_to_db(self):
-        """Sync metadata from config yaml files into DB
-        """
+        """Sync metadata from config yaml files into DB"""
         metadata_file_path = os.path.join(
             self.plugin_path, self.plugin_metadata)
 
@@ -95,16 +92,17 @@ class PluginAdapterBase(object):
         return data
 
     def get_plugin_attributes(self, cluster):
-        """Should be used for initial configuration uploading to
-            custom storage. Will be invoked in 2 cases:
-            1. Cluster is created but there was no plugins in system
-            on that time, so when plugin is uploaded we need to iterate
-            over all clusters and decide if plugin should be applied
-            2. Plugins is uploaded before cluster creation, in this case
-            we will iterate over all plugins and upload configuration for them
+        """Should be used for initial configuration uploading to custom storage
 
-            In this case attributes will be added to same cluster attributes
-            model and stored in editable field
+        Will be invoked in 2 cases:
+        1. Cluster is created but there was no plugins in system
+        on that time, so when plugin is uploaded we need to iterate
+        over all clusters and decide if plugin should be applied
+        2. Plugins is uploaded before cluster creation, in this case
+        we will iterate over all plugins and upload configuration for them
+
+        In this case attributes will be added to same cluster attributes
+        model and stored in editable field
         """
         config = {}
         if os.path.exists(self.config_file):
@@ -116,7 +114,8 @@ class PluginAdapterBase(object):
         return {}
 
     def validate_cluster_compatibility(self, cluster):
-        """Validates if plugin is compatible with cluster.
+        """Validates if plugin is compatible with cluster
+
         - validates operating systems
         - modes of clusters (simple or ha)
         - release version
@@ -134,8 +133,7 @@ class PluginAdapterBase(object):
         return False
 
     def _is_release_version_compatible(self, rel_version, plugin_rel_version):
-        """Checks if release version is compatible with
-        plugin version.
+        """Checks if release version is compatible with plugin version
 
         :param str rel_version: release version
         :param str plugin_rel_version: plugin release version
@@ -147,7 +145,8 @@ class PluginAdapterBase(object):
         return rel_os.startswith(plugin_os) and rel_fuel.startswith(plugin_rel)
 
     def update_metadata(self, attributes):
-        """Overwrights only default values in metadata.
+        """Overwrites only default values in metadata
+
         Plugin should be able to provide UI "native" conditions
         to enable/disable plugin on UI itself
         """
@@ -162,8 +161,9 @@ class PluginAdapterBase(object):
                 'plugin_id': self.plugin.id}
 
     def set_cluster_tasks(self):
-        """Loads plugins provided tasks from tasks config file and
-        sets them to instance tasks variable.
+        """Load plugins provided tasks and set them to instance tasks variable
+
+        Provided tasks are loaded from tasks config file.
         """
         task_yaml = os.path.join(
             self.plugin_path,
@@ -208,9 +208,7 @@ class PluginAdapterBase(object):
 
     @property
     def normalized_roles_metadata(self):
-        """Adds a restriction for every role which blocks plugin disabling
-        if nodes with plugin-provided roles exist in the cluster
-        """
+        """Block plugin disabling if nodes with plugin-provided roles exist"""
         result = {}
         for role, meta in six.iteritems(self.plugin.roles_metadata):
             condition = "settings:{0}.metadata.enabled == false".format(
@@ -222,9 +220,7 @@ class PluginAdapterBase(object):
         return result
 
     def get_release_info(self, release):
-        """Returns plugin release information which corresponds to
-            a provided release.
-        """
+        """Get plugin release information which corresponds to given release"""
         os = release.operating_system.lower()
         version = release.version
 
@@ -266,26 +262,26 @@ class PluginAdapterBase(object):
 
 
 class PluginAdapterV1(PluginAdapterBase):
-    """Plugins attributes class for package version 1.0.0
-    """
+    """Plugins attributes class for package version 1.0.0"""
 
     @property
     def path_name(self):
-        """Returns a name and full version, e.g. if there is
-        a plugin with name "plugin_name" and version is "1.0.0",
-        the method returns "plugin_name-1.0.0"
+        """Returns a name and full version
+
+        e.g. if there is a plugin with name "plugin_name" and version
+        is "1.0.0", the method returns "plugin_name-1.0.0"
         """
         return self.full_name
 
 
 class PluginAdapterV2(PluginAdapterBase):
-    """Plugins attributes class for package version 2.0.0
-    """
+    """Plugins attributes class for package version 2.0.0"""
 
     @property
     def path_name(self):
-        """Returns a name and major version of the plugin, e.g.
-        if there is a plugin with name "plugin_name" and version
+        """Returns a name and major version of the plugin
+
+        e.g. if there is a plugin with name "plugin_name" and version
         is "1.0.0", the method returns "plugin_name-1.0".
 
         It's different from previous version because in previous
@@ -299,8 +295,9 @@ class PluginAdapterV2(PluginAdapterBase):
 
     @property
     def _major_version(self):
-        """Returns major version of plugin's version, e.g.
-        if plugin has 1.2.3 version, the method returns 1.2
+        """Returns major version of plugin's version
+
+        e.g. if plugin has 1.2.3 version, the method returns 1.2
         """
         version_tuple = StrictVersion(self.plugin.version).version
         major = '.'.join(map(str, version_tuple[:2]))
@@ -309,8 +306,7 @@ class PluginAdapterV2(PluginAdapterBase):
 
 
 class PluginAdapterV3(PluginAdapterV2):
-    """Plugin wrapper class for package version 3.0.0
-    """
+    """Plugin wrapper class for package version 3.0.0"""
 
     node_roles_config_name = 'node_roles.yaml'
     volumes_config_name = 'volumes.yaml'
@@ -318,8 +314,7 @@ class PluginAdapterV3(PluginAdapterV2):
     network_roles_config_name = 'network_roles.yaml'
 
     def sync_metadata_to_db(self):
-        """Sync metadata from all config yaml files to DB
-        """
+        """Sync metadata from all config yaml files to DB"""
         super(PluginAdapterV3, self).sync_metadata_to_db()
 
         data_to_update = {}

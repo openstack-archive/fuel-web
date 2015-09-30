@@ -32,8 +32,7 @@ class OpenStackWorkloadStats(NailgunObject):
 
     @classmethod
     def get_last_by(cls, cluster_id, resource_type):
-        """Get last entry by cluster_id and resource type.
-        """
+        """Get last entry by cluster_id and resource type."""
         instance = db().query(models.OpenStackWorkloadStats) \
             .order_by(models.OpenStackWorkloadStats.created_date.desc()) \
             .filter_by(cluster_id=cluster_id) \
@@ -48,8 +47,7 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
 
     @classmethod
     def get_ready_to_send(cls):
-        """Get entries which are ready to send but were not sent yet.
-        """
+        """Get entries which are ready to send but were not sent yet."""
         last_date = datetime.datetime.utcnow().date() - \
             datetime.timedelta(days=settings.OSWL_COLLECT_PERIOD)
         instance = db().query(models.OpenStackWorkloadStats) \
@@ -60,8 +58,7 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
 
     @classmethod
     def clean_expired_entries(cls):
-        """Delete expired oswl entries from db
-        """
+        """Delete expired oswl entries from db"""
         # CAVEAT(aroma): if settings.OSWL_COLLECT_PERIOD is 0
         # then all oswl entries will be deleted from db
         last_date = datetime.datetime.utcnow().date() - \
@@ -73,9 +70,10 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
 
     @classmethod
     def get_last_by_resource_type(cls, resource_type):
-        """Get records for given resource_type which have most recent
-        created_date (today or yesterday). Records (for some clusters)
-        which were updated earlier will not be selected.
+        """Get most recently created records for given resource_type
+
+        Records (for some clusters) which were updated earlier than yesterday
+        will not be selected.
         """
         instances = db().query(models.OpenStackWorkloadStats) \
             .order_by(models.OpenStackWorkloadStats.created_date.desc()) \

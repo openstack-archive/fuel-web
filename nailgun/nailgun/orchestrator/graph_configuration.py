@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-#(dshulyak) temporary, this config will be moved to fuel-library
-#until we will stabilize our api
+# (dshulyak) temporary, this config will be moved to fuel-library
+# until we will stabilize our api
 DEPLOYMENT_51_60 = """
 
 - id: deploy_start

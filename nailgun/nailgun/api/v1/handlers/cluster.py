@@ -45,8 +45,7 @@ from nailgun.task.manager import UpdateEnvironmentTaskManager
 
 
 class ClusterHandler(SingleHandler):
-    """Cluster single handler
-    """
+    """Cluster single handler"""
 
     single = objects.Cluster
     validator = ClusterValidator
@@ -54,6 +53,7 @@ class ClusterHandler(SingleHandler):
     @content
     def DELETE(self, obj_id):
         """:returns: {}
+
         :http: * 202 (cluster deletion process launched)
                * 400 (failed to execute cluster deletion process)
                * 404 (cluster not found in db)
@@ -73,8 +73,7 @@ class ClusterHandler(SingleHandler):
 
 
 class ClusterCollectionHandler(CollectionHandler):
-    """Cluster collection handler
-    """
+    """Cluster collection handler"""
 
     collection = objects.ClusterCollection
     validator = ClusterValidator
@@ -114,8 +113,7 @@ class ClusterUpdateHandler(DeferredTaskHandler):
 
 
 class ClusterAttributesHandler(BaseHandler):
-    """Cluster attributes handler
-    """
+    """Cluster attributes handler"""
 
     fields = (
         "editable",
@@ -126,6 +124,7 @@ class ClusterAttributesHandler(BaseHandler):
     @content
     def GET(self, cluster_id):
         """:returns: JSONized Cluster attributes.
+
         :http: * 200 (OK)
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
@@ -138,6 +137,7 @@ class ClusterAttributesHandler(BaseHandler):
 
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster attributes.
+
         :http: * 200 (OK)
                * 400 (wrong attributes data specified)
                * 404 (cluster not found in db)
@@ -153,6 +153,7 @@ class ClusterAttributesHandler(BaseHandler):
     @content
     def PATCH(self, cluster_id):
         """:returns: JSONized Cluster attributes.
+
         :http: * 200 (OK)
                * 400 (wrong attributes data specified)
                * 404 (cluster not found in db)
@@ -186,8 +187,7 @@ class ClusterAttributesHandler(BaseHandler):
 
 
 class ClusterAttributesDefaultsHandler(BaseHandler):
-    """Cluster default attributes handler
-    """
+    """Cluster default attributes handler"""
 
     fields = (
         "editable",
@@ -196,6 +196,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
     @content
     def GET(self, cluster_id):
         """:returns: JSONized default Cluster attributes.
+
         :http: * 200 (OK)
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
@@ -209,6 +210,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster attributes.
+
         :http: * 200 (OK)
                * 400 (wrong attributes data specified)
                * 404 (cluster not found in db)
@@ -240,12 +242,12 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
 
 
 class ClusterGeneratedData(BaseHandler):
-    """Cluster generated data
-    """
+    """Cluster generated data"""
 
     @content
     def GET(self, cluster_id):
         """:returns: JSONized cluster generated data
+
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
@@ -260,8 +262,7 @@ class ClusterDeploymentTasksHandler(DeploymentTasksHandler):
 
 
 class VmwareAttributesHandler(BaseHandler):
-    """Vmware attributes handler
-    """
+    """Vmware attributes handler"""
 
     fields = (
         "editable",
@@ -272,6 +273,7 @@ class VmwareAttributesHandler(BaseHandler):
     @content
     def GET(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
+
         :http: * 200 (OK)
                * 400 (cluster doesn't accept vmware configuration)
                * 404 (cluster not found in db |
@@ -298,6 +300,7 @@ class VmwareAttributesHandler(BaseHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
+
         :http: * 200 (OK)
                * 400 (wrong attributes data specified |
                       cluster doesn't accept vmware configuration)
@@ -332,12 +335,12 @@ class VmwareAttributesHandler(BaseHandler):
 
 
 class VmwareAttributesDefaultsHandler(BaseHandler):
-    """Vmware default attributes handler
-    """
+    """Vmware default attributes handler"""
 
     @content
     def GET(self, cluster_id):
         """:returns: JSONized default Cluster vmware attributes.
+
         :http: * 200 (OK)
                * 400 (cluster doesn't accept vmware configuration)
                * 404 (cluster not found in db)

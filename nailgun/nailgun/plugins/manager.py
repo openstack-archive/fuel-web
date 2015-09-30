@@ -26,7 +26,9 @@ class PluginManager(object):
 
     @classmethod
     def process_cluster_attributes(cls, cluster, attrs):
-        """Iterates through plugins attributes, creates
+        """Generate Cluster-Plugins relation based on attributes
+
+        Iterates through plugins attributes, creates
         or deletes Cluster <-> Plugins relation if plugin
         is enabled or disabled.
 
@@ -166,8 +168,7 @@ class PluginManager(object):
 
     @classmethod
     def get_volumes_metadata(cls, cluster):
-        """Get volumes metadata for specific cluster from all
-        plugins which enabled for it.
+        """Get volumes metadata for cluster from all plugins which enabled it
 
         :param cluster: Cluster DB model
         :returns: dict -- object with merged volumes data from plugins
@@ -209,8 +210,9 @@ class PluginManager(object):
 
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
-        """Sync metadata for plugins by given ids. If there is not
-        ids all newest plugins will be synced
+        """Sync metadata for plugins by given ids.
+
+        If there are no ids all newest plugins will be synced
         """
         if plugin_ids:
             plugins = PluginCollection.get_by_uids(plugin_ids)

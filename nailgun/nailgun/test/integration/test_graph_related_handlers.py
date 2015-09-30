@@ -397,9 +397,6 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
         self.assertIn('Task nonexistent is not present in graph', resp.body)
 
     def test_single_task_from_tasks_subset(self, m_get_tasks):
-        """If only pre-B and pre-A tasks will be executed,
-        what requirements pre-C will have?
-        """
         m_get_tasks.return_value = self.tasks
         resp = self.app.get(
             reverse('TaskDeployGraph', kwargs={

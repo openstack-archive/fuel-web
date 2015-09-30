@@ -29,16 +29,14 @@ from nailgun.objects import ReleaseCollection
 
 
 class ReleaseHandler(SingleHandler):
-    """Release single handler
-    """
+    """Release single handler"""
 
     single = Release
     validator = ReleaseValidator
 
 
 class ReleaseCollectionHandler(CollectionHandler):
-    """Release collection handler
-    """
+    """Release collection handler"""
 
     validator = ReleaseValidator
     collection = ReleaseCollection
@@ -46,6 +44,7 @@ class ReleaseCollectionHandler(CollectionHandler):
     @content
     def GET(self):
         """:returns: Sorted releases' collection in JSON format
+
         :http: * 200 (OK)
         """
         q = sorted(self.collection.all(), reverse=True)
@@ -53,8 +52,7 @@ class ReleaseCollectionHandler(CollectionHandler):
 
 
 class ReleaseNetworksHandler(SingleHandler):
-    """Release Handler for network metadata
-    """
+    """Release Handler for network metadata"""
 
     single = Release
     validator = ReleaseNetworksValidator

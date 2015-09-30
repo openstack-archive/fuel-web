@@ -39,8 +39,7 @@ from nailgun.task.helpers import TaskHelper
 class NetworkCheck(object):
 
     def __init__(self, task, data):
-        """Collect Network Groups data
-        """
+        """Collect Network Groups data"""
         self.cluster = task.cluster
         self.task = task
         self.data = data
@@ -89,6 +88,7 @@ class NetworkCheck(object):
 
     def check_untagged_intersection(self):
         """check if there are untagged networks on the same interface
+
         (both nova-net and neutron)
         """
         netw_untagged = lambda n: (n['vlan_start'] is None) \
@@ -141,9 +141,7 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_network_address_spaces_intersection(self):
-        """check intersection of networks address spaces for all networks
-        (nova-net)
-        """
+        """check intersection of address spaces for all networks (nova-net)"""
         nets_w_cidr = filter(lambda n: n['cidr'], self.networks)
         for ngs in combinations(nets_w_cidr, 2):
             addrs = [netaddr.IPNetwork(ngs[0]['cidr']).cidr,
@@ -194,7 +192,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_public_floating_ranges_intersection(self):
-        """1. Check intersection of networks address spaces inside
+        """Check public floating ranges intersection
+
+        1. Check intersection of networks address spaces inside
         Public and Floating network
         2. Check that Public Gateway is in Public CIDR
         3. Check that Public IP ranges are in Public CIDR
@@ -262,7 +262,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_vlan_ids_range_and_intersection(self):
-        """1. check intersection of networks VLAN IDs ranges
+        """Check vlan ids range and intersection
+
+        1. check intersection of networks VLAN IDs ranges
         2. check networks VLAN ID ranges are in allowed range
         (nova-net)
         """
@@ -300,7 +302,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_networks_amount(self):
-        """1. check number of fixed networks is one in case of FlatDHCPManager
+        """Check networks count
+
+        1. check number of fixed networks is one in case of FlatDHCPManager
         2. check number of fixed networks fit in fixed CIDR and size of
         one fixed network
         (nova-net)
@@ -323,7 +327,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def neutron_check_segmentation_ids(self):
-        """1. check networks VLAN IDs not in Neutron L2 private VLAN ID range
+        """Check neutron segmentation ids
+
+        1. check networks VLAN IDs not in Neutron L2 private VLAN ID range
         for VLAN segmentation only
         2. check networks VLAN IDs should not intersect
         (neutron)
@@ -358,8 +364,9 @@ class NetworkCheck(object):
                 raise errors.NetworkCheckError(err_msg)
 
     def neutron_check_network_address_spaces_intersection(self):
-        """Check intersection between address spaces of all networks
-        including admin (neutron)
+        """Check intersection of address spaces of all networks including admin
+
+        (Neutron)
         """
         # check intersection of address ranges
         # between all networks
@@ -458,7 +465,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def neutron_check_l3_addresses_not_match_subnet_and_broadcast(self):
-        """check virtual l3 network address ranges and gateway don't intersect
+        """validate virtual l3 network address range and gateway
+
+        check virtual l3 network address ranges and gateway don't intersect
         with subnetwork address and broadcast address (neutron)
         """
         ext_fl = self.network_config['floating_ranges'][0]
@@ -490,7 +499,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_network_classes_exclude_loopback(self):
-        """1. check network address space lies inside A,B or C network class
+        """Check if address space is in real world addresses space
+
+        1. check network address space lies inside A,B or C network class
         address space
         2. check network address space doesn't lie inside loopback
         address space
@@ -518,7 +529,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_network_addresses_not_match_subnet_and_broadcast(self):
-        """check network address ranges and gateway don't intersect with
+        """Network shouldn't intersect with subnetwork and broadcast
+
+        check network address ranges and gateway don't intersect with
         subnetwork address and broadcast address (both neutron and nova-net)
         """
         for n in self.networks:
@@ -559,8 +572,7 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_bond_slaves_speeds(self):
-        """check bond slaves speeds are equal
-        """
+        """check bond slaves speeds are equal"""
         for node in self.cluster.nodes:
             for bond in node.bond_interfaces:
                 slaves_speed = set(
@@ -573,8 +585,7 @@ class NetworkCheck(object):
                     self.err_msgs.append(warn_msg)
 
     def check_dns_servers_ips(self):
-        """check DNS servers IPs are distinct
-        """
+        """check DNS servers IPs are distinct"""
         ips = self.network_config['dns_nameservers']
         if len(set(ips)) < len(ips):
             self.err_msgs.append(
@@ -585,7 +596,8 @@ class NetworkCheck(object):
             self.expose_error_messages()
 
     def check_calculated_network_cidr(self):
-        """Check calculated networks CIDRs are equal to values set by user.
+        """Check calculated networks CIDRs are equal to values set by user
+
         E.g. when user set CIDR to "10.20.30.0/16" it will be calculated as
         "10.20.0.0/16". So, this helps to avoid some user errors while entering
         network parameters.
@@ -606,8 +618,7 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_configuration(self):
-        """check network configuration parameters
-        """
+        """check network configuration parameters"""
         if self.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
             self.neutron_check_network_address_spaces_intersection()
             self.neutron_check_segmentation_ids()
@@ -623,8 +634,7 @@ class NetworkCheck(object):
         self.check_calculated_network_cidr()
 
     def check_interface_mapping(self):
-        """check mapping of networks to NICs
-        """
+        """check mapping of networks to NICs"""
         self.check_untagged_intersection()
         self.check_bond_slaves_speeds()
         return self.err_msgs

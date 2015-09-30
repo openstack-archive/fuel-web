@@ -110,7 +110,7 @@ class Task(NailgunObject):
 
             elif any(map(lambda s: s.status in ('error',), subtasks)):
                 for subtask in subtasks:
-                    if not subtask.status in ('error', 'ready'):
+                    if subtask.status not in ('error', 'ready'):
                         subtask.status = 'error'
                         subtask.progress = 100
                         subtask.message = 'Task aborted'
@@ -121,7 +121,7 @@ class Task(NailgunObject):
                     lambda s: (s.message or ""), filter(
                         lambda s: (
                             s.status == 'error' and not
-                            # TODO: make this check less ugly
+                            # TODO(aroma): make this check less ugly
                             s.message == 'Task aborted'
                         ), subtasks)))))
 

@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# flake8: noqa
+# This is done because grammar definition in docstrings cause H405
 import ply.lex
 import ply.yacc
 

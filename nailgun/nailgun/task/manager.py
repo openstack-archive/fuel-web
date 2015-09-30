@@ -131,16 +131,10 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
     deployment_type = consts.TASK_NAMES.deploy
 
-    def _lock_required_tasks(self):
-        return objects.TaskCollection.lock_cluster_tasks(
-            cluster_id=self.cluster.id, names=self.deployment_tasks)
-
     def _remove_obsolete_tasks(self):
-        locked_tasks = self._lock_required_tasks()
-        current_tasks = objects.TaskCollection.filter_by(
-            locked_tasks,
-            name=consts.TASK_NAMES.deploy
-        )
+        current_tasks = objects.TaskCollection.get_cluster_tasks(
+            cluster_id=self.cluster.id, names=(consts.TASK_NAMES.deploy,))
+
         # locking cluster
         objects.Cluster.get_by_uid(
             self.cluster.id,
@@ -155,7 +149,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         db().flush()
 
         obsolete_tasks = objects.TaskCollection.filter_by_list(
-            locked_tasks,
+            current_tasks,
             'name',
             (consts.TASK_NAMES.stop_deployment,
              consts.TASK_NAMES.reset_environment)
@@ -181,7 +175,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         self.check_no_running_deployment(self.cluster)
         self._remove_obsolete_tasks()
 
-        supertask = Task(name=self.deployment_type, cluster=self.cluster)
+        supertask = Task(name=self.deployment_type, cluster=self.cluster,
+                         status=consts.TASK_STATUSES.pending)
         db().add(supertask)
 
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
@@ -239,7 +234,6 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             db().commit()
 
     def delete_nodes(self, supertask, nodes_to_delete):
-        objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
         objects.NodeCollection.lock_nodes(nodes_to_delete)
         # For more accurate progress calculation
         task_weight = 0.4
@@ -294,8 +288,6 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             task_deletion = self.delete_nodes(supertask, nodes_to_delete)
 
         if nodes_to_provision:
-            objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
-
             logger.debug("There are nodes to provision: %s",
                          " ".join([objects.Node.get_node_fqdn(n)
                                    for n in nodes_to_provision]))
@@ -304,6 +296,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             task_weight = 0.4
             task_provision = supertask.create_subtask(
                 consts.TASK_NAMES.provision,
+                status=consts.TASK_STATUSES.pending,
                 weight=task_weight)
 
             # we should have task committed for processing in other threads
@@ -331,13 +324,13 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             task_messages.append(provision_message)
 
         if nodes_to_deploy:
-            objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
-
             logger.debug("There are nodes to deploy: %s",
                          " ".join([objects.Node.get_node_fqdn(n)
                                    for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(
-                name=consts.TASK_NAMES.deployment)
+                name=consts.TASK_NAMES.deployment,
+                status=consts.TASK_STATUSES.pending
+            )
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -374,7 +367,9 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 "No nodes to deploy, just update nodes.yaml everywhere.")
 
             task_deployment = supertask.create_subtask(
-                name=consts.TASK_NAMES.deployment)
+                name=consts.TASK_NAMES.deployment,
+                status=consts.TASK_STATUSES.pending
+            )
             task_message = tasks.UpdateNodesInfoTask.message(task_deployment)
             task_deployment.cache = task_message
             task_messages.append(task_message)
@@ -523,6 +518,7 @@ class ProvisioningTaskManager(TaskManager):
                       for n in nodes_to_provision])))
 
         task_provision = Task(name=consts.TASK_NAMES.provision,
+                              status=consts.TASK_STATUSES.pending,
                               cluster=self.cluster)
         db().add(task_provision)
         db().commit()
@@ -563,7 +559,9 @@ class DeploymentTaskManager(TaskManager):
             ' '.join([objects.Node.get_node_fqdn(n)
                       for n in nodes_to_deployment])))
         task_deployment = Task(
-            name=consts.TASK_NAMES.deployment, cluster=self.cluster)
+            name=consts.TASK_NAMES.deployment, cluster=self.cluster,
+            status=consts.TASK_STATUSES.pending
+        )
         db().add(task_deployment)
 
         deployment_message = self._call_silently(
@@ -600,29 +598,19 @@ class DeploymentTaskManager(TaskManager):
 class StopDeploymentTaskManager(TaskManager):
 
     def execute(self):
-        # locking tasks for processing
-        names = (
-            consts.TASK_NAMES.deploy,
-            consts.TASK_NAMES.stop_deployment,
-            consts.TASK_NAMES.deployment,
-            consts.TASK_NAMES.provision
-        )
-        objects.TaskCollection.lock_cluster_tasks(
-            self.cluster.id,
-            names=names
-        )
-
         stop_running = objects.TaskCollection.filter_by(
             None,
             cluster_id=self.cluster.id,
-            name=consts.TASK_NAMES.stop_deployment,
+            name=consts.TASK_NAMES.stop_deployment
         )
         stop_running = objects.TaskCollection.order_by(
             stop_running, 'id'
         ).first()
 
         if stop_running:
-            if stop_running.status == consts.TASK_STATUSES.running:
+            if stop_running.status in (
+                    consts.TASK_STATUSES.running,
+                    consts.TASK_STATUSES.pending):
                 raise errors.StopAlreadyRunning(
                     "Stopping deployment task "
                     "is already launched"
@@ -636,6 +624,9 @@ class StopDeploymentTaskManager(TaskManager):
             cluster_id=self.cluster.id,
             name=consts.TASK_NAMES.deployment,
         )
+        deployment_task = deployment_task.filter(
+            Task.status != consts.TASK_STATUSES.pending
+        )
         deployment_task = objects.TaskCollection.order_by(
             deployment_task, '-id'
         ).first()
@@ -644,6 +635,9 @@ class StopDeploymentTaskManager(TaskManager):
             None,
             cluster_id=self.cluster.id,
             name=consts.TASK_NAMES.provision,
+        )
+        provisioning_task = provisioning_task.filter(
+            Task.status != consts.TASK_STATUSES.pending
         )
         provisioning_task = objects.TaskCollection.order_by(
             provisioning_task, '-id'
@@ -984,10 +978,10 @@ class VerifyNetworksTaskManager(TaskManager):
 class ClusterDeletionManager(TaskManager):
 
     def execute(self):
-        # locking required tasks
-        locked_tasks = objects.TaskCollection.lock_cluster_tasks(
+        current_tasks = objects.TaskCollection.get_cluster_tasks(
             self.cluster.id, names=(consts.TASK_NAMES.cluster_deletion,)
         )
+
         # locking cluster
         objects.Cluster.get_by_uid(
             self.cluster.id,
@@ -1023,7 +1017,7 @@ class ClusterDeletionManager(TaskManager):
             TaskHelper.set_ready_if_not_finished(deploy_running)
 
         logger.debug("Removing cluster tasks")
-        for task in locked_tasks:
+        for task in current_tasks:
             if task.status == consts.TASK_STATUSES.running:
                 db().rollback()
                 raise errors.DeletionAlreadyStarted()
@@ -1115,7 +1109,6 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
         cluster = None
         if hasattr(self, 'cluster'):
             cluster = self.cluster
-            objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
 
         logger.info("Trying to execute node deletion task with nodes %s",
                     ', '.join(str(node.id) for node in nodes_to_delete))

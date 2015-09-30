@@ -24,10 +24,33 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from nailgun.utils.migration import upgrade_enum
+
+
+task_statuses_old = (
+    'ready',
+    'running',
+    'error'
+)
+
+task_statuses_new = task_statuses_old + (
+    'pending',
+)
+
 
 def upgrade():
-    pass
+    task_statuses_upgrade()
 
 
 def downgrade():
-    pass
+    task_statuses_downgrade()
+
+
+def task_statuses_upgrade():
+    upgrade_enum('tasks', 'status', 'task_status',
+                 task_statuses_old, task_statuses_new)
+
+
+def task_statuses_downgrade():
+    upgrade_enum('tasks', 'status', 'task_status',
+                 task_statuses_new, task_statuses_old)

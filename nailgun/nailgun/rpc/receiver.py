@@ -26,6 +26,7 @@ from oslo_serialization import jsonutils
 from sqlalchemy import or_
 
 from nailgun import consts
+from nailgun.errors import errors as nailgun_errors
 from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings
@@ -61,9 +62,7 @@ class NailgunReceiver(object):
         if status in [consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error]:
             progress = 100
 
-        # locking tasks on cluster
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-        objects.TaskCollection.lock_cluster_tasks(task.cluster_id)
+        # locking task
         task = objects.Task.get_by_uuid(
             task_uuid,
             fail_if_not_found=True,
@@ -234,11 +233,8 @@ class NailgunReceiver(object):
 
         task = objects.Task.get_by_uuid(
             task_uuid,
-            fail_if_not_found=True,
+            fail_if_not_found=True
         )
-
-        # locking all cluster tasks
-        objects.TaskCollection.lock_cluster_tasks(task.cluster_id)
 
         # lock cluster
         objects.Cluster.get_by_uid(
@@ -558,9 +554,6 @@ class NailgunReceiver(object):
             task_uuid,
             fail_if_not_found=True,
         )
-
-        # locking all cluster tasks
-        objects.TaskCollection.lock_cluster_tasks(task.cluster_id)
 
         stopping_task_names = [
             consts.TASK_NAMES.deploy,
@@ -1161,3 +1154,26 @@ class NailgunReceiver(object):
 
         objects.Task.update_verify_networks(
             task, status, progress, msg, {})
+
+    @classmethod
+    def task_in_orchestrator(cls, **kwargs):
+        logger.info("RPC method task_in_orchestrator received: %s",
+                    jsonutils.dumps(kwargs))
+
+        task_uuid = kwargs.get('task_uuid')
+
+        try:
+            task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
+                                            lock_for_update=True)
+            if task.status == consts.TASK_STATUSES.pending:
+                objects.Task.update(
+                    task, {'status': consts.TASK_STATUSES.running})
+                logger.debug("Task '%s' is acknowledged as running",
+                             task_uuid)
+            else:
+                logger.debug("Task '%s' in status '%s' can not "
+                             "be acknowledged as running", task_uuid,
+                             task.status)
+        except nailgun_errors.ObjectNotFound:
+            logger.warning("Task '%s' acknowledgement as running failed "
+                           "due to task doesn't exist in DB", task_uuid)

@@ -1745,7 +1745,9 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         task = self.env.launch_deployment()
-        self.assertIn(task.status, ('running', 'ready'))
+        self.env.wait_until_task_pending(task)
+        self.assertIn(task.status, (consts.TASK_STATUSES.running,
+                                    consts.TASK_STATUSES.ready))
 
     @fake_tasks()
     def test_admin_untagged_intersection(self):
@@ -1836,3 +1838,12 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(check_mongo.call_count, 1)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_deploy_task_status(self, _):
+        self.env.create(
+            nodes_kwargs=[{'name': '', 'pending_addition': True}]
+        )
+        deploy_task = self.env.launch_deployment()
+        self.assertEqual(consts.TASK_STATUSES.pending, deploy_task.status)

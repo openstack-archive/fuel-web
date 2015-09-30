@@ -312,9 +312,9 @@
                         "cores": "CPU (real)",
                         "ht_cores": "CPU (total)",
                         "hdd": "HDD total size",
-                        "disks": "Disks amount and sizes",
+                        "disks": "Number and size of disks",
                         "ram": "RAM total size",
-                        "interfaces": "Interfaces amount"
+                        "interfaces": "Number of interfaces"
                     },
                     "filters": {
                         "roles": "Roles",
@@ -323,9 +323,9 @@
                         "manufacturer": "Manufacturer",
                         "cores": "CPU (real)",
                         "ht_cores": "CPU (total)",
-                        "disks_amount": "Disks amount",
+                        "disks_amount": "Number of disks",
                         "ram": "RAM total size (Gb)",
-                        "interfaces": "Interfaces amount",
+                        "interfaces": "Number of interfaces",
                         "prefixes": {
                             "cores": "CPU (real)",
                             "ht_cores": "CPU (total)",
@@ -664,7 +664,7 @@
                         "forbidden_vlan": "This VLAN ID is used by other networks. Please choose another ID",
                         "invalid_netmask": "Invalid netmask",
                         "invalid_gateway": "Invalid gateway",
-                        "invalid_amount": "Invalid amount of networks",
+                        "invalid_amount": "Invalid number of networks",
                         "gateway_is_out_of_ip_range": "This Gateway address is outside of network's CIDR",
                         "gateway_is_out_of_internal_ip_range": "This Gateway address is out of the internal network IP range",
                         "need_more_vlan": "The number of networks defined needs more VLAN IDs than available. Check VLAN ID Range field.",

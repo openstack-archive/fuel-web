@@ -58,7 +58,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         this.values = values;
         this.title = isLabel ? this.name : i18n('cluster_page.nodes_tab.filters.' + this.name, {defaultValue: this.name});
         this.isLabel = isLabel;
-        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id'], this.name);
+        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id', 'cluster'], this.name);
         return this;
     }
     _.extend(Filter, {
@@ -97,7 +97,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin('nodes', 'update change'),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster.get('tasks');},
+                modelOrCollection: function(props) {return props.cluster && props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
             componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters')
@@ -109,6 +109,31 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
         },
         getInitialState: function() {
+            var activeFilters;
+
+            // Nodes page
+            if (!this.props.cluster) {
+                // TODO(jkirnosova): need to store UI settings of the page in DB
+
+                activeFilters = Filter.fromObject(this.props.defaultFilters, false);
+                _.invoke(activeFilters, 'updateLimits', this.props.nodes, false);
+
+                return {
+                    search: '',
+                    activeSorters: _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false)),
+                    activeFilters: activeFilters,
+                    availableSorters: this.props.sorters.map(function(name) {return new Sorter(name, 'asc', false);}),
+                    availableFilters: this.props.filters.map(function(name) {
+                        var filter = new Filter(name, [], false);
+                        filter.updateLimits(this.props.nodes, true);
+                        return filter;
+                    }, this),
+                    viewMode: 'standard',
+                    isLabelsPanelOpen: false
+                };
+            }
+
+            // Nodes tab of Cluster page
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 uiSettings = cluster.get('ui_settings'),
@@ -119,7 +144,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         return roleName;
                     }
                 }, this)) : [];
-            var activeFilters = this.props.mode == 'add' ?
+            activeFilters = this.props.mode == 'add' ?
                     Filter.fromObject(this.props.defaultFilters, false)
                 :
                     _.union(
@@ -333,6 +358,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         };
                     });
                     break;
+                case 'cluster':
+                    options = _.uniq(this.props.nodes.pluck('cluster')).map(function(clusterId) {
+                        return {
+                            name: clusterId,
+                            label: clusterId ? this.props.clusters.get(clusterId).get('name') : i18n('cluster_page.nodes_tab.node.unallocated')
+                        };
+                    }, this);
+                    break;
             }
 
             // sort option list
@@ -368,9 +401,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.changeUISettings('view_mode', value);
         },
         changeUISettings: function(name, value) {
-            var uiSettings = this.props.cluster.get('ui_settings');
-            uiSettings[name] = value;
-            this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
+            if (this.props.cluster) {
+                var uiSettings = this.props.cluster.get('ui_settings');
+                uiSettings[name] = value;
+                this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
+            }
         },
         revertChanges: function() {
             this.props.nodes.each(function(node) {
@@ -396,9 +431,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         render: function() {
             var cluster = this.props.cluster,
-                locked = !!cluster.task({group: 'deployment', active: true}),
+                locked = cluster && !!cluster.task({group: 'deployment', active: true}),
                 nodes = this.props.nodes,
-                processedRoleData = this.processRoleLimits();
+                processedRoleData = cluster ? this.processRoleLimits() : {};
 
             // labels to manage in labels panel
             var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
@@ -435,6 +470,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             result = _.contains(filter.values, node.getStatusSummary());
                             break;
                         case 'manufacturer':
+                        case 'cluster':
                         case 'group_id':
                             result = _.contains(filter.values, node.get(filter.name));
                             break;
@@ -459,7 +495,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     <ManagementPanel
                         {... _.pick(this.state, 'viewMode', 'search', 'activeSorters', 'activeFilters', 'availableSorters', 'availableFilters', 'isLabelsPanelOpen')}
-                        {... _.pick(this.props, 'cluster', 'mode', 'defaultSorting', 'statusesToFilter', 'defaultFilters')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'defaultSorting', 'statusesToFilter', 'defaultFilters', 'uiSettings')}
                         {... _.pick(this, 'addSorting', 'removeSorting', 'resetSorters', 'changeSortingOrder')}
                         {... _.pick(this, 'addFilter', 'changeFilter', 'removeFilter', 'resetFilters', 'getFilterOptions')}
                         {... _.pick(this, 'toggleLabelsPanel')}
@@ -476,7 +512,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         revertChanges={this.revertChanges}
                         selectNodes={this.selectNodes}
                     />
-                    {this.props.mode != 'list' &&
+                    {cluster && this.props.mode != 'list' &&
                         <RolePanel
                             {... _.pick(this.state, 'selectedRoles', 'indeterminateRoles', 'configModels')}
                             {... _.pick(this.props, 'cluster', 'mode', 'nodes', 'selectedNodeIds')}
@@ -486,7 +522,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     <NodeList
                         {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedRoles')}
-                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'selectedNodeIds')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'selectedNodeIds', 'clusters')}
                         {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
                         nodes={filteredNodes}
                         totalNodesLength={nodes.length}
@@ -884,7 +920,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             );
         },
         render: function() {
-            var ns = 'cluster_page.nodes_tab.node_management_panel.';
+            var ns = 'cluster_page.nodes_tab.node_management_panel.',
+                cluster = this.props.cluster;
 
             var configurationAvailable = _.all(this.props.nodes.invoke('isConfigurable')),
                 disksConflict, interfaceConflict;
@@ -934,7 +971,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         <div className='node-list-management-buttons col-xs-5'>
                             <div className='view-mode-switcher'>
                                 <div className='btn-group' data-toggle='buttons'>
-                                    {_.map(this.props.cluster.viewModes(), function(mode) {
+                                    {_.map(cluster ? cluster.viewModes() : this.props.uiSettings.nodeViewModes(), function(mode) {
                                         return (
                                             <controls.Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                                                 <label
@@ -1013,79 +1050,52 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             ]}
                         </div>
                         <div className='control-buttons-box col-xs-7 text-right'>
-                            {this.props.mode != 'list' ?
-                                <div className='btn-group' role='group'>
-                                    <button
-                                        className='btn btn-default'
-                                        disabled={this.state.actionInProgress}
-                                        onClick={_.bind(function() {
-                                            this.props.revertChanges();
-                                            this.changeScreen();
-                                        }, this)}
-                                    >
-                                        {i18n('common.cancel_button')}
-                                    </button>
-                                    <button
-                                        className='btn btn-success btn-apply'
-                                        disabled={!this.isSavingPossible()}
-                                        onClick={this.applyAndRedirect}
-                                    >
-                                        {i18n('common.apply_changes_button')}
-                                    </button>
-                                </div>
-                            :
-                                [
-                                    <div className='btn-group' role='group' key='configuration-buttons'>
+                            {cluster && (
+                                this.props.mode != 'list' ?
+                                    <div className='btn-group' role='group'>
                                         <button
-                                            className='btn btn-default btn-configure-disks'
-                                            disabled={!this.props.nodes.length}
-                                            onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
+                                            className='btn btn-default'
+                                            disabled={this.state.actionInProgress}
+                                            onClick={_.bind(function() {
+                                                this.props.revertChanges();
+                                                this.changeScreen();
+                                            }, this)}
                                         >
-                                            {disksConflict && <i className='glyphicon glyphicon-danger-sign' />}
-                                            {i18n('dialog.show_node.disk_configuration' + (configurationAvailable ? '_action' : ''))}
+                                            {i18n('common.cancel_button')}
                                         </button>
                                         <button
-                                            className='btn btn-default btn-configure-interfaces'
-                                            disabled={!this.props.nodes.length}
-                                            onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
+                                            className='btn btn-success btn-apply'
+                                            disabled={!this.isSavingPossible()}
+                                            onClick={this.applyAndRedirect}
                                         >
-                                            {interfaceConflict && <i className='glyphicon glyphicon-danger-sign' />}
-                                            {i18n('dialog.show_node.network_configuration' + (configurationAvailable ? '_action' : ''))}
+                                            {i18n('common.apply_changes_button')}
                                         </button>
-                                    </div>,
-                                    <div className='btn-group' role='group' key='role-management-buttons'>
-                                        {!this.props.locked && !!this.props.nodes.length && this.props.nodes.any({pending_deletion: false}) &&
+                                    </div>
+                                :
+                                    [
+                                        <div className='btn-group' role='group' key='configuration-buttons'>
                                             <button
-                                                className='btn btn-danger btn-delete-nodes'
-                                                onClick={this.showDeleteNodesDialog}
+                                                className='btn btn-default btn-configure-disks'
+                                                disabled={!this.props.nodes.length}
+                                                onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                                             >
-                                                <i className='glyphicon glyphicon-trash' />
-                                                {i18n('common.delete_button')}
+                                                {disksConflict && <i className='glyphicon glyphicon-danger-sign' />}
+                                                {i18n('dialog.show_node.disk_configuration' + (configurationAvailable ? '_action' : ''))}
                                             </button>
-                                        }
-                                        {!!this.props.nodes.length && !this.props.nodes.any({pending_addition: false}) &&
-                                            <button
-                                                className='btn btn-success btn-edit-roles'
-                                                onClick={_.bind(this.changeScreen, this, 'edit', true)}
-                                            >
-                                                <i className='glyphicon glyphicon-edit' />
-                                                {i18n(ns + 'edit_roles_button')}
-                                            </button>
-                                        }
-                                    </div>,
-                                    !this.props.locked &&
-                                        <div className='btn-group' role='group' key='add-nodes-button'>
-                                            <button
-                                                className='btn btn-success btn-add-nodes'
-                                                onClick={_.bind(this.changeScreen, this, 'add', false)}
-                                                disabled={this.props.locked}
-                                            >
-                                                <i className='glyphicon glyphicon-plus' />
-                                                {i18n(ns + 'add_nodes_button')}
-                                            </button>
-                                        </div>
-                                ]
-                            }
+                                        </div>,
+                                        !this.props.locked &&
+                                            <div className='btn-group' role='group' key='add-nodes-button'>
+                                                <button
+                                                    className='btn btn-default btn-configure-interfaces'
+                                                    disabled={!this.props.nodes.length}
+                                                    onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
+                                                >
+                                                    {interfaceConflict && <i className='glyphicon glyphicon-danger-sign' />}
+                                                    {i18n('dialog.show_node.network_configuration' + (configurationAvailable ? '_action' : ''))}
+                                                </button>
+                                            </div>
+                                    ]
+                            )}
                         </div>
                         {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
                             this.props.isLabelsPanelOpen &&
@@ -1595,7 +1605,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     NodeList = React.createClass({
         mixins: [SelectAllMixin],
         groupNodes: function() {
-            var roles = this.props.cluster.get('roles');
+            var cluster = this.props.cluster,
+                roles = cluster ?
+                        this.props.cluster.get('roles')
+                    :
+                        // TODO(jkirnosova): how to get list of role models without a cluster?
+                        _.uniq(_.flatten(_.union(_.pluck(this.props.nodes, 'roles'), _.pluck(this.props.nodes, 'pending_roles'))));
             var uniqValueSorters = ['name', 'mac', 'ip'];
 
             var composeNodeDiskSizesLabel = function(node) {
@@ -1633,7 +1648,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             break;
                         case 'status':
                             result = i18n('cluster_page.nodes_tab.node.status.' + node.getStatusSummary(), {
-                                os: this.props.cluster.get('release').get('operating_system') || 'OS'
+                                os: this.props.cluster && this.props.cluster.get('release').get('operating_system') || 'OS'
                             });
                             break;
                         case 'manufacturer':
@@ -1643,6 +1658,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             result = i18n('cluster_page.nodes_tab.node.node_network_group', {
                                 group: app.nodeNetworkGroups.get(node.get('group_id')).get('name')
                             });
+                            break;
+                        case 'cluster':
+                            var clusterId = node.get('cluster');
+                            result = clusterId ? i18n('cluster_page.nodes_tab.node.cluster', {
+                                    cluster: this.props.clusters.get(clusterId).get('name')
+                                }) : i18n('cluster_page.nodes_tab.node.unallocated');
                             break;
                         case 'hdd':
                             result = i18n('node_details.total_hdd', {total: utils.showDiskSize(node.resource('hdd'))});
@@ -1679,7 +1700,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
 
             // sort grouped nodes by other applied sorters
-            var preferredRolesOrder = roles.pluck('name');
+            var preferredRolesOrder = _.isArray(roles) ? roles : roles.pluck('name');
             return groups.sort(_.bind(function(group1, group2) {
                 var result;
                 _.each(this.props.activeSorters, function(sorter) {
@@ -1708,11 +1729,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 result = _.indexOf(this.props.statusesToFilter, node1.getStatusSummary()) - _.indexOf(this.props.statusesToFilter, node2.getStatusSummary());
                                 break;
                             case 'manufacturer':
-                            case 'group_id':
                                 result = utils.compare(node1, node2, {attr: sorter.name});
                                 break;
                             case 'disks':
                                 result = utils.natsort(composeNodeDiskSizesLabel(node1), composeNodeDiskSizesLabel(node2));
+                                break;
+                            case 'group_id':
+                                var nodeGroup1 = node1.get('group_id'),
+                                    nodeGroup2 = node2.get('group_id');
+                                result = nodeGroup1 == nodeGroup2 ? 0 :
+                                    !nodeGroup1 ? 1 : !nodeGroup2 ? -1 : nodeGroup1 - nodeGroup2;
+                                break;
+                            case 'cluster':
+                                var cluster1 = node1.get('cluster'),
+                                    cluster2 = node2.get('cluster');
+                                result = cluster1 == cluster2 ? 0 :
+                                    !cluster1 ? 1 : !cluster2 ? -1 : utils.natsort(this.props.clusters.get(cluster1).get('name'), this.props.clusters.get(cluster2).get('name'));
                                 break;
                             default:
                                 result = node1.resource(sorter.name) - node2.resource(sorter.name);
@@ -1787,7 +1819,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     <div className='row'>
                         {this.props.nodes.map(function(node) {
                             return <Node
-                                {... _.pick(this.props, 'cluster', 'mode', 'viewMode')}
+                                {... _.pick(this.props, 'cluster', 'mode', 'viewMode', 'clusters')}
                                 key={node.id}
                                 node={node}
                                 checked={this.props.mode == 'edit' || this.props.selectedNodeIds[node.id]}

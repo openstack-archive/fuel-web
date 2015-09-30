@@ -1204,5 +1204,13 @@ define([
         comparator: 'id'
     });
 
+    models.FuelUISettings = BaseModel.extend({
+        constructorName: 'FuelUISettings',
+        urlRoot: '/api/ui_settings',
+        nodeViewModes: function() {
+            return ['standard', 'compact'];
+        }
+    });
+
     return models;
 });

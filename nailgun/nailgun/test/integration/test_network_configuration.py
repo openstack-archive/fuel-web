@@ -518,12 +518,49 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.db.flush()
 
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(200, resp.status_code)
 
         nm = objects.Cluster.get_network_manager(self.cluster)
         self.assertEqual(
             resp.json_body['vips']['my-vip']['ipaddr'],
             nm.assign_vip(self.cluster, 'fuelweb_admin', 'my-vip'))
+
+    def test_not_enough_ip_addresses_return_400(self):
+        # restrict public network to have only 2 ip addresses
+        netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
+        public = next((
+            net for net in netconfig['networks']
+            if net['name'] == consts.NETWORKS.public), None)
+        public['ip_ranges'] = [['172.16.0.2', '172.16.0.4']]
+        self.env.neutron_networks_put(self.cluster.id, netconfig)
+
+        # add a network role that requires VIPs more than we
+        # in FreeIPs pool
+        self.cluster.release.network_roles_metadata.append({
+            'id': 'vip-bucket',
+            'default_mapping': 'public',
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': [
+                    {'name': 'vip-a'},
+                    {'name': 'vip-b'},
+                    {'name': 'vip-c'},
+                ]
+            }
+        })
+        self.cluster.release.version = '2015.1-7.0'
+        self.db.flush()
+
+        # check that we return 400 Bad Request
+        resp = self.env.neutron_networks_get(
+            self.cluster.id,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "Not enough free IP addresses in ranges [172.16.0.2-172.16.0.4] "
+            "of 'public' network",
+            resp.json_body['message'])
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

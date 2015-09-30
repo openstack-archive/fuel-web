@@ -139,6 +139,7 @@ NODE_VIEW_MODES = Enum(
 )
 
 NODE_LIST_FILTERS = Enum(
+    'cluster',
     'roles',
     'status',
     'manufacturer',

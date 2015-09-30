@@ -74,7 +74,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
                 options.source = 'install/puppet';
             }
-            return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
+            return '#cluster/' + this.props.node.get('cluster') + '/logs/' + utils.serializeTabOptions(options);
         },
         applyNewNodeName: function(newName) {
             if (newName && newName != this.props.node.get('name')) {
@@ -141,9 +141,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showNodeDetails: function(e) {
             e.preventDefault();
             if (this.state.extendedView) this.toggleExtendedNodePanel();
-            var networkGroupId = this.props.node.get('group_id');
+            var clusterId = this.props.node.get('cluster'),
+                networkGroupId = this.props.node.get('group_id');
             dialogs.ShowNodeInfoDialog.show({
                 node: this.props.node,
+                clusterName: this.props.cluster ? this.props.cluster.get('name') : clusterId ? this.props.clusters.get(clusterId).get('name') : '',
                 networkGroupName: networkGroupId ? this.props.networkGroups.get(networkGroupId).get('name') : ''
             });
         },
@@ -177,7 +179,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <span>
                     {i18n('cluster_page.nodes_tab.node.status.' + status, {
-                        os: this.props.cluster.get('release').get('operating_system') || 'OS'
+                        os: this.props.cluster && this.props.cluster.get('release').get('operating_system') || 'OS'
                     })}
                 </span>
             );
@@ -284,10 +286,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
+                cluster = this.props.cluster,
                 node = this.props.node,
                 isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
                 status = node.getStatusSummary(),
-                roles = node.sortedRoles(this.props.cluster.get('roles').pluck('name'));
+                roles = cluster ? node.sortedRoles(cluster.get('roles').pluck('name')) : _.union(node.get('roles'), node.get('pending_roles'));
 
             // compose classes
             var nodePanelClasses = {
@@ -396,7 +399,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     {!!node.get('cluster') &&
                                                         [
                                                             this.renderLogsLink(),
-                                                            node.hasChanges() &&
+                                                            cluster && node.hasChanges() &&
                                                                 <button className='btn btn-discard' key='btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
                                                                     {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
                                                                 </button>
@@ -450,7 +453,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             {!!node.get('cluster') &&
                                 [
                                     this.renderLogsLink(true),
-                                    node.hasChanges() && !this.props.locked &&
+                                    cluster && node.hasChanges() && !this.props.locked &&
                                         <controls.Tooltip key={'pending_addition_' + node.id} text={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}>
                                             <div
                                                 className='icon btn-discard'

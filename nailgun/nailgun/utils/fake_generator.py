@@ -112,7 +112,7 @@ DISK_SAMPLES = [
         'model': 'Silicon-Power16G',
         'name': 'sdb',
         'disk': 'sdb',
-        'size': 15518924800
+        'size': 155189248000
     },
     {
         'model': 'WDC WD3200BPVT-7',
@@ -309,7 +309,7 @@ class FakeNodesGenerator:
         }
 
     def generate_fake_node(self, pk, is_online=True, is_error=False,
-                           use_offload_iface=False):
+                           use_offload_iface=False, min_ifaces_num=1):
         """Generate one fake node
         :param int pk: node's database primary key
         :param bool is_online: node's online status
@@ -351,7 +351,7 @@ class FakeNodesGenerator:
                     'cpu': self._generate_cpu_meta(kind),
                     'interfaces': self._generate_interfaces_meta(
                         mac, ip, netmask, use_offload_iface,
-                        random.randrange(1, 7)),
+                        random.randrange(min_ifaces_num, 7)),
                     'disks': self._generate_disks_meta(random.randint(1, 7)),
                     'system': self._generate_systems_meta(
                         hostname, manufacture, platform_name),
@@ -362,7 +362,8 @@ class FakeNodesGenerator:
 
     def generate_fake_nodes(self, total_nodes_count, error_nodes_count=None,
                             offline_nodes_count=None,
-                            offloading_ifaces_nodes_count=None):
+                            offloading_ifaces_nodes_count=None,
+                            min_ifaces_num=1):
         """Generate list of fake nodes
         :param int total_nodes_count: total count of nodes to generate
         :param int error_nodes_count: count of error nodes (optional)
@@ -395,8 +396,11 @@ class FakeNodesGenerator:
         res = []
         for i in total_nodes_range:
             node = self.generate_fake_node(
-                i + 1, i not in offline_nodes_indexes,
-                i in error_nodes_indexes, i in offloading_ifaces_nodes_indexes
+                i + 1,
+                is_online=i not in offline_nodes_indexes,
+                is_error=i in error_nodes_indexes,
+                use_offload_iface=i in offloading_ifaces_nodes_indexes,
+                min_ifaces_num=min_ifaces_num
             )
             res.append(node)
         return res

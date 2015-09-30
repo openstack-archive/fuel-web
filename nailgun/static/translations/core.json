@@ -202,6 +202,7 @@
             },
             "navbar": {
                 "environments": "Environments",
+                "nodes": "Nodes",
                 "releases": "Releases",
                 "plugins": "Plugins",
                 "support": "Support",
@@ -215,6 +216,7 @@
             "breadcrumbs": {
                 "home": "Home",
                 "environments": "Environments",
+                "nodes": "Nodes",
                 "releases": "Releases",
                 "plugins": "Plugins",
                 "support": "Support",
@@ -228,6 +230,9 @@
             "notifications_popover": {
                 "view_all_button": "View all",
                 "no_notifications_text": "No notifications to display."
+            },
+            "nodes_page": {
+                "title": "Nodes"
             },
             "support_page": {
                 "title": "Support",
@@ -321,7 +326,8 @@
                         "disks": "Number and size of disks",
                         "ram": "RAM total size",
                         "interfaces": "Number of interfaces",
-                        "group_id": "Node network group"
+                        "group_id": "Node network group",
+                        "cluster": "Environment"
                     },
                     "filters": {
                         "roles": "Roles",
@@ -334,6 +340,7 @@
                         "ram": "RAM total size (GB)",
                         "interfaces": "Number of interfaces",
                         "group_id": "Node network group",
+                        "cluster": "Environment",
                         "prefixes": {
                             "cores": "CPU (real)",
                             "ht_cores": "CPU (total)",
@@ -497,7 +504,11 @@
                         "view_logs": "View Logs",
                         "edit_name": "Edit Name",
                         "more_info": "More Info",
-                        "node_network_group": "Node network group \"__group__\""
+                        "node_network_group": "Node network group \"__group__\"",
+                        "no_node_network_group": "Node network group not specified",
+                        "no_roles": "No roles assigned",
+                        "cluster": "Environment \"__cluster__\"",
+                        "unallocated": "Unallocated"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
@@ -920,7 +931,8 @@
                     "bytes": "bytes",
                     "drive": "drive",
                     "drive_plural": "drives",
-                    "node_network_group": "Node network group"
+                    "node_network_group": "Node network group",
+                    "cluster": "Environment"
                 },
                 "delete_nodes": {
                     "title": "Delete Nodes",

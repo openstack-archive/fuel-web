@@ -631,18 +631,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 };
             if (this.state.VMsConf) groups.push('config');
 
-            var nodeNetworkGroup = app.nodeNetworkGroups.get(node.get('group_id'));
-
             return (
                 <div className='node-details-popup'>
                     <div className='row'>
                         <div className='col-xs-5'><div className='node-image-outline' /></div>
                         <div className='col-xs-7'>
+                            {this.props.cluster &&
+                                <div><strong>{i18n('dialog.show_node.cluster')}: </strong>{this.props.cluster.get('name')}</div>
+                            }
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
-                            {nodeNetworkGroup &&
+                            {this.props.nodeNetworkGroup &&
                                 <div>
                                     <strong>{i18n('dialog.show_node.node_network_group')}: </strong>
-                                    {nodeNetworkGroup.get('name')}
+                                    {this.props.nodeNetworkGroup.get('name')}
                                 </div>
                             }
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
@@ -763,7 +764,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var isConfigurable = this.props.node.isConfigurable();
             return (
                 <div>
-                    {this.props.node.get('cluster') &&
+                    {this.props.renderActionButtons && this.props.node.get('cluster') &&
                         <div className='btn-group' role='group'>
                             <button className='btn btn-default btn-edit-disks' onClick={_.partial(this.goToConfigurationScreen, 'disks')}>
                                 {i18n('dialog.show_node.disk_configuration' + (isConfigurable ? '_action' : ''))}

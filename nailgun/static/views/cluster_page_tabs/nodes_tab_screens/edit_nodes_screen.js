@@ -48,7 +48,14 @@ function($, _, React, models, utils, ComponentMixins, NodeListScreen) {
             }
         },
         render: function() {
-            return <NodeListScreen {... _.omit(this.props, 'screenOptions')} ref='screen' mode='edit' />;
+            return (
+                <NodeListScreen
+                    {... _.omit(this.props, 'screenOptions')}
+                    ref='screen'
+                    mode='edit'
+                    roles={this.props.cluster.get('roles')}
+                />
+            );
         }
     });
 

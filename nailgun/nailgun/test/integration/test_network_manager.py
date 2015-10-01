@@ -204,6 +204,44 @@ class TestNetworkManager(BaseNetworkManagerTest):
             self.env.clusters[0],
             consts.NETWORKS.fuelweb_admin)
 
+    def test_vip_for_admin_network_is_free(self):
+        admin_net_id = self.env.network_manager.get_admin_network_group_id()
+        map(
+            self.db.delete,
+            self.db.query(IPAddrRange).filter_by(network_group_id=admin_net_id)
+        )
+        admin_range = IPAddrRange(
+            first='10.20.0.3',
+            last='10.20.0.254',
+            network_group_id=admin_net_id
+        )
+        self.db.add(admin_range)
+        self.db.flush()
+
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True, "ip": "10.20.0.3"},
+                {"pending_addition": True, "api": True, "ip": "10.20.0.4"},
+                {"pending_addition": True, "api": True, "ip": "10.20.0.5"},
+            ]
+        )
+        # These nodes are "bootstrapped". They have an IP but don't yet
+        # belong to a cluster. Because fuelweb_admin is a shared network
+        # these IPs should not be used for a VIP in any cluster.
+        self.env.create_node(ip="10.20.0.6")
+        self.env.create_node(ip="10.20.0.7")
+        self.env.create_node(ip="10.20.0.8")
+
+        self.env.network_manager.assign_admin_ips(cluster.nodes)
+        admin_vip = self.env.network_manager.assign_vip(
+            cluster,
+            consts.NETWORKS.fuelweb_admin
+        )
+
+        node_ips = [n.ip for n in self.env.nodes]
+        self.assertNotIn(admin_vip, node_ips)
+
     def test_get_node_networks_for_vlan_manager(self):
         cluster = self.env.create(
             cluster_kwargs={},

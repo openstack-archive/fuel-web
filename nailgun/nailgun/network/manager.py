@@ -320,6 +320,7 @@ class NetworkManager(object):
         group_id = objects.Cluster.get_controllers_group_id(cluster)
         network = db().query(NetworkGroup).\
             filter_by(name=network_name, group_id=group_id).first()
+        ips_in_use = None
 
         # FIXME:
         #   Built-in fuelweb_admin network doesn't belong to any node
@@ -343,8 +344,16 @@ class NetworkManager(object):
                                                        network):
             return cluster_vip.ip_addr
 
+        if network_name == consts.NETWORKS.fuelweb_admin:
+            # Nodes not currently assigned to a cluster will still
+            # have an IP from the appropriate admin network assigned.
+            # So we much account for ALL admin IPs, not just the ones
+            # allocated in the current cluster.
+            node_ips = db().query(Node.ip).all()
+            ips_in_use = set(ip[0] for ip in node_ips)
+
         # IP address has not been assigned, let's do it
-        vip = cls.get_free_ips(network)[0]
+        vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
         ne_db = IPAddr(network=network.id, ip_addr=vip, vip_type=vip_type)
         db().add(ne_db)
         db().flush()
@@ -518,13 +527,14 @@ class NetworkManager(object):
         return result
 
     @classmethod
-    def get_free_ips(cls, network_group, num=1):
+    def get_free_ips(cls, network_group, num=1, ips_in_use=None):
         """Returns list of free IP addresses for given Network Group
         """
+        ips_in_use = ips_in_use or set()
         ip_ranges = [IPRange(r.first, r.last)
                      for r in network_group.ip_ranges]
         return cls.get_free_ips_from_ranges(
-            network_group.name, ip_ranges, set(), num)
+            network_group.name, ip_ranges, ips_in_use, num)
 
     @classmethod
     def _get_ips_except_admin(cls, node_id=None,

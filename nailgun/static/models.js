@@ -784,7 +784,7 @@ define([
     models.InterfaceNetworks = BaseCollection.extend({
         constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
@@ -805,7 +805,7 @@ define([
     models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
         model: models.Network,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
@@ -933,6 +933,13 @@ define([
                 var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'), true);
                 if (floatingRangesErrors.length) {
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
+                }
+            }
+	            var networkWithBaremetalRange = attrs.networks.filter(function(network) {return network.get('meta').baremetal_range_var;})[0];
+            if (networkWithBaremetalRange && !_.has(networksErrors[networkWithBaremetalRange.id], 'cidr')) {
+                var baremetalRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('baremetal_ranges'), networkWithBaremetalRange.get('cidr'));
+                if (baremetalRangesErrors.length) {
+                    networkingParametersErrors.baremetal_ranges = baremetalRangesErrors;
                 }
             }
             var nameserverErrors = [];

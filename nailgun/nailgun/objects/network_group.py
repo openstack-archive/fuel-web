@@ -47,33 +47,8 @@ class NetworkGroup(NailgunObject):
         :returns: instance of new NetworkGroup
         """
         instance = super(NetworkGroup, cls).create(data)
-        notation = instance.meta.get('notation')
-        if notation:
-            ip_range = models.IPAddrRange(network_group_id=instance.id)
-            try:
-                if notation == 'cidr':
-                    cidr = IPNetwork(instance.cidr).cidr
-                    ip_range.first = str(cidr[2])
-                    ip_range.last = str(cidr[-2])
-                elif notation == 'ip_ranges' and instance.meta.get('ip_range'):
-                    ip_range.first = instance.meta['ip_range'][0]
-                    ip_range.last = instance.meta['ip_range'][1]
-                else:
-                    raise errors.CannotCreate()
-            except (
-                errors.CannotCreate,
-                IndexError,
-                TypeError
-            ):
-                raise errors.CannotCreate(
-                    "IPAddrRange object cannot be created for network '{0}' "
-                    "with notation='{1}', ip_range='{2}'".format(
-                        instance.name,
-                        instance.meta.get('notation'),
-                        instance.meta.get('ip_range'))
-                )
-            db().add(ip_range)
-            db().flush()
+        cls._create_ip_ranges_on_notation(instance)
+        db().refresh(instance)
         return instance
 
     @classmethod
@@ -101,6 +76,48 @@ class NetworkGroup(NailgunObject):
         # attribute for the orm model object
         data.pop('ip_ranges', None)
         return super(NetworkGroup, cls).update(instance, data)
+
+    @classmethod
+    def _create_ip_ranges_on_notation(cls, instance):
+        """Create IP-address ranges basing on 'notation' field of
+        Network group 'meta' content.
+
+        :param instance: NetworkGroup instance
+        :type instance: models.NetworkGroup
+        :return: None
+        """
+        notation = instance.meta.get("notation")
+        if notation:
+            try:
+                if notation == 'cidr':
+                    cidr = IPNetwork(instance.cidr).cidr
+                    ip_range = models.IPAddrRange(
+                        first=str(cidr[2]),
+                        last=str(cidr[-2])
+                    )
+                    if not instance.meta.get('use_gateway'):
+                        ip_range.first = str(cidr[1])
+                elif notation == 'ip_ranges' and instance.meta.get("ip_range"):
+                    ip_range = models.IPAddrRange(
+                        first=instance.meta["ip_range"][0],
+                        last=instance.meta["ip_range"][1]
+                    )
+                else:
+                    raise errors.CannotCreate()
+            except (
+                errors.CannotCreate,
+                IndexError,
+                TypeError
+            ):
+                raise errors.CannotCreate(
+                    "IPAddrRange object cannot be created for network '{0}' "
+                    "with notation='{1}', ip_range='{2}'".format(
+                        instance.name,
+                        instance.meta.get('notation'),
+                        instance.meta.get('ip_range'))
+                )
+            instance.ip_ranges.append(ip_range)
+            db().flush()
 
     @classmethod
     def _regenerate_ip_ranges_on_notation(cls, instance, data):

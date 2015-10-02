@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import random
 import sys
 
@@ -153,12 +154,66 @@ class TestDriver(base.BaseTestCase):
             host_string="remote_host", key_filename="path_to_key",
             timeout=2, warn_only=True, abort_on_prompts=True)
 
-        mexecute.reset_mock()
-        driver = shotgun.driver.Driver({}, conf)
+    @mock.patch('shotgun.driver.os', autospec=True)
+    @mock.patch('shotgun.driver.glob.glob')
+    @mock.patch('shotgun.driver.utils.execute')
+    def test_driver_get_local_dir(self, mexecute, mglob, mos):
+        mock_walk = [
+            (
+                '/var/log',
+                ['3'],  # dir
+                ['1', '2', 'remote_file']
+            ),
+            ('/var/log/3',
+             ['6'],  # dir
+             ['5', '4']),
+            ('/var/log/3/6', [], [])
+        ]
+        mos.walk.return_value = mock_walk
+        mos.path.isdir.return_value = True
+        mglob.return_value = ['/var/log']
+        driver = shotgun.driver.Driver({}, mock.Mock())
+        driver.local = True
+
+        remote_path = "/var/log"
+        target_path = "/var/www/dump/log"
+
+        mos.path.join.side_effect = os.path.join
+        mos.path.dirname.side_effect = os.path.dirname
+
         driver.get(remote_path, target_path)
-        self.assertEqual(mexecute.mock_calls, [
-            mock.call('mkdir -p "{0}"'.format(target_path)),
-            mock.call('cp -r "{0}" "{1}"'.format(remote_path, target_path))])
+        expected_calls = [
+            mock.call('mkdir -p "/var/www/dump/log"'),
+            mock.call('mkdir -p "/var/www/dump/var/log/3"'),
+            mock.call('ln -fs "/var/log/1" "/var/www/dump/var/log/1"'),
+            mock.call('ln -fs "/var/log/2" "/var/www/dump/var/log/2"'),
+            mock.call('ln -fs "/var/log/remote_file" '
+                      '"/var/www/dump/var/log/remote_file"'),
+            mock.call('mkdir -p "/var/www/dump/var/log/3/6"'),
+            mock.call('ln -fs "/var/log/3/5" "/var/www/dump/var/log/3/5"'),
+            mock.call('ln -fs "/var/log/3/4" "/var/www/dump/var/log/3/4"')]
+        self.assertEqual(expected_calls, mexecute.call_args_list)
+
+    @mock.patch('shotgun.driver.os', autospec=True)
+    @mock.patch('shotgun.driver.glob.glob')
+    @mock.patch('shotgun.driver.utils.execute')
+    def test_driver_get_local_file(self, mexecute, mglob, mos):
+        mos.path.isdir.return_value = False
+        mglob.return_value = ['/var/log/atop/atop_current']
+        driver = shotgun.driver.Driver({}, mock.Mock())
+        driver.local = True
+        remote_path = "/var/log/atop/atop_current"
+        target_path = "/var/www/dump/var/log/atop"
+
+        mos.path.join.side_effect = os.path.join
+        mos.path.basename = os.path.basename
+
+        driver.get(remote_path, target_path)
+        expected_calls = [
+            mock.call('mkdir -p "/var/www/dump/var/log/atop"'),
+            mock.call('ln -fs "/var/log/atop/atop_current" '
+                      '"/var/www/dump/var/log/atop/atop_current"')]
+        self.assertEqual(expected_calls, mexecute.call_args_list)
 
     def test_use_timeout_from_global_conf(self):
         data = {}

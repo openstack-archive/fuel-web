@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
 import logging
 import os
 import pprint
@@ -125,11 +126,29 @@ class Driver(object):
                     except SystemExit:
                         logger.error("Fabric aborted this iteration")
             else:
-                logger.debug("Getting local file: cp -r %s %s",
+                logger.debug("Symlinking local files: %s into directory %s",
                              path, target_path)
                 utils.execute('mkdir -p "{0}"'.format(target_path))
-                return utils.execute('cp -r "{0}" "{1}"'.format(path,
-                                                                target_path))
+                # FIXME: Use fnmatch in order support ** as glob in py2.x
+                # doesn't support it.
+                for name in glob.glob(path):
+                    if os.path.isdir(name):
+                        for root, dirs, files in os.walk(name):
+                            cwd = os.path.join(
+                                os.path.dirname(target_path.rstrip('/')),
+                                root.lstrip('/'))
+                            for d in dirs:
+                                dirname = os.path.join(cwd, d)
+                                utils.execute('mkdir -p "{0}"'.format(dirname))
+                            for f in files:
+                                source = os.path.join(root, f)
+                                dest = os.path.join(cwd, f)
+                                utils.execute('ln -fs "{0}" "{1}"'.format(
+                                    source, dest))
+                    else:
+                        utils.execute('ln -fs "{0}" "{1}"'.format(
+                            name, os.path.join(target_path,
+                                               os.path.basename(name))))
         except Exception as e:
             logger.error("Error occured: %s", str(e))
 

@@ -81,7 +81,7 @@ class Settings(object):
         try:
             infile = file(yamlfile, 'r')
             settings = yaml.load(infile)
-            return settings
+            return settings or OrderedDict()
         except Exception:
             if yamlfile is not None:
                 logging.error("Unable to read YAML: %s", yamlfile)

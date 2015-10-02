@@ -82,8 +82,8 @@ class FuelSetup(object):
         self.footer = None
         self.frame = None
         self.screen = None
-        self.defaultsettingsfile = "%s/settings.yaml" \
-                                   % (os.path.dirname(__file__))
+        self.defaultsettingsfile = os.path.join(os.path.dirname(__file__),
+                                                "settings.yaml")
         self.settingsfile = "/etc/fuel/astute.yaml"
         self.managediface = "eth0"
         #Set to true to move all settings to end
@@ -398,6 +398,8 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
         log.error("Duplicate host found with IP {0}".format(ip))
         print("ERROR: Duplicate host found with IP {0}".format(ip))
 
+    defaultsettingsfile = os.path.join(os.path.dirname(__file__),
+                                       "settings.yaml")
     newsettings = Settings().read(settingsfile)
     settings = \
         {
@@ -453,7 +455,7 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
                 newsettings[setting] = settings[setting]
 
     #Write astute.yaml
-    Settings().write(newsettings, defaultsfile=None,
+    Settings().write(newsettings, defaultsfile=defaultsettingsfile,
                      outfn=settingsfile)
 
 

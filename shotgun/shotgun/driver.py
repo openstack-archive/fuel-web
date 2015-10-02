@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
 import logging
 import os
 import pprint
@@ -121,11 +122,28 @@ class Driver(object):
                     except SystemExit:
                         logger.error("Fabric aborted this iteration")
             else:
-                logger.debug("Getting local file: cp -r %s %s",
-                             path, target_path)
                 utils.execute('mkdir -p "{0}"'.format(target_path))
-                return utils.execute('cp -r "{0}" "{1}"'.format(path,
-                                                                target_path))
+                for name in glob.glob(path):
+                    if os.path.isdir(name):
+                        for root, dirs, files in os.walk(path):
+                            cwd = os.path.join(
+                                os.path.dirname(target_path.rstrip('/')),
+                                root.lstrip('/'))
+                            utils.execute('mkdir -p "{0}"'.format(cwd))
+                            for d in dirs:
+                                dirname = os.path.join(cwd, d)
+                                utils.execute('mkdir -p "{0}"'.format(dirname))
+                            for f in files:
+                                source = os.path.join(root, f)
+                                dest = os.path.join(cwd, f)
+                                if os.path.exists(dest):
+                                    utils.execute('rm -f "{0}"'.format(dest))
+                                utils.execute('ln -s "{0}" "{1}"'.format(
+                                    source, dest))
+                    else:
+                        utils.execute('ln -s "{0}" "{1}"'.format(
+                            name, os.path.join(target_path,
+                                               os.path.basename(name))))
         except Exception as e:
             logger.error("Error occured: %s", str(e))
 

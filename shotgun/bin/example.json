@@ -17,22 +17,6 @@
                 "dbname": "nailgun",
                 "username": "postgres"
             },
-            {
-                "type": "subs",
-                "path": "/tmp/111",
-                "subs": {
-                    "line": "LINE",
-                    "password": "PASSWORD"
-               }
-            },
-            {
-                "type": "subs",
-                "path": "/tmp/222.gz",
-                "subs": {
-                    "line": "LINE",
-                    "password": "PASSWORD"
-               }
-            }
         ],
         "slave": [
             {

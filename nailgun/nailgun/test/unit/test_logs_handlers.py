@@ -392,9 +392,8 @@ class TestLogs(BaseIntegrationTest):
             'master': {
                 'hosts': [],
                 'objects': [{
-                    'type': 'subs',
+                    'type': 'dir',
                     'path': '/var/log/remote',
-                    'subs': {}
                 }],
             },
             'slave': {
@@ -421,9 +420,8 @@ class TestLogs(BaseIntegrationTest):
                 'master': {
                     'hosts': [],
                     'objects': [{
-                        'type': 'subs',
+                        'type': 'dir',
                         'path': '/var/log/remote',
-                        'subs': {}
                     }],
                 },
                 'slave': {

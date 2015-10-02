@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import fnmatch
-import os
 import random
 import sys
 
@@ -38,7 +36,6 @@ class TestDriver(base.BaseTestCase):
         types = {
             "file": "File",
             "dir": "Dir",
-            "subs": "Subs",
             "postgres": "Postgres",
             "command": "Command"
         }
@@ -220,110 +217,3 @@ class TestFile(base.BaseTestCase):
 
         mget.assert_called_with(data["path"], target_path)
         mremove.assert_called_with(dir_driver.full_dst_path, data['exclude'])
-
-
-class TestSubs(base.BaseTestCase):
-    def setUp(self):
-        self.data = {
-            "type": "subs",
-            "path": "/remote_dir/remote_file",
-            "host": {
-                "address": "remote_host",
-            },
-            "subs": {
-                "line0": "LINE0",
-                "line1": "LINE1"
-            }
-        }
-
-        self.conf = mock.MagicMock()
-        self.conf.target = "/target"
-
-        self.sedscript = mock.MagicMock()
-        self.sedscript.name = "SEDSCRIPT"
-        self.sedscript.write = mock.MagicMock()
-
-    @mock.patch('shotgun.driver.tempfile.NamedTemporaryFile')
-    @mock.patch('shotgun.driver.Driver.get')
-    @mock.patch('shotgun.driver.utils.execute')
-    def test_sed(self, mexecute, mget, mntemp):
-        mexecute.return_value = ("RETURN_CODE", "STDOUT", "STDERR")
-        mntemp.return_value = self.sedscript
-
-        subs_driver = shotgun.driver.Subs(self.data, self.conf)
-        subs_driver.sed("from_file", "to_file")
-        self.assertEqual(self.sedscript.write.mock_calls, [
-            mock.call("s/{0}/{1}/g\n".format(old, new))
-            for old, new in self.data["subs"].iteritems()])
-        shotgun.driver.utils.execute.assert_called_with(
-            "cat from_file | sed -f SEDSCRIPT", to_filename="to_file")
-
-        subs_driver.sed("from_file.gz", "to_file.gz")
-        shotgun.driver.utils.execute.assert_called_with(
-            "cat from_file.gz | gunzip -c | sed -f SEDSCRIPT | gzip -c",
-            to_filename="to_file.gz")
-
-        subs_driver.sed("from_file.bz2", "to_file.bz2")
-        shotgun.driver.utils.execute.assert_called_with(
-            "cat from_file.bz2 | bunzip2 -c | sed -f SEDSCRIPT | bzip2 -c",
-            to_filename="to_file.bz2")
-
-    @mock.patch('shotgun.driver.os.walk')
-    @mock.patch('shotgun.driver.Subs.sed')
-    @mock.patch('shotgun.driver.Driver.get')
-    @mock.patch('shotgun.driver.utils.execute')
-    def test_snapshot(self, mexecute, mdriverget, msed, mwalk):
-        mexecute.return_value = ("RETURN_CODE", "STDOUT", "STDERR")
-
-        """ 1. Should get remote (or local) file (or directory)
-        2. Should put it into /target/host.domain.tld
-        3. Should walk through and check if files match given path pattern
-        4. If matched, sed them
-        """
-
-        """this return_value corresponds to the following structure
-        /target/remote_host/remote_dir/
-            /target/remote_host/remote_dir/remote_file
-            /target/remote_host/remote_dir/1
-            /target/remote_host/remote_dir/2
-            /target/remote_host/remote_dir/3/
-                /target/remote_host/remote_dir/3/4
-                /target/remote_host/remote_dir/3/5
-                /target/remote_host/remote_dir/3/6/
-        """
-        mock_walk = [
-            (
-                '/target/remote_host/remote_dir',
-                ['3'],
-                ['1', '2', 'remote_file']
-            ),
-            ('/target/remote_host/remote_dir/3', ['6'], ['5', '4']),
-            ('/target/remote_host/remote_dir/3/6', [], [])
-        ]
-        mwalk.return_value = mock_walk
-
-        subs_driver = shotgun.driver.Subs(self.data, self.conf)
-        subs_driver.snapshot()
-
-        sed_calls = []
-        execute_calls = []
-        for root, _, files in mock_walk:
-            for filename in files:
-                fullfilename = os.path.join(root, filename)
-                # /target/remote_host
-                tgt_host = os.path.join(
-                    self.conf.target, self.data["host"]["address"])
-                rel_tgt_host = os.path.relpath(fullfilename, tgt_host)
-                # /remote_dir/remote_file
-                match_orig_path = os.path.join("/", rel_tgt_host)
-                if not fnmatch.fnmatch(match_orig_path, self.data["path"]):
-                    continue
-                tempfilename = "STDOUT"
-                execute_calls.append(mock.call("mktemp"))
-                sed_calls.append(mock.call(fullfilename, tempfilename))
-                execute_calls.append(
-                    mock.call('mv -f "{0}" "{1}"'.format(
-                        tempfilename, fullfilename)))
-
-        self.assertEqual(msed.mock_calls, sed_calls)
-        self.assertEqual(mexecute.mock_calls, execute_calls)

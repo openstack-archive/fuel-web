@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import fnmatch
 import logging
 import os
 import pprint
@@ -20,7 +19,6 @@ import pwd
 import re
 import stat
 import sys
-import tempfile
 import xmlrpclib
 
 import fabric.api
@@ -52,7 +50,6 @@ class Driver(object):
         return {
             "file": File,
             "dir": Dir,
-            "subs": Subs,
             "postgres": Postgres,
             "xmlrpc": XmlRpc,
             "command": Command,
@@ -166,79 +163,6 @@ class File(Driver):
             utils.remove(self.full_dst_path, self.exclude)
 
 Dir = File
-
-
-class Subs(File):
-    def __init__(self, data, conf):
-        super(Subs, self).__init__(data, conf)
-        self.subs = self.data["subs"]
-
-    def decompress(self, filename):
-        if re.search(ur".+\.gz$", filename):
-            return "gunzip -c"
-        elif re.search(ur".+\.bz2$", filename):
-            return "bunzip2 -c"
-        return ""
-
-    def compress(self, filename):
-        if re.search(ur".+\.gz$", filename):
-            return "gzip -c"
-        elif re.search(ur".+\.bz2$", filename):
-            return "bzip2 -c"
-        return ""
-
-    def sed(self, from_filename, to_filename, gz=False):
-        sedscript = tempfile.NamedTemporaryFile()
-        logger.debug("Sed script: %s", sedscript.name)
-        for orig, new in self.subs.iteritems():
-            logger.debug("Sed script: s/%s/%s/g", orig, new)
-            sedscript.write("s/{0}/{1}/g\n".format(orig, new))
-            sedscript.flush()
-        command = " | ".join(filter(lambda x: x != "", [
-            "cat {0}".format(from_filename),
-            self.decompress(from_filename),
-            "sed -f {0}".format(sedscript.name),
-            self.compress(from_filename),
-        ]))
-        utils.execute(command, to_filename=to_filename)
-        sedscript.close()
-
-    def snapshot(self):
-        """Make a snapshot
-
-        Example:
-        self.conf.target IS /target
-        self.host IS host.domain.tld
-        self.path IS /var/log/somedir (it can be /var/log/somedir*)
-        self.target_path IS /target/host.domain.tld/var/log
-
-        1. we get remote directory host.domain.tld:/var/log/somedir
-        2. we put it into /target/host.domain.tld/var/log
-        3. we walk through /target/host.domain.tld/var/log
-        4. we check fnmatch(/var/log/*, /var/log/somedir)
-        """
-        # 1.
-        # 2.
-        super(Subs, self).snapshot()
-        # 3.
-        walk = os.walk(self.target_path)
-        for root, _, files in walk:
-            for filename in files:
-                # /target/host.domain.tld/var/log/somedir/1/2
-                fullfilename = os.path.join(root, filename)
-                # 4.
-                # /target/host.domain.tld
-                tgt_host = os.path.join(self.conf.target, self.host)
-                # var/log/somedir/1/2
-                rel_tgt_host = os.path.relpath(fullfilename, tgt_host)
-                # /var/log/somedir/1/2
-                match_orig_path = os.path.join("/", rel_tgt_host)
-                if not fnmatch.fnmatch(match_orig_path, self.path):
-                    continue
-                tempfilename = utils.execute("mktemp")[1].strip()
-                self.sed(fullfilename, tempfilename)
-                utils.execute('mv -f "{0}" "{1}"'.format(tempfilename,
-                                                         fullfilename))
 
 
 class Postgres(Driver):

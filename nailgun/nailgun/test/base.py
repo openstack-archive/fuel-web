@@ -1069,6 +1069,7 @@ class EnvironmentManager(object):
             "group_id": Cluster.get_default_group(cluster).id,
             "meta": {
                 "notation": consts.NETWORK_NOTATION.cidr,
+                "use_gateway": True,
                 "map_priority": 2}
         }
         ng.update(kwargs)

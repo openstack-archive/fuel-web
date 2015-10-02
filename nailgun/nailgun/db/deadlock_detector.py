@@ -21,6 +21,7 @@ from nailgun.logger import logger
 
 ALLOWED_LOCKS_CHAINS = [
     ('attributes', 'clusters'),
+    ('attributes', 'clusters', 'ip_addr_ranges'),
     ('clusters', 'nodes'),
     ('tasks', 'clusters'),
     ('tasks', 'clusters', 'nodes'),

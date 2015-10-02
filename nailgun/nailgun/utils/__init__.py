@@ -142,7 +142,7 @@ class AttributesGenerator(object):
         try:
             length = int(arg)
         except Exception:
-            length = 8
+            length = 24
         chars = string.letters + string.digits
         return u''.join([choice(chars) for _ in xrange(length)])
 

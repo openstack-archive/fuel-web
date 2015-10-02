@@ -411,7 +411,7 @@ class TestAttributes(BaseIntegrationTest):
         )
         self.assertEqual(
             len(editable["workloads_collector"]["password"]["value"]),
-            8
+            24
         )
         self.assertEqual(
             set(editable["workloads_collector"]["metadata"].keys()),

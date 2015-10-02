@@ -56,3 +56,12 @@ class TestAttributesGenerators(BaseTestCase):
         self.assertEqual(sec, 1437172408)
         self.assertEqual(usec, 0)
         self.assertEqual(length, 16)
+
+    def test_password_generate(self):
+        password_str = AttributesGenerator.password()
+        self.assertEqual(len(password_str), 24)
+        self.assertTrue(all(password_str))
+
+        password_str = AttributesGenerator.password(8)
+        self.assertEqual(len(password_str), 8)
+        self.assertTrue(all(password_str))

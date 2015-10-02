@@ -51,7 +51,7 @@ class TestHandlers(BaseIntegrationTest):
         ng_data = resp.json_body
         ng = objects.NetworkGroup.get_by_uid(ng_data['id'])
         self.assertEqual(len(ng.ip_ranges), 1)
-        self.assertEqual(ng.ip_ranges[0].first, "10.3.0.2")
+        self.assertEqual(ng.ip_ranges[0].first, "10.3.0.1")
         self.assertEqual(ng.ip_ranges[0].last, "10.3.0.254")
 
     def test_create_network_group_w_ip_range(self):

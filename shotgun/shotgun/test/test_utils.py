@@ -58,7 +58,7 @@ class TestUtils(base.BaseTestCase):
         self.assertEqual(compress_env['XZ_OPT'], level)
         self.assertEqual(
             compress_call[0][0],
-            'tar cJvf /path/target.tar.xz -C /path target')
+            'tar cJhvf /path/target.tar.xz -C /path target')
 
         self.assertEqual(rm_call[0][0], 'rm -r /path/target')
 

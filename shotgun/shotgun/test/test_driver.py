@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import random
 import sys
 
@@ -153,12 +154,71 @@ class TestDriver(base.BaseTestCase):
             host_string="remote_host", key_filename="path_to_key",
             timeout=2, warn_only=True, abort_on_prompts=True)
 
-        mexecute.reset_mock()
-        driver = shotgun.driver.Driver({}, conf)
+    @mock.patch('shotgun.driver.os', autospec=True)
+    @mock.patch('shotgun.driver.glob.glob')
+    @mock.patch('shotgun.driver.utils.execute')
+    def test_driver_get_local_dir(self, mexecute, mglob, mos):
+        mock_walk = [
+            (
+                '/target/remote_host/remote_dir',
+                ['3'],  # dir
+                ['1', '2', 'remote_file']
+            ),
+            ('/target/remote_host/remote_dir/3',
+             ['6'],  # dir
+             ['5', '4']),
+            ('/target/remote_host/remote_dir/3/6', [], [])
+        ]
+        mos.walk.return_value = mock_walk
+        mos.path.isdir.return_value = True
+        mglob.return_value = ['/target/remote_host/remote_dir']
+        driver = shotgun.driver.Driver({}, mock.Mock())
+        driver.local = True
+        remote_path = "/remote_dir/remote_file"
+        target_path = "/target_dir"
+
+        mos.path.join.side_effect = os.path.join
+
         driver.get(remote_path, target_path)
-        self.assertEqual(mexecute.mock_calls, [
-            mock.call('mkdir -p "{0}"'.format(target_path)),
-            mock.call('cp -r "{0}" "{1}"'.format(remote_path, target_path))])
+        expected_calls = [
+            mock.call('mkdir -p "/target_dir"'),
+            mock.call('mkdir -p "/target_dir/target/remote_host/remote_dir/'
+                      '3"'),
+            mock.call('ln -fs "/target/remote_host/remote_dir/1" '
+                      '"/target_dir/target/remote_host/remote_dir/1"'),
+            mock.call('ln -fs "/target/remote_host/remote_dir/2" '
+                      '"/target_dir/target/remote_host/remote_dir/2"'),
+            mock.call('ln -fs "/target/remote_host/remote_dir/remote_file" '
+                      '"/target_dir/target/remote_host/remote_dir/remote_file'
+                      '"'),
+            mock.call('mkdir -p "/target_dir/target/remote_host/remote_dir/3/'
+                      '6"'),
+            mock.call('ln -fs "/target/remote_host/remote_dir/3/5" '
+                      '"/target_dir/target/remote_host/remote_dir/3/5"'),
+            mock.call('ln -fs "/target/remote_host/remote_dir/3/4" '
+                      '"/target_dir/target/remote_host/remote_dir/3/4"')]
+        self.assertEqual(expected_calls, mexecute.call_args_list)
+
+    @mock.patch('shotgun.driver.os', autospec=True)
+    @mock.patch('shotgun.driver.glob.glob')
+    @mock.patch('shotgun.driver.utils.execute')
+    def test_driver_get_local_file(self, mexecute, mglob, mos):
+        mos.path.isdir.return_value = False
+        mglob.return_value = ['/target/remote_host/remote_dir/remote_file']
+        driver = shotgun.driver.Driver({}, mock.Mock())
+        driver.local = True
+        remote_path = "/remote_dir/remote_file"
+        target_path = "/target_dir"
+
+        mos.path.join.side_effect = os.path.join
+        mos.path.basename = os.path.basename
+
+        driver.get(remote_path, target_path)
+        expected_calls = [
+            mock.call('mkdir -p "/target_dir"'),
+            mock.call('ln -fs "/target/remote_host/remote_dir/remote_file" '
+                      '"/target_dir/remote_file"')]
+        self.assertEqual(expected_calls, mexecute.call_args_list)
 
     def test_use_timeout_from_global_conf(self):
         data = {}

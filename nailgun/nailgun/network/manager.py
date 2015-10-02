@@ -1276,61 +1276,31 @@ class NetworkManager(object):
         group_id = gid or objects.Cluster.get_default_group(cluster).id
         networks_metadata = cluster.release.networks_metadata
         networks_list = networks_metadata[cluster.net_provider]["networks"]
-        used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
-
-        def check_range_in_use_already(cidr_range):
-            for n in used_nets:
-                if cls.is_range_intersection(n, cidr_range):
-                    logger.warn("IP range {0} is in use already".format(
-                        cidr_range))
-                    break
-            used_nets.append(cidr_range)
 
         for net in networks_list:
             if "seg_type" in net \
                     and neutron_segment_type != net['seg_type']:
                 continue
-            vlan_start = net.get("vlan_start")
             cidr, gw, cidr_gw = None, None, None
             if net.get("notation"):
                 if net.get("cidr"):
                     cidr = IPNetwork(net["cidr"]).cidr
                     cidr_gw = str(cidr[1])
                 if net["notation"] == 'cidr' and cidr:
-                    new_ip_range = IPAddrRange(
-                        first=str(cidr[2]),
-                        last=str(cidr[-2])
-                    )
                     if net.get('use_gateway'):
                         gw = cidr_gw
-                    else:
-                        new_ip_range.first = cidr_gw
-                    check_range_in_use_already(cidr)
                 elif net["notation"] == 'ip_ranges' and net.get("ip_range"):
-                    new_ip_range = IPAddrRange(
-                        first=net["ip_range"][0],
-                        last=net["ip_range"][1]
-                    )
                     gw = net.get('gateway') or cidr_gw \
                         if net.get('use_gateway') else None
-                    check_range_in_use_already(IPRange(new_ip_range.first,
-                                                       new_ip_range.last))
-
-            nw_group = NetworkGroup(
-                release=cluster.release.id,
-                name=net['name'],
-                cidr=str(cidr) if cidr else None,
-                gateway=gw,
-                group_id=group_id,
-                vlan_start=vlan_start,
-                meta=net
-            )
-            db().add(nw_group)
-            db().flush()
-            if net.get("notation"):
-                nw_group.ip_ranges.append(new_ip_range)
-                db().flush()
-                cls.cleanup_network_group(nw_group)
+            data = {}
+            data['release'] = cluster.release.id
+            data['name'] = net['name']
+            data['cidr'] = str(cidr) if cidr else None
+            data['gateway'] = gw
+            data['group_id'] = group_id
+            data['vlan_start'] = net['vlan_start']
+            data['meta'] = net
+            objects.NetworkGroup.create(data)
 
     @classmethod
     def update_networks(cls, network_configuration):

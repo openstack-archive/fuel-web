@@ -963,7 +963,7 @@
     "zh-CN": {
         "translation": {
             "language": "CN",
-            "language_name": "中国语文",
+            "language_name": "中文",
             "common": {
                 "title": "Fuel Dashboard",
                 "select_all": "选择全部",
@@ -974,7 +974,7 @@
                 "save_settings_button": "保存设置",
                 "cancel_button": "取消",
                 "apply_changes_button": "应用变更",
-                "not_available": "N/A",
+                "not_available": "不适用",
                 "size": {
                     "byte": "byte",
                     "byte_plural": "bytes",
@@ -1018,7 +1018,8 @@
             "navbar": {
                 "environments": "环境",
                 "releases": "版本",
-                "support": "支持",
+                "plugins": "插件",
+                "support": "技术支持",
                 "stats": {
                     "total": ["全部", "节点"],
                     "total_plural": ["全部", "节点"],
@@ -1030,9 +1031,9 @@
                 "home": "首页",
                 "environments": "环境",
                 "releases": "版本",
-                "support": "支持",
+                "support": "技术支持",
                 "notifications": "通知",
-                "capacity": "Capacity"
+                "capacity": "容量"
             },
             "notifications_page": {
                 "title": "通知"
@@ -1042,7 +1043,7 @@
                 "no_notifications_text": "没有通知可显示"
             },
             "support_page": {
-                "title": "支持",
+                "title": "技术支持",
                 "contact_text": "欢迎提出反馈和改进意见，请点击下面的按钮，我们将尽快回复您。",
                 "irc_text": "如果您有任何问题，可通过IRC（freenode.net网络的 #fuel 频道）联系开发者。",
                 "log_text": "如果您在使用Fuel Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
@@ -1061,10 +1062,10 @@
                 "title": "版本",
                 "name": "名称",
                 "version": "发布",
-                "no_releases_message": "没有版本可用",
+                "no_releases_message": "没有发布信息",
                 "release": {
                     "error": "错误",
-                    "not_available": "不可用"
+                    "not_available": "不存在"
                 }
             },
             "clusters_page": {
@@ -1072,8 +1073,8 @@
                 "create_cluster_text": "新建OpenStack环境",
                 "cluster_hardware_nodes": "节点",
                 "cluster_hardware_cpu": "CPU (cores)",
-                "cluster_hardware_hdd": "HDD",
-                "cluster_hardware_ram": "RAM"
+                "cluster_hardware_hdd": "硬盘",
+                "cluster_hardware_ram": "内存"
             },
             "cluster_page": {
                 "tabs": {
@@ -1082,7 +1083,7 @@
                     "settings": "设置",
                     "logs": "日志",
                     "healthcheck": "健康检查",
-                    "actions": "动作"
+                    "actions": "操作"
                 },
                 "nodes_tab": {
                     "roles": "角色",
@@ -1297,7 +1298,7 @@
                         "node_name": "节点名称",
                         "node_mac_address": "节点MAC地址",
                         "node_interface": "节点接口",
-                        "expected_vlan": "Expected VLAN (未接收)"
+                        "expected_vlan": "应存在的VLAN "
                     },
                     "network": {
                         "ip_range": "IP范围",
@@ -1317,7 +1318,7 @@
                     "logs": "日志",
                     "node": "节点",
                     "source": "来源",
-                    "min_level": "最低级别",
+                    "min_level": "最低严重性级别",
                     "show": "显示",
                     "log_alert": "无法获取日志",
                     "source_alert": "无法获取日志来源",
@@ -1333,8 +1334,8 @@
                     "stop_tests_button": "停止测试",
                     "deploy_alert": "在测试之前必须先部署新的OpenStack环境",
                     "not_available_alert": "OSTF服务不可用",
-                    "expected_duration": "Expected Duration",
-                    "actual_duration": "Actual Duration",
+                    "expected_duration": "预期的时长",
+                    "actual_duration": "实际时长",
                     "status": "状态"
                 },
                 "deploy_changes": "部署变更",

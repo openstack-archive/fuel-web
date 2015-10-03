@@ -76,11 +76,13 @@ class TaskCollectionHandler(CollectionHandler):
         :http: * 200 (OK)
                * 404 (task not found in db)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
+        request_data = web.input(cluster_id=None, in_orchestrator=None)
 
-        if cluster_id is not None:
-            return self.collection.to_json(
-                self.collection.get_by_cluster_id(cluster_id)
-            )
-        else:
-            return self.collection.to_json()
+        tasks = self.collection.eager(None, self.eager)
+        if request_data.cluster_id is not None:
+            tasks = tasks.get_by_cluster_id(request_data.cluster_id)
+        if request_data.in_orchestrator is not None:
+            tasks = tasks.filter_by(
+                in_orchestrator=request_data.in_orchestrator)
+
+        return self.collection.to_json(tasks)

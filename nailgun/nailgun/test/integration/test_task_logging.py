@@ -157,7 +157,9 @@ class TestTasksLogging(BaseIntegrationTest):
                 {"pending_addition": True, "pending_roles": ["compute"]},
             ]
         )
-        self.env.launch_deployment()
+        deploy_task = self.env.launch_deployment()
+        self.env.set_provision_task_in_orchestrator(deploy_task)
+        self.env.db.commit()
         self.env.stop_deployment()
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
@@ -261,7 +263,7 @@ class TestTasksLogging(BaseIntegrationTest):
         action_log = objects.ActionLog.get_by_kwargs(
             task_uuid=deploy_task.uuid, action_name=deploy_task.name)
         action_log.end_timestamp = None
-
+        self.env.set_provision_task_in_orchestrator(deploy_task)
         self.db.commit()
 
     @fake_tasks()

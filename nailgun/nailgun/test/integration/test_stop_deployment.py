@@ -50,6 +50,8 @@ class TestStopDeployment(BaseIntegrationTest):
     @fake_tasks(recover_nodes=False, tick_interval=1)
     def test_stop_deployment(self):
         supertask = self.env.launch_deployment()
+        self.env.set_provision_task_in_orchestrator(supertask)
+        self.env.db.commit()
         deploy_task_uuid = supertask.uuid
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
@@ -79,7 +81,9 @@ class TestStopDeployment(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_admin_ip_in_args(self, mocked_rpc):
-        self.env.launch_deployment()
+        deploy_task = self.env.launch_deployment()
+        self.env.set_provision_task_in_orchestrator(deploy_task)
+        self.env.db.commit()
         self.env.stop_deployment()
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         for n in args[1]["args"]["nodes"]:
@@ -97,6 +101,8 @@ class TestStopDeployment(BaseIntegrationTest):
         provision_task = self.env.launch_provisioning_selected(
             self.node_uids
         )
+        provision_task.in_orchestrator = True
+        self.db.flush()
         provision_task_uuid = provision_task.uuid
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
@@ -117,11 +123,13 @@ class TestStopDeployment(BaseIntegrationTest):
                 name=consts.TASK_NAMES.deployment,
                 uuid="deploy-{0}".format(uuid),
                 status=status,
+                in_orchestrator=True,
                 cluster_id=self.cluster.id)
             self.env.create_task(
                 name=consts.TASK_NAMES.provision,
                 uuid="provision-{0}".format(uuid),
                 status=status,
+                in_orchestrator=True,
                 cluster_id=self.cluster.id)
 
         self.env.stop_deployment()

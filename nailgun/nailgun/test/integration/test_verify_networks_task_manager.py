@@ -724,7 +724,9 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
     @fake_tasks()
     def test_verify_networks_after_stop(self):
         self.cluster = self.env.clusters[0]
-        self.env.launch_deployment()
+        deploy_task = self.env.launch_deployment()
+        self.env.set_provision_task_in_orchestrator(deploy_task)
+        self.env.db.commit()
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)

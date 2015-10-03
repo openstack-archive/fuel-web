@@ -65,6 +65,7 @@ from nailgun.objects import Node
 from nailgun.objects import NodeGroup
 from nailgun.objects import Plugin
 from nailgun.objects import Release
+from nailgun.objects import TaskCollection
 
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
@@ -1089,6 +1090,14 @@ class EnvironmentManager(object):
             headers=self.default_headers,
             expect_errors=expect_errors
         )
+
+    def set_provision_task_in_orchestrator(self, deploy_task):
+        cluster = self.clusters[0]
+        provision_task = TaskCollection.filter_by(
+            None, cluster_id=cluster.id,
+            name=consts.TASK_NAMES.provision, parent_id=deploy_task.id).\
+            order_by('-id').first()
+        provision_task.in_orchestrator = True
 
 
 class BaseTestCase(TestCase):

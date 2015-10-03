@@ -765,6 +765,13 @@ class EnvironmentManager(object):
                 "Nothing to deploy - try creating cluster"
             )
 
+    def mark_child_tasks_received_by_orchestrator(self, task):
+        task.is_in_orchestrator = True
+        child_tasks = self.db.query(Task).filter_by(parent_id=task.id)
+        for task in child_tasks:
+            task.is_in_orchestrator = True
+        self.db.flush()
+
     def stop_deployment(self):
         if self.clusters:
             resp = self.app.put(
@@ -1267,6 +1274,7 @@ def fake_tasks(fake_rpc=True,
                mock_rpc=True,
                tick_count=100,
                tick_interval=0,
+               received_by_orchestrator=True,
                **kwargs):
     def wrapper(func):
         func = mock.patch(

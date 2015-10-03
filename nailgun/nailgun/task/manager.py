@@ -633,6 +633,7 @@ class StopDeploymentTaskManager(TaskManager):
             None,
             cluster_id=self.cluster.id,
             name=consts.TASK_NAMES.deployment,
+            is_in_orchestrator=True
         )
         deployment_task = objects.TaskCollection.order_by(
             deployment_task, '-id'
@@ -642,6 +643,7 @@ class StopDeploymentTaskManager(TaskManager):
             None,
             cluster_id=self.cluster.id,
             name=consts.TASK_NAMES.provision,
+            is_in_orchestrator=True
         )
         provisioning_task = objects.TaskCollection.order_by(
             provisioning_task, '-id'
@@ -650,8 +652,9 @@ class StopDeploymentTaskManager(TaskManager):
         if not deployment_task and not provisioning_task:
             db().rollback()
             raise errors.DeploymentNotRunning(
-                u"Nothing to stop - deployment is "
-                u"not running on environment '{0}'".format(
+                u"Nothing to stop - deployment is not running "
+                u"or not received by orchestrator for environment "
+                u"'{0}'".format(
                     self.cluster.id
                 )
             )

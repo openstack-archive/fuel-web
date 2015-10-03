@@ -83,3 +83,44 @@ class TestTaskHandlers(BaseTestCase):
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 204)
+
+    def test_get_tasks_in_orchestrator_filtration(self):
+        self.env.create()
+        task = Task(
+            name=consts.TASK_NAMES.provision,
+            cluster=self.env.clusters[0],
+            status=consts.TASK_STATUSES.running,
+            progress=1,
+            in_orchestrator=True
+        )
+        self.db.add(task)
+        self.db.flush()
+
+        # No filtration by in_orchestrator
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(1, len(resp.json_body))
+
+        # Filtered by in_orchestrator == True
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            params={'in_orchestrator': True},
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(1, len(resp.json_body))
+
+        # Filtered by in_orchestrator == False
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            params={'in_orchestrator': False},
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(0, len(resp.json_body))

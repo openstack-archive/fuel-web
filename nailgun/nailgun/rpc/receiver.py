@@ -1170,8 +1170,7 @@ class NailgunReceiver(object):
         task_uuid = kwargs.get('task_uuid')
 
         try:
-            task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
-                                            lock_for_update=True)
+            task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
             task.in_orchestrator = True
         except nailgun_errors.ObjectNotFound:
             logger.warning("Task '%s' is in orchestrator, "

@@ -80,12 +80,24 @@ def fake_cast(queue, messages, **kwargs):
         thread.name = message['method'].upper()
         return thread
 
+    task_in_orchestrator = {
+        'args': {'task_uuid': None},
+        'respond_to': 'task_in_orchestrator',
+        'method': 'task_in_orchestrator'
+    }
+
     if isinstance(messages, (list,)):
         thread = None
         for m in messages:
             thread = make_thread(m, join_to=thread)
+            task_in_orchestrator['args']['task_uuid'] = \
+                m['args'].get('task_uuid')
+            make_thread(task_in_orchestrator)
     else:
         make_thread(messages)
+        task_in_orchestrator['args']['task_uuid'] = \
+            messages['args'].get('task_uuid')
+        make_thread(task_in_orchestrator)
 
 
 class DeploymentTask(object):

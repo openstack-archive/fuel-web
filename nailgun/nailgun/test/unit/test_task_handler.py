@@ -16,6 +16,7 @@
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
+from nailgun.objects.serializers.task import TaskSerializer
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -83,3 +84,94 @@ class TestTaskHandlers(BaseTestCase):
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 204)
+
+    def test_get_tasks_in_orchestrator_filtration(self):
+        self.env.create()
+        task = Task(
+            name=consts.TASK_NAMES.provision,
+            cluster=self.env.clusters[0],
+            status=consts.TASK_STATUSES.running,
+            progress=1,
+            in_orchestrator=True
+        )
+        self.db.add(task)
+        self.db.flush()
+
+        # No filtration by in_orchestrator
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(1, len(resp.json_body))
+
+        # Filtered by in_orchestrator == True
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            params={'in_orchestrator': True},
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(1, len(resp.json_body))
+
+        # Filtered by in_orchestrator == False
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            params={'in_orchestrator': False},
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(0, len(resp.json_body))
+
+        # Filtered by cluster_id and in_orchestrator
+        cluster = self.env.clusters[0]
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            params={'in_orchestrator': True, 'cluster_id': cluster.id},
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(1, len(resp.json_body))
+
+        cluster = self.env.clusters[0]
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            params={'in_orchestrator': True, 'cluster_id': cluster.id + 1},
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(0, len(resp.json_body))
+
+        cluster = self.env.clusters[0]
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers,
+            params={'in_orchestrator': False, 'cluster_id': cluster.id},
+            expect_errors=False
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(0, len(resp.json_body))
+
+    def test_get_tasks_serialization(self):
+        task = Task(
+            name=consts.TASK_NAMES.dump,
+            in_orchestrator=True
+        )
+        self.db.add(task)
+        self.db.flush()
+
+        resp = self.app.get(
+            reverse('TaskCollectionHandler'),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        for task_data in resp.json_body:
+            self.assertItemsEqual(
+                TaskSerializer.fields,
+                task_data.keys()
+            )

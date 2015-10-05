@@ -150,6 +150,38 @@ class Release(NailgunObject):
     def get_min_controller_count(cls, instance):
         return instance.roles_metadata['controller']['limits']['min']
 
+    @classmethod
+    def get_mixed_plugin_wizard_metadata(cls, instance, plugins):
+        merged_wizard_metadata = instance.wizard_metadata
+        for plugin in plugins:
+            merged_wizard_metadata = cls._merge(merged_wizard_metadata,
+                                                plugin.wizard_metadata)
+        return merged_wizard_metadata
+
+    @staticmethod
+    def _merge(release_wizard, plugin_wizard):
+        for section in plugin_wizard.keys():
+            if section not in release_wizard:
+                release_wizard[section] = plugin_wizard[section]
+            elif section in plugin_wizard and section in release_wizard:
+                sub_release_wizard = release_wizard[section]
+                sub_plugin_wizard = plugin_wizard[section]
+                for setting in sub_plugin_wizard.keys():
+                    if setting not in sub_release_wizard:
+                        sub_release_wizard[setting] = sub_plugin_wizard[setting]
+                    elif setting in sub_plugin_wizard and setting in sub_release_wizard:
+                        plugin_settings = sub_plugin_wizard[setting]
+                        release_settings = sub_release_wizard[setting]
+                        if plugin_settings['type'] == release_settings['type'] \
+                            and release_settings['type'] == 'radio':
+                            # TODO: what should we do if types is different?
+                                release_values = [
+                                    x['data'] for x in release_settings['values']]
+                                for val in plugin_settings['values']:
+                                    if val['data'] not in release_values:
+                                        release_settings['values'].append(val)
+        return release_wizard
+
 
 class ReleaseCollection(NailgunCollection):
     """Release collection

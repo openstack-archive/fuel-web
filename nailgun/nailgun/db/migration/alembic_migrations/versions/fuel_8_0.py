@@ -24,10 +24,19 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from alembic import op
+import sqlalchemy as sa
+
+from nailgun.db.sqlalchemy.models import fields
+
 
 def upgrade():
-    pass
+    op.add_column(
+        'plugins', sa.Column('wizard_metadata', fields.JSON(), nullable=True))
+    op.add_column(
+        'plugins', sa.Column('compatibility', fields.JSON(), nullable=True))
 
 
 def downgrade():
-    pass
+    op.drop_column('plugins', 'wizard_metadata')
+    op.drop_column('plugins', 'compatibility')

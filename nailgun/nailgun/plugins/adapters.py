@@ -26,6 +26,7 @@ import yaml
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import Plugin
+from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
 
 
@@ -343,10 +344,139 @@ class PluginAdapterV3(PluginAdapterV2):
         Plugin.update(self.plugin, data_to_update)
 
 
+class PluginAdapterV4(PluginAdapterV3):
+    """Plugin wrapper class for package version 4.0.0
+    """
+
+    # in plugin metadata.yaml expected section. Ex.:
+    # compatibility:
+    #   type: ['hypervisor:new']
+    #   provides:
+    #   - name: 'hypervisor:new'
+    #   compatible_hypervisors: []
+    #   compatible_storages: ['storage:object:backend', 'storage:block:backend', 'storage:image:backend']
+    #   compatible_net_providers: ['network:ml2']
+    #
+    # wizard_metadata.yaml should provide options with the same type and
+    # format as uses in openstack.yaml. Ex.:
+    # Compute:
+    #   hypervisor:
+    #   type: "radio"
+    #   weight: 5
+    #   values:
+    #     - data: "new"
+    #       label: "New Hypervisor"
+    #       description: "New Hypervisor"
+
+
+    wizard_config_name = 'wizard_metadata.yaml'
+
+    def sync_metadata_to_db(self):
+        """Sync metadata from all config yaml files to DB
+        """
+        super(PluginAdapterV4, self).sync_metadata_to_db()
+
+        data_to_update = {}
+        db_config_metadata_mapping = {
+            'attributes_metadata': self.environment_config_name,
+            'roles_metadata': self.node_roles_config_name,
+            'volumes_metadata': self.volumes_config_name,
+            'network_roles_metadata': self.network_roles_config_name,
+            'deployment_tasks': self.deployment_tasks_config_name,
+            'wizard_metadata': self.wizard_config_name,
+            'tasks': self.task_config_name
+        }
+
+        for attribute, config in six.iteritems(db_config_metadata_mapping):
+            config_file_path = os.path.join(self.plugin_path, config)
+            attribute_data = self._load_config(config_file_path)
+            # Plugin columns have constraints for nullable data, so
+            # we need to check it
+            if attribute_data:
+                data_to_update[attribute] = attribute_data
+
+        Plugin.update(self.plugin, data_to_update)
+        for plugin in PluginCollection.all():
+            Plugin.update(
+                plugin, {'wizard_metadata': self._update_wizard_metadata(plugin)})
+
+    def _update_wizard_metadata(self, target_plugin):
+        wizard_metadata = target_plugin.wizard_metadata
+        if not wizard_metadata:
+            return
+        restrictions = self._generate_plugin_restrictions(target_plugin)
+        if not restrictions:
+            return wizard_metadata
+        for wizard_item, wizard_item_setting in wizard_metadata.items():
+            for setting_name, setting_data in wizard_item_setting.items():
+                if setting_data['type'] == 'checkbox':
+                    setting_data['restrictions'] = [{
+                        'condition': ' or '.join(restrictions),
+                        'message': 'One or more non-compatible plugin ware selected'
+                    }]
+                elif setting_data['type'] == 'radio':
+                    for value in setting_data['values']:
+                        value['restrictions'] = [{
+                            'condition': ' or '.join(restrictions),
+                            'message': 'One or more non-compatible plugin ware selected'
+                        }]
+        return wizard_metadata
+
+    def _generate_plugin_restrictions(self, target_plugin):
+        # TODO: think about generate restrictions based on plugin subtypes, not plugin names
+        # TODO: old and new plugins in system. Plugin by default is compatible with
+        # TODO: compatibility by releases
+        restrictions = []
+        for plugin in PluginCollection.all():
+            if plugin.name == target_plugin.name:
+                continue
+            # compatibility may be non-cemeteries, check A+B and B+A
+            # TODO: need to add dependency restrictions
+            if not(self.is_compatible_plugins(plugin, target_plugin) or \
+                    self.is_compatible_plugins(target_plugin, plugin)):
+                restrictions.extend(self._get_restriction_string(plugin.wizard_metadata))
+        return restrictions
+
+    def is_compatible_plugins(self, base_plugin, target_plugin):
+        if not base_plugin.compatibility or not target_plugin.compatibility:
+            return False
+        # TODO: support regexp, and not full type e.g network, storage etc
+        target_types = target_plugin.compatibility['type']
+        base_plugin_provides = base_plugin.compatibility['provides'][0]
+        base_plugin_compatibilities = \
+            base_plugin_provides.get('compatible_hypervisors', [])
+        base_plugin_compatibilities.extend(
+            base_plugin_provides.get('compatible_storages', []))
+        base_plugin_compatibilities.extend(
+            base_plugin_provides.get('compatible_net_providers', []))
+        for type in target_types:
+            if type not in base_plugin_compatibilities:
+                return False
+        return True
+
+    def _get_restriction_string(self, plugin_wizard_metadata):
+        restrictions = []
+        for wizard_item, wizard_item_setting in plugin_wizard_metadata.items():
+            for setting_name, setting_data in wizard_item_setting.items():
+                # TODO: how to describe this setting in plugin wizard metadata?
+                #       is it ok use radio & checkbox types
+                if setting_data['type'] == 'checkbox':
+                    restrictions.append(
+                        "{0}.{1} == true".format(wizard_item, setting_name))
+                elif setting_data['type'] == 'radio':
+                    for value in setting_data['values']:
+                        restrictions.append(
+                            "{0}.{1} == '{2}'".format(
+                                wizard_item, setting_name, value['data'])
+                        )
+        return restrictions
+
+
 __version_mapping = {
     '1.0.': PluginAdapterV1,
     '2.0.': PluginAdapterV2,
-    '3.0.': PluginAdapterV3
+    '3.0.': PluginAdapterV3,
+    '4.0.': PluginAdapterV4
 }
 
 

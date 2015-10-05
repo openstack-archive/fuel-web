@@ -22,6 +22,7 @@ from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
 from nailgun.objects import Release
@@ -49,8 +50,19 @@ class ReleaseCollectionHandler(CollectionHandler):
         :http: * 200 (OK)
         """
         q = sorted(self.collection.all(), reverse=True)
+        # TODO: remove me letter! this is hack!!!
+        def _get_merged_release_with_merged_wizard_metadata(releases):
+            result = []
+            from nailgun.objects.plugin import PluginCollection
+            # TODO: get only release-compatible plugins
+            plugins = PluginCollection.all()
+            for release in releases:
+                release.wizard_metadata = \
+                    Release.get_mixed_plugin_wizard_metadata(release, plugins)
+                result.append(release)
+            return  result
+        q = _get_merged_release_with_merged_wizard_metadata(q)
         return self.collection.to_json(q)
-
 
 class ReleaseNetworksHandler(SingleHandler):
     """Release Handler for network metadata
@@ -98,6 +110,19 @@ class ReleaseNetworksHandler(SingleHandler):
         :http: * 405 (method not supported)
         """
         raise self.http(405, 'Delete not supported for this entity')
+
+
+class ReleaseWizardHandler(BaseHandler):
+
+    single = Release
+
+    @content
+    def GET(self, obj_id):
+        from nailgun.objects.plugin import PluginCollection
+        release = self.get_object_or_404(self.single, obj_id)
+        # TODO: get only release-compatible plugins
+        plugins = PluginCollection.all()
+        return Release.get_mixed_plugin_wizard_metadata(release, plugins)
 
 
 class ReleaseDeploymentTasksHandler(DeploymentTasksHandler):

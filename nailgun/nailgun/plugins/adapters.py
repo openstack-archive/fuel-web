@@ -18,6 +18,7 @@ import glob
 import os
 
 from distutils.version import StrictVersion
+from itertools import chain
 from urlparse import urljoin
 
 import six
@@ -26,6 +27,7 @@ import yaml
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import Plugin
+from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
 
 
@@ -343,10 +345,167 @@ class PluginAdapterV3(PluginAdapterV2):
         Plugin.update(self.plugin, data_to_update)
 
 
+class PluginAdapterV4(PluginAdapterV3):
+    """Plugin wrapper class for package version 4.0.0
+    """
+
+    # in plugin metadata.yaml expected section. Ex.:
+    # compatibility:
+    #   type: ['hypervisor:new']
+    #   provides:
+    #   - name: 'hypervisor:new'
+    #   compatible_hypervisors: []
+    #   compatible_storages: ['storage:object:backend', 'storage:block:backend', 'storage:image:backend']
+    #   compatible_net_providers: ['network:ml2']
+    #
+    # wizard_metadata.yaml should provide options with the same type and
+    # format as uses in openstack.yaml. Ex.:
+    # Compute:
+    #   hypervisor:
+    #   type: "radio"
+    #   weight: 5
+    #   values:
+    #     - data: "new"
+    #       label: "New Hypervisor"
+    #       description: "New Hypervisor"
+
+
+    wizard_config_name = 'wizard_metadata.yaml'
+
+    def sync_metadata_to_db(self):
+        """Sync metadata from all config yaml files to DB
+        """
+        super(PluginAdapterV4, self).sync_metadata_to_db()
+
+        data_to_update = {}
+        db_config_metadata_mapping = {
+            'attributes_metadata': self.environment_config_name,
+            'roles_metadata': self.node_roles_config_name,
+            'volumes_metadata': self.volumes_config_name,
+            'network_roles_metadata': self.network_roles_config_name,
+            'deployment_tasks': self.deployment_tasks_config_name,
+            'wizard_metadata': self.wizard_config_name,
+            'tasks': self.task_config_name
+        }
+
+        for attribute, config in six.iteritems(db_config_metadata_mapping):
+            config_file_path = os.path.join(self.plugin_path, config)
+            attribute_data = self._load_config(config_file_path)
+            # Plugin columns have constraints for nullable data, so
+            # we need to check it
+            if attribute_data:
+                data_to_update[attribute] = attribute_data
+
+        Plugin.update(self.plugin, data_to_update)
+        for plugin in PluginCollection.all():
+            if plugin.name != self.plugin.name:
+                updated_wizard_metadata = self._update_wizard_metadata(plugin)
+                Plugin.update(
+                    plugin, {'wizard_metadata': updated_wizard_metadata})
+
+    def _update_wizard_metadata(self, target_plugin):
+        wizard_metadata = target_plugin.wizard_metadata
+        component_rest_dict = self._generate_restrictions(target_plugin)
+        if component_rest_dict:
+            for component_name, component_data in wizard_metadata.items():
+                for setting_name, setting_data in component_data.items():
+                    if setting_data['type'] == 'checkbox':
+                        setting_data['restrictions'] = list(
+                            chain(*component_rest_dict.values()))
+                    elif setting_data['type'] == 'radio':
+                        restrictions = list(chain(*[
+                            v for k, v in component_rest_dict.items()
+                            if k != component_name
+                        ]))
+                        for value in setting_data['values']:
+                            value['restrictions'] = restrictions
+        return wizard_metadata
+
+    def _generate_restrictions(self, target_plugin):
+        # TODO: think about generate restrictions based on plugin subtypes, not plugin names
+        # TODO: old and new plugins in system. Plugin by default is compatible with
+        # TODO: compatibility by releases
+        component_restrictions_dict = {}
+        for plugin in PluginCollection.all():
+            if plugin.name == target_plugin.name:
+                continue
+            # compatibility may be non-cemeteries, check A+B and B+A
+            if not(self.is_compatible_plugins(plugin, target_plugin) or \
+                    self.is_compatible_plugins(target_plugin, plugin)):
+                plugin_restrictions = self._generate_plugin_restrictions(plugin)
+                for component, rest in plugin_restrictions.items():
+                    if not component_restrictions_dict.get(component):
+                        component_restrictions_dict[component] = []
+                    component_restrictions_dict[component].extend(rest)
+        return component_restrictions_dict
+
+    def is_compatible_plugins(self, base_plugin, target_plugin):
+        if not base_plugin.provides or not target_plugin.provides:
+            return False
+        # TODO: support regexp, and not full type e.g network, storage etc
+        for base_plugin_component in base_plugin.provides:
+            for target_plugin_component in target_plugin.provides:
+                if not self.is_compatible_plugin_components(
+                        base_plugin_component, target_plugin_component):
+                    return False
+        return True
+
+    def is_compatible_plugin_components(self, base_component, target_component):
+        # TODO: support regexp, and not full type e.g network, storage etc
+
+        splited_name = target_component['name'].split(':')
+        type = splited_name[ : 1][0]
+        subtype = ':'.join(splited_name[1: -1]) if len(splited_name) > 1 else None
+
+        key_map = {
+            'networking': 'compatible_networking',
+            'hypervisor': 'compatible_hypervisors',
+            'storage': 'compatible_storages',
+            'monitoring': 'compatible_monitoring'
+        }
+        base_component_compatible_list = base_component.get(key_map[type], [])
+        if 'all' not in base_component_compatible_list and \
+                subtype and subtype not in base_component_compatible_list:
+            return False
+        return True
+
+    def _generate_plugin_restrictions(self, plugin):
+        restrictions_by_component = {}
+        for component, component_setting in plugin.wizard_metadata.items():
+            if not restrictions_by_component.get(component):
+                restrictions_by_component[component] = []
+            restrictions = restrictions_by_component.get(component)
+            for setting_name, setting_data in component_setting.items():
+                # TODO: how to describe this setting in plugin wizard metadata?
+                #       is it ok use radio & checkbox types
+                message = '{0} is not compatible with {1}'.format(
+                    self.plugin.name, plugin.name)
+                if setting_data['type'] == 'checkbox':
+                    restrictions.append({
+                        'condition': '{0}.{1} == true'.format(
+                            component, setting_name),
+                        'message': message
+                    })
+                    # condition = "{0}.{1} == true".format(component, setting_name)
+                    # restrictions.append({condition: message})
+                elif setting_data['type'] == 'radio':
+                    for value in setting_data['values']:
+                        restrictions.append({
+                            'condition': "{0}.{1} == '{2}'".format(
+                                component, setting_name, value['data']),
+                            'message': message
+                        })
+                        # condition = "{0}.{1} == '{2}'".format(
+                        #     component, setting_name, value['data'])
+                        # restrictions.append({condition: message})
+        return restrictions_by_component
+
+
 __version_mapping = {
     '1.0.': PluginAdapterV1,
     '2.0.': PluginAdapterV2,
-    '3.0.': PluginAdapterV3
+    #'3.0.': PluginAdapterV3,
+    '3.0.': PluginAdapterV4
 }
 
 

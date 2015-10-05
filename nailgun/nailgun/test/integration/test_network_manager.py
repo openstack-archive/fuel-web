@@ -186,15 +186,27 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_assign_vip_is_idempotent(self):
         self.env.create_cluster(api=True)
+        nodegroup = objects.Cluster.get_controllers_node_group(
+            self.env.clusters[0])
+
         vip = self.env.network_manager.assign_vip(
-            self.env.clusters[0],
-            consts.NETWORKS.management
-        )
+            nodegroup, consts.NETWORKS.management)
         vip2 = self.env.network_manager.assign_vip(
-            self.env.clusters[0],
-            consts.NETWORKS.management
-        )
+            nodegroup, consts.NETWORKS.management)
+
         self.assertEqual(vip, vip2)
+
+    def test_assign_vip_throws_not_found_exception(self):
+        self.env.create_cluster(api=True)
+        nodegroup = objects.Cluster.get_controllers_node_group(
+            self.env.clusters[0])
+
+        self.assertRaisesRegexp(
+            errors.CanNotFindNetworkForNodeGroup,
+            "Network 'non-existing-network' for nodegroup='[\w-]+' not found.",
+            self.env.network_manager.assign_vip,
+            nodegroup,
+            'non-existing-network')
 
     def test_get_node_networks_for_vlan_manager(self):
         cluster = self.env.create(
@@ -915,7 +927,8 @@ class TestNeutronManager70(BaseNetworkManagerTest):
                           return_value=vip) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
-                self.cluster, mock.ANY, vip_type='public')
+                objects.Cluster.get_controllers_node_group(self.cluster),
+                mock.ANY, vip_type='public')
             self.assertEqual(endpoint_ip, vip)
 
     def test_assign_vips_for_net_groups_for_api(self):
@@ -1033,5 +1046,6 @@ class TestNovaNetworkManager70(TestNeutronManager70):
                           return_value=vip) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
-                self.cluster, mock.ANY, vip_type='public')
+                objects.Cluster.get_controllers_node_group(self.cluster),
+                mock.ANY, vip_type='public')
             self.assertEqual(endpoint_ip, vip)

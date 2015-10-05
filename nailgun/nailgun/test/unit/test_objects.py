@@ -882,11 +882,13 @@ class TestClusterObject(BaseTestCase):
     def setUp(self):
         super(TestClusterObject, self).setUp()
         self.env.create(
+            cluster_kwargs={'net_provider': 'neutron'},
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['controller']},
                 {'roles': ['compute']},
                 {'roles': ['cinder']}])
+        self.cluster = self.env.clusters[0]
 
     def _create_cluster_with_plugins(self, plugins_kw_list):
         cluster = self.env.create_cluster(api=False)
@@ -942,12 +944,65 @@ class TestClusterObject(BaseTestCase):
                 status not in allowed
             )
 
-    def test_get_group_id(self):
+    def test_get_controller_group_id(self):
         controllers = objects.Cluster.get_nodes_by_role(
             self.env.clusters[0], 'controller')
         group_id = objects.Cluster.get_controllers_group_id(
             self.env.clusters[0])
         self.assertEqual(controllers[0].group_id, group_id)
+
+    def test_get_node_group(self):
+        controller = objects.Cluster.get_nodes_by_role(
+            self.cluster, 'controller')[0]
+        compute = objects.Cluster.get_nodes_by_role(
+            self.cluster, 'compute')[0]
+
+        group_id = self.env.create_node_group().json_body['id']
+        compute.group_id = group_id
+        self.db.flush()
+
+        self.assertEqual(
+            group_id,
+            objects.Cluster.get_node_group(self.cluster, ['compute']).id)
+        self.assertEqual(
+            controller.group_id,
+            objects.Cluster.get_node_group(self.cluster, ['controller']).id)
+
+    def test_get_node_group_multiple_return_same_group(self):
+        group_id = self.env.create_node_group().json_body['id']
+
+        compute = objects.Cluster.get_nodes_by_role(self.cluster, 'compute')[0]
+        cinder = objects.Cluster.get_nodes_by_role(self.cluster, 'cinder')[0]
+
+        compute.group_id = group_id
+        cinder.group_id = group_id
+        self.db.flush()
+
+        self.assertEqual(
+            group_id,
+            objects.Cluster.get_node_group(
+                self.cluster, ['compute', 'cinder']).id)
+
+    def test_get_node_group_multiple_fail(self):
+        group_id = self.env.create_node_group().json_body['id']
+
+        controller = \
+            objects.Cluster.get_nodes_by_role(self.cluster, 'controller')[0]
+        cinder = objects.Cluster.get_nodes_by_role(self.cluster, 'cinder')[0]
+
+        controller.group_id = group_id
+        cinder.group_id = group_id
+        self.db.flush()
+
+        # since we have two controllers, and one of them is in another
+        # node group, the error will be raised
+        self.assertRaisesRegexp(
+            errors.CanNotFindCommonNodeGroup,
+            '^Node roles \[controller, cinder\] has more than one common '
+            'node group$',
+            objects.Cluster.get_node_group,
+            self.cluster,
+            ['controller', 'cinder'])
 
     def test_get_nic_interfaces_for_all_nodes(self):
         nodes = self.env.nodes

@@ -23,6 +23,7 @@ from distutils.version import StrictVersion
 
 import six
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql as psql
 import yaml
 
 
@@ -713,26 +714,51 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_controllers_group_id(cls, instance):
-        nodes = db().query(models.Node).filter_by(
-            cluster_id=instance.id
-        ).filter(
-            False == models.Node.pending_deletion
-        )
-
-        controller = nodes.filter(models.Node.roles.any('controller')).first()
-        if not controller or not controller.group_id:
-            controller = nodes.filter(
-                models.Node.pending_roles.any('controller')).first()
-
-        if controller and controller.group_id:
-            return controller.group_id
-        return cls.get_default_group(instance).id
+        return cls.get_controllers_node_group(instance).id
 
     @classmethod
-    def get_controllers_node_group(cls, cluster):
-        from nailgun.objects import NodeGroup
-        group_id = cls.get_controllers_group_id(cluster)
-        return NodeGroup.get_by_uid(group_id)
+    def get_controllers_node_group(cls, instance):
+        return cls.get_node_group(instance, ['controller'])
+
+    @classmethod
+    def get_node_group(cls, instance, noderoles):
+        """Returns a node group for a given node roles.
+
+        If a given node roles have different node groups, the error
+        will be raised, so it's mandatory to have them the same
+        node group.
+
+        :param instance: a Cluster instance
+        :param noderoles: a list of node roles
+        :returns: a common NodeGroup instance
+        """
+        psql_noderoles = sa.cast(
+            psql.array(noderoles),
+            psql.ARRAY(sa.String(consts.ROLE_NAME_MAX_SIZE)))
+
+        nodegroups = db().query(models.NodeGroup).join(models.Node).filter(
+            models.Node.cluster_id == instance.id,
+            False == models.Node.pending_deletion
+        ).filter(sa.or_(
+            models.Node.roles.overlap(psql_noderoles),
+            models.Node.pending_roles.overlap(psql_noderoles)
+        )).all()
+
+        # NOTE(ikalnitsky):
+        #   The 'nodegroups' may be an empty list only in case when there's
+        #   no nodes with a given 'noderoles' in the cluster. I think we
+        #   should reconsider this behaviour, and propogate some error up
+        #   above, because returning default node group doesn't look like
+        #   a right choice here.
+        if not nodegroups:
+            return cls.get_default_group(instance)
+
+        if len(nodegroups) > 1:
+            raise errors.CanNotFindCommonNodeGroup(
+                'Node roles [{0}] has more than one common node group'.format(
+                    ', '.join(noderoles)))
+
+        return nodegroups[0]
 
     @classmethod
     def get_bond_interfaces_for_all_nodes(cls, instance, networks=None):

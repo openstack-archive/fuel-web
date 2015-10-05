@@ -76,6 +76,8 @@ default_messages = {
     "CanNotFindInterface": "Cannot find interface",
     "CanNotDetermineEndPointIP": "Cannot determine end point IP",
     "CanNotFindNetworkForNode": "Cannot find network for node",
+    "CanNotFindNetworkForNodeGroup": "Cannot find network for node group",
+    "CanNotFindCommonNodeGroup": "Node role doesn't have common node group",
     "NetworkRoleConflict": "Cannot override existing network role",
     "NetworkTemplateMissingRoles": "Roles are missing from network template",
     "NetworkTemplateMissingNetRoles": "Network roles are missing",

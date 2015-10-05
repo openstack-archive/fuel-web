@@ -148,6 +148,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         render: function() {
             var cluster = this.props.cluster,
                 horizonLinkProtocol = cluster.get('settings').get('public_ssl.horizon.value') ? 'https://' : 'http://';
+            debugger;
             return (
                 <div className='row plugins-block'>
                     <div className='col-xs-12 plugin-entry horizon'>
@@ -158,6 +159,14 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             target='_blank'
                             href={horizonLinkProtocol + cluster.get('networkConfiguration').get('public_vip')}
                         >
+                            {i18n(namespace + 'go_to_horizon')}
+                        </a>
+                        <a
+                            className='btn btn-success second-horizon'
+                            target='_blank'
+                            href={horizonLinkProtocol + cluster.get('nodes').pluck('fqdn')[0]}
+                        >
+
                             {i18n(namespace + 'go_to_horizon')}
                         </a>
                     </div>

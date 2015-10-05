@@ -175,7 +175,7 @@ function runIntern(params) {
     };
 }
 
-gulp.task('intern:unit', runIntern({suites: argv.suites || 'static/tests/unit/**/*.js', browser: 'phantomjs'}));
+gulp.task('intern:unit', runIntern({suites: argv.suites || 'static/tests/unit/**/*.js'}));
 gulp.task('intern:functional', runIntern({functionalSuites: argv.suites || 'static/tests/functional/**/test_*.js'}));
 
 gulp.task('unit-tests', function(cb) {

@@ -296,10 +296,10 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
-    def assign_vip(cls, cluster, network_name,
+    def assign_vip(cls, nodegroup, network_name,
                    vip_type=consts.NETWORK_VIP_TYPES.haproxy):
-        """Idempotent assignment of VirtualIP addresses to cluster.
-        Returns VIP for given cluster and network.
+        """Idempotent assignment of VirtualIP addresses to nodegroup.
+        Returns VIP for given nodegroup and network.
 
         It's required for HA deployment to have IP address
         not assigned to any of nodes. Currently we need one
@@ -308,8 +308,8 @@ class NetworkManager(object):
         If one of the nodes is the node from other cluster,
         this func will fail.
 
-        :param cluster: Cluster instance
-        :type  cluster: Cluster model
+        :param nodegroup: Nodegroup instance
+        :type nodegroup: NodeGroup model
         :param network_name: Network name
         :type  network_name: str
         :param vip_type: Type of VIP
@@ -317,9 +317,8 @@ class NetworkManager(object):
         :returns: assigned VIP (string)
         :raises: Exception
         """
-        group_id = objects.Cluster.get_controllers_group_id(cluster)
         network = db().query(NetworkGroup).\
-            filter_by(name=network_name, group_id=group_id).first()
+            filter_by(name=network_name, group_id=nodegroup.id).first()
         ips_in_use = None
 
         # FIXME:
@@ -331,8 +330,9 @@ class NetworkManager(object):
             network = cls.get_admin_network_group()
 
         if not network:
-            raise Exception(u"Network '%s' for cluster_id=%s not found." %
-                            (network_name, cluster.id))
+            raise Exception(
+                u"Network '{0}' for nodegroup='{1}' not found.".format(
+                    network_name, nodegroup.name))
 
         cluster_vip = db().query(IPAddr).filter_by(
             network=network.id,
@@ -368,9 +368,9 @@ class NetworkManager(object):
         :type  cluster: Cluster model
         :return: dict with vip definitions
         """
-
         result = {}
 
+        nodegroup = objects.Cluster.get_controllers_node_group(cluster)
         for ng in cluster.network_groups:
             for vip_type in ng.meta.get('vips', ()):
                 # used for backwards compatibility
@@ -379,8 +379,7 @@ class NetworkManager(object):
                 else:
                     key = '{0}_{1}_vip'.format(ng.name, vip_type)
 
-                result[key] = cls.assign_vip(cluster, ng.name,
-                                             vip_type=vip_type)
+                result[key] = cls.assign_vip(nodegroup, ng.name, vip_type)
 
         return result
 
@@ -1175,7 +1174,8 @@ class NetworkManager(object):
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
         ip = None
         if cluster_db.is_ha_mode:
-            ip = cls.assign_vip(cluster_db, "public")
+            nodegroup = objects.Cluster.get_controllers_node_group(cluster_db)
+            ip = cls.assign_vip(nodegroup, "public")
         elif cluster_db.mode in ('singlenode', 'multinode'):
             controller = db().query(Node).filter_by(
                 cluster_id=cluster_id
@@ -1565,21 +1565,42 @@ class AllocateVIPs70Mixin(object):
             cluster_db, node_group.name)
         net_group = cls.get_network_group_for_role(
             net_role, net_group_mapping)
-        return cls.assign_vip(cluster_db, net_group, vip_type='public')
+        return cls.assign_vip(node_group, net_group, vip_type='public')
 
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
-        net_roles = objects.Cluster.get_network_roles(cluster)
-        node_group = objects.Cluster.get_controllers_node_group(cluster)
-        net_group_mapping = cls.build_role_to_network_group_mapping(
-            cluster, node_group.name)
-        for role in net_roles:
+        # noderole -> nodegroup mapping; used for choosing node group
+        # where VIPs should be allocated
+        noderole_nodegroup = {}
+        # network role -> network group mapping; used for choosing
+        # network group of the specified node group
+        netrole_network = {}
+
+        # iterate over all network roles, assign vip and yield information
+        # about assignment
+        for role in objects.Cluster.get_network_roles(cluster):
             properties = role.get('properties', {})
-            net_group = cls.get_network_group_for_role(role, net_group_mapping)
             for vip_info in properties.get('vip', ()):
+                noderoles = vip_info.get('node_roles', ['controller'])
+                nodegroup = objects.Cluster.get_node_group(cluster, noderoles)
+
+                # populate cache if needed
+                for noderole in noderoles:
+                    if noderole not in noderole_nodegroup:
+                        noderole_nodegroup[noderole] = nodegroup
+                        netrole_network[nodegroup.name] = \
+                            cls.build_role_to_network_group_mapping(
+                                cluster, nodegroup.name)
+
+                net_group = cls.get_network_group_for_role(
+                    role,
+                    # we assume that all listed noderoles has the same
+                    # nodegroup
+                    netrole_network[noderole_nodegroup[noderoles[0]].name]
+                )
+
                 vip_name = vip_info['name']
-                vip_addr = cls.assign_vip(
-                    cluster, net_group, vip_type=vip_name)
+                vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
 
                 yield role, vip_info, vip_addr
 

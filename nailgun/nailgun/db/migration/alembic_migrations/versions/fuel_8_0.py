@@ -24,10 +24,23 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from alembic import op
+
 
 def upgrade():
-    pass
+    upgrade_nodegroups_constraint()
 
 
 def downgrade():
-    pass
+    op.drop_constraint('_name_cluster_uc', 'nodegroups',)
+
+
+def upgrade_nodegroups_constraint():
+    op.create_unique_constraint(
+        '_name_cluster_uc',
+        'nodegroups',
+        [
+            'cluster_id',
+            'name'
+        ]
+    )

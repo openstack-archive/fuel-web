@@ -42,6 +42,9 @@ from nailgun.logger import logger
 
 class NodeGroup(Base):
     __tablename__ = 'nodegroups'
+    __table_args__ = (
+        UniqueConstraint('cluster_id', 'name',
+                         name='_name_cluster_uc'),)
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     name = Column(String(50), nullable=False)

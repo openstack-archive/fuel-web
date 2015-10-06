@@ -176,3 +176,23 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         self.assertEquals(resp.status_code, 404)
+
+    def test_nodegroup_create_duplication(self):
+        self.assertEquals(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count(), 1)
+
+        resp = self.env.create_node_group()
+        self.assertEquals(resp.status_code, 201)
+        self.assertEquals(resp.json_body['cluster'], self.cluster['id'])
+
+        with self.assertRaises(Exception) as error:
+            self.env.create_node_group()
+            self.assertIn(
+                "Node group '{0}' already exists in environment {1}".format(
+                    resp.json_body['cluster'], self.cluster['id']),
+                error.message)
+
+        self.assertEquals(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count(), 2)

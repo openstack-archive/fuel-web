@@ -731,8 +731,6 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                 net['vlan_start'] = 333
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         task = self.env.launch_verify_networks()
         # Public VLANs are not being checked on both nodes
@@ -761,8 +759,6 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                 net['vlan_start'] = 333
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         task = self.env.launch_verify_networks()
         eth0_vlans = {'iface': 'eth0',

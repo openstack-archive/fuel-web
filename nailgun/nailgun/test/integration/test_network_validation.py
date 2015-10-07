@@ -64,42 +64,24 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_nova_networks_w_error(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets,
                                           expect_errors=True)
-        self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
-        self.assertEqual(task['progress'], 100)
-        self.assertEqual(task['name'], consts.TASK_NAMES.check_networks)
-        self.check_result_format(task, cluster_id)
-        return task
+        self.assertEqual(resp.status_code, 400)
+        return resp.json_body
 
     def update_nova_networks_success(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
-        self.assertEqual(task['progress'], 100)
-        self.assertEqual(task['name'], consts.TASK_NAMES.check_networks)
-        return task
+        return resp.json_body
 
     def update_neutron_networks_w_error(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets,
                                              expect_errors=True)
-        self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
-        self.assertEqual(task['progress'], 100)
-        self.assertEqual(task['name'], consts.TASK_NAMES.check_networks)
-        self.check_result_format(task, cluster_id)
-        return task
+        self.assertEqual(resp.status_code, 400)
+        return resp.json_body
 
     def update_neutron_networks_success(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
-        self.assertEqual(task['progress'], 100)
-        self.assertEqual(task['name'], consts.TASK_NAMES.check_networks)
-        return task
+        return resp.json_body
 
 
 class TestNovaHandlers(TestNetworkChecking):
@@ -314,9 +296,7 @@ class TestNovaHandlers(TestNetworkChecking):
             "10.10.0.0/28"
         self.nets['networking_parameters']['fixed_networks_amount'] = 1
         self.nets['networking_parameters']['fixed_network_size'] = 256
-        task = self.update_nova_networks_success(self.cluster.id, self.nets)
-
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
+        self.update_nova_networks_success(self.cluster.id, self.nets)
 
     def test_network_size_and_amount_not_fit_cidr(self):
         self.nets['networking_parameters']['net_manager'] = \

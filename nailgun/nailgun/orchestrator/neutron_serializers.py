@@ -18,7 +18,11 @@
 
 from collections import defaultdict
 import netaddr
-from ordereddict import OrderedDict
+try:
+    from collections import OrderedDict
+except Exception:
+    # python 2.6 or earlier use backport
+    from ordereddict import OrderedDict
 import re
 import six
 

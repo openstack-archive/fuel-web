@@ -80,7 +80,7 @@ define([
                     .then(function() {
                         return modal.waitToClose();
                     })
-                    .assertElementAppears('div.deploy-readiness a.btn-add-nodes', 2000, 'All changes discarded, add nodes button gets visible in deploy readiness block');
+                    .assertElementAppears('.introduction-block a.btn-add-nodes', 2000, 'All changes discarded, add nodes button gets visible in introduction block');
             },
             'Start/stop deployment': function() {
                 this.timeout = 60000;

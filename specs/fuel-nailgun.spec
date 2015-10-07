@@ -169,7 +169,6 @@ Release:   %{release}
 License:   GPLv2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 URL:       http://github.com/Mirantis
-Requires:  vconfig
 Requires:  scapy
 Requires:  python-argparse
 Requires:  python-pypcap

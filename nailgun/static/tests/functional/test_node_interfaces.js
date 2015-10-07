@@ -50,7 +50,8 @@ define([
             },
             afterEach: function() {
                 return this.remote
-                    .clickByCssSelector('.btn-defaults');
+                    .clickByCssSelector('.btn-defaults')
+                    .waitForCssSelector('.btn-defaults:enabled', 2000);
             },
             teardown: function() {
                 return this.remote

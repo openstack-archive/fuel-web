@@ -97,6 +97,7 @@ define([
                         .type(newHostname)
                         .pressKeys('\uE007')
                         .end()
+                    .assertElementDisappears('.change-hostname [type=text]', 2000, 'Hostname input disappears after submit')
                     .assertElementTextEquals('span.node-hostname', newHostname, 'Node hostname has been updated')
                     .then(function() {
                         return modal.close();

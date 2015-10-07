@@ -770,7 +770,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         </div>
                     }
                     <div className='btn-group' role='group'>
-                        <button className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>
+                        <button className='btn btn-default' onClick={this.close}>{i18n('common.close_button')}</button>
                     </div>
                 </div>
             );

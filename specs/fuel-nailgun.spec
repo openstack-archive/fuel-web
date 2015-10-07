@@ -55,7 +55,6 @@ Requires:    python-networkx-core >= 1.8.0
 Requires:    python-networkx-core < 1.10.0
 Requires:    python-cinderclient >= 1.0.7
 Requires:    pydot-ng >= 1.0.0
-Requires:    python-ordereddict >= 1.1
 # Workaroud for babel bug
 Requires:    pytz
 
@@ -163,13 +162,12 @@ Release:   %{release}
 License:   GPLv2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 URL:       http://github.com/Mirantis
-Requires:  vconfig
 Requires:  scapy
 Requires:  python-argparse
-Requires:  python-pypcap
+#Requires:  python-pypcap
 Requires:  python-cliff-tablib
 Requires:  python-stevedore
-Requires:  python-daemonize
+#Requires:  python-daemonize
 Requires:  python-yaml
 Requires:  tcpdump
 Requires:  python-requests
@@ -213,7 +211,6 @@ Prefix: %{_prefix}
 BuildArch: noarch
 Requires:  python-keystoneclient >= 0.11
 Requires:  python-keystonemiddleware >= 1.2.0
-Requires:  python-ordereddict >= 1.1
 
 %description -n fuel-package-updates
 Command line utility to download apt/yum repositories for Fuel

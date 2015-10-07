@@ -51,28 +51,18 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             return this.props.cluster.get('nodes').fetch();
         },
         getTitle: function() {
-            var title = 'title_new',
+            var title = null,
                 cluster = this.props.cluster;
             if (cluster.get('nodes').length) {
                 title = 'title_ready';
             }
-            if (cluster.get('status') != 'new') {
-                title = null;
-            }
-            if (cluster.task({group: 'deployment', active: true})) {
+            if (cluster.task({group: 'deployment', status: 'running'})) {
                 title = 'deploy_progress';
             }
             if (cluster.task({group: 'deployment', status: 'error'})) {
                 title = 'title_error';
             }
             return title;
-        },
-        renderTitle: function(title) {
-            return (
-                <div className='title'>
-                    {i18n(namespace + title)}
-                </div>
-            );
         },
         render: function() {
             var cluster = this.props.cluster,
@@ -83,62 +73,68 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 isNew = clusterStatus == 'new',
                 isOperational = clusterStatus == 'operational',
                 title = this.getTitle(),
-                runningDeploymentTask = cluster.task({group: 'deployment', active: true}),
+                finishedDeploymentTask = cluster.task({group: 'deployment', status: ['ready', 'error']}),
+                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'}),
                 failedDeploymentTask = cluster.task({group: 'deployment', status: 'error'}),
-                stopDeploymentTask = cluster.task('stop_deployment'),
-                hasOfflineNodes = nodes.any({online: false}),
-                resetDeploymentTask = cluster.task('reset_environment'),
                 isDeploymentPossible = cluster.isDeploymentPossible();
-
             return (
-                <div>
-                    {failedDeploymentTask && !!title &&
-                        <div className='row'>
-                            {this.renderTitle(title)}
+                <div className='row'>
+                    {!!title &&
+                        <div className='title'>
+                            {i18n(namespace + title)}
                         </div>
                     }
-                    {!runningDeploymentTask &&
-                        [
-                            (failedDeploymentTask || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask || isOperational) &&
-                                <DeploymentResult cluster={cluster} />,
-                            isOperational && <HorizonBlock cluster={cluster} />
-                        ]
-                    }
-                    {release.get('state') == 'unavailable' &&
-                        <div className='alert alert-warning'>
-                            {i18n('cluster_page.unavailable_release', {name: release.get('name')})}
-                        </div>
-                    }
-                    {cluster.get('is_customized') &&
-                        <div className='alert alert-warning'>
-                            {i18n('cluster_page.cluster_was_modified_from_cli')}
-                        </div>
-                    }
-                    {/* @FIXME (morale): !hasNodes condition is not clear here
-                     * - it requires decoupling DeployReadinessBlock component */}
-                    {(isDeploymentPossible || !hasNodes) &&
-                        <div className='row'>
-                            {!!title && !failedDeploymentTask && hasNodes &&
-                                this.renderTitle(title)
-                            }
+                    <div className='col-xs-12'>
+                        {release.get('state') == 'unavailable' &&
+                            <div className='alert alert-warning'>
+                                {i18n('cluster_page.unavailable_release', {name: release.get('name')})}
+                            </div>
+                        }
+                        {cluster.get('is_customized') &&
+                            <div className='alert alert-warning'>
+                                {i18n('cluster_page.cluster_was_modified_from_cli')}
+                            </div>
+                        }
+                        <DeploymentResult task={finishedDeploymentTask} />
+                        {isOperational && <HorizonBlock cluster={cluster} />}
+                        {!isOperational &&
+                            [
+                                !hasNodes &&
+                                    <div className='introduction-block'>
+                                        <h4 key='welcome'>{i18n(namespace + 'new_environment_welcome')}</h4>
+                                        <InstructionElement
+                                            key='no_nodes_instruction'
+                                            description='no_nodes_instruction'
+                                            explanation='for_more_information_roles'
+                                            link='user-guide.html#add-nodes-ug'
+                                            linkTitle='user_guide'
+                                        />
+                                        <AddNodesButton
+                                            disabled={!!runningDeploymentTask}
+                                            clusterId={cluster.id}
+                                        />
+                                    </div>,
+                                runningDeploymentTask &&
+                                    <DeploymentInProgressControl
+                                        cluster={cluster}
+                                        task={runningDeploymentTask}
+                                    />
+                            ]
+
+                        }
+                        {isDeploymentPossible &&
                             <DeployReadinessBlock
                                 cluster={cluster}
                                 deploymentErrorTask={failedDeploymentTask}
                                 selectNodes={this.props.selectNodes}
                             />
-                        </div>
-                    }
-                    {runningDeploymentTask &&
-                        <DeploymentInProgressControl
+                        }
+                        <ClusterInfo
                             cluster={cluster}
-                            task={runningDeploymentTask}
+                            isNew={isNew}
                         />
-                    }
-                    <ClusterInfo
-                        cluster={cluster}
-                        isNew={isNew}
-                    />
-                    <DocumentationLinks />
+                        <DocumentationLinks />
+                    </div>
                 </div>
             );
         }
@@ -179,32 +175,28 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 taskProgress = task.get('progress'),
                 stoppableTask = task.isStoppable();
             return (
-                <div className='row'>
-                    <div className='col-xs-12'>
-                        <div className='deploy-block'>
-                            <div className={'deploy-process ' + this.props.taskName}>
-                                <div className='task-title'>
-                                    <strong>
-                                        {i18n(namespace + 'current_task') + ' '}
-                                    </strong>
-                                    {i18n('cluster_page.' + taskName) + '...'}
-                                </div>
-                                <controls.ProgressBar
-                                    progress={!isInfiniteTask && taskProgress}
-                                    wrapperClassName={stoppableTask ? 'has-stop-control' : ''}
-                                />
-                                {stoppableTask &&
-                                    <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
-                                        <button
-                                            className='btn btn-danger btn-xs pull-right stop-deployment-btn'
-                                            onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
-                                        >
-                                            {i18n(namespace + 'stop')}
-                                        </button>
-                                    </controls.Tooltip>
-                                }
-                            </div>
+                <div className='deploy-block'>
+                    <div className={'deploy-process ' + this.props.taskName}>
+                        <div className='task-title'>
+                            <strong>
+                                {i18n(namespace + 'current_task') + ' '}
+                            </strong>
+                            {i18n('cluster_page.' + taskName) + '...'}
                         </div>
+                        <controls.ProgressBar
+                            progress={!isInfiniteTask && taskProgress}
+                            wrapperClassName={isInfiniteTask ? '' : 'has-progress'}
+                        />
+                        {stoppableTask &&
+                            <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
+                                <button
+                                    className='btn btn-danger btn-xs pull-right stop-deployment-btn'
+                                    onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                >
+                                    {i18n(namespace + 'stop')}
+                                </button>
+                            </controls.Tooltip>
+                        }
                     </div>
                 </div>
             );
@@ -214,19 +206,14 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     var WarningsBlock = React.createClass({
         ns: 'dialog.display_changes.',
         render: function() {
-            var result = {
-                    danger: _.union(this.props.alerts.blocker, this.props.alerts.error),
-                    warning: this.props.alerts.warning
-                };
             return (
                 <div className='warnings-block'>
                     <div className='validation-result'>
                         {
-                            _.map(['danger', 'warning'], function(severity) {
-                                if (_.isEmpty(result[severity]) || (!this.props.cluster.get('nodes').length && severity == 'warning')) return null;
+                            _.map(this.props.alerts, function(error, severity) {
                                 return (
                                     <ul key={severity} className={severity}>
-                                        {result[severity].map(function(line, index) {
+                                        {error.map(function(line, index) {
                                             return (<li key={severity + index}>
                                                 {line}
                                             </li>);
@@ -255,7 +242,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
         render: function() {
-            var task = this.props.cluster.task({group: 'deployment', active: false});
+            var task = this.props.task;
             if (!task) return null;
             var error = task.match({status: 'error'}),
                 delimited = task.escape('message').split('\n\n'),
@@ -327,8 +314,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         }
     });
 
-    // @FIXME (morale): this component is written in a bad pattern of 'monolith' component
-    // it should be refactored to provide proper logics separation and decoupling
     var DeployReadinessBlock = React.createClass({
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
@@ -465,131 +450,130 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         render: function() {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                hasNodes = !!nodes.length,
                 alerts = this.validate(cluster),
                 isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length,
                 isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
-                });
-
+                }),
+                deployButtonOptions = {},
+                buttonText;
+            if (isVMsProvisioningAvailable) {
+                deployButtonOptions.key = 'provision-vms';
+                deployButtonOptions.onClick = _.partial(this.showDialog, dialogs.ProvisionVMsDialog);
+                buttonText = i18n('cluster_page.provision_vms');
+            } else if (isDeploymentPossible) {
+                deployButtonOptions.key = 'deploy-changes';
+                deployButtonOptions.onClick = _.partial(this.showDialog, dialogs.DeployChangesDialog);
+                buttonText = i18n('cluster_page.deploy_changes');
+            } else {
+                deployButtonOptions = null;
+            }
             return (
-                <div className='col-xs-12 deploy-readiness'>
-                    <div className='deploy-block'>
-                        <div className='row'>
-                            {hasNodes &&
-                                <div className='col-xs-12 changes-list'>
-                                    <h4>
-                                        {i18n(namespace + 'changes_header') + ':'}
-                                    </h4>
-                                    <ul>
-                                        {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
-                                        {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                                    </ul>
-                                    {isVMsProvisioningAvailable ?
-                                        (
-                                            <button
-                                                key='provision-vms'
-                                                className='btn btn-primary deploy-btn'
-                                                onClick={_.partial(this.showDialog, dialogs.ProvisionVMsDialog)}
-                                            >
-                                                <div className='deploy-icon'></div>
-                                                {i18n('cluster_page.provision_vms')}
-                                            </button>
-                                        )
-                                    :
-                                        isDeploymentPossible &&
-                                            (
-                                                <button
-                                                    key='deploy-changes'
-                                                    className='btn btn-primary deploy-btn'
-                                                    onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
-                                                >
-                                                    <div className='deploy-icon'></div>
-                                                    {i18n('cluster_page.deploy_changes')}
-                                                </button>
-                                            )
-                                    }
-                                    {nodes.hasChanges() &&
-                                        <button
-                                            className='btn-link discard-changes'
-                                            key='discard-changes'
-                                            onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
-                                        >
-                                            {i18n('cluster_page.discard_changes')}
-                                        </button>
-                                    }
-                                </div>
-                            }
-                            <div className='col-xs-12 deploy-readiness'>
-                                {!isDeploymentPossible &&
-                                    <div className='informational-block'>
-                                        {!!this.props.deploymentErrorTask &&
-                                            <InstructionElement
-                                                description='unsuccessful_deploy'
-                                                explanation='for_more_information_roles'
-                                                link='operations.html#troubleshooting'
-                                                linkTitle='user_guide'
-                                            />
-                                        }
-                                        {!hasNodes &&
-                                            [
-                                                <h4 key='welcome'>{i18n(namespace + 'new_environment_welcome')}</h4>,
-                                                <InstructionElement
-                                                    key='no_nodes_instruction'
-                                                    description='no_nodes_instruction'
-                                                    explanation='for_more_information_roles'
-                                                    link='user-guide.html#add-nodes-ug'
-                                                    linkTitle='user_guide'
-                                                />
-                                            ]
-                                        }
-                                    </div>
-                                }
-                                {hasNodes &&
-                                    [
-                                        cluster.needsRedeployment() &&
-                                            <div className='invalid'>
-                                                {i18n('dialog.display_changes.redeployment_needed')}
-                                            </div>,
-                                        !_.isEmpty(alerts.blocker) &&
-                                            [
-                                                <InstructionElement
-                                                    key='deployment_cannot_be_started'
-                                                    description='deployment_cannot_be_started'
-                                                    explanation='for_more_information_roles'
-                                                    link='user-guide.html#add-nodes-ug'
-                                                    linkTitle='user_guide'
-                                                    wrapperClass='invalid'
-                                                />,
-                                                <WarningsBlock
-                                                    key='blocker'
-                                                    cluster={cluster}
-                                                    alerts={_.pick(alerts, 'blocker')}
-                                                />
-                                            ],
-                                        !_.isEmpty(alerts.error) &&
-                                            <WarningsBlock
-                                                key='error'
-                                                cluster={cluster}
-                                                alerts={_.pick(alerts, 'error')}
-                                            />,
-                                        !_.isEmpty(alerts.warning) &&
-                                            [
-                                                <p>{i18n(namespace + 'note_recommendations')}</p>,
-                                                <WarningsBlock
-                                                    key='warning'
-                                                    cluster={cluster}
-                                                    alerts={_.pick(alerts, 'warning')}
-                                                />
-                                            ]
-                                    ]
-                                }
-                                {!hasNodes &&
-                                    <AddNodesButton cluster={cluster}/>
-                                }
-                            </div>
-                        </div>
+                <div className='deploy-readiness'>
+                    <div className='changes-list'>
+                        <h4>
+                            {i18n(namespace + 'changes_header') + ':'}
+                        </h4>
+                        <ul>
+                            {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
+                            {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                        </ul>
                     </div>
+                    {!_.isNull(deployButtonOptions) &&
+                        <button {...deployButtonOptions}
+                            className='btn btn-primary deploy-btn'
+                        >
+                            <div className='deploy-icon'></div>
+                            {buttonText}
+                        </button>
+                    }
+                    {nodes.hasChanges() &&
+                        <button
+                            className='btn-link discard-changes'
+                            key='discard-changes'
+                            onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
+                        >
+                            {i18n('cluster_page.discard_changes')}
+                        </button>
+                    }
+                    <ErrorsBlock
+                        deploymentImpossible={!isDeploymentPossible}
+                        hasDeploymentError={!!this.props.deploymentErrorTask}
+                        needsRedeployment={cluster.needsRedeployment()}
+                        alerts={alerts}
+                        hasNoNodes={!nodes.length}
+                    />
+                </div>
+            );
+        }
+    });
+
+    var ErrorsBlock = React.createClass({
+        render: function() {
+            var alerts = this.props.alerts,
+                hasNoNodes = this.props.hasNoNodes,
+                resultingErrors = {},
+                dangers = _.union(alerts.blocker, alerts.error),
+                warnings = alerts.warning;
+            if (!_.isEmpty(dangers)) {
+                resultingErrors.danger = dangers;
+            }
+            if (!(_.isEmpty(warnings) && hasNoNodes)) {
+                resultingErrors.warning = warnings;
+            }
+            return (
+                <div className='recommendations-warnings-block'>
+                    {this.props.deploymentImpossible &&
+                        <div className='informational-block'>
+                            {this.props.hasDeploymentError &&
+                                <InstructionElement
+                                    description='unsuccessful_deploy'
+                                    explanation='for_more_information_roles'
+                                    link='operations.html#troubleshooting'
+                                    linkTitle='user_guide'
+                                />
+                            }
+                        </div>
+                    }
+                    {this.props.needsRedeployment &&
+                        <div className='invalid'>
+                            {i18n('dialog.display_changes.redeployment_needed')}
+                        </div>
+                    }
+                    {!_.isEmpty(alerts.blocker) &&
+                        [
+                            <InstructionElement
+                                key='deployment_cannot_be_started'
+                                description='deployment_cannot_be_started'
+                                explanation='for_more_information_roles'
+                                link='user-guide.html#add-nodes-ug'
+                                linkTitle='user_guide'
+                                wrapperClass='invalid'
+                            />,
+                            <WarningsBlock
+                                key='blocker'
+                                hasNoNodes={hasNoNodes}
+                                alerts={_.pick(alerts, 'blocker')}
+                            />
+                        ]
+                    }
+                    {!_.isEmpty(alerts.error) &&
+                        <WarningsBlock
+                            key='error'
+                            hasNoNodes={hasNoNodes}
+                            alerts={_.pick(alerts, 'error')}
+                        />
+                    }
+                    {!_.isEmpty(alerts.warning) &&
+                        [
+                            <p className='recommendations-title'>{i18n(namespace + 'note_recommendations')}</p>,
+                            <WarningsBlock
+                                key='warning'
+                                hasNoNodes={hasNoNodes}
+                                alerts={_.pick(alerts, 'warning')}
+                            />
+                        ]
+                    }
                 </div>
             );
         }
@@ -673,15 +657,15 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     <div className='title'>{i18n(ns + 'capacity')}</div>
                     <div className='col-xs-12 capacity-items'>
                         <div className='col-xs-4 cpu capacity-item'>
-                            <span>{i18n(ns + 'cpu_cores')}</span>
+                            {i18n(ns + 'cpu_cores')}
                             <span className='capacity-value pull-right'>{cores}</span>
                         </div>
                         <div className='col-xs-4 hdd capacity-item'>
-                            <span>{i18n(ns + 'hdd')}</span>
+                            {i18n(ns + 'hdd')}
                             <span className='capacity-value pull-right'>{utils.showDiskSize(hdds)}</span>
                         </div>
                         <div className='col-xs-4 ram capacity-item'>
-                            <span>{i18n(ns + 'ram')}</span>
+                            {i18n(ns + 'ram')}
                             <span className='capacity-value pull-right'>{utils.showDiskSize(ram)}</span>
                         </div>
                     </div>
@@ -756,7 +740,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     {this.renderLegend(fieldRoles, true)}
                                 </div>
                                 <AddNodesButton
-                                    cluster={this.props.cluster}
+                                    clusterId={this.props.cluster.id}
                                 />
                             </div>,
                             <div className='col-xs-6' key='statuses'>
@@ -775,8 +759,17 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 </div>
             );
         },
+        getResetDescriptionKey: function() {
+            var task = this.props.task;
+                if (task) {
+                    if (_.contains(task.get('name'), 'reset')) {return 'repeated_reset_disabled';}
+                    return 'reset_disabled_for_deploying_cluster';
+                }
+            return 'reset_environment_description';
+        },
         render: function() {
-            var cluster = this.props.cluster;
+            var cluster = this.props.cluster,
+                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'});
             return (
                 <div className='cluster-information'>
                     <div className='row'>
@@ -815,11 +808,26 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     </div>
                                 }
                                 <div className='col-xs-12 dashboard-actions-wrapper'>
-                                    <DeleteEnvironmentAction cluster={cluster} />
+                                    <EnvironmentAction
+                                        cluster={cluster}
+                                        disabled={runningDeploymentTask}
+                                        Dialog={dialogs.RemoveClusterDialog}
+                                        keyName='delete'
+                                        wrapperClasses='delete-environment pull-left'
+                                        buttonClasses='delete-environment-btn'
+                                        buttonText={i18n(namespace + 'delete_environment')}
+                                        tooltipText={i18n(namespace + 'alert_delete')}
+                                    />
                                     {!this.props.isNew &&
-                                        <ResetEnvironmentAction
+                                        <EnvironmentAction
                                             cluster={cluster}
-                                            task={cluster.task({group: 'deployment', active: true})}
+                                            disabled={runningDeploymentTask}
+                                            Dialog={dialogs.ResetEnvironmentDialog}
+                                            keyName='reset'
+                                            wrapperClasses='reset-environment pull-right'
+                                            buttonClasses='reset-environment-btn'
+                                            buttonText={i18n(namespace + 'reset_environment')}
+                                            tooltipText={runningDeploymentTask ? i18n(namespace + 'reset_environment_warning') : i18n(namespace + this.getResetDescriptionKey())}
                                         />
                                     }
                                 </div>
@@ -837,12 +845,11 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
 
     var AddNodesButton = React.createClass({
         render: function() {
-            var disabled = !!this.props.cluster.task({group: 'deployment', active: true});
             return (
                     <a
                         className='btn btn-success btn-add-nodes'
-                        href={'#cluster/' + this.props.cluster.id + '/nodes/add'}
-                        disabled={disabled}
+                        href={'#cluster/' + this.props.clusterId + '/nodes/add'}
+                        disabled={this.props.disabled}
                     >
                         <i className='glyphicon glyphicon-plus' />
                         {i18n(namespace + 'go_to_nodes')}
@@ -937,64 +944,31 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         }
     });
 
-    var ResetEnvironmentAction = React.createClass({
+    var EnvironmentAction = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster'),
             componentMixins.backboneMixin('task')
         ],
-        getDescriptionKey: function() {
-            var task = this.props.task;
-            if (task) {
-                if (_.contains(task.get('name'), 'reset')) {return 'repeated_reset_disabled';}
-                return 'reset_disabled_for_deploying_cluster';
-            }
-            return 'reset_environment_description';
-        },
         applyAction: function(e) {
             e.preventDefault();
-            dialogs.ResetEnvironmentDialog.show({cluster: this.props.cluster});
+            this.props.Dialog.show({cluster: this.props.cluster});
         },
         render: function() {
-            var isLocked = !!this.props.task;
+            var buttonClasses = {'btn btn-default': true};
+            buttonClasses[this.props.buttonClasses] = !!this.props.buttonClasses;
             return (
-                <div className='pull-right reset-environment'>
+                <div className={this.props.wrapperClasses}>
                     <button
-                        className='btn reset-environment-btn btn-default'
+                        className={utils.classNames(buttonClasses)}
                         onClick={this.applyAction}
-                        disabled={isLocked}
+                        disabled={this.props.disabled}
                     >
-                        {i18n(namespace + 'reset_environment')}
+                        {this.props.buttonText}
                     </button>
                     <controls.Tooltip
-                        key='reset-tooltip'
+                        key={this.props.keyName + '_tooltip'}
                         placement='right'
-                        text={!isLocked ? i18n(namespace + 'reset_environment_warning') : i18n(namespace + this.getDescriptionKey())}
-                    >
-                        <i className='glyphicon glyphicon-info-sign' />
-                    </controls.Tooltip>
-                </div>
-            );
-        }
-    });
-
-    var DeleteEnvironmentAction = React.createClass({
-        applyAction: function(e) {
-            e.preventDefault();
-            dialogs.RemoveClusterDialog.show({cluster: this.props.cluster});
-        },
-        render: function() {
-            return (
-                <div className='delete-environment pull-left'>
-                    <button
-                        className='btn delete-environment-btn btn-default'
-                        onClick={this.applyAction}
-                    >
-                        {i18n(namespace + 'delete_environment')}
-                    </button>
-                    <controls.Tooltip
-                        key='delete-tooltip'
-                        placement='right'
-                        text={i18n(namespace + 'alert_delete')}
+                        text={this.props.tooltipText}
                     >
                         <i className='glyphicon glyphicon-info-sign' />
                     </controls.Tooltip>

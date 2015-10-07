@@ -594,7 +594,6 @@
                     "for_more_information_roles": "for more information on how to assign roles to nodes and add them to an environment.",
                     "for_more_information_configuration": " for more information on how to configure environment and node level settings.",
                     "and_vcenter": "and VCenter",
-                    "manager": "manager",
                     "nova_with": "Nova Network with",
                     "neutron_with": "Neutron with",
                     "horizon": "Horizon",

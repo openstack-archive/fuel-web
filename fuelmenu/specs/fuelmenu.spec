@@ -21,7 +21,6 @@ Requires: python-netaddr
 Requires: python-netifaces
 Requires: python-urwid >= 1.1.0
 Requires: PyYAML
-Requires: python-ordereddict
 Requires: screen
 Requires: python-six
 

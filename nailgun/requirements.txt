@@ -33,7 +33,6 @@ python-novaclient>=2.17.0,<2.24.0
 python-cinderclient>=1.0.7,<1.2.0
 networkx>=1.8,<1.10
 pydot-ng>=1.0.0
-ordereddict>=1.1
 oslo.utils<1.4.1
 # NOTE(prmtl): not all packages has correctly
 # requirements for stevedore - some of them install

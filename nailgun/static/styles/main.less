@@ -778,13 +778,14 @@ input[type=range] {
   .popover {
     @default-popover-width: 260px;
     @default-arrow-offset: 10px;
+    @default-z-index: 1060;
     display: block;
     position: absolute;
     left: 0;
     top: @navbar-icon-size;
     max-width: none;
     width: @default-popover-width;
-    z-index: 1060;
+    z-index: @default-z-index;
     font-family: @open-sans-font;
     .font-normal;
     font-size: @base-font-size - 1px;
@@ -820,6 +821,7 @@ input[type=range] {
 
     &.notifications-popover {
       .popover-layout(@index: 0);
+      z-index: @default-z-index - 20;
       .notification {
         border-bottom: 1px solid @gray + 80%;
         padding-bottom: 14px;

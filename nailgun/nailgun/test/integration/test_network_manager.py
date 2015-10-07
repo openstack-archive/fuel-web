@@ -269,7 +269,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             },
         }
         resp = self.env.nova_networks_put(cluster['id'], networks_data)
-        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
+        self.assertEqual(resp.status_code, 200)
         network_data = self.env.network_manager.get_node_networks(
             self.env.nodes[0]
         )

@@ -26,38 +26,21 @@ define([
     InterfacesPage.prototype = {
         constructor: InterfacesPage,
         findInterfaceElement: function(ifcName) {
+            console.log('findInterfaceElement', ifcName);
             return this.remote
-                .findAllByCssSelector('div.ifc-inner-container')
-                    .then(function(ifcElements) {
-                        return ifcElements.reduce(function(result, ifcElement) {
-                            return ifcElement
-                                .findByCssSelector('div.ifc-name')
-                                    .then(function(ifcDiv) {
-                                        return ifcDiv
-                                            .getVisibleText()
-                                                .then(function(currentIfcName) {
-                                                    return _.trim(currentIfcName) == ifcName ? ifcElement : result;
-                                                });
-                                    })
-                        }, null);
-                    });
+                .findByXpath(
+                    '//div[contains(@class, "ifc-inner-container")]' +
+                    '[.//div[contains(@class, "ifc-name") and ' +
+                        'normalize-space(descendant-or-self::text())="' + ifcName + '"' +
+                    ']]'
+                );
         },
         findInterfaceElementInBond: function(ifcName) {
             return this.remote
-                .findAllByCssSelector('.ifc-info-block')
-                    .then(function(ifcsElements) {
-                        return ifcsElements.reduce(function(result, ifcElement) {
-                            return ifcElement
-                                .findByCssSelector('.ifc-name')
-                                    .then(function(ifcNameElement) {
-                                        return ifcNameElement
-                                            .getVisibleText()
-                                                .then(function(foundIfcName) {
-                                                    return ifcName == foundIfcName ? ifcElement : result;
-                                                });
-                                    });
-                        }, null);
-                    });
+                .findByXpath(
+                    '//div[contains(@class, "ifc-info-block")]' +
+                    '[.//div[contains(@class, "ifc-name") and text()="' + ifcName + '"]]'
+                );
         },
         removeInterfaceFromBond: function(ifcName) {
             var self = this;
@@ -141,7 +124,7 @@ define([
                                             .getVisibleText()
                                                 .then(function(name) {
                                                     name = _.trim(name);
-                                                    if (_.indexOf(ifcsNames, name) < 0)
+                                                    if (!_.contains(ifcsNames, name))
                                                         throw new Error('Unexpected name in bond: ' + name);
                                                 });
                                     });

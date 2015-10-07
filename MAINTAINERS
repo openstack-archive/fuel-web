@@ -29,3 +29,16 @@ maintainers:
     - name:   Matthew Mosesohn
       email:  mmosesohn@mirantis.com
       IRC:    mattymo
+- nailgun/static/:
+    - name:   Vitaly Kramskikh
+      email:  vkramskikh@mirantis.com
+      IRC:    vkramskikh
+    - name:   Julia Aranovich
+      email:  jkirnosova@mirantis.com
+      IRC:    jaranovich
+    - name:   Alexandra Morozova
+      email:  astepanchuk@mirantis.com
+      IRC:    morale
+    - name:   Kate Pimenova
+      email:  kpimenova@mirantis.com
+      IRC:    kpimenova

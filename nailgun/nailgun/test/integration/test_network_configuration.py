@@ -104,8 +104,6 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(self.cluster.id, data)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
@@ -182,9 +180,8 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets,
                                           expect_errors=True)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(400, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             "Networks with ID's [500] are not present in the database"
@@ -307,8 +304,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEqual(200, resp.status_code)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
@@ -322,9 +317,8 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(400, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             "Change of 'segmentation_type' is prohibited"
@@ -339,9 +333,8 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         ]
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(400, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             'Setting of multiple floating IP ranges is prohibited'
@@ -374,9 +367,8 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(400, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             "Change of 'segmentation_type' is prohibited"
@@ -388,9 +380,8 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(400, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertIn(
             "'id' is a required property",
             task['message']
@@ -403,9 +394,8 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(400, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             "Networks with ID's [500] are not present in the database"
@@ -425,8 +415,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEqual(200, resp.status_code)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         publ_ng = filter(lambda ng: ng.name == 'public',
@@ -452,8 +440,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
             resp = self.env.neutron_networks_put(self.cluster.id, data)
             self.assertEqual(200, resp.status_code)
-            task = resp.json_body
-            self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
             self.db.refresh(self.cluster)
             ng_db = filter(lambda ng: ng.name == ng_name,
@@ -653,11 +639,8 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         nets = resp.json_body
         resp = self.env.nova_networks_put(self.cluster['id'], nets,
                                           expect_errors=True)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 400)
         task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
-        self.assertEqual(task['progress'], 100)
-        self.assertEqual(task['name'], 'check_networks')
         self.assertIn("Address space intersection between networks:\n"
                       "admin (PXE), management.",
                       task['message'])

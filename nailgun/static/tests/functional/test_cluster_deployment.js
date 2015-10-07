@@ -102,8 +102,7 @@ define([
                     .assertElementDisappears('div.deploy-process div.progress', 5000, 'Deployment stopped')
                     .assertElementAppears(dashboardPage.deployButtonSelector, 1000, 'Deployment button available')
                     .assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected')
-                    //@todo: uncomment this after bug fix https://bugs.launchpad.net/fuel/+bug/1493291
-                    //.assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy')
+                    .assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy')
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);

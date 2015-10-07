@@ -5,6 +5,7 @@
 Summary: Nailgun package
 Name: %{name}
 Obsoletes: nailgun
+Epoch:   1
 Version: %{version}
 Release: %{release}
 Source0: %{name}-%{version}.tar.gz
@@ -20,7 +21,7 @@ BuildArch: noarch
 Requires:    python-alembic >= 0.6.2
 Requires:    python-amqplib >= 1.0.2
 Requires:    python-anyjson >= 0.3.3
-Requires:    python-argparse >= 1.2.1
+#Requires:    python-argparse >= 1.2.1
 Requires:    python-babel >= 1.3
 Requires:    python-crypto >= 2.6.1
 Requires:    python-decorator >= 3.4.0
@@ -56,7 +57,6 @@ Requires:    python-networkx-core >= 1.8.0
 Requires:    python-networkx-core < 1.10.0
 Requires:    python-cinderclient >= 1.0.7
 Requires:    pydot-ng >= 1.0.0
-Requires:    python-ordereddict >= 1.1
 # Workaroud for babel bug
 Requires:    pytz
 
@@ -140,6 +140,7 @@ rm -rf $RPM_BUILD_ROOT
 %package -n fuel-openstack-metadata
 
 Summary:   Fuel Openstack metadata files
+Epoch:     1
 Version:   %{version}
 Release:   %{release}
 License:   GPLv2
@@ -156,6 +157,7 @@ This package currently installs just a single file openstack.yaml
 
 %package -n fencing-agent
 Summary:   Fencing agent
+Epoch:     1
 Version:   %{version}
 Release:   %{release}
 License:   GPLv2
@@ -175,6 +177,7 @@ Fuel fencing agent
 %package -n fuel-package-updates
 
 Summary: Fuel package update downloader
+Epoch:   1
 Version: %{version}
 Release: %{release}
 License: Apache
@@ -183,7 +186,6 @@ Prefix: %{_prefix}
 BuildArch: noarch
 Requires:  python-keystoneclient >= 0.11
 Requires:  python-keystonemiddleware >= 1.2.0
-Requires:  python-ordereddict >= 1.1
 
 %description -n fuel-package-updates
 Command line utility to download apt/yum repositories for Fuel
@@ -194,6 +196,7 @@ Command line utility to download apt/yum repositories for Fuel
 %package -n fuel-provisioning-scripts
 
 Summary: Fuel provisioning scripts
+Epoch:   1
 Version: %{version}
 Release: %{release}
 URL:     http://mirantis.com

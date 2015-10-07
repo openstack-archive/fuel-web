@@ -163,8 +163,6 @@ class TestNodeHandlers(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -200,8 +198,6 @@ class TestNodeHandlers(BaseIntegrationTest):
                 net['vlan_start'] = 112
         resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -241,8 +237,6 @@ class TestNodeHandlers(BaseIntegrationTest):
                 net['vlan_start'] = None
         resp = self.env.neutron_networks_put(cluster['id'], nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -278,8 +272,6 @@ class TestNodeHandlers(BaseIntegrationTest):
                 net['vlan_start'] = 112
         resp = self.env.neutron_networks_put(cluster['id'], nets)
         self.assertEqual(resp.status_code, 200)
-        task = resp.json_body
-        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()

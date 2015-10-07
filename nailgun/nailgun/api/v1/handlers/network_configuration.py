@@ -106,7 +106,7 @@ class ProviderHandler(BaseHandler):
 
     @content
     def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
+        """:returns: JSONized network configuration for cluster.
         :http: * 200 (task successfully executed)
                * 202 (network checking task scheduled for execution)
                * 400 (data validation failed)
@@ -121,18 +121,18 @@ class ProviderHandler(BaseHandler):
             data = self.validator.validate_networks_data(
                 web.data(), cluster, networks_required=False)
         except Exception as exc:
-            self._raise_error_task(cluster, exc)
+            raise self.http(400, six.text_type(exc))
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
-        if task.status != consts.TASK_STATUSES.error:
-            objects.Cluster.get_network_manager(
-                cluster
-            ).update(cluster, data)
+        if task.status == consts.TASK_STATUSES.error:
+            raise self.http(400, task.message)
 
-        # TODO(pkaminski): this is synchronous, no task needed here
-        self.raise_task(task)
+        objects.Cluster.get_network_manager(
+            cluster
+        ).update(cluster, data)
+        return self.serializer.serialize_for_cluster(cluster)
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):

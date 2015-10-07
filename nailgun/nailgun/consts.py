@@ -392,3 +392,9 @@ NETWORK_NOTATION = Enum(
 
 # Minimal quantity of IPs to be fetched and checked within one request to DB.
 MIN_IPS_PER_DB_QUERY = 5
+
+CLOUD_INIT_TEMPLATES = Enum(
+    'boothook',
+    'cloud_config',
+    'meta_data',
+)

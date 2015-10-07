@@ -37,7 +37,6 @@ setuptools.setup(
     ],
     install_requires=[
         'netaddr>=0.7.5',
-        'OrderedDict>=1.1',
         'PyYAML>=3.10',
         'netifaces>=0.5',
         'urwid>=1.1.1',

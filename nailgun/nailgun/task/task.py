@@ -686,6 +686,16 @@ class BaseNetworkVerification(object):
             node_json['bonds'] = bonds
 
         for iface in node.nic_interfaces:
+	    ######dirty hack
+            logger.debug("ZZZ node.nic_interfaces iface.nameBEFORE: %s", iface.name )
+            for iface_n in node.meta['interfaces']:
+                if 'orig_name' in iface_n:
+                    if iface_n['name'] == iface.name:
+                        logger.debug("ZZZ node.nic_interfaces iface. iface_n: type %s %s", type(iface.name) ,iface_n['orig_name']  )
+                        iface.name = iface_n['orig_name']
+            logger.debug("ZZZ node.nic_interfaces iface.nameAFTER: %s", iface.name )
+	    ######dirty hack end
+
             assigned_networks = iface.assigned_networks_list
             # In case of present bond interfaces - collect assigned networks
             # against bonds slave NICs. We should skip LACP bonds Fuel

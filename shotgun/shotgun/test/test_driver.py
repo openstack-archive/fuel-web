@@ -14,14 +14,13 @@
 
 import fnmatch
 import os
+import random
 import sys
 
 import fabric
 import mock
 
-import shotgun.config
-import shotgun.driver
-import shotgun.settings
+import shotgun
 from shotgun.test import base
 
 
@@ -63,16 +62,38 @@ class TestDriver(base.BaseTestCase):
 
         command = "COMMAND"
 
+        conf = mock.Mock()
         driver = shotgun.driver.Driver(
-            {"host": {"address": "remote_host"}}, None)
+            {"host": {"address": "remote_host"}}, conf)
         result = driver.command(command)
 
-        shotgun.driver.fabric.api.run.assert_called_with(
+        mfabrun.assert_called_with(
             command, stdout=mock.ANY)
-        shotgun.driver.fabric.api.settings.assert_called_with(
-            host_string="remote_host", timeout=2, command_timeout=10,
-            warn_only=True, key_filename=None, abort_on_prompts=True)
+        mfabset.assert_called_with(
+            host_string="remote_host",
+            timeout=2,
+            command_timeout=driver.timeout,
+            warn_only=True,
+            key_filename=None,
+            abort_on_prompts=True)
         self.assertEqual(result, out)
+
+    @mock.patch('shotgun.driver.fabric.api.run')
+    @mock.patch('shotgun.driver.fabric.api.settings')
+    def test_fabric_use_timout_from_driver(self, mfabset, _):
+        timeout = random.randint(1, 100)
+        conf = mock.Mock()
+        driver = shotgun.driver.Driver(
+            {"host": {"address": "remote_host"}}, conf)
+        driver.timeout = timeout
+        driver.command("COMMAND")
+        mfabset.assert_called_with(
+            host_string=mock.ANY,
+            timeout=mock.ANY,
+            command_timeout=timeout,
+            warn_only=mock.ANY,
+            key_filename=mock.ANY,
+            abort_on_prompts=mock.ANY)
 
     @mock.patch('shotgun.driver.utils.execute')
     def test_driver_local_command(self, mexecute):
@@ -84,7 +105,8 @@ class TestDriver(base.BaseTestCase):
         out.return_code = "RETURN_CODE"
 
         command = "COMMAND"
-        driver = shotgun.driver.Driver({}, None)
+        conf = mock.Mock()
+        driver = shotgun.driver.Driver({}, conf)
         result = driver.command(command)
         shotgun.driver.utils.execute.assert_called_with(command)
         self.assertEqual(result, out)
@@ -101,8 +123,9 @@ class TestDriver(base.BaseTestCase):
 
         command = "COMMAND"
 
+        conf = mock.Mock()
         driver = shotgun.driver.Driver(
-            {"host": {"address": "remote_host"}}, None)
+            {"host": {"address": "remote_host"}}, conf)
         result = driver.command(command)
 
         mstringio.assert_has_calls([
@@ -118,13 +141,14 @@ class TestDriver(base.BaseTestCase):
         mexecute.return_value = ("RETURN_CODE", "STDOUT", "STDERR")
         remote_path = "/remote_dir/remote_file"
         target_path = "/target_dir"
+        conf = mock.Mock()
 
         driver = shotgun.driver.Driver({
             "host": {
                 "address": "remote_host",
                 "ssh-key": "path_to_key",
             }
-        }, None)
+        }, conf)
         driver.get(remote_path, target_path)
         mexecute.assert_called_with('mkdir -p "{0}"'.format(target_path))
         mfabget.assert_called_with(remote_path, target_path)
@@ -133,11 +157,27 @@ class TestDriver(base.BaseTestCase):
             timeout=2, warn_only=True, abort_on_prompts=True)
 
         mexecute.reset_mock()
-        driver = shotgun.driver.Driver({}, None)
+        driver = shotgun.driver.Driver({}, conf)
         driver.get(remote_path, target_path)
         self.assertEqual(mexecute.mock_calls, [
             mock.call('mkdir -p "{0}"'.format(target_path)),
             mock.call('cp -r "{0}" "{1}"'.format(remote_path, target_path))])
+
+    def test_use_timeout_from_global_conf(self):
+        data = {}
+        conf = mock.Mock(spec=shotgun.config.Config, target="some_target")
+        cmd_driver = shotgun.driver.Driver(data, conf)
+        self.assertEqual(cmd_driver.timeout, conf.timeout)
+
+    def test_use_command_specific_timeout(self):
+        timeout = 1234
+        data = {
+            "timeout": timeout
+        }
+        conf = mock.Mock(spec=shotgun.config.Config, target="some_target")
+        cmd_driver = shotgun.driver.Driver(data, conf)
+        self.assertEqual(cmd_driver.timeout, timeout)
+        self.assertNotEqual(cmd_driver.timeout, conf.timeout)
 
 
 class TestFile(base.BaseTestCase):

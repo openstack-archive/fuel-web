@@ -10,12 +10,12 @@ anyjson==0.3.3
 argparse==1.2.1
 decorator==3.4.0
 fysom==1.0.11
-iso8601==0.1.9
+iso8601
 jsonschema==2.3.0
 kombu==3.0.16
 netaddr>=0.7.10
-oslo.config>=1.6.0,<1.10.0
-oslo.serialization>=1.2.0,<1.5.0
+oslo.config>=1.6.0
+oslo.serialization>=1.2.0
 ply==3.4
 psycopg2==2.5.1
 pycrypto==2.6.1
@@ -26,17 +26,16 @@ urllib3>=1.7
 web.py==0.37
 wsgilog==0.3
 wsgiref==0.1.2
-keystonemiddleware>=1.2.0,<1.6.0
+keystonemiddleware>=1.2.0
 # we might still need keystone command
-python-keystoneclient>=0.11,<1.4.0
-python-novaclient>=2.17.0,<2.24.0
-python-cinderclient>=1.0.7,<1.2.0
-networkx>=1.8,<1.10
+python-keystoneclient>=0.11
+python-novaclient>=2.17.0
+python-cinderclient>=1.0.7
+networkx>=1.8
 pydot-ng>=1.0.0
-ordereddict>=1.1
-oslo.utils<1.4.1
+oslo.utils
 # NOTE(prmtl): not all packages has correctly
 # requirements for stevedore - some of them install
 # newest one which case version conflicts
 # See: https://bugs.launchpad.net/fuel/+bug/1481212
-stevedore<1.4.0
+stevedore

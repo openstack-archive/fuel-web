@@ -321,6 +321,8 @@ def get_serializer_for_cluster(cluster):
     serializers_map = {
         '5': ProvisioningSerializer,
         '6.0': ProvisioningSerializer,
+        '6.1': ProvisioningSerializer61,
+        '7.0': ProvisioningSerializer70
     }
 
     for version, serializer in six.iteritems(serializers_map):
@@ -328,7 +330,7 @@ def get_serializer_for_cluster(cluster):
             return serializer
 
     # by default, we should return latest serializer
-    return ProvisioningSerializer61
+    return ProvisioningSerializer80
 
 
 def serialize(cluster, nodes, ignore_customized=False):
@@ -338,3 +340,32 @@ def serialize(cluster, nodes, ignore_customized=False):
 
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)
+
+
+class ProvisioningSerializer70(ProvisioningSerializer61):
+
+    pass
+
+
+class ProvisioningSerializer80(ProvisioningSerializer70):
+
+    @classmethod
+    def serialize_pre_provision_tasks(cls, cluster):
+        tasks = super(ProvisioningSerializer80,
+                      cls).serialize_pre_provision_tasks(cluster)
+
+        add_comps = cluster.attributes['editable']['additional_components']
+
+        if add_comps['ironic']['value']:
+            tasks.append(
+                tasks_templates.generate_ironic_bootstrap_keys_task(
+                    [consts.MASTER_ROLE],
+                    cluster.id))
+
+            tasks.append(
+                tasks_templates.make_ironic_bootstrap_task(
+                    [consts.MASTER_ROLE],
+                    cluster.id))
+
+        PriorityStrategy().one_by_one(tasks)
+        return tasks

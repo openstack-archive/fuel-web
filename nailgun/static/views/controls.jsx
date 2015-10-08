@@ -326,7 +326,11 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             text: React.PropTypes.node
         },
         getDefaultProps: function() {
-            return {placement: 'top', container: 'body'};
+            return {
+                placement: 'top',
+                container: 'body',
+                wrapperClassName: 'tooltip-wrapper'
+            };
         },
         componentDidMount: function() {
             if (this.props.text) this.addTooltip();
@@ -348,7 +352,12 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             $(this.refs.tooltip.getDOMNode()).tooltip('destroy');
         },
         render: function() {
-            return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});
+            if (!this.props.wrap) return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});
+            return (
+                <div className={this.props.wrapperClassName} ref='tooltip'>
+                    {this.props.children}
+                </div>
+            );
         }
     });
 

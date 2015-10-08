@@ -935,7 +935,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 </div>
                             </div>
                             {this.props.mode != 'edit' && [
-                                <controls.Tooltip key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
+                                <controls.Tooltip wrap key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
                                     <button
                                         disabled={!this.props.nodes.length}
                                         onClick={this.props.nodes.length && this.toggleLabelsPanel}
@@ -944,7 +944,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         <i className='glyphicon glyphicon-tag' />
                                     </button>
                                 </controls.Tooltip>,
-                                <controls.Tooltip key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
+                                <controls.Tooltip wrap key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
                                     <button
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleSorters}
@@ -953,7 +953,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         <i className='glyphicon glyphicon-sort' />
                                     </button>
                                 </controls.Tooltip>,
-                                <controls.Tooltip key='filters-btn' text={i18n(ns + 'filter_tooltip')}>
+                                <controls.Tooltip wrap key='filters-btn' text={i18n(ns + 'filter_tooltip')}>
                                     <button
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleFilters}
@@ -963,7 +963,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </button>
                                 </controls.Tooltip>,
                                 !this.state.activeSearch && (
-                                    <controls.Tooltip key='search-btn' text={i18n(ns + 'search_tooltip')}>
+                                    <controls.Tooltip wrap key='search-btn' text={i18n(ns + 'search_tooltip')}>
                                         <button
                                             disabled={!this.props.screenNodes.length}
                                             onClick={this.activateSearch}

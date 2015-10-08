@@ -43,8 +43,7 @@ class TestOpenStackUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.openstack.glob.glob', return_value=['path'])
     def setUp(self, _):
-        """Create upgrader with mocked data.
-        """
+        """Create upgrader with mocked data."""
         with mock.patch('fuel_upgrade.engines.openstack.io.open',
                         self.mock_open(self.releases_raw)):
             self.upgrader = OpenStackUpgrader(self.fake_config)

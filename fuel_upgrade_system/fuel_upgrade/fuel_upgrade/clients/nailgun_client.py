@@ -42,8 +42,7 @@ class NailgunClient(object):
 
     @http_retry(status_codes=[500, 502])
     def get_releases(self):
-        """Returns a list with all releases.
-        """
+        """Returns a list with all releases."""
         r = self.request.get(
             '{api_url}/releases/'.format(api_url=self.api_url))
 

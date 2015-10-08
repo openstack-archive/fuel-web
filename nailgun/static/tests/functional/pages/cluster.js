@@ -28,8 +28,44 @@ define([
     ClusterPage.prototype = {
         constructor: ClusterPage,
         goToTab: function(tabName) {
+            var self = this,
+                currentTimeout;
             return this.remote
-                .clickLinkByText(tabName);
+                .clickLinkByText(tabName)
+                .getFindTimeout()
+                .then(function(value) {
+                    currentTimeout = value;
+                })
+                .setFindTimeout(5000)
+                .then(function() {
+                    return self.findTab(tabName);
+                })
+                    .then(function(tabElement) {
+                        return tabElement
+                            .getAttribute('class')
+                                .then(function(className) {
+                                    if (_.contains(className, 'active')) {
+                                        self.remote.setFindTimeout(currentTimeout);
+                                    }
+                                });
+                    });
+        },
+        findTab: function(tabName) {
+            return this.remote
+                .findAllByCssSelector('.cluster-tab')
+                    .then(function(tabElements) {
+                        return tabElements.reduce(function(result, tabElement) {
+                            return tabElement
+                                .findByCssSelector('.label')
+                                    .then(function(ifcNameElement) {
+                                        return ifcNameElement
+                                            .getVisibleText()
+                                                .then(function(foundTabName) {
+                                                    return tabName == foundTabName ? tabElement : result;
+                                                });
+                                    })
+                        }, null);
+                    });
         },
         removeCluster: function(clusterName) {
             var self = this;

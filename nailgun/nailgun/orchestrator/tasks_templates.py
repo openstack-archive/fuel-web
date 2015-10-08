@@ -221,6 +221,41 @@ def make_provisioning_images_task(uids, repos, provision_data, cid):
             'retries': 1}})
 
 
+def generate_ironic_bootstrap_keys_task(uids, cid):
+    cmd = "/etc/puppet/modules/osnailyfacter/modular/astute/generate_keys.sh"
+
+    return make_shell_task(uids, {
+        'parameters': {
+            'cmd': (
+                "sh {cmd} "
+                "-i {cid} "
+                "-s 'ironic' "
+                "-p /var/lib/fuel/keys/ ").format(
+                    cid=cid,
+                    cmd=cmd),
+            'timeout': 180,
+            'retries': 1}})
+
+
+def make_ironic_bootstrap_task(uids, cid):
+    extra_conf_files = "/usr/share/fuel-agent-bootstrap-ironic-configs/"
+    ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
+
+    return make_shell_task(uids, {
+        'parameters': {
+            'cmd': (
+                "BOOTSTRAP_FUEL_PKGS='openssh-server ntp fuel-agent' "
+                "EXTRA_CONF_FILES='{extra_conf_files}' "
+                "DESTDIR='/var/lib/fuel/ironic-bootstrap/{cid}' "
+                "BOOTSTRAP_SSH_KEYS='{bootstrap_ssh_keys}' "
+                'fuel-bootstrap-image ').format(
+                    cid=cid,
+                    extra_conf_files=extra_conf_files,
+                    bootstrap_ssh_keys=ssh_keys),
+            'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
+            'retries': 1}})
+
+
 def make_download_debian_installer_task(
         uids, repos, installer_kernel, installer_initrd):
     # NOTE(kozhukalov): This task is going to go away by 7.0

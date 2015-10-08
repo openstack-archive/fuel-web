@@ -25,7 +25,74 @@ description:
   to read this as a configuration data.
 
 maintainers:
+
 - fuelmenu/:
     - name:   Matthew Mosesohn
       email:  mmosesohn@mirantis.com
       IRC:    mattymo
+
+- fuel_upgrade_system/fuel_package_updates/:
+    - name:   Matthew Mosesohn
+      email:  mmosesohn@mirantis.com
+      IRC:    mattymo
+
+- fuel_upgrade_system/fuel_upgrade/:
+    - name:   Evgeny Li
+      email:  eli@mirantis.com
+      IRC:    evgeniyl
+
+    - name:   Igor Kalnitsky
+      email:  ikalnitsky@mirantis.com
+      IRC:    ikalnitsky
+
+- network_checker/:
+    - name:   Dmytro Shuliak
+      email:  dshulyak@mirantis.com
+      IRC:    dshulyak
+
+    - name:   Lukasz Oles
+      email:  loles@mirantis.com
+      IRC:    salmon_
+
+- shotgun/:
+    - name:   Maciej Kwiek
+      email:  mkwiek@mirantis.com
+      IRC:    mkwiek
+
+    - name:   Vladimir Kozhukalov
+      email:  vkozhukalov@mirantis.com
+      IRC:    kozhukalov
+
+- nailgun/:
+    - name:   Aleksandr Kislitskii
+      email:  akislitsky@mirantis.com
+      IRC:    akislitsky
+
+    - name:   Ivan Kliuk
+      email:  ikliuk@mirantis.com
+      IRC:    ivankliuk
+
+    - name:   Maciej Kwiek
+      email:  mkwiek@mirantis.com
+      IRC:    mkwiek
+
+- nailgun/nailgun/extensions/volume_manager/:
+    - name:   Evgeny Li
+      email:  eli@mirantis.com
+      IRC:    evgeniyl
+
+    - name:   Sebastian Kalinowski
+      email:  skalinowski@mirantis.com
+      IRC:    prmtl
+
+- nailgun/nailgun/network/: &network_experts
+    - name:   Aleksei Kasatkin
+      email:  akasatkin@mirantis.com
+      IRC:    akasatkin
+
+    - name:   Ryan Moe
+      email:  rmoe@mirantis.com
+      IRC:    rmoe
+
+- nailgun/nailgun/orchestrator/neutron_serializers.py: *network_experts
+- nailgun/nailgun/orchestrator/nova_serializers.py: *network_experts

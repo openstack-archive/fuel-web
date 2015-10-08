@@ -3935,6 +3935,14 @@ input[type=range] {
       line-height: 13px;
       margin-bottom: 4px;
       text-align: left;
+      &.has-error {
+        height: auto;
+        .text-danger {
+          margin: 10px 0px 10px -12px;
+          line-height: 15px;
+          font-size: 12px;
+        }
+      }
       input[type=text] {
         width: 240px;
         height: 32px;

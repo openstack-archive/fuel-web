@@ -17,7 +17,6 @@
 from nailgun import consts
 
 from nailgun.api.v1.validators.json_schema import base_types
-from nailgun.api.v1.validators.json_schema import role
 
 CLUSTER_UI_SETTINGS = {
     "type": "object",
@@ -130,7 +129,7 @@ attribute_schema = {
             ]
         },
         # 'value': None,  # custom validation depending on type
-        'restrictions': role.RESTRICTIONS,
+        'restrictions': base_types.RESTRICTIONS,
         'weight': {
             'type': 'integer',
             'minimum': 0,
@@ -154,7 +153,7 @@ allowed_values_schema = {
                     'data': {'type': 'string'},
                     'label': {'type': 'string'},
                     'description': {'type': 'string'},
-                    'restrictions': role.RESTRICTIONS,
+                    'restrictions': base_types.RESTRICTIONS,
                 },
                 'required': ['data', 'label'],
             },

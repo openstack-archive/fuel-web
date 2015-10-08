@@ -110,6 +110,7 @@
                 "username": "Username",
                 "password": "Password",
                 "login_error": "Unable to log in",
+                "credentials_error": "Invalid credentials",
                 "log_in": "Log in",
                 "title": "Log In",
                 "http_warning": "You're not using a secure connection. ",

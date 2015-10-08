@@ -58,9 +58,10 @@ function($, _, i18n, React, dispatcher, utils) {
             var keystoneClient = app.keystoneClient;
 
             return keystoneClient.authenticate(username, password, {force: true})
-                .fail(_.bind(function() {
+                .fail(_.bind(function(xhr) {
                     $(this.refs.username.getDOMNode()).focus();
-                    this.setState({hasError: true});
+                    var error = i18n('login_page.' + (xhr && xhr.status == 401 ? 'credentials_error' : 'login_error'));
+                    this.setState({error: error});
                 }, this))
                 .then(_.bind(function() {
                     app.user.set({
@@ -90,11 +91,11 @@ function($, _, i18n, React, dispatcher, utils) {
         getInitialState: function() {
             return {
                 actionInProgress: false,
-                hasError: false
+                error: null
             };
         },
         onChange: function() {
-            this.setState({hasError: false});
+            this.setState({error: null});
         },
         onSubmit: function(e) {
             e.preventDefault();
@@ -140,8 +141,8 @@ function($, _, i18n, React, dispatcher, utils) {
                             <a href={httpsLink}>{i18n('login_page.http_warning_link')}</a>
                         </div>
                     }
-                    {this.state.hasError &&
-                        <div className='login-error'>{i18n('login_page.login_error')}</div>
+                    {this.state.error &&
+                        <div className='login-error'>{this.state.error}</div>
                     }
                     <div className='form-group'>
                         <div className='col-xs-12 text-center'>

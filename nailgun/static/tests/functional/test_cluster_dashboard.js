@@ -65,6 +65,7 @@ define([
                         .type('\uE00C')
                         .end()
                     .assertElementNotExists(renameInputSelector, 'Rename control disappears')
+                    .waitForCssSelector(nameSelector, 1000)
                     .assertElementTextEquals(nameSelector, initialName,
                             'Switching rename control does not change cluster name')
                     .then(function() {
@@ -221,7 +222,7 @@ define([
                 var vCenterClusterName = clusterName + 'VCenter test';
                 return this.remote
                     .clickLinkByText('Environments')
-                    .assertElementAppears('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
+                    .assertElementsAppear('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
                     .then(function() {
                         return common.createCluster(
                             vCenterClusterName,

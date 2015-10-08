@@ -160,11 +160,12 @@ class LimitsMixin(object):
             return Expression(str(expression), models).evaluate()
 
 
-class RestrictionMixin(object):
+class RestrictionBase(object):
     """Mixin with restriction processing functionality"""
 
     @classmethod
-    def check_restrictions(cls, models, restrictions, action=None):
+    def check_restrictions(cls, models, restrictions, action=None,
+                           strict=True):
         """Check if attribute satisfied restrictions
 
         :param models: objects which represent models in restrictions
@@ -173,7 +174,9 @@ class RestrictionMixin(object):
         :type restrictions: list
         :param action: filtering restrictions by action key
         :type action: string
-        :returns: dict -- object with 'result' as number and 'message' as dict
+        :param strict: disallow undefined variables in condition
+        :type strict: bool
+        :returns: dict -- object with 'result' as bool and 'message' as dict
         """
         satisfied = []
 
@@ -190,7 +193,7 @@ class RestrictionMixin(object):
             # Filter which restriction satisfied condition
             satisfied = filter(
                 lambda item: Expression(
-                    item.get('condition'), models).evaluate(),
+                    item.get('condition'), models, strict=strict).evaluate(),
                 filterd_by_action_restrictions)
 
         return {
@@ -230,7 +233,7 @@ class RestrictionMixin(object):
         return result
 
 
-class AttributesRestriction(RestrictionMixin):
+class AttributesRestriction(RestrictionBase):
 
     @classmethod
     def check_data(cls, models, data):
@@ -283,7 +286,7 @@ class AttributesRestriction(RestrictionMixin):
                 return attr_regex.get('error')
 
 
-class VmwareAttributesRestriction(RestrictionMixin):
+class VmwareAttributesRestriction(RestrictionBase):
 
     @classmethod
     def check_data(cls, models, metadata, data):

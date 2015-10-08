@@ -65,6 +65,7 @@ define([
                         .type('\uE00C')
                         .end()
                     .assertElementNotExists(renameInputSelector, 'Rename control disappears')
+                    .waitForCssSelector(nameSelector, 1000)
                     .assertElementTextEquals(nameSelector, initialName,
                             'Switching rename control does not change cluster name')
                     .then(function() {
@@ -210,6 +211,7 @@ define([
                     .assertElementAppears('.dashboard-tab .alert strong', 1000, 'Error message is shown when adding error node')
                     .assertElementTextEquals('.dashboard-tab .alert strong', 'Error',
                             'Deployment failed in case of adding offline nodes')
+                    .assertElementAppears('button.reset-environment-btn:enabled', 1000)
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);
                     })
@@ -221,7 +223,7 @@ define([
                 var vCenterClusterName = clusterName + 'VCenter test';
                 return this.remote
                     .clickLinkByText('Environments')
-                    .assertElementAppears('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
+                    .assertElementsAppear('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
                     .then(function() {
                         return common.createCluster(
                             vCenterClusterName,

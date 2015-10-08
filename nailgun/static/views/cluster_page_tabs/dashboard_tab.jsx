@@ -871,7 +871,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         })
                         .always(_.bind(function() {
                             this.setState({disabled: false});
-                            this.props.endRenaming();
+                            if (!(this.state && this.state.error)) this.props.endRenaming();
                         }, this));
                 } else if (cluster.validationError) {
                     this.setState({error: cluster.validationError.name});
@@ -904,8 +904,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             }
         },
         render: function() {
+            var classes = {
+                'rename-block': true,
+                'has-error': !!this.state.error
+            };
             return (
-                <div className='rename-block'>
+                <div className={utils.classNames(classes)}>
                     <div className='action-body' onKeyDown={this.handleKeyDown}>
                         <controls.Input
                             type='text'

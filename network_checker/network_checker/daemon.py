@@ -29,7 +29,7 @@ def run_server(server, config):
         keep_fds=[0, 1, 2, server.fileno()])
     try:
         daemon.start()
-    #this is required to do some stuff after server is daemonized
+    # this is required to do some stuff after server is daemonized
     except SystemExit as e:
         if e.code is 0:
             return True

@@ -39,7 +39,7 @@ class Api(object):
             invoke_kwds=self.verification_config)
         self.driver = self.manager.driver
         rpc_server = xmlrpc.get_server(self.server_config)
-        #TODO(dshulyak) verification api should know what methods to serve
+        # TODO(dshulyak) verification api should know what methods to serve
         rpc_server.register_function(self.driver.listen, 'listen')
         rpc_server.register_function(self.driver.send, 'send')
         rpc_server.register_function(self.driver.get_info, 'get_info')

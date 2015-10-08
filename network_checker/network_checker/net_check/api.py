@@ -171,8 +171,7 @@ class Actor(object):
         return (state == 'UP')
 
     def _iface_up(self, iface, vid=None):
-        """Brings interface with vid up
-        """
+        """Brings interface with vid up"""
         if vid and not self._try_viface_create(iface, vid):
             # if viface does not exist we raise exception
             raise ActorException(
@@ -191,8 +190,7 @@ class Actor(object):
             "up"])
 
     def _ensure_iface_up(self, iface, vid=None):
-        """Ensures interface is with vid up.
-        """
+        """Ensures interface is with vid up."""
         if not self._try_iface_up(iface, vid):
             # if iface is not up we try to bring it up
             self._iface_up(iface, vid)
@@ -224,6 +222,7 @@ class Actor(object):
 
     def _try_viface_create(self, iface, vid):
         """Tries to find vlan interface on iface with VLAN_ID=vid and return it
+
             :returns: name of vlan interface if it exists or None
         """
         self.logger.debug("Checking if vlan %s on interface %s exists",
@@ -236,6 +235,7 @@ class Actor(object):
 
     def _viface_create(self, iface, vid):
         """Creates VLAN interface with VLAN_ID=vid on interface iface
+
             :returns: None
         """
         self.logger.debug("Creating vlan %s on interface %s", str(vid), iface)
@@ -248,7 +248,9 @@ class Actor(object):
             "id", str(vid)])
 
     def _ensure_viface_create(self, iface, vid):
-        """Ensures that vlan interface exists. If it does not already
+        """Ensures that vlan interface exists.
+
+        If it does not already
         exist, then we need it to be created. It also marks newly created
         vlan interface to remove it after probing procedure.
         """

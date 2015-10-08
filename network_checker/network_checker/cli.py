@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument(
         'actions', nargs='+',
         help="List of actions to perform.")
-    #TODO(dshulyak) Add posibility to provide arguments like regular shell args
+    # TODO(dshulyak) Add posibility to provide args like regular shell args
     parser.add_argument(
         '-c', '--config', default='{}',
         help="User defined configuration in json format.")

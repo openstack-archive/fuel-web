@@ -25,8 +25,7 @@ from dhcp_checker import utils
 class TestDhcpServers(unittest.TestCase):
 
     def test_dhcp_server_on_eth1(self):
-        """Test verifies dhcp server on eth1 iface
-        """
+        """Test verifies dhcp server on eth1 iface"""
         response = api.check_dhcp_on_eth('eth1', 2)
         self.assertEqual(len(response), 1)
         # we need to guarantee that received answer has server_ip
@@ -34,8 +33,7 @@ class TestDhcpServers(unittest.TestCase):
         self.assertTrue(response[0]['server_ip'])
 
     def test_dhcp_server_on_eth2(self):
-        """Test verifies dhcp server on eth2 iface
-        """
+        """Test verifies dhcp server on eth2 iface"""
         response = api.check_dhcp_on_eth('eth2', 2)
         self.assertEqual(len(response), 1)
         self.assertTrue(response[0]['server_ip'])
@@ -48,14 +46,12 @@ class TestDhcpUtils(unittest.TestCase):
         utils.command_util('ifconfig', self.iface_down, 'down')
 
     def test_check_network_up(self):
-        """Verify that true would be returned on test network up
-        """
+        """Verify that true would be returned on test network up"""
         result = utils.check_network_up('eth0')
         self.assertTrue(result)
 
     def test_check_network_down(self):
-        """Verify that false would be returned on test network down
-        """
+        """Verify that false would be returned on test network down"""
         self.assertFalse(utils.check_network_up(self.iface_down))
 
     def tearDown(self):
@@ -70,9 +66,7 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
         utils.command_util('ifconfig', self.iface_down, 'down')
 
     def test_dhcp_server_on_eth2_down(self):
-        """Test verifies that iface would be ifuped in case it's down
-        and rolledback after
-        """
+        """iface should be ifuped in case it's down and rolledback after"""
         manager = utils.IfaceState(self.iface_down)
         with manager as iface:
             response = api.check_dhcp_on_eth(iface, 2)
@@ -84,8 +78,7 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
         self.assertEqual(manager.post_iface_state, 'DOWN')
 
     def test_dhcp_server_on_eth0_up(self):
-        """Test verifies that if iface is up, it won't be touched
-        """
+        """Test verifies that if iface is up, it won't be touched"""
         manager = utils.IfaceState(self.iface_up)
         with manager as iface:
             response = api.check_dhcp_on_eth(iface, 2)

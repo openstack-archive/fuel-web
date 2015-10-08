@@ -25,8 +25,7 @@ LOG = logging.getLogger(__name__)
 
 
 class BaseCommand(command.Command):
-    """Base command for all app
-    """
+    """Base command for all app"""
     def get_parser(self, prog_name):
         parser = super(BaseCommand, self).get_parser(prog_name)
         parser.add_argument('--timeout', default=5, type=int,
@@ -37,8 +36,7 @@ class BaseCommand(command.Command):
 
 
 class ListDhcpServers(lister.Lister, BaseCommand):
-    """Show list of dhcp servers on ethernet interfaces.
-    """
+    """Show list of dhcp servers on ethernet interfaces"""
 
     def get_parser(self, prog_name):
         parser = super(ListDhcpServers, self).get_parser(prog_name)
@@ -53,7 +51,7 @@ class ListDhcpServers(lister.Lister, BaseCommand):
             parsed_args.ifaces,
             timeout=parsed_args.timeout,
             repeat=parsed_args.repeat))
-        #NOTE(dshulyak) unfortunately cliff doesnt allow to configure
+        # NOTE(dshulyak) unfortunately cliff doesnt allow to configure
         # PrettyTable output, see link:
         # https://github.com/dhellmann/cliff/blob/master/
         # cliff/formatters/table.py#L34
@@ -67,8 +65,7 @@ class ListDhcpServers(lister.Lister, BaseCommand):
 
 
 class ListDhcpAssignment(lister.Lister, BaseCommand):
-    """Make dhcp request to servers and receive acknowledgement messages
-    """
+    """Make dhcp request to servers and receive acknowledgement messages"""
 
     def get_parser(self, prog_name):
         parser = super(ListDhcpAssignment, self).get_parser(prog_name)
@@ -95,6 +92,7 @@ class ListDhcpAssignment(lister.Lister, BaseCommand):
 
 class DhcpWithVlansCheck(lister.Lister, BaseCommand):
     """Provide iface with list of vlans to check
+
     If no vlans created - they will be. After creation they won't be deleted.
     """
 

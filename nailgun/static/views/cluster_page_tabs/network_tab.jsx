@@ -676,9 +676,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return result;
         },
         isSavingPossible: function() {
-            return _.isNull(this.props.networkConfiguration.validationError) &&
-                !this.isLocked() &&
-                this.hasChanges();
+            return this.props.cluster.isAvailableForSettingsChanges() &&
+                this.hasChanges() &&
+                _.isNull(this.props.networkConfiguration.validationError);
         },
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,

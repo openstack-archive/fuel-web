@@ -49,7 +49,7 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                     var dialogs = require('views/dialogs');
                     dialogs.DiscardSettingsChangesDialog
                         .show({
-                            reasonToStay: _.result(this, 'getStayMessage'),
+                            isDiscardingPossible: _.result(this, 'isDiscardingPossible'),
                             isSavingPossible: _.result(this, 'isSavingPossible'),
                             applyChanges: this.applyChanges,
                             revertChanges: this.revertChanges

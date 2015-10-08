@@ -663,8 +663,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     this.setState({actionInProgress: false});
                 }, this));
         },
-        getStayMessage: function() {
-            return this.props.cluster.task({group: 'network', active: true}) && i18n('dialog.dismiss_settings.verify_message');
+        isDiscardingPossible: function() {
+            return !this.props.cluster.task({group: 'network', active: true});
         },
         hasChanges: function() {
             return this.props.hasChanges();
@@ -701,9 +701,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return result;
         },
         isSavingPossible: function() {
-            return _.isNull(this.props.networkConfiguration.validationError) &&
-                !this.isLocked() &&
-                this.hasChanges();
+            return !this.state.actionInProgress &&
+                this.props.cluster.isAvailableForSettingsChanges() &&
+                this.hasChanges() &&
+                _.isNull(this.props.networkConfiguration.validationError);
         },
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,

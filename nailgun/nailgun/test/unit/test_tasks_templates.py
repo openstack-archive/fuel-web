@@ -168,6 +168,53 @@ class TestMakeTask(base.BaseTestCase):
             "--data_driver nailgun_build_image --input_data '").rstrip("'")
         self.assertEqual(jsonutils.loads(cmd), fuel_image_conf)
 
+    def test_generate_ironic_bootstrap_keys_task (self):
+        result = tasks_templates.generate_ironic_bootstrap_keys_task(
+            [1, 2, 3],
+            cid=123)
+
+        cmd = "/etc/puppet/modules/osnailyfacter/modular/astute/generate_keys.sh"
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters':{
+                'cmd': ("sh {cmd} "
+                "-i 123 "
+                "-s 'ironic' "
+                "-p /var/lib/fuel/keys/ ").format(
+                    cmd=cmd),
+                'timeout': 180,
+                'retries': 1,
+                'interval': 1,
+                'cwd': '/'}})
+    def test_make_ironic_bootstrap_task(self):
+        cid=123
+
+        result = tasks_templates.make_ironic_bootstrap_task(
+            [1, 2, 3],
+            cid=cid)
+
+        extra_conf_files = "/usr/share/ironic-fa-bootstrap-configs/"
+        ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
+
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters':{
+                'cmd': (
+                    "BOOTSTRAP_FUEL_PKGS='openssh-server ntp fuel-agent' "
+                    "EXTRA_CONF_FILES='{extra_conf_files}' "
+                    "DESTDIR='/var/www/nailgun/bootstrap/ironic/{cid}' "
+                    "BOOTSTRAP_SSH_KEYS='{bootstrap_ssh_keys}' "
+                    'fuel-bootstrap-image ').format(
+                        cid=cid,
+                        extra_conf_files=extra_conf_files,
+                        bootstrap_ssh_keys=ssh_keys),
+                    'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
+                    'retries': 1,
+                    'interval': 1,
+                    'cwd': '/'}})
+
     def test_make_download_debian_installer_task(self):
         remote_kernel = ('http://some/a/dists/trusty/main/'
                          'installer-amd64/current/images/'

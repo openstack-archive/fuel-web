@@ -45,6 +45,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.utils.restrictions import RestrictionMixin
 from nailgun.utils.zabbix import ZabbixManager
 from nailgun.settings import settings
 
@@ -1259,6 +1260,24 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
+    def update_restricted_networks(cls, cluster):
+        networks_metadata = cluster.release.networks_metadata
+        networks_list = networks_metadata[cluster.net_provider]["networks"]
+        for net in networks_list:
+            if net.get('restrictions'):
+                if RestrictionMixin.check_restrictions(
+                    models={'settings': cluster.attributes.editable},
+                    restrictions=net['restrictions'])['result']:
+                    ng = filter(lambda ng: ng.name == net['name'], cluster.network_groups)
+                    if ng:
+                        objects.NetworkGroup.delete(ng[0])
+                else:
+                    if not filter(lambda ng: ng.name == net['name'],
+                          cluster.network_groups):
+                        gid = objects.Cluster.get_controllers_node_group(cluster).id
+                        cls.create_network_group(cluster, net, gid)
+
+    @classmethod
     def create_network_group(cls, cluster, net, gid=None):
         """Method for creation of network groups for cluster.
 
@@ -1306,6 +1325,11 @@ class NetworkManager(object):
             if "seg_type" in net \
                     and neutron_segment_type != net['seg_type']:
                 continue
+            if net.get('restrictions'):
+                if RestrictionMixin.check_restrictions(
+                    models={'settings': cluster.attributes.editable},
+                    restrictions=net['restrictions'])['result']:
+                    continue
             cls.create_network_group(cluster, net, gid)
 
     @classmethod
@@ -1571,6 +1595,10 @@ class AllocateVIPs70Mixin(object):
                 net_group = cls.get_network_group_for_role(
                     role,
                     nodegroup_networks[nodegroup.name])
+                if (net_group != consts.NETWORKS.fuelweb_admin and
+                    not filter(lambda net: net.name == net_group,
+                               cluster.network_groups)):
+                    continue
                 vip_name = vip_info['name']
 
                 # do allocation

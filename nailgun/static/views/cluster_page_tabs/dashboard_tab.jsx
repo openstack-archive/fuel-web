@@ -766,7 +766,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         },
         render: function() {
             var cluster = this.props.cluster,
-                isNew = this.props.isNew,
                 task = cluster.task({group: 'deployment', status: 'running'}),
                 runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'});
             return (
@@ -797,7 +796,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     }
                                 </div>
                                 {this.renderClusterInfoFields()}
-                                {!isNew &&
+                                {(cluster.get('status') == 'operational') &&
                                     <div className='col-xs-12 go-to-healthcheck'>
                                         {i18n(namespace + 'healthcheck')}
                                         <a href={'#cluster/' + cluster.id + '/healthcheck'}>
@@ -807,7 +806,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 }
                                 <div className='col-xs-12 dashboard-actions-wrapper'>
                                     <DeleteEnvironmentAction cluster={cluster} disabled={runningDeploymentTask} />
-                                    {!isNew &&
+                                    {!this.props.isNew &&
                                         <ResetEnvironmentAction cluster={cluster} task={task} disabled={runningDeploymentTask} />
                                     }
                                 </div>

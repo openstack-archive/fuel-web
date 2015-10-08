@@ -805,13 +805,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.proceedWith(this.props.applyChanges);
         },
         renderBody: function() {
+            var message = this.props.forbidDiscard ? 'no_discard_message' : this.props.isSavingPossible ? 'default_message' : 'no_saving_message';
             return (
                 <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
-                    {
-                        this.props.reasonToStay ||
-                        i18n('dialog.dismiss_settings.' + (this.props.isSavingPossible ? 'default_message' : 'no_saving_message'))
-                    }
+                    {i18n('dialog.dismiss_settings.' + message)}
                 </div>
             );
         },
@@ -828,7 +826,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     key='leave'
                     className='btn btn-danger proceed-btn'
                     onClick={this.discard}
-                    disabled={this.state.actionInProgress || !!this.props.reasonToStay}
+                    disabled={this.state.actionInProgress || this.props.forbidDiscard}
                 >
                     {i18n('dialog.dismiss_settings.leave_button')}
                 </button>,
@@ -838,8 +836,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     onClick={this.save}
                     disabled={
                         this.state.actionInProgress ||
-                        !this.props.isSavingPossible ||
-                        !!this.props.reasonToStay
+                        !this.props.isSavingPossible
                     }
                 >
                     {i18n('dialog.dismiss_settings.apply_and_proceed_button')}

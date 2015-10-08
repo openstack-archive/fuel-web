@@ -29,7 +29,8 @@ define([
         constructor: ClusterPage,
         goToTab: function(tabName) {
             return this.remote
-                .clickLinkByText(tabName);
+                .clickLinkByText(tabName)
+                .waitForCssSelector('.tab-content', 3000);
         },
         removeCluster: function(clusterName) {
             var self = this;

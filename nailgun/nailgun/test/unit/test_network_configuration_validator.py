@@ -226,6 +226,10 @@ class TestNetworkConfigurationValidatorProtocol(
         self.nc['networks'][0]['meta']['ext_net_data'] = {}
         self.assertRaisesInvalidType(self.nc, "{}", "'array'")
 
+    def test_networks_meta_invalid_type_restrictions(self):
+        self.nc['networks'][0]['meta']['restrictions'] = 'wrong'
+        self.assertRaisesInvalidType(self.nc, "'wrong'", "'array'")
+
     # networks.meta.vips
     def test_networks_meta_vips(self):
         self.nc['networks'][0]['meta']['vips'] = {}

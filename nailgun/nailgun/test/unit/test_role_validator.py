@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import role
 from nailgun.api.v1.validators.role import RoleValidator
 from nailgun.errors import errors
@@ -44,11 +45,12 @@ class TestRoleVolumeAllocationsValidationBySchema(BaseUnitTest):
 
     def test_full_restriction(self):
         full_restriction = {'condition': "some_string"}
-        RoleValidator.validate_schema(full_restriction, role.FULL_RESTRICTION)
+        RoleValidator.validate_schema(full_restriction,
+                                      base_types.FULL_RESTRICTION)
 
     def test_restrictions(self):
         restrictions = ["conidtion", {'condition': "some condition"}]
-        RoleValidator.validate_schema(restrictions, role.RESTRICTIONS)
+        RoleValidator.validate_schema(restrictions, base_types.RESTRICTIONS)
 
     def test_meta_info(self):
         meta = {'name': 'Some Name', 'description': 'Some Description'}

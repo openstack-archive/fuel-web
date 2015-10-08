@@ -276,7 +276,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         # Instantiate all default values in dict.
         image_data = {
             'container_format': 'bare',
-            'public': 'true',
+            'visibility': 'public',
             'disk_format': 'qcow2',
             'img_name': 'TestVM',
             'img_path': '',

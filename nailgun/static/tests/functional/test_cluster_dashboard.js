@@ -19,13 +19,15 @@ define([
     'intern/chai!assert',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
+    'tests/functional/pages/clusters',
     'tests/functional/pages/dashboard'
-], function(registerSuite, assert, Common, ClusterPage, DashboardPage) {
+], function(registerSuite, assert, Common, ClusterPage, ClustersPage, DashboardPage) {
     'use strict';
 
     registerSuite(function() {
         var common,
             clusterPage,
+            clustersPage,
             dashboardPage,
             clusterName;
 
@@ -34,6 +36,7 @@ define([
             setup: function() {
                 common = new Common(this.remote);
                 clusterPage = new ClusterPage(this.remote);
+                clustersPage = new ClustersPage(this.remote);
                 dashboardPage = new DashboardPage(this.remote);
                 clusterName = common.pickRandomName('Test Cluster');
 
@@ -73,6 +76,23 @@ define([
                     .assertElementTextEquals(nameSelector, newName, 'New name is applied')
                     .then(function() {
                         return dashboardPage.setClusterName(initialName);
+                    })
+                    .then(function() {
+                        return common.createCluster(initialName + '1');
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .then(function() {
+                        return dashboardPage.setClusterName(initialName);
+                    })
+                    .assertElementAppears('.rename-block.has-error', 1000, 'Error style for duplicate name is applied')
+                    .assertElementTextEquals('.rename-block .text-danger', 'Environment with this name already exists',
+                        'Duplicate name error text appears'
+                    )
+                    .clickLinkByText('Environments')
+                    .then(function() {
+                        return clustersPage.goToEnvironment(clusterName);
                     });
             },
             'Provision button availability': function() {
@@ -221,7 +241,7 @@ define([
                 var vCenterClusterName = clusterName + 'VCenter test';
                 return this.remote
                     .clickLinkByText('Environments')
-                    .assertElementAppears('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
+                    .assertElementsAppear('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
                     .then(function() {
                         return common.createCluster(
                             vCenterClusterName,

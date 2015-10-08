@@ -1003,6 +1003,11 @@ input[type=range] {
 
 .forms-box {
   @base-indent: 20px;
+  .vcenter() {
+    display: flex;
+    align-items: center;
+    min-height: 30px;
+  }
 
   margin-bottom: @base-indent * 1.5;
   h3 {
@@ -1051,7 +1056,8 @@ input[type=range] {
     label {
       width: @default-label-width;
       float: left;
-      padding: 6px 8px 0 0;
+      padding: 0 8px 0 0;
+      .vcenter;
     }
     input, textarea, select {
       float: left;
@@ -1090,8 +1096,8 @@ input[type=range] {
       max-width: @page-width - @default-input-width - @default-label-width - 280px;
       float: left;
       margin-left: 20px;
-      padding-top: 9px;
       box-sizing: border-box;
+      .vcenter;
     }
     &.has-error .help-block {
       .text-danger;

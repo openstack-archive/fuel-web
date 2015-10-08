@@ -45,6 +45,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.utils.restrictions import RestrictionMixin
 from nailgun.utils.zabbix import ZabbixManager
 from nailgun.settings import settings
 
@@ -1259,6 +1260,28 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
+    def check_network_restrictions(cls, cluster, restrictions):
+        return RestrictionMixin.check_restrictions(
+            models={'settings': cluster.attributes.editable},
+            restrictions=restrictions)['result']
+
+    @classmethod
+    def update_restricted_networks(cls, cluster):
+        networks_metadata = cluster.release.networks_metadata
+        networks_list = networks_metadata[cluster.net_provider]['networks']
+        for net in networks_list:
+            if net.get('restrictions'):
+                present_nets = filter(lambda ng: ng.name == net['name'],
+                                      cluster.network_groups)
+                if cls.check_network_restrictions(cluster, net['restrictions']):
+                    for ng in present_nets:
+                        objects.NetworkGroup.delete(ng)
+                else:
+                    if not len(present_nets):
+                        for node_group in cluster.node_groups:
+                            cls.create_network_group(cluster, net, node_group.id)
+
+    @classmethod
     def create_network_group(cls, cluster, net, gid=None):
         """Method for creation of network groups for cluster.
 
@@ -1306,6 +1329,10 @@ class NetworkManager(object):
             if "seg_type" in net \
                     and neutron_segment_type != net['seg_type']:
                 continue
+            if net.get('restrictions'):
+                if cls.check_network_restrictions(cluster,
+                                                  net['restrictions']):
+                    continue
             cls.create_network_group(cluster, net, gid)
 
     @classmethod

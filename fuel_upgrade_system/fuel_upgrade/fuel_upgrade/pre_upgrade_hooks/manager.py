@@ -80,8 +80,7 @@ class PreUpgradeHookManager(object):
                                   for hook_class in self.hook_list]
 
     def run(self):
-        """Run hooks if required
-        """
+        """Run hooks if required"""
         for hook in self.pre_upgrade_hooks:
             hook_name = hook.__class__.__name__
 

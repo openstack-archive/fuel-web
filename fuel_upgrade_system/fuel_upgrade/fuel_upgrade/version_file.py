@@ -45,9 +45,7 @@ class VersionFile(object):
         self.store_version_file = config.from_version_path
 
     def save_current(self):
-        """Save current version in working
-        directory if it was not saved during
-        previous run.
+        """Save current version in working directory if it was not saved before
 
         This action is important in case
         when upgrade script was interrupted
@@ -60,7 +58,7 @@ class VersionFile(object):
             self.store_version_file)
 
     def switch_to_new(self):
-        """Switche version file to new version
+        """Switch version file to new version
 
         * creates new version yaml file
         * and creates symlink to /etc/fuel/version.yaml
@@ -79,7 +77,6 @@ class VersionFile(object):
             self.current_version_file)
 
     def switch_to_previous(self):
-        """Switch version file symlink to previous version
-        """
+        """Switch version file symlink to previous version"""
         logger.info('Switch current version file to previous version')
         utils.symlink(self.previous_version_file, self.current_version_file)

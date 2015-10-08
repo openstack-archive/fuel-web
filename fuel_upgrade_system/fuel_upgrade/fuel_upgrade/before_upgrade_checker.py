@@ -31,13 +31,11 @@ logger = logging.getLogger(__name__)
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseBeforeUpgradeChecker(object):
-    """Base class for before ugprade checkers
-    """
+    """Base class for before ugprade checkers"""
 
     @abc.abstractmethod
     def check(self):
-        """Run check
-        """
+        """Run check"""
 
 
 class CheckNoRunningTasks(BaseBeforeUpgradeChecker):
@@ -52,10 +50,7 @@ class CheckNoRunningTasks(BaseBeforeUpgradeChecker):
         self.nailgun_client = NailgunClient(**nailgun)
 
     def check(self):
-        """Sends request to nailgun
-        to make sure that there are no
-        running tasks
-        """
+        """Checks in nailgun that there are no running tasks"""
         logger.info('Check nailgun tasks')
 
         try:
@@ -119,8 +114,7 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
         self.required_spaces = context.required_free_spaces
 
     def check(self):
-        """Check free space
-        """
+        """Check free space"""
         logger.info('Check if devices have enough free space')
         logger.debug(
             'Required spaces from upgrade '
@@ -139,8 +133,7 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
         self.check_result(error_mount_point)
 
     def space_required_for_mount_points(self):
-        """Iterates over required spaces generates
-        list of mount points with sum of required space
+        """Generates list of mount points with sum of required space
 
         :returns: dict where key is mount point
                   and value is required free space
@@ -158,8 +151,7 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
         return sum_of_spaces
 
     def list_of_error_mount_points(self, mount_points):
-        """Returns list of devices which don't have
-        enough free space
+        """Returns list of devices which don't have enough free space
 
         :param list mount_points: elements are dicts
                   where key is path to mount point
@@ -183,8 +175,7 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
         return free_space_error_devices
 
     def check_result(self, error_devices):
-        """Checks if there are some devices which
-        don't have enough free space for upgrades
+        """Checks if there are devices with not enough free space for upgrades
 
         :raises: NotEnoughFreeSpaceOnDeviceError
         """
@@ -209,8 +200,7 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
 
 
 class CheckUpgradeVersions(BaseBeforeUpgradeChecker):
-    """Checks that it is possible to upgarde from
-    current version to new one.
+    """Checks that it is possible to upgarde from current version to new one.
 
     :param config: config object
     """

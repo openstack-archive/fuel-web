@@ -53,6 +53,5 @@ class AddDhcpGateway(PreUpgradeHookBase):
         return inject - exists
 
     def run(self):
-        """Adds dhcp gateway to astute.yaml
-        """
+        """Adds dhcp gateway to astute.yaml"""
         self.update_astute_config(defaults=self._admin_network)

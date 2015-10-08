@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class FixHostSystemRepoHook(PreUpgradeHookBase):
-    """During 5.0.1 upgrade we add repository
+    """Fix repo for host system
+
+    During 5.0.1 upgrade we add repository
     where as repository path we set path to
     repository which is from upgrade tar ball.
     When user deletes this information he deletes
@@ -53,7 +55,9 @@ class FixHostSystemRepoHook(PreUpgradeHookBase):
         super(FixHostSystemRepoHook, self).__init__(*args, **kwargs)
 
     def check_if_required(self):
-        """The hack is required if we're going to upgrade from 5.0.1
+        """Check if hack is required
+
+        The hack is required if we're going to upgrade from 5.0.1
         and only repo path for 5.0.1 is exists
         """
         return (self.config.from_version == '5.0.1' and
@@ -61,8 +65,7 @@ class FixHostSystemRepoHook(PreUpgradeHookBase):
                 utils.file_exists(self.yum_repo_file))
 
     def run(self):
-        """Change repo path
-        """
+        """Change repo path"""
         utils.render_template_to_file(
             self.repo_template,
             self.yum_repo_file,

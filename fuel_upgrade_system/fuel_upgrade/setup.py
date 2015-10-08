@@ -19,7 +19,9 @@ from setuptools import setup
 
 
 def parse_requirements_txt():
-    """Parses requirements.txt and returns arrays with `install_requires`
+    """Parses requirements.txt
+
+    Returns arrays with `install_requires`
     packages and with `dependency_links` sources.
     """
     root = os.path.dirname(os.path.abspath(__file__))

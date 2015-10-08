@@ -38,8 +38,7 @@ class UnixSocketHTTP(httplib.HTTP):
 
 
 class UnixSocketTransport(xmlrpclib.Transport, object):
-    """Http transport for UNIX socket
-    """
+    """Http transport for UNIX socket"""
 
     def __init__(self, socket_path):
         """Create object
@@ -54,8 +53,7 @@ class UnixSocketTransport(xmlrpclib.Transport, object):
 
 
 class SupervisorClient(object):
-    """RPC Client for supervisor
-    """
+    """RPC Client for supervisor"""
     templates_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'templates'))
 
@@ -80,8 +78,7 @@ class SupervisorClient(object):
         self.supervisor = self.get_supervisor()
 
     def get_config_path(self, version):
-        """Creates path to supervisor config with
-        specific version
+        """Creates path to supervisor config with specific version
 
         :param version: version of config
         :returns: path to supervisor config
@@ -90,8 +87,7 @@ class SupervisorClient(object):
             self.config.supervisor['configs_prefix'], version)
 
     def get_supervisor(self):
-        """Returns supervisor rpc object
-        """
+        """Returns supervisor rpc object"""
         server = xmlrpclib.Server(
             'http://unused_variable',
             transport=UnixSocketTransport(
@@ -100,9 +96,9 @@ class SupervisorClient(object):
         return server.supervisor
 
     def switch_to_new_configs(self):
-        """Switch to new version of configs
-        for supervisor. Creates symlink on special
-        directory.
+        """Switch to new version of configs for supervisor
+
+        Creates symlink on special directory.
         """
         current_cfg_path = self.config.supervisor['current_configs_prefix']
 
@@ -110,8 +106,7 @@ class SupervisorClient(object):
         self.supervisor.reloadConfig()
 
     def switch_to_previous_configs(self):
-        """Switch to previous version of fuel
-        """
+        """Switch to previous version of fuel"""
         current_cfg_path = self.config.supervisor['current_configs_prefix']
 
         utils.symlink(
@@ -120,20 +115,17 @@ class SupervisorClient(object):
         self.supervisor.reloadConfig()
 
     def start_all_services(self):
-        """Stops all processes
-        """
+        """Stops all processes"""
         logger.info('Start all services')
         self.supervisor.startAllProcesses()
 
     def stop_all_services(self):
-        """Stops all processes
-        """
+        """Stops all processes"""
         logger.info('Stop all services')
         self.supervisor.stopAllProcesses()
 
     def restart_and_wait(self):
-        """Restart supervisor and wait untill it will be available
-        """
+        """Restart supervisor and wait untill it will be available"""
         logger.info('Restart supervisor')
         self.supervisor.restart()
 
@@ -152,9 +144,9 @@ class SupervisorClient(object):
         self.supervisor.startProcess(service_name)
 
     def get_all_processes_safely(self):
-        """Retrieves list of processes from supervisor,
-        doesn't raise errors if there is no running
-        supervisor.
+        """Retrieves list of processes from supervisor
+
+        Doesn't raise errors if there is no running supervisor.
 
         :returns: list of processes in case of success or
                   None in case of error
@@ -208,6 +200,5 @@ class SupervisorClient(object):
             self.supervisor_template_path, config_path, params)
 
     def remove_new_configs(self):
-        """Remove new version of configs from the filesystem.
-        """
+        """Remove new version of configs from the filesystem"""
         utils.remove(self.supervisor_config_dir)

@@ -27,8 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class MoveKeysHook(PreUpgradeHookBase):
-    """Move keys from astute container to new path
-    mounted in all containers.
+    """Move keys from astute container to new path mounted in all containers
 
     In 6.1 we move generating keys for granular deployment
     to tasks and now keys are in the directory mounted in
@@ -45,13 +44,11 @@ class MoveKeysHook(PreUpgradeHookBase):
     dst_path = '/var/lib/fuel/keys/'
 
     def check_if_required(self):
-        """The hack is required if we're going to upgrade from version < 6.1.
-        """
+        """The hack is required if we're going to upgrade from version<6.1."""
         return utils.compare_version(self.config.from_version, '6.1') > 0
 
     def run(self):
-        """Move files to new directory
-        """
+        """Move files to new directory"""
         if not utils.file_exists(self.dst_path):
             os.makedirs(self.dst_path)
 

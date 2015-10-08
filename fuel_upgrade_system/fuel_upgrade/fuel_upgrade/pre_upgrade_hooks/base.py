@@ -38,20 +38,15 @@ class PreUpgradeHookBase(object):
 
     @abc.abstractmethod
     def check_if_required(self):
-        """Should return True if check is required
-        and False if is not required
-        """
+        """Return True if check is required and False if is not required"""
 
     @abc.abstractmethod
     def run(self):
-        """Run pre upgrade hook
-        """
+        """Run pre upgrade hook"""
 
     @abc.abstractproperty
     def enable_for_engines(self):
-        """Should return list of upgrade engines
-        which the hook is required for
-        """
+        """Return list of upgrade engines which the hook is required for"""
 
     @property
     def is_required(self):
@@ -76,7 +71,9 @@ class PreUpgradeHookBase(object):
         return False
 
     def update_astute_config(self, defaults=None, overwrites=None):
-        """Read astute.yaml config file, update it with new config,
+        """Update astute config and backup old one
+
+        Read astute.yaml config file, update it with new config,
         copy old file to backup location and save new astute.yaml.
         """
         # NOTE(ikalnitsky): we need to re-read astute.yaml in order protect

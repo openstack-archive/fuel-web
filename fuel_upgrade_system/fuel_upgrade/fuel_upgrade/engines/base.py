@@ -25,28 +25,24 @@ class UpgradeEngine(object):
     respected by all upgraders.
     """
     def __init__(self, config):
-        """Extract some base parameters and save it internally.
-        """
+        """Extract some base parameters and save it internally."""
         self.config = config
 
     @abc.abstractmethod
     def upgrade(self):
-        """Run upgrade process.
-        """
+        """Run upgrade process."""
 
     @abc.abstractmethod
     def rollback(self):
-        """Rollback all the changes, generally used in case of failed upgrade.
-        """
+        """Rollback all the changes, usually used in case of failed upgrade"""
 
     def backup(self):
-        """Perform backup actions
-        """
+        """Perform backup actions"""
         return NotImplemented
 
     @abc.abstractproperty
     def required_free_space(self):
-        """Required free space for upgarde
+        """Required free space for upgrade
 
         Must return dict where key is path to directory
         and value is required free space in megabytes.

@@ -34,8 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class AttrDict(dict):
-    """Dict as object where keys are object parameters
-    """
+    """Dict as object where keys are object parameters"""
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
@@ -77,8 +76,7 @@ class CheckerManager(object):
             required_free_spaces=required_free_spaces)
 
     def check(self):
-        """Runs checks
-        """
+        """Runs checks"""
         for checker in self._checkers():
             logger.debug('Start checker %s...', checker.__class__.__name__)
             checker.check()

@@ -55,6 +55,5 @@ class AddMonitordKeystoneCredentialsHook(PreUpgradeHookBase):
         )
 
     def run(self):
-        """Adds default credentials to config file
-        """
+        """Adds default credentials to config file"""
         self.update_astute_config(defaults=self.keystone_config)

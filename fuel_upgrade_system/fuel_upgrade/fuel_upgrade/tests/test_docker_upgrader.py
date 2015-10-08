@@ -128,8 +128,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.upgrader.new_release_containers = fake_containers
 
         def mocked_create_container(*args, **kwargs):
-            """Return name of the container
-            """
+            """Return name of the container"""
             return kwargs['name']
 
         self.upgrader.create_container = mock.MagicMock(

@@ -26,10 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class AddKeystoneCredentialsHook(PreUpgradeHookBase):
-    """Feature `Fuel master access control improvements`
-    was introduced in 6.0 release [1].
+    """`Fuel master access control improvements` was introduced in 6.0 release
 
-    In this feature fuelmenu generates keystone credenitals
+    In this feature [1] fuelmenu generates keystone credenitals
     and saves them in /etc/astute.yaml file.
 
     Before upgrade for this featuer we need to
@@ -65,6 +64,5 @@ class AddKeystoneCredentialsHook(PreUpgradeHookBase):
         return is_required
 
     def run(self):
-        """Adds default credentials to config file
-        """
+        """Adds default credentials to config file"""
         self.update_astute_config(defaults=self.keystone_config)

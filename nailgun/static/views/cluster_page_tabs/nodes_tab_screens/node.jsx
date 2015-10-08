@@ -147,6 +147,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var states = this.state.extendedView ? {extendedView: false, renaming: false} : {extendedView: true};
             this.setState(states);
         },
+        handleFocus: function(e) {
+          e.target.select();
+        },
         renderNameControl: function() {
             if (this.state.renaming) return (
                 <controls.Input
@@ -158,6 +161,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     disabled={this.state.actionInProgress}
                     onKeyDown={this.onNodeNameInputKeydown}
                     maxLength='100'
+                    onFocus={this.handleFocus}
                     autoFocus
                 />
             );

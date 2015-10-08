@@ -792,7 +792,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.setState({actionInProgress: true});
             $.when(method ? method() : $.Deferred().resolve())
                 .done(this.state.result.resolve)
-                .always(this.close);
+                .done(this.close)
+                .fail(_.partial(this.showError, null, i18n('dialog.dismiss_settings.saving_failed_message')));
         },
         discard: function() {
             this.proceedWith(this.props.revertChanges);
@@ -804,22 +805,40 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
-                    {this.props.reasonToStay || i18n('dialog.dismiss_settings.default_message')}
+                    {
+                        this.props.reasonToStay ||
+                        i18n('dialog.dismiss_settings.' + (this.props.isSavingPossible ? 'default_message' : 'no_saving_message'))
+                    }
                 </div>
             );
         },
-        shouldStay: function() {
-            return this.state.actionInProgress || !!this.props.reasonToStay;
-        },
         renderFooter: function() {
             var buttons = [
-                <button key='stay' className='btn btn-default' onClick={this.close}>
+                <button
+                    key='stay'
+                    className='btn btn-default'
+                    onClick={this.close}
+                >
                     {i18n('dialog.dismiss_settings.stay_button')}
                 </button>,
-                <button key='leave' className='btn btn-danger proceed-btn' onClick={this.discard} disabled={this.shouldStay()}>
+                <button
+                    key='leave'
+                    className='btn btn-danger proceed-btn'
+                    onClick={this.discard}
+                    disabled={this.state.actionInProgress || !!this.props.reasonToStay}
+                >
                     {i18n('dialog.dismiss_settings.leave_button')}
                 </button>,
-                <button key='save' className='btn btn-success' onClick={this.save} disabled={this.shouldStay()}>
+                <button
+                    key='save'
+                    className='btn btn-success'
+                    onClick={this.save}
+                    disabled={
+                        this.state.actionInProgress ||
+                        !this.props.isSavingPossible ||
+                        !!this.props.reasonToStay
+                    }
+                >
                     {i18n('dialog.dismiss_settings.apply_and_proceed_button')}
                 </button>
             ];

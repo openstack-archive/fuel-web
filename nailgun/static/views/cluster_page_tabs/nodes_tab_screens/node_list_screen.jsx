@@ -935,42 +935,50 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 </div>
                             </div>
                             {this.props.mode != 'edit' && [
-                                <controls.Tooltip key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
-                                    <button
-                                        disabled={!this.props.nodes.length}
-                                        onClick={this.props.nodes.length && this.toggleLabelsPanel}
-                                        className={utils.classNames(managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels'))}
-                                    >
-                                        <i className='glyphicon glyphicon-tag' />
-                                    </button>
+                            <controls.Tooltip key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
+                                    <div className='tooltip-wrapper'>
+                                        <button
+                                            disabled={!this.props.nodes.length}
+                                            onClick={this.props.nodes.length && this.toggleLabelsPanel}
+                                            className={utils.classNames(managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels'))}
+                                        >
+                                            <i className='glyphicon glyphicon-tag' />
+                                        </button>
+                                    </div>
                                 </controls.Tooltip>,
                                 <controls.Tooltip key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
-                                    <button
-                                        disabled={!this.props.screenNodes.length}
-                                        onClick={this.toggleSorters}
-                                        className={utils.classNames(managementButtonClasses(this.state.areSortersVisible, 'btn-sorters'))}
-                                    >
-                                        <i className='glyphicon glyphicon-sort' />
-                                    </button>
+                                    <div className='tooltip-wrapper'>
+                                        <button
+                                            disabled={!this.props.screenNodes.length}
+                                            onClick={this.toggleSorters}
+                                            className={utils.classNames(managementButtonClasses(this.state.areSortersVisible, 'btn-sorters'))}
+                                        >
+                                            <i className='glyphicon glyphicon-sort' />
+                                        </button>
+                                    </div>
                                 </controls.Tooltip>,
                                 <controls.Tooltip key='filters-btn' text={i18n(ns + 'filter_tooltip')}>
-                                    <button
-                                        disabled={!this.props.screenNodes.length}
-                                        onClick={this.toggleFilters}
-                                        className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible, 'btn-filters'))}
-                                    >
-                                        <i className='glyphicon glyphicon-filter' />
-                                    </button>
+                                    <div className='tooltip-wrapper'>
+                                        <button
+                                            disabled={!this.props.screenNodes.length}
+                                            onClick={this.toggleFilters}
+                                            className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible, 'btn-filters'))}
+                                        >
+                                            <i className='glyphicon glyphicon-filter' />
+                                        </button>
+                                    </div>
                                 </controls.Tooltip>,
                                 !this.state.activeSearch && (
                                     <controls.Tooltip key='search-btn' text={i18n(ns + 'search_tooltip')}>
-                                        <button
-                                            disabled={!this.props.screenNodes.length}
-                                            onClick={this.activateSearch}
-                                            className={utils.classNames(managementButtonClasses(false, 'btn-search'))}
-                                        >
-                                            <i className='glyphicon glyphicon-search' />
-                                        </button>
+                                        <div className='tooltip-wrapper'>
+                                            <button
+                                                disabled={!this.props.screenNodes.length}
+                                                onClick={this.activateSearch}
+                                                className={utils.classNames(managementButtonClasses(false, 'btn-search'))}
+                                            >
+                                                <i className='glyphicon glyphicon-search' />
+                                            </button>
+                                        </div>
                                     </controls.Tooltip>
                                 ),
                                 this.state.activeSearch && (

@@ -135,3 +135,27 @@ ERROR_RESPONSE = {
     },
     'required': ['error_code', 'message']
 }
+
+CONDITION = {"type": "string"}
+
+FULL_RESTRICTION = {
+    "type": "object",
+    "required": ["condition"],
+    "properties": {
+        "condition": CONDITION,
+        "message": {"type": "string"},
+        "action": {"type": "string"}}}
+
+
+# restriction can be specified as one item dict, with condtion as a key
+# and value as a message
+SHORT_RESTRICTION = {
+    "type": "object",
+    "minProperties": 1,
+    "maxProperties": 1}
+
+RESTRICTIONS = {
+    "type": "array",
+    "minItems": 1,
+    "items": {"anyOf": [CONDITION, FULL_RESTRICTION, SHORT_RESTRICTION]}
+}

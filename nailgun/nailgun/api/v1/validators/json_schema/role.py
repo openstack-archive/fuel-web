@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.validators.json_schema import base_types
 
 VOLUME_ALLOCATION = {
     'type': 'object',
@@ -28,32 +29,6 @@ VOLUME_ALLOCATIONS = {
     'type': 'array',
     "minItems": 1,
     'items': VOLUME_ALLOCATION}
-
-
-CONDITION = {"type": "string"}
-
-
-FULL_RESTRICTION = {
-    "type": "object",
-    "required": ["condition"],
-    "properties": {
-        "condition": CONDITION,
-        "message": {"type": "string"},
-        "action": {"type": "string"}}}
-
-
-# restriction can be specified as one item dict, with condtion as a key
-# and value as a message
-SHORT_RESTRICTION = {
-    "type": "object",
-    "minProperties": 1,
-    "maxProperties": 1}
-
-
-RESTRICTIONS = {
-    "type": "array",
-    "minItems": 1,
-    "items": {"anyOf": [CONDITION, FULL_RESTRICTION, SHORT_RESTRICTION]}}
 
 
 # rule can be either integer value, like 1,2,3, or reference to
@@ -84,7 +59,7 @@ OVERRIDES = {
 LIMITS = {
     "type": "object",
     "properties": {
-        "condition": CONDITION,
+        "condition": base_types.CONDITION,
         "max": RULE,
         "recommended": RULE,
         "min": RULE,
@@ -121,7 +96,7 @@ ROLE_META_INFO = {
             "description": ("Specified roles will be updated if current role"
                             " added to cluster first time.")},
         "limits": LIMITS,
-        "restrictions": RESTRICTIONS}}
+        "restrictions": base_types.RESTRICTIONS}}
 
 
 SCHEMA = {

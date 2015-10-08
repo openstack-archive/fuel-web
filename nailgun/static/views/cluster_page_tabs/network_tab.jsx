@@ -597,7 +597,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             dispatcher.trigger('hideNetworkVerificationResult');
         },
         verifyNetworks: function() {
-            this.setState({actionInProgress: true});
             this.prepareIpRanges();
             dispatcher.trigger('networkConfigurationUpdated', this.startVerification);
         },

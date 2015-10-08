@@ -157,7 +157,7 @@ class TestHandlers(BaseIntegrationTest):
 
         common_attrs['test_vm_image'] = {
             'container_format': 'bare',
-            'public': 'true',
+            'visibility': 'public',
             'disk_format': 'qcow2',
             'img_name': 'TestVM',
             'img_path': '/opt/vm/cirros-x86_64-disk.img',

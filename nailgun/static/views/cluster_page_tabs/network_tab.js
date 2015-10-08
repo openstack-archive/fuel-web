@@ -648,8 +648,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     this.setState({actionInProgress: false});
                 });
         },
-        getStayMessage: function() {
-            return this.props.cluster.task({group: 'network', active: true}) && i18n('dialog.dismiss_settings.verify_message');
+        isDiscardingPossible: function() {
+            return !this.props.cluster.task({group: 'network', active: true});
         },
         applyChanges: function() {
             if (!this.isSavingPossible()) return $.Deferred().reject();
@@ -679,9 +679,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return result;
         },
         isSavingPossible: function() {
-            return _.isNull(this.props.cluster.get('networkConfiguration').validationError) &&
-                !this.isLocked() &&
-                this.hasChanges();
+            return !this.state.actionInProgress &&
+                this.props.cluster.isAvailableForSettingsChanges() &&
+                this.hasChanges() &&
+                _.isNull(this.props.networkConfiguration.validationError);
         },
         renderButtons: function() {
             var isCancelChangesDisabled = this.isLocked() || !this.hasChanges();

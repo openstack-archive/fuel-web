@@ -1275,7 +1275,8 @@ class CheckBeforeDeploymentTask(object):
             network_roles.update(net_template['roles'])
 
         cluster_net_roles = \
-            set(m['id'] for m in cluster.release.network_roles_metadata)
+            set(m['id'] for m in (
+                objects.Cluster.get_cluster_network_roles(cluster)))
         missing_net_roles = set(cluster_net_roles) - network_roles
 
         if missing_net_roles:

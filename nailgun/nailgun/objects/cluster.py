@@ -274,6 +274,7 @@ class Cluster(NailgunObject):
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
+        cls.get_network_manager(instance).update_restricted_networks(instance)
         db().flush()
 
     @classmethod
@@ -971,13 +972,24 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
+    def get_cluster_network_roles(cls, instance):
+        release_roles = instance.release.network_roles_metadata
+        cluster_ngs = ([ng['name'] for ng in instance.network_groups] +
+                       [consts.NETWORKS.fuelweb_admin])
+        cluster_roles = []
+        for role in release_roles:
+            if role['default_mapping'] in cluster_ngs:
+                cluster_roles.append(role)
+        return cluster_roles
+
+    @classmethod
     def get_network_roles(cls, instance):
         """Method for receiving network roles for particular cluster
 
         :param instance: nailgun.db.sqlalchemy.models.Cluster instance
         :returns: List of network roles' descriptions
         """
-        return (instance.release.network_roles_metadata +
+        return (cls.get_cluster_network_roles(instance) +
                 PluginManager.get_network_roles(instance))
 
     @classmethod

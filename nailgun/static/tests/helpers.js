@@ -73,6 +73,31 @@ define([
                     });
             });
         },
+        assertWaitElementContainsText: function(cssSelector, text, timeout) {
+            return new this.constructor(this, function() {
+                var self = this, currentTimeout;
+                return this.parent
+                    .getFindTimeout()
+                    .then(function(value) {
+                        currentTimeout = value;
+                    })
+                    .setFindTimeout(timeout)
+                    .findByCssSelector(cssSelector)
+                    .catch(function(error) {
+                        self.parent.setFindTimeout(currentTimeout);
+                        throw error;
+                    })
+                    .getVisibleText()
+                        .then(function(visibleText) {
+                            return assert.isTrue(_.contains(visibleText, text), 'Text matches for ' +
+                                    cssSelector + 'expected ' + text + 'instead of ' + visibleText);
+                        })
+                    .end()
+                    .then(function() {
+                        self.parent.setFindTimeout(currentTimeout);
+                    });
+            });
+        },
         waitForElementDeletion: function(cssSelector, timeout) {
             return new this.constructor(this, function() {
                 var self = this, currentTimeout;

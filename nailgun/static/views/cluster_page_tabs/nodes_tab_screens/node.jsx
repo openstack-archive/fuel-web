@@ -158,6 +158,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     disabled={this.state.actionInProgress}
                     onKeyDown={this.onNodeNameInputKeydown}
                     maxLength='100'
+                    selectOnFocus
                     autoFocus
                 />
             );

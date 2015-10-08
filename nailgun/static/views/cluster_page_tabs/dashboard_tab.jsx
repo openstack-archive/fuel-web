@@ -879,7 +879,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 error: ''
             };
         },
-        handleChange: function(newValue) {
+        onChange: function(inputName, newValue) {
             this.setState({
                 name: newValue,
                 error: ''
@@ -896,18 +896,17 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             }
         },
         render: function() {
-            var valueLink = {
-                value: this.state.name,
-                requestChange: this.handleChange
-            };
             return (
                 <div className='rename-block'>
                     <div className='action-body' onKeyDown={this.handleKeyDown}>
-                        <input type='text'
+                        <controls.Input
+                            type='text'
                             disabled={this.state.disabled}
                             className={utils.classNames({'form-control': true, error: this.state.error})}
                             maxLength='50'
-                            valueLink={valueLink}
+                            onChange={this.onChange}
+                            defaultValue={this.state.name}
+                            selectOnFocus
                             autoFocus
                         />
                         {this.state.error &&

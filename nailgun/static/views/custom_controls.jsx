@@ -101,7 +101,7 @@ define([
                     repos[index].name = value;
                     break;
                 case 'change_priority':
-                    repos[index].priority = value == '' ? null : parseInt(value, 10);
+                    repos[index].priority = value == '' ? null : Number(value);
                     break;
                 default:
                     var repo = repos[index],

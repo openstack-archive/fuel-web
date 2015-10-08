@@ -715,7 +715,7 @@
                 "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
                 "provision_vms": "Provision VMs",
-                "deploy": "Deploying",
+                "deployment": "Deploying",
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
@@ -826,7 +826,7 @@
                         "env_select_deploy": "Your environment is now ready for deployment! After clicking on the Create button, you can select",
                         "or_make_config_choice": "or make additional configuration choices in the Fuel",
                         "console": "console.",
-                        "deploy": "Deploy Changes",
+                        "deployment": "Deploy Changes",
                         "env": "Environments"
                     },
                     "create_cluster_error": {
@@ -858,7 +858,7 @@
                         "no_deployment": "Environment configuration is invalid. Deployment cannot be started. Please check warnings below.",
                         "connectivity_alert": "By default, packages and package updates will be fetched from repositories. Please make sure your Fuel node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment."
                     },
-                    "deploy": "Deploy",
+                    "deployment": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",
                     "verification_not_performed": "It is recommended to verify network settings before deployment.",
                     "verification_in_progress": "Your network verification is in progress.",
@@ -1402,7 +1402,7 @@
                         "env_select_deploy": "部署准备就绪！请选择",
                         "or_make_config_choice": "或者更多配置，请前往",
                         "console": "控制面板。",
-                        "deploy": "立即部署",
+                        "deployment": "立即部署",
                         "env": "环境"
                     }
                 },
@@ -1427,7 +1427,7 @@
                     },
                     "warnings": {
                     },
-                    "deploy": "部署",
+                    "deployment": "部署",
                     "redeployment_needed": "某些节点配置后状态错误，需要重新部署。"
                 },
                 "show_node": {
@@ -2106,7 +2106,7 @@
                         "env_select_deploy": "環境をデプロイする準備ができました！作成ボタンをクリックした後で、環境を選択",
                         "or_make_config_choice": "またはFuelで追加の構成を選択することができます",
                         "console": "コンソール。",
-                        "deploy": "変更をデプロイ",
+                        "deployment": "変更をデプロイ",
                         "env": "環境"
                     },
                     "create_cluster_error": {
@@ -2137,7 +2137,7 @@
                         "no_deployment": "環境の設定が無効です。デプロイは開始できません。次の警告を確認してください。",
                         "connectivity_alert": "デフォルトではパッケージやパッケージの更新は、リポジトリから取得されます。 Fuelノードがインタネットにアクセスできることを確認してください。\n別のリポジトリを指定またはローカルミラーを作成するには、デプロイ前に設定タブを確認してください。"
                     },
-                    "deploy": "デプロイ",
+                    "deployment": "デプロイ",
                     "redeployment_needed": "いくつかのノードはデプロイ後にステータスがエラーになっています。再デプロイが必要です。",
                     "locked_settings_alert": "環境設定とノードの設定はデプロイ後に変更できなくなりますので注意してください。",
                     "verification_not_performed": "デプロイ前にネットワーク設定を確認することをおすすめします。",
@@ -2632,7 +2632,7 @@
                         "env_select_deploy": "환경은 이제 배치 할 준비가 되었습니다! [만들기] 버튼을 클릭한후, Fuel 콘솔에서 선택하거나",
                         "or_make_config_choice": "추가설정을 할 수 있습니다",
                         "console": ".",
-                        "deploy": "변경내용 배치",
+                        "deployment": "변경내용 배치",
                         "env": "환경"
                     }
                 },
@@ -2657,7 +2657,7 @@
                     },
                     "warnings": {
                     },
-                    "deploy": "배치되었읍니다",
+                    "deployment": "배치되었읍니다",
                     "redeployment_needed": "일부 노드는 배치후 오류상태가 있습니다. 재배치가 필요합니다."
                 },
                 "show_node": {

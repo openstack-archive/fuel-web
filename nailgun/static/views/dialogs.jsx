@@ -273,7 +273,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     className='btn start-deployment-btn btn-success'
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
-                >{i18n(this.ns + 'deploy')}</button>
+                >{i18n(this.ns + 'deployment')}</button>
             ]);
         }
     });

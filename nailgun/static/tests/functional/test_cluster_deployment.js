@@ -96,15 +96,14 @@ define([
                         return dashboardPage.startDeployment();
                     })
                     .assertElementAppears('div.deploy-process div.progress', 2000, 'Deployment started')
-                    // TODO(amorozova) restore commented lines in https://review.openstack.org/#/c/231940/
-                    //.then(function() {
-                    //    return dashboardPage.stopDeployment();
-                    //})
-                    //.assertElementDisappears('div.deploy-process div.progress', 5000, 'Deployment stopped')
-                    //.assertElementAppears(dashboardPage.deployButtonSelector, 1000, 'Deployment button available')
-                    //.assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected')
-                    //@todo: uncomment this after bug fix https://bugs.launchpad.net/fuel/+bug/1493291
-                    //.assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy')
+                    .assertElementAppears('button.stop-deployment-btn', 8000, 'Stop Deployment button appears')
+                    .then(function() {
+                        return dashboardPage.stopDeployment();
+                    })
+                    .assertElementDisappears('div.deploy-process div.progress', 5000, 'Deployment stopped')
+                    .assertElementAppears(dashboardPage.deployButtonSelector, 1000, 'Deployment button available')
+                    .assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected')
+                    .assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy')
                     // Reset environment button is available
                     .then(function() {
                         return clusterPage.resetEnvironment(clusterName);

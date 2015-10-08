@@ -41,8 +41,7 @@ import pytest
 
 @pytest.mark.performance
 class BaseLoadTestCase(BaseTestCase):
-    """All load test are long and test suits should be run only in purpose.
-    """
+    """All load test are long and test suits should be run only in purpose."""
 
     # Number of nodes will be added during the test
     NODES_NUM = 100
@@ -68,8 +67,7 @@ class BaseLoadTestCase(BaseTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Packs all the files from the profiling.
-        """
+        """Packs all the files from the profiling."""
         if not os.path.exists(settings.LOAD_TESTS_PATHS['load_tests_results']):
             os.makedirs(settings.LOAD_TESTS_PATHS['load_tests_results'])
         if os.path.exists(settings.LOAD_TESTS_PATHS['load_tests_base']):
@@ -101,7 +99,8 @@ class BaseLoadTestCase(BaseTestCase):
         self.call_number = 1
 
     def tearDown(self):
-        """Copy all files from profiling from last test to separate folder.
+        """Copy all files from profiling from last test to separate folder
+
         Folder name starts from execution time of the test, it will help to
         find data from tests that test bottlenecks
         """
@@ -297,8 +296,7 @@ def read_previous_results():
 
 
 def write_results(test_class_name, results):
-    """Write tests results to file defined in settings.
-    """
+    """Write tests results to file defined in settings."""
     prev_results = read_previous_results()
     if test_class_name in prev_results:
         prev_results[test_class_name].update(results)
@@ -356,8 +354,8 @@ def evaluate_unit_performance(f):
                 avg_time <= expect_time,
                 "Average execution time: {exec_time} is greater, "
                 "than expected: {max_exec_time}".format(
-                exec_time=avg_time,
-                max_exec_time=expect_time))
+                    exec_time=avg_time,
+                    max_exec_time=expect_time))
             test.tests_stats[str(test)][call_number]['request_name'] =\
                 request_name
             test.tests_stats[str(test)][call_number]['expect_time'] =\

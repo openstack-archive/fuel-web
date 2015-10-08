@@ -36,7 +36,9 @@ def public_urls():
 
 
 class CookieTokenMixin(object):
-    """Mixin for getting the auth token out of request X-Auth-Token header or
+    """Mixin for getting the auth token out of request
+
+    Token is taken from X-Auth-Token header or
     if that doesn't exist, from the cookie.
     """
     def get_auth_token(self, env):
@@ -56,9 +58,7 @@ class CookieTokenMixin(object):
 
 
 class SkipAuthMixin(object):
-    """Mixin which skips verification of authentication tokens for public
-    routes in the API.
-    """
+    """Skips verification of authentication tokens for public routes in API."""
     def __init__(self, app):
         self.public_api_routes = {}
         self.app = app
@@ -91,8 +91,7 @@ class SkipAuthMixin(object):
 
 
 class FakeAuthProtocol(CookieTokenMixin):
-    """Auth protocol for fake mode.
-    """
+    """Auth protocol for fake mode."""
     def __init__(self, app, conf):
         self.app = app
 
@@ -108,8 +107,7 @@ class NailgunKeystoneAuthMiddleware(
         CookieTokenMixin,
         SkipAuthMixin,
         auth_token.AuthProtocol):
-    """Auth middleware for keystone.
-    """
+    """Auth middleware for keystone."""
     def __call__(self, env, start_response):
         token = self.get_auth_token(env)
 
@@ -123,6 +121,5 @@ class NailgunKeystoneAuthMiddleware(
 
 
 class NailgunFakeKeystoneAuthMiddleware(SkipAuthMixin, FakeAuthProtocol):
-    """Auth middleware for fake mode.
-    """
+    """Auth middleware for fake mode."""
     pass

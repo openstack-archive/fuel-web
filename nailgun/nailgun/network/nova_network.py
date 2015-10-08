@@ -52,8 +52,7 @@ class NovaNetworkManager70(AllocateVIPs70Mixin, NovaNetworkManager):
 
     @classmethod
     def build_role_to_network_group_mapping(cls, *_):
-        """Default network role to network mapping is used always so
-        map building is not required.
+        """Not needed due to always using default net role to network mapping
 
         :return: Empty network role to network map
         :rtype: dict
@@ -62,7 +61,8 @@ class NovaNetworkManager70(AllocateVIPs70Mixin, NovaNetworkManager):
 
     @classmethod
     def get_network_group_for_role(cls, network_role, _):
-        """Returns network group to which network role is associated.
+        """Returns network group to which network role is associated
+
         The default network group from the network role description is
         returned.
 

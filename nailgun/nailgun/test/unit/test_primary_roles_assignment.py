@@ -144,17 +144,12 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
             objects.Node.all_roles(nodes[0]), [self.primary_role_name])
 
     def test_primary_assign_after_reset_to_discovery(self):
-        """After node is reset to discovery, it will be booted into
-        bootstrap once again, therefore we want to remove any primary
-        roles assigned to this test
-        """
+        """Removing primary roles after resetting node to discovery"""
         with self.assert_node_reassigned() as node:
             objects.Node.reset_to_discover(node)
 
     def test_primary_assign_after_node_is_removed_from_cluster(self):
-        """When node is remove from cluster all primary roles
-        assigned to this node should be flushed
-        """
+        """Node removal from cluster should cause flushing its primary roles"""
         with self.assert_node_reassigned() as node:
             objects.Node.remove_from_cluster(node)
 

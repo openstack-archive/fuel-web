@@ -30,9 +30,7 @@ from nailgun.utils import flatten
 
 
 class LimitsMixin(object):
-    """Mixin which extends nailgun objects with limits
-    processing functionality
-    """
+    """Mixin with limits processing functionality"""
 
     def check_node_limits(self, models, nodes, role,
                           limits, limit_reached=True,
@@ -122,8 +120,7 @@ class LimitsMixin(object):
             }
 
     def _check_override(self, override):
-        """Check overridden restriction for limit
-        """
+        """Check overridden restriction for limit"""
         expression = override.get('condition')
         result = self._evaluate_expression(expression, self.models)
         if result:
@@ -131,6 +128,7 @@ class LimitsMixin(object):
 
     def _check_limit_type(self, limit_type):
         """Check limit types for role
+
         :param limit_type: one of (min|max|recommended) values
         :type limit_type: string
         """
@@ -157,16 +155,13 @@ class LimitsMixin(object):
             return message[0].get('message')
 
     def _evaluate_expression(self, expression, models):
-        """Evaluate expression if it exists
-        """
+        """Evaluate expression if it exists"""
         if expression:
             return Expression(str(expression), models).evaluate()
 
 
 class RestrictionMixin(object):
-    """Mixin which extend nailgun objects with restriction
-    processing functionality
-    """
+    """Mixin with restriction processing functionality"""
 
     @classmethod
     def check_restrictions(cls, models, restrictions, action=None):
@@ -201,13 +196,12 @@ class RestrictionMixin(object):
         return {
             'result': bool(satisfied),
             'message': '. '.join([item.get('message') for item in
-            satisfied if item.get('message')])
+                                  satisfied if item.get('message')])
         }
 
     @staticmethod
     def _expand_restriction(restriction):
-        """Get restriction in different formats like string, short
-        or long dict formats and return in one canonical format
+        """Normalize restrictions into one canonical format
 
         :param restriction: restriction object
         :type restriction: string|dict
@@ -250,7 +244,8 @@ class AttributesRestriction(RestrictionMixin):
         """
         def find_errors(data=data):
             """Generator which traverses through cluster attributes tree
-            checks restrictions for attributes and values for correctness
+
+            Also checks restrictions for attributes and values for correctness
             with regex
             """
             if isinstance(data, dict):
@@ -305,8 +300,9 @@ class VmwareAttributesRestriction(RestrictionMixin):
         root_key = camel_to_snake_case(cls.__name__)
 
         def find_errors(metadata=metadata, path_key=root_key):
-            """Generator for vmware attributes errors which for each
-            attribute in 'metadata' gets relevant values from vmware
+            """Generator for vmware attributes errors
+
+            for each attribute in 'metadata' gets relevant values from vmware
             'value' and checks them with restrictions and regexs
             """
             if isinstance(metadata, dict):

@@ -23,16 +23,14 @@ from nailgun import objects
 
 
 class NetworkGroupHandler(SingleHandler):
-    """Network group handler
-    """
+    """Network group handler"""
 
     validator = NetworkGroupValidator
     single = objects.NetworkGroup
 
 
 class NetworkGroupCollectionHandler(CollectionHandler):
-    """Network group collection handler
-    """
+    """Network group collection handler"""
 
     collection = objects.NetworkGroupCollection
     validator = NetworkGroupValidator

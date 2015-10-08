@@ -40,6 +40,7 @@ class NetworkGroup(NailgunObject):
     @classmethod
     def create(cls, data):
         """Create NetworkGroup instance with specified parameters in DB.
+
         Create corresponding IPAddrRange instance with IP range specified in
         data or calculated from CIDR if not specified.
 
@@ -79,6 +80,7 @@ class NetworkGroup(NailgunObject):
     @classmethod
     def update_meta(cls, instance, data):
         """Updates particular keys in object's meta.
+
         Is used by NetworkManager.update_networks as
         for old clusters only those data in meta is
         allowed for updating
@@ -104,7 +106,9 @@ class NetworkGroup(NailgunObject):
 
     @classmethod
     def _regenerate_ip_ranges_on_notation(cls, instance, data):
-        """Regenerate IP-address ranges basing on 'notation' field of
+        """Regenerate IP-address ranges
+
+        This method regenerates IPs based on 'notation' field of
         Network group 'meta' content.
 
         :param instance: NetworkGroup instance
@@ -175,8 +179,9 @@ class NetworkGroup(NailgunObject):
 
     @classmethod
     def _delete_ips(cls, instance):
-        """Network group cleanup - deletes all IPs were assigned within
-        the network group.
+        """Network group cleanup
+
+        Deletes all IPs which were assigned within the network group.
 
         :param instance: NetworkGroup instance
         :type  instance: models.NetworkGroup

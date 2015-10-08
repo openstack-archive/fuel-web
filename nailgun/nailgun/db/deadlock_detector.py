@@ -30,8 +30,7 @@ ALLOWED_LOCKS_CHAINS = [
 
 
 class Lock(object):
-    """Locking table info. Includes traceback info of locking call
-    """
+    """Locking table info. Includes traceback info of locking call"""
 
     @staticmethod
     def _warnings_only():
@@ -126,8 +125,7 @@ class LockTransitionNotAllowedError(DeadlockDetectorError):
 
 
 def clean_locks():
-    """Context must be cleaned when transaction ends
-    """
+    """Context must be cleaned when transaction ends"""
     context.locks = []
 
 

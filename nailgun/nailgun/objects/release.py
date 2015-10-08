@@ -33,8 +33,7 @@ from nailgun.settings import settings
 
 
 class Release(NailgunObject):
-    """Release object
-    """
+    """Release object"""
 
     #: SQLAlchemy model for Release
     model = models.Release
@@ -72,6 +71,7 @@ class Release(NailgunObject):
     @classmethod
     def update_role(cls, instance, role):
         """Update existing Release instance with specified role.
+
         Previous ones are deleted.
 
         :param instance: a Release instance
@@ -152,8 +152,7 @@ class Release(NailgunObject):
 
 
 class ReleaseCollection(NailgunCollection):
-    """Release collection
-    """
+    """Release collection"""
 
     #: Single Release object class
     single = Release

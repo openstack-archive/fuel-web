@@ -340,8 +340,9 @@ class EnvironmentManager(object):
 
     def create_nodes_w_interfaces_count(self,
                                         nodes_count, if_count=2, **kwargs):
-        """Create nodes_count nodes with if_count interfaces each.
-        Default random MAC is generated for each interface.
+        """Create nodes_count nodes with if_count interfaces each
+
+        Default random MAC is generated for each interface
         """
         nodes = []
         for i in range(nodes_count):
@@ -1494,6 +1495,7 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
 
 class BaseValidatorTest(TestCase):
     """JSON-schema validation policy:
+
        1) All required properties are present;
        2) No additional properties allowed;
        3) Item has correct type.

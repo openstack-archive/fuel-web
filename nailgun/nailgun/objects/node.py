@@ -54,8 +54,7 @@ from nailgun.network.template import NetworkTemplate
 
 
 class Node(NailgunObject):
-    """Node object
-    """
+    """Node object"""
 
     #: SQLAlchemy model for Node
     model = models.Node
@@ -141,8 +140,7 @@ class Node(NailgunObject):
 
     @classmethod
     def should_have_public_with_ip(cls, instance):
-        """Determine whether this node should be connected to Public network
-        with an IP address assigned from that network
+        """Returns True if node should have IP belonging to Public network
 
         :param instance: Node DB instance
         :returns: True when node has Public network
@@ -162,6 +160,7 @@ class Node(NailgunObject):
     @classmethod
     def should_have_public(cls, instance):
         """Determine whether this node should be connected to Public network,
+
         no matter with or without an IP address assigned from that network
 
         For example Neutron DVR does require Public network access on compute
@@ -187,6 +186,7 @@ class Node(NailgunObject):
     @classmethod
     def create(cls, data):
         """Create Node instance with specified parameters in DB.
+
         This includes:
 
         * generating its name by MAC (if name is not specified in data)
@@ -286,6 +286,7 @@ class Node(NailgunObject):
     @classmethod
     def hardware_info_locked(cls, instance):
         """Returns true if update of hardware information is not allowed.
+
         It is not allowed during provision/deployment, after
         successful provision/deployment and during node removal.
         """
@@ -297,6 +298,7 @@ class Node(NailgunObject):
     @classmethod
     def update_interfaces(cls, instance, update_by_agent=False):
         """Update interfaces for Node instance using Cluster
+
         network manager (see :func:`get_network_manager`)
 
         :param instance: Node instance
@@ -377,6 +379,7 @@ class Node(NailgunObject):
     @classmethod
     def update(cls, instance, data):
         """Update Node instance with specified parameters in DB.
+
         This includes:
 
         * adding node to Cluster (if cluster_id is not None in data) \
@@ -498,7 +501,8 @@ class Node(NailgunObject):
     @classmethod
     def reset_to_discover(cls, instance):
         """Flush database objects which is not consistent with actual node
-           configuration in the event of resetting node to discover state
+
+        configuration in the event of resetting node to discover state
 
         :param instance: Node database object
         :returns: None
@@ -599,6 +603,7 @@ class Node(NailgunObject):
     @classmethod
     def update_roles(cls, instance, new_roles):
         """Update roles for Node instance.
+
         Logs an error if node doesn't belong to Cluster
 
         :param instance: Node instance
@@ -623,6 +628,7 @@ class Node(NailgunObject):
     @classmethod
     def update_pending_roles(cls, instance, new_pending_roles):
         """Update pending_roles for Node instance.
+
         Logs an error if node doesn't belong to Cluster
 
         :param instance: Node instance
@@ -654,6 +660,7 @@ class Node(NailgunObject):
     @classmethod
     def update_primary_roles(cls, instance, new_primary_roles):
         """Update primary_roles for Node instance.
+
         Logs an error if node doesn't belong to Cluster
 
         :param instance: Node instance
@@ -688,6 +695,7 @@ class Node(NailgunObject):
     @classmethod
     def add_into_cluster(cls, instance, cluster_id):
         """Adds Node to Cluster by its ID.
+
         Also assigns networks by default for Node.
 
         :param instance: Node instance
@@ -724,6 +732,7 @@ class Node(NailgunObject):
     @classmethod
     def get_admin_physical_iface(cls, instance):
         """Returns node's physical iface.
+
         In case if we have bonded admin iface, first
         of the bonded ifaces will be returned
 
@@ -745,6 +754,7 @@ class Node(NailgunObject):
     @classmethod
     def remove_from_cluster(cls, instance):
         """Remove Node from Cluster.
+
         Also drops networks assignment for Node and clears both
         roles and pending roles
 
@@ -774,8 +784,7 @@ class Node(NailgunObject):
 
     @classmethod
     def move_roles_to_pending_roles(cls, instance):
-        """Move roles to pending_roles
-        """
+        """Move roles to pending_roles"""
         instance.pending_roles = instance.pending_roles + instance.roles
         instance.roles = []
         instance.primary_roles = []
@@ -803,8 +812,9 @@ class Node(NailgunObject):
 
     @classmethod
     def get_kernel_params(cls, instance):
-        """Return cluster kernel_params if they wasnot replaced by
-           custom params.
+        """Get kernel params
+
+        Return cluster kernel_params if they weren't replaced by custom params.
         """
         return (instance.kernel_params or
                 Cluster.get_default_kernel_params(instance.cluster))
@@ -866,9 +876,11 @@ class Node(NailgunObject):
 
     @classmethod
     def get_unique_hostname(cls, node, cluster_id):
-        """Generate default hostname 'node-{id}' if it's not used
-        or 'node-{uuid} otherwise. It's needed for case when user have
-        manually renamed any another node to 'node-{id}'.
+        """Generate default hostname
+
+        Hostname is 'node-{id}' if it's not used or 'node-{uuid} otherwise.
+        It's needed for case when user have manually renamed any another node
+        to 'node-{id}'.
         """
         hostname = cls.get_slave_name(node)
         if cls.get_by_hostname(hostname, cluster_id):
@@ -877,8 +889,7 @@ class Node(NailgunObject):
 
 
 class NodeCollection(NailgunCollection):
-    """Node collection
-    """
+    """Node collection"""
 
     #: Single Node object class
     single = Node
@@ -900,8 +911,9 @@ class NodeCollection(NailgunCollection):
 
     @classmethod
     def prepare_for_lt_6_1_deployment(cls, instances):
-        """Prepare environment for deployment,
-        assign management, public, storage ips
+        """Prepare environment for deployment
+
+        Assign management, public, storage ips
         """
 
         # TODO(enchantner): check network manager instance for each node
@@ -914,8 +926,9 @@ class NodeCollection(NailgunCollection):
 
     @classmethod
     def prepare_for_6_1_deployment(cls, instances, nst=None):
-        """Prepare environment for deployment,
-        assign management, public, storage, private ips
+        """Prepare environment for deployment
+
+        Assign management, public, storage, private ips
         """
 
         # TODO(enchantner): check network manager instance for each node
@@ -931,9 +944,7 @@ class NodeCollection(NailgunCollection):
 
     @classmethod
     def prepare_for_deployment(cls, instances):
-        """Prepare environment for deployment. Assign IPs for all
-        networks.
-        """
+        """Prepare environment for deployment. Assign IPs for all networks."""
         if not instances:
             logger.debug("prepare_for_deployment was called with no instances")
             return
@@ -977,15 +988,14 @@ class NodeCollection(NailgunCollection):
 
     @classmethod
     def prepare_for_provisioning(cls, instances):
-        """Prepare environment for provisioning,
-        assign admin IPs
-        """
+        """Prepare environment for provisioning, assign admin IPs"""
         netmanager = Cluster.get_network_manager()
         netmanager.assign_admin_ips(instances)
 
     @classmethod
     def lock_nodes(cls, instances):
         """Locking nodes instances, fetched before, but required to be locked
+
         :param instances: list of nodes
         :return: list of locked nodes
         """
@@ -1014,8 +1024,7 @@ class NodeCollection(NailgunCollection):
 
     @classmethod
     def discovery_node_ids(self):
-        """List of nodes ids which belong to the cluster and have
-        'discovery' status
+        """Ids of nodes which belong to the cluster and have 'discovery' status
 
         :returns: list of node ids
         """

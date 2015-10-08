@@ -60,10 +60,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(201, resp.status_code)
 
     def test_cluster_create_no_ip_addresses(self):
-        """In this test we check that no error is occured
-        if two clusters will have same networks updated to use
-        full CIDR
-        """
+        """Two clusters having same networks updated to use full CIDR is ok"""
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.db.query(Cluster).get(cluster["id"])
         cluster2 = self.env.create_cluster(api=True,

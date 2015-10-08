@@ -63,7 +63,7 @@ compiled_urls_actions_mapping = utils.compile_mapping_keys(
          r'/network_configuration/nova_network/?$'): {
              'action_name': 'nova_network',
              'action_group': 'network_configuration'
-         },
+        },
         r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/neutron/?$': {
             'action_name': 'neutron',
             'action_group': 'network_configuration'
@@ -72,12 +72,12 @@ compiled_urls_actions_mapping = utils.compile_mapping_keys(
          r'nova_network/verify/?$'): {
              'action_name': 'nova_network',
              'action_group': 'network_verification'
-         },
+        },
         (r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/'
          r'neutron/verify/?$'): {
              'action_name': 'neutron',
              'action_group': 'network_verification'
-         },
+        },
         r'.*/clusters/(?P<cluster_id>\d+)/attributes/?$': {
             'action_name': 'attributes',
             'action_group': 'cluster_attributes'
@@ -133,9 +133,7 @@ class ConnectionMonitorMiddleware(object):
                 request_body = utils.get_body_from_env(env)
 
                 def save_headers_start_response(status, headers, *args):
-                    """Hook for saving response headers for further
-                    processing
-                    """
+                    """Hook for saving resp headers for further processing"""
                     self.status = status
                     return start_response(status, headers, *args)
 

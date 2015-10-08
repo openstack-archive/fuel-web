@@ -808,6 +808,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     {this.renderImportantLabel()}
                     {
                         this.props.reasonToStay ||
+                        this.props.reasonToCantDiscard ||
                         i18n('dialog.dismiss_settings.' + (this.props.isSavingPossible ? 'default_message' : 'no_saving_message'))
                     }
                 </div>
@@ -826,7 +827,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     key='leave'
                     className='btn btn-danger proceed-btn'
                     onClick={this.discard}
-                    disabled={this.state.actionInProgress || !!this.props.reasonToStay}
+                    disabled={this.state.actionInProgress || !!this.props.reasonToStay || !!this.props.reasonToCantDiscard}
                 >
                     {i18n('dialog.dismiss_settings.leave_button')}
                 </button>,

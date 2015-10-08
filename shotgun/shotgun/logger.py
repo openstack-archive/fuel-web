@@ -18,8 +18,7 @@ from shotgun.settings import LOG_FILE
 
 
 def configure_logger():
-    """Configures shotgun logger
-    """
+    """Configures shotgun logger"""
     logger = logging.getLogger('shotgun')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(

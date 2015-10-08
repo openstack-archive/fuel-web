@@ -67,6 +67,5 @@ def make_snapshot(args):
 
 
 def main():
-    """Entry point
-    """
+    """Entry point"""
     make_snapshot(parse_args())

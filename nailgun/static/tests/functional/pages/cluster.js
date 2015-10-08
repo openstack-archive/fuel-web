@@ -17,8 +17,9 @@
 define([
     'underscore',
     'tests/functional/pages/modal',
+    'intern/dojo/node!leadfoot/helpers/pollUntil',
     '../../helpers'
-], function(_, ModalWindow) {
+], function(_, ModalWindow, pollUntil) {
     'use strict';
     function ClusterPage(remote) {
         this.remote = remote;
@@ -29,7 +30,11 @@ define([
         constructor: ClusterPage,
         goToTab: function(tabName) {
             return this.remote
-                .clickLinkByText(tabName);
+                .clickLinkByText(tabName)
+                .then(pollUntil(function(textToFind) {
+                    /*eslint no-undef:0 */
+                    return $('.cluster-tab.active').text() == textToFind ? true : null;
+                }, [tabName], 3000));
         },
         removeCluster: function(clusterName) {
             var self = this;

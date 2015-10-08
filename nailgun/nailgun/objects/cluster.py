@@ -274,6 +274,7 @@ class Cluster(NailgunObject):
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
+        cls.get_network_manager(instance).update_restricted_networks(instance)
         db().flush()
 
     @classmethod

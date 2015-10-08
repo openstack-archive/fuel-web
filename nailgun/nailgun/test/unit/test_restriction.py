@@ -23,7 +23,7 @@ from nailgun.settings import settings
 from nailgun.test import base
 from nailgun.utils.restrictions import AttributesRestriction
 from nailgun.utils.restrictions import LimitsMixin
-from nailgun.utils.restrictions import RestrictionMixin
+from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 
 
@@ -91,7 +91,7 @@ class TestRestriction(base.BaseTestCase):
 
         for gkey, gvalue in six.iteritems(attributes):
             for key, value in six.iteritems(gvalue):
-                result = RestrictionMixin.check_restrictions(
+                result = RestrictionBase.check_restrictions(
                     models={'settings': attributes},
                     restrictions=value.get('restrictions', []))
                 # check when couple restrictions true for some item
@@ -126,21 +126,21 @@ class TestRestriction(base.BaseTestCase):
 
         # check string format
         self.assertDictEqual(
-            RestrictionMixin._expand_restriction(
+            RestrictionBase._expand_restriction(
                 string_restriction), result)
         result['message'] = 'Another attribute required'
         # check long format
         self.assertDictEqual(
-            RestrictionMixin._expand_restriction(
+            RestrictionBase._expand_restriction(
                 dict_restriction_long_format), result)
         # check short format
         self.assertDictEqual(
-            RestrictionMixin._expand_restriction(
+            RestrictionBase._expand_restriction(
                 dict_restriction_short_format), result)
         # check invalid format
         self.assertRaises(
             errors.InvalidData,
-            RestrictionMixin._expand_restriction,
+            RestrictionBase._expand_restriction,
             invalid_format)
 
 

@@ -46,7 +46,8 @@ NETWORK_META = {
             "type": "array",
             "uniqueItems": True,
             "items": {"type": "string", "pattern": "^[a-zA-Z_]+$"}
-        }
+        },
+        "restrictions": base_types.RESTRICTIONS
     }
 }
 

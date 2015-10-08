@@ -1345,6 +1345,18 @@ input[type=range] {
   }
 
   .settings-tab {
+    .forms-box {
+      .vcenter() {
+        display: flex;
+        align-items: center;
+        min-height: 30px;
+        padding-top: 0;
+      }
+      .form-group {
+        label {.vcenter;}
+        .help-block {.vcenter;}
+      }
+    }
     .nav-pills:after {
       margin-bottom: 20px;
     }

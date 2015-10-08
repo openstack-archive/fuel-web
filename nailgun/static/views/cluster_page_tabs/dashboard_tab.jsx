@@ -608,7 +608,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     var networkingParam = cluster.get('networkConfiguration').get('networking_parameters'),
                         networkManager = networkingParam.get('net_manager');
                     if (cluster.get('net_provider') == 'nova_network') {
-                        return i18n(namespace + 'nova_with') + ' ' + networkManager + ' ' + i18n(namespace + 'manager');
+                        return i18n(namespace + 'nova_with') + ' ' + networkManager;
                     }
                     return (i18n('common.network.neutron_' + networkingParam.get('segmentation_type')));
                 case 'storage_backends':

@@ -74,10 +74,8 @@ define([
                     // introduce change
                     .clickByCssSelector('input[type=checkbox]')
                     .waitForCssSelector('.btn-apply-changes:not(:disabled)', 200)
-                    .then(function() {
-                        // try to move out of Settings tab
-                        return clusterPage.goToTab('Dashboard');
-                    })
+                    // try to move out of Settings tab
+                    .clickLinkByText('Dashboard')
                     .then(function() {
                         // check Discard Chasnges dialog appears
                         return modal.waitToOpen();

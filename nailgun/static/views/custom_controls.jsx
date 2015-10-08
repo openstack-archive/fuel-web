@@ -45,7 +45,7 @@ define([
                         error.uri = i18n(ns + 'invalid_repo');
                     }
                     var priority = repo.priority;
-                    if (_.isNaN(priority) || !_.isNull(priority) && (!_.isNumber(priority) || os == 'CentOS' && (priority < 1 || priority > 99))) {
+                    if (_.isNaN(priority) || !_.isNull(priority) && (!(priority == _.parseInt(priority, 10)) || os == 'CentOS' && (priority < 1 || priority > 99))) {
                         error.priority = i18n(ns + 'invalid_priority');
                     }
                     return _.isEmpty(error) ? null : error;
@@ -101,7 +101,7 @@ define([
                     repos[index].name = value;
                     break;
                 case 'change_priority':
-                    repos[index].priority = value == '' ? null : parseInt(value, 10);
+                    repos[index].priority = value == '' ? null : Number(value);
                     break;
                 default:
                     var repo = repos[index],

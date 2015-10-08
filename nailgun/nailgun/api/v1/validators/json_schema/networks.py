@@ -14,6 +14,7 @@
 
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import network_template
+from nailgun.api.v1.validators.json_schema import role
 from nailgun import consts
 
 NETWORK_META = {
@@ -46,7 +47,8 @@ NETWORK_META = {
             "type": "array",
             "uniqueItems": True,
             "items": {"type": "string", "pattern": "^[a-zA-Z_]+$"}
-        }
+        },
+        "restrictions": role.RESTRICTIONS
     }
 }
 

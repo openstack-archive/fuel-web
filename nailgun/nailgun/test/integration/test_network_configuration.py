@@ -20,8 +20,7 @@ from oslo_serialization import jsonutils
 from sqlalchemy.sql import not_
 
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -32,16 +31,15 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
     def setUp(self):
         super(TestNovaNetworkConfigurationHandler, self).setUp()
         cluster = self.env.create_cluster(api=True)
-        self.cluster = self.db.query(Cluster).get(cluster['id'])
+        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
 
     def test_get_request_should_return_net_manager_and_networks(self):
         resp = self.env.nova_networks_get(self.cluster.id)
         data = resp.json_body
-        cluster = self.db.query(Cluster).get(self.cluster.id)
 
         self.assertEqual(data['networking_parameters']['net_manager'],
                          self.cluster.network_config.net_manager)
-        for network_group in cluster.network_groups:
+        for network_group in self.cluster.network_groups:
             network = [i for i in data['networks']
                        if i['id'] == network_group.id][0]
 
@@ -143,8 +141,8 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
             new_net_manager['networking_parameters']['net_manager'])
 
     def test_network_group_update_changes_network(self):
-        network = self.db.query(NetworkGroup).filter(
-            not_(NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
+        network = self.db.query(models.NetworkGroup).filter(
+            not_(models.NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
         ).first()
         self.assertIsNotNone(network)
         new_vlan_id = 500  # non-used vlan id
@@ -157,8 +155,8 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(network.vlan_start, 500)
 
     def test_update_networks_and_net_manager(self):
-        network = self.db.query(NetworkGroup).filter(
-            not_(NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
+        network = self.db.query(models.NetworkGroup).filter(
+            not_(models.NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
         ).first()
         new_vlan_id = 500  # non-used vlan id
         new_net = {
@@ -260,16 +258,15 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                                           net_segment_type='gre',
                                           mode='ha_compact'
                                           )
-        self.cluster = self.db.query(Cluster).get(cluster['id'])
+        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
 
     def test_get_request_should_return_net_provider_segment_and_networks(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body
-        cluster = self.db.query(Cluster).get(self.cluster.id)
 
         self.assertEqual(data['networking_parameters']['segmentation_type'],
                          self.cluster.network_config.segmentation_type)
-        for network_group in cluster.network_groups:
+        for network_group in self.cluster.network_groups:
             network = [i for i in data['networks']
                        if i['id'] == network_group.id][0]
 
@@ -349,7 +346,8 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
     def test_network_group_update_changes_network(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body
-        network = self.db.query(NetworkGroup).get(data['networks'][0]['id'])
+        netid = data['networks'][0]['id']
+        network = self.db.query(models.NetworkGroup).get(netid)
         self.assertIsNotNone(network)
 
         data['networks'][0]['vlan_start'] = 500  # non-used vlan id
@@ -363,7 +361,8 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
     def test_update_networks_fails_if_change_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body
-        network = self.db.query(NetworkGroup).get(data['networks'][0]['id'])
+        netid = data['networks'][0]['id']
+        network = self.db.query(models.NetworkGroup).get(netid)
         self.assertIsNotNone(network)
 
         data['networks'][0]['vlan_start'] = 500  # non-used vlan id
@@ -505,7 +504,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
     def test_admin_vip_reservation(self):
         self.cluster.release.network_roles_metadata.append({
             'id': 'admin/vip',
-            'default_mapping': 'fuelweb_admin',
+            'default_mapping': consts.NETWORKS.fuelweb_admin,
             'properties': {
                 'subnet': True,
                 'gateway': False,
@@ -521,9 +520,10 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
 
         nm = objects.Cluster.get_network_manager(self.cluster)
+        nodegroup = objects.Cluster.get_default_group(self.cluster)
         self.assertEqual(
-            resp.json_body['vips']['my-vip']['ipaddr'],
-            nm.assign_vip(self.cluster, 'fuelweb_admin', 'my-vip'))
+            nm.assign_vip(nodegroup, consts.NETWORKS.fuelweb_admin, 'my-vip'),
+            resp.json_body['vips']['my-vip']['ipaddr'])
 
     def test_not_enough_ip_addresses_return_400(self):
         # restrict public network to have only 2 ip addresses
@@ -562,25 +562,63 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             "of 'public' network",
             resp.json_body['message'])
 
+    def test_assign_vip_in_correct_node_group(self):
+        # prepare two nodes that are in different node groups
+        self.env.create_node(
+            cluster_id=self.cluster.id, pending_roles=['controller'])
+        self.env.create_node(
+            cluster_id=self.cluster.id, pending_roles=['compute'])
+        group_id = self.env.create_node_group().json_body['id']
+        self.env.nodes[1].group_id = group_id
+
+        # configure management net to have custom range on compute nodes
+        management_net = self.db.query(models.NetworkGroup)\
+            .filter_by(group_id=group_id, name=consts.NETWORKS.management)\
+            .first()
+        management_net.ip_ranges = [
+            models.IPAddrRange(first='10.42.0.2', last='10.42.0.10')]
+
+        # populate release with a network role that requests a VIP
+        # for compute nodes
+        self.env.clusters[0].release.network_roles_metadata.append({
+            'id': 'mymgmt/vip',
+            'default_mapping': consts.NETWORKS.management,
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': [{
+                    'name': 'my-vip',
+                    'node_roles': ['compute'],
+                }]
+            }})
+        self.cluster.release.version = '2015.1-7.0'
+        self.db.flush()
+
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.assertEqual(200, resp.status_code)
+        ipaddr = resp.json_body['vips']['my-vip']['ipaddr']
+        self.assertEqual('10.42.0.2', ipaddr)
+
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNovaNetworkConfigurationHandlerHA, self).setUp()
         cluster = self.env.create_cluster(api=True, mode='ha_compact')
-        self.cluster = self.db.query(Cluster).get(cluster['id'])
+        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
         self.net_manager = objects.Cluster.get_network_manager(self.cluster)
 
     def test_returns_management_vip_and_public_vip(self):
         resp = self.env.nova_networks_get(self.cluster.id).json_body
+        nodegroup = objects.Cluster.get_default_group(self.cluster)
 
         self.assertEqual(
             resp['management_vip'],
-            self.net_manager.assign_vip(self.cluster, 'management'))
+            self.net_manager.assign_vip(nodegroup, 'management'))
 
         self.assertEqual(
             resp['public_vip'],
-            self.net_manager.assign_vip(self.cluster, 'public'))
+            self.net_manager.assign_vip(nodegroup, 'public'))
 
 
 class TestAdminNetworkConfiguration(BaseIntegrationTest):

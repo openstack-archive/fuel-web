@@ -348,7 +348,8 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             $(this.refs.tooltip.getDOMNode()).tooltip('destroy');
         },
         render: function() {
-            return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});
+            var content = !this.props.wrapperClassName ? this.props.children : <div className={this.props.wrapperClassName}>{this.props.children}</div>;
+            return React.cloneElement(React.Children.only(content), {ref: 'tooltip'});
         }
     });
 

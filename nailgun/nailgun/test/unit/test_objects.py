@@ -1064,6 +1064,36 @@ class TestClusterObject(BaseTestCase):
 
     def test_get_network_roles(self):
         cluster = self.env.clusters[0]
+        cluster.release.network_roles_metadata = [
+            {
+                'default_mapping': 'management',
+                'properties': {
+                    'subnet': True,
+                    'vip': [],
+                    'gateway': False
+                },
+                'id': 'keystone/api'
+            },
+            {
+                'default_mapping': 'fuelweb_admin',
+                'properties': {
+                    'subnet': True,
+                    'vip': [],
+                    'gateway': True
+                },
+                'id': u'admin/pxe'
+            },
+            {
+                'default_mapping': 'management',
+                'properties': {
+                    'subnet': True,
+                    'vip': [],
+                    'gateway': False
+                },
+                'id': 'swift/api'
+            }
+        ]
+
         self.assertEqual(
             objects.Cluster.get_network_roles(cluster),
             cluster.release.network_roles_metadata)
@@ -1115,7 +1145,7 @@ class TestClusterObject(BaseTestCase):
         cluster = self._create_cluster_with_plugins([plugin_data])
         self.assertItemsEqual(
             objects.Cluster.get_network_roles(cluster),
-            cluster.release.network_roles_metadata + network_roles)
+            objects.Cluster.get_cluster_network_roles(cluster) + network_roles)
 
     def test_get_plugin_network_roles_fail(self):
         network_roles = [self._get_network_role_metadata()]

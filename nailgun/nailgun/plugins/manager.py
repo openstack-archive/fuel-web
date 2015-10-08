@@ -15,6 +15,7 @@
 import six
 from six.moves import map
 
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import Plugin
@@ -85,8 +86,19 @@ class PluginManager(object):
         return cluster_plugins
 
     @classmethod
+    def get_cluster_network_roles(cls, instance):
+        release_roles = instance.release.network_roles_metadata
+        cluster_ngs = ([ng['name'] for ng in instance.network_groups] +
+                       [consts.NETWORKS.fuelweb_admin])
+        cluster_roles = []
+        for role in release_roles:
+            if role['default_mapping'] in cluster_ngs:
+                cluster_roles.append(role)
+        return cluster_roles
+
+    @classmethod
     def get_network_roles(cls, cluster):
-        core_roles = cluster.release.network_roles_metadata
+        core_roles = cls.get_cluster_network_roles(cluster)
         known_roles = set(role['id'] for role in core_roles)
 
         plugin_roles = []

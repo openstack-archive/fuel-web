@@ -677,7 +677,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         isSavingPossible: function() {
             return _.isNull(this.props.networkConfiguration.validationError) &&
-                !this.isLocked() &&
+                // Network task is not blocking networks saving possibility
+                (!this.isLocked() || !!this.props.cluster.task({group: ['network'], status: 'running'})) &&
                 this.hasChanges();
         },
         renderButtons: function() {

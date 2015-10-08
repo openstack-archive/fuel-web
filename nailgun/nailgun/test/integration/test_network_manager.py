@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
 import itertools
 
 import mock
@@ -24,6 +25,7 @@ from netaddr import IPNetwork
 from netaddr import IPRange
 import six
 from sqlalchemy import not_
+import yaml
 
 import nailgun
 from nailgun import consts
@@ -752,6 +754,57 @@ class TestNetworkManager(BaseNetworkManagerTest):
             ),
             itertools.product((0, 1), ('eth0',))
         )
+
+    def test_restricted_networks(self):
+        rel = self.env.create_release()
+        enabled_net = {'name': 'always_enabled', 'restrictions': ['false']}
+        disabled_net = {'name': 'always_disabled', 'restrictions': ['true']}
+        netw_meta = deepcopy(rel.networks_metadata)
+        netw_meta['neutron']['networks'].extend([enabled_net, disabled_net])
+        rel.networks_metadata = netw_meta
+        cluster = self.env.create_cluster(
+            release_id=rel.id,
+            api=False
+        )
+        self.assertEqual(len(filter(lambda ng: ng.name == 'always_enabled',
+                                    cluster.network_groups)), 1)
+        self.assertEqual(len(filter(lambda ng: ng.name == 'always_disabled',
+                                    cluster.network_groups)), 0)
+
+    def test_update_restricted_networks(self):
+        restricted_net = {
+            'name': 'restricted_net',
+            'restrictions': [
+                'settings:additional_components.ironic.value == false'
+            ]
+        }
+        attributes_metadata = """
+            editable:
+                additional_components:
+                    ironic:
+                        value: %r
+                        type: "checkbox"
+        """
+        rel = self.env.create_release()
+        netw_meta = deepcopy(rel.networks_metadata)
+        netw_meta['neutron']['networks'].append(restricted_net)
+        rel.networks_metadata = netw_meta
+        cluster = self.env.create_cluster(
+            release_id=rel.id,
+            api=False
+        )
+        self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
+                                    cluster.network_groups)), 0)
+        objects.Cluster.patch_attributes(
+            cluster, yaml.load(attributes_metadata % True))
+        self.db.refresh(cluster)
+        self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
+                                    cluster.network_groups)), 1)
+        objects.Cluster.patch_attributes(
+            cluster, yaml.load(attributes_metadata % False))
+        self.db.refresh(cluster)
+        self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
+                                    cluster.network_groups)), 0)
 
 
 class TestNovaNetworkManager(BaseIntegrationTest):

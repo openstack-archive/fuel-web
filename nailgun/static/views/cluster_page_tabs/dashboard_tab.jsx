@@ -603,27 +603,27 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 settings = cluster.get('settings');
             switch (fieldName) {
                 case 'status':
-                    return i18n('cluster.status.' + cluster.get('status'));
+                    return [i18n('cluster.status.' + cluster.get('status'))];
                 case 'openstack_release':
-                    return release.get('name');
+                    return [release.get('name')];
                 case 'compute':
                     var libvirtSettings = settings.get('common').libvirt_type,
                         compute = libvirtSettings.value,
                         computeLabel = _.find(libvirtSettings.values, {data: compute}).label;
                     computeLabel += (settings.get('common').use_vcenter.value ? ' ' + i18n(namespace + 'and_vcenter') : '');
-                    return computeLabel;
+                    return [computeLabel];
                 case 'network':
                     var networkingParam = cluster.get('networkConfiguration').get('networking_parameters'),
                         networkManager = networkingParam.get('net_manager');
                     if (cluster.get('net_provider') == 'nova_network') {
-                        return i18n(namespace + 'nova_with') + ' ' + networkManager;
+                        return [i18n(namespace + 'nova_with') + ' ' + networkManager];
                     }
-                    return (i18n('common.network.neutron_' + networkingParam.get('segmentation_type')));
+                    return [(i18n('common.network.neutron_' + networkingParam.get('segmentation_type')))];
                 case 'storage_backends':
-                    return _.map(_.where(settings.get('storage'), {value: true}), 'label').join('\n') ||
-                        i18n(namespace + 'no_storage_enabled');
+                    return _.map(_.where(settings.get('storage'), {value: true}), 'label') ||
+                        [i18n(namespace + 'no_storage_enabled')];
                 default:
-                    return cluster.get(fieldName);
+                    return [cluster.get(fieldName)];
             }
         },
         renderClusterInfoFields: function() {
@@ -639,7 +639,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             </div>
                             <div className='col-xs-6'>
                                 <div className={'cluster-info-value ' + field}>
-                                    {this.getClusterValue(field)}
+                                    {
+                                        this.getClusterValue(field)
+                                            .map(function(line) {
+                                                return (<p>{line}</p>);
+                                            })
+                                    }
                                 </div>
                             </div>
                         </div>

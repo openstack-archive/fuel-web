@@ -306,7 +306,8 @@ class UploadNodesInfo(GenericRolesHook):
     identity = 'upload_nodes_info'
 
     def serialize(self):
-        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        q_nodes = objects.Cluster.get_online_nodes_not_for_deletion(
+            self.cluster)
         # task can be executed only on deployed nodes
         nodes = set(q_nodes.filter_by(status=consts.NODE_STATUSES.ready))
         # add nodes scheduled for deployment since they could be filtered out
@@ -341,7 +342,8 @@ class UpdateHosts(GenericRolesHook):
     identity = 'update_hosts'
 
     def serialize(self):
-        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        q_nodes = objects.Cluster.get_online_nodes_not_for_deletion(
+            self.cluster)
         # task can be executed only on deployed nodes
         nodes = set(q_nodes.filter_by(status=consts.NODE_STATUSES.ready))
         # add nodes scheduled for deployment since they could be filtered out

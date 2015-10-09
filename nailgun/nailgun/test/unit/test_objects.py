@@ -915,7 +915,8 @@ class TestClusterObject(BaseTestCase):
                 {'roles': ['controller']},
                 {'roles': ['controller']},
                 {'roles': ['compute']},
-                {'roles': ['cinder']}])
+                {'roles': ['cinder']},
+                {'roles': ['controller'], 'online': False}])
         self.cluster = self.env.clusters[0]
 
     def _create_cluster_with_plugins(self, plugins_kw_list):
@@ -956,7 +957,7 @@ class TestClusterObject(BaseTestCase):
 
     def test_all_controllers(self):
         self.assertEqual(len(objects.Cluster.get_nodes_by_role(
-            self.env.clusters[0], 'controller')), 2)
+            self.env.clusters[0], 'controller')), 3)
 
     def test_put_delete_template_after_deployment(self):
         allowed = [consts.CLUSTER_STATUSES.new,
@@ -1151,6 +1152,12 @@ class TestClusterObject(BaseTestCase):
 
             self.assertDictEqual(
                 volumes_metadata, expected_volumes_metadata)
+
+    def test_get_online_nodes_not_for_deletion(self):
+        nodes = objects.Cluster.get_online_nodes_not_for_deletion(self.cluster)
+        for node in self.env.nodes[:4]:
+            self.assertIn(node, nodes)
+        self.assertNotIn(self.env.nodes[4], nodes)
 
 
 class TestClusterObjectGetRoles(BaseTestCase):

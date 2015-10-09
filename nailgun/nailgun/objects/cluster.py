@@ -366,9 +366,18 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_nodes_not_for_deletion(cls, cluster):
-        """All clusters nodes except nodes for deletion."""
+        """All cluster nodes except nodes for deletion."""
         return db().query(models.Node).filter_by(
             cluster=cluster, pending_deletion=False).order_by(models.Node.id)
+
+    @classmethod
+    def get_online_nodes_not_for_deletion(cls, cluster):
+        """All cluster nodes that are online and are not pending deletion"""
+        return db().query(models.Node).filter_by(
+            cluster=cluster,
+            pending_deletion=False,
+            online=True
+        ).order_by(models.Node.id)
 
     @classmethod
     def clear_pending_changes(cls, instance, node_id=None):

@@ -30,6 +30,7 @@ default_messages = {
     "ObjectNotFound": "Object not found in DB",
 
     # node discovering errors
+    "InvalidNodeRole": "Invalid node role",
     "InvalidInterfacesInfo": "Invalid interfaces info",
     "InvalidMetadata": "Invalid metadata specified for node",
     "CannotFindNodeIDForDiscovering": "Cannot find node for discovering",

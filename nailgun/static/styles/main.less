@@ -3884,17 +3884,15 @@ input[type=range] {
     }
     .cluster-info-value,
     .cluster-info-title {
-      height: 30px;
-      line-height: 13px;
+      height: auto;
+      min-height: 30px;
+      line-height: 17px;
       margin-bottom: 4px;
       text-align: left;
     }
     .cluster-info-value {
-      &.storage_backends {
-        line-height: 17px;
-        white-space: pre;
-        height: auto;
-      }
+      white-space: pre-line;
+      word-wrap: break-word;
       &.name {
         .btn-link {
           padding-left: 0;
@@ -3911,7 +3909,7 @@ input[type=range] {
         .glyphicon {
           margin-left: 10px;
           cursor: pointer;
-          vertical-align: top;
+          vertical-align: text-top;
         }
       }
     }

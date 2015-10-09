@@ -732,7 +732,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         validationErrors={(this.props.networkConfiguration.validationError || {}).networks}
                         disabled={this.isLocked()}
                         verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
-                        netProvider={network.get('name') == 'public' && this.props.cluster.get('net_provider')}
                     />
                 );
             }, this);
@@ -830,13 +829,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     {networkConfig.use_gateway &&
                         this.renderInput('gateway')
                     }
-                    {networkName == 'public' &&
-                        <Range
-                            {...this.composeProps('floating_ranges', true)}
-                            rowsClassName='floating-ranges-rows'
-                            hiddenControls={this.props.netProvider == 'neutron'}
-                        />
-                    }
                 </div>
             );
         }
@@ -861,6 +853,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     {manager ?
                         <div className='forms-box'>
                             <h3 className='networks'>{i18n(ns + 'nova_configuration')}</h3>
+                            <Range
+                                {...this.composeProps('floating_ranges', true)}
+                                rowsClassName='floating-ranges-rows'
+                                hiddenControls={false}
+                            />
                             <div>
                                 {this.renderInput('fixed_networks_cidr')}
                                 {(manager == 'VlanManager') ?
@@ -910,6 +907,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             </div>,
                             <div className='forms-box' key='neutron-l3'>
                                 <h3 className='networks'>{i18n(ns + 'l3_configuration')}</h3>
+                                <Range
+                                    {...this.composeProps('floating_ranges', true)}
+                                    rowsClassName='floating-ranges-rows'
+                                    hiddenControls={true}
+                                />
                                 <div>
                                     {this.renderInput('internal_cidr')}
                                     {this.renderInput('internal_gateway')}

@@ -148,6 +148,11 @@ class Nailgun(BaseDataDriver):
     def _num_ceph_osds(self):
         return self._get_partition_count('ceph')
 
+    def _is_boot_disk(self, disk):
+        for vol in disk['volumes']:
+            if vol['type'] == 'pv' and vol['vg'] == 'os' and vol['size'] > 0:
+                return True
+
     def parse_partition_scheme(self):
         LOG.debug('--- Preparing partition scheme ---')
         data = self.partition_data()
@@ -172,9 +177,9 @@ class Nailgun(BaseDataDriver):
             LOG.debug('Adding gpt table on disk %s' % disk['name'])
             parted = partition_scheme.add_parted(
                 name=self._disk_dev(disk), label='gpt')
-            # we install bootloader on every disk
-            LOG.debug('Adding bootloader stage0 on disk %s' % disk['name'])
-            parted.install_bootloader = True
+            if self._is_boot_disk(disk):
+                LOG.debug('Adding bootloader stage0 on disk %s' % disk['name'])
+                parted.install_bootloader = True
             # legacy boot partition
             LOG.debug('Adding bios_grub partition on disk %s: size=24' %
                       disk['name'])
@@ -241,8 +246,7 @@ class Nailgun(BaseDataDriver):
 
                     elif volume.get('mount') == '/boot' \
                             and not self._boot_partition_done \
-                            and (disk in self.small_ks_disks or
-                                 not self.small_ks_disks):
+                            and self._is_boot_disk(disk):
                         # NOTE(kozhukalov): On some hardware GRUB is not able
                         # to see disks larger than 2T due to firmware bugs,
                         # so we'd better avoid placing /boot on such

@@ -960,7 +960,7 @@ class Cluster(NailgunObject):
         return nodes
 
     @classmethod
-    def mark_vms_as_created(cls, instance):
+    def set_vms_created_state(cls, instance):
         nodes = cls.get_nodes_by_role(instance, consts.VIRTUAL_NODE_TYPES.virt)
         for node in nodes:
             vms_conf = copy.deepcopy(node.attributes.vms_conf)

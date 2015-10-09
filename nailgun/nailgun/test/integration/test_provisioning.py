@@ -81,3 +81,28 @@ class TestProvisioning(BaseIntegrationTest):
         self.assertEqual(self.env.nodes[3].status, 'provisioning')
         self.assertEqual(self.env.nodes[4].status, 'error')
         self.assertEqual(self.env.nodes[5].status, 'provisioning')
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_vms_reset_on_provisioning(self, mocked_rpc=None):
+        self.env.create(
+            nodes_kwargs=[
+                {'api': False, 'roles': ['virt'], 'status': 'ready'},
+                {'api': False, 'roles': ['virt']},
+            ]
+        )
+
+        nodes = self.env.nodes
+        nodes[0].attributes.vms_conf = [
+            {'id': 1, 'cpu': 1, 'mem': 2, 'created': True},
+            {'id': 2, 'cpu': 1, 'mem': 2, 'created': True}
+        ]
+        nodes[1].attributes.vms_conf = [
+            {'id': 1, 'cpu': 2, 'mem': 4}
+        ]
+        self.db.commit()
+
+        self.env.launch_provisioning_selected([str(nodes[0].id)])
+
+        for conf in nodes[0].attributes.vms_conf:
+            self.assertFalse(conf['created'])

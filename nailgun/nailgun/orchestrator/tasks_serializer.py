@@ -313,8 +313,6 @@ class UploadNodesInfo(GenericRolesHook):
         # above and task must be run also on them
         nodes.update(self.nodes)
 
-        uids = [n.uid for n in nodes]
-
         # every node must have data about every other good node in cluster
         serialized_nodes = self._serialize_nodes(nodes)
         data = yaml.safe_dump({
@@ -322,6 +320,16 @@ class UploadNodesInfo(GenericRolesHook):
         })
 
         path = self.task['parameters']['path']
+
+        q_online_nodes = objects.Cluster.get_online_nodes_not_for_deletion(
+            self.cluster
+        )
+        online_nodes = set(
+            q_online_nodes.filter_by(status=consts.NODE_STATUSES.ready)
+        )
+        online_nodes.update(self.nodes)
+        uids = [n.uid for n in online_nodes]
+
         yield templates.make_upload_task(uids, path=path, data=data)
 
     def _serialize_nodes(self, nodes):
@@ -341,7 +349,8 @@ class UpdateHosts(GenericRolesHook):
     identity = 'update_hosts'
 
     def serialize(self):
-        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        q_nodes = objects.Cluster.get_online_nodes_not_for_deletion(
+            self.cluster)
         # task can be executed only on deployed nodes
         nodes = set(q_nodes.filter_by(status=consts.NODE_STATUSES.ready))
         # add nodes scheduled for deployment since they could be filtered out

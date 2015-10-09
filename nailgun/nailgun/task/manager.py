@@ -525,6 +525,9 @@ class ProvisioningTaskManager(TaskManager):
         db().add(task_provision)
         db().commit()
 
+        objects.Cluster.reset_vms(self.cluster)
+        db().commit()
+
         provision_message = self._call_silently(
             task_provision,
             tasks.ProvisionTask,
@@ -709,6 +712,9 @@ class ResetEnvironmentTaskManager(TaskManager):
         )
         for task in obsolete_tasks:
             db().delete(task)
+        db().commit()
+
+        objects.Cluster.reset_vms(self.cluster)
         db().commit()
 
         task = Task(

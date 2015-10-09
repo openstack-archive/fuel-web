@@ -938,6 +938,16 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
+    def reset_vms(cls, instance):
+        nodes = cls.get_nodes_by_role(instance, consts.VIRTUAL_NODE_TYPES.virt)
+        for node in nodes:
+            vms_conf = copy.deepcopy(node.attributes.vms_conf)
+            for vm in vms_conf:
+                vm['created'] = False
+            node.attributes.vms_conf = vms_conf
+        db().flush()
+
+    @classmethod
     def get_network_roles(cls, instance):
         """Method for receiving network roles for particular cluster
 

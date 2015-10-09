@@ -17,6 +17,7 @@
 """
 Node-related objects and collections
 """
+import copy
 import itertools
 import operator
 from oslo_serialization import jsonutils
@@ -906,6 +907,16 @@ class Node(NailgunObject):
         ).first()
 
         return nic
+
+    @classmethod
+    def unset_vms_created_state(cls, node):
+        if consts.VIRTUAL_NODE_TYPES.virt not in node.all_roles:
+            return
+
+        vms_conf = copy.deepcopy(node.attributes.vms_conf)
+        for vm in vms_conf:
+            vm['created'] = False
+        node.attributes.vms_conf = vms_conf
 
 
 class NodeCollection(NailgunCollection):

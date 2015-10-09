@@ -711,6 +711,9 @@ class ResetEnvironmentTaskManager(TaskManager):
             db().delete(task)
         db().commit()
 
+        objects.Cluster.reset_vms(self.cluster)
+        db().commit()
+
         task = Task(
             name=consts.TASK_NAMES.reset_environment,
             cluster=self.cluster

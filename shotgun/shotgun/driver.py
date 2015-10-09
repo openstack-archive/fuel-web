@@ -106,7 +106,9 @@ class Driver(object):
         return out
 
     def get(self, path, target_path):
-        """target_path must be the directory where to put
+        """Get remote or local file
+
+        target_path must be the directory where to put
         copied files or directories
         """
         try:
@@ -150,7 +152,9 @@ class File(Driver):
         logger.debug("File to save: %s", self.target_path)
 
     def snapshot(self):
-        """Example:
+        """Make a snapshot
+
+        Example:
         self.conf.target IS /target
         self.host IS host.domain.tld
         self.path IS /var/log/somedir
@@ -200,7 +204,9 @@ class Subs(File):
         sedscript.close()
 
     def snapshot(self):
-        """Example:
+        """Make a snapshot
+
+        Example:
         self.conf.target IS /target
         self.host IS host.domain.tld
         self.path IS /var/log/somedir (it can be /var/log/somedir*)

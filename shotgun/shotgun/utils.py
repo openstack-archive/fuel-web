@@ -52,7 +52,8 @@ def iterfiles(path):
 
 
 def remove(full_dst_path, excludes):
-    """Removes subdirs/files using unixs syntax.
+    """Removes subdirs/files using unixs syntax
+
     full_dst_path is treated as root directory for remove
 
     :param full_dst_path: str
@@ -66,6 +67,7 @@ def remove(full_dst_path, excludes):
 
 def compress(target, level, keep_target=False):
     """Runs compression of provided directory
+
     :param target: directory to compress
     :param level: level of compression
     :param keep_target: bool, if True target directory wont be removed
@@ -126,7 +128,9 @@ class CCStringIO(StringIO):
     """
 
     def __init__(self, buffer='', writers=None):
-        """If ``writers`` is given and is a file-like object or an
+        """CCStringIO initializator
+
+        If ``writers`` is given and is a file-like object or an
         iterable of same, it/they will be written to whenever this
         StringIO instance is written to.
         """

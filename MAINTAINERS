@@ -117,3 +117,38 @@ maintainers:
 - nailgun/gulpfile.js: *ui_experts
 - nailgun/gulp/: *ui_experts
 - nailgun/package.json: *ui_experts
+
+- docs/: &docs_team
+     - name:   Svetlana Karslioglu
+       email:  skarslioglu@mirantis.com
+       IRC:    lanakars
+
+     - name:   Evgeny Konstantinov
+       email:  evkonst@mirantis.com
+       IRC:    evkonst
+
+     - name:   Michele Fagan
+       email:  mfagan@mirantis.com
+       IRC:    mfagan
+
+     - name:   Sheena Gregson
+       email:  sgregson@mirantis.com
+       IRC:    SheenaG
+
+     - name:   Sheena Gregson
+       email:  sgregson@mirantis.com
+       IRC:    SheenaG
+
+     - name:   Olga Gusarenko
+       email:  ogusarenko@mirantis.com
+       IRC:    ogusarenko
+
+     - name:   Olena Logvinova
+       email:  ologvinova@mirantis.com
+       IRC:    ologvinova
+
+     - name:   Mariia Zlatkova
+       email:  mzlatkova@mirantis.com
+       IRC:    mzlatkova
+
+- nailgun/static/translations/core.json: *docs_team

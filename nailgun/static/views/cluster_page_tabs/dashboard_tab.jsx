@@ -620,7 +620,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     }
                     return (i18n('common.network.neutron_' + networkingParam.get('segmentation_type')));
                 case 'storage_backends':
-                    return _.map(_.where(settings.get('storage'), {value: true}), 'label').join('\n') ||
+                    return _.map(_.where(settings.get('storage'), {value: true}), 'label') ||
                         i18n(namespace + 'no_storage_enabled');
                 default:
                     return cluster.get(fieldName);
@@ -639,7 +639,14 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             </div>
                             <div className='col-xs-6'>
                                 <div className={'cluster-info-value ' + field}>
-                                    {this.getClusterValue(field)}
+                                    {
+                                        _.isArray(this.getClusterValue(field)) ?
+                                            this.getClusterValue(field).map(function(line) {
+                                                return (<p>{line}</p>);
+                                            })
+                                        :
+                                            <p>{this.getClusterValue(field)}</p>
+                                    }
                                 </div>
                             </div>
                         </div>

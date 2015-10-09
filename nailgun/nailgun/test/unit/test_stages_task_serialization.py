@@ -46,7 +46,11 @@ class BaseTaskSerializationTest(base.BaseTestCase):
                 roles=['controller'], primary_roles=['controller'],
                 cluster_id=self.cluster.id),
             self.env.create_node(
-                roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
+                roles=['cinder', 'compute'], cluster_id=self.cluster.id),
+            self.env.create_node(
+                roles=['cinder', 'compute'], cluster_id=self.cluster.id,
+                online=False)
+        ]
         self.all_uids = [n.uid for n in self.nodes]
         self.cluster.deployment_tasks = yaml.load(self.TASKS)
 

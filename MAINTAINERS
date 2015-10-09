@@ -117,3 +117,9 @@ maintainers:
 - nailgun/gulpfile.js: *ui_experts
 - nailgun/gulp/: *ui_experts
 - nailgun/package.json: *ui_experts
+
+- docs/: &docs_team
+    - name:   Svetlana Karslioglu
+      email:  skarslioglu@mirantis.com
+
+- nailgun/static/translations/core.json: *docs_team

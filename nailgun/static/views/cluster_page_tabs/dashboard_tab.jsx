@@ -631,7 +631,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             </div>
                             <div className='col-xs-6'>
                                 <div className={'cluster-info-value ' + field}>
-                                    {this.getClusterValue(field)}
+                                    {
+                                        this.getClusterValue(field).split('\n')
+                                            .map(function(line) {
+                                                return (<p>{line}</p>);
+                                            })
+                                    }
                                 </div>
                             </div>
                         </div>

@@ -1100,6 +1100,52 @@ class TestClusterObject(BaseTestCase):
                 volumes_metadata, expected_volumes_metadata)
 
 
+class TestClusterObjectVirtRoles(BaseTestCase):
+
+    def setUp(self):
+        super(TestClusterObjectVirtRoles, self).setUp()
+        self.env.create(
+            release_kwargs={
+                'roles_metadata': {
+                    'virt': {
+                        'name': 'Virt role', 'description': 'Description', },
+                },
+            },
+            nodes_kwargs=[
+                {'roles': ['virt']},
+                {'roles': ['virt']}
+            ]
+        )
+
+        self.env.nodes[0].attributes.vms_conf = [
+            {'id': 1, 'cpu': 1, 'mem': 2},
+            {'id': 2, 'cpu': 1, 'mem': 2},
+        ]
+
+        self.env.nodes[1].attributes.vms_conf = [
+            {'id': 1, 'cpu': 1, 'mem': 2},
+            {'id': 2, 'cpu': 1, 'mem': 2},
+        ]
+
+    def test_mark_vms_as_created(self):
+        objects.Cluster.mark_vms_as_created(self.env.clusters[0])
+
+        for node in self.env.nodes:
+            for conf in node.attributes.vms_conf:
+                self.assertTrue(conf['created'])
+
+    def test_unset_vms_created_state(self):
+        objects.Cluster.mark_vms_as_created(self.env.clusters[0])
+
+        objects.Cluster.unset_vms_created_state(self.env.nodes[0])
+
+        for conf in self.env.nodes[0].attributes.vms_conf:
+            self.assertFalse(conf['created'])
+
+        for conf in self.env.nodes[1].attributes.vms_conf:
+            self.assertTrue(conf['created'])
+
+
 class TestClusterObjectGetRoles(BaseTestCase):
 
     def setUp(self):

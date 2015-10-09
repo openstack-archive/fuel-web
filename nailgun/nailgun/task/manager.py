@@ -523,6 +523,10 @@ class ProvisioningTaskManager(TaskManager):
         task_provision = Task(name=consts.TASK_NAMES.provision,
                               cluster=self.cluster)
         db().add(task_provision)
+
+        for node in nodes:
+            objects.Cluster.unset_vms_created_state(node)
+
         db().commit()
 
         provision_message = self._call_silently(
@@ -709,6 +713,12 @@ class ResetEnvironmentTaskManager(TaskManager):
         )
         for task in obsolete_tasks:
             db().delete(task)
+
+        nodes = objects.Cluster.get_nodes_by_role(
+            self.cluster, consts.VIRTUAL_NODE_TYPES.virt)
+        for node in nodes:
+            objects.Cluster.unset_vms_created_state(node)
+
         db().commit()
 
         task = Task(

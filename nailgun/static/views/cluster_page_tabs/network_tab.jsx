@@ -732,7 +732,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         validationErrors={(this.props.networkConfiguration.validationError || {}).networks}
                         disabled={this.isLocked()}
                         verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
-                        netProvider={network.get('name') == 'public' && this.props.cluster.get('net_provider')}
                     />
                 );
             }, this);
@@ -782,6 +781,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         networkConfiguration={this.props.networkConfiguration}
                         validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
                         disabled={this.isLocked()}
+                        netProvider={this.props.cluster.get('net_provider')}
                     />
                     <div className='verification-control col-xs-12'>
                         <NetworkVerificationResult
@@ -829,13 +829,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     />
                     {networkConfig.use_gateway &&
                         this.renderInput('gateway')
-                    }
-                    {networkName == 'public' &&
-                        <Range
-                            {...this.composeProps('floating_ranges', true)}
-                            rowsClassName='floating-ranges-rows'
-                            hiddenControls={this.props.netProvider == 'neutron'}
-                        />
                     }
                 </div>
             );
@@ -919,6 +912,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     }
                     <div className='forms-box'>
                         <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
+                    </div>
+                    <div className='forms-box'>
+                        <Range
+                            {...this.composeProps('floating_ranges', true)}
+                            rowsClassName='floating-ranges-rows'
+                            hiddenControls={this.props.netProvider == 'neutron'}
+                        />
                     </div>
                 </div>
             );

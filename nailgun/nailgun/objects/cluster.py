@@ -47,7 +47,7 @@ from nailgun.utils import traverse
 
 
 class Attributes(NailgunObject):
-    """Cluster attributes object"""
+    """Cluster attributes object."""
 
     #: SQLAlchemy model for Cluster attributes
     model = models.Attributes
@@ -119,7 +119,7 @@ class Attributes(NailgunObject):
 
 
 class Cluster(NailgunObject):
-    """Cluster object"""
+    """Cluster object."""
 
     #: SQLAlchemy model for Cluster
     model = models.Cluster
@@ -916,7 +916,7 @@ class Cluster(NailgunObject):
 
     @classmethod
     def is_vmware_enabled(cls, instance):
-        """Check if current cluster supports vmware configuration"""
+        """Check if current cluster supports vmware configuration."""
         attributes = cls.get_attributes(instance).editable
         return attributes.get('common', {}).get('use_vcenter', {}).get('value')
 
@@ -1041,7 +1041,7 @@ class Cluster(NailgunObject):
 
 
 class ClusterCollection(NailgunCollection):
-    """Cluster collection"""
+    """Cluster collection."""
 
     #: Single Cluster object class
     single = Cluster

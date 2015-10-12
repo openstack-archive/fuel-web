@@ -1,0 +1,52 @@
+[
+    {
+        "pk": 1,
+        "model": "nailgun.components_compatibility",
+        "fields": {
+            "name": "hypervisor:libvirt:kvm",
+            "hypervisor": ["all"],
+            "networking": ["all"],
+            "storage": ["all"]
+        }
+    },
+    {
+        "pk": 2,
+        "model": "nailgun.components_compatibility",
+        "fields": {
+            "name": "hypervisor:libvirt:qemu",
+            "hypervisor": ["all"],
+            "networking": ["all"],
+            "storage": ["all"]
+        }
+    },
+    {
+        "pk": 3,
+        "model": "nailgun.components_compatibility",
+        "fields": {
+            "name": "hypervisor:vmware",
+            "hypervisor": ["all"],
+            "networking": ["nova"],
+            "storage": ["all"]
+        }
+    },
+    {
+        "pk": 4,
+        "model": "nailgun.components_compatibility",
+        "fields": {
+            "name": "network:nova",
+            "hypervisor": ["vmware"],
+            "networking": [],
+            "storage": ["all"]
+        }
+    },
+    {
+        "pk": 5,
+        "model": "nailgun.components_compatibility",
+        "fields": {
+            "name": "storage:object:backend:ceph",
+            "hypervisor": ["all"],
+            "networking": ["all"],
+            "storage": ["all"]
+        }
+    }
+]

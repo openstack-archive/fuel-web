@@ -97,7 +97,8 @@ NOVA_NETWORK_CONFIGURATION = {
                 "fixed_network_size": base_types.NON_NEGATIVE_INTEGER,
                 "fixed_networks_amount": base_types.NON_NEGATIVE_INTEGER,
                 "fixed_networks_cidr": base_types.NET_ADDRESS,
-                "fixed_networks_vlan_start": base_types.NON_NEGATIVE_INTEGER,
+                "fixed_networks_vlan_start":
+                    base_types.NULLABLE_NON_NEGATIVE_INTEGER,
                 "net_manager": {
                     "enum": list(consts.NOVA_NET_MANAGERS)
                 },

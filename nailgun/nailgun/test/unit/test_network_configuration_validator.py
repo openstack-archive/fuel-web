@@ -431,8 +431,13 @@ class TestNovaNetworkConfigurationValidatorProtocol(
         self.assertRaisesInvalidType(self.nc, "1", "'string'")
 
     def test_fixed_networks_vlan_start_invalid_type(self):
-        self.nc['networking_parameters']['fixed_networks_vlan_start'] = {}
-        self.assertRaisesInvalidType(self.nc, "{}", "'integer'")
+        invalid_values = [{}, str(), ()]
+        for value in invalid_values:
+            self.nc['networking_parameters']['fixed_networks_vlan_start'] = \
+                value
+            self.assertRaisesInvalidAnyOf(
+                self.nc, value,
+                "['networking_parameters']['fixed_networks_vlan_start']")
 
     def test_net_manager_invalid_type(self):
         self.nc['networking_parameters']['net_manager'] = 'x'

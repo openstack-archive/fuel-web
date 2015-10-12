@@ -30,6 +30,7 @@
                 },
                 "true": "True",
                 "false": "False",
+                "or": "or",
                 "node": "__count__ node",
                 "node_plural": "__count__ nodes",
                 "important": "Important",
@@ -276,7 +277,7 @@
                 "licenses": "Licenses",
                 "ubuntu": "Ubuntu",
                 "centos": "CentOS",
-                "more_info": "For more information please visit",
+                "more_info": "For more information you can visit",
                 "plugins_catalog": "Plugins Catalog",
                 "plugins_documentation": "Plugins Documentation",
                 "no_plugins": "There are no plugins installed."

@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Code-Review+1: Maciej Kwiek <mkwiek@mirantis.com>
+Workflow+1: Vitaly Sedelnik <vsedelnik@mirantis.com>
+Code-Review+1: Alex Schultz <aschultz@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 12 Oct 2015 11:47:19 +0000
+Reviewed-on: https://review.openstack.org/230452
+Project: stackforge/fuel-web
+Branch: refs/heads/stable/7.0

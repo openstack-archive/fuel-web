@@ -29,6 +29,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
 
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun import consts
 from nailgun.db import db
@@ -1594,12 +1595,16 @@ class AllocateVIPs70Mixin(object):
         :type  cluster: Cluster model
         :return: dict with vip definitions
         """
+        # check VIPs names overlapping before assigning them
+        cls.check_unique_vip_names_for_cluster(cluster)
+
         vips = {}
         vips['vips'] = {}
         for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
                 cluster):
 
             vip_name = vip_info['name']
+
             vips['vips'][vip_name] = cls._build_advanced_vip_info(vip_info,
                                                                   role,
                                                                   vip_addr)
@@ -1630,6 +1635,13 @@ class AllocateVIPs70Mixin(object):
         :type  cluster: Cluster model
         :return: dict with vip definitions
         """
+        # NOTE(aroma): VIPs names intersection must be checked here too
+        # since deployment can be started omitting ApplyChangesTaskManager
+        # so, in turn, 'check_before_deployment' will not be executed.
+        # But it is not very good idea to put additional check into
+        # serialization process. Hence the issue remains possible unless
+        # some general validation of network data will be introduced for
+        # all kinds of deployment flow
         vips = {}
         for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
                 cluster):
@@ -1638,3 +1650,19 @@ class AllocateVIPs70Mixin(object):
                                                           role,
                                                           vip_addr)
         return vips
+
+    @classmethod
+    def check_unique_vip_names_for_cluster(cls, cluster):
+        """ Detect situation when VIPs with same names
+        are present in vip_info. We must stop processing
+        immediately because rewritting of existing VIP data
+        by another VIP info could lead to failed deployment
+
+        """
+        vip_names = []
+        for role in objects.Cluster.get_network_roles(cluster):
+            properties = role.get('properties', {})
+            for vip_info in properties.get('vip', ()):
+                if vip_info['name'] in vip_names:
+                    raise errors.DuplicatedVIPNames()
+                vip_names.append(vip_info['name'])

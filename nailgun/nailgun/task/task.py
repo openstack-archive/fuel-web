@@ -814,7 +814,7 @@ class BaseNetworkVerification(object):
 
     @classmethod
     def enabled(cls, cluster):
-        """Verify that subtask is enabled based on cluster configuration"""
+        """Verify that subtask is enabled based on cluster configuration."""
         return True
 
 
@@ -982,7 +982,7 @@ class VerifyNetworksTask(VerifyNetworksForTemplateMixin,
 
 class CheckDhcpTask(VerifyNetworksForTemplateMixin,
                     BaseNetworkVerification):
-    """Task for dhcp verification"""
+    """Task for dhcp verification."""
 
 
 class MulticastVerificationTask(BaseNetworkVerification):
@@ -1206,7 +1206,7 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_mongo_nodes(cls, task):
-        """Check for mongo nodes presence in env with external mongo"""
+        """Check for mongo nodes presence in env with external mongo."""
         components = objects.Attributes.merged_attrs(
             task.cluster.attributes).get("additional_components", None)
         if (components and components["ceilometer"]["value"]
@@ -1222,7 +1222,7 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_vmware_consistency(cls, task):
-        """Checks vmware attributes consistency and proper values"""
+        """Checks vmware attributes consistency and proper values."""
         attributes = task.cluster.attributes.editable
         vmware_attributes = task.cluster.vmware_attributes
         # Old(< 6.1) clusters haven't vmware support

@@ -40,7 +40,7 @@ define([
             }).join(';');
         },
         deserializeTabOptions: function(serializedOptions) {
-            return _.object(_.map(serializedOptions.split(';'), function(option) {
+            return _.object(_.map((serializedOptions || '').split(';'), function(option) {
                 return option.split(':');
             }));
         },

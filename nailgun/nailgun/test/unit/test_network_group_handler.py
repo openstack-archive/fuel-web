@@ -31,20 +31,6 @@ class TestHandlers(BaseIntegrationTest):
         super(TestHandlers, self).setUp()
         self.cluster = self.env.create_cluster(api=False)
 
-    def _create_network_group(self, expect_errors=False, **kwargs):
-        meta = {
-            "meta": {
-                "notation": consts.NETWORK_NOTATION.cidr,
-                "use_gateway": False
-            }
-        }
-        meta.update(kwargs)
-
-        return self.env._create_network_group(
-            expect_errors=expect_errors,
-            cluster=None,
-            **meta)
-
     def test_create_network_group_w_cidr(self):
         resp = self.env._create_network_group()
         self.assertEqual(201, resp.status_code)
@@ -140,7 +126,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(204, resp.status_code)
 
     def test_delete_network_group_cleanup_ip_range(self):
-        ng_id = self._create_network_group(
+        ng_id = self.env._create_network_group(
             meta={
                 "notation": "ip_ranges",
                 "ip_range": ["10.3.0.33", "10.3.0.158"]
@@ -159,7 +145,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertIsNone(ip_range)
 
     def test_delete_network_group_cleanup_ip_addrs(self):
-        ng_id = self._create_network_group().json["id"]
+        ng_id = self.env._create_network_group().json["id"]
         node = self.env.create_node(api=False)
 
         ip_address = []
@@ -236,7 +222,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals('test2', updated_ng['name'])
 
     def test_update_network_group_ipranges_regenerated(self):
-        resp = self._create_network_group(
+        resp = self.env._create_network_group(
             meta={
                 "notation": "ip_ranges",
                 "ip_range": ["10.3.0.33", "10.3.0.158"],
@@ -267,7 +253,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
     def test_update_network_group_ipranges_regenerated_for_cidr(self):
-        resp = self._create_network_group()
+        resp = self.env._create_network_group()
         new_ng = resp.json_body
 
         new_cidr = "10.3.0.1/20"

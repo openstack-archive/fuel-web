@@ -52,13 +52,11 @@ class CopyOpenstackReleaseVersions(PreUpgradeHookBase):
     dst_version_path_5_0_1 = join(release_dir, '2014.1.1-5.0.1.yaml')
 
     def check_if_required(self):
-        """The hack is required if we're going to upgrade from 5.0 or 5.0.1.
-        """
+        """The hack is required if we're going to upgrade from 5.0 or 5.0.1."""
         return self.config.from_version in ('5.0', '5.0.1')
 
     def run(self):
-        """Copy version files
-        """
+        """Copy version files"""
         utils.create_dir_if_not_exists(self.release_dir)
         utils.copy_if_exists(self.version_path_5_0, self.dst_version_path_5_0)
 

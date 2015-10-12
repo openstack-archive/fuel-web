@@ -43,8 +43,7 @@ class BaseChecker(object):
 
     @abc.abstractproperty
     def checker_name(self):
-        """Name of the checker
-        """
+        """Name of the checker"""
 
     @abc.abstractmethod
     def check(self):
@@ -52,7 +51,8 @@ class BaseChecker(object):
 
     def safe_get(self, url, auth=None, timeout=0.5):
         """Make get request to specified url
-        in case of errors returns None and doesn't
+
+        In case of errors returns None and doesn't
         raise exceptions
 
         :param url: url to service
@@ -75,12 +75,10 @@ class BaseChecker(object):
         return self.make_safe_request(get_request)
 
     def make_safe_request(self, method):
-        """Make get request to specified url
-        in case of errors returns None and doesn't
-        raise exceptions
+        """Execute passed method and supress HTTP related errors
 
         :param method: callable object
-        :returns: result of method call
+        :returns: result of method call or None in case of error
         """
         try:
             return method()
@@ -390,8 +388,7 @@ class FuelUpgradeVerify(object):
             checker.checker_name for checker in self.checkers]
 
     def verify(self):
-        """Run fuel verification
-        """
+        """Run fuel verification"""
         try:
             utils.wait_for_true(
                 self.check_if_all_services_ready,

@@ -35,8 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class DockerUpgrader(UpgradeEngine):
-    """Docker management system for upgrades
-    """
+    """Docker management system for upgrades"""
 
     def __init__(self, *args, **kwargs):
         super(DockerUpgrader, self).__init__(*args, **kwargs)
@@ -63,8 +62,7 @@ class DockerUpgrader(UpgradeEngine):
         self.save_cobbler_configs()
 
     def upgrade(self):
-        """Method with upgarde logic
-        """
+        """Method with upgrade logic"""
         # Point to new supervisor configs and restart supervisor in
         # order to apply them
         self.switch_to_new_configs()
@@ -88,8 +86,7 @@ class DockerUpgrader(UpgradeEngine):
         self.upgrade_verifier.verify()
 
     def rollback(self):
-        """Method which contains rollback logic
-        """
+        """Method which contains rollback logic"""
         self.supervisor.switch_to_previous_configs()
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
@@ -118,8 +115,7 @@ class DockerUpgrader(UpgradeEngine):
         return utils.files_size([self.config.images])
 
     def save_db(self):
-        """Saves postgresql database into the file
-        """
+        """Saves postgresql database into the file"""
         logger.debug('Backup database')
         pg_dump_path = os.path.join(self.working_directory, 'pg_dump_all.sql')
         pg_dump_files = utils.VersionedFile(pg_dump_path)
@@ -176,8 +172,7 @@ class DockerUpgrader(UpgradeEngine):
         return True
 
     def save_cobbler_configs(self):
-        """Copy config files from container
-        """
+        """Copy config files from container"""
         container_name = self.make_container_name(
             'cobbler', self.from_version)
 
@@ -193,9 +188,7 @@ class DockerUpgrader(UpgradeEngine):
         self.verify_cobbler_configs()
 
     def verify_cobbler_configs(self):
-        """Verify that cobbler config directory
-        contains valid data
-        """
+        """Verify that cobbler config directory contains valid data"""
         configs = glob.glob(
             self.config.cobbler_config_files_for_verifier.format(
                 cobbler_config_path=self.cobbler_config_path))
@@ -213,8 +206,7 @@ class DockerUpgrader(UpgradeEngine):
                     'Invalid json config {0}'.format(config))
 
     def upload_images(self):
-        """Uploads images to docker
-        """
+        """Uploads images to docker"""
         logger.info('Start image uploading')
 
         if not os.path.exists(self.config.images):
@@ -228,8 +220,7 @@ class DockerUpgrader(UpgradeEngine):
         utils.exec_cmd('docker load -i "{0}"'.format(self.config.images))
 
     def create_and_start_new_containers(self):
-        """Create containers in the right order
-        """
+        """Create containers in the right order"""
         logger.info('Started containers creation')
         graph = self.build_dependencies_graph(self.new_release_containers)
         logger.debug('Built dependencies graph %s', graph)
@@ -274,8 +265,7 @@ class DockerUpgrader(UpgradeEngine):
                 self.run_after_container_creation_command(container)
 
     def run_after_container_creation_command(self, container):
-        """Runs command in container with retries in
-        case of error
+        """Runs command in container with retries in case of error
 
         :param container: dict with container information
         """
@@ -297,8 +287,7 @@ class DockerUpgrader(UpgradeEngine):
         utils.exec_cmd("dockerctl shell {0} {1}".format(db_container_id, cmd))
 
     def get_ports(self, container):
-        """Docker binding accepts ports as tuple,
-        here we convert from list to tuple.
+        """Docker binding accepts ports as tuple, convert from list to tuple
 
         FIXME(eli): https://github.com/dotcloud/docker-py/blob/
                     73434476b32136b136e1cdb0913fd123126f2a52/
@@ -343,9 +332,7 @@ class DockerUpgrader(UpgradeEngine):
 
     @classmethod
     def build_dependencies_graph(cls, containers):
-        """Builds graph which based on
-        `volumes_from` and `link` parameters
-        of container.
+        """Builds graph which based on container's `volumes_from` and `link`
 
         :returns: dict where keys are nodes and
                   values are lists of dependencies
@@ -359,9 +346,7 @@ class DockerUpgrader(UpgradeEngine):
         return graph
 
     def generate_configs(self, autostart=True):
-        """Generates supervisor configs
-        and saves them to configs directory
-        """
+        """Generates supervisor configs and saves them to configs directory"""
         configs = []
 
         for container in self.new_release_containers:
@@ -381,8 +366,7 @@ class DockerUpgrader(UpgradeEngine):
         return 'docker-{0}'.format(container_name)
 
     def switch_to_new_configs(self):
-        """Switches supervisor to new configs
-        """
+        """Switches supervisor to new configs"""
         self.supervisor.switch_to_new_configs()
 
     def volumes_dependencies(self, container):
@@ -416,8 +400,7 @@ class DockerUpgrader(UpgradeEngine):
         return names
 
     def stop_fuel_containers(self):
-        """Use docker API to shutdown containers
-        """
+        """Use docker API to shutdown containers"""
         containers = self.docker_client.containers(limit=-1)
         containers_to_stop = filter(
             lambda c: c['Image'].startswith(self.config.image_prefix),
@@ -508,9 +491,7 @@ class DockerUpgrader(UpgradeEngine):
             interval=2)
 
     def make_new_release_containers_list(self):
-        """Returns list of dicts with information
-        for new containers.
-        """
+        """Returns list of dicts with information for new containers"""
         new_containers = []
 
         for container in self.config.containers:
@@ -631,7 +612,8 @@ class DockerUpgrader(UpgradeEngine):
 
 class DockerInitializer(DockerUpgrader):
     """Initial implementation of docker initializer
-    will be used for master node initialization
+
+    Used for master node initialization
     """
 
     def upgrade(self):

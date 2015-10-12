@@ -24,6 +24,7 @@ from fuel_upgrade import utils
 
 class HostSystemUpgrader(UpgradeEngine):
     """Upgrader for master node host system.
+
     Required for upgrading of packages which
     are not under docker, for example fuelclient,
     dockerctl.
@@ -82,8 +83,7 @@ class HostSystemUpgrader(UpgradeEngine):
         }
 
     def upgrade(self):
-        """Run host system upgrade process
-        """
+        """Run host system upgrade process"""
         # The workaround we need in order to fix [1]. In few words,
         # when new Docker is installed the containers MUST NOT start
         # again because in this case puppet inside them will install
@@ -104,9 +104,7 @@ class HostSystemUpgrader(UpgradeEngine):
         self.run_puppet()
 
     def rollback(self):
-        """The only thing which we can rollback here
-        is yum config
-        """
+        """The only thing which we can rollback here is yum config"""
         self.remove_repo_config()
         self.remove_repos()
 
@@ -129,8 +127,7 @@ class HostSystemUpgrader(UpgradeEngine):
             utils.remove(destination)
 
     def update_repo(self):
-        """Add new centos repository
-        """
+        """Add new centos repository"""
         utils.render_template_to_file(
             self.repo_template_path,
             self.repo_config_path,
@@ -143,22 +140,19 @@ class HostSystemUpgrader(UpgradeEngine):
         utils.exec_cmd('yum clean all')
 
     def install_packages(self):
-        """Install packages for new release
-        """
+        """Install packages for new release"""
         for package in self.packages:
             utils.exec_cmd('yum install -v -y {0}'.format(package))
 
     def run_puppet(self):
-        """Run puppet to upgrade host system
-        """
+        """Run puppet to upgrade host system"""
         utils.exec_cmd(
             'puppet apply -d -v '
             '{0} --modulepath={1}'.format(
                 self.manifest_path, self.puppet_modules_path))
 
     def remove_repo_config(self):
-        """Remove yum repository config
-        """
+        """Remove yum repository config"""
         utils.remove_if_exists(self.repo_config_path)
 
         # One more damn hack! We have to remove auxiliary repo config

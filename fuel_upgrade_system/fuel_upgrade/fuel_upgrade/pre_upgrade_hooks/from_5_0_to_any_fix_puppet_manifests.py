@@ -71,13 +71,11 @@ class FixPuppetManifests(PreUpgradeHookBase):
                 )]
 
     def check_if_required(self):
-        """The hack is required if we're going to upgrade from 5.0 or 5.0.1.
-        """
+        """The hack is required if we're going to upgrade from 5.0 or 5.0.1."""
         return self.config.from_version in ('5.0', '5.0.1')
 
     def run(self):
-        """Install patched manifests to the master node.
-        """
+        """Install patched manifests to the master node."""
         for srcpath, dstpath in self._copypairs:
             # we can't just copy folder as is, since it's not a full and
             # overwrite mode will erase entire old content

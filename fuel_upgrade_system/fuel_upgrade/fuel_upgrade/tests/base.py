@@ -29,8 +29,7 @@ from fuel_upgrade import config
 
 
 class FakeFile(StringIO):
-    """It's a fake file which returns StringIO
-    when file opens with 'with' statement.
+    """Context manager that fakes a file with StringIO object
 
     NOTE(eli): We cannot use mock_open from mock library
     here, because it hangs when we use 'with' statement,
@@ -44,22 +43,18 @@ class FakeFile(StringIO):
 
 
 class BaseTestCase(TestCase):
-    """Base class for test cases
-    """
+    """Base class for test cases"""
 
     def method_was_not_called(self, method):
-        """Checks that mocked method was not called
-        """
+        """Checks that mocked method was not called"""
         self.assertEqual(method.call_count, 0)
 
     def called_once(self, method):
-        """Checks that mocked method was called once
-        """
+        """Checks that mocked method was called once"""
         self.assertEqual(method.call_count, 1)
 
     def called_times(self, method, count):
-        """Checks that mocked method was called `count` times
-        """
+        """Checks that mocked method was called `count` times"""
         self.assertEqual(method.call_count, count)
 
     @property
@@ -99,8 +94,7 @@ class BaseTestCase(TestCase):
         return mock.MagicMock(return_value=fileobj)
 
     def mock_requests_response(self, status_code, body):
-        """Creates a response object with custom status code and body.
-        """
+        """Creates a response object with custom status code and body."""
         rv = requests.Response()
         rv.status_code = status_code
         rv.encoding = 'utf-8'

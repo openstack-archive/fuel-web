@@ -80,8 +80,7 @@ def handle_exception(exc):
 
 
 def parse_args(args):
-    """Parse arguments and return them
-    """
+    """Parse arguments and return them"""
     parser = argparse.ArgumentParser(
         description='fuel-upgrade is an upgrade system for fuel-master node')
 
@@ -177,8 +176,7 @@ def run_upgrade(args):
 
 
 def main():
-    """Entry point
-    """
+    """Entry point"""
     configure_logger('/var/log/fuel_upgrade.log')
     try:
         run_upgrade(parse_args(sys.argv[1:]))

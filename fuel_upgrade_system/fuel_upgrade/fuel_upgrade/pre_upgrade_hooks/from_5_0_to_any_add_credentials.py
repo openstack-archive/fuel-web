@@ -26,10 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class AddCredentialsHook(PreUpgradeHookBase):
-    """Feature `access control on master node`
-    was introduced in 5.1 release [1].
+    """Feature `access control on master node` was introduced in 5.1 release
 
-    In this feature fuelmenu generates credenitals
+    In this feature [1] fuelmenu generates credenitals
     and saves them in /etc/astute.yaml file.
 
     Before upgrade for this featuer we need to
@@ -80,6 +79,5 @@ class AddCredentialsHook(PreUpgradeHookBase):
         return is_required
 
     def run(self):
-        """Adds default credentials to config file
-        """
+        """Adds default credentials to config file"""
         self.update_astute_config(defaults=self.credentials)

@@ -652,9 +652,9 @@ class TestSanitizer(BaseTestCase):
                 {'login': 'root', 'a_password': '8xMflcaD', 'x': 55.2},
                 {
                     'and_again': {
-                    'UPPERCASE_PASSWORD': 'VpE8gqKN',
-                    'password_as_list': ['it', 'will', 'be', 'changed'],
-                    'admin_token': 'Ab8ph9qO'
+                        'UPPERCASE_PASSWORD': 'VpE8gqKN',
+                        'password_as_list': ['it', 'will', 'be', 'changed'],
+                        'admin_token': 'Ab8ph9qO'
                     }
                 }
             ]
@@ -672,9 +672,9 @@ class TestSanitizer(BaseTestCase):
                 {'login': 'root', 'a_password': '******', 'x': 55.2},
                 {
                     'and_again': {
-                    'UPPERCASE_PASSWORD': 'VpE8gqKN',
-                    'password_as_list': '******',
-                    'admin_token': '******'
+                        'UPPERCASE_PASSWORD': 'VpE8gqKN',
+                        'password_as_list': '******',
+                        'admin_token': '******'
                     }
                 }
             ]
@@ -692,9 +692,9 @@ class TestSanitizer(BaseTestCase):
                 {'login': 'root', 'a_password': 'XXX', 'x': 55.2},
                 {
                     'and_again': {
-                    'UPPERCASE_PASSWORD': 'VpE8gqKN',
-                    'password_as_list': 'XXX',
-                    'admin_token': 'XXX'
+                        'UPPERCASE_PASSWORD': 'VpE8gqKN',
+                        'password_as_list': 'XXX',
+                        'admin_token': 'XXX'
                     }
                 }
             ]

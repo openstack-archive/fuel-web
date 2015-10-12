@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
 
 def exec_cmd(cmd):
     """Execute command with logging.
+
     Ouput of stdout and stderr will be written
     in log.
 
@@ -65,6 +66,7 @@ def exec_cmd(cmd):
 
 def safe_exec_cmd(cmd):
     """Execute command with logging.
+
     Ouput of stdout and stderr will be written
     in log. Doesn't raise error in case
     of non zero exit code.
@@ -134,6 +136,7 @@ def get_request(url):
 
 def topological_sorting(dep_graph):
     """Implementation of topological sorting algorithm
+
     http://en.wikipedia.org/wiki/Topological_sorting
 
     :param dep_graph: graph of dependencies, where key is
@@ -270,8 +273,7 @@ def remove_if_exists(path):
 
 
 def file_contains_lines(file_path, patterns):
-    """Checks if file contains lines
-    which described by patterns
+    """Checks if file contains lines which described by patterns
 
     :param file_path: path to file
     :param patterns: list of strings
@@ -452,8 +454,10 @@ def dict_merge(a, b):
 
 
 def load_fixture(fileobj, loader=None):
-    """Loads a fixture from a given `fileobj` and process it with
-    our extended markup that provides an inherit feature.
+    """Loads a fixture from a given `fileobj`
+
+    Process the fixture with our extended markup
+    that provides an inherit feature.
 
     :param fileobj: a file-like object with fixture
     :para, loader: a fixture loader; use default one if None
@@ -590,8 +594,7 @@ def compare_version(v1, v2):
 
 
 def get_required_size_for_actions(actions, update_path):
-    """Returns a size on disk that will be required for completing
-    a given actions list.
+    """Returns a size on disk that will be required for completing actions list
 
     :param actions: a list of actions
     :returns: a size
@@ -746,8 +749,7 @@ def sanitize(obj, keywords, mask='******'):
 
 
 def iterfiles_filter(dir_path, file_pattern):
-    """Returns generator where each item is a path to file, that satisfies
-    file_patterns condtion
+    """Returns generator of paths to files that satisfy file_patterns condtion
 
     :param dir_path: path to directory, e.g /etc/puppet/
     :param file_pattern: unix filepattern to match files
@@ -774,6 +776,7 @@ def normversion(version):
 
 class VersionedFile(object):
     """Set of methods for versioned files.
+
     If `basename` is '/tmp/file.ext' it allows
     to get and filter list of files with names
     '/tmp/file.ext.N' where N is integer.
@@ -788,6 +791,7 @@ class VersionedFile(object):
 
     def next_file_name(self):
         """Returns free file name
+
         If directory has file '/tmp/file.ext.10'
         method returns file name '/tmp/file.ext.11'.
         If it does not have any files it returns

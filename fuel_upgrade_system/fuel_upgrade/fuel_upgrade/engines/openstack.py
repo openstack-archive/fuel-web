@@ -83,8 +83,7 @@ class OpenStackUpgrader(UpgradeEngine):
             utils.remove(destination)
 
     def install_versions(self):
-        """Copy openstack release versions
-        """
+        """Copy openstack release versions"""
         logger.info('Copy openstack release versions...')
         release_versions_cfg = self.config.openstack['release_versions']
         versions = glob.glob(release_versions_cfg['src'])
@@ -97,8 +96,7 @@ class OpenStackUpgrader(UpgradeEngine):
             utils.copy(version_file, dst)
 
     def remove_versions(self):
-        """Copy openstack release versions
-        """
+        """Copy openstack release versions"""
         logger.info('Copy openstack release versions...')
         release_versions_cfg = self.config.openstack['release_versions']
         versions = glob.glob(release_versions_cfg['src'])
@@ -144,7 +142,9 @@ class OpenStackUpgrader(UpgradeEngine):
             self._rollback_ids['notification'].append(response['id'])
 
     def upload_release_deployment_tasks(self, release):
-        """Performs os.walk by puppet src, matches all files with tasks
+        """Upload deployment tasks for release
+
+        Performs os.walk by puppet src, matches all files with tasks
         of given pattern and uploads this for release.
 
         :param release: dict representation of release
@@ -162,8 +162,7 @@ class OpenStackUpgrader(UpgradeEngine):
         self.nailgun.put_deployment_tasks(release, tasks)
 
     def remove_releases(self):
-        """Remove all releases that are created by current session.
-        """
+        """Remove all releases that are created by current session."""
         for release_id in reversed(self._rollback_ids['release']):
             try:
                 logger.debug('Removing release with ID=%s', release_id)
@@ -183,8 +182,7 @@ class OpenStackUpgrader(UpgradeEngine):
                 logger.exception('%s', six.text_type(exc))
 
     def _reset_state(self):
-        """Remove rollback IDs from the arrays.
-        """
+        """Remove rollback IDs from the arrays."""
         #: a list of ids that have to be removed in case of rollback
         self._rollback_ids = {
             'release': [],
@@ -207,8 +205,7 @@ class OpenStackUpgrader(UpgradeEngine):
         return [r for r in releases if unique(r)]
 
     def _read_releases(self):
-        """Returns a list of releases in a dict representation.
-        """
+        """Returns a list of releases in a dict representation."""
         releases = []
 
         # read releases from a set of files

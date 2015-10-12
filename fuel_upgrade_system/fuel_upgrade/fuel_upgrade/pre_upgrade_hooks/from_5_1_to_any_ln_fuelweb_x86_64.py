@@ -57,6 +57,5 @@ class AddFuelwebX8664LinkForUbuntu(PreUpgradeHookBase):
             not utils.file_exists(self.ubuntu_x86_64_new)])
 
     def run(self):
-        """Add link for repo/ubuntu/x86_64 -> repo/ubuntu/fuelweb/x86_64
-        """
+        """Add link for repo/ubuntu/x86_64 -> repo/ubuntu/fuelweb/x86_64"""
         utils.symlink(self.ubuntu_x86_64_old, self.ubuntu_x86_64_new)

@@ -25,8 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 class SyncDnsHook(PreUpgradeHookBase):
-    """Bug `Fix dns domain and search settings on Fuel Master`
-    was introduced in 5.1 release [1].
+    """Synchronize DNS hook
+
+    Bug `Fix dns domain and search settings on Fuel Master` was introduced
+    in 5.1 release [1].
 
     In this feature fuelmenu parses existing DNS
     settings and applies them as a default instead
@@ -57,8 +59,7 @@ class SyncDnsHook(PreUpgradeHookBase):
         return is_required
 
     def run(self):
-        """Replaces config file with current DNS domain
-        """
+        """Replaces config file with current DNS domain"""
         hostname, sep, realdomain = os.uname()[1].partition('.')
         self.update_astute_config(overwrites={
             'DNS_DOMAIN': realdomain,

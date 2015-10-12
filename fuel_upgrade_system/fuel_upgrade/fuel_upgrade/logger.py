@@ -23,6 +23,7 @@ from fuel_upgrade.utils import sanitize
 
 class SanitizingLogger(logging.Logger):
     """Logger subclass which sanitizes passed positional arguments.
+
     It traverses the arguments one by one and recursively looks them up for
     dictionaries. If a key of the dictionary contains a keyword listed in
     `SanitizingLogger.keywords` corresponding value is masked.

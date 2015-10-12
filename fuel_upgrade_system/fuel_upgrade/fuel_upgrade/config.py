@@ -44,8 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 class Config(object):
-    """Config object, allow to call first
-    level keys as object attributes.
+    """Config object, allow to call first level keys as object attributes.
 
     :param dict config_dict: config dict
     """
@@ -94,8 +93,7 @@ def build_config(update_path, admin_password):
 
 
 def from_fuel_version(current_version_path, from_version_path):
-    """Get version of fuel which user run upgrade from
-    """
+    """Get version of fuel which user run upgrade from"""
     # NOTE(eli): If this file exists, then user
     # already ran this upgrade script which was
     # for some reasons interrupted

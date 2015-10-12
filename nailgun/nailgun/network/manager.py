@@ -685,8 +685,8 @@ class NetworkManager(object):
             # as all the networks must be assigned.
             # But network check will not pass if we get here.
             logger.warn(
-                u"Cannot assign all networks appropriately for"
-                u"node %r. Set all unassigned networks to the"
+                u"Cannot assign all networks appropriately for "
+                u"node %r. Set all unassigned networks to the "
                 u"interface %r",
                 node.name,
                 nics[0]['name']

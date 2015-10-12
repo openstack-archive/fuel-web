@@ -429,8 +429,16 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
         :param supertask: task SqlAlchemy object
         """
+        try:
+            # if there are VIPs with same names in the network configuration
+            # the error will be raised. Such situation may occur when, for
+            # example, enabled plugins contain conflicting net
+            # configuration
+            network_info = self.serialize_network_cfg(self.cluster)
+        except errors.VIPAssigningConflict as e:
+            raise errors.CheckBeforeDeploymentError(e.message)
+
         # checking admin intersection with untagged
-        network_info = self.serialize_network_cfg(self.cluster)
         network_info["networks"] = [
             n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
         ]
@@ -508,7 +516,7 @@ class SpawnVMsTaskManager(ApplyChangesTaskManager):
 class ProvisioningTaskManager(TaskManager):
 
     def execute(self, nodes_to_provision):
-        """Run provisioning task on specified nodes"""
+        """Run provisioning task on specified nodes."""
         # locking nodes
         nodes_ids = [node.id for node in nodes_to_provision]
         nodes = objects.NodeCollection.filter_by_list(

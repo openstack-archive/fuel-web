@@ -29,6 +29,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
 
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun import consts
 from nailgun.db import db
@@ -1596,6 +1597,14 @@ class AllocateVIPs70Mixin(object):
                 cluster):
 
             vip_name = vip_info['name']
+
+            # detect situation when VIPs with same names
+            # are present in vip_info. We must stop processing
+            # immediately because rewritting of existing VIP data
+            # by another VIP info could lead to failed deployment
+            if vip_name in vips['vips']:
+                raise errors.VIPAssigningConflict()
+
             vips['vips'][vip_name] = cls._build_advanced_vip_info(vip_info,
                                                                   role,
                                                                   vip_addr)

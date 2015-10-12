@@ -17,6 +17,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import plugin
 from nailgun.errors import errors
+from nailgun.objects import ComponentCollection
 from nailgun.objects import Plugin
 
 
@@ -38,11 +39,28 @@ class PluginValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance):
-        return cls.validate(data)
+        data = cls.validate(data)
+        return cls.validate_provided_components(data, instance.id)
 
     @classmethod
     def validate_create(cls, data):
-        return cls.validate(data)
+        data = cls.validate(data)
+        return cls.validate_provided_components(data)
+
+    @classmethod
+    def validate_provided_components(cls, data, plugin_id=None):
+        for provided_component in data.get('provides', []):
+            installed_components = list(ComponentCollection.filter_by(
+                None, name=provided_component['name']))
+            if plugin_id:
+                installed_components = [comp for comp in installed_components
+                                        if comp.plugin_id != plugin_id]
+            if len(installed_components):
+                raise errors.AlreadyExists(
+                    "One or more plugin components has been installed "
+                    "in system already"
+                )
+        return data
 
 
 class PluginSyncValidator(BasicValidator):

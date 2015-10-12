@@ -99,6 +99,7 @@ default_messages = {
 
     # Plugin errors
     "PackageVersionIsNotCompatible": "Package version is not compatible",
+    "PluginProvideInstalledComponent": "Plugin's component is already provided in system",
 
     # Extensions
     "CannotFindExtension": "Cannot find extension",

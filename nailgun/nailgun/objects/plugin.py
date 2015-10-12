@@ -20,6 +20,7 @@ from itertools import groupby
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import plugins as plugin_db_model
 from nailgun.objects import base
+from nailgun.objects.component import ComponentCollection
 from nailgun.objects.serializers import plugin
 
 
@@ -32,6 +33,17 @@ class Plugin(base.NailgunObject):
     def get_by_name_version(cls, name, version):
         return db().query(cls.model).\
             filter_by(name=name, version=version).first()
+
+    @classmethod
+    def create(cls, data):
+        # TODO(add doc string)
+        provided_components = data.pop('provides', None)
+        plugin = super(Plugin, cls).create(data)
+
+        if provided_components:
+            ComponentCollection.create(provided_components,
+                                       plugin_id=plugin.id)
+        return plugin
 
 
 class PluginCollection(base.NailgunCollection):

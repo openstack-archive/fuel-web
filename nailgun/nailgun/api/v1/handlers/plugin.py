@@ -43,12 +43,18 @@ class PluginCollectionHandler(base.CollectionHandler):
                * 400 (invalid object data specified)
                * 409 (object with such parameters already exists)
         """
-        data = self.checked_data(self.validator.validate)
+        data = self.checked_data(self.validator.validate_create)
         obj = self.collection.single.get_by_name_version(
             data['name'], data['version'])
         if obj:
             raise self.http(409, self.collection.single.to_json(obj))
-        return super(PluginCollectionHandler, self).POST()
+
+        try:
+            new_obj = self.collection.create(data)
+        except errors.CannotCreate as exc:
+            raise self.http(400, exc.message)
+
+        raise self.http(201, self.collection.single.to_json(new_obj))
 
 
 class PluginSyncHandler(base.BaseHandler):

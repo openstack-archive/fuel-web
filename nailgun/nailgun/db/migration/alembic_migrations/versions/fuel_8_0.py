@@ -24,10 +24,31 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from alembic import op
+import sqlalchemy as sa
+
+from nailgun.db.sqlalchemy.models import fields
+
 
 def upgrade():
-    pass
+    op.create_table('components',
+                    sa.Column('id', sa.Integer(), nullable=False),
+                    sa.Column('name', sa.String(), nullable=False),
+                    sa.Column('hypervisor', fields.JSON(), nullable=True),
+                    sa.Column('networking', fields.JSON(), nullable=True),
+                    sa.Column('storage', fields.JSON(), nullable=True),
+                    sa.Column('additional_services',
+                              fields.JSON(), nullable=True),
+                    sa.Column('plugin_id', sa.Integer(), nullable=True),
+                    sa.Column('release_id', sa.Integer(), nullable=True),
+                    sa.ForeignKeyConstraint(
+                        ['plugin_id'], ['plugins.id'], ondelete='CASCADE'),
+                    sa.ForeignKeyConstraint(
+                        ['release_id'], ['releases.id'], ondelete='CASCADE'),
+                    sa.PrimaryKeyConstraint('id'),
+                    sa.UniqueConstraint('name')
+                    )
 
 
 def downgrade():
-    pass
+    op.drop_table('components')

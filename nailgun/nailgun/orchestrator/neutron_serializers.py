@@ -55,7 +55,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
-        """Serialize node, then it will be merged with common attributes"""
+        """Serialize node, then it will be merged with common attributes."""
         nm = Cluster.get_network_manager(cluster)
         networks = nm.get_node_networks(node)
         node_attrs = {
@@ -175,7 +175,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def neutron_attrs(cls, cluster):
-        """Network configuration for Neutron"""
+        """Network configuration for Neutron."""
         attrs = {}
         attrs['L3'] = cls.generate_l3(cluster)
         attrs['L2'] = cls.generate_l2(cluster)

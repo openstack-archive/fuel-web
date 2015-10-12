@@ -30,6 +30,7 @@
                 },
                 "true": "True",
                 "false": "False",
+                "and": "and",
                 "node": "__count__ node",
                 "node_plural": "__count__ nodes",
                 "important": "Important",

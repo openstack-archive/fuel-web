@@ -142,7 +142,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(al.additional_info["message"], "")
         self.assertEqual(al.additional_info["output"], {})
 
-    def test_check_before_deployment_with_error(self):
+    def test_action_log_created_for_check_before_deployment_with_error(self):
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "online": False}

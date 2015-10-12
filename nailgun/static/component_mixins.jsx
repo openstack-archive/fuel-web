@@ -50,6 +50,7 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                     dialogs.DiscardSettingsChangesDialog
                         .show({
                             reasonToStay: _.result(this, 'getStayMessage'),
+                            isSavingPossible: _.result(this, 'isSavingPossible'),
                             applyChanges: this.applyChanges,
                             revertChanges: this.revertChanges
                         }).done(function() {

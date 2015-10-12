@@ -843,7 +843,9 @@
                     "stay_button": "Cancel",
                     "leave_button": "Discard Changes",
                     "apply_and_proceed_button": "Save and Proceed",
-                    "default_message": "You have unsaved changes on this page. Please press Cancel to stay on the page, Discard Changes to proceed without data saving or Save and Proceed to save data and proceed",
+                    "default_message": "You have unsaved changes on this page. Please press Cancel to stay on the page, Discard Changes to proceed without data saving or Save and Proceed to save data and proceed.",
+                    "no_saving_message": "You have unsaved changes on this page. Please press Cancel to stay on the page or Discard Changes to proceed without data saving.",
+                    "saving_failed_message": "Failed to save changes. Please fix the errors and try again.",
                     "verify_message": "Network verification is in progress"
                 },
                 "display_changes": {

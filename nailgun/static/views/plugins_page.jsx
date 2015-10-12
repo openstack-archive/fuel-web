@@ -95,19 +95,17 @@ function(_, i18n, React, models, utils) {
                     </div>
                     <div className='content-box'>
                         <div className='row'>
-                            <div className='col-xs-12 content-elements'>
-                                {this.props.plugins.length ?
-                                    this.props.plugins.map(this.renderPlugin)
-                                :
-                                    <div>
-                                        {i18n('plugins_page.no_plugins')}
-                                        <span> {i18n('plugins_page.more_info')}:</span>
-                                        <ul>
-                                            <li><a href={links.catalog} target='_blank'>{i18n('plugins_page.plugins_catalog')}</a></li>
-                                            <li><a href={links.documentation} target='_blank'>{i18n('plugins_page.plugins_documentation')}</a></li>
-                                        </ul>
-                                    </div>
-                                }
+                            <div className='col-xs-12'>
+                                {this.props.plugins.map(this.renderPlugin)}
+                                <div className={utils.classNames({'plugin-links': !!this.props.plugins.length, 'text-center': true})}>
+                                    {!this.props.plugins.length && i18n('plugins_page.no_plugins')}{' '}
+                                    <span>
+                                        {i18n('plugins_page.more_info')}{' '}
+                                        <a href={links.catalog} target='_blank'>{i18n('plugins_page.plugins_catalog')}</a>{' '}
+                                        {i18n('common.and')}{' '}
+                                        <a href={links.documentation} target='_blank'>{i18n('plugins_page.plugins_documentation')}</a>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -82,8 +82,9 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(clusters_before, clusters_after)
 
     def test_cluster_update_fails_on_net_provider_change(self):
-        cluster = self.env.create_cluster(api=False)
-        self.assertEqual(cluster.net_provider, "nova_network")
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             jsonutils.dumps({'net_provider': 'neutron'}),

@@ -111,7 +111,9 @@ class TestNovaHandlers(TestNetworkChecking):
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"}])
         self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
+            },
             nodes_kwargs=[
                 {"api": True,
                  "meta": meta,

@@ -941,6 +941,16 @@ class TestClusterObject(BaseTestCase):
         network_role.update(kwargs)
         return network_role
 
+    def test_network_defaults(self):
+        cluster = objects.Cluster.get_by_uid(self.env.create(api=True)['id'])
+
+        self.assertEqual(
+            consts.CLUSTER_NET_PROVIDERS.neutron,
+            cluster.net_provider)
+        self.assertEqual(
+            consts.NEUTRON_SEGMENT_TYPES.vlan,
+            cluster.network_config.segmentation_type)
+
     @mock.patch('nailgun.objects.cluster.fire_callback_on_cluster_delete')
     @mock.patch(
         'nailgun.objects.cluster.'

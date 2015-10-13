@@ -32,19 +32,24 @@ class NeutronManager(NetworkManager):
 
     @classmethod
     def create_neutron_config(
-            cls, cluster, segmentation_type,
+            cls, cluster, segmentation_type=None,
             net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs):
+
         neutron_config = models.NeutronConfig(
             cluster_id=cluster.id,
-            segmentation_type=segmentation_type,
-            net_l23_provider=net_l23_provider
-        )
-        db().add(neutron_config)
+            net_l23_provider=net_l23_provider)
+
+        if segmentation_type is not None:
+            neutron_config.segmentation_type = segmentation_type
+
         meta = cluster.release.networks_metadata["neutron"]["config"]
         for key, value in meta.iteritems():
             if hasattr(neutron_config, key):
                 setattr(neutron_config, key, value)
+
+        db().add(neutron_config)
         db().flush()
+        return neutron_config
 
     @classmethod
     def generate_vlan_ids_list(cls, data, cluster, ng):

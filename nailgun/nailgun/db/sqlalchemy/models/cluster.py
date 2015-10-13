@@ -64,7 +64,7 @@ class Cluster(Base):
     net_provider = Column(
         Enum(*consts.CLUSTER_NET_PROVIDERS, name='net_provider'),
         nullable=False,
-        default=consts.CLUSTER_NET_PROVIDERS.nova_network
+        default=consts.CLUSTER_NET_PROVIDERS.neutron
     )
     network_config = relationship("NetworkingConfig",
                                   backref=backref("cluster"),

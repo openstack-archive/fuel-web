@@ -1368,14 +1368,18 @@ class NetworkManager(object):
 
     @classmethod
     def create_network_groups_and_config(cls, cluster, data):
-        cls.create_network_groups(cluster,
-                                  data.get('net_segment_type'))
+        segmentation_type = None
+
         if cluster.net_provider == 'neutron':
-            cls.create_neutron_config(cluster,
-                                      data.get('net_segment_type'),
-                                      data.get('net_l23_provider'))
+            neutron_config = cls.create_neutron_config(
+                cluster,
+                data.get('net_segment_type'),
+                data.get('net_l23_provider'))
+            segmentation_type = neutron_config.segmentation_type
         elif cluster.net_provider == 'nova_network':
             cls.create_nova_network_config(cluster)
+
+        cls.create_network_groups(cluster, segmentation_type)
 
     @classmethod
     def get_network_config_create_data(cls, cluster):

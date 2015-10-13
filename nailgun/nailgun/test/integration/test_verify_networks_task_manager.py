@@ -30,20 +30,22 @@ from nailgun.utils import reverse
 class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
     def setUp(self):
-
         super(TestVerifyNetworkTaskManagers, self).setUp()
 
         meta1 = self.env.generate_interfaces_in_meta(2)
-        mac1 = meta1['interfaces'][0]['mac']
         meta2 = self.env.generate_interfaces_in_meta(2)
+
+        mac1 = meta1['interfaces'][0]['mac']
         mac2 = meta2['interfaces'][0]['mac']
+
         self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron},
             nodes_kwargs=[
                 {"api": True, "meta": meta1, "mac": mac1},
                 {"api": True, "meta": meta2, "mac": mac2},
-            ]
-        )
+            ])
+        self.cluster = self.env.clusters[0]
 
     def tearDown(self):
         self._wait_for_threads()
@@ -56,14 +58,8 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_network_verify_compares_received_with_cached(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
         self.assertEqual(200, resp.status_code)
         nets = resp.json_body
 
@@ -73,20 +69,18 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False)
     def test_network_verify_fails_if_admin_intersection(self, mocked_rpc):
-
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.neutron_networks_get(self.cluster.id)
         self.assertEqual(200, resp.status_code)
         nets = resp.json_body
 
         admin_ng = self.env.network_manager.get_admin_network_group()
 
-        nets['networks'][-2]['cidr'] = admin_ng.cidr
+        # find first non-admin network
+        network = next((
+            net for net in nets['networks']
+            if net['name'] != consts.NETWORKS.fuelweb_admin),
+            None)
+        network['cidr'] = admin_ng.cidr
 
         task = self.env.launch_verify_networks(nets)
         self.env.wait_error(task, 30)
@@ -94,19 +88,12 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             "Address space intersection between networks:\n",
             task.message)
         self.assertIn("admin (PXE)", task.message)
-        self.assertIn("fixed", task.message)
+        self.assertIn(network['name'], task.message)
         self.assertEqual(mocked_rpc.called, False)
 
     @fake_tasks(fake_rpc=False)
     def test_network_verify_fails_if_untagged_intersection(self, mocked_rpc):
-
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.neutron_networks_get(self.cluster.id)
         self.assertEqual(200, resp.status_code)
         nets = resp.json_body
 
@@ -127,13 +114,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.assertEqual(mocked_rpc.called, False)
 
     def check_verify_networks_less_than_2_online_nodes_error(self):
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.neutron_networks_get(self.cluster.id)
         nets = resp.json_body
 
         task = self.env.launch_verify_networks(nets)
@@ -158,15 +139,9 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_verify_networks_offline_nodes_notice(self):
         self.env.create_node(api=True,
-                             cluster_id=self.env.clusters[0].id,
+                             cluster_id=self.cluster.id,
                              online=False)
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.neutron_networks_get(self.cluster.id)
         nets = resp.json_body
 
         task = self.env.launch_verify_networks(nets)
@@ -187,13 +162,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             cluster_db.status = status
             self.db.flush()
 
-            resp = self.app.get(
-                reverse(
-                    'NovaNetworkConfigurationHandler',
-                    kwargs={'cluster_id': self.env.clusters[0].id}
-                ),
-                headers=self.default_headers
-            )
+            resp = self.env.neutron_networks_get(self.cluster.id)
             nets = resp.json_body
 
             task = self.env.launch_verify_networks(nets)
@@ -208,26 +177,18 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_network_verify_if_old_task_is_running(self):
-
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.neutron_networks_get(self.cluster.id)
         nets = resp.body
 
         self.env.create_task(
             name="verify_networks",
             status=consts.TASK_STATUSES.running,
-            cluster_id=self.env.clusters[0].id
-        )
+            cluster_id=self.cluster.id)
 
         resp = self.app.put(
             reverse(
-                'NovaNetworkConfigurationVerifyHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}),
+                'NeutronNetworkConfigurationVerifyHandler',
+                kwargs={'cluster_id': self.cluster.id}),
             nets,
             headers=self.default_headers,
             expect_errors=True
@@ -320,7 +281,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         )
         self.env.create(
             cluster_kwargs={
-                'net_provider': 'neutron',
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': 'gre'
             },
             nodes_kwargs=[
@@ -660,7 +621,8 @@ class TestVerifyNovaFlatDHCP(BaseIntegrationTest):
             )
 
         self.env.create(
-            cluster_kwargs={'net_provider': 'nova_network'},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=nodes_kwargs,
         )
         self.cluster = self.env.clusters[0]
@@ -699,7 +661,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
             {"name": "eth2", "mac": "00:00:00:00:01:88"}])
         self.env.create(
             cluster_kwargs={
-                'net_provider': 'neutron',
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': 'vlan'
             },
             nodes_kwargs=[

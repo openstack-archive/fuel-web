@@ -940,7 +940,8 @@
                 },
                 "error_dialog": {
                     "title": "Error",
-                    "warning": "A server error has occured. Please contact the administrators."
+                    "server_error": "A server error has occured. Please contact the administrators.",
+                    "server_unavailable": "Nailgun server is unavailable. Please check your connection or contact the administrators."
                 },
                 "change_password": {
                     "title": "Change Password",
@@ -2205,7 +2206,7 @@
                 },
                 "error_dialog": {
                     "title": "エラー",
-                    "warning": "サーバエラーが発生しました。管理者に連絡してください。"
+                    "server_error": "サーバエラーが発生しました。管理者に連絡してください。"
                 },
                 "change_password": {
                     "title": "パスワードの変更",

@@ -262,16 +262,18 @@ define([
             });
         },
         getResponseText: function(response) {
-            var defaultMessage = i18n('dialog.error_dialog.warning');
-            if (response && response.status >= 400) {
-                if (response.status == 500) return defaultMessage;
+            var serverErrorMessage = i18n('dialog.error_dialog.server_error');
+            var serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
+            if (response && (!response.status || response.status >= 400)) {
+                if (!response.status || response.status == 502) return serverUnavailableMessage;
+                if (response.status == 500) return serverErrorMessage;
                 // parsing new backend response format in responseText
                 response = response.responseText || response;
                 try {
                     response = JSON.parse(response);
-                    return response.message || defaultMessage;
+                    return response.message || serverErrorMessage;
                 } catch (exception) {
-                    return defaultMessage;
+                    return serverErrorMessage;
                 }
             }
             return '';

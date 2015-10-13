@@ -113,7 +113,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <div className='modal-body'>
                                 {this.props.error ?
                                     <div className='text-error'>
-                                        {this.props.message || i18n('dialog.error_dialog.warning')}
+                                        {this.props.message || i18n('dialog.error_dialog.server_error')}
                                     </div>
                                 : this.renderBody()}
                             </div>

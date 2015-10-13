@@ -265,9 +265,6 @@ class FuelSetup(object):
         #Initialize each module completely before any events are handled
         for child in reversed(self.children):
             self.setChildScreen(name=child.name)
-        #Prepare DNS for resolution
-        dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
-        dnsobj.setEtcResolv()
 
         signal.signal(signal.SIGUSR1, self.handle_sigusr1)
 

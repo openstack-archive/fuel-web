@@ -56,6 +56,10 @@ define([
         composeList: function(value) {
             return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
         },
+        // FIXME(vkramskikh): moved here from healthcheck_tab to make testable
+        highlightTestStep: function(text, step) {
+            return text.replace(new RegExp('(^|\\s*)(' + step + '\\.[\\s\\S]*?)(\\s*\\d+\\.|$)'), '$1<b>$2</b>$3');
+        },
         classNames: classNames,
         parseModelPath: function(path, models) {
             var modelPath = new expressionObjects.ModelPath(path);

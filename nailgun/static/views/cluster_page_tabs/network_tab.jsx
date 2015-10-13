@@ -657,6 +657,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             this.props.updateInitialConfiguration();
                             result.resolve(response);
                         } else {
+                            result.reject(response);
                             // FIXME(vkramskikh): the same hack for check_networks task:
                             // remove failed tasks immediately, so they won't be taken into account
                             this.props.cluster.fetchRelated('tasks')
@@ -664,10 +665,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                     this.props.cluster.get('tasks')
                                         .get(response.id)
                                         .set('unsaved', true);
-                                    result.reject();
                                 }, this));
                         }
-                    }, this))
+                    }, this), result.reject)
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));

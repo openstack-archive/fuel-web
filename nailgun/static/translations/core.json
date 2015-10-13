@@ -834,7 +834,8 @@
                         "env": "Environments"
                     },
                     "create_cluster_error": {
-                        "title": "OpenStack Environment Creation Error"
+                        "title": "OpenStack Environment Creation Error",
+                        "server_unavailable": "The server is unavailable"
                     }
                 },
                 "dismiss_settings": {

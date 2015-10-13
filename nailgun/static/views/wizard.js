@@ -351,9 +351,15 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                             cluster.trigger('invalid', cluster, {name: utils.getResponseText(response)});
                         } else {
                             this.close();
+                            var message;
+                            if (response.status == 400) {
+                                message = utils.getResponseText(response);
+                            } else if (response.status == 0) {
+                                message = i18n('dialog.create_cluster_wizard.create_cluster_error.server_unavailable');
+                            }
                             utils.showErrorDialog({
                                 title: i18n('dialog.create_cluster_wizard.create_cluster_error.title'),
-                                message: response.status == 400 ? utils.getResponseText(response) : undefined
+                                message: message
                             });
                         }
                     }, this));

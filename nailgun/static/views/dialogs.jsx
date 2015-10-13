@@ -655,6 +655,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                         error={this.state.hostnameChangingError}
                                         disabled={this.state.actionInProgress}
                                         onKeyDown={this.onHostnameInputKeydown}
+                                        selectOnFocus
                                         autoFocus
                                     />
                                 :

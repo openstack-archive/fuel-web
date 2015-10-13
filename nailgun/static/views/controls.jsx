@@ -101,12 +101,16 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                 );
             }
         },
+        handleFocus: function(e) {
+            e.target.select();
+        },
         renderInput: function() {
             var classes = {'form-control': this.props.type != 'range'};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
                 ref: 'input',
                 key: 'input',
+                onFocus: this.props.selectOnFocus && this.handleFocus,
                 type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
                 className: utils.classNames(classes)
             };

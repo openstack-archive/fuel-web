@@ -157,6 +157,7 @@
 
 .break-word() {
   /* the following code refers to https://css-tricks.com/almanac/properties/w/word-break/ */
+  white-space: pre-wrap;
   word-wrap: break-word;
   hyphens: auto;
   -moz-hyphens: auto; /* for word-wrap to work in FF */
@@ -3854,6 +3855,14 @@ input[type=range] {
   @deploy-border: #d3d3d3;
   @dashboard-gray: rgb(153, 153, 153);
   @dashboard-offset: 10px;
+  pre {
+    border: 2px solid @white - 7%;
+    color: @black + 51%;
+    background-color: transparent;
+    margin: 10px 0;
+    padding: 15px;
+    .break-word;
+  }
   .alert-success {
     margin-bottom: @dashboard-offset;
   }

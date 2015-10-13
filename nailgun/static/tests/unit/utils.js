@@ -45,6 +45,58 @@ define([
 
             response = {status: 400, responseText: JSON.stringify({message: '123'})};
             assert.equal(getResponseText(response), '123', 'HTTP 400 with JSON response is treated correctly');
+        },
+        'Test highlightTestStep': function() {
+            var text;
+            var highlight = utils.highlightTestStep;
+
+            text = '1. Step 1\n2. Step 2\n3. Step 3';
+            assert.equal(
+                highlight(text, 1),
+                '<b>1. Step 1</b>\n2. Step 2\n3. Step 3',
+                'Highlighting first step in simple text works'
+            );
+            assert.equal(
+                highlight(text, 2),
+                '1. Step 1\n<b>2. Step 2</b>\n3. Step 3',
+                'Highlighting middle step in simple text works'
+            );
+            assert.equal(
+                highlight(text, 3),
+                '1. Step 1\n2. Step 2\n<b>3. Step 3</b>',
+                'Highlighting last step in simple text works'
+            );
+
+            text = '1. Step 1\n1-1\n1-2\n2. Step 2\n2-1\n2-2\n3. Step 3\n3-1\n3-2';
+            assert.equal(
+                highlight(text, 1),
+                '<b>1. Step 1\n1-1\n1-2</b>\n2. Step 2\n2-1\n2-2\n3. Step 3\n3-1\n3-2',
+                'Highlighting first step in multiline text works'
+            );
+            assert.equal(
+                highlight(text, 2),
+                '1. Step 1\n1-1\n1-2\n<b>2. Step 2\n2-1\n2-2</b>\n3. Step 3\n3-1\n3-2',
+                'Highlighting middle step in multiline text works'
+            );
+            assert.equal(
+                highlight(text, 3),
+                '1. Step 1\n1-1\n1-2\n2. Step 2\n2-1\n2-2\n<b>3. Step 3\n3-1\n3-2</b>',
+                'Highlighting last step in multiline text works'
+            );
+
+            text = ' \n \n 1. Step 1 \n \n';
+            assert.equal(
+                highlight(text, 1),
+                ' \n \n <b>1. Step 1 \n \n</b>',
+                'Highlighting steps in padded text works'
+            );
+
+            text = '1. Step 1\n3. Step 3';
+            assert.equal(
+                highlight(text, 2),
+                text,
+                'Attempting to highlight non-existent step keeps text as it is'
+            );
         }
     });
 });

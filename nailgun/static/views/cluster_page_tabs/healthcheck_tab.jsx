@@ -373,16 +373,6 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         handleTestCheck: function(name, value) {
             this.props.test.set('checked', value);
         },
-        highlightStep: function(text, step) {
-            var lines = text.split('\n');
-            var rx = new RegExp('^\\s*' + step + '\\.');
-            _.each(lines, function(line, index) {
-                if (line.match(rx)) {
-                    lines[index] = '<b>' + line + '</b>';
-                }
-            });
-            return lines.join('\n');
-        },
         render: function() {
             var test = this.props.test,
                 result = this.props.result,
@@ -421,7 +411,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 <div className='well' dangerouslySetInnerHTML={{__html:
                                     utils.urlify(
                                         (result && _.isNumber(result.step)) ?
-                                            this.highlightStep(description, result.step)
+                                            utils.highlightTestStep(description, result.step)
                                         :
                                             description
                                         )

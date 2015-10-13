@@ -107,6 +107,16 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_network_address_spaces_intersection(self, mocked_db):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
+            nodes_kwargs=[
+                {"api": True,
+                 "pending_addition": True},
+            ]
+        )
+        self.task = FakeTask(self.db.query(Cluster).get(cluster['id']))
+
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
@@ -246,6 +256,15 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     @patch.object(helpers, 'db')
     def test_check_networks_amount(self, mocked_db):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
+            nodes_kwargs=[
+                {"api": True,
+                 "pending_addition": True},
+            ])
+        self.task = FakeTask(self.db.query(Cluster).get(cluster['id']))
+
         checker = NetworkCheck(self.task, {})
         checker.network_config['net_manager'] = 'FlatDHCPManager'
         checker.network_config['fixed_networks_amount'] = 2

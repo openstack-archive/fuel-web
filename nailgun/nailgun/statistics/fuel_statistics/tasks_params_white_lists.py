@@ -99,7 +99,7 @@ _task_output_white_list_template = {
                         "use_namespaces": ""
                     },
                     "L2": {
-                        "phys_nets": "",
+                        "phys_nets": {"*": {"*": ""}},
                         "segmentation_type": "",
                         "tunnel_id_ranges": ""
                     },

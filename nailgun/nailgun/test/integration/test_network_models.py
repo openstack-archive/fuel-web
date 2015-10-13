@@ -47,7 +47,7 @@ class TestNetworkModels(BaseIntegrationTest):
                 {'pending_addition': False,
                  'status': consts.NODE_STATUSES.deploying}])
 
-        test_nets = self.env.nova_networks_get(
+        test_nets = self.env.neutron_networks_get(
             self.env.clusters[0].id).json_body
 
         resp_nova_net = self.env.nova_networks_put(
@@ -71,9 +71,9 @@ class TestNetworkModels(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
 
-        self.assertEqual(resp_nova_net.status_code, 403)
+        self.assertEqual(resp_nova_net.status_code, 400)
         # it's 400 because we used Nova network
-        self.assertEqual(resp_neutron_net.status_code, 400)
+        self.assertEqual(resp_neutron_net.status_code, 403)
         self.assertEqual(resp_cluster.status_code, 403)
 
     def test_networks_update_after_deployment(self):

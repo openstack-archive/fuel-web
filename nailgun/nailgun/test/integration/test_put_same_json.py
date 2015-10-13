@@ -159,15 +159,21 @@ class TestPutSameJson(base.BaseIntegrationTest):
         )
 
     def test_nova_network_configuration(self):
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                'api': True,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
+            },
+        )
         nova_config = self.http_get(
             'NovaNetworkConfigurationHandler', {
-                'cluster_id': self.cluster.id
+                'cluster_id': self.cluster['id']
             }
         )
 
         self.assertHttpPut(
             'NovaNetworkConfigurationHandler', {
-                'cluster_id': self.cluster.id
+                'cluster_id': self.cluster['id']
             },
             nova_config, 200
         )
@@ -176,12 +182,8 @@ class TestPutSameJson(base.BaseIntegrationTest):
         self.cluster = self.env.create(
             cluster_kwargs={
                 'api': True,
-                'net_provider': 'neutron',
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
             },
-            nodes_kwargs=[
-                {'api': True},
-                {'api': True},
-            ]
         )
 
         neutron_config = self.http_get(

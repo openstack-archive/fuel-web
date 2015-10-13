@@ -30,7 +30,9 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNovaNetworkConfigurationHandler, self).setUp()
-        cluster = self.env.create_cluster(api=True)
+        cluster = self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         self.cluster = self.db.query(models.Cluster).get(cluster['id'])
 
     def test_get_request_should_return_net_manager_and_networks(self):
@@ -215,7 +217,8 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
         mgmt['gateway'] = '192.168.0.1'
 
         cluster = self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             release_kwargs={'networks_metadata': net_meta, 'api': False},
             nodes_kwargs=[{"pending_addition": True}]
         )
@@ -237,7 +240,8 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(mgmt['use_gateway'], False)
 
         cluster = self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.nova_network},
             release_kwargs={'networks_metadata': net_meta, 'api': False},
             nodes_kwargs=[{"pending_addition": True}]
         )
@@ -604,7 +608,10 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNovaNetworkConfigurationHandlerHA, self).setUp()
-        cluster = self.env.create_cluster(api=True, mode='ha_compact')
+        cluster = self.env.create_cluster(
+            api=True,
+            mode='ha_compact',
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         self.cluster = self.db.query(models.Cluster).get(cluster['id'])
         self.net_manager = objects.Cluster.get_network_manager(self.cluster)
 
@@ -633,7 +640,8 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         super(TestAdminNetworkConfiguration, self).setUp()
         self.cluster = self.env.create(
             cluster_kwargs={
-                "api": True
+                "api": True,
+                "net_provider": consts.CLUSTER_NET_PROVIDERS.nova_network,
             },
             nodes_kwargs=[
                 {"pending_addition": True, "api": True}

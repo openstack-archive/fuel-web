@@ -61,10 +61,14 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_cluster_create_no_ip_addresses(self):
         """Two clusters having same networks updated to use full CIDR is ok"""
-        cluster = self.env.create_cluster(api=True)
+        cluster = self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         cluster_db = self.db.query(Cluster).get(cluster["id"])
-        cluster2 = self.env.create_cluster(api=True,
-                                           release_id=cluster_db.release.id)
+        cluster2 = self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network,
+            release_id=cluster_db.release.id)
         cluster2_db = self.db.query(Cluster).get(cluster2["id"])
 
         for clstr in (cluster_db, cluster2_db):
@@ -105,8 +109,12 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(cluster1_nets, cluster2_nets)
 
     def test_cluster_creation_same_networks(self):
-        cluster1_id = self.env.create_cluster(api=True)["id"]
-        cluster2_id = self.env.create_cluster(api=True)["id"]
+        cluster1_id = self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)["id"]
+        cluster2_id = self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)["id"]
         cluster1_nets = self._get_cluster_networks(cluster1_id)
         cluster2_nets = self._get_cluster_networks(cluster2_id)
 
@@ -148,6 +156,7 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps({
                 'name': 'cluster-name',
                 'release': release.id,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
             }),
             headers=self.default_headers
         )
@@ -198,7 +207,9 @@ class TestHandlers(BaseIntegrationTest):
 
     @patch('nailgun.rpc.cast')
     def test_verify_networks(self, mocked_rpc):
-        cluster = self.env.create_cluster(api=True)
+        cluster = self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         nets = self.env.nova_networks_get(cluster['id']).json_body
 
         resp = self.env.nova_networks_put(cluster['id'], nets)

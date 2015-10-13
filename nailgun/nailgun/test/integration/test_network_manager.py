@@ -257,7 +257,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_get_node_networks_for_vlan_manager(self):
         cluster = self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=[
                 {"pending_addition": True},
             ]
@@ -758,7 +759,9 @@ class TestNovaNetworkManager(BaseIntegrationTest):
     def setUp(self):
         super(TestNovaNetworkManager, self).setUp()
         self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
+            },
             nodes_kwargs=[
                 {'api': True,
                  'pending_addition': True}

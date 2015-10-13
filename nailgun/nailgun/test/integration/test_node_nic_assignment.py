@@ -151,7 +151,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def test_novanet_assignment_when_network_cfg_changed_then_node_added(self):
-        cluster = self.env.create_cluster(api=True)
+        cluster = self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
 
         resp = self.env.nova_networks_get(cluster['id'])
         nets = resp.json_body
@@ -549,7 +551,9 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
             1)
 
     def test_nova_net_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(api=True)
+        self.env.create_cluster(
+            api=True,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         self.create_node_and_check_assignment()
 
     def test_neutron_gre_public_network_assigned_to_second_nic_by_name(self):

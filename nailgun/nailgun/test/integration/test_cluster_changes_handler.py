@@ -48,6 +48,9 @@ class TestHandlers(BaseIntegrationTest):
             release_kwargs={
                 'version': "2014.2-6.0"
             },
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
+            },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},
@@ -1572,7 +1575,9 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_occurs_error_not_enough_ip_addresses(self):
         self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
+            },
             nodes_kwargs=[
                 {'pending_addition': True},
                 {'pending_addition': True},
@@ -1773,12 +1778,12 @@ class TestHandlers(BaseIntegrationTest):
         )
         cluster_id = self.env.clusters[0].id
 
-        resp = self.env.nova_networks_get(cluster_id)
+        resp = self.env.neutron_networks_get(cluster_id)
         nets = resp.json_body
         for net in nets["networks"]:
             if net["name"] in ["management", ]:
                 net["vlan_start"] = None
-        self.env.nova_networks_put(cluster_id, nets)
+        self.env.neutron_networks_put(cluster_id, nets)
 
         supertask = self.env.launch_deployment()
         self.env.wait_error(supertask)

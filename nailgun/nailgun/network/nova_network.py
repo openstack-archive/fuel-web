@@ -25,15 +25,15 @@ class NovaNetworkManager(NetworkManager):
 
     @classmethod
     def create_nova_network_config(cls, cluster):
-        nova_net_config = NovaNetworkConfig(
-            cluster_id=cluster.id,
-        )
-        db().add(nova_net_config)
+        nova_net_config = NovaNetworkConfig(cluster_id=cluster.id)
         meta = cluster.release.networks_metadata["nova_network"]["config"]
         for key, value in meta.iteritems():
             if hasattr(nova_net_config, key):
                 setattr(nova_net_config, key, value)
+
+        db().add(nova_net_config)
         db().flush()
+        return nova_net_config
 
     @classmethod
     def generate_vlan_ids_list(cls, data, cluster, ng):

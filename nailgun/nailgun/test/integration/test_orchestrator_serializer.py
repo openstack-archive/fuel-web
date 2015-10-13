@@ -191,7 +191,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
-                'net_manager': network_manager},
+                'net_manager': network_manager,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=node_args)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
@@ -450,8 +451,9 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
     def create_env(self, manager, nodes_count=3, ctrl_count=1, nic_count=2):
         cluster = self.env.create(
             release_kwargs={'version': self.env_version},
-            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact}
-        )
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network})
 
         data = {'networking_parameters': {'net_manager': manager}}
         self.env.nova_networks_put(cluster['id'], data)
@@ -1226,7 +1228,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': mode,
-            },
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},

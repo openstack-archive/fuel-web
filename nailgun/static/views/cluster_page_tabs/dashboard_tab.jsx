@@ -240,9 +240,17 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     });
 
     var DeploymentResult = React.createClass({
+        getInitialState: function() {
+            return {collapsed: false};
+        },
         dismissTaskResult: function() {
             var task = this.props.cluster.task({group: 'deployment'});
             if (task) task.destroy();
+        },
+        componentDidMount: function() {
+            $('.result-details', this.getDOMNode())
+                .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
+                .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
         render: function() {
             var task = this.props.cluster.task({group: 'deployment', status: ['ready', 'error']});
@@ -258,18 +266,18 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     'alert-danger': !warning && error,
                     'alert-success': !warning && !error
                 };
-
             return (
                 <div className={utils.classNames(classes)}>
                     <button className='close' onClick={this.dismissTaskResult}>&times;</button>
                     <strong>{i18n('common.' + (error ? 'error' : 'success'))}</strong>
                     <br />
                     <span dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
-                    {details &&
-                        <div className='task-result-details'>
-                            <pre dangerouslySetInnerHTML={{__html: utils.urlify(details)}} />
-                        </div>
-                    }
+                    <div className={utils.classNames({'task-result-details': true, hidden: !details})}>
+                        <pre className='collapse result-details' dangerouslySetInnerHTML={{__html: utils.urlify(details)}} />
+                        <button className='btn-link' data-toggle='collapse' data-target='.result-details'>
+                            {this.state.collapsed ? i18n('cluster_page.hide_details_button') : i18n('cluster_page.show_details_button')}
+                        </button>
+                    </div>
                 </div>
             );
         }

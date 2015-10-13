@@ -157,6 +157,7 @@
 
 .break-word() {
   /* the following code refers to https://css-tricks.com/almanac/properties/w/word-break/ */
+  white-space: pre-wrap;
   word-wrap: break-word;
   hyphens: auto;
   -moz-hyphens: auto; /* for word-wrap to work in FF */
@@ -423,6 +424,22 @@ button, .btn:not(.btn-link) {.font-semibold;}
     font-size: @base-font-size + 4px;
     line-height: 1px;
   }
+  .task-result-details {
+    @deployment-result-indent: 5px;
+    margin-top: @deployment-result-indent;
+    .btn-link {
+      padding: 0;
+      color: @link-color;
+      font-size: @base-font-size - 1px;
+    }
+    pre {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      .break-word;
+    }
+  }
 }
 
 .alert-success {
@@ -465,23 +482,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
     font-size: @base-font-size - 1px;
     &:hover {
       color: @link-color + 20%;
-    }
-  }
-  .task-result-details {
-    @deployment-result-indent: 5px;
-    margin-top: @deployment-result-indent;
-    .btn-link {
-      padding: 0;
-      color: @link-color;
-      font-size: @base-font-size - 1px;
-    }
-    pre {
-      background: none;
-      border: none;
-      padding: @deployment-result-indent * 2 0 @deployment-result-indent;
-      margin: 0;
-      line-height: 0.6;
-      .text-success;
     }
   }
 }

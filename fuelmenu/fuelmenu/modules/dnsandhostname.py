@@ -57,7 +57,7 @@ class dnsandhostname(urwid.WidgetWrap):
                              "value": hostname},
                 "DNS_UPSTREAM": {"label": "External DNS",
                                  "tooltip": "DNS server(s) (comma separated) \
-to handle DNS requests (example 8.8.8.8)",
+to handle DNS requests (example 8.8.8.8,8.8.4.4)",
                                  "value": "8.8.8.8"},
                 "DNS_DOMAIN": {"label": "Domain",
                                "tooltip": "Domain suffix to user for all \
@@ -97,15 +97,6 @@ is accessible"}
                                   managediface_ip,
                                   socket.gethostname(),
                                   socket.gethostname().split('.')[0]))
-
-    def setEtcResolv(self, nameserver="default"):
-        if nameserver == "default":
-            nss = self.defaults['DNS_UPSTREAM']['value'].split(',')
-        else:
-            nss = [nameserver]
-        with open("/etc/resolv.conf", "w") as fh:
-            for ns in nss:
-                fh.write("nameserver %s\n" % ns)
 
     def check(self, args):
         """Validate that all fields have valid values through sanity checks."""
@@ -266,6 +257,10 @@ is accessible"}
         ModuleHelper.cancel(self, button)
 
     def load(self):
+        # Precedence of DNS information:
+        # Class defaults, fuelmenu default YAML, astute.yaml, uname,
+        # /etc/resolv.conf
+
         #Read in yaml
         defaultsettings = Settings().read(self.parent.defaultsettingsfile)
         oldsettings = defaultsettings
@@ -290,7 +285,31 @@ is accessible"}
             oldsettings["DNS_SEARCH"] = domain
         except Exception:
             log.warning("Unable to look up system hostname")
+
+        # Parse /etc/resolv.conf if it contains data
+        search, domain, nameservers = self.getDNS()
+        if search:
+            oldsettings["DNS_SEARCH"] = search
+        if domain:
+            oldsettings["DNS_DOMAIN"] = domain
+        if nameservers:
+            oldsettings["DNS_UPSTREAM"] = nameservers
+
         return oldsettings
+
+    def getDNS(self, resolver="/etc/resolv.conf"):
+        nameservers = []
+        domain = None
+        searches = None
+        with open(resolver, 'r') as f:
+            for line in f:
+                if line.startswith("search "):
+                    searches = line.split(' ')[1:]
+                if line.startswith("domain "):
+                    domain = ' '.join(line.split(' ')[1])
+                if line.startswith("nameserver "):
+                    nameservers.append(line.split(' ')[1])
+        return searches, domain, ",".join(nameservers)
 
     def save(self, responses):
         ## Generic settings start ##

@@ -13,7 +13,6 @@
 #    under the License.
 
 import alembic
-from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 import uuid
@@ -33,94 +32,133 @@ def setup_module(module):
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
     prepare()
     alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
+    setup_component_table_tests()
 
 
 def prepare():
     meta = base.reflect_db_metadata()
 
-    result = db.execute(
-        meta.tables['releases'].insert(),
-        [{
-            'name': 'test_name',
-            'version': '2014.2.2-6.1',
-            'operating_system': 'ubuntu',
-            'state': 'available',
-            'roles': jsonutils.dumps([
-                'controller',
-                'compute',
-                'mongo',
-            ]),
-            'roles_metadata': jsonutils.dumps({
-                'controller': {
-                    'name': 'Controller',
-                    'description': 'Controller role',
-                    'has_primary': True,
-                },
-                'zabbix-server': {
-                    'name': 'Zabbix Server',
-                    'description': 'Zabbix Server role'
-                },
-                'cinder': {
-                    'name': 'Cinder',
-                    'description': 'Cinder role'
-                },
-                'mongo': {
-                    'name': 'Telemetry - MongoDB',
-                    'description': 'mongo is',
-                    'has_primary': True,
-                }
-            }),
-            'attributes_metadata': jsonutils.dumps({}),
-            'networks_metadata': jsonutils.dumps({
-                'bonding': {
-                    'properties': {
-                        'linux': {
-                            'mode': [
-                                {
-                                    "values": ["balance-rr",
-                                               "active-backup",
-                                               "802.3ad"]
-                                },
-                                {
-                                    "values": ["balance-xor",
-                                               "broadcast",
-                                               "balance-tlb",
-                                               "balance-alb"],
-                                    "condition": "'experimental' in "
-                                                 "version:feature_groups"
-                                }
-                            ]
-                        }
-                    }
-                },
-            }),
-            'is_deployable': True,
-        }])
+    release_data = [{
+        'name': 'test_name',
+        'version': '2014.2.2-6.1',
+        'operating_system': 'ubuntu',
+        'state': 'available'
+    }]
+    result = insert_table_rows(meta.tables['releases'], release_data)
     releaseid = result.inserted_primary_key[0]
 
-    result = db.execute(
-        meta.tables['clusters'].insert(),
-        [{
-            'name': 'test_env',
-            'release_id': releaseid,
-            'mode': 'ha_compact',
-            'status': 'new',
-            'net_provider': 'neutron',
-            'grouping': 'roles',
-            'fuel_version': '6.1',
-        }])
+    cluster_data = [{
+        'name': 'test_env',
+        'release_id': releaseid,
+        'mode': 'ha_compact',
+        'status': 'new',
+        'net_provider': 'neutron',
+        'grouping': 'roles',
+        'fuel_version': '6.1',
+    }]
+    result = insert_table_rows(meta.tables['clusters'], cluster_data)
     clusterid = result.inserted_primary_key[0]
 
-    db.execute(
-        meta.tables['nodegroups'].insert(),
-        [
-            {'cluster_id': clusterid, 'name': 'test_nodegroup_a'},
-            {'cluster_id': clusterid, 'name': 'test_nodegroup_a'},
-            {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
-            {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
-        ])
+    nodegroups_data = [
+        {'cluster_id': clusterid, 'name': 'test_nodegroup_a'},
+        {'cluster_id': clusterid, 'name': 'test_nodegroup_a'},
+        {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
+        {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
+    ]
+    insert_table_rows(meta.tables['nodegroups'], nodegroups_data)
+
+    plugin_data = [{
+        'name': 'test_plugin',
+        'title': 'Test plugin',
+        'version': '1.0.0',
+        'description': 'Test plugin for Fuel',
+        'homepage': 'http://fuel_plugins.test_plugin.com',
+        'package_version': '3.0.0'
+    }]
+    insert_table_rows(meta.tables['plugins'], plugin_data)
 
     db.commit()
+
+
+def setup_component_table_tests():
+    meta = base.reflect_db_metadata()
+    insert_table_rows(meta.tables['components'], [{'name': 'test_component'}])
+    db.commit()
+
+
+def insert_table_rows(table, data):
+    result = db.execute(
+        table.insert(),
+        data
+    )
+    return result
+
+
+class TestComponentTableMigration(base.BaseAlembicMigrationTest):
+    def test_table_fields_and_default_values(self):
+        component_table = self.meta.tables['components']
+        columns = [t.name for t in component_table.columns]
+        self.assertItemsEqual(columns, ['id', 'name', 'hypervisors',
+                                        'networks', 'storages', 'release_id',
+                                        'plugin_id', 'additional_services'])
+
+        column_with_default_values = [
+            (component_table.c.hypervisors, []),
+            (component_table.c.networks, []),
+            (component_table.c.storages, []),
+            (component_table.c.additional_services, [])
+        ]
+        result = db.execute(
+            sa.select([item[0] for item in column_with_default_values]))
+        db_values = result.fetchone()
+
+        for idx, db_value in enumerate(db_values):
+            self.assertEqual(db_value, column_with_default_values[idx][1])
+
+    def test_unique_name_fields(self):
+        component_table = self.meta.tables['components']
+        component_name = db.execute(
+            sa.select([component_table.c.name])).fetchone()[0]
+        with self.assertRaisesRegexp(IntegrityError,
+                                     'duplicate key value violates unique '
+                                     'constraint "components_name_key"'):
+            insert_table_rows(component_table, [{'name': component_name}])
+
+    def test_cascade_plugin_deletion(self):
+        plugin_table = self.meta.tables['plugins']
+        plugin_id = db.execute(sa.select([plugin_table.c.id])).fetchone()[0]
+        component_table = self.meta.tables['components']
+        insert_table_rows(component_table,
+                          [{'name': 'test_name', 'plugin_id': plugin_id}])
+        db.execute(
+            sa.delete(plugin_table).where(plugin_table.c.id == plugin_id))
+        deleted_plugin_components = db.execute(
+            sa.select([component_table.c.name]).
+            where(component_table.c.plugin_id == plugin_id)
+        )
+        self.assertEqual(deleted_plugin_components.rowcount, 0)
+
+    def test_cascade_release_deletion(self):
+        release_data = [{
+            'name': 'release_with_components',
+            'version': '2014.2.2-6.1',
+            'operating_system': 'ubuntu',
+            'state': 'available'
+        }]
+        release_table = self.meta.tables['releases']
+        result = insert_table_rows(release_table, release_data)
+        release_id = result.inserted_primary_key[0]
+        component_table = self.meta.tables['components']
+        insert_table_rows(component_table,
+                          [{'name': 'test_name', 'release_id': release_id}])
+
+        db.execute(
+            sa.delete(release_table).where(release_table.c.id == release_id))
+        deleted_release_components = db.execute(
+            sa.select([component_table.c.name]).
+            where(component_table.c.release_id == release_id)
+        )
+        self.assertEqual(deleted_release_components.rowcount, 0)
 
 
 class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):

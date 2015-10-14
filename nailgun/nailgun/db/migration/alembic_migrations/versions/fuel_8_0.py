@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""empty message
+"""Fuel 8.0
 
 Revision ID: 43b2cb64dae6
 Revises: 1e50a4903910
@@ -24,10 +24,33 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql as psql
+
 
 def upgrade():
-    pass
+    op.create_table('components',
+                    sa.Column('id', sa.Integer(), nullable=False),
+                    sa.Column('name', sa.String(), nullable=False),
+                    sa.Column('hypervisors', psql.ARRAY(sa.String()),
+                              nullable=False, server_default='{}'),
+                    sa.Column('networks', psql.ARRAY(sa.String()),
+                              nullable=False, server_default='{}'),
+                    sa.Column('storages', psql.ARRAY(sa.String()),
+                              nullable=False, server_default='{}'),
+                    sa.Column('additional_services', psql.ARRAY(sa.String()),
+                              nullable=False, server_default='{}'),
+                    sa.Column('plugin_id', sa.Integer(), nullable=True),
+                    sa.Column('release_id', sa.Integer(), nullable=True),
+                    sa.ForeignKeyConstraint(
+                        ['plugin_id'], ['plugins.id'], ondelete='CASCADE'),
+                    sa.ForeignKeyConstraint(
+                        ['release_id'], ['releases.id'], ondelete='CASCADE'),
+                    sa.PrimaryKeyConstraint('id'),
+                    sa.UniqueConstraint('name')
+                    )
 
 
 def downgrade():
-    pass
+    op.drop_table('components')

@@ -125,7 +125,7 @@ define([
         showErrorDialog: function(options) {
             var dialogs = require('views/dialogs'); // avoid circular dependencies
             options.message = options.response ? utils.getResponseText(options.response) :
-                options.message || i18n('dialog.error_dialog.warning');
+                options.message || i18n('dialog.error_dialog.server_error');
             dialogs.ErrorDialog.show(options);
         },
         showBandwidth: function(bandwidth) {

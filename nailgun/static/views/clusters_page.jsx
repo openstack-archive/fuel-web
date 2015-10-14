@@ -23,9 +23,10 @@ define(
     'utils',
     'dispatcher',
     'jsx!component_mixins',
-    'views/wizard'
+    'views/wizard',
+    'jsx!views/wizard2'
 ],
-function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) {
+function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard, wizard2) {
     'use strict';
     var ClustersPage, ClusterList, Cluster;
 
@@ -63,7 +64,8 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
     ClusterList = React.createClass({
         mixins: [componentMixins.backboneMixin('clusters')],
         createCluster: function() {
-            (new wizard.CreateClusterWizard({collection: this.props.clusters})).render();
+            //(new wizard.CreateClusterWizard({collection: this.props.clusters})).render();
+            wizard2.CreateClusterWizard.show({collection: this.props.clusters});
         },
         render: function() {
             return (

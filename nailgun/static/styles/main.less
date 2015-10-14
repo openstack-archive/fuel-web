@@ -2942,13 +2942,47 @@ input[type=range] {
 }
 
 // wizard styles
-#wizard {
-  &.modal-dialog {
-    width: 830px;
-    height: 485px;
+.wizard {
+  .modal-dialog {
+    width: 840px;
+    height: 560px;
     color: @base-text-color;
+    .modal-body {
+      padding: 0px;
+    }
+    label {
+      font-weight: 600;
+    }
+    .forms-box {
+      margin-bottom: 0px;
+      .name-and-release .form-group {
+        label {
+          width: 30%;
+          text-align: right;
+        }
+        input, select {
+          max-width: 70%;
+          width: 70%;
+        }
+        .help-block {
+          margin-left: 30%;
+          width: 70%;
+        }
+      }
+    }
+    .forms-box .form-group {
+      label {
+        width: 100%;
+      }
+      .help-block {
+        max-width: 95%;
+        width: 95%;
+        padding-top: 3px;
+        padding-bottom: 6px;
+      }
+    }
     .wizard-body {
-      @wizard-body-height: 315px;
+      @wizard-body-height: 360px;
       @wizard-body-padding: 15px;
       height: @wizard-body-height;
       padding: @wizard-body-padding;
@@ -3006,7 +3040,7 @@ input[type=range] {
     }
   }
   .alert {
-    margin: 10px 0;
+    margin: 0 0 10px 0;
     padding: 7px;
     line-height: 14px;
     font-size: @base-font-size - 2;
@@ -3036,6 +3070,9 @@ input[type=range] {
     font-size: @base-font-size - 2;
     color: @gray;
     line-height: 14px;
+  }
+  .ml2-driver {
+    margin-left: 32px;
   }
 }
 

@@ -25,6 +25,7 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects.component import Component
 from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
 
@@ -338,10 +339,43 @@ class PluginAdapterV3(PluginAdapterV2):
         Plugin.update(self.plugin, data_to_update)
 
 
+class PluginAdapterV4(PluginAdapterV3):
+    """Plugin wrapper class for package version 4.0.0"""
+
+    components = 'components.yaml'
+
+    def sync_metadata_to_db(self):
+        super(PluginAdapterV4, self).sync_metadata_to_db()
+        components_file_path = os.path.join(
+            self.plugin_path, self.components)
+        components = self._load_config(components_file_path) or []
+        for component in components:
+            name = component.get('name')
+            db_component = Component.get_by_name(name)
+            if db_component:
+                Component.update(db_component, dict(
+                    name=name,
+                    hypervisor=component.get('compatible_hypervisors', []),
+                    networking=component.get('compatible_networks', []),
+                    storage=component.get('compatible_storages', []),
+                    additional_services=component.get(
+                        'compatible_additional_services', [])))
+            else:
+                Component.create(dict(
+                    name=name,
+                    hypervisor=component.get('compatible_hypervisors', []),
+                    networking=component.get('compatible_networks', []),
+                    storage=component.get('compatible_storages', []),
+                    additional_services=component.get(
+                        'compatible_additional_services', []),
+                    plugin_id=self.plugin.id))
+
+
 __version_mapping = {
     '1.0.': PluginAdapterV1,
     '2.0.': PluginAdapterV2,
-    '3.0.': PluginAdapterV3
+    '3.0.': PluginAdapterV3,
+    '4.0.': PluginAdapterV4
 }
 
 

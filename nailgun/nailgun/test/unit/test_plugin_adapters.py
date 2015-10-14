@@ -23,6 +23,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.expression import Expression
+from nailgun.objects import Component
 from nailgun.objects import Plugin
 from nailgun.plugins import adapters
 from nailgun.settings import settings
@@ -188,6 +189,11 @@ class TestPluginBase(base.BaseTestCase):
         depl_task = self.plugin_adapter.deployment_tasks[0]
         self.assertEqual(depl_task['parameters'].get('cwd'), expected)
 
+    def _find_path(self, config_name):
+        return os.path.join(
+            self.plugin_adapter.plugin_path,
+            '{0}.yaml'.format(config_name))
+
 
 class TestPluginV1(TestPluginBase):
 
@@ -275,10 +281,73 @@ class TestPluginV3(TestPluginBase):
             self.assertEqual(
                 self.plugin.tasks, tasks)
 
-    def _find_path(self, config_name):
-        return os.path.join(
-            self.plugin_adapter.plugin_path,
-            '{0}.yaml'.format(config_name))
+
+class TestPluginV4(TestPluginBase):
+
+    __test__ = True
+    package_version = '4.0.0'
+
+    def test_sync_metadata_to_db(self):
+        plugin_metadata = self.env.get_default_plugin_metadata()
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        roles_metadata = self.env.get_default_plugin_node_roles_config()
+        volumes_metadata = self.env.get_default_plugin_volumes_config()
+        network_roles_metadata = self.env.get_default_network_roles_config()
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        tasks = self.env.get_default_plugin_tasks()
+        components_metadata = self.env.get_default_plugin_components()
+
+        mocked_metadata = {
+            self._find_path('metadata'): plugin_metadata,
+            self._find_path('environment_config'): attributes_metadata,
+            self._find_path('node_roles'): roles_metadata,
+            self._find_path('volumes'): volumes_metadata,
+            self._find_path('network_roles'): network_roles_metadata,
+            self._find_path('deployment_tasks'): deployment_tasks,
+            self._find_path('tasks'): tasks,
+            self._find_path('components'): components_metadata
+        }
+
+        with mock.patch.object(
+                self.plugin_adapter, '_load_config') as load_conf:
+            load_conf.side_effect = lambda key: mocked_metadata[key]
+            self.plugin_adapter.sync_metadata_to_db()
+
+            for key, val in six.iteritems(plugin_metadata):
+                self.assertEqual(
+                    getattr(self.plugin, key), val)
+
+            self.assertEqual(
+                self.plugin.attributes_metadata, attributes_metadata)
+            self.assertEqual(
+                self.plugin.roles_metadata, roles_metadata)
+            self.assertEqual(
+                self.plugin.volumes_metadata, volumes_metadata)
+            self.assertEqual(
+                self.plugin.deployment_tasks, deployment_tasks)
+            self.assertEqual(
+                self.plugin.tasks, tasks)
+
+            component = Component.get_by_name(
+                components_metadata[0].get('name'))
+
+            self.assertEqual(
+                component.name,
+                components_metadata[0].get('name'))
+            self.assertEqual(
+                component.hypervisor,
+                components_metadata[0].get('compatible_hypervisors'))
+            self.assertEqual(
+                component.networking,
+                components_metadata[0].get('compatible_networks'))
+            self.assertEqual(
+                component.storage,
+                components_metadata[0].get('compatible_storages'))
+            self.assertEqual(
+                component.additional_services,
+                components_metadata[0].get('compatible_additional_services'))
+            self.assertEqual(component.plugin_id, self.plugin.id)
+            self.assertIsNone(component.release_id)
 
 
 class TestClusterCompatiblityValidation(base.BaseTestCase):

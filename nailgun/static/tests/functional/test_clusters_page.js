@@ -72,7 +72,7 @@ define([
                                     return this.remote
                                         .pressKeys('\uE007')
                                         .assertElementTextEquals(
-                                            'form.create-cluster-form span.help-block',
+                                            '.create-cluster-form span.help-block',
                                             'Environment with name "' + clusterName + '" already exists',
                                             'Error message should say that environment with that name already exists'
                                         )

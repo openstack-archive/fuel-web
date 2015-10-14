@@ -41,7 +41,7 @@
                 "version": "Version",
                 "username": "Username",
                 "change_password": "Change password",
-                "default_password_warning": "Please change your default admin password as soon as possible",
+                "default_password_warning": "For security reasons, change the default admin password.",
                 "loading_error": "Failed to start Fuel UI. Nailgun is not available.",
                 "logout": "Logout",
                 "role_limits": {
@@ -78,8 +78,8 @@
                 "total_hdd": "__total__ HDD",
                 "total_ram": "__total__ RAM",
                 "offline": "Offline",
-                "config": "VMs Config",
-                "vms_config_msg": "You can define your own VM configuration. It should be valid JSON object.",
+                "config": "VM Configurations",
+                "vms_config_msg": "You can define a custom virtual machine configuration in a JSON file.",
                 "invalid_vms_conf_msg": "Invalid JSON object"
             },
             "cluster": {
@@ -114,27 +114,27 @@
                 "credentials_error": "Invalid credentials",
                 "log_in": "Log in",
                 "title": "Log In",
-                "http_warning": "You're not using a secure connection. ",
-                "http_warning_link": "Switch to HTTPS version"
+                "http_warning": "You are using an insecure network connection. ",
+                "http_warning_link": "Switch to HTTPS"
             },
             "statistics": {
                 "help_to_improve": "Help us to improve your experience by sending Mirantis information about the settings, features, and deployment actions when you use Mirantis OpenStack.",
                 "help_to_improve_community": "Help us to improve your experience by sending information about the settings, features, and deployment actions when you use Fuel and OpenStack.",
                 "learn_whats_collected": "Learn what's collected",
-                "statistics_user_info": "Note, that if you agree to send statistics, a new user under \"fuel_stats_user\" name will be added to your OpenStack environment. The fuel_stats_user will collect information about OpenStack workloads.",
-                "statistics_includes_full": "Usage statistics include the following. Information such as passwords, ip addresses, and node names are not included.",
+                "statistics_user_info": "Note, that if you agree to send statistics, a new user \"fuel_stats_user\" will be added to your OpenStack environment. The fuel_stats_user will collect information about OpenStack workloads.",
+                "statistics_includes_full": "Usage statistics includes the following. Confidential information, such as passwords, IP addresses, node names, and so on, is not included into statistics.",
                 "actions_title": "Actions:",
                 "actions": {
-                    "operation_type": "Operation type (adding cluster, adding node, deployment, removing node, e.t.c.)",
-                    "operation_time": "Operation start and finish time",
-                    "actual_time": "Actual time that is took to complete the operation",
-                    "network_verification": "Network verification - whether it was used, and what was the result",
-                    "ostf_results": "Is OSTF used, and tests results"
+                    "operation_type": "Type of operation (adding a cluster, adding a node, deploying an OpenStack environment, removing a node, and so on)",
+                    "operation_time": "Start and end time of the operation",
+                    "actual_time": "Actual time to complete the operation",
+                    "network_verification": "Network verification results",
+                    "ostf_results": "OSTF test results"
                 },
                 "settings_title": "Environment Settings:",
                 "settings": {
                     "envronments_amount": "Number of environments",
-                    "nistribution": "Distribution / OS",
+                    "distribution": "Distribution / OS",
                     "network_type": "Network type",
                     "kernel_parameters": "Kernel parameters",
                     "admin_network_parameters": "Admin network parameters",
@@ -142,7 +142,7 @@
                     "dns_parameters": "DNS parameters",
                     "storage_options": "Storage options",
                     "related_projects": "Related Projects",
-                    "modified_settings": "Settings modified on Settings tab",
+                    "modified_settings": "Settings modified in the Settings tab",
                     "networking_configuration": "Networking configuration"
                 },
                 "node_settings_title": "Node Settings:",
@@ -162,21 +162,21 @@
                 "setting_labels": {
                     "send_anonymous_statistic": "Send usage statistics to Mirantis",
                     "send_anonymous_statistic_community": "Send usage statistics",
-                    "send_user_info": "Identify my error reports so that Mirantis Support can assist me",
-                    "send_user_info_community": "Identify my error reports so that Mirantis Support can assist me",
+                    "send_user_info": "Identify my error reports, so that Mirantis Support can assist me with resolving",
+                    "send_user_info_community": "Identify my error reports, so that Mirantis Support can assist me with resolving",
                     "name": "Name",
                     "email": "Email",
                     "company": "Company"
                 },
                 "errors": {
-                    "name": "Please fill in your name",
-                    "email": "Please fill in correct email address",
-                    "company": "Please fill in company name"
+                    "name": "Please type your name.",
+                    "email": "Please type your email address.",
+                    "company": "Please type your company name."
                 }
             },
             "welcome_page": {
-                "title": "Welcome to Mirantis OpenStack",
-                "title_community": "Welcome to Fuel and OpenStack",
+                "title": "Welcome to Mirantis OpenStack!",
+                "title_community": "Welcome to Fuel and OpenStack!",
                 "start_fuel": "Start Using Fuel",
                 "connect_now": "Connect Now",
                 "connect_later": "Connect Later",
@@ -184,18 +184,18 @@
                 "thanks": "Thanks for helping to improve Mirantis OpenStack!",
                 "thanks_community": "Thanks for helping to improve Fuel and OpenStack!",
                 "statistics_collector": "Web UI for collected statistics is under development and will be available at ",
-                "privacy_policy": "Usage stats will include your name, company and email once you login to your Mirantis account",
+                "privacy_policy": "Usage statistics will include your name, company, and email address once you log in to your Mirantis account.",
                 "privacy_policy_link": "Read Privacy Policy",
                 "register": {
                     "register_installation": "Connect this installation with your Mirantis account and receive important notifications about security updates and other improvements.",
                     "link_text": "Register Now",
                     "create_account": "Create Account",
                     "retrieve_password": "Retrieve Password",
-                    "connection_error": " Looks like this machine is not connected to Internet. Please check connection and try again",
-                    "required_fields": "Please note that all fields are required.",
+                    "connection_error": "This machine may not be connected to the Internet. Please check the Internet connection and try again.",
+                    "required_fields": "All fields are required.",
                     "welcome_phrase": {
                         "thanks": "Thanks",
-                        "content": "you’re all set!"
+                        "content": "you are all set!"
                     }
                 }
             },
@@ -225,18 +225,18 @@
             },
             "notifications_popover": {
                 "view_all_button": "View all",
-                "no_notifications_text": "There are no notifications to display"
+                "no_notifications_text": "No notifications to display."
             },
             "support_page": {
                 "title": "Support",
-                "contact_text": "If you need to report a problem or just suggest an improvement, click the button below. We will get back to you as soon as possible.",
-                "irc_text": "If you have any questions, you can also reach out to developers on the IRC channel",
-                "log_text": "If you have encountered some bugs or errors, you may need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
+                "contact_text": "If you need to report a problem or suggest an improvement, click the button below. A Mirantis Support representative will contact you as soon as possible.",
+                "irc_text": "If you have any questions, you can reach out to the OpenStack developers directly through the IRC channel",
+                "log_text": "If you have encountered bugs or errors, you may need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
                 "contact_support": "Contact Support",
                 "register_fuel_title": "Connect Mirantis Account",
-                "register_fuel_content": "This will ensure that you receive important notifications about security updates and other improvements. In addition you will be notified about new versions of Mirantis products.",
+                "register_fuel_content": "This will ensure that you receive important notifications about security updates and other improvements. In addition, you will be notified about new versions of Mirantis products.",
                 "product_registered_title": "Connect Mirantis Account",
-                "product_registered_content": "This OpenStack installation is connected to",
+                "product_registered_content": "This OpenStack environment is connected to",
                 "master_node_uuid": "Master Node UUID",
                 "manage_account": "Manage Account",
                 "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
@@ -244,7 +244,7 @@
                 "gen_diagnostic_snapshot_text": "Generate Diagnostic Snapshot",
                 "diagnostic_snapshot": "Diagnostic Snapshot",
                 "capacity_audit": "Capacity Audit",
-                "capacity_audit_text": "To better manage your resources, you can run this report to find out what OpenStack roles have been deployed across all of your environments.",
+                "capacity_audit_text": "To better manage your resources, you can run this report to learn what OpenStack roles have been deployed across your environments.",
                 "view_capacity_audit": "View Capacity Audit",
                 "send_statistics_title": "Send Statistics About Usage",
                 "save_changes": "Save Changes",
@@ -277,7 +277,7 @@
                 "licenses": "Licenses",
                 "ubuntu": "Ubuntu",
                 "centos": "CentOS",
-                "more_info": "For more information please visit",
+                "more_info": "For more information, visit",
                 "plugins_catalog": "Plugins Catalog",
                 "plugins_documentation": "Plugins Documentation",
                 "no_plugins": "There are no plugins installed."
@@ -320,20 +320,20 @@
                     },
                     "filters": {
                         "roles": "Roles",
-                        "hdd": "HDD total size (Gb)",
+                        "hdd": "HDD total size (GB)",
                         "status": "Status",
                         "manufacturer": "Manufacturer",
                         "cores": "CPU (real)",
                         "ht_cores": "CPU (total)",
                         "disks_amount": "Number of disks",
-                        "ram": "RAM total size (Gb)",
+                        "ram": "RAM total size (GB)",
                         "interfaces": "Number of interfaces",
                         "prefixes": {
                             "cores": "CPU (real)",
                             "ht_cores": "CPU (total)",
-                            "hdd": "Gb HDD",
+                            "hdd": "GB HDD",
                             "disks_amount": "disks",
-                            "ram": "Gb RAM",
+                            "ram": "GB RAM",
                             "interfaces": "interfaces"
                         }
                     },
@@ -354,11 +354,11 @@
                         "vlan_id": "VLAN ID",
                         "vlan_id_plural": "VLAN IDs",
                         "mac": "MAC",
-                        "configuration_template_warning": "Configuration of bonding and networks is unavailable: configuration template is used",
-                        "bond_button": "Bond Interfaces",
-                        "unbond_button": "Unbond Interfaces",
-                        "bond_speed_warning": "Bonding interfaces of different speeds is not recommended",
-                        "several_bonds_warning": "Bonds cannot be bonded together",
+                        "configuration_template_warning": "Cannot configure bonding and networks: network configuration template is used.",
+                        "bond_button": "Bond Network Interfaces",
+                        "unbond_button": "Unbond Network Interfaces",
+                        "bond_speed_warning": "Bonding network interfaces with different network performance parameters is not recommended.",
+                        "several_bonds_warning": "This network interface is already bonded with other network inteface.",
                         "speed": "Speed",
                         "bonding_mode": "Mode",
                         "bonding_modes": {
@@ -385,14 +385,14 @@
                             "fast": "Fast"
                         },
                         "bonding_policy": "Xmit Hash Policy",
-                        "drag_and_drop_description": "You can drag and drop logical networks between interfaces",
+                        "drag_and_drop_description": "You can drag and drop logical networks between the interfaces",
                         "configuration_error": {
                             "title": "Interfaces Configuration Error",
-                            "saving_warning": "Unable to apply changes",
-                            "load_defaults_warning": "Unable to load default configuration"
+                            "saving_warning": "Unable to apply changes.",
+                            "load_defaults_warning": "Unable to load the default configuration."
                         },
                         "validation": {
-                            "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface",
+                            "too_many_untagged_networks": "Untagged networks cannot be assigned to the same interface.",
                             "invalid_mtu": "Invalid MTU value"
                         },
                         "disable_offloading": "Offloading Disabled",
@@ -406,8 +406,8 @@
                         "mtu_placeholder": "Default"
                     },
                     "configure_disks": {
-                        "no_disks": "The node has no disks to configure.",
-                        "no_disks_plural": "The nodes has no disks to configure.",
+                        "no_disks": "No unassigned disks available.",
+                        "no_disks_plural": "No unassigned disks available.",
                         "title": "Configure disks on __name__",
                         "title_plural": "Configure disks on __count__ nodes",
                         "read_only_title": "Disks configuration of __name__",
@@ -417,14 +417,14 @@
                         "total_space": "Total Space",
                         "unallocated": "Unallocated",
                         "use_all_allowed_space": "Use All Allowed Space",
-                        "validation_error": "Volume groups total size exceeds available space of __size__ MB",
-                        "minimum_reached": "Minimum allowed size reached",
-                        "not_enough_space": "There is no enough space for assigned volume groups",
-                        "volume_error": "The value is too low. You should allocate at least __size__ MB",
+                        "validation_error": "The total size of volume groups exceeds available space of __size__ MB.",
+                        "minimum_reached": "Minimum allowed size reached.",
+                        "not_enough_space": "Not enough space for assigned volume groups.",
+                        "volume_error": "The size is too small. Allocate at least __size__ MB.",
                         "configuration_error": {
                             "title": "Disks Configuration Error",
-                            "saving_warning": "Unable to apply changes",
-                            "load_defaults_warning": "Unable to load default configuration"
+                            "saving_warning": "Unable to apply changes.",
+                            "load_defaults_warning": "Unable to load the default configuration."
                         }
                     },
                     "node_management_panel": {
@@ -452,23 +452,23 @@
                             "not_specified_label" : "Label \"__label__\" not specified",
                             "label_key": "Name",
                             "label_value": "Value",
-                            "empty_label_key": "Label name can not be empty",
-                            "existing_label": "Label with this name already exists",
+                            "empty_label_key": "Label name cannot be empty.",
+                            "existing_label": "Label already exists.",
                             "selected_nodes_amount": "__count__ selected node",
                             "selected_nodes_amount_plural": "__count__ selected nodes",
                             "bulk_label_action_start": "Here you can change labels of ",
-                            "bulk_label_action_end": ". Use checkbox control to add or delete label from the selected nodes, and text fields to update label name or value.",
-                            "label_value_warning": "This label has different values within the selected nodes. If you change label value, this new value will be applied to all the selected node that has the label."
+                            "bulk_label_action_end": ". Use the checkbox to add or delete labels on the selected nodes. Use the text fields to update the label names or values.",
+                            "label_value_warning": "The label has different values on some of the selected nodes. If you change the value, the new value will be applied to all the selected nodes that have the label."
                         },
                         "node_management_error": {
                             "title": "Node Management Error",
-                            "saving_warning": "Unable to apply changes",
-                            "labels_warning": "Unable to apply labels",
+                            "saving_warning": "Unable to apply changes.",
+                            "labels_warning": "Unable to apply labels.",
                             "disks_configuration_warning": "Selected nodes have different disk capacities.",
                             "interfaces_configuration_warning": "Selected nodes have different number of network interfaces."
                         },
                         "labels_error": {
-                            "label_already_exists": "Label already exists",
+                            "label_already_exists": "Label already exists.",
                             "invalid_label": "Invalid label"
                         }
                     },
@@ -494,14 +494,14 @@
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
-                    "no_selected_nodes": "There are no selected nodes to edit.",
-                    "disk_configuration_reset_warning": "Disk configuration will be reset to default after roles change.",
-                    "no_nodes_in_environment": "To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.",
-                    "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
-                    "role_conflict": "This role cannot be combined with the other roles already selected.",
+                    "no_selected_nodes": "No selected nodes to edit.",
+                    "disk_configuration_reset_warning": "When you change the node role, disk configuration will be reset to default.",
+                    "no_nodes_in_environment": "To add nodes to the environment:\n1. Click Add Nodes.\n2. Select the nodes you want to allocate.\n3. Assign a role to each node.",
+                    "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add nodes to the pool, configure the node to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
+                    "role_conflict": "This role cannot be combined with the selected roles.",
                     "node_deletion_error": {
                         "title": "Node Deletion Error",
-                        "node_deletion_warning": "Unable to delete nodes"
+                        "node_deletion_warning": "Unable to delete the nodes."
                     },
                     "no_filtered_nodes_warning": "No nodes found matching the selected filters.",
                     "filtered_nodes_count":"__filteredNodesCount__ of __count__ node",
@@ -510,15 +510,15 @@
                 "settings_tab": {
                     "settings_error": {
                         "title": "OpenStack Settings Configuration Error",
-                        "load_defaults_warning": "Unable to load default configuration",
-                        "saving_warning": "Unable to apply changes"
+                        "load_defaults_warning": "Unable to load the default configuration.",
+                        "saving_warning": "Unable to apply the changes."
                     },
                     "title": "OpenStack Settings",
-                    "dependent_role_warning": "The environment contains __roles__ node",
-                    "dependent_role_warning_plural": "The environment contains __roles__ nodes",
+                    "dependent_role_warning": "The environment contains__roles__ node.",
+                    "dependent_role_warning_plural": "The environment contains__roles__ nodes.",
                     "dependent_settings_warning": "__settings__ is active",
                     "dependent_settings_warning_plural": "__settings__ are active",
-                    "images_ceph_warning": "The environment contains controllers",
+                    "images_ceph_warning": "The environment contains controllers.",
                     "custom_repo_configuration": {
                         "add_repo_button": "Add Extra Repo",
                         "labels": {
@@ -543,20 +543,20 @@
                     "title_error": "Deployment Failed",
                     "deploy_progress": "Deployment in Progress",
                     "delete_environment": "Delete Environment",
-                    "alert_delete": "This action will clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
+                    "alert_delete": "You are about to clean up each node and return it to the pool of unallocated nodes. All logs from the deleted nodes will be removed.",
                     "reset_environment": "Reset Environment",
-                    "reset_environment_description": "Enables you to modify the settings for the environment and redeploy.",
-                    "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
-                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed.",
-                    "repeated_reset_disabled": "The current environment is already being reset.",
+                    "reset_environment_description": "Enables you to modify the settings and re-deploy the environment.",
+                    "reset_environment_warning": "You are about to reset all existing nodes to the pre-deployment state and delete this environment.",
+                    "reset_disabled_for_deploying_cluster": "The OpenStack environment is still being deployed. Wait untill Fuel completes the deployment and try again.",
+                    "repeated_reset_disabled": "The environment is already being reset.",
                     "rename_error": {
-                        "title": "Unable to Rename the Environment"
+                        "title": "Unable to rename the OpenStack environment"
                     },
                     "current_task": "Current task:",
                     "cluster_info_fields": {
                         "name": "Name",
                         "status": "Status",
-                        "openstack_release": "Openstack Release",
+                        "openstack_release": "OpenStack Release",
                         "operating_system": "OS",
                         "compute": "Compute",
                         "network": "Network",
@@ -568,39 +568,39 @@
                         "statistics": "Node Statistics",
                         "total": "Total Nodes"
                     },
-                    "mos_documentation": "Mirantis Openstack Documentation",
+                    "mos_documentation": "Mirantis OpenStack Documentation",
                     "openstack_documentation": "OpenStack Documentation",
-                    "documentation_description": "Quick access to the documentation on configuring and deploying environment:",
-                    "no_nodes_warning_add_them": "You don't have any nodes in your environment. Add them first at nodes tab.",
+                    "documentation_description": "Quick access to the documentation on how to deploy and configure your OpenStack environment:",
+                    "no_nodes_warning_add_them": "No nodes found in this environment. Please add nodes in the Nodes tab and try again.",
                     "plugin_documentation": "Plugin Documentation",
                     "technical_bulletins": "Technical Bulletins",
                     "cluster_information": "Cluster Information",
                     "summary": "Summary",
                     "changes_header": "List of Changes",
-                    "new_environment_welcome": "Welcome to New OpenStack Environment",
-                    "add_nodes": "You need to add nodes to the OpenStack Environment.",
-                    "not_deployed_instruction": "Please review all environment configurations, including node disk partitioning and interface configuration, before proceeding. These settings will be locked once the deployment is complete.",
+                    "new_environment_welcome": "Welcome to the New OpenStack Environment!",
+                    "add_nodes": "Add nodes to the OpenStack Environment.",
+                    "not_deployed_instruction": "Before you proceed, review the environment configuration, including the node disk partitioning and network settings. You will not be able to change these settings after Fuel deploys the OpenStack environment.",
                     "deployment_cannot_be_started": "Deployment cannot be started due to invalid environment configuration. Please review and address the warnings below before proceeding and see the",
-                    "note_recommendations": "Please note our recommendations:",
+                    "note_recommendations": "Please note the following recommendations:",
                     "stop": "Stop",
-                    "healthcheck": "To check out the OpenStack Healthcheck status go to ",
+                    "healthcheck": "To view the OpenStack health check status go to ",
                     "healthcheck_tab": "Healthcheck tab",
                     "documentation": "Documentation",
                     "go_to_nodes": "Add nodes",
-                    "unsuccessful_deploy": "Your deployment was unsuccessful. See the Troubleshooting section of the",
-                    "no_nodes_instruction": "You must add at least one node to your environment in order to deploy. See the",
-                    "locked_settings_alert": "Please review all environment configurations, including node disk partitioning and interface configuration, before proceeding. These settings will be locked once the deployment is complete.",
-                    "package_information": "Packages and package updates are fetched from the repositories defined on the Settings tab.  If your environment is using the default external repositories, please confirm your Fuel node has internet access. To specify alternate repositories, or to create a local mirror, please review the ",
+                    "unsuccessful_deploy": "Your deployment was unsuccessful. See the Troubleshooting section of the ",
+                    "no_nodes_instruction": "You must add at least one node to your environment in order to deploy. See the ",
+                    "locked_settings_alert": "Before you proceed, review the environment configuration, including the node disk partitioning and network settings. You will not be able to change these settings after Fuel deploys the OpenStack environment.",
+                    "package_information": "Packages and updates are fetched from the repositories defined in the Settings tab. If your environment uses the default external repositories, verify that the Fuel Master node can access the Internet. If the Fuel Master node is not connected to the Internet, you must set up a local mirror and configure Fuel to upload packages from the local mirror. Fuel must have network access to the local mirror. You may also configure alternate repositories for installation. For more information, see ",
                     "user_guide": "User Guide",
                     "operations_guide": "Operations Guide",
-                    "for_more_information_roles": "for more information on how to assign roles to nodes and add them to an environment.",
-                    "for_more_information_configuration": " for more information on how to configure environment and node level settings.",
+                    "for_more_information_roles": "for more information on how to assign roles to nodes and add them to an OpenStack environment.",
+                    "for_more_information_configuration": " for more information on how to configure an OpenStack environment and node settings.",
                     "and_vcenter": "and VCenter",
                     "nova_with": "Nova Network with",
                     "neutron_with": "Neutron with",
                     "horizon": "Horizon",
-                    "horizon_description": "OpenStack Environment management panel (Horizon) is now available ",
-                    "go_to_horizon": "Proceed to Horizon",
+                    "horizon_description": "The OpenStack dashboard Horizon is now available.",
+                    "go_to_horizon": "Go to Horizon",
                     "no_storage_enabled": "No storage option enabled"
                 },
                 "network_tab": {
@@ -613,11 +613,11 @@
                     "range_start": "Start",
                     "range_end": "End",
                     "verify_networks": {
-                        "step_0": "Network verification performs the following checks:",
-                        "step_1": "1. L2 connectivity checks between every node in the environment.",
+                        "step_0": "Network verification checks the following:",
+                        "step_1": "1. L2 connectivity checks between nodes in the environment.",
                         "step_2": "2. DHCP discover check on all nodes.",
-                        "step_3": "3. Packages repo connectivity check from master node.",
-                        "step_4": "4. Packages repo connectivity check from slave nodes via public & admin (PXE) networks.",
+                        "step_3": "3. Repository connectivity check from the Fuel Master node.",
+                        "step_4": "4. Repository connectivity check from the Fuel Slave nodes through the  public & admin (PXE) networks.",
                         "success_alert": "Verification succeeded. Your network is configured correctly.",
                         "verification_error": {
                             "title": "Network Verification Error",
@@ -640,7 +640,7 @@
                         "fixed_network_size": "Fixed network size",
                         "fixed_networks_amount": "Number of fixed networks",
                         "fixed_vlan_range": "Fixed VLAN ID range",
-                        "use_vlan_tagging_fixed": "Use VLAN tagging for fixed  networks",
+                        "use_vlan_tagging_fixed": "Use VLAN tagging for fixed networks",
                         "nova_configuration": "Nova-network Configuration",
                         "dns_nameservers": "Guest OS DNS Servers",
                         "l2_configuration": "Neutron L2 Configuration",
@@ -658,25 +658,25 @@
                         "invalid_cidr": "Invalid CIDR",
                         "invalid_ip_start": "Invalid IP range start",
                         "invalid_ip_end": "Invalid IP range end",
-                        "invalid_ip_range": "IP range start is greater than IP range end",
-                        "invalid_ip_range_equal": "IP range should contain more than 1 address",
-                        "empty_ip_range": "Please specify at least one IP range",
+                        "invalid_ip_range": "The IP range start value must be less than the IP range end value.",
+                        "invalid_ip_range_equal": "The IP range must include more than 1 IP address.",
+                        "empty_ip_range": "Please specify at least one IP range.",
                         "invalid_vlan": "Invalid VLAN ID",
-                        "forbidden_vlan": "This VLAN ID is used by other networks. Please choose another ID",
+                        "forbidden_vlan": "This VLAN ID is used by other networks. Please select other VLAN ID.",
                         "invalid_netmask": "Invalid netmask",
                         "invalid_gateway": "Invalid gateway",
-                        "invalid_amount": "Invalid number of networks",
-                        "gateway_is_out_of_ip_range": "This Gateway address is outside of network's CIDR",
-                        "gateway_is_out_of_internal_ip_range": "This Gateway address is out of the internal network IP range",
-                        "need_more_vlan": "The number of networks defined needs more VLAN IDs than available. Check VLAN ID Range field.",
+                        "invalid_amount": "Invalid amount of networks",
+                        "gateway_is_out_of_ip_range": "The gateway address is outside of network CIDR.",
+                        "gateway_is_out_of_internal_ip_range": "This Gateway address is out of the internal network IP range.",
+                        "need_more_vlan": "Not enough VLAN IDs are available for the selected number of networks. Verify that the number of networks specified in the VLAN ID Range field is correct.",
                         "invalid_nameserver": "Invalid nameserver",
                         "invalid_id_start": "Invalid ID range start",
                         "invalid_id_end": "Invalid ID range end",
-                        "invalid_id_range": "The ID range start is greater than ID range end",
-                        "vlan_intersection": "There is an intersection with the VLAN ID of other networks. Please set another ID range",
+                        "invalid_id_range": "The ID range start is greater than ID range end.",
+                        "vlan_intersection": "The VLAN ID range overlaps with the VLAN ID range used in other networks. Please set a different VLAN ID range.",
                         "invalid_mac": "Invalid MAC address",
-                        "ip_start_is_out_of_ip_range": "The IP start is outside of the IP range",
-                        "ip_end_is_out_of_ip_range": "The IP end is outside of the IP range"
+                        "ip_start_is_out_of_ip_range": "The IP start value is out of the selected IP range.",
+                        "ip_end_is_out_of_ip_range": "The IP end value is out of the selected IP range."
                     }
                 },
                 "logs_tab": {
@@ -688,10 +688,10 @@
                     "level": "Level",
                     "show": "Show",
                     "log_alert": "Unable to fetch logs.",
-                    "source_alert": "Unable to fetch log sources.",
+                    "source_alert": "Unable to fetch the log sources.",
                     "date": "Date",
                     "message": "Message",
-                    "bottom_text": "Some previous lines have been skipped. Show more lines",
+                    "bottom_text": "Some lines have been skipped. Show more lines.",
                     "all_logs": "All",
                     "no_log_text": "No log entries match current filters."
                 },
@@ -699,13 +699,13 @@
                     "title": "OpenStack Health Check",
                     "run_tests_button": "Run Tests",
                     "stop_tests_button": "Stop Tests",
-                    "deploy_alert": "You must deploy your OpenStack environment before running tests against it.",
+                    "deploy_alert": "Before you can test an OpenStack environment, you must deploy the OpenStack environment.",
                     "not_available_alert": "OSTF server is not available.",
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",
                     "status": "Status",
                     "provide_credentials": "Provide credentials",
-                    "credentials_description": "If you changed the credentials after deployment, you need to provide new ones to run the checks. The credentials won't be stored anywhere.",
+                    "credentials_description": "If you changed the credentials after deployment, provide the new ones to run the health checks. Fuel does not store the credentials.",
                     "password_label": "Password",
                     "password_description": "Password for Administrator",
                     "user_label": "Username",
@@ -725,8 +725,8 @@
                 "hide_details_button": "Hide additional information",
                 "openstack_release": "OpenStack Release",
                 "environment_status": "Status",
-                "cluster_was_modified_from_cli": "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
-                "unavailable_release": "__name__ release is unavailable. The environment can not be deployed."
+                "cluster_was_modified_from_cli": "Some deployment parameters for this environment have been modified using the Fuel CLI. Changes from the Fuel CLI precede the changes made using the Fuel web-interface. Proceed with caution.",
+                "unavailable_release": "__name__ release is unavailable. Cannot deploy the OpenStack environment."
             },
             "capacity_page": {
                 "title": "Capacity Audit",
@@ -739,7 +739,7 @@
                 "total_number_unalloc_nodes": "Total number of unallocated nodes",
                 "node_role": "Node role(s)",
                 "nodes_with_config": "Number of nodes with this configuration",
-                "download_report": "Download report",
+                "download_report": "Download a report",
                 "loading": "Loading..."
             },
             "dialog": {
@@ -748,14 +748,14 @@
                     "prev": "Prev",
                     "next": "Next",
                     "create": "Create",
-                    "configuration_failed_warning": "Your OpenStack environment has been created, but configuration failed. You can configure it manually.",
+                    "configuration_failed_warning": "Your OpenStack environment has been created, but the configuration failed. You can configure it manually.",
                     "name_release": {
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OpenStack Release",
                         "existing_environment": "Environment with name \"__name__\" already exists",
-                        "Ubuntu_connectivity_alert": "By default, packages will be fetched from external repositories. Please make sure your Fuel master node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment.",
-                        "CentOS_connectivity_alert": "Please make sure your Fuel master node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment."
+                        "Ubuntu_connectivity_alert": "By default, Fuel uploads the software packages for the Fuel Slave nodes from the external repositories. Please verify the Fuel Master node has the Internet connection.\nIf the Fuel Master node does not have access to the Internet, you must create a local mirror with all required software packages and configure Fuel to use the mirror before you deploy an OpenStack environment.",
+                        "CentOS_connectivity_alert": "By default, Fuel uploads the software packages for the Fuel Slave nodes from the external repositories. Please verify the Fuel Master node has the Internet connection.\nIf the Fuel Master node does not have access to the Internet, you must create a local mirror with all required software packages and configure Fuel to use the mirror before you deploy an OpenStack environment."
                     },
                     "mode": {
                         "title": "Deployment Mode"
@@ -765,9 +765,9 @@
                         "kvm": "KVM",
                         "qemu": "QEMU",
                         "vcenter": "vCenter",
-                        "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
-                        "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts",
-                        "vcenter_description": "Choose this option if you have a vCenter environment with ESXi servers to be used as hypervisors",
+                        "kvm_description": "Select this option if you run OpenStack on bare-metal hardware.",
+                        "qemu_description": "Select this option if you run OpenStack on virtual hosts (for example on VirtualBox).",
+                        "vcenter_description": "Select this option if you run OpenStack on VMware vCenter.",
                         "vcenter_ip": "Hostname",
                         "vcenter_ip_description": "Hostname or IP Address of vCenter",
                         "vcenter_username": "Username",
@@ -783,17 +783,17 @@
                     },
                     "network": {
                         "title": "Networking Setup",
-                        "description": "Choose the private (guest) network configuration. The choice you make here cannot be changed after you finish the wizard. More information see the ",
+                        "description": "Choose the private (guest) network configuration. You cannot modify this setting after you complete the wizard. For more information, see the ",
                         "description_link": "Mirantis OpenStack Planning Guide for Network Topology",
                         "release_alert": "Neutron is not supported in __NameAndRelease.release_name__",
                         "hypervisor_alert": "Neutron is not available with __Compute.vcenter__ as a selected compute option.",
                         "nove_network_vcenter_alert": "Legacy Networking (nova-network) requires __Compute.vcenter__ to be a selected compute option.",
                         "nova_network": "(DEPRECATED) Legacy Networking (nova-network)",
-                        "nova_network_description": "This option is only available if you use VMware vCenter. Note that OpenStack is moving to deprecate nova-network in upcoming releases.",
-                        "neutron_gre_description": "The networking equipment must support GRE segmentation. This option supports up to 65535 networks.",
+                        "nova_network_description": "This option is only available if you use VMware vCenter. OpenStack is deprecating nova-network in upcoming releases.",
+                        "neutron_gre_description": "Your network hardware must support GRE segmentation. This option supports up to 65535 networks.",
                         "neutron_vlan": "Neutron with VLAN segmentation (default)",
-                        "neutron_vlan_description": "The networking equipment must be configured for VLAN segmentation. This option supports up to 4095 networks.",
-                        "neutron_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE via Fuel CLI).The networking equipment must support VXLAN segmentation. This option supports millions of tenant data networks."
+                        "neutron_vlan_description": "Your network hardware must be configured for VLAN segmentation. This option supports up to 4095 networks.",
+                        "neutron_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE using the Fuel CLI). Your network hardware must support VXLAN segmentation. This option supports millions of tenant data networks."
                     },
                     "storage": {
                         "title": "Storage Backends",
@@ -801,7 +801,7 @@
                         "ceph_description": "Use Ceph storage?",
                         "ceph_enable": "Yes, use Ceph",
                         "ceph_disable": "No, use default providers",
-                        "ceph_help": "Ceph provides a shared backend for Glance images, Nova and Cinder volumes, and Swift objects, as well as copy-on-write between them in some cases. Ceph will require assigning Ceph-OSD role to several nodes in your cluster (at least as many as the configured replication factor). You can control the storage backend options for each component and the replication factor on the settings page.",
+                        "ceph_help": "Ceph provides a shared backend for Glance images, Nova and Cinder volumes, and Swift objects, as well as copy-on-write between them in some cases. Ceph requires assigning Ceph-OSD role to several nodes in your cluster (at least as many as the configured Ceph object replication factor). You can modify the storage backend options for each component and the replication factor on the Settings page.",
                         "default": "Default",
                         "ceph": "Ceph",
                         "lvm": "LVM",
@@ -824,12 +824,12 @@
                         "install_ironic": "Install Ironic",
                         "install_ironic_description": "Ironic enables baremetal provisioning.",
                         "ironic_network_mode_alert": "Ironic requires Neutron with VLAN segmentation as a network option.",
-                        "ironic_storage_mode_alert": "Ironic requires Swift object storage as a backend for Glance image service."
+                        "ironic_storage_mode_alert": "Ironic requires Swift object storage as a backend for the Glance image service."
                     },
                     "ready": {
                         "title": "Finish",
-                        "env_select_deploy": "Your environment is now ready for deployment! After clicking on the Create button, you can select",
-                        "or_make_config_choice": "or make additional configuration choices in the Fuel",
+                        "env_select_deploy": "Your environment is now ready for deployment! After clicking the Create button, you can",
+                        "or_make_config_choice": "or modify additional configuration changes in the Fuel",
                         "console": "console.",
                         "deploy": "Deploy Changes",
                         "env": "Environments"
@@ -844,8 +844,8 @@
                     "stay_button": "Cancel",
                     "leave_button": "Discard Changes",
                     "apply_and_proceed_button": "Save and Proceed",
-                    "default_message": "You have unsaved changes on this page. Please press Cancel to stay on the page, Discard Changes to proceed without data saving or Save and Proceed to save data and proceed.",
-                    "no_saving_message": "You have unsaved changes on this page. Please press Cancel to stay on the page or Discard Changes to proceed without data saving.",
+                    "default_message": "You have unsaved changes on this page. Press Cancel to stay on the page, Discard Changes to proceed without saving, or Save and Proceed to save changes and proceed.",
+                    "no_saving_message": "You have unsaved changes on this page. Press Cancel to stay on the page or Discard Changes to proceed without saving.",
                     "saving_failed_message": "Failed to save changes. Please fix the errors and try again.",
                     "verify_message": "Network verification is in progress"
                 },
@@ -862,25 +862,25 @@
                         "interfaces": "Changed interface configuration of the following nodes:"
                     },
                     "warnings": {
-                        "no_deployment": "Environment configuration is invalid. Deployment cannot be started. Please check warnings below.",
-                        "connectivity_alert": "By default, packages and package updates will be fetched from repositories. Please make sure your Fuel node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment."
+                        "no_deployment": "Environment configuration is invalid. Cannot start the deployment. Please check the warnings below.",
+                        "connectivity_alert": "Packages and updates are fetched from the repositories defined in the Settings tab. If your environment uses the default repositories, verify that the Fuel Master node can access the Internet. If the Fuel Master node is not connected to the Internet, you must set up a local mirror and configure Fuel to upload packages from the local mirror. Fuel must have network access to the local mirror."
                     },
                     "deploy": "Deploy",
-                    "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",
-                    "verification_not_performed": "It is recommended to verify network settings before deployment.",
-                    "verification_in_progress": "Your network verification is in progress.",
+                    "redeployment_needed": "Deployment completed with errors. Please redeploy your environment.",
+                    "verification_not_performed": "Please verify your network settings before deployment.",
+                    "verification_in_progress": "Network verification is in progress.",
                     "verification_failed": "Networks verification failed with an error.",
                     "get_more_info": "For more information please visit the",
                     "networks_link": "Networks tab",
                     "invalid_settings": "Environment settings are invalid.",
                     "settings_link": "Settings tab",
-                    "are_you_sure_deploy": "Your OpenStack environment will now deploy."
+                    "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes."
                 },
                 "provision_vms": {
                     "title": "Provision VMs",
                     "text": "Are you sure you want to start VMs provisioning on __count__ node?",
                     "text_plural": "Are you sure you want to start VMs provisioning on __count__ nodes?",
-                    "provision_vms_error": "Unable to start provisioning"
+                    "provision_vms_error": "Unable to start virtual machine provisioning."
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",
@@ -901,34 +901,34 @@
                 },
                 "delete_nodes": {
                     "title": "Delete Nodes",
-                    "common_message": "Are you sure you want to delete selected node from the environment?",
+                    "common_message": "Are you sure you want to delete the selected node from the environment?",
                     "common_message_plural": "Are you sure you want to delete selected nodes from the environment?",
-                    "new_nodes_message": "Pending addition node will return to the pool of unallocated nodes.",
+                    "new_nodes_message": "The pending addition node will return to the pool of unallocated nodes.",
                     "new_nodes_message_plural": "Pending addition nodes will return to the pool of unallocated nodes.",
-                    "deployed_nodes_message": "Deployed node will be marked as pending deletion and will be removed from the environment after redeployment.",
+                    "deployed_nodes_message": "The deployed node will be marked as pending deletion and will be removed from the environment after re-deployment.",
                     "deployed_nodes_message_plural": "Deployed nodes will be marked as pending deletion and will be removed from the environment after redeployment."
                 },
                 "discard_changes": {
                     "title": "Discard Changes",
                     "discard_button": "Discard",
                     "alert_text": "Are you sure you want to discard these changes?",
-                    "cant_discard": "Can't discard node changes"
+                    "cant_discard": "Cannot discard the node changes."
                 },
                 "remove_node": {
-                    "default_message": "Fuel will remove this node from its database. This operation will not try to erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and node re-appear in Fuel as new, unallocated server.",
+                    "default_message": "Fuel will remove this node from its database. This operation will not erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and the node will appear in Fuel as new unallocated server.",
                     "title": "Remove Node"
                 },
                 "remove_cluster": {
                     "title": "Delete Environment",
-                    "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
-                    "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
+                    "incomplete_actions_text": "There are incompleted operations in the OpenStack environment. Removing of the OpenStack environment may fail and lead to the inconsistent state.",
+                    "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes. All logs from deleted nodes will be removed.",
                     "default_text": "Are you sure you want to delete this environment?",
-                    "enter_environment_name": "Please type in the name of the environment \"__name__\" to confirm."
+                    "enter_environment_name": "Please type the name of the environment \"__name__\" to confirm."
                 },
                 "stop_deployment": {
                     "title": "Stop Deployment",
-                    "text": "Are you sure you want to stop this deployment? Successful deployment may NOT be possible unless you completely reset the environment. Use with caution!",
-                    "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state.",
+                    "text": "Are you sure you want to stop this deployment? You may not be able to successfully re-deploy this OpenStack environment until you reset the environment. Proceed with caution!",
+                    "provisioning_warning": "Are you sure you want to interrupt the deployment? If Fuel has not completed the node provisioning, changes applied to the nodes will be discarded and the nodes will be reset to their pre-deployment state.",
                     "stop_deployment_error": {
                         "title": "Stop Deployment Error",
                         "stop_deployment_warning": "Unable to stop deployment"
@@ -936,19 +936,19 @@
                 },
                 "reset_environment": {
                     "title": "Reset Environment",
-                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configuration will also be reset to defaults.",
-                    "enter_environment_name": "Please type in the name of the environment \"__name__\" to confirm."
+                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configurations will also be reset to defaults.",
+                    "enter_environment_name": "Type the name of the environment \"__name__\" to confirm."
                 },
                 "error_dialog": {
                     "title": "Error",
-                    "server_error": "A server error has occured. Please contact the administrators.",
-                    "server_unavailable": "Nailgun server is unavailable. Please check your connection or contact the administrators."
+                    "server_error": "A server error has occurred. Please contact your system administrator.",
+                    "server_unavailable": "Nailgun server is unavailable. Please check your connection and contact your system administrator."
                 },
                 "change_password": {
-                    "title": "Change Password",
+                    "title": "Change Your Password",
                     "current_password": "Current password",
                     "new_password": "New password",
-                    "confirm_new_password": "Confirm new password",
+                    "confirm_new_password": "Confirm the new password",
                     "wrong_current_password": "Wrong password",
                     "new_password_mismatch": "Passwords do not match"
                 },
@@ -961,7 +961,7 @@
                 "retrieve_password": {
                     "title": "Retrieve Password",
                     "send_new_password": "Send New Password",
-                    "submit_email": "Please submit your Mirantis Account Email and we will send your new password.",
+                    "submit_email": "Please submit your Mirantis Account email to receive your new password by email.",
                     "done": "Done.",
                     "check_email": "Please check your email for new password"
                 }

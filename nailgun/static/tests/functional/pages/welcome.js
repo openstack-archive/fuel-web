@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['../../helpers'], function(Helpers) {
+define([], function() {
     'use strict';
     function WelcomePage(remote) {
         this.remote = remote;
@@ -23,19 +23,21 @@ define(['../../helpers'], function(Helpers) {
     WelcomePage.prototype = {
         constructor: WelcomePage,
         skip: function(strictCheck) {
+            var self = this;
             return this.remote
-                .getCurrentUrl()
-                .then(function(url) {
-                    if (url == Helpers.serverUrl + '/#welcome') {
-                        return this.parent
-                            .clickByCssSelector('.welcome-button-box button')
-                            .waitForDeletedByCssSelector('.welcome-button-box button', 2000)
-                            .then(
-                                function() {return true},
-                                function() {return !strictCheck}
-                            );
-                    } else {
-                        return true;
+                .then(function() {
+                    if (strictCheck) {
+                        return self.remote
+                            .waitForCssSelector('.welcome-page', 1000)
+                            .then(function() {
+                                return this.parent
+                                    .clickByCssSelector('.welcome-button-box button')
+                                    .waitForDeletedByCssSelector('.welcome-button-box button', 2000)
+                                    .then(
+                                        function() {return true},
+                                        function() {return !strictCheck}
+                                    );
+                            });
                     }
                 });
         }

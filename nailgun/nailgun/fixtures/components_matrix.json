@@ -1,0 +1,101 @@
+[
+    {
+        "pk": 1,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "hypervisor:libvirt:kvm",
+            "hypervisor": ["*"],
+            "networking": ["*"],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 2,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "hypervisor:libvirt:qemu",
+            "hypervisor": ["*"],
+            "networking": ["*"],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 3,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "hypervisor:vmware",
+            "hypervisor": ["*"],
+            "networking": ["nova"],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 4,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "network:nova",
+            "hypervisor": ["vmware"],
+            "networking": [],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 5,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "storage:object:backend:ceph",
+            "hypervisor": ["*"],
+            "networking": ["*"],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 6,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "additional_services:sahara",
+            "hypervisor": ["*"],
+            "networking": ["*"],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 7,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "additional_services:murano",
+            "hypervisor": ["*"],
+            "networking": ["*"],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 8,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "additional_services:ceilometer",
+            "hypervisor": ["*"],
+            "networking": ["*"],
+            "storage": ["*"],
+            "additional_services": ["*"]
+        }
+    },
+    {
+        "pk": 9,
+        "model": "nailgun.component",
+        "fields": {
+            "name": "additional_services:ironic",
+            "hypervisor": ["*"],
+            "networking": ["*"],
+            "storage": ["object:backend:swift", "image:swift"],
+            "additional_services": ["*"]
+        }
+    }
+]

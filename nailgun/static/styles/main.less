@@ -2942,13 +2942,16 @@ input[type=range] {
 }
 
 // wizard styles
-#wizard {
-  &.modal-dialog {
+.wizard {
+  .modal-dialog {
     width: 830px;
-    height: 485px;
+    height: 540px;
     color: @base-text-color;
+    .modal-body {
+      padding: 0px;
+    }
     .wizard-body {
-      @wizard-body-height: 315px;
+      @wizard-body-height: 350px;
       @wizard-body-padding: 15px;
       height: @wizard-body-height;
       padding: @wizard-body-padding;
@@ -3036,6 +3039,9 @@ input[type=range] {
     font-size: @base-font-size - 2;
     color: @gray;
     line-height: 14px;
+  }
+  .ml2-driver {
+    margin-left: 32px;
   }
 }
 

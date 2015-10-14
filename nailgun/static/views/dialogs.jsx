@@ -31,7 +31,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     var dialogs = {};
 
-    var dialogMixin = {
+    var dialogMixin = dialogs.dialogMixin = {
         propTypes: {
             title: React.PropTypes.node,
             message: React.PropTypes.node,
@@ -62,7 +62,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             Backbone.history.on('route', this.close, this);
             var $el = $(this.getDOMNode());
             $el.on('hidden.bs.modal', this.handleHidden);
-            $el.on('shown.bs.modal', function() {$el.find('[autofocus]:first').focus();});
+            $el.on('shown.bs.modal', function() {$el.find('input:enabled:first').focus();});
             $el.modal(_.defaults(
                 {keyboard: false},
                 _.pick(this.props, ['background', 'backdrop']),
@@ -86,10 +86,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         closeOnLinkClick: function(e) {
             // close dialogs on click of any internal link inside it
-            if (e.target.tagName == 'A' && !e.target.target) this.close();
+            if (e.target.tagName == 'A' && !e.target.target && e.target.href) this.close();
         },
         closeOnEscapeKey: function(e) {
             if (this.props.keyboard !== false && e.key == 'Escape') this.close();
+            if (_.isFunction(this.onKeyDown)) this.onKeyDown(e);
         },
         showError: function(response, message) {
             var props = {error: true};

@@ -63,7 +63,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
     ClusterList = React.createClass({
         mixins: [componentMixins.backboneMixin('clusters')],
         createCluster: function() {
-            (new wizard.CreateClusterWizard({collection: this.props.clusters})).render();
+            wizard.show({collection: this.props.clusters, modalClass: 'wizard', backdrop: 'static'});
         },
         render: function() {
             return (

@@ -1231,6 +1231,16 @@
             generator: "password"
           swift_tempurl_key:
             generator: "password"
+        cloud_management:
+          admin_user:
+            generator: "identical"
+            generator_arg: "fuel-admin"
+          admin_password:
+            generate: "password"
+            generator_arg: "64"
+          tenant:
+            generator: "identical"
+            generator_arg: "admin"
         puppet:
           manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
           modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"

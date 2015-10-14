@@ -217,6 +217,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                 _.each(paneConfig, function(attributeConfig, attribute) {
                     var bind = attributeConfig.bind;
                     var value = this.model.get(paneName + '.' + attribute);
+                    console.log('ATTR', attribute, value, bind);
                     if (_.isString(bind)) {
                         // simple binding declaration - just copy the value
                         processBind(bind, value);

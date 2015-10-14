@@ -1722,9 +1722,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </div>
                             )
                         :
-                            <div className='alert alert-warning'>
-                                {i18n('cluster_page.nodes_tab.' + (this.props.mode == 'add' ? 'no_nodes_in_fuel' : 'no_nodes_in_environment'))}
-                            </div>
+                            this.props.mode == 'add' ?
+                                <div className='alert alert-warning'>{i18n('cluster_page.nodes_tab.no_nodes_in_fuel')}</div>
+                            :
+                                <div className='alert alert-warning' dangerouslySetInnerHTML={{__html: utils.linebreaks(i18n('cluster_page.nodes_tab.no_nodes_in_environment'))}} />
                         }
                     </div>
                 </div>

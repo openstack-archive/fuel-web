@@ -94,6 +94,10 @@ NULLABLE_IP_ADDRESS = {
     'anyOf': [IP_ADDRESS, NULL]
 }
 
+NULLABLE_IP_ADDRESS_RANGE = {
+    'anyOf': [IP_ADDRESS_RANGE, NULL]
+}
+
 NET_ADDRESS = {
     'type': 'string',
     # check for valid ip address and route prefix

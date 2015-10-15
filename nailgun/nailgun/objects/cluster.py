@@ -1035,6 +1035,11 @@ class Cluster(NailgunObject):
                    consts.CLUSTER_STATUSES.error]
         return instance.status not in allowed
 
+    @classmethod
+    def is_component_enabled(cls, instance, component):
+        return bool(instance.attributes.editable['additional_components'].
+                    get((component), {}).get('value'))
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

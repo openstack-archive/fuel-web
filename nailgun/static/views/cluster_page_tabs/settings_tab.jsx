@@ -104,6 +104,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 deferred
                     .done(_.bind(function() {
                         this.setState({initialAttributes: _.cloneDeep(settings.attributes)});
+                        this.props.clusterSettingsUpdated(true);
                     }, this))
                     .always(_.bind(function() {
                         this.setState({

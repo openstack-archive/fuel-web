@@ -105,7 +105,8 @@
                 "floating": "Floating",
                 "management": "Management",
                 "storage": "Storage",
-                "private": "Private"
+                "private": "Private",
+                "baremetal": "Baremetal"
             },
             "login_page": {
                 "username": "Username",
@@ -652,7 +653,9 @@
                         "base_mac": "Base MAC address",
                         "internal_cidr": "Internal network CIDR",
                         "internal_gateway": "Internal network gateway",
-                        "floating_ranges": "Floating IP ranges"
+                        "floating_ranges": "Floating IP ranges",
+                        "baremetal_gateway": "Baremetal network gateway",
+                        "baremetal_range": "Baremetal IP range"
                     },
                     "validation": {
                         "large_network": "Network is too large",

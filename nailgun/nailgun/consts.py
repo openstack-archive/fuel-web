@@ -59,6 +59,7 @@ NETWORKS = Enum(
     # Node networks
     'fuelweb_admin',
     'storage',
+    'baremetal',
     # internal in terms of fuel
     'management',
     'public',
@@ -101,6 +102,7 @@ DEFAULT_BRIDGES_NAMES = Enum(
     'br-ex',
     'br-mesh',
     'br-aux',
+    'br-baremetal',
     names=(
         'br_fw_admin',
         'br_storage',
@@ -110,7 +112,8 @@ DEFAULT_BRIDGES_NAMES = Enum(
         'br_int',
         'br_ex',
         'br_mesh',
-        'br_aux'
+        'br_aux',
+        'br_baremetal'
     )
 )
 

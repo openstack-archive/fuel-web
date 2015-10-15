@@ -1058,6 +1058,17 @@ class Cluster(NailgunObject):
                    consts.CLUSTER_STATUSES.error]
         return instance.status not in allowed
 
+    @classmethod
+    def is_component_enabled(cls, instance, component):
+        """Checks is specified additional component enabled in cluster
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :param component: name of additional component
+        :returns: The result depends on current component status in settings
+        """
+        return bool(instance.attributes.editable['additional_components'].
+                    get((component), {}).get('value'))
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

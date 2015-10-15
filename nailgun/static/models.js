@@ -784,7 +784,7 @@ define([
     models.InterfaceNetworks = BaseCollection.extend({
         constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
@@ -805,7 +805,7 @@ define([
     models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
         model: models.Network,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
@@ -941,6 +941,19 @@ define([
             });
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
+            }
+            var baremetal_net = attrs.networks.filter(function(network) {return network.get('name') == 'baremetal';})[0];
+            if (baremetal_net && !_.has(networksErrors[baremetal_net.id], 'cidr')) {
+                var gateway = attrs.networking_parameters.get('baremetal_gateway');
+                if (utils.validateIP(gateway)) {
+                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
+                } else if (!utils.validateIpCorrespondsToCIDR(baremetal_net.get('cidr'), gateway)) {
+                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_baremetal_ip_range');
+                }
+                var baremetalRangeErrors = utils.validateIpRanges(attrs.networking_parameters.get('baremetal_range'), baremetal_net.get('cidr'), true);
+                if (baremetalRangeErrors.length) {
+                    networkingParametersErrors.baremetal_range = baremetalRangeErrors;
+                }
             }
             if (!_.isEmpty(networkingParametersErrors)) {
                 errors.networking_parameters = networkingParametersErrors;

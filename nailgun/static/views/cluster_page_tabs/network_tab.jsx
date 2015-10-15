@@ -912,6 +912,21 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                     {this.renderInput('internal_cidr')}
                                     {this.renderInput('internal_gateway')}
                                 </div>
+                                <div className='forms-box baremetal'>
+                                    {_.contains(this.props.networkConfiguration.get('networks').pluck('name'), 'baremetal')  &&
+                                        [
+                                            <h3 className='networks'>{i18n('network.baremetal')}</h3>,
+                                            <Range
+                                                {...this.composeProps('baremetal_range', true)}
+                                                placeholder=''
+                                                hiddenControls={true}
+                                            />,
+                                            <div>
+                                                {this.renderInput('baremetal_gateway')}
+                                            </div>
+                                        ]
+                                    }
+                                </div>
                             </div>
                         ]
                     }

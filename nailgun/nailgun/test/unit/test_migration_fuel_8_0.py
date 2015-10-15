@@ -555,3 +555,40 @@ class TestClusterPluginsMigration(base.BaseAlembicMigrationTest):
             'weight': 25,
             'label': 'label'
         })
+
+
+class TestBaremetalFields(base.BaseAlembicMigrationTest):
+
+    def test_baremetal_fields_saving(self):
+        baremetal_gateway = '192.168.3.51'
+        baremetal_range = jsonutils.dumps(['192.168.3.52', '192.168.3.254'])
+        result = db.execute(
+            self.meta.tables['networking_configs'].insert(),
+            [{
+                'cluster_id': None,
+                'dns_nameservers': ['8.8.8.8'],
+                'floating_ranges': [],
+                'configuration_template': None,
+            }])
+        db.execute(
+            self.meta.tables['neutron_config'].insert(),
+            [{
+                'id': result.inserted_primary_key[0],
+                'vlan_range': [],
+                'gre_id_range': [],
+                'base_mac': '00:00:00:00:00:00',
+                'internal_cidr': '10.10.10.00/24',
+                'internal_gateway': '10.10.10.01',
+                'internal_name': 'my_internal_name',
+                'floating_name': 'my_floating_name',
+                'baremetal_gateway': baremetal_gateway,
+                'baremetal_range': baremetal_range,
+                'segmentation_type': 'vlan',
+                'net_l23_provider': 'ovs'
+            }])
+        result = db.execute(
+            sa.select(
+                [self.meta.tables['neutron_config'].c.baremetal_gateway,
+                 self.meta.tables['neutron_config'].c.baremetal_range])).\
+            fetchall()
+        self.assertIn((baremetal_gateway, baremetal_range), result)

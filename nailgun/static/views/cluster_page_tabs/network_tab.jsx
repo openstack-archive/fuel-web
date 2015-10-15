@@ -911,6 +911,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 <div>
                                     {this.renderInput('internal_cidr')}
                                     {this.renderInput('internal_gateway')}
+                                    {this.renderInput('baremetal_gateway')}
+                                    <Range
+                                        {...this.composeProps('baremetal_ranges', true)}
+                                        mini={true}
+                                        placeholder=''
+                                        hiddenControls={true}
+                                    />
                                 </div>
                             </div>
                         ]

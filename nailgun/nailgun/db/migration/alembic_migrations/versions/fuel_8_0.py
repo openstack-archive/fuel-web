@@ -28,6 +28,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
 
+from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import drop_enum
 
 
@@ -35,6 +36,7 @@ def upgrade():
     create_components_table()
     create_release_components_table()
     upgrade_nodegroups_name_cluster_constraint()
+    add_baremetal_net_upgrade()
 
 
 def downgrade():
@@ -42,6 +44,7 @@ def downgrade():
     op.drop_table('release_components')
     op.drop_table('components')
     drop_enum('component_types')
+    add_baremetal_net_downgrade()
 
 
 def upgrade_nodegroups_name_cluster_constraint():
@@ -104,3 +107,16 @@ def create_release_components_table():
                         ['release_id'], ['releases.id'], ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id')
                     )
+
+
+def add_baremetal_net_upgrade():
+    op.add_column('neutron_config',
+                  sa.Column('baremetal_gateway', sa.String(length=25),
+                            nullable=True))
+    op.add_column('neutron_config',
+                  sa.Column('baremetal_ranges', JSON(), nullable=True))
+
+
+def add_baremetal_net_downgrade():
+    op.drop_column('neutron_config', 'baremetal_gateway')
+    op.drop_column('neutron_config', 'baremetal_ranges')

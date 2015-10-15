@@ -93,6 +93,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         },
         render: function() {
             var unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
+            var authenticationEnabled = this.props.version.get('auth_required') && this.props.user.get('authenticated');
             return (
                 <div className='navigation-box'>
                     <div className='navbar-bg'></div>
@@ -115,7 +116,11 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                     </ul>
                                 </div>
                                 <div className='col-xs-5'>
-                                    <ul className='nav navbar-icons pull-right'>
+                                    <ul className={utils.classNames({
+                                        'nav navbar-icons pull-right': true,
+                                        'with-auth': authenticationEnabled,
+                                        'without-auth': !authenticationEnabled
+                                    })}>
                                         <li
                                             key='language-icon'
                                             className='language-icon'
@@ -133,7 +138,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                             }
                                             <div className='total'>{this.props.statistics.get('total')}</div>
                                         </li>
-                                        {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
+                                        {authenticationEnabled &&
                                             <li
                                                 key='user-icon'
                                                 className='user-icon'

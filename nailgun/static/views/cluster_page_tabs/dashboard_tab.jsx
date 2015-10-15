@@ -147,19 +147,26 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     var HorizonBlock = React.createClass({
         render: function() {
             var cluster = this.props.cluster,
-                horizonLinkProtocol = cluster.get('settings').get('public_ssl.horizon.value') ? 'https://' : 'http://';
+                isSecureProtocolUsed = cluster.get('settings').get('public_ssl.horizon.value'),
+                horizonLinkProtocol = isSecureProtocolUsed ? 'https://' : 'http://',
+                ipValue = horizonLinkProtocol + cluster.get('networkConfiguration').get('public_vip'),
+                fqdnValue = 'https://' + cluster.get('settings').get('public_ssl.hostname.value');
             return (
                 <div className='row plugins-block'>
                     <div className='col-xs-12 plugin-entry horizon'>
                         <div className='title'>{i18n(namespace + 'horizon')}</div>
-                        <div className='description'>{i18n(namespace + 'horizon_description')}</div>
-                        <a
-                            className='btn btn-success'
-                            target='_blank'
-                            href={horizonLinkProtocol + cluster.get('networkConfiguration').get('public_vip')}
-                        >
-                            {i18n(namespace + 'go_to_horizon')}
-                        </a>
+                        <div className='description'>{i18n(namespace + 'please_use')}</div>
+                        {isSecureProtocolUsed ?
+                            [
+                                <a target='_blank' href={fqdnValue}>{fqdnValue}</a>,
+                                <span>&nbsp;</span>,
+                                <div className='description'>{i18n(namespace + 'not_configured_dns')}</div>,
+                                <a target='_blank' href={ipValue}>{ipValue}</a>
+                            ]
+                        :
+                            <a target='_blank' href={ipValue}>{ipValue}</a>
+                        }
+
                     </div>
                 </div>
             );

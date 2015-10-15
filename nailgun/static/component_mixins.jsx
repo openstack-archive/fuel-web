@@ -114,6 +114,37 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                 Backbone.history.off('route', null, this);
             }
         },
+        renamingMixin: function(refname) {
+            return {
+                getInitialState: function() {
+                    return {
+                        isRenaming: false,
+                        renamingMixinEventName: 'click.' + _.uniqueId('rename')
+                    };
+                },
+                componentWillUnmount: function() {
+                    $('html').off(this.state.renamingMixinEventName);
+                },
+                startRenaming: function(e) {
+                    e.preventDefault();
+                    $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
+                        if (e && !$(e.target).closest(this.refs[refname].getDOMNode()).length) {
+                            this.endRenaming();
+                        } else {
+                            e.preventDefault();
+                        }
+                    }, this));
+                    this.setState({isRenaming: true});
+                },
+                endRenaming: function() {
+                    $('html').off(this.state.renamingMixinEventName);
+                    this.setState({
+                        isRenaming: false,
+                        actionInProgress: false
+                    });
+                }
+            };
+        },
         nodeConfigurationScreenMixin: {
             getNodeList: function(options) {
                 var utils = require('utils'),

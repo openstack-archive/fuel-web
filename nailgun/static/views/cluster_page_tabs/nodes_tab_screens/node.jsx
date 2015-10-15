@@ -24,44 +24,23 @@ define(
     'models',
     'dispatcher',
     'jsx!views/controls',
-    'jsx!views/dialogs'
+    'jsx!views/dialogs',
+    'jsx!component_mixins'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins) {
     'use strict';
 
     var Node = React.createClass({
+        mixins: [componentMixins.renamingMixin('name')],
         getInitialState: function() {
             return {
-                renaming: false,
                 actionInProgress: false,
-                eventNamespace: 'click.editnodename' + this.props.node.id,
                 extendedView: false,
                 labelsPopoverVisible: false
             };
         },
-        componentWillUnmount: function() {
-            $('html').off(this.state.eventNamespace);
-        },
         componentDidUpdate: function() {
             if (!this.props.node.get('cluster') && !this.props.checked) this.props.node.set({pending_roles: []}, {assign: true});
-        },
-        startNodeRenaming: function(e) {
-            e.preventDefault();
-            $('html').on(this.state.eventNamespace, _.bind(function(e) {
-                if ($(e.target).hasClass('node-name-input')) {
-                    e.preventDefault();
-                } else {
-                    this.endNodeRenaming();
-                }
-            }, this));
-            this.setState({renaming: true});
-        },
-        endNodeRenaming: function() {
-            $('html').off(this.state.eventNamespace);
-            this.setState({
-                renaming: false,
-                actionInProgress: false
-            });
         },
         getNodeLogsLink: function() {
             var status = this.props.node.get('status'),
@@ -79,16 +58,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         applyNewNodeName: function(newName) {
             if (newName && newName != this.props.node.get('name')) {
                 this.setState({actionInProgress: true});
-                this.props.node.save({name: newName}, {patch: true, wait: true}).always(this.endNodeRenaming);
+                this.props.node.save({name: newName}, {patch: true, wait: true}).always(this.endRenaming);
             } else {
-                this.endNodeRenaming();
+                this.endRenaming();
             }
         },
         onNodeNameInputKeydown: function(e) {
             if (e.key == 'Enter') {
                 this.applyNewNodeName(this.refs.name.getInputDOMNode().value);
             } else if (e.key == 'Escape') {
-                this.endNodeRenaming();
+                this.endRenaming();
             }
         },
         discardNodeChanges: function(e) {
@@ -144,11 +123,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             dialogs.ShowNodeInfoDialog.show({node: this.props.node});
         },
         toggleExtendedNodePanel: function() {
-            var states = this.state.extendedView ? {extendedView: false, renaming: false} : {extendedView: true};
+            var states = this.state.extendedView ? {extendedView: false, isRenaming: false} : {extendedView: true};
             this.setState(states);
         },
         renderNameControl: function() {
-            if (this.state.renaming) return (
+            if (this.state.isRenaming) return (
                 <controls.Input
                     ref='name'
                     type='text'
@@ -164,7 +143,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             );
             return (
                 <controls.Tooltip text={i18n('cluster_page.nodes_tab.node.edit_name')}>
-                    <p onClick={!this.state.actionInProgress && this.startNodeRenaming}>
+                    <p onClick={!this.state.actionInProgress && this.startRenaming}>
                         {this.props.node.get('name') || this.props.node.get('mac')}
                     </p>
                 </controls.Tooltip>

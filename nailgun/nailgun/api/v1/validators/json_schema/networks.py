@@ -165,7 +165,16 @@ NEUTRON_NETWORK_CONFIGURATION = {
                         "exclusiveMinimum": False,
                         "exclusiveMaximum": False
                     }
+                },
+                "baremetal_gateway": base_types.NULLABLE_IP_ADDRESS,
+                "baremetal_range": {
+                    "type": "array",
+                    "items": base_types.IP_ADDRESS_RANGE
                 }
+
+            },
+            "dependencies": {
+                "baremetal_range": ["baremetal_gateway"]
             }
         }
     }

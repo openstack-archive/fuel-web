@@ -53,6 +53,7 @@ def _get_dhcp_discover_message(iface):
 @utils.single_format
 def check_dhcp_on_eth(iface, timeout):
     """Check if there is roque dhcp server in network on given iface
+
         @iface - name of the ethernet interface
         @timeout - scapy timeout for waiting on response
     >>> check_dhcp_on_eth('eth1')
@@ -68,6 +69,7 @@ def check_dhcp_on_eth(iface, timeout):
 
 def check_dhcp(ifaces, timeout=5, repeat=2):
     """Given list of ifaces. Process them in separate processes
+
     @ifaces - lsit of ifaces
     @timeout - timeout for scapy to wait for response
     @repeat - number of packets sended
@@ -102,6 +104,7 @@ def make_listeners(ifaces):
 @utils.filter_duplicated_results
 def check_dhcp_with_vlans(config, timeout=5, repeat=2):
     """Provide config of {iface: [vlans..]} pairs
+
     @config - {'eth0': (100, 101), 'eth1': (100, 102)}
     """
     # vifaces - list of pairs ('eth0', ['eth0.100', 'eth0.101'])
@@ -122,6 +125,7 @@ def check_dhcp_with_vlans(config, timeout=5, repeat=2):
 @utils.single_format
 def check_dhcp_request(iface, server, range_start, range_end, timeout=5):
     """Provide interface, server endpoint and pool of ip adresses
+
         Should be used after offer received
         >>> check_dhcp_request('eth1','10.10.0.5','10.10.0.10','10.10.0.15')
     """

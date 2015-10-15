@@ -25,8 +25,7 @@ logger = getLogger(__name__)
 
 
 def get_default_gateway():
-    """Return ipaddress, interface pair for default gateway
-    """
+    """Return ipaddress, interface pair for default gateway"""
     gws = netifaces.gateways()
     if 'default' in gws:
         return gws['default'][netifaces.AF_INET]
@@ -34,8 +33,7 @@ def get_default_gateway():
 
 
 def check_ifaddress_present(iface, addr):
-    """Check if required ipaddress already assigned to the iface
-    """
+    """Check if required ipaddress already assigned to the iface"""
     for ifaddress in netifaces.ifaddresses(iface).get(netifaces.AF_INET, []):
         if ifaddress['addr'] in addr:
             return True
@@ -173,8 +171,8 @@ class Route(object):
         elif ((self.default_gateway, self.df_iface)
               != (self.gateway, self.iface)):
             execute(['ip', 'ro', 'change',
-                    'default', 'via', self.default_gateway,
-                    'dev', self.df_iface])
+                     'default', 'via', self.default_gateway,
+                     'dev', self.df_iface])
 
 
 @contextmanager

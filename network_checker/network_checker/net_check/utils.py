@@ -32,6 +32,7 @@ def timeout_handler(timeout, signum, frame):
 @contextmanager
 def signal_timeout(timeout, raise_exc=True):
     """Timeout handling using signals
+
     :param timeout: timeout in seconds, integer
     :param raise_exc: bool to control suppressing of exception
     """

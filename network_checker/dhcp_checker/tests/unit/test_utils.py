@@ -95,7 +95,9 @@ class TestDhcpFormat(unittest.TestCase):
         self.dhcp_response = self.scapy_data[1:]
 
     def test_single_format_decorator(self):
-        """Test verifies that single_format decorator contains logic to modify
+        """Test modifying scapy response objects
+
+        Test verifies that single_format decorator contains logic to modify
         scapy response object into dict with predefined fields
         """
 
@@ -113,7 +115,9 @@ class TestDhcpFormat(unittest.TestCase):
 
 
 class TestMultiprocMap(unittest.TestCase):
-    """Test verifies that working with function decorated by multiproc_map
+    """Check if multiproc_map decorator works the same for different arg types
+
+    Test verifies that working with function decorated by multiproc_map
     will work indifirently either args passed as tuple, or *args
     """
 

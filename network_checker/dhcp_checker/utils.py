@@ -24,20 +24,19 @@ DHCP_OFFER_COLUMNS = ('iface', 'mac', 'server_ip', 'server_id', 'gateway',
 
 
 def command_util(*command):
-    """object with stderr and stdout
-    """
+    """object with stderr and stdout"""
     return subprocess.Popen(command, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
 
 
 def _check_vconfig():
-    """Check vconfig installed or not
-    """
+    """Check vconfig installed or not"""
     return not command_util('which', 'vconfig').stderr.read()
 
 
 def _iface_state(iface):
     """For a given iface return it's state
+
     returns UP, DOWN, UNKNOWN
     """
     state = command_util('ip', 'link', 'show', iface).stdout.read()
@@ -56,8 +55,7 @@ def check_network_up(iface):
 
 
 def check_iface_exist(iface):
-    """Check provided interface exists
-    """
+    """Check provided interface exists"""
     return not command_util("ip", "link", "show", iface).stderr.read()
 
 
@@ -75,6 +73,7 @@ def filtered_ifaces(ifaces):
 
 def pick_ip(range_start, range_end):
     """Given start_range, end_range generate list of ips
+
     >>> next(pick_ip('192.168.1.10','192.168.1.13'))
     '192.168.1.10'
     """
@@ -95,6 +94,7 @@ def pick_ip(range_start, range_end):
 
 def get_item_properties(item, columns):
     """Get specified in columns properties, with preserved order.
+
     Required for correct cli table generation
 
     :param item: dict
@@ -108,6 +108,7 @@ def get_item_properties(item, columns):
 
 def format_options(options):
     """Util for serializing dhcp options
+
     @options = [1,2,3]
     >>> format_options([1, 2, 3])
     '\x01\x02\x03'
@@ -117,6 +118,7 @@ def format_options(options):
 
 def _dhcp_options(dhcp_options):
     """Dhcp options returned by scapy is not in usable format
+
     [('message-type', 2), ('server_id', '192.168.0.5'),
         ('name_server', '192.168.0.1', '192.168.0.2'), 'end']
     """
@@ -141,14 +143,13 @@ def format_answer(ans, iface):
 
 
 def single_format(func):
-    """Manage format of dhcp response
-    """
+    """Manage format of dhcp response"""
     @functools.wraps(func)
     def formatter(*args, **kwargs):
         iface = args[0]
         ans = func(*args, **kwargs)
-        #scapy stores all sequence of requests
-        #so ans[0][1] would be response to first request
+        # scapy stores all sequence of requests
+        # so ans[0][1] would be response to first request
         return [format_answer(response[1], iface) for response in ans]
     return formatter
 
@@ -173,11 +174,11 @@ def filter_duplicated_results(func):
 
 
 class VlansContext(object):
-    """Contains all logic to manage vlans
-    """
+    """Contains all logic to manage vlans"""
 
     def __init__(self, config):
         """Initialize VlansContext
+
         @config - list or tuple of (iface, vlan) pairs
         """
         self.config = config
@@ -195,8 +196,7 @@ class VlansContext(object):
 
 
 class IfaceState(object):
-    """Context manager to control state of iface when dhcp checker is running
-    """
+    """Context manager to control state of iface while dhcp checker runs"""
 
     def __init__(self, iface, rollback=True, retry=3):
         self.rollback = rollback
@@ -226,9 +226,10 @@ class IfaceState(object):
 
 
 def create_mac_filter(iface):
-    '''tcpdump can not cactch all 6 octets so it is splitted.
+    """tcpdump can not catch all 6 octets so it is splitted
+
     See http://blog.jasonantman.com/2010/04/dhcp-debugging-and-handy-tcpdump-filters # noqa
-    '''
+    """
     mac = scapy.get_if_hwaddr(iface).split(':')
     filter1 = '(udp[36:2] = 0x{0})'.format(''.join(mac[:2]))
     filter2 = '(udp[38:4] = 0x{0})'.format(''.join(mac[2:]))

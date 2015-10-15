@@ -480,7 +480,9 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
                 "internal_gateway": "192.168.111.1",
                 "net_l23_provider": consts.NEUTRON_L23_PROVIDERS.ovs,
                 "segmentation_type": consts.NEUTRON_SEGMENT_TYPES.gre,
-                "vlan_range": [1000, 1030]
+                "vlan_range": [1000, 1030],
+                "baremetal_gateway": "192.168.3.51",
+                "baremetal_range": ["192.168.3.52", "192.168.3.254"]
             }
         }
 
@@ -599,6 +601,16 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
 
         self.nc['networking_parameters']['vlan_range'] = [2, 2]
         self.assertRaisesNonUnique(self.nc, "[2, 2]")
+
+    def test_baremetal_gateway_invalid_type(self):
+        self.nc['networking_parameters']['baremetal_gateway'] = []
+        self.assertRaisesInvalidAnyOf(
+            self.nc, [], "['networking_parameters']['baremetal_gateway']")
+
+    def test_baremetal_range_invalid_value(self):
+        self.nc['networking_parameters']['baremetal_range'] = ["bad"]
+        self.assertRaisesInvalidAnyOf(
+            self.nc, ["bad"], "['networking_parameters']['baremetal_range']")
 
 
 class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):

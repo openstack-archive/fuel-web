@@ -82,6 +82,13 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
         'configuration_template')
 
     @classmethod
+    def serialize_network_params(cls, cluster):
+        fields = cls.network_cfg_fields
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            fields += ('baremetal_gateway', 'baremetal_range')
+        return BasicSerializer.serialize(cluster.network_config, fields)
+
+    @classmethod
     def serialize_for_cluster(cls, cluster):
         result = cls.serialize_net_groups_and_vips(cluster)
         result['networking_parameters'] = cls.serialize_network_params(cluster)

@@ -784,7 +784,7 @@ define([
     models.InterfaceNetworks = BaseCollection.extend({
         constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
@@ -805,7 +805,7 @@ define([
     models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
         model: models.Network,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
@@ -941,6 +941,20 @@ define([
             });
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
+            }
+            var baremetalNetwork = attrs.networks.findWhere({name: 'baremetal'});
+            // FIXME(amorozova): networking parameters validation should not be hardcoded
+            if (baremetalNetwork && !_.has(networksErrors[baremetalNetwork.id], 'cidr')) {
+                var baremetalGateway = attrs.networking_parameters.get('baremetal_gateway');
+                if (utils.validateIP(gateway)) {
+                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
+                } else if (!utils.validateIpCorrespondsToCIDR(baremetalNetwork.get('cidr'), gateway)) {
+                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_baremetal_ip_range');
+                }
+                var baremetalRangeErrors = utils.validateIpRanges(attrs.networking_parameters.get('baremetal_range'), baremetalNetwork.get('cidr'), true);
+                if (baremetalRangeErrors.length) {
+                    networkingParametersErrors.baremetal_range = baremetalRangeErrors;
+                }
             }
             if (!_.isEmpty(networkingParametersErrors)) {
                 errors.networking_parameters = networkingParametersErrors;

@@ -586,9 +586,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     });
 
     var ClusterInfo = React.createClass({
-        getInitialState: function() {
-            return {isRenaming: false};
-        },
+        mixins: [componentMixins.renamingCloseMixin],
         getClusterValue: function(fieldName) {
             var cluster = this.props.cluster,
                 release = cluster.get('release'),
@@ -758,12 +756,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 </div>
             );
         },
-        startClusterRenaming: function() {
-            this.setState({isRenaming: true});
-        },
-        endClusterRenaming: function() {
-            this.setState({isRenaming: false});
-        },
         render: function() {
             var cluster = this.props.cluster,
                 task = cluster.task({group: 'deployment', status: 'running'}),
@@ -783,11 +775,11 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     {this.state.isRenaming ?
                                         <RenameEnvironmentAction
                                             cluster={cluster}
-                                            startRenaming={this.startClusterRenaming}
-                                            endRenaming={this.endClusterRenaming}
+                                            startRenaming={this.startRenaming}
+                                            endRenaming={this.endRenaming}
                                         />
                                     :
-                                        <div className='cluster-info-value name' onClick={this.startClusterRenaming}>
+                                        <div className='cluster-info-value name' onClick={this.startRenaming}>
                                             <button className='btn-link cluster-name'>
                                                 {cluster.get('name')}
                                             </button>

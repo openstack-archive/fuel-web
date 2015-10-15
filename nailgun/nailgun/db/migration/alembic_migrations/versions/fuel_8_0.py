@@ -24,10 +24,27 @@ Create Date: 2015-09-03 12:28:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+from alembic import op
+from nailgun.db.sqlalchemy.models.fields import JSON
+import sqlalchemy as sa
+
 
 def upgrade():
-    pass
+    add_baremetal_net_upgrade()
 
 
 def downgrade():
-    pass
+    add_baremetal_net_downgrade()
+
+
+def add_baremetal_net_upgrade():
+    op.add_column('neutron_config',
+                  sa.Column('baremetal_gateway', sa.String(length=25),
+                            nullable=True))
+    op.add_column('neutron_config',
+                  sa.Column('baremetal_ranges', JSON(), nullable=True))
+
+
+def add_baremetal_net_downgrade():
+    op.drop_column('neutron_config', 'baremetal_gateway')
+    op.drop_column('neutron_config', 'baremetal_ranges')

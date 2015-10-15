@@ -54,7 +54,7 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                   'nova/api', 'murano/api', 'horizon', 'management',
                   'mgmt/database', 'mgmt/messaging', 'mgmt/corosync',
                   'mgmt/memcache', 'mgmt/vip', 'mongo/db',
-                  'ceph/public', 'nova/migration']
+                  'ceph/public', 'nova/migration', 'ironic/api']
     fuelweb_admin = ['admin/pxe', 'fw-admin']
     neutron = ['neutron/private', 'neutron/floating']
     storage = ['storage', 'ceph/replication', 'swift/replication',
@@ -115,7 +115,7 @@ class TestDeploymentAttributesSerialization70(
     segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
     custom_network = {
         'name': 'baremetal',
-        'role': 'ironic/baremetal',
+        'role': 'ironic_plugin/baremetal',
         'cidr': '192.168.3.0/24',
         'vlan_start': 50,
         'bridge': 'br-baremetal',

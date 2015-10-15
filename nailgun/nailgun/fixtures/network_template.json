@@ -121,7 +121,8 @@
                         "mgmt/corosync": "br-mgmt",
                         "mongo/db": "br-mgmt",
                         "nova/migration": "br-mgmt",
-                        "ceph/public": "br-mgmt"
+                        "ceph/public": "br-mgmt",
+                        "ironic/api": "br-mgmt"
                     }
                 },
                 "private": {
@@ -393,7 +394,8 @@
                         "nova/api": "br-mgmt",
                         "horizon": "br-mgmt",
                         "nova/migration": "br-mgmt",
-                        "mgmt/memcache": "br-mgmt"
+                        "mgmt/memcache": "br-mgmt",
+                        "ironic/api": "br-mgmt"
                     }
                 }
             },

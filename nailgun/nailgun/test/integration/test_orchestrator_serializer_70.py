@@ -114,11 +114,11 @@ class TestDeploymentAttributesSerialization70(
 ):
     segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
     custom_network = {
-        'name': 'baremetal',
-        'role': 'ironic/baremetal',
+        'name': 'custom',
+        'role': 'plugin/custom',
         'cidr': '192.168.3.0/24',
         'vlan_start': 50,
-        'bridge': 'br-baremetal',
+        'bridge': 'br-custom',
     }
     plugin_network_roles = yaml.safe_load("""
 - id: "{role}"
@@ -232,25 +232,25 @@ class TestDeploymentAttributesSerialization70(
             transformations = node['network_scheme']['transformations']
             node_network_roles = (node['network_metadata']['nodes']
                                   ['node-' + node['uid']]['network_roles'])
-            baremetal_ip = node_network_roles.get(self.custom_network['role'],
-                                                  '0.0.0.0')
-            baremetal_brs = filter(lambda t: t.get('name') ==
-                                   self.custom_network['bridge'],
-                                   transformations)
-            baremetal_ports = filter(lambda t: t.get('name') ==
-                                     ("eth0.%s" %
-                                      self.custom_network['vlan_start']),
-                                     transformations)
+            custom_ip = node_network_roles.get(self.custom_network['role'],
+                                               '0.0.0.0')
+            custom_brs = filter(lambda t: t.get('name') ==
+                                self.custom_network['bridge'],
+                                transformations)
+            custom_ports = filter(lambda t: t.get('name') ==
+                                  ("eth0.%s" %
+                                   self.custom_network['vlan_start']),
+                                  transformations)
             self.assertEqual(roles.get(self.custom_network['role']),
                              self.custom_network['bridge'])
             self.assertEqual(vips.get(self.custom_network['name'],
                                       {}).get('network_role'),
                              self.custom_network['role'])
-            self.assertTrue(netaddr.IPAddress(baremetal_ip) in
+            self.assertTrue(netaddr.IPAddress(custom_ip) in
                             netaddr.IPNetwork(self.custom_network['cidr']))
-            self.assertEqual(len(baremetal_brs), 1)
-            self.assertEqual(len(baremetal_ports), 1)
-            self.assertEqual(baremetal_ports[0]['bridge'],
+            self.assertEqual(len(custom_brs), 1)
+            self.assertEqual(len(custom_ports), 1)
+            self.assertEqual(custom_ports[0]['bridge'],
                              self.custom_network['bridge'])
 
     def test_network_scheme(self):

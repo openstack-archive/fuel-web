@@ -18,7 +18,9 @@ import copy
 from mock import patch
 
 from oslo_serialization import jsonutils
+import yaml
 
+from nailgun.objects import Cluster
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.objects.serializers.network_configuration \
@@ -238,3 +240,28 @@ class TestNetworkModels(BaseIntegrationTest):
             "admin_internal_net", cluster.network_config.internal_name)
         self.assertEqual(
             "admin_floating_net", cluster.network_config.floating_name)
+
+    def test_neutron_networking_parameters_baremetal(self):
+        attributes_metadata = """
+            editable:
+                additional_components:
+                    ironic:
+                        value: %r
+                        type: "checkbox"
+        """
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron)
+        # Ensure baremetal_* fields are not serialized when Ironic disabled
+        nw_params = NeutronNetworkConfigurationSerializer. \
+            serialize_network_params(cluster)
+        self.assertNotIn('baremetal_gateway', nw_params)
+        self.assertNotIn('baremetal_range', nw_params)
+        # Ensure baremetal_* fields are serialized when Ironic enabled
+        Cluster.patch_attributes(
+            cluster, yaml.load(attributes_metadata % True))
+        self.db.refresh(cluster)
+        nw_params = NeutronNetworkConfigurationSerializer. \
+            serialize_network_params(cluster)
+        self.assertIn('baremetal_gateway', nw_params)
+        self.assertIn('baremetal_range', nw_params)

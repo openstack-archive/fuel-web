@@ -680,7 +680,6 @@ input[type=range] {
 }
 
 .navbar-icons {
-  @navbar-icon-count: 4;
   @navbar-icon-size: 44px;
   @navbar-icon-spacing: 10px;
   @navbar-icon-font: 'bebas bold';
@@ -780,15 +779,12 @@ input[type=range] {
   }
 
   .popover {
-    @default-popover-width: 260px;
-    @default-arrow-offset: 10px;
     @default-z-index: 1060;
     display: block;
     position: absolute;
     left: 0;
     top: @navbar-icon-size;
     max-width: none;
-    width: @default-popover-width;
     z-index: @default-z-index;
     font-family: @open-sans-font;
     .font-normal;
@@ -805,26 +801,12 @@ input[type=range] {
     color: @base-text-color;
     > .arrow {
       left: auto;
-      right: @default-arrow-offset;
     }
     > .popover-content {
       padding: 12px;
     }
 
-    .popover-layout(@index, @width: @default-popover-width) {
-      width: @width;
-      @navbar-icon-width: @navbar-icon-size + @navbar-icon-spacing;
-      @popover-right-align-offset: @navbar-icon-width * @navbar-icon-count - @width;
-      @popover-center-align-offset: @popover-right-align-offset - @navbar-icon-width * @index  + @width / 2 - @navbar-icon-size / 2;
-      @popover-offset: min(@popover-right-align-offset, @popover-center-align-offset);
-      left: @popover-offset;
-      > .arrow {
-        right: @default-arrow-offset + @navbar-icon-width * @index + (@popover-offset - @popover-right-align-offset);
-      }
-    }
-
     &.notifications-popover {
-      .popover-layout(@index: 0);
       z-index: @default-z-index - 20;
       .notification {
         border-bottom: 1px solid @gray + 80%;
@@ -875,7 +857,6 @@ input[type=range] {
     }
 
     &.user-popover {
-      .popover-layout(@index: 1);
       .username {
         color: @gray;
       }
@@ -894,18 +875,45 @@ input[type=range] {
     }
 
     &.statistics-popover {
-      .popover-layout(@index: 2, @width: 230px);
       .list-group {
         margin: 0;
       }
     }
 
     &.language-popover {
-      .popover-layout(@index: 3, @width: 110px);
       a {
         cursor: pointer;
       }
     }
+  }
+
+  @default-popover-width: 260px;
+  @default-arrow-offset: 10px;
+  .popover-layout(@index, @width: @default-popover-width) {
+    width: @width;
+    @navbar-icon-width: @navbar-icon-size + @navbar-icon-spacing;
+    @popover-right-align-offset: @navbar-icon-width * @navbar-icon-count - @width;
+    @popover-center-align-offset: @popover-right-align-offset - @navbar-icon-width * @index  + @width / 2 - @navbar-icon-size / 2;
+    @popover-offset: min(@popover-right-align-offset, @popover-center-align-offset);
+    left: @popover-offset;
+    > .arrow {
+      right: @default-arrow-offset + @navbar-icon-width * @index + (@popover-offset - @popover-right-align-offset);
+    }
+  }
+
+  &.with-auth {
+    @navbar-icon-count: 4;
+    .notifications-popover {.popover-layout(@index: 0)}
+    .user-popover {.popover-layout(@index: 1)}
+    .statistics-popover {.popover-layout(@index: 2, @width: 230px)}
+    .language-popover {.popover-layout(@index: 3, @width: 110px)}
+  }
+
+  &.without-auth {
+    @navbar-icon-count: 3;
+    .notifications-popover {.popover-layout(@index: 0)}
+    .statistics-popover {.popover-layout(@index: 1, @width: 230px)}
+    .language-popover {.popover-layout(@index: 2, @width: 110px)}
   }
 }
 

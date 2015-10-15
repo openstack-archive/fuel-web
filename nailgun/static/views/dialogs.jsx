@@ -474,7 +474,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
     dialogs.ShowNodeInfoDialog = React.createClass({
         mixins: [
             dialogMixin,
-            componentMixins.backboneMixin('node')
+            componentMixins.backboneMixin('node'),
+            componentMixins.renamingMixin
         ],
         getDefaultProps: function() {
             return {modalClass: 'always-show-scrollbar'};
@@ -484,7 +485,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 title: i18n('dialog.show_node.default_dialog_title'),
                 VMsConf: null,
                 VMsConfValidationError: null,
-                changingHostname: false,
                 hostnameChangingError: null
             };
         },
@@ -597,12 +597,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     }, this));
             }
         },
-        startHostnameChanging: function() {
-            this.setState({changingHostname: true});
-        },
-        endHostnameChanging: function() {
-            this.setState({changingHostname: false, actionInProgress: false});
-        },
         onHostnameInputKeydown: function(e) {
             this.setState({hostnameChangingError: null});
             if (e.key == 'Enter') {
@@ -617,9 +611,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         actionInProgress: false
                     });
                     this.refs.hostname.getInputDOMNode().focus();
-                }, this)).done(this.endHostnameChanging);
+                }, this)).done(this.endRenaming);
             } else if (e.key == 'Escape') {
-                this.endHostnameChanging();
+                this.endRenaming();
                 e.stopPropagation();
                 this.getDOMNode().focus();
             }
@@ -646,12 +640,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
                             <div className='change-hostname'>
                                 <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
-                                {this.state.changingHostname ?
+                                {this.state.isRenaming ?
                                     <controls.Input
                                         ref='hostname'
                                         type='text'
                                         defaultValue={node.get('hostname')}
-                                        inputClassName={'input-sm'}
+                                        inputClassName={'input-sm renaming'}
                                         error={this.state.hostnameChangingError}
                                         disabled={this.state.actionInProgress}
                                         onKeyDown={this.onHostnameInputKeydown}
@@ -660,13 +654,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                     />
                                 :
                                     <span>
-                                        <span className='node-hostname'>
+                                        <span className='node-hostname name'>
                                             {node.get('hostname') || i18n('common.not_available')}
                                         </span>
                                         {(node.get('pending_addition') || !node.get('cluster')) &&
                                             <button
                                                 className='btn-link glyphicon glyphicon-pencil'
-                                                onClick={this.startHostnameChanging}
+                                                onClick={this.startRenaming}
                                             />
                                         }
                                     </span>

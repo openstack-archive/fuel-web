@@ -388,60 +388,68 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
         # check Floating Start and Stop IPs belong to Public CIDR
-        public = filter(lambda ng: ng['name'] == consts.NETWORKS.public,
-                        self.networks)[0]
-        public_cidr = netaddr.IPNetwork(public['cidr']).cidr
-        fl_range = self.network_config['floating_ranges'][0]
-        fl_ip_range = netaddr.IPRange(fl_range[0], fl_range[1])
-        if fl_ip_range not in public_cidr:
-            self.err_msgs.append(
-                u"Floating address range {0}:{1} is not in public "
-                u"address space {2}.".format(
-                    netaddr.IPAddress(fl_range[0]),
-                    netaddr.IPAddress(fl_range[1]),
-                    public['cidr']
+        publics = filter(lambda ng: ng['name'] == consts.NETWORKS.public,
+                         self.networks)
+        public_cidrs = [netaddr.IPNetwork(p['cidr']).cidr for p in publics]
+        fl_ip_ranges = []
+
+        for start, end in self.network_config['floating_ranges']:
+            fl_ip_range = netaddr.IPRange(start, end)
+            fl_in_public = any(fl_ip_range in cidr for cidr in public_cidrs)
+            if not fl_in_public:
+                self.err_msgs.append(
+                    u"Floating address range {0}:{1} is not in public "
+                    u"address space {2}.".format(
+                        start, end,
+                        ','.join(str(cidr) for cidr in public_cidrs)
+                    )
                 )
-            )
-            self.result = [{"ids": [int(public["id"])],
-                            "errors": ["cidr", "ip_ranges"]}]
+                self.result = [{"ids": [],
+                                "errors": ["cidr", "ip_ranges"]}]
+            fl_ip_ranges.append(fl_ip_range)
         self.expose_error_messages()
 
         # Check intersection of networks address spaces inside
         # Public network
-        ranges = [netaddr.IPRange(v[0], v[1])
-                  for v in public['ip_ranges']] + [fl_ip_range]
-        public_gw = netaddr.IPAddress(public['gateway'])
-        for npair in combinations(ranges, 2):
-            if self.net_man.is_range_intersection(npair[0], npair[1]):
-                if fl_ip_range in npair:
+        for public in publics:
+            public_cidr = netaddr.IPNetwork(public['cidr']).cidr
+            public_gw = netaddr.IPAddress(public['gateway'])
+
+            ranges = [netaddr.IPRange(start, end)
+                      for start, end in public['ip_ranges']]
+            ranges.extend(r for r in fl_ip_ranges if r in public_cidr)
+
+            for npair in combinations(ranges, 2):
+                if self.net_man.is_range_intersection(npair[0], npair[1]):
+                    if npair[0] in fl_ip_ranges or npair[1] in fl_ip_ranges:
+                        self.err_msgs.append(
+                            u"Address space intersection between ranges "
+                            u"of public and floating network."
+                        )
+                    else:
+                        self.err_msgs.append(
+                            u"Address space intersection between ranges "
+                            u"of public network."
+                        )
+                    self.result.append({"ids": [int(public["id"])],
+                                        "errors": ["ip_ranges"]})
+            for net in ranges:
+                # Check intersection of public GW and public IP ranges
+                if public_gw in net:
                     self.err_msgs.append(
-                        u"Address space intersection between ranges "
-                        u"of public and external network."
+                        u"Address intersection between public gateway "
+                        u"and IP range of public network."
                     )
-                else:
+                    self.result.append({"ids": [int(public["id"])],
+                                        "errors": ["gateway", "ip_ranges"]})
+                # Check that public IP ranges are in public CIDR
+                if net not in public_cidr:
                     self.err_msgs.append(
-                        u"Address space intersection between ranges "
-                        u"of public network."
+                        u"Public gateway and public ranges "
+                        u"are not in one CIDR."
                     )
-                self.result.append({"ids": [int(public["id"])],
-                                    "errors": ["ip_ranges"]})
-        for net in ranges:
-            # Check intersection of public GW and public IP ranges
-            if public_gw in net:
-                self.err_msgs.append(
-                    u"Address intersection between public gateway "
-                    u"and IP range of public network."
-                )
-                self.result.append({"ids": [int(public["id"])],
-                                    "errors": ["gateway", "ip_ranges"]})
-            # Check that public IP ranges are in public CIDR
-            if net not in public_cidr:
-                self.err_msgs.append(
-                    u"Public gateway and public ranges "
-                    u"are not in one CIDR."
-                )
-                self.result.append({"ids": [int(public["id"])],
-                                    "errors": ["gateway", "ip_ranges"]})
+                    self.result.append({"ids": [int(public["id"])],
+                                        "errors": ["gateway", "ip_ranges"]})
         self.expose_error_messages()
 
         # check internal Gateway is in Internal CIDR

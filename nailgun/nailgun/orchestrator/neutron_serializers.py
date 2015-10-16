@@ -17,12 +17,14 @@
 """Neutron network deployment serializers for orchestrator"""
 
 from collections import defaultdict
+import netaddr
 from ordereddict import OrderedDict
+import re
 import six
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.objects import Node
@@ -30,7 +32,6 @@ from nailgun.objects import NodeGroupCollection
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.settings import settings
 from nailgun import utils
-import re
 
 
 class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
@@ -391,21 +392,33 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def _generate_external_network(cls, cluster):
-        public_cidr, public_gw = db().query(
-            NetworkGroup.cidr,
-            NetworkGroup.gateway
-        ).filter_by(
-            group_id=Cluster.get_default_group(cluster).id,
-            name='public'
-        ).first()
+        floating_range = cluster.network_config.floating_ranges[0]
+        floating_iprange = netaddr.IPRange(
+            floating_range[0], floating_range[1])
+
+        floating_cidr, floating_gw = None, None
+        networks = db().query(
+            models.NetworkGroup.cidr,
+            models.NetworkGroup.gateway
+        ).join(
+            models.NetworkGroup.nodegroup
+        ).filter(
+            models.NodeGroup.cluster_id == cluster.id
+        )
+        for net in networks:
+            if net[0] and floating_iprange in netaddr.IPNetwork(net[0]):
+                floating_cidr, floating_gw = net[0], net[1]
+                break
+        if None == floating_cidr:
+            logger.error('Floating range %s does not correspond to any '
+                         'network', str(floating_iprange))
 
         return {
             "L3": {
-                "subnet": public_cidr,
-                "gateway": public_gw,
+                "subnet": floating_cidr,
+                "gateway": floating_gw,
                 "nameservers": [],
-                "floating": utils.join_range(
-                    cluster.network_config.floating_ranges[0]),
+                "floating": utils.join_range(floating_range),
                 "enable_dhcp": False
             },
             "L2": {

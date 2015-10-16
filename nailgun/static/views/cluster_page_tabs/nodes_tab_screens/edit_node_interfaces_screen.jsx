@@ -68,6 +68,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     .then(_.bind(function() {
                         var interfaces = new models.Interfaces();
                         interfaces.set(_.cloneDeep(nodes.at(0).interfaces.toJSON()), {parse: true});
+                        interfaces.comparator = function(ifc1, ifc2) {
+                            return utils.natsort(ifc1.get('name'), ifc2.get('name'), {insensitive: true});
+                        };
                         return {
                             interfaces: interfaces,
                             nodes: nodes,
@@ -500,7 +503,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         </div>
                     }
                     <div className='ifc-list col-xs-12'>
-                        {interfaces.map(_.bind(function(ifc, index) {
+                        {interfaces.sort().map(_.bind(function(ifc, index) {
                             var ifcName = ifc.get('name');
                             if (!_.contains(slaveInterfaceNames, ifcName)) return (
                                 <NodeInterfaceDropTarget {...this.props}

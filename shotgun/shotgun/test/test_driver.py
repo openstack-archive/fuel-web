@@ -61,13 +61,14 @@ class TestDriver(base.BaseTestCase):
 
         conf = mock.Mock()
         driver = shotgun.driver.Driver(
-            {"host": {"address": "remote_host"}}, conf)
+            {"host": {"hostname": "remote_host", 'address': '10.109.0.2'}},
+            conf)
         result = driver.command(command)
 
         mfabrun.assert_called_with(
             command, stdout=mock.ANY)
         mfabset.assert_called_with(
-            host_string="remote_host",
+            host_string="10.109.0.2",
             timeout=2,
             command_timeout=driver.timeout,
             warn_only=True,
@@ -81,7 +82,8 @@ class TestDriver(base.BaseTestCase):
         timeout = random.randint(1, 100)
         conf = mock.Mock()
         driver = shotgun.driver.Driver(
-            {"host": {"address": "remote_host"}}, conf)
+            {"host": {"hostname": "remote_host", "address": "10.109.0.2"}},
+            conf)
         driver.timeout = timeout
         driver.command("COMMAND")
         mfabset.assert_called_with(
@@ -122,7 +124,7 @@ class TestDriver(base.BaseTestCase):
 
         conf = mock.Mock()
         driver = shotgun.driver.Driver(
-            {"host": {"address": "remote_host"}}, conf)
+            {"host": {"hostname": "remote_host"}}, conf)
         result = driver.command(command)
 
         mstringio.assert_has_calls([
@@ -142,15 +144,17 @@ class TestDriver(base.BaseTestCase):
 
         driver = shotgun.driver.Driver({
             "host": {
-                "address": "remote_host",
+                "hostname": "remote_host",
+                "address": "10.109.0.2",
                 "ssh-key": "path_to_key",
             }
         }, conf)
         driver.get(remote_path, target_path)
         mexecute.assert_called_with('mkdir -p "{0}"'.format(target_path))
         mfabget.assert_called_with(remote_path, target_path)
+
         mfabset.assert_called_with(
-            host_string="remote_host", key_filename="path_to_key",
+            host_string="10.109.0.2", key_filename="path_to_key",
             timeout=2, warn_only=True, abort_on_prompts=True)
 
         mexecute.reset_mock()
@@ -185,7 +189,8 @@ class TestFile(base.BaseTestCase):
             "type": "file",
             "path": "/remote_dir/remote_file",
             "host": {
-                "address": "remote_host",
+                "hostname": "remote_host",
+                "address": "10.109.0.2",
             },
         }
         conf = mock.MagicMock()
@@ -205,7 +210,8 @@ class TestFile(base.BaseTestCase):
             "path": "/remote_dir/",
             "exclude": ["*test"],
             "host": {
-                "address": "remote_host",
+                "hostname": "remote_host",
+                "address": "10.109.0.2",
             },
         }
         conf = mock.MagicMock()

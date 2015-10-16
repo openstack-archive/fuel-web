@@ -59,7 +59,8 @@ class Driver(object):
         logger.debug("Initializing driver %s: host=%s",
                      self.__class__.__name__, data.get("host"))
         self.data = data
-        self.host = self.data.get("host", {}).get("address", "localhost")
+        self.host = self.data.get("host", {}).get("hostname", "localhost")
+        self.addr = self.data.get("host", {}).get("address", "127.0.0.1")
         self.ssh_key = self.data.get("host", {}).get("ssh-key")
         self.local = utils.is_local(self.host)
         self.conf = conf
@@ -75,7 +76,7 @@ class Driver(object):
         try:
             if not self.local:
                 with fabric.api.settings(
-                    host_string=self.host,      # destination host
+                    host_string=self.addr,      # destination host
                     key_filename=self.ssh_key,  # a path to ssh key
                     timeout=2,                  # a network connection timeout
                     command_timeout=self.timeout,  # command execution timeout
@@ -111,7 +112,7 @@ class Driver(object):
         try:
             if not self.local:
                 with fabric.api.settings(
-                    host_string=self.host,      # destination host
+                    host_string=self.addr,      # destination host
                     key_filename=self.ssh_key,  # a path to ssh key
                     timeout=2,                  # a network connection timeout
                     warn_only=True,             # don't exit on error

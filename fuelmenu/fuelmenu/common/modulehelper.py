@@ -214,3 +214,21 @@ class ModuleHelper(object):
                 if fields[1] != '00000000' or not int(fields[3], 16) & 2:
                     continue
                 return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+
+    @classmethod
+    def get_deployment_mode(cls):
+        """Report if any fuel containers are already created."""
+
+        command = "docker ps -a"
+        try:
+            process = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                       stdin=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            output, errout = process.communicate(input=' '.join(input))
+        except Exception as e:
+            return "pre"
+        if "fuel" in output.lower():
+           return "post"
+        else:
+           return "pre"
+

@@ -259,6 +259,26 @@ interface first.")
                     errors.append("Duplicate host found with IP {0}.".format(
                         mgmt_if_ipaddr))
 
+        # Extra checks for post-deployment changes
+        if self.get_deployment_mode() == "post":
+            # Admin interface cannot change
+            if mgmt_if_ipaddr != \
+                    self.oldsettings["ADMIN_NETWORK"]["interface"]:
+                errors.append("Cannot change admin interface after deployment")
+
+            # PXE network range must contain previous PXE network range
+            old_range = network.range(
+                self.oldsettings["ADMIN_NETWORK"]["dhcp_pool_start"],
+                self.oldsettings["ADMIN_NETWORK"]["dhcp_pool_end"])
+            new_range = network.range(
+                responses["ADMIN_NETWORK/dhcp_pool_start"],
+                responses["ADMIN_NETWORK/dhcp_pool_end"])
+            if old_range[0] not in new_range:
+                errors.append("DHCP range must contain previous values.")
+            if old_range[-1] not in new_range:
+                errors.append("DHCP range can only be increased after "
+                              "deployment.")
+
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
             log.error("Errors: %s %s" % (len(errors), errors))
@@ -341,6 +361,9 @@ interface first.")
 
     def get_default_gateway_linux(self):
         return ModuleHelper.get_default_gateway_linux()
+
+    def get_deployment_mode(self):
+        return ModuleHelper.get_deployment_mode()
 
     def radioSelect(self, current, state, user_data=None):
         """Update network details and display information."""

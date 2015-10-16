@@ -19,11 +19,11 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+import sqlalchemy.dialects.postgresql as psql
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
-from nailgun.db.sqlalchemy.models.fields import LowercaseString
 
 
 class NetworkingConfig(Base):
@@ -58,9 +58,9 @@ class NeutronConfig(NetworkingConfig):
 
     vlan_range = Column(JSON, default=[])
     gre_id_range = Column(JSON, default=[])
-    base_mac = Column(LowercaseString(17), nullable=False)
-    internal_cidr = Column(String(25))
-    internal_gateway = Column(String(25))
+    base_mac = Column(psql.MACADDR, nullable=False)
+    internal_cidr = Column(psql.CIDR)
+    internal_gateway = Column(psql.INET)
 
     segmentation_type = Column(
         Enum(*consts.NEUTRON_SEGMENT_TYPES,
@@ -83,7 +83,7 @@ class NovaNetworkConfig(NetworkingConfig):
 
     id = Column(Integer, ForeignKey('networking_configs.id'), primary_key=True)
 
-    fixed_networks_cidr = Column(String(25))
+    fixed_networks_cidr = Column(psql.CIDR)
     fixed_networks_vlan_start = Column(Integer)
     fixed_network_size = Column(Integer, nullable=False, default=256)
     fixed_networks_amount = Column(Integer, nullable=False, default=1)

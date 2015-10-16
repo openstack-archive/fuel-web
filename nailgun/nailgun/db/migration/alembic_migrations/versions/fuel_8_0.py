@@ -29,6 +29,7 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
 
+from nailgun.db.sqlalchemy.models.fields import LowercaseString
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
 
@@ -106,9 +107,11 @@ def upgrade():
     task_names_upgrade()
     add_node_discover_error_upgrade()
     upgrade_neutron_parameters()
+    upgrade_all_network_data_from_string_to_appropriate_data_type()
 
 
 def downgrade():
+    downgrade_all_network_data_to_string()
     downgrade_neutron_parameters()
     add_node_discover_error_downgrade()
     task_names_downgrade()
@@ -320,3 +323,59 @@ def upgrade_neutron_parameters():
 def downgrade_neutron_parameters():
     op.drop_column('neutron_config', 'floating_name')
     op.drop_column('neutron_config', 'internal_name')
+
+
+def upgrade_all_network_data_from_string_to_appropriate_data_type():
+    convert_column_type('ip_addrs', 'ip_addr', 'inet')
+    convert_column_type('ip_addr_ranges', 'first', 'inet')
+    convert_column_type('ip_addr_ranges', 'last', 'inet')
+    convert_column_type('network_groups', 'cidr', 'cidr')
+    convert_column_type('network_groups', 'gateway', 'inet')
+    convert_column_type('neutron_config', 'base_mac', 'macaddr')
+    convert_column_type('neutron_config', 'internal_cidr', 'cidr')
+    convert_column_type('neutron_config', 'internal_gateway', 'inet')
+    convert_column_type('nova_network_config', 'fixed_networks_cidr',
+                        'cidr')
+    convert_column_type('nodes', 'mac', 'macaddr')
+    convert_column_type('nodes', 'ip', 'inet')
+    convert_column_type('node_nic_interfaces', 'mac', 'macaddr')
+    convert_column_type('node_nic_interfaces', 'ip_addr', 'inet')
+    convert_column_type('node_nic_interfaces', 'netmask', 'inet')
+    convert_column_type('node_bond_interfaces', 'mac', 'macaddr')
+
+
+def convert_column_type(table_name, column_name, psql_type):
+    op.execute('ALTER TABLE {0} ALTER COLUMN {1}'
+               ' TYPE {2} USING cast({1} as {2})'.format(table_name,
+                                                         column_name,
+                                                         psql_type))
+
+
+def downgrade_all_network_data_to_string():
+    ip_type_to_string('ip_addrs', 'ip_addr', 25)
+    ip_type_to_string('ip_addr_ranges', 'first', 25)
+    ip_type_to_string('ip_addr_ranges', 'last', 25)
+    op.alter_column('network_groups', 'cidr', type_=sa.String(length=25))
+    ip_type_to_string('network_groups', 'gateway', 25)
+    op.alter_column('neutron_config', 'base_mac', type_=LowercaseString(17))
+    op.alter_column('neutron_config', 'internal_cidr',
+                    type_=sa.String(length=25))
+    ip_type_to_string('neutron_config', 'internal_gateway', 25)
+    op.alter_column('nova_network_config', 'fixed_networks_cidr',
+                    type_=sa.String(length=25))
+    op.alter_column('nodes', 'mac', type_=LowercaseString(17))
+    ip_type_to_string('nodes', 'ip', 15)
+    op.alter_column('node_nic_interfaces', 'mac', type_=LowercaseString(17))
+    ip_type_to_string('node_nic_interfaces', 'ip_addr', 25)
+    ip_type_to_string('node_nic_interfaces', 'netmask', 25)
+    op.alter_column('node_bond_interfaces', 'mac', type_=sa.String(length=50))
+
+
+def ip_type_to_string(table_name, column_name, string_len):
+    op.execute(
+        'ALTER TABLE {0} ALTER COLUMN {1} '
+        'TYPE varchar({2}) USING '
+        'split_part(cast({1} as varchar({2})), \'/\', 1)'.format(table_name,
+                                                                 column_name,
+                                                                 string_len)
+    )

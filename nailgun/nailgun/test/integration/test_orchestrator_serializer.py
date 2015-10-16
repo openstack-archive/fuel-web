@@ -1886,7 +1886,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                     network[pkey] = pval
                 network['meta']['use_gateway'] = True
             elif network['meta']['notation'] and not network['gateway']:
-                network['gateway'] = str(IPNetwork(network['cidr']).first)
+                cidr = IPNetwork(network['cidr'])
+                network['gateway'] = six.text_type(IPAddress(cidr.first))
                 network['meta']['use_gateway'] = True
         netconfig['networking_parameters']['floating_ranges'] = \
             [['199.10.0.77', '199.10.0.177']]

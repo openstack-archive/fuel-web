@@ -256,12 +256,12 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.env._create_network_group()
         new_ng = resp.json_body
 
-        new_cidr = "10.3.0.1/20"
+        new_cidr = "10.3.0.0/20"
         new_ng['cidr'] = new_cidr
         new_ng['name'] = 'test'
         new_ng['meta']['use_gateway'] = True
 
-        generated_range = IPNetwork("10.3.0.1/20")
+        generated_range = IPNetwork("10.3.0.0/20")
         new_ip_range = [str(generated_range[2]), str(generated_range[-2])]
 
         self.app.put(

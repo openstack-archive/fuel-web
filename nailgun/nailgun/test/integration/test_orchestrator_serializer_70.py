@@ -1617,8 +1617,11 @@ class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
                   'ip_range': ['172.16.122.2', '172.16.122.255']})
         self.prepare_for_deployment(self.env.nodes)
 
+        ip = models.IPAddr.ip_addr.label('ip')
         ip_addrs_count = db().query(models.IPAddr).filter(
-            models.IPAddr.ip_addr.like('172.16.122.%')).count()
+            "inet '172.16.122/24' >> {0}".format(ip)
+        ).count()
+
         self.assertEqual(ip_addrs_count, 2)
 
 

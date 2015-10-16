@@ -26,6 +26,34 @@
       "version": "3.3.4",
       "from": "bootstrap@3.3.4"
     },
+    "react-slider": {
+      "version": "0.5.1",
+      "from": "react-slider@0.5.1"
+    },
+    "react-range": {
+      "version": "0.0.5",
+      "from": "react-range@0.0.5"
+    },
+    "react-input-range": {
+      "version": "0.3.1",
+      "from": "react-range@0.3.1",
+      "dependencies": {
+        "react": {
+          "version": "0.13.3",
+          "from": "react@0.13.3"
+        }
+      }
+    },
+    "react-rangeslider": {
+      "version": "1.0.0",
+      "from": "react-rangeslider@1.0.0",
+      "dependencies": {
+        "react": {
+          "version": "0.13.3",
+          "from": "react@0.13.3"
+        }
+      }
+    },
     "classnames": {
       "version": "1.1.4",
       "from": "classnames@1.1.4"

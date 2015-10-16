@@ -22,10 +22,11 @@ define(
     'react',
     'utils',
     'models',
+    'react-slider',
     'jsx!component_mixins',
     'jsx!views/controls'
 ],
-function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) {
+function($, _, i18n, Backbone, React, utils, models, ReactSlider, ComponentMixins, controls) {
     'use strict';
 
     var EditNodeDisksScreen = React.createClass({
@@ -208,6 +209,28 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             );
         }
     });
+    
+    // var Demo = React.createFactory(React.createClass({
+    var Demo = React.createClass({
+        getInitialState: function() {
+            return {value: this.props.defaultValue}
+        },
+        onChange: function(value) {
+            this.setState({value: value});
+        },
+        render: function() {
+            return ReactSlider(
+                React.__spread({
+                    className: this.props.className,
+                    pearling: true,
+                    minDistance: 10,
+                    value: this.state.value,
+                    onChange: this.onChange
+                }, this.props),
+                [React.createElement('div', {key: 'value'}, this.state.value)]
+            );
+        }
+    });
 
     var NodeDisk = React.createClass({
         getInitialState: function() {
@@ -323,13 +346,20 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                     {volume.get('label')}
                                                 </label>
                                                 <div className='col-xs-4 volume-group-range'>
-                                                    <controls.Input {...props}
-                                                        key={currentMinSize + currentMaxSize + this.state.key}
-                                                        type='range'
-                                                        ref={'range-' + volumeName}
-                                                        onInput={_.partial(this.onRangeInput, volumeName)}
+                                                    {Demo({defaultValue: value, className: 'horizontal-slider'})}
+                                                    {/*React.createElement(Demo, {defaultValue: value, className: 'horizontal-slider'})*/}
+                                                    /*
+                                                    <Demo
+                                                        //{...props}
+                                                        //key={currentMinSize + currentMaxSize + this.state.key}
+                                                        //type='range'
+                                                        //ref={'range-' + volumeName}
+                                                        //onInput={_.partial(this.onRangeInput, volumeName)}
+                                                        //defaultValue={value}
                                                         defaultValue={value}
+                                                        className='horizontal-slider'
                                                     />
+                                                    */
                                                 </div>
                                                 <controls.Input {...props}
                                                     key={value}

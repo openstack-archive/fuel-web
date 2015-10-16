@@ -21,6 +21,10 @@
     "open-sans-fontface": "1.4.0",
     "react": "0.13.3",
     "react-dnd": "1.1.3",
+    "react-slider": "0.5.1",
+    "react-range": "0.0.5",
+    "react-input-range": "0.3.1",
+    "react-rangeslider": "1.0.0",
     "require-css": "0.1.8",
     "requirejs": "2.1.20",
     "requirejs-plugins": "1.0.2"
@@ -61,6 +65,10 @@
       "dist/css/bootstrap.css.map",
       "dist/fonts/*"
     ],
+    "react-slider": "react-slider.js",
+    "react-range": "index.js",
+    "react-input-range": "lib/InputRange/index.js",
+    "react-rangeslider": "lib/index.js",
     "classnames": "index.js",
     "es5-shim": "es5-shim.js",
     "i18next": "lib/dep/i18next-1.7.1.js",

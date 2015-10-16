@@ -69,19 +69,21 @@ class TestSnapshotConf(base.TestCase):
             mock_db.return_value.query.return_value.filter.return_value.
             all.return_value
         ) = [
-            mock.Mock(hostname='node1', roles=[]),
-            mock.Mock(hostname='node2', roles=[]),
+            mock.Mock(hostname='node1', ip="10.109.0.2", roles=[]),
+            mock.Mock(hostname='node2', ip="10.109.0.5", roles=[]),
         ]
 
         conf = task.DumpTask.conf()
 
         self.assertIn({
-            'address': 'node1.example.com',
+            'hostname': 'node1.example.com',
+            'address': '10.109.0.2',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['slave']['hosts'])
 
         self.assertIn({
-            'address': 'node2.example.com',
+            'hostname': 'node2.example.com',
+            'address': '10.109.0.5',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['slave']['hosts'])
 
@@ -92,18 +94,20 @@ class TestSnapshotConf(base.TestCase):
             mock_db.return_value.query.return_value.filter.return_value.
             all.return_value
         ) = [
-            mock.Mock(hostname='node1', roles=['controller', 'cinder']),
+            mock.Mock(hostname='node1', ip='10.109.0.1', roles=['controller',
+                      'cinder']),
             mock.Mock(hostname='node2', roles=['compute']),
         ]
 
         conf = task.DumpTask.conf()
 
         self.assertIn({
-            'address': 'node1.example.com',
+            'hostname': 'node1.example.com',
+            'address': '10.109.0.1',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['controller']['hosts'])
 
         self.assertNotIn({
-            'address': 'node2.example.com',
+            'hostname': 'node2.example.com',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['controller']['hosts'])

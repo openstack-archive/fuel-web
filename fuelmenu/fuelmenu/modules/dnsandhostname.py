@@ -57,7 +57,7 @@ class dnsandhostname(urwid.WidgetWrap):
                              "value": hostname},
                 "DNS_UPSTREAM": {"label": "External DNS",
                                  "tooltip": "DNS server(s) (comma separated) \
-to handle DNS requests (example 8.8.8.8)",
+to handle DNS requests (example 8.8.8.8,8.8.4.4)",
                                  "value": "8.8.8.8"},
                 "DNS_DOMAIN": {"label": "Domain",
                                "tooltip": "Domain suffix to user for all \
@@ -97,15 +97,6 @@ is accessible"}
                                   managediface_ip,
                                   socket.gethostname(),
                                   socket.gethostname().split('.')[0]))
-
-    def setEtcResolv(self, nameserver="default"):
-        if nameserver == "default":
-            nss = self.defaults['DNS_UPSTREAM']['value'].split(',')
-        else:
-            nss = [nameserver]
-        with open("/etc/resolv.conf", "w") as fh:
-            for ns in nss:
-                fh.write("nameserver %s\n" % ns)
 
     def check(self, args):
         """Validate that all fields have valid values through sanity checks."""
@@ -165,6 +156,12 @@ is accessible"}
             if re.match('[^0-9.,]', responses["DNS_UPSTREAM"]):
                 errors.append(
                     "External DNS must contain only IP addresses and commas.")
+
+            admin_ip = self.netsettings[self.parent.managediface]['addr']
+            if admin_ip in responses["DNS_UPSTREAM"]:
+                errors.append("Admin interface IP cannot be in upstream "
+                              "nameservers.")
+
             #ensure test DNS name isn't empty
             if len(responses["TEST_DNS"]) == 0:
                 errors.append("Test DNS must not be empty.")
@@ -266,12 +263,35 @@ is accessible"}
         ModuleHelper.cancel(self, button)
 
     def load(self):
+        # Precedence of DNS information:
+        # Class defaults, fuelmenu default YAML, astute.yaml, uname,
+        # /etc/resolv.conf
+
         #Read in yaml
         defaultsettings = Settings().read(self.parent.defaultsettingsfile)
         oldsettings = defaultsettings
         oldsettings.update(Settings().read(self.parent.settingsfile))
 
         oldsettings = Settings().read(self.parent.settingsfile)
+
+        #Read hostname if it's already set
+        try:
+            hostname, sep, domain = os.uname()[1].partition('.')
+            oldsettings["HOSTNAME"] = hostname
+            oldsettings["DNS_DOMAIN"] = domain
+            oldsettings["DNS_SEARCH"] = domain
+        except Exception:
+            log.warning("Unable to look up system hostname")
+
+        # Parse /etc/resolv.conf if it contains data
+        search, domain, nameservers = self.getDNS()
+        if search:
+            oldsettings["DNS_SEARCH"] = search
+        if domain:
+            oldsettings["DNS_DOMAIN"] = domain
+        if nameservers:
+            oldsettings["DNS_UPSTREAM"] = nameservers
+
         for setting in self.defaults.keys():
             try:
                 if "/" in setting:
@@ -282,15 +302,35 @@ is accessible"}
             except Exception:
                 log.warning("No setting named %s found." % setting)
                 continue
-        #Read hostname if it's already set
-        try:
-            hostname, sep, domain = os.uname()[1].partition('.')
-            oldsettings["HOSTNAME"] = hostname
-            oldsettings["DNS_DOMAIN"] = domain
-            oldsettings["DNS_SEARCH"] = domain
-        except Exception:
-            log.warning("Unable to look up system hostname")
         return oldsettings
+
+    def getDNS(self, resolver="/etc/resolv.conf"):
+        nameservers = []
+        domain = None
+        searches = None
+
+        try:
+            with open(resolver, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("search "):
+                        searches = ' '.join(line.split(' ')[1:])
+                    if line.startswith("domain "):
+                        domain = line.split(' ')[1]
+                    if line.startswith("nameserver "):
+                        nameservers.append(line.split(' ')[1])
+        except EnvironmentError:
+            log.warn("Unable to open /etc/resolv.conf")
+
+        # Always remove admin interface IP from nameserver list
+        admin_ip = self.netsettings[self.parent.managediface]["addr"]
+        if admin_ip in nameservers:
+            try:
+                nameservers.remove(admin_ip)
+            except ValueError:
+                pass
+
+        return searches, domain, ",".join(nameservers)
 
     def save(self, responses):
         ## Generic settings start ##

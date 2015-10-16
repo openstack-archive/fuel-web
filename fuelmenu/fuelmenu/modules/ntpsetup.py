@@ -228,8 +228,7 @@ class ntpsetup(urwid.WidgetWrap):
                 self.defaults[fieldname]['value'] = newsettings[fieldname]
 
     def checkNTP(self, server):
-        #Note: Python's internal resolver caches negative answers.
-        #Therefore, we should call dig externally to be sure.
+        # Use ntpdate to verify server answers NTP requests
 
         noout = open('/dev/null', 'w')
         ntp_works = subprocess.call(["ntpdate", "-q", "-t2", server],

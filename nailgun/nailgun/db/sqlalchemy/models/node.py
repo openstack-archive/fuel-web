@@ -32,7 +32,6 @@ from sqlalchemy.dialects import postgresql as psql
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
-from nailgun.db.sqlalchemy.models.fields import LowercaseString
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
@@ -74,8 +73,8 @@ class Node(Base):
         default=consts.NODE_STATUSES.discover
     )
     meta = Column(JSON, default={})
-    mac = Column(LowercaseString(17), nullable=False, unique=True)
-    ip = Column(String(15))
+    mac = Column(psql.MACADDR, nullable=False, unique=True)
+    ip = Column(psql.INET)
     hostname = Column(String(255), nullable=False,
                       default="", server_default="")
     manufacturer = Column(Unicode(50))
@@ -235,15 +234,15 @@ class NodeNICInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(128), nullable=False)
-    mac = Column(LowercaseString(17), nullable=False)
+    mac = Column(psql.MACADDR, nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
     assigned_networks_list = relationship(
         "NetworkGroup",
         secondary=NetworkNICAssignment.__table__,
         order_by="NetworkGroup.id")
-    ip_addr = Column(String(25))
-    netmask = Column(String(25))
+    ip_addr = Column(psql.INET)
+    netmask = Column(psql.INET)
     state = Column(String(25))
     interface_properties = Column(JSON, default={}, nullable=False,
                                   server_default='{}')
@@ -298,7 +297,7 @@ class NodeBondInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(32), nullable=False)
-    mac = Column(LowercaseString(17))
+    mac = Column(psql.MACADDR)
     assigned_networks_list = relationship(
         "NetworkGroup",
         secondary=NetworkBondAssignment.__table__,

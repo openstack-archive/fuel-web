@@ -354,7 +354,7 @@ define([
             if (_.isNumber(value1) && _.isNumber(value2)) {
                 result = value1 - value2;
             } else {
-                result = !value1 && !value2 ? 0 : !value1 ? 1 : -1;
+                result = value1 === value2 || !value1 && !value2 ? 0 : !value1 ? 1 : -1;
             }
             return options.desc ? -result : result;
         },

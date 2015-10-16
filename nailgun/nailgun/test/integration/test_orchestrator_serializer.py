@@ -1842,6 +1842,59 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             test_gateway
         )
 
+    def test_neutron_l3_floating_w_multiple_node_groups(self):
+
+        self.new_env_release_version = '1111-7.0'
+        self.prepare_for_deployment = \
+            objects.NodeCollection.prepare_for_deployment
+
+        ng2_networks = {
+            'public': {'cidr': '199.10.0.0/24',
+                       'ip_ranges': [['199.10.0.5', '199.10.0.55']],
+                       'gateway': '199.10.0.1'},
+            'management': {'cidr': '199.10.1.0/24',
+                           'gateway': '199.10.1.1'},
+            'storage': {'cidr': '199.10.2.0/24',
+                        'gateway': '199.10.2.1'},
+            'private': {'cidr': '199.10.3.0/24',
+                        'gateway': '199.10.3.1'},
+            'fuelweb_admin': {'cidr': '199.11.0.0/24',
+                              'ip_ranges': [['199.11.0.5', '199.11.0.55']],
+                              'gateway': '199.11.0.1'}
+        }
+
+        cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
+        ng2 = self.env.create_node_group(api=False, cluster_id=cluster.id)
+        netw_ids = [net.id for net in ng2.networks]
+
+        netconfig = self.env.neutron_networks_get(cluster.id).json_body
+        for network in netconfig['networks']:
+            if network['id'] in netw_ids and network['name'] in ng2_networks:
+                for pkey, pval in six.iteritems(ng2_networks[network['name']]):
+                    network[pkey] = pval
+                    network['meta']['use_gateway'] = True
+        netconfig['networking_parameters']['floating_ranges'] = \
+            [['199.10.0.77', '199.10.0.177']]
+        resp = self.env.neutron_networks_put(cluster.id, netconfig)
+        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
+
+        self.prepare_for_deployment(cluster.nodes)
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        pd_nets = facts[0]["quantum_settings"]["predefined_networks"]
+        self.assertEqual(
+            pd_nets["net04_ext"]["L3"]["subnet"],
+            ng2_networks['public']['cidr']
+        )
+        self.assertEqual(
+            pd_nets["net04_ext"]["L3"]["gateway"],
+            ng2_networks['public']['gateway']
+        )
+        self.assertEqual(
+            pd_nets["net04_ext"]["L3"]["floating"],
+            '199.10.0.77:199.10.0.177'
+        )
+
     def test_gre_segmentation(self):
         cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'gre')
         facts = self.serializer.serialize(cluster, cluster.nodes)

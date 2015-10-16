@@ -20,6 +20,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy import String
+from sqlalchemy.dialects import postgresql as psql
 
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
@@ -31,7 +32,7 @@ class IPAddr(Base):
     network = Column(Integer, ForeignKey('network_groups.id',
                                          ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
-    ip_addr = Column(String(25), nullable=False)
+    ip_addr = Column(psql.INET, nullable=False)
     vip_type = Column(String(25), nullable=True)
 
     network_data = relationship("NetworkGroup")
@@ -43,8 +44,8 @@ class IPAddrRange(Base):
     id = Column(Integer, primary_key=True)
     network_group_id = Column(Integer, ForeignKey('network_groups.id',
                                                   ondelete="CASCADE"))
-    first = Column(String(25), nullable=False)
-    last = Column(String(25), nullable=False)
+    first = Column(psql.INET, nullable=False)
+    last = Column(psql.INET, nullable=False)
 
 
 class NetworkGroup(Base):
@@ -57,8 +58,8 @@ class NetworkGroup(Base):
     # can be nullable only for fuelweb admin net
     group_id = Column(Integer, ForeignKey('nodegroups.id'), nullable=True)
     vlan_start = Column(Integer)
-    cidr = Column(String(25))
-    gateway = Column(String(25))
+    cidr = Column(psql.CIDR)
+    gateway = Column(psql.INET)
     ip_ranges = relationship(
         "IPAddrRange",
         backref="network_group",

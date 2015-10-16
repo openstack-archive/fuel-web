@@ -500,7 +500,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         </div>
                     }
                     <div className='ifc-list col-xs-12'>
-                        {interfaces.map(_.bind(function(ifc, index) {
+                        {_.map(interfaces.models.sort(function(ifc1, ifc2) {
+                            return utils.natsort(ifc1.get('name'), ifc2.get('name'), {insensitive: true});
+                        }), function(ifc, index) {
                             var ifcName = ifc.get('name');
                             if (!_.contains(slaveInterfaceNames, ifcName)) return (
                                 <NodeInterfaceDropTarget {...this.props}
@@ -517,7 +519,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     interfaceSpeeds={interfaceSpeeds[index]}
                                 />
                             );
-                        }, this))}
+                        }, this)}
                     </div>
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>

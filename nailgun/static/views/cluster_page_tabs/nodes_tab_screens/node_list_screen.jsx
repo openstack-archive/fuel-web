@@ -708,7 +708,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         showDeleteNodesDialog: function() {
             dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster})
-                .done(_.partial(this.props.selectNodes, _.pluck(this.props.nodes.where({status: 'ready'}), 'id'), null, true));
+                .done(_.partial(this.props.selectNodes, [], null));
         },
         hasChanges: function() {
             return this.props.hasChanges;

@@ -48,7 +48,7 @@ class TestDBRefresh(TestCase):
 
     def test_session_update(self):
         node = Node()
-        node.mac = u"ASDFGHJKLMNOPR"
+        node.mac = "aa:bb:cc:dd:ff:11"
         node.timestamp = datetime.now()
         self.db.add(node)
         self.db.commit()
@@ -56,10 +56,10 @@ class TestDBRefresh(TestCase):
         node2 = self.db2.query(Node).filter(
             Node.id == node.id
         ).first()
-        node2.mac = u"12345678"
+        node2.mac = "aa:bb:cc:dd:ff:11"
         self.db2.add(node2)
         self.db2.commit()
         self.db.query(Node).filter(
             Node.id == node.id
         ).first()
-        self.assertEqual(node.mac, u"12345678")
+        self.assertEqual(node.mac, "aa:bb:cc:dd:ff:11")

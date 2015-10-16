@@ -19,8 +19,9 @@ define([
     'intern/chai!assert',
     'underscore',
     'utils',
-    'i18n'
-], function(registerSuite, assert, _, utils, i18n) {
+    'i18n',
+    'backbone'
+], function(registerSuite, assert, _, utils, i18n, Backbone) {
     'use strict';
 
     registerSuite({
@@ -45,6 +46,44 @@ define([
 
             response = {status: 400, responseText: JSON.stringify({message: '123'})};
             assert.equal(getResponseText(response), '123', 'HTTP 400 with JSON response is treated correctly');
+        },
+        'Test comparison': function() {
+            var compare = utils.compare;
+            var Model = Backbone.Model;
+            var model1 = new Model({
+                    string: 'bond0',
+                    number: '01',
+                    boolean: true,
+                    booleanFlagWithNull: null
+                });
+            var model2 = new Model({
+                    string: 'bond1',
+                    number: '10',
+                    boolean: false,
+                    booleanFlagWithNull: false
+                });
+
+            assert.equal(compare(model1, model2, {attr: 'string'}), '-1', 'String comparison a<b');
+
+            assert.equal(compare(model2, model1, {attr: 'string'}), '1', 'String comparison a>b');
+
+            assert.equal(compare(model1, model1, {attr: 'string'}), '0', 'String comparison a=b');
+
+            assert.equal(compare(model1, model2, {attr: 'number'}), '-1', 'Number comparison a<b');
+
+            assert.equal(compare(model2, model1, {attr: 'number'}), '1', 'Number comparison a>b');
+
+            assert.equal(compare(model1, model1, {attr: 'number'}), '0', 'Number comparison a=b');
+
+            assert.equal(compare(model1, model2, {attr: 'boolean'}), '-1', 'Boolean comparison true and false');
+
+            assert.equal(compare(model2, model1, {attr: 'boolean'}), '1', 'Boolean comparison false and true');
+
+            assert.equal(compare(model1, model1, {attr: 'boolean'}), '0', 'Boolean comparison true and true');
+
+            assert.equal(compare(model2, model2, {attr: 'boolean'}), '0', 'Boolean comparison false and false');
+
+            assert.equal(compare(model1, model2, {attr: 'booleanFlagWithNull'}), '0', 'Comparison null and false');
         },
         'Test highlightTestStep': function() {
             var text;

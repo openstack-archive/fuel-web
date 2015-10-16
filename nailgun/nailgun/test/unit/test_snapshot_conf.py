@@ -76,7 +76,7 @@ class TestSnapshotConf(base.TestCase):
         conf = task.DumpTask.conf()
 
         self.assertIn({
-            'address': 'node1.example.com',
+            'hostname': 'node1.example.com',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['slave']['hosts'])
 
@@ -99,7 +99,7 @@ class TestSnapshotConf(base.TestCase):
         conf = task.DumpTask.conf()
 
         self.assertIn({
-            'address': 'node1.example.com',
+            'hostname': 'node1.example.com',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['controller']['hosts'])
 

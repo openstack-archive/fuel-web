@@ -153,4 +153,4 @@ Supported operators are:
 
 Parentheses can be used to override the order of precedence.
 
-.. _openstack.yaml: https://github.com/stackforge/fuel-web/blob/master/nailgun/nailgun/fixtures/openstack.yaml
+.. _openstack.yaml: https://github.com/openstack/fuel-web/blob/master/nailgun/nailgun/fixtures/openstack.yaml

@@ -43,9 +43,9 @@ Core Fuel developers provided feedback to small
 commits via Gerrit and IRC while the work was coming
 together.  Ultimately the work was rolled up into two
 commits including over 23k lines of code, and these two
-commits were merged into `fuel-web <https://github.com/stackforge/fuel-web>`_
+commits were merged into `fuel-web <https://github.com/openstack/fuel-web>`_
 and `fuel-library
-<https://github.com/stackforge/fuel-library>`_.
+<https://github.com/openstack/fuel-library>`_.
 
 Additions to Fuel-Web for Zabbix role
 -------------------------------------
@@ -85,7 +85,7 @@ Additions to Fuel-Library for Zabbix role
 
 In addition to the Nailgun additions, the related Puppet
 modules were added to the `fuel-library repository
-<https://github.com/stackforge/fuel-library>`_.  This
+<https://github.com/openstack/fuel-library>`_.  This
 `Zabbix fuel-library integration
 <https://review.openstack.org/#/c/101844/>`_ commit included
 all the puppet files, many of which are brand new modules

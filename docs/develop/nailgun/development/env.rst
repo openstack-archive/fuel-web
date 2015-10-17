@@ -76,7 +76,7 @@ Preparing Development Environment
    You can install pip and use it to require all the other packages at once::
 
     sudo apt-get install --yes git
-    git clone https://github.com/stackforge/fuel-web.git
+    git clone https://github.com/openstack/fuel-web.git
     cd fuel-web
     pip install ./shotgun  # this fuel project is listed in setup.py requirements
     pip install --allow-all-external -r nailgun/test-requirements.txt

@@ -153,7 +153,7 @@ Nailgun will run the hiera task first, then netconfig or tools, and then firewal
 Modular manifests
 -----------------
 
- Starting with Fuel 6.1, granular deployment allows using a number of small manifests instead of the single monolithic one. These small manifests are placed in the ``deployment/puppet/osnailyfacter/modular`` folder and its subfolders. In Fuel 6.0 or older there was a single entry point manifest used -- located at ``deployment/puppet/osnailyfacter/examples/site.pp`` in the `fuel-library <https://github.com/stackforge/fuel-library/>`_ repository.
+ Starting with Fuel 6.1, granular deployment allows using a number of small manifests instead of the single monolithic one. These small manifests are placed in the ``deployment/puppet/osnailyfacter/modular`` folder and its subfolders. In Fuel 6.0 or older there was a single entry point manifest used -- located at ``deployment/puppet/osnailyfacter/examples/site.pp`` in the `fuel-library <https://github.com/openstack/fuel-library/>`_ repository.
 
 To write a modular manifest, you will need to take all the resources, classes and definitions you are using to deploy your component and place them into a single file. This manifest should be able to do everything that is required for your component.
 

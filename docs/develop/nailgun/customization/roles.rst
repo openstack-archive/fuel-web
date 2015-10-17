@@ -118,4 +118,4 @@ You should take the following restrictions for the role into consideration:
      required.
 
 
-.. _openstack.yaml: https://github.com/stackforge/fuel-web/blob/master/nailgun/nailgun/fixtures/openstack.yaml
+.. _openstack.yaml: https://github.com/openstack/fuel-web/blob/master/nailgun/nailgun/fixtures/openstack.yaml

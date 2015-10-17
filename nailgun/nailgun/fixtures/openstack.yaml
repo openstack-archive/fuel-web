@@ -332,20 +332,22 @@
             configurable: true
             vips: ["haproxy", "vrouter"]
           - name: "management"
+            ip_range: ["192.168.0.2", "192.168.0.127"]
             cidr: "192.168.0.0/24"
             vlan_start: 101
             use_gateway: false
-            notation: "cidr"
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "internal"
             map_priority: 2
             configurable: true
             vips: ["haproxy", "vrouter"]
           - name: "storage"
+            ip_range: ["192.168.1.2", "192.168.1.127"]
             cidr: "192.168.1.0/24"
             vlan_start: 102
             use_gateway: false
-            notation: "cidr"
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "storage"
             map_priority: 2
@@ -382,19 +384,21 @@
             vips: ["haproxy", "vrouter"]
           - name: "management"
             cidr: "192.168.0.0/24"
+            ip_range: ["192.168.0.2", "192.168.0.126"]
             vlan_start: 101
             use_gateway: false
-            notation: "cidr"
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "internal"
             map_priority: 2
             configurable: true
             vips: ["haproxy", "vrouter"]
           - name: "storage"
+            ip_range: ["192.168.0.2", "192.168.0.126"]
             cidr: "192.168.1.0/24"
             vlan_start: 102
             use_gateway: false
-            notation: "cidr"
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: "storage"
             map_priority: 2
@@ -411,20 +415,22 @@
             configurable: false
           - name: "private"
             seg_type: "gre"
+            ip_range: ["192.168.2.0", "192.168.2.126"]
             cidr: "192.168.2.0/24"
             vlan_start: 103
             use_gateway: false
-            notation: "cidr"
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: null
             map_priority: 2
             configurable: true
           - name: "private"
             seg_type: "tun"
+            ip_range: ["192.168.2.0", "192.168.2.126"]
             cidr: "192.168.2.0/24"
             vlan_start: 103
             use_gateway: false
-            notation: "cidr"
+            notation: "ip_ranges"
             render_type: "cidr"
             render_addr_mask: null
             map_priority: 2

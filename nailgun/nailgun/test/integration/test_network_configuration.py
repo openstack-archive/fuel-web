@@ -93,22 +93,23 @@ class TestNovaNetworkConfigurationHandler(BaseIntegrationTest):
             new_dns_nameservers['networking_parameters']['dns_nameservers']
         )
 
-    def test_refresh_mask_on_cidr_change(self):
+    def test_update_db_on_cidr_change(self):
         resp = self.env.nova_networks_get(self.cluster.id)
         data = resp.json_body
 
-        mgmt = [n for n in data['networks']
-                if n['name'] == 'management'][0]
-        cidr = mgmt['cidr'].partition('/')[0] + '/25'
-        mgmt['cidr'] = cidr
+        mgmt = [n for n in data['networks'] if n['name'] ==
+                consts.NETWORKS.management][0]
+        mgmt['meta']['notation'] = consts.NETWORK_NOTATION.cidr
+        mgmt['cidr'] = mgmt['cidr'].partition('/')[0] + '/25'
 
         resp = self.env.nova_networks_put(self.cluster.id, data)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
-                   if ng.name == 'management'][0]
-        self.assertEqual(mgmt_ng.cidr, cidr)
+                   if ng.name == consts.NETWORKS.management][0]
+        self.assertEqual(mgmt_ng.cidr, mgmt['cidr'])
 
     def test_wrong_net_provider(self):
         resp = self.app.put(
@@ -293,22 +294,23 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                                              expect_errors=True)
         self.assertEqual(404, resp.status_code)
 
-    def test_refresh_mask_on_cidr_change(self):
+    def test_update_db_on_cidr_change(self, ):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body
 
-        mgmt = [n for n in data['networks']
-                if n['name'] == 'management'][0]
-        cidr = mgmt['cidr'].partition('/')[0] + '/25'
-        mgmt['cidr'] = cidr
+        mgmt = [n for n in data['networks'] if n['name'] ==
+                consts.NETWORKS.management][0]
+        mgmt['meta']['notation'] = consts.NETWORK_NOTATION.cidr
+        mgmt['cidr'] = mgmt['cidr'].partition('/')[0] + '/25'
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEqual(200, resp.status_code)
+        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
-                   if ng.name == 'management'][0]
-        self.assertEqual(mgmt_ng.cidr, cidr)
+                   if ng.name == consts.NETWORKS.management][0]
+        self.assertEqual(mgmt_ng.cidr, mgmt['cidr'])
 
     def test_do_not_update_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)

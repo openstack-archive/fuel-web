@@ -105,6 +105,7 @@ class TestNetworkModels(BaseIntegrationTest):
                           test_nets['networks'])[0]
 
         mgmt_net['cidr'] = u'1.1.1.0/24'
+        mgmt_net['meta']['notation'] = consts.NETWORK_NOTATION.cidr
 
         resp_neutron_net = self.env.neutron_networks_put(
             self.env.clusters[0].id, test_nets, expect_errors=True)

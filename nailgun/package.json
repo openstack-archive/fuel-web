@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stackforge/fuel-web.git"
+    "url": "https://github.com/openstack/fuel-web.git"
   },
   "scripts": {
     "install": "./node_modules/.bin/gulp copy-main"

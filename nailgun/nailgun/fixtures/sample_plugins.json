@@ -10,7 +10,7 @@
             "fuel_version": ["6.1"],
             "authors": ["Mirantis Inc."],
             "licenses": ["Apache License Version 2.0"],
-            "homepage": "https://github.com/stackforge/fuel-plugin-lma-collector",
+            "homepage": "https://github.com/openstack/fuel-plugin-lma-collector",
             "groups": ["monitoring"],
             "releases": [
                 {
@@ -79,7 +79,7 @@
             "fuel_version": ["6.1"],
             "authors": ["Dmitry Klenov <dklenov@mirantis.com>", "Piotr Misiak <pmisiak@mirantis.com>", "Szymon Banka <sbanka@mirantis.com>", "Bartosz Kupidura <bkupidura@mirantis.com>", "Alexander Zatserklyany <azatserklyany@mirantis.com>"],
             "licenses": ["Apache License Version 2.0"],
-            "homepage": "https://github.com/stackforge/fuel-plugin-external-zabbix",
+            "homepage": "https://github.com/openstack/fuel-plugin-external-zabbix",
             "groups": ["monitoring"],
             "releases": [
                 {

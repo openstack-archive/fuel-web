@@ -656,7 +656,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
                 "meta": {"notation": consts.NETWORK_NOTATION.cidr},
             },
             consts.NETWORKS.management: {
-                "meta": {"use_gateway": True}
+                "meta": {"notation": consts.NETWORK_NOTATION.cidr,
+                         "use_gateway": True}
             }
         }
         cluster = self.env.create_cluster(

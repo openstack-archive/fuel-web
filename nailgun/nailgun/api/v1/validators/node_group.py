@@ -15,6 +15,7 @@
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun import consts
+from nailgun.db import db
 from nailgun.errors import errors
 from nailgun import objects
 
@@ -26,10 +27,38 @@ class NodeGroupValidator(BasicValidator):
     single_schema = node_group.single_schema
 
     @classmethod
+    def _validate_unique_name(cls, data, *filters):
+        """Validate node group name to be unique.
+
+        Validate whether node group name is unique for specific
+        environment. Prevent to have duplicated node group names for
+        the same environment.
+
+        :param data: data which contains node group name and cluster_id.
+        :param filters: additional filters for the query which is
+                        used in the method for validation.
+        :type data: dict
+        :type filters: list
+        :returns: None
+        """
+        nodegroup_query = objects.NodeGroupCollection.filter_by(
+            None, name=data['name'], cluster_id=data['cluster_id'])
+        if filters:
+            nodegroup_query = nodegroup_query.filter(*filters)
+        nodegroup_exists = db.query(nodegroup_query.exists()).scalar()
+        if nodegroup_exists:
+            raise errors.NotAllowed(
+                "Node group '{0}' already exists "
+                "in environment {1}.".format(
+                    data['name'], data['cluster_id']))
+
+    @classmethod
     def validate(cls, data):
         data = cls.validate_json(data)
         cluster = objects.Cluster.get_by_uid(
             data['cluster_id'], fail_if_not_found=True)
+
+        cls._validate_unique_name(data)
 
         if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
             raise errors.NotAllowed(
@@ -47,5 +76,8 @@ class NodeGroupValidator(BasicValidator):
             )
 
     @classmethod
-    def validate_update(cls, data, **kwargs):
-        return cls.validate_json(data)
+    def validate_update(cls, data, instance):
+        data = cls.validate_json(data)
+        cls._validate_unique_name(
+            data, objects.NodeGroup.model.id != instance.id)
+        return data

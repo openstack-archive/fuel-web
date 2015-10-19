@@ -18,6 +18,7 @@ import threading
 import traceback
 
 from nailgun.logger import logger
+from nailgun.settings import settings
 
 ALLOWED_LOCKS_CHAINS = [
     ('attributes', 'clusters'),
@@ -50,7 +51,9 @@ class Lock(object):
         :return: raises exception or writes log
         """
         if Lock._warnings_only():
-            logger.warning("Possible deadlock found: {0}".format(exception))
+            if settings.LOG_DEADLOCKS_WARNINGS:
+                logger.warning("Possible deadlock found: {0}".
+                               format(exception))
         else:
             raise exception
 

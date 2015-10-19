@@ -979,3 +979,6 @@ LOAD_TESTS_PATHS:
 
 DNS_UPSTREAM: "8.8.8.8, 8.8.4.4"
 NTP_UPSTREAM: "0.fuel.pool.ntp.org, 1.fuel.pool.ntp.org"
+
+# deadlocks detection settings
+LOG_DEADLOCKS_WARNINGS: 1

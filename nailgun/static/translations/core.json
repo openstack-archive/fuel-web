@@ -440,7 +440,7 @@
                         "search_tooltip": "Quick Search",
                         "filter_by": "Filter By",
                         "filter_placeholder": "Node name/mac",
-                        "search_placeholder": "Search by node name, MAC or IP address",
+                        "search_placeholder": "Node name, MAC or IP address",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "selected_options": "__count__ selected",

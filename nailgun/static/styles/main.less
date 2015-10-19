@@ -411,10 +411,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
   max-width: 300px;
 }
 
-.tooltip-wrapper {
-  display: inline-block;
-}
-
 // ALERTS
 
 .alert {
@@ -1682,6 +1678,11 @@ input[type=range] {
 .node-management-panel {
   @management-panel-indent: 5px;
 
+  .tooltip-wrapper {
+    display: inline-block;
+    float: left;
+  }
+
   .view-mode-switcher {
     margin-right: @management-panel-indent * 3;
     float: left;
@@ -1700,20 +1701,20 @@ input[type=range] {
       }
     }
     .search {
-      min-width: 290px;
+      min-width: 224px;
       position: relative;
       .form-group {
         margin: 0;
       }
       input {
-        padding-right: 25px;
+        padding: 4px 24px 6px 10px;
         font-size: @base-font-size - 1;
       }
       .btn-clear-search {
         margin: 0;
         padding: 6px 10px;
         position: absolute;
-        right: 0;
+        right: -1px;
         top: 0;
       }
     }
@@ -1796,11 +1797,14 @@ input[type=range] {
     overflow: hidden;
     padding-left: 0;
     .btn-group {
-      button:first-child {
-        margin-left: @management-panel-indent;
+      button {
+        padding: 6px 10px;
+        .glyphicon {
+          margin-right: @management-panel-indent;
+        }
       }
-      .glyphicon {
-        margin-right: @management-panel-indent;
+      &:not(:first-child) button:first-child {
+        margin-left: @management-panel-indent;
       }
     }
   }

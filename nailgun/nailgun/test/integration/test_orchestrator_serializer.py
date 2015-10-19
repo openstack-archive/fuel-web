@@ -1179,10 +1179,14 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             if net['name'] in nets_w_gw.keys():
                 if net['group_id'] == group_id:
                     net['cidr'] = nets_w_gw[net['name']]
-                    net['ip_ranges'] = [[
-                        str(IPAddress(IPNetwork(net['cidr']).first + 2)),
-                        str(IPAddress(IPNetwork(net['cidr']).first + 253)),
-                    ]]
+                # IP ranges for networks in default nodegroup must
+                # be updated as well to exclude gateway address.
+                # Use first 126 addresses to avoid clashing
+                # with floating range.
+                net['ip_ranges'] = [[
+                    str(IPAddress(IPNetwork(net['cidr']).first + 2)),
+                    str(IPAddress(IPNetwork(net['cidr']).first + 127)),
+                ]]
                 net['gateway'] = str(
                     IPAddress(IPNetwork(net['cidr']).first + 1))
         resp = self.env.neutron_networks_put(cluster.id, nets)

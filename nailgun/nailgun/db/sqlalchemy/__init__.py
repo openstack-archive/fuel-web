@@ -148,6 +148,8 @@ class DeadlockDetectingQuery(DeadlocksSafeQueryMixin, NoCacheQuery):
 
 
 class DeadlockDetectingSession(Session):
+    """This session class is used for deadlocks detection."""
+
     def commit(self):
         dd.clean_locks()
         super(DeadlockDetectingSession, self).commit()
@@ -162,6 +164,8 @@ class DeadlockDetectingSession(Session):
                        ids=(instance.id,))
 
 
+# We introduce deadlock detection workflow only for
+# development mode
 if settings.DEVELOPMENT:
     query_class = DeadlockDetectingQuery
     session_class = DeadlockDetectingSession

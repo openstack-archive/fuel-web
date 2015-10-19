@@ -20,7 +20,7 @@ from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
 
 
-class TestDbMigrations(base.BaseTestCase):
+class TestDbMigrations(base.TestCase):
 
     def test_clean_downgrade(self):
         # We don't have data migration for clusters with vip_type 'ovs'

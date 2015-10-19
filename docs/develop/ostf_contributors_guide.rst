@@ -33,7 +33,7 @@ There are a few rules you need to follow to successfully pass the code review an
 How to setup my environment?
 ----------------------------
 
-OSTF repository is located on Stackforge: https://github.com/stackforge/fuel-ostf. You also have to install and hook-up gerrit, because otherwise you will not be able to contribute code. To do that you need to follow registration and installation instructions in the document https://wiki.openstack.org/wiki/CLA#Contributors_License_Agreement
+OSTF repository is located at git.openstack.org or GitHub mirror: https://github.com/openstack/fuel-ostf. You also have to install and hook-up gerrit, because otherwise you will not be able to contribute code. To do that you need to follow registration and installation instructions in the document https://wiki.openstack.org/wiki/CLA#Contributors_License_Agreement
 After you've completed the instructions, you're all set to begin editing/creating code.
 
 How should my modules look like?
@@ -145,7 +145,7 @@ How to execute my tests?
 Simplest way is to install Fuel, and OSTF will be installed as part of it.
   - install virtualbox
   - build Fuel ISO: :ref:`building-fuel-iso`
-  - use `virtualbox scripts to run an ISO <https://github.com/stackforge/fuel-main/tree/master/virtualbox>`_
+  - use `virtualbox scripts to run an ISO <https://github.com/openstack/fuel-main/tree/master/virtualbox>`_
   - once the installation is finished, go to Fuel UI (usually it's 10.20.0.2:8000) and create a new cluster with necessary configuration
   - execute::
 

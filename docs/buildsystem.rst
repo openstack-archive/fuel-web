@@ -4,7 +4,7 @@
 Fuel ISO build system
 =====================
 
-Use the `fuel-main repository <https://github.com/stackforge/fuel-main.git>`_
+Use the `fuel-main repository <https://github.com/openstack/fuel-main.git>`_
 to build Fuel components such as an ISO or an upgrade tarball.
 This repository contains a set of GNU Make build scripts.
 
@@ -39,7 +39,7 @@ If git is not found, install it with the following command:
 
    mkdir ~/fuel
    cd ~/fuel
-   git clone https://github.com/stackforge/fuel-main.git
+   git clone https://github.com/openstack/fuel-main.git
    cd fuel-main
 
 
@@ -87,11 +87,11 @@ puppet modules, orchestration components, testing components.
 Source code of all those components is split into multiple git
 repositories like:
 
-- https://github.com/stackforge/fuel-web
-- https://github.com/stackforge/fuel-astute
-- https://github.com/stackforge/fuel-ostf
-- https://github.com/stackforge/fuel-library
-- https://github.com/stackforge/fuel-docs
+- https://github.com/openstack/fuel-web
+- https://github.com/openstack/fuel-astute
+- https://github.com/openstack/fuel-ostf
+- https://github.com/openstack/fuel-library
+- https://github.com/openstack/fuel-docs
 
 The main component of the Fuel build system is
 *fuel-main* directory.

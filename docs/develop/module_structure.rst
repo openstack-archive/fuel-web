@@ -63,7 +63,7 @@ to Fuel project.
 
 In other cases (like applying some very specific custom logic or settings)
 contributor should submit patches to ``openstack::*`` `classes
-<https://github.com/stackforge/fuel-library/tree/master/deployment/puppet/
+<https://github.com/openstack/fuel-library/tree/master/deployment/puppet/
 openstack>`_
 
 Fuel library includes custom modules as well as ones forked from upstream
@@ -75,7 +75,7 @@ Otherwise, he or she should submit patch to upstream module first, and once
 merged or +2 recieved from a core reviewer, the patch should be backported to
 Fuel library as well. Note that the patch submitted for Fuel library should
 contain in commit message the upstream commit SHA or link to github pull-request
-(if the module is not on stackforge) or Change-Id of gerrit patch.
+(if the module is not on git.openstack.org) or Change-Id of gerrit patch.
 
 The Puppet modules structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -401,7 +401,7 @@ tests written.
 
 Whole test suite is run by `python_run_tests.sh <docs/develop/module_structure.rst>`_.
 It uses a virtualenv in which all Python modules from
-`python-tests-requirements.txt <https://github.com/stackforge/fuel-library/blob/master/utils/jenkins/python-test-requirements.txt>`_
+`python-tests-requirements.txt <https://github.com/openstack/fuel-library/blob/master/utils/jenkins/python-test-requirements.txt>`_
 are installed. If tests need any third-party library, it should be added as a requirement into this file.
 
 Before starting any test for Python code, test suite runs style checks for any Python code

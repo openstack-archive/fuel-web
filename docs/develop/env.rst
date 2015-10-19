@@ -25,19 +25,21 @@ Fuel master node installation ISO, and generate documentation.
 Getting the Source Code
 -----------------------
 
-Source code of OpenStack Fuel can be found on Stackforge.
+Source code of OpenStack Fuel can be found at git.openstack.org or
+GitHub.
+
 Follow these steps to clone the repositories for each of
 the Fuel components:
 ::
 
     apt-get install git
-    git clone https://github.com/stackforge/fuel-main
-    git clone https://github.com/stackforge/fuel-web
-    git clone https://github.com/stackforge/fuel-agent
-    git clone https://github.com/stackforge/fuel-astute
-    git clone https://github.com/stackforge/fuel-ostf
-    git clone https://github.com/stackforge/fuel-library
-    git clone https://github.com/stackforge/fuel-docs
+    git clone https://github.com/openstack/fuel-main
+    git clone https://github.com/openstack/fuel-web
+    git clone https://github.com/openstack/fuel-agent
+    git clone https://github.com/openstack/fuel-astute
+    git clone https://github.com/openstack/fuel-ostf
+    git clone https://github.com/openstack/fuel-library
+    git clone https://github.com/openstack/fuel-docs
 
 
 .. _building-fuel-iso:
@@ -56,7 +58,7 @@ Ubuntu 14.04 environment are:
 ::
 
     apt-get install git
-    git clone https://github.com/stackforge/fuel-main
+    git clone https://github.com/openstack/fuel-main
     cd fuel-main
     ./prepare-build-env.sh
     make iso
@@ -74,10 +76,10 @@ tag of Fuel:
     ASTUTE_COMMIT?=tags/5.0
     OSTF_COMMIT?=tags/5.0
 
-    FUELLIB_REPO?=https://github.com/stackforge/fuel-library.git
-    NAILGUN_REPO?=https://github.com/stackforge/fuel-web.git
-    ASTUTE_REPO?=https://github.com/stackforge/fuel-astute.git
-    OSTF_REPO?=https://github.com/stackforge/fuel-ostf.git
+    FUELLIB_REPO?=https://github.com/openstack/fuel-library.git
+    NAILGUN_REPO?=https://github.com/openstack/fuel-web.git
+    ASTUTE_REPO?=https://github.com/openstack/fuel-astute.git
+    OSTF_REPO?=https://github.com/openstack/fuel-ostf.git
 
 To build an ISO image from custom gerrit patches on review, edit the
 "Gerrit URLs and commits" section of config.mk, e.g. for
@@ -120,7 +122,7 @@ your Fuel ISO build environment on Ubuntu 14.04:
 
 #. If you haven't already done so, get the source code::
 
-    git clone https://github.com/stackforge/fuel-main
+    git clone https://github.com/openstack/fuel-main
 
 #. Now you can build the Fuel ISO image::
 
@@ -134,7 +136,7 @@ your Fuel ISO build environment on Ubuntu 14.04:
 
 .. note:: In case you are using Virtualbox for building iso, please ensure that the build
     directory BUILD_DIR and LOCAL_MIRROR
-    (see `config.mk <https://github.com/stackforge/fuel-main/blob/master/config.mk>`_)
+    (see `config.mk <https://github.com/openstack/fuel-main/blob/master/config.mk>`_)
     both ``are OUT`` of the Virtualbox
     `shared folder path <https://www.virtualbox.org/manual/ch04.html#sharedfolders>`_
 
@@ -153,7 +155,7 @@ with Fuel easier:
   This is useful for UI or Nailgun development.
 
 You can download both tools from the
-`fuel-dev-tools <https://github.com/stackforge/fuel-dev-tools>`_.
+`fuel-dev-tools <https://github.com/openstack/fuel-dev-tools>`_.
 
 Nailgun (Fuel-Web)
 ------------------

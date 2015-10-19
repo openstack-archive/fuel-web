@@ -19,7 +19,7 @@ separate versions of fuel-devops provide backward compatibility for system
 tests which have been refactored since the last major release. `How to migrate`_
 
 For sources please refer to
-`fuel-devops repository on github <https://github.com/stackforge/fuel-devops>`_.
+`fuel-devops repository on github <https://github.com/openstack/fuel-devops>`_.
 
 .. _install system dependencies:
 
@@ -86,12 +86,12 @@ Devops installation in `virtualenv <http://virtualenv.readthedocs.org/en/latest/
 .. code-block:: bash
 
     source  <path>/fuel-devops-venv/bin/activate
-    pip install git+https://github.com/stackforge/fuel-devops.git@<version> --upgrade
+    pip install git+https://github.com/openstack/fuel-devops.git@<version> --upgrade
 
 where <version> is the specific version of fuel-devops you would like to
 install. For Fuel 6.0 and earlier, take the latest fuel-devops 2.5.x. For Fuel
 6.1 and later, use 2.9.x or newer. See more information on the latest available
-versions in `fuel-devops <https://github.com/stackforge/fuel-devops/tags>`_
+versions in `fuel-devops <https://github.com/openstack/fuel-devops/tags>`_
 repo.
 
 setup.py in fuel-devops repository does everything required.
@@ -199,7 +199,7 @@ Depending on the Fuel release, you may need a different repository. In case of
 
 .. code-block:: bash
 
-    git clone https://github.com/stackforge/fuel-qa # fuel-main for 6.0 and earlier
+    git clone https://github.com/openstack/fuel-qa # fuel-main for 6.0 and earlier
     cd fuel-qa/
 
 2. Install requirements
@@ -327,7 +327,7 @@ To update fuel-devops, you can use the following examples:
       virtualenv --system-site-packages  ~/venv-nailgun-tests
     fi
     source ~/venv-nailgun-tests/bin/activate
-    pip install -r https://raw.githubusercontent.com/stackforge/fuel-main/master/fuelweb_test/requirements.txt --upgrade
+    pip install -r https://raw.githubusercontent.com/openstack/fuel-main/master/fuelweb_test/requirements.txt --upgrade
     django-admin.py syncdb --settings=devops.settings --noinput
     django-admin.py migrate devops --settings=devops.settings --noinput
     deactivate
@@ -340,7 +340,7 @@ To update fuel-devops, you can use the following examples:
       virtualenv --system-site-packages  ~/venv-nailgun-tests-2.9
     fi
     source ~/venv-nailgun-tests-2.9/bin/activate
-    pip install -r https://raw.githubusercontent.com/stackforge/fuel-qa/master/fuelweb_test/requirements.txt --upgrade
+    pip install -r https://raw.githubusercontent.com/openstack/fuel-qa/master/fuelweb_test/requirements.txt --upgrade
     django-admin.py syncdb --settings=devops.settings --noinput
     django-admin.py migrate devops --settings=devops.settings --noinput
     deactivate
@@ -348,11 +348,11 @@ To update fuel-devops, you can use the following examples:
 3. Setup new repository of system tests for 6.1 release
 
 All system tests for 6.1 and higher were moved to
-`fuel-qa <https://github.com/stackforge/fuel-qa>`_ repo.
+`fuel-qa <https://github.com/openstack/fuel-qa>`_ repo.
 
 To upgrade 6.1 jobs, follow these steps:
 
 * make a separate Python venv, for example in ~/venv-nailgun-tests-2.9
-* install `requirements <https://github.com/stackforge/fuel-qa/blob/master/fuelweb_test/requirements.txt>`_ of system tests
+* install `requirements <https://github.com/openstack/fuel-qa/blob/master/fuelweb_test/requirements.txt>`_ of system tests
 * if you are using system tests on CI, please configure your CI to use new Python venv, or export path to the new Python venv in the variable VENV_PATH:
   export VENV_PATH=<path>/fuel-devops-venv-2.9

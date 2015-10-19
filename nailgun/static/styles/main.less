@@ -3551,6 +3551,14 @@ input[type=range] {
     }
   }
   .healthcheck-table {
+    &.disabled {
+      tr td label {
+        cursor: default;
+      }
+      .custom-tumbler span {
+        cursor: not-allowed;
+      }
+    }
     tr {
       td {
         &.healthcheck-name,

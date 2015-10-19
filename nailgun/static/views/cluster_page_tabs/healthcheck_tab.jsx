@@ -247,7 +247,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 credentials={this.state.credentials}
                                 onInputChange={this.handleInputChange}
                                 disabled={hasRunningTests}
-                                />
+                            />
                         </div>
                     }
                     <div>
@@ -257,11 +257,11 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         <div key='testsets'>
                             {this.props.testsets.map(_.bind(function(testset) {
                                 return <TestSet
-                                key={testset.id}
-                                testset={testset}
-                                testrun={this.props.testruns.findWhere({testset: testset.id}) || new models.TestRun({testset: testset.id})}
-                                tests={new Backbone.Collection(this.props.tests.where({testset: testset.id}))}
-                                disabled={disabledState || hasRunningTests}
+                                    key={testset.id}
+                                    testset={testset}
+                                    testrun={this.props.testruns.findWhere({testset: testset.id}) || new models.TestRun({testset: testset.id})}
+                                    tests={new Backbone.Collection(this.props.tests.where({testset: testset.id}))}
+                                    disabled={disabledState || hasRunningTests}
                                 />;
                             }, this))}
                         </div>
@@ -319,8 +319,12 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             this.props.testset.set('checked', this.props.tests.where({checked: true}).length == this.props.tests.length);
         },
         render: function() {
+            var classes = {
+                'table healthcheck-table': true,
+                disabled: this.props.disabled
+            };
             return (
-                <table className='table healthcheck-table'>
+                <table className={utils.classNames(classes)}>
                     <thead>
                         <tr>
                             <th>

@@ -26,10 +26,22 @@ class NodeGroupValidator(BasicValidator):
     single_schema = node_group.single_schema
 
     @classmethod
+    def _validate_name(cls, data):
+        count = objects.NodeGroupCollection.filter_by(
+            None, name=data['name'], cluster_id=data['cluster_id']).count()
+        if count:
+            raise errors.NotAllowed(
+                "Node group '{0}' already exists "
+                "in environment {1}.".format(
+                    data['name'], data['cluster_id']))
+
+    @classmethod
     def validate(cls, data):
         data = cls.validate_json(data)
         cluster = objects.Cluster.get_by_uid(
             data['cluster_id'], fail_if_not_found=True)
+
+        cls._validate_name(data)
 
         if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
             raise errors.NotAllowed(

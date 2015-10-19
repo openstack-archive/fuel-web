@@ -49,6 +49,8 @@ from nailgun.orchestrator.neutron_serializers import \
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer70
 from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkDeploymentSerializer80
+from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer
@@ -506,6 +508,11 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
         return {}
 
 
+class DeploymentHASerializer80(DeploymentHASerializer70):
+
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer80
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -532,6 +539,9 @@ def get_serializer_for_cluster(cluster):
         '7.0': {
             # Multinode is not supported anymore
             'ha': DeploymentHASerializer70,
+        },
+        '8.0': {
+            'ha': DeploymentHASerializer80,
         }
     }
 

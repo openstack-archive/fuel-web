@@ -413,6 +413,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .tooltip-wrapper {
   display: inline-block;
+  float: left;
 }
 
 // ALERTS
@@ -1700,13 +1701,12 @@ input[type=range] {
       }
     }
     .search {
-      min-width: 290px;
+      min-width: 224px;
       position: relative;
       .form-group {
         margin: 0;
       }
       input {
-        padding-right: 25px;
         font-size: @base-font-size - 1;
       }
       .btn-clear-search {
@@ -1796,11 +1796,17 @@ input[type=range] {
     overflow: hidden;
     padding-left: 0;
     .btn-group {
-      button:first-child {
-        margin-left: @management-panel-indent;
+      button {
+        padding: 6px 10px;
+        &:first-child {
+          margin-left: @management-panel-indent;
+        }
+        .glyphicon {
+          margin-right: @management-panel-indent;
+        }
       }
-      .glyphicon {
-        margin-right: @management-panel-indent;
+      &:first-child button {
+        margin-left: 0;
       }
     }
   }

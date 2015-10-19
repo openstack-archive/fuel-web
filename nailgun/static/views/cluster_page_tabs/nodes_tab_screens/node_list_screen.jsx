@@ -912,7 +912,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <div className='row'>
                     <div className='sticker node-management-panel'>
-                        <div className='node-list-management-buttons col-xs-6'>
+                        <div className='node-list-management-buttons col-xs-5'>
                             <div className='view-mode-switcher'>
                                 <div className='btn-group' data-toggle='buttons'>
                                     {_.map(this.props.cluster.viewModes(), function(mode) {
@@ -993,7 +993,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 )
                             ]}
                         </div>
-                        <div className='control-buttons-box col-xs-6 text-right'>
+                        <div className='control-buttons-box col-xs-7 text-right'>
                             {this.props.mode != 'list' ?
                                 <div className='btn-group' role='group'>
                                     <button
@@ -1053,7 +1053,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 {i18n(ns + 'edit_roles_button')}
                                             </button>
                                         }
-                                        {!this.props.locked && !this.props.nodes.length &&
+                                    </div>,
+                                    !this.props.locked &&
+                                        <div className='btn-group' role='group' key='add-nodes-button'>
                                             <button
                                                 className='btn btn-success btn-add-nodes'
                                                 onClick={_.bind(this.changeScreen, this, 'add', false)}
@@ -1062,8 +1064,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 <i className='glyphicon glyphicon-plus' />
                                                 {i18n(ns + 'add_nodes_button')}
                                             </button>
-                                        }
-                                    </div>
+                                        </div>
                                 ]
                             }
                         </div>

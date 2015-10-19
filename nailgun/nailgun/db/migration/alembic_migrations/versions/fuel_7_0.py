@@ -123,7 +123,7 @@ def downgrade():
     vms_conf_downgrade()
     extend_segmentation_type_downgrade()
 
-    op.execute('UPDATE clusters SET name=LEFT(name, 50)')
+    op.execute('UPDATE clusters SET name=substring(name from 1 for 50)')
     op.alter_column('clusters', 'name', type_=sa.VARCHAR(50))
     op.drop_constraint(
         'oswl_stats_cluster_id_created_date_resource_type_unique_key',

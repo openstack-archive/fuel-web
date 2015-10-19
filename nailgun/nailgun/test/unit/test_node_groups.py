@@ -16,6 +16,8 @@
 
 import json
 
+from webtest.app import AppError
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun import objects
@@ -176,3 +178,141 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         self.assertEquals(resp.status_code, 404)
+
+    def test_nodegroup_create_duplication(self):
+        self.assertEquals(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count(), 1)
+
+        resp = self.env.create_node_group()
+        self.assertEquals(resp.status_code, 201)
+        self.assertEquals(resp.json_body['cluster'], self.cluster['id'])
+
+        msg = "Node group .*{0}.* already exists in environment {1}".format(
+            resp.json_body['name'], self.cluster['id'])
+        with self.assertRaisesRegexp(Exception, msg):
+            self.env.create_node_group()
+
+        self.assertEquals(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count(), 2)
+
+    def test_nodegroup_rename(self):
+        self.assertEquals(
+            1,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+
+        resp = self.env.create_node_group(name='nodegroup_to_be_renamed')
+        self.assertEquals(201, resp.status_code)
+        self.assertEquals(self.cluster['id'], resp.json_body['cluster'])
+
+        self.assertEquals(
+            2,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+
+        nodegroup_name = 'test_ng_renamed'
+        resp = self.app.put(
+            reverse(
+                'NodeGroupHandler',
+                kwargs={'obj_id': resp.json_body['id']}),
+            json.dumps(
+                {'cluster_id': self.cluster['id'], 'name': nodegroup_name}),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+
+        self.assertEquals(200, resp.status_code)
+        self.assertEquals(self.cluster['id'], resp.json_body['cluster'])
+        self.assertEquals(
+            2,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+        self.assertEquals(
+            1,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).filter_by(name=nodegroup_name).count())
+
+    def test_nodegroup_rename_same_nodegroup_using_same_name(self):
+        self.assertEquals(
+            1,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+
+        nodegroup_name='nodegroup_to_be_renamed'
+        resp = self.env.create_node_group(name=nodegroup_name)
+        self.assertEquals(201, resp.status_code)
+        self.assertEquals(self.cluster['id'], resp.json_body['cluster'])
+
+        self.assertEquals(
+            2,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+
+        resp = self.app.put(
+            reverse(
+                'NodeGroupHandler',
+                kwargs={'obj_id': resp.json_body['id']}),
+            json.dumps(
+                {'cluster_id': self.cluster['id'], 'name': nodegroup_name}),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+
+        self.assertEquals(200, resp.status_code)
+        self.assertEquals(self.cluster['id'], resp.json_body['cluster'])
+        self.assertEquals(
+            2,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+        self.assertEquals(
+            1,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).filter_by(name=nodegroup_name).count())
+
+    def test_nodegroup_rename_using_existing_name(self):
+
+        self.assertEquals(
+            1,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+
+        nodegroup_name = 'test_ng'
+        ng_resp = self.env.create_node_group(name=nodegroup_name)
+        self.assertEquals(201, ng_resp.status_code)
+        self.assertEquals(self.cluster['id'], ng_resp.json_body['cluster'])
+
+        self.assertEquals(
+            2,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+
+        new_ng_resp = self.env.create_node_group(name='new_group')
+        self.assertEquals(201, new_ng_resp.status_code)
+        self.assertEquals(self.cluster['id'], new_ng_resp.json_body['cluster'])
+
+        self.assertEquals(
+            3,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())
+
+        self.app.put(
+            reverse(
+                'NodeGroupHandler',
+                kwargs={'obj_id': new_ng_resp.json_body['id']}),
+            json.dumps(
+                {'cluster_id': self.cluster['id'],
+                 'name': nodegroup_name}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEquals(
+            1,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).filter_by(name=nodegroup_name).count())
+        self.assertEquals(
+            3,
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count())

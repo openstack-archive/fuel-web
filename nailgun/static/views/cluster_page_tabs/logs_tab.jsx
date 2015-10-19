@@ -61,7 +61,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             var options = {
                 url: '/api/logs',
                 dataType: 'json',
-                data: _.omit(this.props.selectedLogs, 'type'),
+                data: _.omit(this.state.selectedLogs, 'type'),
                 headers: {
                     'X-Auth-Token': app.keystoneClient.token
                 }
@@ -70,16 +70,15 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             _.extend(options.data, data);
             return $.ajax(options);
         },
-        showLogs: function(selectedLogs, params) {
-            params = params || {};
-            var options = this.composeOptions(selectedLogs);
+        showLogs: function(logOptions, params) {
             this.stopPolling();
-            this.props.cluster.set({log_options: options}, {silent: true});
+            var options = logOptions.type == 'remote' ? logOptions : _.omit(logOptions, 'node')
+            if (options.level) options.level = options.level.toLowerCase();
             app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
+            params = params || {};
             this.fetchLogs(params)
                 .done(_.bind(function(data) {
                     var logsEntries = this.state.logsEntries || [];
-
                     this.setState({
                         showMoreLogsLink: data.has_more || false,
                         logsEntries: params.fetch_older ? logsEntries.concat(data.entries) : data.entries,
@@ -96,27 +95,14 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     });
                 }, this));
         },
-        composeOptions: function(selectedLogs) {
-            var options = _.omit(selectedLogs, 'node');
-            if (options.level) {
-                options.level = options.level.toLowerCase();
-            }
-            if (options.type == 'remote') {
-                options.node = selectedLogs.node;
-            }
-            return options;
-        },
         onShowButtonClick: function(states) {
-            if (states) this.props.changeLogSelection(states);
-            this.setState({loading: 'loading'}, _.partial(this.showLogs, states || this.props.selectedLogs));
+            this.setState({
+                selectedLogs: states,
+                loading: 'loading'
+            }, _.partial(this.showLogs, states));
         },
         onShowMoreClick: function(value) {
-            var options = {
-                max_entries: value,
-                fetch_older: true,
-                from: this.state.from
-            };
-            this.showLogs(this.props.selectedLogs, options);
+            this.showLogs(this.state.selectedLogs, {max_entries: value, fetch_older: true, from: this.state.from});
         },
         render: function() {
             return (
@@ -124,9 +110,9 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     <div className='title'>{i18n('cluster_page.logs_tab.title')}</div>
                     <div className='col-xs-12 content-elements'>
                         <LogFilterBar
-                            cluster={this.props.cluster}
-                            selectedLogs={this.props.selectedLogs}
-                            onShowButtonClick={this.onShowButtonClick} />
+                            {...this.props}
+                            onShowButtonClick={this.onShowButtonClick}
+                        />
                         {this.state.loading == 'fail' &&
                             <div className='logs-fetch-error alert alert-danger'>
                                 {i18n('cluster_page.logs_tab.log_alert')}
@@ -137,7 +123,8 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                             <LogsTable
                                 logsEntries={this.state.logsEntries}
                                 showMoreLogsLink={this.state.showMoreLogsLink}
-                                onShowMoreClick={this.onShowMoreClick} />
+                                onShowMoreClick={this.onShowMoreClick}
+                            />
                         }
                     </div>
                 </div>
@@ -147,11 +134,12 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
 
     var LogFilterBar = React.createClass({
         getInitialState: function() {
+            var logOptions = this.props.tabOptions[0] ? utils.deserializeTabOptions(_.compact(this.props.tabOptions).join('/')) : this.props.selectedLogs;
             return {
-                chosenType: this.props.selectedLogs.type,
-                chosenNodeId: this.props.selectedLogs.node,
-                chosenSourceId: this.props.selectedLogs.source,
-                chosenLevelId: this.props.selectedLogs.level,
+                chosenType: logOptions.type,
+                chosenNodeId: logOptions.node,
+                chosenSourceId: logOptions.source,
+                chosenLevelId: logOptions.level ? logOptions.level.toUpperCase() : null,
                 sourcesLoadingState: 'loading',
                 sources: [],
                 locked: false
@@ -253,14 +241,16 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             }
             return options;
         },
-        handleShowButtonClick: function(updateStates) {
+        handleShowButtonClick: function(saveLogSelection) {
             this.setState({locked: true});
-            this.props.onShowButtonClick(updateStates && {
-                type: this.state.chosenType,
-                node: this.state.chosenNodeId,
-                source: this.state.chosenSourceId,
-                level: this.state.chosenLevelId
-            });
+            var states = {
+                    type: this.state.chosenType,
+                    node: this.state.chosenNodeId,
+                    source: this.state.chosenSourceId,
+                    level: this.state.chosenLevelId
+                };
+            if (saveLogSelection == true) this.props.changeLogSelection(states);
+            this.props.onShowButtonClick(states);
         },
         render: function() {
             var isRemote = this.state.chosenType == 'remote';

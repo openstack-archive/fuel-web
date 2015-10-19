@@ -3602,6 +3602,9 @@ input[type=range] {
     }
     .custom-tumbler {
       margin: 0;
+      input[disabled] + span {
+        cursor: not-allowed;
+      }
       span {
         margin-top: @padding-top-controls;
         cursor: pointer;

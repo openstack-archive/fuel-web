@@ -1293,3 +1293,13 @@ class NeutronNetworkTemplateSerializer70(
             [n.update(addresses) for n in nodes
              if n['uid'] == str(node.uid)]
         return nodes
+
+
+class NeutronNetworkDeploymentSerializer80(
+    NeutronNetworkDeploymentSerializer70
+):
+    pass
+
+
+class NeutronNetworkTemplateSerializer80(NeutronNetworkTemplateSerializer70):
+    pass

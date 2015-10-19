@@ -50,9 +50,51 @@ class TestGetSerializer(BaseUnitTest):
             ds.get_serializer_for_cluster(cluster),
             ds.DeploymentMultinodeSerializer51)
 
+    def test_retreiving_ha_for_6_0(self):
+        cluster = mock.MagicMock(is_ha_mode=True)
+        cluster.release.environment_version = '6.0'
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentHASerializer60)
+
+    def test_retreiving_multinode_for_6_0(self):
+        cluster = mock.MagicMock(is_ha_mode=False)
+        cluster.release.environment_version = '6.0'
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentMultinodeSerializer60)
+
+    def test_retreiving_ha_for_6_1(self):
+        cluster = mock.MagicMock(is_ha_mode=True)
+        cluster.release.environment_version = '6.1'
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentHASerializer61)
+
+    def test_retreiving_multinode_for_6_1(self):
+        cluster = mock.MagicMock(is_ha_mode=False)
+        cluster.release.environment_version = '6.1'
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentMultinodeSerializer61)
+
+    def test_retreiving_ha_for_7_0(self):
+        cluster = mock.MagicMock(is_ha_mode=True)
+        cluster.release.environment_version = '7.0'
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentHASerializer70)
+
+    def test_retreiving_ha_for_8_0(self):
+        cluster = mock.MagicMock(is_ha_mode=True)
+        cluster.release.environment_version = '8.0'
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentHASerializer80)
+
     def test_usage_of_latest_serializer_in_case_of_new_release(self):
         cluster = mock.MagicMock(is_ha_mode=True)
         cluster.release.environment_version = '9999.0'
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
-            ds.DeploymentHASerializer70)
+            ds.DeploymentHASerializer80)

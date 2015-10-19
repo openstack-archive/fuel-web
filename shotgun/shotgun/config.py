@@ -15,6 +15,8 @@
 import logging
 import time
 
+import fabric.api
+
 from shotgun import settings
 
 
@@ -55,12 +57,44 @@ class Config(object):
     def lastdump(self):
         return self.data.get("lastdump", settings.LASTDUMP)
 
+    def _check_hosts(self):
+        offline_hosts = []
+        online_hosts = []
+        for role, properties in self.data["dump"].iteritems():
+            for host in properties.get("hosts", []):
+                address = host.get("address", "localhost")
+                ssh_key = host.get("ssh-key")
+                if address in offline_hosts or address in online_hosts:
+                    continue
+                with fabric.api.settings(
+                    host_string=address,
+                    key_filename=ssh_key,
+                    timeout=2,
+                    command_timeout=3,
+                    warn_only=True,
+                    abort_on_prompts=True,
+                ):
+                    logger.debug("Checking whether the host %s is online",
+                                 address)
+                    try:
+                        fabric.api.run('uname -a')
+                        logger.debug("Host %s is online", address)
+                        online_hosts.append(address)
+                    except Exception as e:
+                        logger.debug("Host %s is offline/unreachable: %s",
+                                     address, str(e))
+                        offline_hosts.append(address)
+        return online_hosts
+
     @property
     def objects(self):
+        online_hosts = self._check_hosts()
         for role, properties in self.data["dump"].iteritems():
             for host in properties.get("hosts", []):
                 for object_ in properties.get("objects", []):
                     object_["host"] = host
+                    if host.get("address", "localhost") not in online_hosts:
+                        object_["type"] = 'offline'
                     yield object_
 
     @property

@@ -53,6 +53,7 @@ class Driver(object):
             "postgres": Postgres,
             "xmlrpc": XmlRpc,
             "command": Command,
+            "offline": Offline,
         }.get(driver_type, cls)(data, conf)
 
     def __init__(self, data, conf):
@@ -255,3 +256,19 @@ class Command(Driver):
             f.write("\n===== STDERR =====:\n")
             if out.stderr:
                 f.write(out.stderr)
+
+
+class Offline(Driver):
+
+    def __init__(self, data, conf):
+        super(Offline, self).__init__(data, conf)
+        self.target_path = os.path.join(
+            self.conf.target, self.host, "OFFLINE_NODE.txt")
+
+    def snapshot(self):
+        if not os.path.exists(self.target_path):
+            utils.execute('mkdir -p "{0}"'.format(os.path.dirname(
+                self.target_path)))
+            with open(self.target_path, "w") as f:
+                f.write("Host {0} was offline/unreachable during logs "
+                        "obtaining\n".format(self.host))

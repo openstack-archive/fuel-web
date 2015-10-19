@@ -143,27 +143,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }
         },
         getInitialState: function() {
-            // FIXME(vkramskikh): we need to get rid of log_options - there
-            // should be single source of truth: tabOptions/URL parameters
-            var logOptions = this.props.tabOptions[0] ?
-                    utils.deserializeTabOptions(_.compact(this.props.tabOptions).join('/'))
-                :
-                    this.props.cluster.get('log_options') || {};
             return {
                 activeGroupName: this.pickDefaultSettingGroup(),
                 selectedNodeIds: {},
-                selectedLogs: {
-                    type: logOptions.type || 'local',
-                    node: logOptions.node || null,
-                    source: logOptions.source || null,
-                    level: logOptions.level ? logOptions.level.toUpperCase() : 'INFO'
-                }
+                selectedLogs: {type: 'local', node: null, source: 'app', level: 'INFO'}
             };
         },
         changeLogSelection: function(selectedLogs) {
-            this.setState({
-                selectedLogs: _.extend({}, this.state.selectedLogs, selectedLogs)
-            });
+            this.setState({selectedLogs: selectedLogs});
         },
         removeFinishedNetworkTasks: function(callback) {
             var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));

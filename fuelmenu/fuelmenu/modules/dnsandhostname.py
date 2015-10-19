@@ -245,11 +245,19 @@ is accessible"}
             etchosts.close()
 
         def make_resolv_conf(filename):
+            if self.netsettings[self.parent.managediface]["addr"] != "":
+                managediface_ip = self.netsettings[
+                    self.parent.managediface]["addr"]
+            else:
+                managediface_ip = "127.0.0.1"
+
             with open(filename, 'w') as f:
-                f.write("search %s\n" % responses['DNS_SEARCH'])
-                f.write("domain %s\n" % responses['DNS_DOMAIN'])
+                f.write("search {0}\n".format(responses['DNS_SEARCH']))
+                f.write("domain {0}\n".format(responses['DNS_DOMAIN']))
+                if self.get_deployment_mode() == "post":
+                    f.write("nameserver {0}\n".format(managediface_ip))
                 for upstream_dns in responses['DNS_UPSTREAM'].split(','):
-                    f.write("nameserver %s\n" % upstream_dns)
+                    f.write("nameserver {0}\n".format(upstream_dns))
 
         # Create a temporary resolv.conf so DNS works before the cobbler
         # container is up and running.
@@ -381,6 +389,9 @@ is accessible"}
 
     def get_default_gateway_linux(self):
         return ModuleHelper.get_default_gateway_linux()
+
+    def get_deployment_mode(self):
+        return ModuleHelper.get_deployment_mode()
 
     def radioSelect(self, current, state, user_data=None):
         pass

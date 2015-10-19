@@ -147,7 +147,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     var HorizonBlock = React.createClass({
         render: function() {
             var cluster = this.props.cluster,
-                horizonLinkProtocol = cluster.get('settings').get('public_ssl.horizon.value') ? 'https://' : 'http://';
+                isSecureProtocolUsed = cluster.get('settings').get('public_ssl.horizon.value'),
+                ipValue = 'http://' + cluster.get('networkConfiguration').get('public_vip'),
+                fqdnValue = 'https://' + cluster.get('settings').get('public_ssl.hostname.value');
             return (
                 <div className='row plugins-block'>
                     <div className='col-xs-12 plugin-entry horizon'>
@@ -156,7 +158,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         <a
                             className='btn btn-success'
                             target='_blank'
-                            href={horizonLinkProtocol + cluster.get('networkConfiguration').get('public_vip')}
+                            href={isSecureProtocolUsed ? fqdnValue : ipValue}
                         >
                             {i18n(namespace + 'go_to_horizon')}
                         </a>

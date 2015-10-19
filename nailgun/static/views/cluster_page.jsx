@@ -143,21 +143,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }
         },
         getInitialState: function() {
-            // FIXME(vkramskikh): we need to get rid of log_options - there
-            // should be single source of truth: tabOptions/URL parameters
-            var logOptions = this.props.tabOptions[0] ?
-                    utils.deserializeTabOptions(_.compact(this.props.tabOptions).join('/'))
-                :
-                    this.props.cluster.get('log_options') || {};
             return {
                 activeGroupName: this.pickDefaultSettingGroup(),
-                selectedNodeIds: {},
-                selectedLogs: {
-                    type: logOptions.type || 'local',
-                    node: logOptions.node || null,
-                    source: logOptions.source || null,
-                    level: logOptions.level ? logOptions.level.toUpperCase() : 'INFO'
-                }
+                selectedNodeIds: {}
             };
         },
         changeLogSelection: function(selectedLogs) {
@@ -211,6 +199,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     this.props.cluster.set({release: release});
                 }, this));
             }, this);
+            this.updateLogSettings();
+        },
+        componentWillReceiveProps: function(newProps) {
+            this.updateLogSettings(newProps);
+        },
+        updateLogSettings: function(props) {
+            props = props || this.props;
+            if (props.activeTab == 'logs') {
+                // FIXME(vkramskikh): we need to get rid of log_options - there
+                // should be single source of truth: tabOptions/URL parameters
+                var logOptions = props.tabOptions[0] ?
+                        utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'))
+                    :
+                        props.cluster.get('log_options') || {};
+                this.setState({
+                    selectedLogs: {
+                        type: logOptions.type || 'local',
+                        node: logOptions.node || null,
+                        source: logOptions.source || null,
+                        level: logOptions.level ? logOptions.level.toUpperCase() : 'INFO'
+                    }
+                });
+            }
         },
         getAvailableTabs: function(cluster) {
             return _.filter(this.constructor.getTabs(), function(tabData) {

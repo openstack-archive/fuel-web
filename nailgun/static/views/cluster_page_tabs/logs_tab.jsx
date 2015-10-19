@@ -70,16 +70,13 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             _.extend(options.data, data);
             return $.ajax(options);
         },
-        showLogs: function(selectedLogs, params) {
-            params = params || {};
-            var options = this.composeOptions(selectedLogs);
+        showLogs: function(logOptions, params) {
             this.stopPolling();
-            this.props.cluster.set({log_options: options}, {silent: true});
-            app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
+            app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(logOptions), {trigger: false, replace: true});
+            params = params || {};
             this.fetchLogs(params)
                 .done(_.bind(function(data) {
                     var logsEntries = this.state.logsEntries || [];
-
                     this.setState({
                         showMoreLogsLink: data.has_more || false,
                         logsEntries: params.fetch_older ? logsEntries.concat(data.entries) : data.entries,
@@ -106,9 +103,15 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             }
             return options;
         },
-        onShowButtonClick: function(states) {
+        onShowButtonClick: function(states, saveLogSelection) {
             if (states) this.props.changeLogSelection(states);
-            this.setState({loading: 'loading'}, _.partial(this.showLogs, states || this.props.selectedLogs));
+            this.setState({loading: 'loading'}, function() {
+                var logOptions = this.composeOptions(states || this.props.selectedLogs);
+                this.showLogs(logOptions);
+                if (saveLogSelection) {
+                    this.props.cluster.set({log_options: logOptions}, {silent: true});
+                }
+            });
         },
         onShowMoreClick: function(value) {
             var options = {
@@ -201,7 +204,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         },
         componentDidMount: function() {
             this.fetchSources(this.state.chosenType, this.state.chosenNodeId)
-                .done(this.handleShowButtonClick);
+                .done(_.partial(this.handleShowButtonClick, false));
         },
         onTypeChange: function(name, value) {
             this.fetchSources(value);
@@ -253,14 +256,14 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             }
             return options;
         },
-        handleShowButtonClick: function(updateStates) {
+        handleShowButtonClick: function(saveLogSelection) {
             this.setState({locked: true});
-            this.props.onShowButtonClick(updateStates && {
+            this.props.onShowButtonClick({
                 type: this.state.chosenType,
                 node: this.state.chosenNodeId,
                 source: this.state.chosenSourceId,
                 level: this.state.chosenLevelId
-            });
+            }, saveLogSelection);
         },
         render: function() {
             var isRemote = this.state.chosenType == 'remote';

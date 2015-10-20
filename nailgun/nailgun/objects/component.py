@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -24,6 +25,10 @@ class Component(NailgunObject):
 
     model = models.Component
     serializer = component.ComponentSerializer
+
+    @classmethod
+    def get_by_name(cls, name):
+        return db().query(cls.model).filter_by(name=name).first()
 
 
 class ComponentCollection(NailgunCollection):

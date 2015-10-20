@@ -653,6 +653,23 @@ class EnvironmentManager(object):
         default_tasks[0].update(kwargs)
         return default_tasks
 
+    def get_default_plugin_components(self, **kwargs):
+        default_components = [
+            {
+                'name': 'test_hypervisor',
+                'type': 'hypervisor',
+                'compatible': {
+                    'hypervisors': ['*'],
+                    'networks': ['*'],
+                    'storages': ['*'],
+                    'additional_services': ['*']
+                }
+            }
+        ]
+
+        default_components[0].update(kwargs)
+        return default_components
+
     def get_default_plugin_metadata(self, **kwargs):
         sample_plugin = {
             'version': '0.1.0',

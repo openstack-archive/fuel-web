@@ -14,13 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+from nailgun import consts
 from nailgun.objects import Plugin
 from nailgun.objects import PluginCollection
 from nailgun.test import base
 
 
 class TestPluginCollection(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestPluginCollection, self).setUp()
+        self.release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact])
 
     def test_all_newest(self):
         self._create_test_plugins()
@@ -47,6 +54,27 @@ class TestPluginCollection(base.BaseTestCase):
         self.assertEqual(len(list(plugins)), 2)
         self.assertListEqual(
             [plugin.id for plugin in plugins], ids)
+
+    def test_get_all_by_release(self):
+        # install 5 plugins (4 multiversion and 1 single)
+        self._create_test_plugins()
+        plugin_data = self.env.get_default_plugin_metadata(
+            name='compatible_plugin',
+            releases=[{
+                'repository_path': 'repositories/ubuntu',
+                'version': '2015.1-8.0',
+                'os': 'ubuntu',
+                'mode': ['ha'],
+                'deployment_scripts_path': 'deployment_scripts/'}])
+        # install 1 plugin compatible with 2015.1-8.0 release
+        Plugin.create(plugin_data)
+        self.assertEqual(len(list(PluginCollection.all())), 6)
+
+        plugins = PluginCollection.get_all_by_release(self.release.id)
+        self.assertEqual(len(list(plugins)), 1)
+        self.assertEqual(list(plugins)[0]['name'], 'compatible_plugin')
+        self.assertEqual(
+            list(plugins)[0]['releases'][0]['version'], '2015.1-8.0')
 
     def _create_test_plugins(self):
         plugin_ids = []

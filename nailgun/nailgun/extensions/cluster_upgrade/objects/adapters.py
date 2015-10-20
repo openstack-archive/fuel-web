@@ -95,7 +95,7 @@ class NailgunReleaseAdapter(object):
 
     @property
     def is_deployable(self):
-        return self.release.is_deployable
+        return objects.Release.is_deployable(self.release)
 
     @property
     def environment_version(self):

@@ -258,6 +258,20 @@ class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):
         nodegroup = db.execute(
             sa.select([self.meta.tables['nodegroups'].c.cluster_id,
                        self.meta.tables['nodegroups'].c.name])).fetchone()
-        insert_table_row(self.meta.tables['nodegroups'],
-                         {'cluster_id': nodegroup['cluster_id'],
-                          'name': uuid.uuid4()})
+        db.execute(self.meta.tables['nodegroups'].insert(),
+                   [{'cluster_id': nodegroup['cluster_id'],
+                     'name': uuid.uuid4()}])
+
+
+class TestReleaseMigrations(base.BaseAlembicMigrationTest):
+
+    def test_release_is_deployable_deleted(self):
+        self.assertNotIn('is_deployable',
+                         [c.name for c in self.meta.tables['releases'].c])
+
+    def test_releases_are_manageonly(self):
+        states = [r[0] for r in db.execute(
+            sa.select([self.meta.tables['releases'].c.state])).fetchall()]
+
+        for state in states:
+            self.assertEqual(state, 'manageonly')

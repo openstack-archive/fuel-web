@@ -81,11 +81,16 @@ function($, _, React, i18n, utils) {
                 mode = this.findMode(name, modes);
 
             return (function() {
-                if (!_.isEmpty(mode)) {
+                if (mode) {
                     this.setModeState(mode, state);
                     this.checkModes(null, modes);
-                    this.props.interface.set('offloading_modes', modes);
+                } else {
+                    // handle Select All click
+                    _.each(modes, function(mode) {
+                        return this.setModeState(mode, state);
+                    }, this);
                 }
+                this.props.interface.set('offloading_modes', modes);
             }).bind(this);
         },
         makeOffloadingModesExcerpt: function() {
@@ -146,7 +151,14 @@ function($, _, React, i18n, utils) {
             }).bind(this));
         },
         render: function() {
-            var modes = this.props.interface.get('offloading_modes') || [];
+            var ifcModes = this.props.interface.get('offloading_modes'),
+                ifcModeStates = _.union(_.pluck(ifcModes, 'state'), _.pluck(_.flatten(_.pluck(ifcModes, 'sub')), 'state')),
+                modes = ifcModes ?
+                    [{
+                        name: i18n(ns + 'all_modes'),
+                        state: _.uniq(ifcModeStates).length == 1 ? ifcModeStates[0] : undefined,
+                        sub: ifcModes
+                    }] : [];
             return (
                 <div className='offloading-modes'>
                     <div>

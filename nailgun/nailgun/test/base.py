@@ -431,6 +431,12 @@ class EnvironmentManager(object):
 
         return plugin
 
+    def create_component(self, release=None, **kwargs):
+        if release:
+            pass
+        else:
+            pass
+
     def default_metadata(self):
         item = self.find_item_by_pk_model(
             self.read_fixtures(("sample_environment",)),

@@ -94,7 +94,6 @@ def prepare():
                     }
                 },
             }),
-            'is_deployable': True,
         }])
     releaseid = result.inserted_primary_key[0]
 
@@ -151,3 +150,10 @@ class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):
         db.execute(self.meta.tables['nodegroups'].insert(),
                    [{'cluster_id': nodegroup['cluster_id'],
                      'name': uuid.uuid4()}])
+
+
+class TestReleaseMigrations(base.BaseAlembicMigrationTest):
+
+    def test_release_is_deployable_deleted(self):
+        self.assertNotIn('is_deployable',
+                         [c.name for c in self.meta.tables['releases'].c])

@@ -633,7 +633,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             this.addPasswordToggle();
 
             if (!_.isUndefined(this.releases) && this.releases.length) {
-                this.releases = new Backbone.Collection(this.releases.where({is_deployable: true}));
+                this.releases = new Backbone.Collection(this.releases.where({state: 'available'}));
             }
             this.composePaneBindings();
             return this;

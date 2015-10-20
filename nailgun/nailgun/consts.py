@@ -26,6 +26,7 @@ def Enum(*values, **kwargs):
 RELEASE_STATES = Enum(
     'available',
     'unavailable',
+    'manageonly'
 )
 
 RELEASE_OS = Enum(

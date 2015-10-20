@@ -23,9 +23,20 @@ class ComponentSerializer(BasicSerializer):
         "id",
         "name",
         "type",
-        "hypervisors",
-        "networks",
-        "storages",
-        "additional_services",
         "plugin_id"
     )
+
+    @classmethod
+    def serialize(cls, instance, fields=None):
+        data_dict = BasicSerializer.serialize(
+            instance, fields=fields if fields else cls.fields)
+        data_dict.setdefault('compatible', {})
+        data_dict['compatible'] = {
+            'hypervisors': instance.hypervisors,
+            'networks': instance.networks,
+            'storages': instance.storages,
+            'additional_services': instance.additional_services
+        }
+        data_dict['releases_ids'] = [r.id for r in instance.releases]
+
+        return data_dict

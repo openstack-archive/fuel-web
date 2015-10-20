@@ -353,8 +353,8 @@ class PluginAdapterV4(PluginAdapterV3):
         for component in components:
             component_name = component.get('name')
             component_type = component.get('type')
-            db_component = Component.get_by_name_and_type(
-                component_name, component_type)
+            db_component = Component.get(
+                name=component_name, type=component_type)
             if not db_component:
                 components_data = component.get('compatible', {})
                 components_data.update({

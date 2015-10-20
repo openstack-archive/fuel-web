@@ -83,5 +83,10 @@ define(['views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'], f
             offloadingModesConrol.checkModes(null, fakeOffloadingModes);
             assert.strictEqual(mode.state, null, 'Parent state changing leads to all child modes states changing');
         });
+        test('All Modes option logic', function() {
+            var mode = offloadingModesConrol.findMode('TestName2', fakeOffloadingModes);
+            mode.onModeStateChange('All Modes', true);
+            assert.strictEqual(mode.state, true, 'All Modes option state changing leads to all parent modes states changing');
+        });
     });
 });

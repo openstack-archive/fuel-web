@@ -124,7 +124,7 @@ class OpenStackUpgrader(UpgradeEngine):
             self._rollback_ids['release'].append(response['id'])
             self.upload_release_deployment_tasks(response)
 
-            if not release.get('is_deployable', True):
+            if not release.get('state', 'available') == 'available':
                 continue
 
             # add notification abot successfull releases

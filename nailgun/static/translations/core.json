@@ -258,12 +258,14 @@
                 "title": "Releases",
                 "name": "OpenStack Release",
                 "version": "Version",
-                "is_deployable": "Available for New Deployments",
+                "state": "Available for New Deployments",
                 "no_releases_message": "There are no releases available.",
                 "release": {
                     "available": "Available",
                     "error": "Error",
-                    "not_available": "Not available"
+                    "not_available": "Not available",
+                    "unavailable": "Not available",
+                    "manageonly": "Manage only"
                 }
             },
             "plugins_page": {

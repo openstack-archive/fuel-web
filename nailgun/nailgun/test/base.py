@@ -60,6 +60,7 @@ from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
 from nailgun.objects import Cluster
+from nailgun.objects import Component
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import Node
 from nailgun.objects import NodeGroup
@@ -408,8 +409,7 @@ class EnvironmentManager(object):
         return ng
 
     def create_plugin(self, api=False, cluster=None, **kwargs):
-        plugin_data = self.get_default_plugin_metadata()
-        plugin_data.update(kwargs)
+        plugin_data = self.get_default_plugin_metadata(**kwargs)
 
         if api:
             resp = self.app.post(
@@ -420,16 +420,32 @@ class EnvironmentManager(object):
             )
 
             plugin = Plugin.get_by_uid(resp.json_body['id'])
-            self.plugins.append(plugin)
         else:
             plugin = Plugin.create(plugin_data)
-            self.plugins.append(plugin)
+
+        self.plugins.append(plugin)
 
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
 
         return plugin
+
+    def create_component(self, release=None, plugin=None, **kwargs):
+        component = self.get_default_components(**kwargs)[0]
+        component_data = component.get('compatible', {})
+        component_data.update({
+            'name': component.get('name'),
+            'type': component.get('type')
+        })
+        component = Component.create(component_data)
+        if release:
+            component.releases.append(release)
+        elif plugin:
+            component.plugin = plugin
+        self.db.commit()
+
+        return component
 
     def default_metadata(self):
         item = self.find_item_by_pk_model(
@@ -653,23 +669,6 @@ class EnvironmentManager(object):
         default_tasks[0].update(kwargs)
         return default_tasks
 
-    def get_default_plugin_components(self, **kwargs):
-        default_components = [
-            {
-                'name': 'test_hypervisor',
-                'type': 'hypervisor',
-                'compatible': {
-                    'hypervisors': ['*'],
-                    'networks': ['*'],
-                    'storages': ['*'],
-                    'additional_services': ['*']
-                }
-            }
-        ]
-
-        default_components[0].update(kwargs)
-        return default_components
-
     def get_default_plugin_metadata(self, **kwargs):
         sample_plugin = {
             'version': '0.1.0',
@@ -694,6 +693,23 @@ class EnvironmentManager(object):
 
         sample_plugin.update(kwargs)
         return sample_plugin
+
+    def get_default_components(self, **kwargs):
+        default_components = [
+            {
+                'name': 'test_hypervisor',
+                'type': 'hypervisor',
+                'compatible': {
+                    'hypervisors': ['*'],
+                    'networks': [],
+                    'storages': ['object:block:swift'],
+                    'additional_services': []
+                }
+            }
+        ]
+
+        default_components[0].update(kwargs)
+        return default_components
 
     def get_default_vmware_attributes_metadata(self):
         return self.read_fixtures(

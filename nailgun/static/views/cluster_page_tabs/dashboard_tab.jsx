@@ -59,7 +59,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             if (cluster.get('status') != 'new') {
                 title = null;
             }
-            if (cluster.task({group: 'deployment', status: 'running'})) {
+            if (cluster.task({group: 'deployment', inProgress: true})) {
                 title = 'deploy_progress';
             }
             if (cluster.task({group: 'deployment', status: 'error'})) {
@@ -83,13 +83,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 isNew = clusterStatus == 'new',
                 isOperational = clusterStatus == 'operational',
                 title = this.getTitle(),
-                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'}),
+                runningDeploymentTask = cluster.task({group: 'deployment', inProgress: true}),
                 failedDeploymentTask = cluster.task({group: 'deployment', status: 'error'}),
                 stopDeploymentTask = cluster.task({name: 'stop_deployment'}),
                 hasOfflineNodes = nodes.any({online: false}),
                 resetDeploymentTask = cluster.task({name: 'reset_environment'}),
                 isDeploymentPossible = cluster.isDeploymentPossible();
-
             return (
                 <div>
                     {failedDeploymentTask && !!title &&
@@ -785,8 +784,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         },
         render: function() {
             var cluster = this.props.cluster,
-                task = cluster.task({group: 'deployment', status: 'running'}),
-                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'});
+                task = cluster.task({group: 'deployment'}),
+                runningDeploymentTask = cluster.task({group: 'deployment', inProgress: true});
             return (
                 <div className='cluster-information'>
                     <div className='row'>
@@ -843,7 +842,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
 
     var AddNodesButton = React.createClass({
         render: function() {
-            var disabled = !!this.props.cluster.task({group: 'deployment', status: 'running'});
+            var disabled = !!this.props.cluster.task({group: 'deployment', inProgress: true});
             return (
                     <a
                         className='btn btn-success btn-add-nodes'

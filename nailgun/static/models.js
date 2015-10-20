@@ -515,6 +515,8 @@ define([
                 }
             } else if (filters.status) {
                 result = _.contains(utils.composeList(filters.status), this.get('status'));
+            } else if (filters.inProgress) {
+                result = this.get('status') == 'running';
             }
             return result;
         },

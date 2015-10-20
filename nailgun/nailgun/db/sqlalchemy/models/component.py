@@ -22,6 +22,7 @@ from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
 
 from sqlalchemy.dialects import postgresql as psql
+from sqlalchemy.orm import relationship
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
@@ -47,6 +48,10 @@ class Component(Base):
     additional_services = Column(psql.ARRAY(String), nullable=False,
                                  default=[], server_default='{}')
     plugin_id = Column(Integer, ForeignKey('plugins.id', ondelete='CASCADE'))
+    plugin = relationship("Plugin", backref="components")
+    releases = relationship('Release',
+                            secondary='release_components',
+                            backref='components')
 
 
 class ReleaseComponent(Base):

@@ -622,16 +622,18 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     }
                     return (i18n('common.network.neutron_' + networkingParam.get('segmentation_type')));
                 case 'storage_backends':
-                    return _.map(_.where(settings.get('storage'), {value: true}), 'label').join('\n') ||
+                    return _.map(_.where(settings.get('storage'), {value: true}), 'label') ||
                         i18n(namespace + 'no_storage_enabled');
                 default:
                     return cluster.get(fieldName);
             }
         },
         renderClusterInfoFields: function() {
-                var fields = ['status', 'openstack_release', 'compute', 'network', 'storage_backends'];
+                var fields = ['status', 'openstack_release', 'compute', 'network', 'storage_backends'],
+                    clusterValue;
             return (
                 _.map(fields, function(field, index) {
+                    clusterValue = this.getClusterValue(field);
                     return (
                         <div key={field + index}>
                             <div className='col-xs-6'>
@@ -641,7 +643,14 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             </div>
                             <div className='col-xs-6'>
                                 <div className={'cluster-info-value ' + field}>
-                                    {this.getClusterValue(field)}
+                                    {
+                                        _.isArray(clusterValue) ?
+                                            clusterValue.map(function(line) {
+                                                return (<p>{line}</p>);
+                                            })
+                                        :
+                                            <p>{clusterValue}</p>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -723,7 +732,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                             </div>
                             <div className='col-xs-2'>
-                                <div className={'cluster-info-value pull-right ' + field}>
+                                <div className={'cluster-info-value ' + field}>
                                     {numberOfNodes}
                                 </div>
                             </div>

@@ -28,7 +28,6 @@ def make_release(**overrides):
         'name': 'Kilo on Ubuntu 14.04.1',
         'operating_system': 'Ubuntu',
         'version': '2015.1.0-7.0',
-        'is_deployable': True,
         'state': 'available',
         'attributes_metadata': {},
         'can_update_from_versions': [],

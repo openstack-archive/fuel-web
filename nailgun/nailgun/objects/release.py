@@ -29,7 +29,6 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
 from nailgun.orchestrator import graph_configuration
-from nailgun.settings import settings
 
 
 class Release(NailgunObject):
@@ -105,13 +104,8 @@ class Release(NailgunObject):
         :param instance: a Release instance
         :returns: True if a given release is deployable; otherwise - False
         """
-        if instance.state == consts.RELEASE_STATES.unavailable:
-            return False
 
-        # in experimental mode we deploy all releases
-        if 'experimental' in settings.VERSION['feature_groups']:
-            return True
-        return instance.is_deployable
+        return instance.state == consts.RELEASE_STATES.available
 
     @classmethod
     def is_granular_enabled(cls, instance):

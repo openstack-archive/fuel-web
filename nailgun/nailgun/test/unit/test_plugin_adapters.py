@@ -295,7 +295,7 @@ class TestPluginV4(TestPluginBase):
         network_roles_metadata = self.env.get_default_network_roles_config()
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()
         tasks = self.env.get_default_plugin_tasks()
-        components_metadata = self.env.get_default_plugin_components()
+        components_metadata = self.env.get_default_components()
 
         mocked_metadata = {
             self._find_path('metadata'): plugin_metadata,
@@ -328,9 +328,9 @@ class TestPluginV4(TestPluginBase):
             self.assertEqual(
                 self.plugin.tasks, tasks)
 
-            component = Component.get_by_name_and_type(
-                components_metadata[0].get('name'),
-                components_metadata[0].get('type'))
+            component = Component.get(
+                name=components_metadata[0].get('name'),
+                type=components_metadata[0].get('type'))
             compatible = components_metadata[0].get('compatible')
 
             self.assertEqual(

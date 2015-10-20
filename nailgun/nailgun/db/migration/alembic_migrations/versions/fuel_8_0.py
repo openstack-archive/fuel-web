@@ -30,18 +30,47 @@ from sqlalchemy.dialects import postgresql as psql
 
 from nailgun.utils.migration import drop_enum
 
+from nailgun.utils.migration import upgrade_enum
+
+release_states_old = (
+    'available',
+    'unavailable',
+)
+release_states_new = (
+    'available',
+    'unavailable',
+    'manageonly',
+)
+
 
 def upgrade():
     create_components_table()
     create_release_components_table()
     upgrade_nodegroups_name_cluster_constraint()
+    upgrade_release_state()
 
 
 def downgrade():
+    downgrade_release_state()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
     op.drop_table('release_components')
     op.drop_table('components')
     drop_enum('component_types')
+
+
+def upgrade_release_state():
+    connection = op.get_bind()
+    op.drop_column('releases', 'is_deployable')
+
+    upgrade_enum(
+        'releases',                 # table
+        'state',                    # column
+        'release_state',            # ENUM name
+        release_states_old,         # old options
+        release_states_new,         # new options
+    )
+
+    connection.execute(sa.sql.text("UPDATE releases SET state='manageonly'"))
 
 
 def upgrade_nodegroups_name_cluster_constraint():
@@ -104,3 +133,26 @@ def create_release_components_table():
                         ['release_id'], ['releases.id'], ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id')
                     )
+
+
+def downgrade_release_state():
+    connection = op.get_bind()
+
+    connection.execute(sa.sql.text("UPDATE releases SET state='available'"))
+    op.add_column(
+        'releases',
+        sa.Column(
+            'is_deployable',
+            sa.Boolean(),
+            nullable=False,
+            server_default='true',
+        )
+    )
+
+    upgrade_enum(
+        'releases',                 # table
+        'state',                    # column
+        'release_state',            # ENUM name
+        release_states_new,         # new options
+        release_states_old,         # old options
+    )

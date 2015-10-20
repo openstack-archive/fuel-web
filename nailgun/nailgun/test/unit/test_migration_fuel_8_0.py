@@ -13,6 +13,7 @@
 #    under the License.
 
 import alembic
+from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.exc import DataError
 from sqlalchemy.exc import IntegrityError
@@ -44,9 +45,57 @@ def prepare():
             'name': 'test_name',
             'version': '2014.2.2-6.1',
             'operating_system': 'ubuntu',
-            'state': 'available'
-        }
-    )
+            'state': 'available',
+            'roles': jsonutils.dumps([
+                'controller',
+                'compute',
+                'mongo',
+            ]),
+            'roles_metadata': jsonutils.dumps({
+                'controller': {
+                    'name': 'Controller',
+                    'description': 'Controller role',
+                    'has_primary': True,
+                },
+                'zabbix-server': {
+                    'name': 'Zabbix Server',
+                    'description': 'Zabbix Server role'
+                },
+                'cinder': {
+                    'name': 'Cinder',
+                    'description': 'Cinder role'
+                },
+                'mongo': {
+                    'name': 'Telemetry - MongoDB',
+                    'description': 'mongo is',
+                    'has_primary': True,
+                }
+            }),
+            'attributes_metadata': jsonutils.dumps({}),
+            'networks_metadata': jsonutils.dumps({
+                'bonding': {
+                    'properties': {
+                        'linux': {
+                            'mode': [
+                                {
+                                    "values": ["balance-rr",
+                                               "active-backup",
+                                               "802.3ad"]
+                                },
+                                {
+                                    "values": ["balance-xor",
+                                               "broadcast",
+                                               "balance-tlb",
+                                               "balance-alb"],
+                                    "condition": "'experimental' in "
+                                                 "version:feature_groups"
+                                }
+                            ]
+                        }
+                    }
+                },
+            }),
+        })
 
     clusterid = insert_table_row(
         meta.tables['clusters'],
@@ -258,6 +307,20 @@ class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):
         nodegroup = db.execute(
             sa.select([self.meta.tables['nodegroups'].c.cluster_id,
                        self.meta.tables['nodegroups'].c.name])).fetchone()
-        insert_table_row(self.meta.tables['nodegroups'],
-                         {'cluster_id': nodegroup['cluster_id'],
-                          'name': uuid.uuid4()})
+        db.execute(self.meta.tables['nodegroups'].insert(),
+                   [{'cluster_id': nodegroup['cluster_id'],
+                     'name': uuid.uuid4()}])
+
+
+class TestReleaseMigrations(base.BaseAlembicMigrationTest):
+
+    def test_release_is_deployable_deleted(self):
+        self.assertNotIn('is_deployable',
+                         [c.name for c in self.meta.tables['releases'].c])
+
+    def test_releases_are_manageonly(self):
+        states = [r[0] for r in db.execute(
+            sa.select([self.meta.tables['releases'].c.state])).fetchall()]
+
+        for state in states:
+            self.assertEqual(state, 'manageonly')

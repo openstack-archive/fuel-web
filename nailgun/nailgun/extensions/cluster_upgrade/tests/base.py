@@ -29,7 +29,7 @@ class BaseCloneClusterTest(nailgun_test_base.BaseIntegrationTest):
         self.release_61 = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,
             version="2014.2.2-6.1",
-            is_deployable=False,
+            state=consts.RELEASE_STATES.manageonly
         )
         self.release_70 = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,

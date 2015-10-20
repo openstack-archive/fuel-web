@@ -49,7 +49,7 @@ class ClusterUpgradeValidator(base.BasicValidator):
 
     @classmethod
     def validate_release_upgrade(cls, orig_release, new_release):
-        if not new_release.is_deployable:
+        if not objects.Release.is_deployable(new_release):
             raise errors.InvalidData(
                 "Upgrade to the given release ({0}) is not possible because "
                 "this release is deprecated and cannot be installed."

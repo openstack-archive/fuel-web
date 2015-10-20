@@ -27,13 +27,39 @@ down_revision = '1e50a4903910'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.utils.migration import upgrade_enum
+
+release_states_old = (
+    'available',
+    'unavailable',
+)
+release_states_new = (
+    'available',
+    'unavailable',
+    'manageonly',
+)
+
 
 def upgrade():
     upgrade_nodegroups_name_cluster_constraint()
+    upgrade_release_state()
 
 
 def downgrade():
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
+    downgrade_release_state()
+
+
+def upgrade_release_state():
+    op.drop_column('releases', 'is_deployable')
+
+    upgrade_enum(
+        'releases',                 # table
+        'state',                    # column
+        'release_state',            # ENUM name
+        release_states_old,         # old options
+        release_states_new,         # new options
+    )
 
 
 def upgrade_nodegroups_name_cluster_constraint():
@@ -57,4 +83,24 @@ def upgrade_nodegroups_name_cluster_constraint():
             'cluster_id',
             'name'
         ]
+    )
+
+
+def downgrade_release_state():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'is_deployable',
+            sa.Boolean(),
+            nullable=False,
+            server_default='true',
+        )
+    )
+
+    upgrade_enum(
+        'releases',                 # table
+        'state',                    # column
+        'release_state',            # ENUM name
+        release_states_new,         # new options
+        release_states_old,         # old options
     )

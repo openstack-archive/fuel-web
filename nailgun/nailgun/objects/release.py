@@ -111,7 +111,8 @@ class Release(NailgunObject):
         # in experimental mode we deploy all releases
         if 'experimental' in settings.VERSION['feature_groups']:
             return True
-        return instance.is_deployable
+
+        return instance.state == consts.RELEASE_STATES.available
 
     @classmethod
     def is_granular_enabled(cls, instance):

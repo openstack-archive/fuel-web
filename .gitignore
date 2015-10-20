@@ -23,6 +23,7 @@ lock
 
 node_modules
 nailgun/static/vendor/npm/*
+nailgun/built-static/
 
 *.egg
 .testrepository

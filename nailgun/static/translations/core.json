@@ -546,7 +546,7 @@
                     "alert_delete": "This action will clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
                     "reset_environment": "Reset Environment",
                     "reset_environment_description": "Enables you to modify the settings for the environment and redeploy.",
-                    "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
+                    "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment. Environment settings will be retained.",
                     "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed.",
                     "repeated_reset_disabled": "The current environment is already being reset.",
                     "rename_error": {

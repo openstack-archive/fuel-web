@@ -20,6 +20,7 @@ from itertools import groupby
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import plugins as plugin_db_model
 from nailgun.objects import base
+from nailgun.objects import Release
 from nailgun.objects.serializers import plugin
 
 
@@ -77,3 +78,30 @@ class PluginCollection(base.NailgunCollection):
         """
         return cls.filter_by_id_list(
             cls.all(), plugin_ids)
+
+    @classmethod
+    def get_all_by_release(cls, release_id):
+        """Returns plugins compatible with specific release
+
+        :param release_id: release ID
+        :type release_id: int
+
+        :returns: list - collection of plugins
+        """
+
+        related_plugins = []
+        related_plugins_ids = set()
+        release = Release.get_by_uid(release_id)
+        release_os = release.operating_system.lower()
+        release_version = release.version
+
+        for db_plugin in cls.all():
+            plugin_id = db_plugin.id
+            for plugin_release in db_plugin.releases:
+                if (release_os == plugin_release.get('os') and
+                        release_version == plugin_release.get('version')):
+                    if plugin_id not in related_plugins_ids:
+                        related_plugins_ids.add(plugin_id)
+                        related_plugins.append(db_plugin)
+
+        return related_plugins

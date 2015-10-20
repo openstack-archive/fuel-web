@@ -20,12 +20,23 @@ from nailgun.objects.serializers.base import BasicSerializer
 class ComponentSerializer(BasicSerializer):
 
     fields = (
-        "id",
         "name",
         "type",
-        "hypervisors",
-        "networks",
-        "storages",
-        "additional_services",
         "plugin_id"
     )
+
+    @classmethod
+    def serialize(cls, instance, fields=None):
+        data_dict = BasicSerializer.serialize(
+            instance, fields=fields if fields else cls.fields)
+        prepare = lambda array: '*' if array == ['*'] else array
+        data_dict.setdefault('compatible', {})
+        data_dict['compatible'] = {
+            'hypervisors': prepare(instance.hypervisors),
+            'networks': prepare(instance.networks),
+            'storages': prepare(instance.storages),
+            'additional_services': prepare(instance.additional_services)
+        }
+        data_dict['releases_ids'] = [r.id for r in instance.releases]
+
+        return data_dict

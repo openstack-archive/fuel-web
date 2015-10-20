@@ -3555,15 +3555,6 @@ input[type=range] {
     }
   }
   .healthcheck-table {
-    &.disabled {
-      tr th label,
-      tr td label {
-        cursor: default;
-      }
-      .custom-tumbler span {
-        cursor: not-allowed;
-      }
-    }
     tr {
       td {
         &.healthcheck-name,
@@ -3595,10 +3586,6 @@ input[type=range] {
         }
       }
       th {
-        label {
-          cursor: pointer;
-          line-height: 17px;
-        }
         .font-semibold;
         text-align: center;
         &.healthcheck-name {
@@ -3924,18 +3911,20 @@ input[type=range] {
     }
     .cluster-info-value,
     .cluster-info-title {
-      height: auto;
-      min-height: 30px;
-      line-height: 17px;
+      height: 30px;
+      line-height: 13px;
       margin-bottom: 4px;
       text-align: left;
-      white-space: pre;
     }
     .cluster-info-value {
+      &.storage_backends {
+        line-height: 17px;
+        white-space: pre;
+        height: auto;
+      }
       &.name {
         .btn-link {
           padding-left: 0;
-          padding-top: 0;
           border-left: 0;
           text-align: left;
           display: inline-block;
@@ -3949,13 +3938,8 @@ input[type=range] {
         .glyphicon {
           margin-left: 10px;
           cursor: pointer;
-          vertical-align: text-top;
+          vertical-align: top;
         }
-      }
-      p {
-        white-space: pre-line;
-        word-wrap: break-word;
-
       }
     }
     .rename-block {
@@ -3980,7 +3964,7 @@ input[type=range] {
       }
     }
     .capacity-block {
-      margin-bottom: 6px;
+      margin-bottom: @dashboard-offset * 2;
       .capacity-items {
         margin-top: -9px;
         .capacity-item {
@@ -4004,9 +3988,6 @@ input[type=range] {
       }
     }
     .statistics-block {
-      .cluster-info-title {
-        margin-bottom: @dashboard-offset;
-      }
       button {
         margin-bottom: @dashboard-offset;
       }

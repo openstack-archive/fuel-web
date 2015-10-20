@@ -36,6 +36,7 @@ from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
 from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
+from nailgun.api.v1.handlers.component import ComponentCollectionHandler
 
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
@@ -126,6 +127,8 @@ urls = (
     ReleaseNetworksHandler,
     r'/releases/(?P<obj_id>\d+)/deployment_tasks/?$',
     ReleaseDeploymentTasksHandler,
+    r'/releases/(?P<obj_id>\d+)/components/?$',
+    ComponentCollectionHandler,
 
     r'/releases/(?P<release_id>\d+)/roles/?$',
     RoleCollectionHandler,

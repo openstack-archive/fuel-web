@@ -375,6 +375,7 @@
                         "bond_speed_warning": "Bonding network interfaces with different network performance parameters is not recommended.",
                         "several_bonds_warning": "This network interface is already bonded with other network inteface.",
                         "speed": "Speed",
+                        "all_modes": "All Modes",
                         "bonding_mode": "Mode",
                         "bonding_modes": {
                             "active-backup": "Active Backup",

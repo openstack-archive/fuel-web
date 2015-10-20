@@ -28,7 +28,7 @@ function(_, i18n, React, models, controls, componentMixins) {
     var ReleasesPage = React.createClass({
         mixins: [componentMixins.backboneMixin('releases')],
         getDefaultProps: function() {
-            return {columns: ['name', 'version', 'is_deployable']};
+            return {columns: ['name', 'version', 'state']};
         },
         statics: {
             title: i18n('release_page.title'),
@@ -43,9 +43,6 @@ function(_, i18n, React, models, controls, componentMixins) {
         },
         getReleaseData: function(release) {
             return _.map(this.props.columns, function(attr) {
-                if (attr == 'is_deployable') {
-                    return i18n('release_page.release.' + (release.get(attr) ? 'available' : 'not_available'));
-                }
                 return release.get(attr) || i18n('common.not_available');
             });
         },

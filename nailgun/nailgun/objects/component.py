@@ -18,6 +18,8 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects.plugin import PluginCollection
+from nailgun.objects import Release
 from nailgun.objects.serializers import component
 
 
@@ -28,7 +30,7 @@ class Component(NailgunObject):
 
     @classmethod
     def get_by_name_and_type(cls, component_name, component_type):
-        """Get component record"""
+        """Get specific component record"""
         return db().query(cls.model).filter_by(
             name=component_name, type=component_type).first()
 
@@ -36,3 +38,21 @@ class Component(NailgunObject):
 class ComponentCollection(NailgunCollection):
 
     single = Component
+
+    @classmethod
+    def get_all_by_release(cls, release_id):
+        """Get all components for specific release.
+
+        :param release_id: release ID
+        :type release_id: int
+
+        :returns: list -- collection of components
+        """
+        core_components = Release.get_by_uid(release_id).components
+        plugin_components = []
+        for db_plugin in PluginCollection.get_all_by_release(release_id):
+            for plugin_component in db_plugin.components:
+                if plugin_component not in plugin_components:
+                    plugin_components.append(plugin_component)
+
+        return core_components + plugin_components

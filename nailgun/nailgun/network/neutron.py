@@ -26,6 +26,10 @@ from nailgun.logger import logger
 
 from nailgun.network.manager import AllocateVIPs70Mixin
 from nailgun.network.manager import NetworkManager
+from nailgun import objects
+
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer70
 
 
 class NeutronManager(NetworkManager):
@@ -222,7 +226,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
     @classmethod
     def assign_ips_in_node_group(
             cls, net_id, net_name, node_ids, ip_ranges):
-        """Assigns IP addresses for nodes in given network"""
+        "Assigns IP addresses for nodes in given network"
         ips_by_node_id = db().query(
             models.IPAddr.ip_addr,
             models.IPAddr.node
@@ -312,3 +316,94 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
                     net_id, net_name, node_ids, ip_ranges)
 
         cls.assign_admin_ips(nodes)
+
+    @classmethod
+    def _split_iface_name(cls, iface):
+        try:
+            iface, vlan = iface.split('.')
+        except ValueError:
+            vlan = None
+
+        return (iface, vlan)
+
+    @classmethod
+    def get_interfaces_from_template(cls, node):
+        """Parse transformations for all node role templates.
+
+        Returns a list of bare interfaces and bonds.
+        """
+        transformations = \
+            NeutronNetworkTemplateSerializer70.generate_transformations(node)
+
+        interfaces = {}
+        for tx in transformations:
+            if tx['action'] == 'add-port':
+                key = tx.get('bridge', tx['name'])
+                interfaces[key] = {
+                    'name': tx['name'],
+                    'type': consts.NETWORK_INTERFACE_TYPES.ether
+                }
+
+            if tx['action'] == 'add-bond':
+                key = tx.get('bridge', tx['name'])
+                interfaces[key] = {
+                    'name': tx['name'],
+                    'slaves': [{'name': cls._split_iface_name(i)[0]}
+                               for i in tx['interfaces']],
+                    'type': consts.NETWORK_INTERFACE_TYPES.bond,
+                    'bond_properties': tx.get('bond_properties', {})
+                }
+
+        return interfaces
+
+    @classmethod
+    def assign_networks_by_template(cls, node):
+        """Configures a node's network-to-nic mapping based on its template.
+
+        This also creates bonds in the database, ensures network
+        groups match the data in the template and all networks
+        are assigned to the correct interface or bond.
+        """
+        interfaces = cls.get_interfaces_from_template(node)
+
+        endpoint_mapping = cls.get_node_network_mapping(node)
+        em = dict((reversed(ep) for ep in endpoint_mapping))
+
+        node_ifaces = {}
+        for bridge, values in interfaces.items():
+            network = em.get(bridge)
+            # There is no network associated with this bridge (e.g. br-aux)
+            if not network:
+                continue
+
+            iface, vlan = cls._split_iface_name(values['name'])
+
+            node_ifaces.setdefault(iface, values)
+            node_ifaces[iface].setdefault('assigned_networks', [])
+
+            # Default admin network has no node group
+            if network == consts.NETWORKS.fuelweb_admin:
+                net_db = cls.get_admin_network_group(node.id)
+            else:
+                net_db = objects.NetworkGroup.get_from_node_group_by_name(
+                    node.group_id, network)
+
+            # Ensure network_group configuration is consistent
+            # with the template
+            if vlan != net_db.vlan_start:
+                net_db.vlan_start = vlan
+                db().add(net_db)
+                db().flush()
+
+            ng = {'id': net_db.id}
+            node_ifaces[iface]['assigned_networks'].append(ng)
+
+            if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
+                nic = objects.Node.get_nic_by_name(node, iface)
+                node_ifaces[iface]['id'] = nic.id
+
+        node_data = {
+            'id': node.id,
+            'interfaces': node_ifaces.values()
+        }
+        cls._update_attrs(node_data)

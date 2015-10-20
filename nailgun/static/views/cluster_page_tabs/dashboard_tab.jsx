@@ -59,7 +59,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             if (cluster.get('status') != 'new') {
                 title = null;
             }
-            if (cluster.task({group: 'deployment', status: 'running'})) {
+            if (cluster.task({group: 'deployment', status: ['running', 'pending']})) {
                 title = 'deploy_progress';
             }
             if (cluster.task({group: 'deployment', status: 'error'})) {
@@ -83,13 +83,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 isNew = clusterStatus == 'new',
                 isOperational = clusterStatus == 'operational',
                 title = this.getTitle(),
-                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'}),
+                runningDeploymentTask = cluster.task({group: 'deployment', status: ['running', 'pending']}),
                 failedDeploymentTask = cluster.task({group: 'deployment', status: 'error'}),
                 stopDeploymentTask = cluster.task({name: 'stop_deployment'}),
                 hasOfflineNodes = nodes.any({online: false}),
                 resetDeploymentTask = cluster.task({name: 'reset_environment'}),
                 isDeploymentPossible = cluster.isDeploymentPossible();
-
             return (
                 <div>
                     {failedDeploymentTask && !!title &&
@@ -147,9 +146,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     var HorizonBlock = React.createClass({
         render: function() {
             var cluster = this.props.cluster,
-                isSecureProtocolUsed = cluster.get('settings').get('public_ssl.horizon.value'),
-                ipValue = 'http://' + cluster.get('networkConfiguration').get('public_vip'),
-                fqdnValue = 'https://' + cluster.get('settings').get('public_ssl.hostname.value');
+                horizonLinkProtocol = cluster.get('settings').get('public_ssl.horizon.value') ? 'https://' : 'http://';
             return (
                 <div className='row plugins-block'>
                     <div className='col-xs-12 plugin-entry horizon'>
@@ -158,7 +155,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         <a
                             className='btn btn-success'
                             target='_blank'
-                            href={isSecureProtocolUsed ? fqdnValue : ipValue}
+                            href={horizonLinkProtocol + cluster.get('networkConfiguration').get('public_vip')}
                         >
                             {i18n(namespace + 'go_to_horizon')}
                         </a>
@@ -191,7 +188,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                                 <controls.ProgressBar
                                     progress={!isInfiniteTask && taskProgress}
-                                    wrapperClassName={isInfiniteTask ? '' : 'has-progress'}
+                                    wrapperClassName={stoppableTask ? 'has-progress' : ''}
                                 />
                                 {stoppableTask &&
                                     <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
@@ -622,18 +619,16 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     }
                     return (i18n('common.network.neutron_' + networkingParam.get('segmentation_type')));
                 case 'storage_backends':
-                    return _.map(_.where(settings.get('storage'), {value: true}), 'label') ||
+                    return _.map(_.where(settings.get('storage'), {value: true}), 'label').join('\n') ||
                         i18n(namespace + 'no_storage_enabled');
                 default:
                     return cluster.get(fieldName);
             }
         },
         renderClusterInfoFields: function() {
-                var fields = ['status', 'openstack_release', 'compute', 'network', 'storage_backends'],
-                    clusterValue;
+                var fields = ['status', 'openstack_release', 'compute', 'network', 'storage_backends'];
             return (
                 _.map(fields, function(field, index) {
-                    clusterValue = this.getClusterValue(field);
                     return (
                         <div key={field + index}>
                             <div className='col-xs-6'>
@@ -643,14 +638,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             </div>
                             <div className='col-xs-6'>
                                 <div className={'cluster-info-value ' + field}>
-                                    {
-                                        _.isArray(clusterValue) ?
-                                            clusterValue.map(function(line) {
-                                                return (<p>{line}</p>);
-                                            })
-                                        :
-                                            <p>{clusterValue}</p>
-                                    }
+                                    {this.getClusterValue(field)}
                                 </div>
                             </div>
                         </div>
@@ -732,7 +720,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                             </div>
                             <div className='col-xs-2'>
-                                <div className={'cluster-info-value ' + field}>
+                                <div className={'cluster-info-value pull-right ' + field}>
                                     {numberOfNodes}
                                 </div>
                             </div>
@@ -785,8 +773,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         },
         render: function() {
             var cluster = this.props.cluster,
-                task = cluster.task({group: 'deployment', status: 'running'}),
-                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'});
+                task = cluster.task({group: 'deployment'}),
+                runningDeploymentTask = cluster.task({group: 'deployment', status: ['running', 'pending']});
             return (
                 <div className='cluster-information'>
                     <div className='row'>
@@ -843,7 +831,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
 
     var AddNodesButton = React.createClass({
         render: function() {
-            var disabled = !!this.props.cluster.task({group: 'deployment', status: 'running'});
+            var disabled = !!this.props.cluster.task({group: 'deployment', status: ['running', 'pending']});
             return (
                     <a
                         className='btn btn-success btn-add-nodes'

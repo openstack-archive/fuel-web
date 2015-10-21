@@ -819,6 +819,15 @@ DUMP:
         to_file: rabbitmqctl_report.txt
       - type: file
         path: /var/log/neutron/neutron-ns-metadata-proxy*.log
+      - type: command
+        command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} ip a; done"
+        to_file: ip_a_ns.txt
+      - type: command
+        command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} ip r; done"
+        to_file: ip_r_ns.txt
+      - type: command
+        command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} netstat -anp; done"
+        to_file: netstat_ns.txt
 
     slave:
       hosts: []
@@ -904,6 +913,9 @@ DUMP:
       - type: command
         command: ip r
         to_file: ip_r.txt
+      - type: command
+        command: arp -an
+        to_file: arp.txt
       - type: command
         command: netstat -anp
         to_file: netstat.txt

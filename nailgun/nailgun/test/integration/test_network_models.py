@@ -107,9 +107,16 @@ class TestNetworkModels(BaseIntegrationTest):
         mgmt_net['cidr'] = u'1.1.1.0/24'
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id, test_nets, expect_errors=True)
+            self.env.clusters[0].id,
+            test_nets)
 
-        self.assertEqual(400, resp_neutron_net.status_code)
+        # Response for task submission handler is always 200,
+        # the result of task should be checked by status of the task.
+        # https://review.openstack.org/#/c/137642/15/nailgun/nailgun/
+        #         api/v1/handlers/network_configuration.py
+        self.assertEqual(200, resp_neutron_net.status_code)
+        self.assertEqual(consts.TASK_STATUSES.error,
+                         resp_neutron_net.json_body['status'])
         self.assertEqual(
             "New IP ranges for network '{0}' conflict "
             "with already allocated IPs.".format(test_network_name),
@@ -118,9 +125,14 @@ class TestNetworkModels(BaseIntegrationTest):
         mgmt_net['cidr'] = u'192.168.0.0/30'
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id, test_nets)
+            self.env.clusters[0].id,
+            test_nets)
 
         self.assertEqual(200, resp_neutron_net.status_code)
+        self.assertEqual(consts.TASK_STATUSES.ready,
+                         resp_neutron_net.json_body['status'],
+                         "Task error message: {0}".format(
+                             resp_neutron_net.json_body['message']))
 
         new_nets = self.env.neutron_networks_get(
             self.env.clusters[0].id).json_body

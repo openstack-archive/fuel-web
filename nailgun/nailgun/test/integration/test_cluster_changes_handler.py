@@ -1439,6 +1439,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -1484,6 +1485,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -1526,6 +1528,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -1560,6 +1563,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         task = self.env.launch_deployment()
 

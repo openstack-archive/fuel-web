@@ -14,10 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import cStringIO
 import mock
 import os
 from oslo_serialization import jsonutils
+from six import StringIO
 import yaml
 
 from nailgun.db.sqlalchemy import fixman
@@ -52,6 +52,7 @@ class TestFixture(BaseIntegrationTest):
         self.assertEqual(len(list(check)), 8)
 
     def test_load_fake_deployment_tasks(self):
+        self.env.upload_fixtures(["openstack"])
         fxtr_path = os.path.join(fixman.get_base_fixtures_path(),
                                  'deployment_tasks.yaml')
         with open(fxtr_path) as f:
@@ -74,7 +75,7 @@ class TestFixture(BaseIntegrationTest):
             }
         }]'''
 
-        fixman.upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
+        fixman.upload_fixture(StringIO(data), loader=jsonutils)
         check = self.db.query(Release).filter(
             Release.name == u"JSONFixtureRelease"
         )
@@ -96,7 +97,7 @@ class TestFixture(BaseIntegrationTest):
     operating_system: CentOS
 '''
 
-        fixman.upload_fixture(cStringIO.StringIO(data), loader=yaml)
+        fixman.upload_fixture(StringIO(data), loader=yaml)
         check = self.db.query(Release).filter(
             Release.name == u"YAMLFixtureRelease"
         )

@@ -19,7 +19,7 @@ import itertools
 import jinja2
 import os.path
 import Queue
-import StringIO
+from six import StringIO
 import sys
 import yaml
 
@@ -63,7 +63,7 @@ def template_fixture(fileobj, **kwargs):
     if not kwargs.get('settings'):
         kwargs["settings"] = settings
     t = jinja2.Template(fileobj.read())
-    return StringIO.StringIO(t.render(**kwargs))
+    return StringIO(t.render(**kwargs))
 
 
 def load_fixture(fileobj, loader=None):

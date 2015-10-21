@@ -59,6 +59,44 @@ def load_fake_deployment_tasks(apply_to_db=True, commit=True):
         return deployment_tasks
 
 
+def load_default_release_components():
+    fxtr_path = os.path.join(get_base_fixtures_path(),
+                             'releases_components.yaml')
+    db_release_ids = [r.id for r in db().query(models.Release).all()]
+
+    with open(fxtr_path) as f:
+        components_list = yaml.load(f)
+
+    for component in components_list:
+        release_ids = component['release_ids']
+        release_ids = db_release_ids if '*' in release_ids else \
+            [c for c in release_ids if c in db_release_ids]
+        if not release_ids:
+            logger.info("Can't find any release in DB for component with "
+                        "type='%s', name='%s'. Skipping", component['type'],
+                        component['name'])
+            continue
+
+        c_obj = db().query(models.Component).filter_by(
+            name=component['name'], type=component['type']).first()
+        if c_obj:
+            logger.info("Fixture model 'component' with type='%s', name='%s' "
+                        "already uploaded. Skipping",
+                        component['type'], component['name'])
+            continue
+        else:
+            component.pop('release_ids')
+            c_obj = models.Component(**component)
+            db().add(c_obj)
+            db().flush()
+
+            for release_id in set(release_ids):
+                obj = models.ReleaseComponent(release_id=release_id,
+                                              component_id=c_obj.id)
+                db().add(obj)
+    db().commit()
+
+
 def template_fixture(fileobj, **kwargs):
     if not kwargs.get('settings'):
         kwargs["settings"] = settings

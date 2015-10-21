@@ -19,7 +19,7 @@ import itertools
 import jinja2
 import os.path
 import Queue
-import StringIO
+from six import StringIO
 import sys
 import yaml
 
@@ -46,9 +46,7 @@ def load_fake_deployment_tasks(apply_to_db=True, commit=True):
     :param apply_to_db: if True applying to all releases in db
     :param commit: boolean
     """
-    fxtr_path = os.path.join(get_base_fixtures_path(), 'deployment_tasks.yaml')
-    with open(fxtr_path) as f:
-        deployment_tasks = yaml.load(f)
+    deployment_tasks = get_yaml_fixture_data('deployment_tasks.yaml')
 
     if apply_to_db:
         for rel in db().query(models.Release).all():
@@ -59,11 +57,44 @@ def load_fake_deployment_tasks(apply_to_db=True, commit=True):
         return deployment_tasks
 
 
+def load_default_release_components():
+    """Load core components for releases."""
+    db_release_ids = [r.id for r in db().query(models.Release).all()]
+    components_list = get_yaml_fixture_data('releases_components.yaml')
+
+    for component in components_list:
+        release_ids = component.get('release_ids', [])
+        release_ids = db_release_ids if '*' in release_ids else \
+            [c for c in release_ids if c in db_release_ids]
+        if not release_ids:
+            logger.info("Can't find any release in DB for component with "
+                        "type='%s', name='%s'. Skipping", component['type'],
+                        component['name'])
+            continue
+
+        c_obj = objects.Component.get_by_name_and_type(
+            component['name'], component['type'])
+        if c_obj:
+            logger.info("Fixture model 'component' with type='%s', name='%s' "
+                        "already uploaded. Skipping",
+                        component['type'], component['name'])
+            continue
+        else:
+            component.pop('release_ids')
+            c_obj = objects.Component.create(component)
+
+            for release_id in set(release_ids):
+                obj = models.ReleaseComponent(release_id=release_id,
+                                              component_id=c_obj.id)
+                db().add(obj)
+    db().commit()
+
+
 def template_fixture(fileobj, **kwargs):
     if not kwargs.get('settings'):
         kwargs["settings"] = settings
     t = jinja2.Template(fileobj.read())
-    return StringIO.StringIO(t.render(**kwargs))
+    return StringIO(t.render(**kwargs))
 
 
 def load_fixture(fileobj, loader=None):
@@ -212,6 +243,18 @@ def get_all_fixtures_paths():
         '/etc/nailgun/fixtures',
         get_base_fixtures_path(),
     ]
+
+
+def get_yaml_fixture_data(fixture_filename):
+    """Get content of yaml fixture file
+
+        :param fixture_filename: filename for loading
+        :returns: object represent file content
+    """
+    fxtr_path = os.path.join(get_base_fixtures_path(), fixture_filename)
+    with open(fxtr_path) as f:
+        fixture = yaml.load(f)
+    return fixture
 
 
 def upload_fixtures():

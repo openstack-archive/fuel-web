@@ -1,0 +1,135 @@
+---
+- type: hypervisor
+  name: libvirt:kvm
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['*']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: hypervisor
+  name: libvirt:qemu
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['*']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: hypervisor
+  name: vmware
+  hypervisors: ['*']
+  networks: [nova_network]
+  storages: ['*']
+  additional_services: [sahara, murano, ceilometer]
+  release_ids: ['*']
+
+- type: network
+  name: nova_network
+  hypervisors: [vmware]
+  storages: ['*']
+  additional_services: [sahara, murano, ceilometer]
+  release_ids: ['*']
+
+- type: network
+  name: neutron:core:ml2:ovs
+  hypervisors: ['*']
+  networks: ['neutron:core:ml2', 'neutron:service']
+  storages: ['*']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: network
+  name: neutron:core:ml2:mellanox
+  hypervisors: ['libvirt:kvm']
+  storages: ['*']
+  networks: ['neutron:core:ml2']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: network
+  name: neutron:core:ml2:sr_iov
+  hypervisors: ['libvirt:kvm']
+  storages: ['*']
+  networks: ['neutron:core:ml2', 'neutron:service:l2']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: storage
+  name: object:backend:swift
+  hypervisors: ['*']
+  storages: ['block:backend', 'image']
+  networks: ['*']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: storage
+  name: object:backend:ceph
+  hypervisors: ['*']
+  storages: ['block:backend', 'image']
+  networks: ['*']
+  additional_services: [sahara, murano, ceilometer]
+  release_ids: ['*']
+
+- type: storage
+  name: block:backend:lvm
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['object:backend', 'block:backend']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: storage
+  name: block:backend:ceph
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['object:backend', 'block:backend']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: storage
+  name: image:ceph
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['block:backend', 'object:backend']
+  additional_services: [ceilometer, murano, sahara]
+  release_ids: ['*']
+
+- type: storage
+  name: image:swift
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['block:backend', 'object:backend']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: additional_service
+  name: sahara
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['*']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: additional_service
+  name: murano
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['*']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: additional_service
+  name: ceilometer
+  hypervisors: ['*']
+  networks: ['*']
+  storages: ['*']
+  additional_services: ['*']
+  release_ids: ['*']
+
+- type: additional_service
+  name: ironic
+  hypervisors: ['*']
+  networks: ['neutron:service:l2']
+  storages: ['object:backend', 'block:backend', 'image:swift']
+  additional_services: ['*']
+  release_ids: ['*']

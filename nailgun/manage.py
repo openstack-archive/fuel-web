@@ -240,6 +240,8 @@ def action_loaddefault(params):
 
     logger.info("Uploading fixture...")
     fixman.upload_fixtures()
+    logger.info("Load releases components...")
+    fixman.load_default_release_components()
     logger.info("Applying fake deployment tasks to all releases...")
     fixman.load_fake_deployment_tasks()
     logger.info("Done")

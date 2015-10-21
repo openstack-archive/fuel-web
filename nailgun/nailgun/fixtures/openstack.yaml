@@ -1554,6 +1554,180 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
+    components_metadata:
+      - name: hypervisor:libvirt:kvm
+        bind:
+          - "settings:common.libvirt_type.value"
+        weight: 5
+        label: "dialog.create_cluster_wizard.compute.kvm"
+        description: "dialog.create_cluster_wizard.compute.kvm_description"
+        compatible:
+          - name: hypervisor:*
+          - name: network:*
+          - name: storage:*
+          - name: additional_service:*
+      - name: hypervisor:libvirt:qemu
+        bind:
+          - "settings:common.libvirt_type.value"
+        weight: 10
+        enabled: true
+        label: "dialog.create_cluster_wizard.compute.qemu"
+        description: "dialog.create_cluster_wizard.compute.qemu_description"
+        compatible:
+          - name: hypervisor:*
+          - name: network:*
+          - name: storage:*
+          - name: additional_service:*
+      - name: hypervisor:vmware
+        weight: 15
+        bind:
+          - "settings:common.use_vcenter.value"
+        label: "dialog.create_cluster_wizard.compute.vcenter"
+        description: "dialog.create_cluster_wizard.compute.vcenter_description"
+        compatible:
+          - name: hypervisor:*
+          - name: network:nova_network
+          - name: storage:*
+          - name: additional_service:sahara
+          - name: additional_service:murano
+          - name: additional_service:ceilometer
+        incompatible:
+          - name: additional_service:ironic
+            message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+      - name: network:nova_network
+        bind:
+          - "cluster:net_provider": "nova_network"
+        weight: 5
+        label: "dialog.create_cluster_wizard.network.nova_network"
+        description: "dialog.create_cluster_wizard.network.nova_network_description"
+        compatible:
+          - name: hypervisor:vmware
+          - name: storage:*
+          - name: additional_service:sahara
+          - name: additional_service:murano
+          - name: additional_service:ceilometer
+        incompatible:
+          - name: network:neutron:*
+            message: "dialog.create_cluster_wizard.network.nove_network_vcenter_alert"
+          - name: additional_service:ironic
+            message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+      - name: network:neutron:vlan
+        enabled: true
+        bind:
+          - "cluster:net_provider": "neutron"
+          - "cluster:net_segment_type": "vlan"
+        weight: 10
+        label: "common.network.neutron_vlan"
+        description: "dialog.create_cluster_wizard.network.neutron_vlan_description"
+        compatible:
+          - name: hypervisor:libvirt:*
+          - name: storage:*
+          - name: additional_service:*
+        incompatible:
+          - name: hypervisor:wmvare
+            message: "dialog.create_cluster_wizard.network.hypervisor_alert"
+      - name: network:neutron:tun
+        bind:
+         - "cluster:net_provider": "neutron"
+         - "cluster:net_segment_type": "tun"
+        weight: 15
+        label: "common.network.neutron_tun"
+        description: "dialog.create_cluster_wizard.network.neutron_tun_description"
+        compatible:
+          - name: hypervisor:libvirt:*
+          - name: storage:*
+          - name: additional_service:sahara
+          - name: additional_service:murano
+          - name: additional_service:ceilometer
+        incompatible:
+          - name: hypervisor:wmvare
+            message: "dialog.create_cluster_wizard.network.hypervisor_alert"
+          - name: additional_service:ironic
+            message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+      - name: storage:default
+        enabled: true
+        bind:
+          - "settings:storage.volumes_lvm.value": true
+          - "settings:storage.volumes_ceph.value": false
+          - "settings:storage.objects_ceph.value": false
+          - "settings:storage.ephemeral_ceph.value": false
+          - "settings:storage.images_ceph.value": false
+        weight: 10
+        label: "dialog.create_cluster_wizard.storage.default_provider"
+        description: ""
+        compatible:
+          - name: hypervisor:*
+          - name: network:*
+          - name: additional_service:*
+        incompatible:
+          - name: storage:ceph
+            message: ""
+      - name: storage:ceph
+        bind:
+          - "settings:storage.volumes_ceph.value": true
+          - "settings:storage.objects_ceph.value": true
+          - "settings:storage.ephemeral_ceph.value": true
+          - "settings:storage.images_ceph.value": true
+          - "settings:storage.volumes_lvm.value": false
+        weight: 20
+        label: "dialog.create_cluster_wizard.storage.ceph_provider"
+        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        compatible:
+          - name: hypervisor:*
+          - name: network:*
+          - name: additional_service:*
+        incompatible:
+          - name: storage:default
+            message: ""
+      - name: additional_service:sahara
+        bind:
+          - "settings:additional_components.sahara.value"
+        weight: 10
+        label: "dialog.create_cluster_wizard.additional.install_sahara"
+        description: "dialog.create_cluster_wizard.additional.install_sahara_description"
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:*
+          - name: additional_service:*
+      - name: additional_service:murano
+        bind:
+          - "settings:additional_components.murano.value"
+        weight: 20
+        label: "dialog.create_cluster_wizard.additional.install_murano"
+        description: "dialog.create_cluster_wizard.additional.install_murano_description"
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:*
+          - name: additional_service:*
+      - name: additional_service:ceilometer
+        bind:
+          - "settings:additional_components.ceilometer.value"
+        weight: 30
+        label: "dialog.create_cluster_wizard.additional.install_ceilometer"
+        description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:*
+          - name: additional_service:*
+      - name: additional_service:ironic
+        bind:
+          - "settings:additional_components.ironic.value"
+        weight: 40
+        label: "dialog.create_cluster_wizard.additional.install_ironic"
+        description: "dialog.create_cluster_wizard.additional.install_ironic_description"
+        compatible:
+          - name: hypervisor:*
+          - name: network:neutron:vlan
+          - name: storage:*
+          - name: additional_service:*
+        incompatible:
+          - name: network:nova_network
+            message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+          - name: network:neutron:tun
+            message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
     modes: ['ha_compact']
     extensions: ['volume_manager']
 - pk: 1

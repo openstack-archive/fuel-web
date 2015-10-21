@@ -1516,6 +1516,156 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
+    components_metadata:
+      - name: hypervisor:libvirt:kvm
+        compatible:
+          - name: hypervisor:*
+          - name: network:*
+          - name: storage:*
+          - name: additional_service:*
+      - name: hypervisor:libvirt:qemu
+        compatible:
+          - name: hypervisor:*
+          - name: network:*
+          - name: storage:*
+          - name: additional_service:*
+      - name: hypervisor:vmware
+        compatible:
+          - name: hypervisor:*
+          - name: network:nova_network
+          - name: storage:*
+          - name: additional_service:sahara
+          - name: additional_service:murano
+          - name: additional_service:ceilometer
+        incompatible:
+          - name: network:neutron:*
+          - name: additional_service:ironic
+      - name: network:nova_network
+        compatible:
+          - name: hypervisor:vmware
+          - name: storage:*
+          - name: additional_service:sahara
+          - name: additional_service:murano
+          - name: additional_service:ceilometer
+        incompatible:
+          - name: network:neutron:*
+          - name: additional_service:ironic
+      - name: network:neutron:core:ml2:ovs
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:neutron:core:ml2:*
+          - name: network:service:*
+          - name: additional_service:*
+      - name: network:neutron:core:ml2:ovs
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:neutron:core:ml2:*
+          - name: network:service:*
+          - name: additional_service:*
+      - name: network:neutron:core:ml2:mellanox
+        compatible:
+          - name: hypervisor:libvirt:kvm
+          - name: storage:*
+          - name: network:neutron:core:ml2:*
+          - name: network:service:*
+          - name: additional_service:*
+      - name: network:neutron:core:ml2:sr_iov
+        compatible:
+          - name: hypervisor:libvirt:kvm
+          - name: storage:*
+          - name: network:neutron:core:ml2:*
+          - name: network:service:l2
+          - name: additional_service:*
+      - name: storage:object:backend:swift
+        compatible:
+          - name: hypervisor:*
+          - name: storage:block:backend:*
+          - name: storage:image:*
+          - name: network:*
+          - name: additional_service:*
+      - name: storage:object:backend:ceph
+        compatible:
+          - name: hypervisor:*
+          - name: storage:block:backend:*
+          - name: storage:image:ceph
+          - name: network:*
+          - name: additional_service:*
+      - name: storage:block:backend:lvm
+        compatible:
+          - name: hypervisor:*
+          - name: storage:object:backend:*
+          - name: storage:image:*
+          - name: network:*
+          - name: additional_service:*
+        incompatible:
+          - name: storage:block:backend:ceph
+      - name: storage:block:backend:ceph
+        compatible:
+          - name: hypervisor:*
+          - name: storage:object:backend:*
+          - name: storage:image:*
+          - name: network:*
+          - name: additional_service:*
+        incompatible:
+          - name: storage:block:backend:lvm
+      - name: storage:image:ceph
+        compatible:
+          - name: hypervisor:*
+          - name: storage:object:backend:*
+          - name: storage:block:backend:*
+          - name: network:*
+          - name: additional_service:sahara
+          - name: additional_service:murano
+          - name: additional_service:ceilometer
+        incompatible:
+          - name: storage:image:vcenter
+      - name: storage:image:swift
+        compatible:
+          - name: hypervisor:*
+          - name: storage:object:backend:*
+          - name: storage:block:backend:*
+          - name: network:*
+          - name: additional_service:*
+      - name: storage:image:vcenter
+        compatible:
+          - name: hypervisor:vmware
+          - name: storage:object:backend:*
+          - name: storage:block:backend:*
+          - name: network:*
+          - name: additional_service:*
+        incompatible:
+          - name: storage:image:ceph
+      - name: additional_service:sahara
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:*
+          - name: additional_service:*
+      - name: additional_service:murano
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:*
+          - name: additional_service:*
+      - name: additional_service:ceilometer
+        compatible:
+          - name: hypervisor:*
+          - name: storage:*
+          - name: network:*
+          - name: additional_service:*
+      - name: additional_service:ironic
+        compatible:
+          - name: hypervisor:*
+          - name: network:service:l2
+          - name: network:neutron:core:*
+          - name: storage:object:backend:*
+          - name: storage:block:backend:*
+          - name: storage:image:swift
+          - name: additional_service:*
+        incompatible:
+          - name: storage:image:ceph
     modes: ['ha_compact']
     extensions: ['volume_manager']
 - pk: 1

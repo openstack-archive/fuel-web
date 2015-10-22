@@ -169,8 +169,10 @@ class TestNetworkModels(BaseIntegrationTest):
             "vlan_range": [1000, 1030],
             "gre_id_range": [2, 65534],
             "base_mac": "fa:16:3e:00:00:00",
+            "internal_name": "my_internal_name",
             "internal_cidr": "192.168.111.0/24",
             "internal_gateway": "192.168.111.1",
+            "floating_name": "my_floating_name",
             "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
             "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
             "cluster_id": cluster.id,
@@ -186,3 +188,13 @@ class TestNetworkModels(BaseIntegrationTest):
 
         kw.pop("cluster_id")
         self.assertEqual(nw_params, kw)
+
+    def test_neutron_has_internal_and_floating_names(self):
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron)
+
+        self.assertEqual(
+            "admin_internal_net", cluster.network_config.internal_name)
+        self.assertEqual(
+            "admin_floating_net", cluster.network_config.floating_name)

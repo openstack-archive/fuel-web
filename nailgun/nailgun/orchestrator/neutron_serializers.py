@@ -177,11 +177,17 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     @classmethod
     def neutron_attrs(cls, cluster):
         """Network configuration for Neutron."""
-        attrs = {}
-        attrs['L3'] = cls.generate_l3(cluster)
-        attrs['L2'] = cls.generate_l2(cluster)
-        attrs['predefined_networks'] = \
-            cls.generate_predefined_networks(cluster)
+        internal_name = cluster.network_config.internal_name
+        floating_name = cluster.network_config.floating_name
+
+        attrs = {
+            'L3': cls.generate_l3(cluster),
+            'L2': cls.generate_l2(cluster),
+            'predefined_networks': cls.generate_predefined_networks(cluster),
+
+            'default_private_net': internal_name,
+            'default_floating_net': floating_name,
+        }
 
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
@@ -451,9 +457,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def generate_predefined_networks(cls, cluster):
+        internal_name = cluster.network_config.internal_name
+        floating_name = cluster.network_config.floating_name
+
         return {
-            "net04_ext": cls._generate_external_network(cluster),
-            "net04": cls._generate_internal_network(cluster)
+            internal_name: cls._generate_internal_network(cluster),
+            floating_name: cls._generate_external_network(cluster),
         }
 
     @classmethod

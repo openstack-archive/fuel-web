@@ -12,11 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import uuid
+
 import alembic
+from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.exc import DataError
 from sqlalchemy.exc import IntegrityError
-import uuid
 
 from nailgun.db import db
 from nailgun.db import dropdb
@@ -44,7 +46,13 @@ def prepare():
             'name': 'test_name',
             'version': '2014.2.2-6.1',
             'operating_system': 'ubuntu',
-            'state': 'available'
+            'state': 'available',
+            'networks_metadata': jsonutils.dumps({
+                'neutron': {
+                    'networks': [],
+                    'config': {}
+                }
+            })
         }
     )
 
@@ -69,6 +77,28 @@ def prepare():
             {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
             {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
         ])
+
+    netconfigid = insert_table_row(
+        meta.tables['networking_configs'],
+        {
+            'cluster_id': None,
+            'dns_nameservers': ['8.8.8.8'],
+            'floating_ranges': [],
+            'configuration_template': None,
+        })
+
+    db.execute(
+        meta.tables['neutron_config'].insert(),
+        [{
+            'id': netconfigid,
+            'vlan_range': [],
+            'gre_id_range': [],
+            'base_mac': '00:00:00:00:00:00',
+            'internal_cidr': '10.10.10.00/24',
+            'internal_gateway': '10.10.10.01',
+            'segmentation_type': 'vlan',
+            'net_l23_provider': 'ovs'
+        }])
 
     db.commit()
 
@@ -275,3 +305,33 @@ class TestReleaseMigrations(base.BaseAlembicMigrationTest):
 
         for state in states:
             self.assertEqual(state, 'manageonly')
+
+
+class TestNeutronConfigInternalFloatingNames(base.BaseAlembicMigrationTest):
+
+    def test_internal_name_and_floating_names_are_added(self):
+        columns = [t.name for t in self.meta.tables['neutron_config'].columns]
+
+        self.assertIn('internal_name', columns)
+        self.assertIn('floating_name', columns)
+
+    def test_internal_name_and_floating_names_defaults(self):
+        result = db.execute(
+            sa.select([
+                self.meta.tables['neutron_config'].c.internal_name,
+                self.meta.tables['neutron_config'].c.floating_name]))
+
+        for internal_name, floating_name in result:
+            self.assertEqual('net04', internal_name)
+            self.assertEqual('net04_ext', floating_name)
+
+    def test_neutron_config_is_updated_in_releases(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.networks_metadata]))
+
+        for networks_metadata, in result:
+            networks_metadata = jsonutils.loads(networks_metadata)
+            neutron_config = networks_metadata['neutron']['config']
+
+            self.assertEqual('net04', neutron_config['internal_name'])
+            self.assertEqual('net04_ext', neutron_config['floating_name'])

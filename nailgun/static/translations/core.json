@@ -546,7 +546,7 @@
                     "alert_delete": "You are about to clean up each node and return it to the pool of unallocated nodes. All logs from the deleted nodes will be removed.",
                     "reset_environment": "Reset Environment",
                     "reset_environment_description": "Enables you to modify the settings and re-deploy the environment.",
-                    "reset_environment_warning": "You are about to reset all existing nodes to the pre-deployment state and delete this environment.",
+                    "reset_environment_warning": "You are about to reset all existing nodes to the pre-deployment state and delete this environment. Environment settings and network configuration will be preserved.",
                     "reset_disabled_for_deploying_cluster": "The OpenStack environment is still being deployed. Wait untill Fuel completes the deployment and try again.",
                     "repeated_reset_disabled": "The environment is already being reset.",
                     "rename_error": {
@@ -936,7 +936,7 @@
                 },
                 "reset_environment": {
                     "title": "Reset Environment",
-                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configurations will also be reset to defaults.",
+                    "text": "Are you sure you want to reset this environment? You are about to reset all existing nodes to the pre-deployment state and delete this environment. Environment settings and network configuration will be preserved.",
                     "enter_environment_name": "Type the name of the environment \"__name__\" to confirm."
                 },
                 "error_dialog": {
@@ -1589,7 +1589,7 @@
                 "settings_title": "環境設定:",
                 "settings": {
                     "envronments_amount": "環境の数",
-                    "nistribution": "ディストリビューション / OS",
+                    "distribution": "ディストリビューション / OS",
                     "network_type": "ネットワークタイプ",
                     "kernel_parameters": "カーネルパラメータ",
                     "admin_network_parameters": "管理ネットワークのパラメータ",

@@ -188,9 +188,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         render: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
-                sortedSettingGroups = _.sortBy(_.keys(settings.attributes), function(groupName) {
-                    return settings.get(groupName + '.metadata.weight');
-                }),
+                groupsList = _.pull(settings.getGroupsList(), 'network'),
+                groupedSettings = {},
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 someSettingsEditable = _.any(settings.attributes, function(group) {return group.metadata.always_editable;}),
@@ -200,39 +199,59 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     row: true,
                     'changes-locked': lockedCluster
                 };
-
+                // TODO: optimize this next function: it will be great to calculate errors and rescrictions right here
+                _.each(groupsList, function(groupName) {
+                    var settingsList = _.chain(_.keys(settings.attributes))
+                        .map(function(settingName) {
+                            var group = settings.get(settingName + '.metadata.group');
+                            if (group == groupName || !group && !_.isEmpty(_.where(settings.get(settingName), {group: groupName}))) return settingName;
+                            if (groupName == 'other' && !group && _.chain(settings.get(settingName)).pluck('group').compact().isEmpty().value()) return settingName;
+                        })
+                        .compact()
+                        .value()
+                    groupedSettings[groupName] = settingsList;
+                });
             return (
                 <div key={this.state.key} className={utils.classNames(classes)}>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
                     <SettingSubtabs
                         settings={settings}
-                        groupNames={sortedSettingGroups}
+                        groupedSettings={groupsList}
                         makePath={settings.makePath}
                         configModels={this.state.configModels}
                         setActiveGroupName={this.props.setActiveGroupName}
                         activeGroupName={this.props.activeGroupName}
                         checkRestrictions={this.checkRestrictions}
                     />
-                    {_.compact(_.map(sortedSettingGroups, function(groupName) {
+                    {_.map(groupedSettings, function(group, groupName) {
                         if (groupName != this.props.activeGroupName) {
                             return null;
                         }
-                        return <SettingGroup
-                            key={groupName}
-                            cluster={this.props.cluster}
-                            groupName={groupName}
-                            onChange={_.bind(this.onChange, this, groupName)}
-                            allocatedRoles={allocatedRoles}
-                            settings={settings}
-                            settingsForChecks={this.state.settingsForChecks}
-                            makePath={settings.makePath}
-                            getValueAttribute={settings.getValueAttribute}
-                            locked={locked}
-                            lockedCluster={lockedCluster}
-                            configModels={this.state.configModels}
-                            checkRestrictions={this.checkRestrictions}
-                        />;
-                    }, this))}
+                        var sortedSettings = _.sortBy(group, function(name) {
+                            return settings.get(name + '.metadata.weight');
+                        });
+                        return (
+                            <div className={'col-xs-10 forms-box ' + groupName}>
+                                {_.map(sortedSettings, function(settingName) {
+                                    return <SettingSection
+                                            key={settingName}
+                                            cluster={this.props.cluster}
+                                            group={groupName}
+                                            groupName={settingName}
+                                            onChange={_.bind(this.onChange, this, settingName)}
+                                            allocatedRoles={allocatedRoles}
+                                            settings={settings}
+                                            settingsForChecks={this.state.settingsForChecks}
+                                            makePath={settings.makePath}
+                                            getValueAttribute={settings.getValueAttribute}
+                                            locked={locked}
+                                            lockedCluster={lockedCluster}
+                                            configModels={this.state.configModels}
+                                            checkRestrictions={this.checkRestrictions}/>;
+                                }, this)}
+                            </div>
+                        );
+                    }, this)}
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
@@ -260,17 +279,20 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             _.forEach(errors, function(error, key) {
                 invalidSections[_.first(key.split('.'))] = true;
             });
+
             return (
                 <div className='col-xs-2'>
                     <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
                     {
-                        this.props.groupNames.map(function(groupName) {
-                            var group = this.props.settings.get(groupName),
-                                metadata = group.metadata;
-                            if (this.props.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) {
-                                return null;
-                            }
-                            var hasErrors = invalidSections[groupName];
+                        this.props.groupedSettings.map(function(groupName) {
+                            var hasErrors = false;
+                            // TODO: check the Restrictions and Error for all settings in the group
+                            // var group = this.props.settings.get(groupName),
+                            //     metadata = group.metadata;
+                            // if (this.props.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) {
+                            //     return null;
+                            // }
+                            // var hasErrors = invalidSections[groupName];
                             return (
                                 <li
                                     key={groupName}
@@ -280,7 +302,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 >
                                     <a className={'subtab-link-' + groupName}>
                                         {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
-                                        {metadata.label}
+                                        {i18n('cluster_page.settings_tab.groups.' + groupName, {defaultValue: groupName})}
                                     </a>
                                 </li>
                             );
@@ -292,7 +314,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         }
     });
 
-    var SettingGroup = React.createClass({
+    var SettingSection = React.createClass({
         processRestrictions: function(groupName, settingName) {
             var result = false,
                 path = this.props.makePath(groupName, settingName),
@@ -427,8 +449,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
                 showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable,
                 groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
+
+                if (!group.metadata.group && this.props.group != 'other') {
+                    sortedSettings = _.compact(_.map(sortedSettings, function(settingName) {
+                        return group[settingName].group == this.props.group && settingName;
+                    }, this))
+                }
             return (
-                <div className={'col-xs-10 forms-box ' + this.props.groupName}>
+                <div className='setting-section'>
                     {showSettingGroupWarning && processedGroupRestrictions.message &&
                         <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>
                     }
@@ -444,7 +472,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 onChange={this.props.onChange}
                             />
                         :
-                            <span className={'subtab-group-' + this.props.groupName}>{metadata.label || this.props.groupName}</span>
+                            <span className={'subtab-group-' + this.props.groupName}>{this.props.groupName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || this.props.groupName}</span>
                         }
                     </h3>
                     <div>

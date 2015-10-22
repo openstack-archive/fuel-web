@@ -227,10 +227,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             });
         },
         pickDefaultSettingGroup: function() {
-            var settings = this.props.cluster.get('settings');
-            return _.min(_.keys(settings.attributes), function(groupName) {
-                return settings.get(groupName + '.metadata.weight');
-            });
+            var settings = this.props.cluster.get('settings'),
+                groupsList = settings.getGroupsList();
+            return _.first(groupsList);
         },
         setActiveSettingsGroupName: function(value) {
             if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();

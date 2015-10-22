@@ -163,7 +163,6 @@ Setup for Web UI Tests
     sudo add-apt-repository --yes ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install --yes nodejs
-    sudo apt-get install --yes npm
     npm install >/dev/null 2>&1 || true  # To initialize $HOME/.npm
     sudo npm install -g gulp
     cd nailgun

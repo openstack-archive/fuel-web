@@ -61,9 +61,14 @@ class NetworkConfigurationSerializer(BasicSerializer):
 class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 
     network_cfg_fields = (
-        'dns_nameservers', 'net_manager', 'fixed_networks_cidr',
-        'fixed_networks_vlan_start', 'fixed_network_size',
-        'fixed_networks_amount', 'floating_ranges')
+        'dns_nameservers',
+        'net_manager',
+        'fixed_networks_cidr',
+        'fixed_networks_vlan_start',
+        'fixed_network_size',
+        'fixed_networks_amount',
+        'floating_ranges',
+    )
 
     @classmethod
     def serialize_for_cluster(cls, cluster):
@@ -76,10 +81,19 @@ class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 
     network_cfg_fields = (
-        'dns_nameservers', 'segmentation_type', 'net_l23_provider',
-        'floating_ranges', 'vlan_range', 'gre_id_range',
-        'base_mac', 'internal_cidr', 'internal_gateway',
-        'configuration_template')
+        'base_mac',
+        'configuration_template',
+        'dns_nameservers',
+        'floating_name',
+        'floating_ranges',
+        'gre_id_range',
+        'internal_cidr',
+        'internal_gateway',
+        'internal_name',
+        'net_l23_provider',
+        'segmentation_type',
+        'vlan_range',
+    )
 
     @classmethod
     def serialize_for_cluster(cls, cluster):

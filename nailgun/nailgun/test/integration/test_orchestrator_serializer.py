@@ -1629,7 +1629,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                     "physnet": None
                 },
                 node['quantum_settings']['predefined_networks'][
-                    'net04_ext']['L2']
+                    'admin_floating_net']['L2']
             )
             self.assertFalse(
                 'physnet1' in node['quantum_settings']['L2']['phys_nets']
@@ -1652,7 +1652,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                     "physnet": "physnet1"
                 },
                 node['quantum_settings']['predefined_networks'][
-                    'net04_ext']['L2']
+                    'admin_floating_net']['L2']
             )
             self.assertEqual(
                 {
@@ -1851,7 +1851,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         pd_nets = facts[0]["quantum_settings"]["predefined_networks"]
         self.assertEqual(
-            pd_nets["net04_ext"]["L3"]["gateway"],
+            pd_nets["admin_floating_net"]["L3"]["gateway"],
             test_gateway
         )
 
@@ -1898,15 +1898,15 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         pd_nets = facts[0]["quantum_settings"]["predefined_networks"]
         self.assertEqual(
-            pd_nets["net04_ext"]["L3"]["subnet"],
+            pd_nets["admin_floating_net"]["L3"]["subnet"],
             ng2_networks['public']['cidr']
         )
         self.assertEqual(
-            pd_nets["net04_ext"]["L3"]["gateway"],
+            pd_nets["admin_floating_net"]["L3"]["gateway"],
             ng2_networks['public']['gateway']
         )
         self.assertEqual(
-            pd_nets["net04_ext"]["L3"]["floating"],
+            pd_nets["admin_floating_net"]["L3"]["floating"],
             '199.10.0.77:199.10.0.177'
         )
 

@@ -63,8 +63,8 @@ class NetworkTenantNameMixin(object):
     def test_predefined_networks_tenant_name(self, creds):
         predefined_network = self.serializer.generate_predefined_networks(
             self.cluster)
-        self.verify_network_tenant(predefined_network['net04'])
-        self.verify_network_tenant(predefined_network['net04_ext'])
+        self.verify_network_tenant(predefined_network['admin_internal_net'])
+        self.verify_network_tenant(predefined_network['admin_floating_net'])
 
 
 class TestNeutronDeploymentSerializer(BaseTestNeutronDeploymentSerializer,

@@ -25,11 +25,11 @@ revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
 from alembic import op
+from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
 
 from nailgun.utils.migration import drop_enum
-
 from nailgun.utils.migration import upgrade_enum
 
 
@@ -105,13 +105,16 @@ def upgrade():
     task_statuses_upgrade()
     task_names_upgrade()
     add_node_discover_error_upgrade()
+    upgrade_neutron_parameters()
 
 
 def downgrade():
+    downgrade_neutron_parameters()
     add_node_discover_error_downgrade()
     task_names_downgrade()
     task_statuses_downgrade()
     downgrade_release_state()
+
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
     op.drop_table('release_components')
     op.drop_table('components')
@@ -268,3 +271,52 @@ def add_node_discover_error_downgrade():
         node_errors_new,
         node_errors_old
     )
+
+
+def upgrade_neutron_parameters():
+    connection = op.get_bind()
+
+    op.add_column(
+        'neutron_config',
+        sa.Column('internal_name', sa.String(length=50), nullable=True))
+    op.add_column(
+        'neutron_config',
+        sa.Column('floating_name', sa.String(length=50), nullable=True))
+
+    # net04 and net04_ext are names that were previously hardcoded,
+    # so let's use them for backward compatibility reason
+    connection.execute(sa.sql.text("""
+        UPDATE neutron_config
+            SET internal_name = 'net04',
+                floating_name = 'net04_ext'
+        """))
+
+    op.alter_column('neutron_config', 'internal_name', nullable=False)
+    op.alter_column('neutron_config', 'floating_name', nullable=False)
+
+    # usually, we don't allow to create new clusters using old releases,
+    # but let's patch old releases just in case
+    select_query = sa.sql.text("SELECT id, networks_metadata FROM releases")
+
+    for id_, networks_metadata in connection.execute(select_query):
+        networks_metadata = jsonutils.loads(networks_metadata)
+
+        if networks_metadata.get('neutron', {}).get('config') is not None:
+            networks_metadata['neutron']['config'].update({
+                'internal_name': 'net04',
+                'floating_name': 'net04_ext',
+            })
+
+            connection.execute(
+                sa.sql.text("""
+                    UPDATE releases
+                        SET networks_metadata = :networks_metadata
+                        WHERE id = :id
+                """),
+                id=id_,
+                networks_metadata=jsonutils.dumps(networks_metadata))
+
+
+def downgrade_neutron_parameters():
+    op.drop_column('neutron_config', 'floating_name')
+    op.drop_column('neutron_config', 'internal_name')

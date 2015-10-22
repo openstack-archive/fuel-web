@@ -640,6 +640,28 @@ define([
                     return !_.isEqual(setting.value, initialAttributes[groupName][settingName].value);
                 }, this);
             }, this);
+        },
+        getGroupsList: function() {
+            var groupsList = _.chain(this.attributes)
+                .map(function(group) {return group.metadata.group;})
+                .uniq()
+                .compact()
+                .value();
+
+            // Search groups into singular setting like Common settings
+            var undfefinedGroups = _.filter(this.attributes, function(attribute) {return !attribute.metadata.group;});
+            _.each(undfefinedGroups, function(settings) {
+                var additionalGroups = _.chain(settings)
+                    .pluck('group')
+                    .compact()
+                    .uniq()
+                    .value();
+                // In case there are no groups found, put this group to 'other'
+                if (_.isEmpty(additionalGroups)) additionalGroups = ['other'];
+                groupsList = _.union(groupsList, additionalGroups);
+            });
+            // return manually sorted list
+            return _.union(['security', 'openstack_services', 'general', 'compute', 'storage', 'logging'], groupsList);
         }
     });
 

@@ -52,7 +52,7 @@ define([
                         return clusterPage.goToTab('Settings');
                     })
                     // go to Common subtab to use checkboxes for tests
-                    .clickLinkByText('Common');
+                    .clickLinkByText('Storage');
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
@@ -112,51 +112,51 @@ define([
             },
             'The choice of subgroup is preserved when user navigates through the cluster tabs': function() {
                 return this.remote
-                    .clickLinkByText('Syslog')
+                    .clickLinkByText('Logging')
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
                     .then(function() {
                         return clusterPage.goToTab('Settings');
                     })
-                    .assertElementExists('.nav-pills li.active a.subtab-link-syslog', 'The choice of subgroup is preserved when user navigates through the cluster tabs');
+                    .assertElementExists('.nav-pills li.active a.subtab-link-logging', 'The choice of subgroup is preserved when user navigates through the cluster tabs');
             },
             'The page reacts on invalid input': function() {
                 return this.remote
-                    .clickLinkByText('Access')
+                    .clickLinkByText('Security')
                     // "nova" is forbidden username
                     .setInputValue('[type=text][name=user]', 'nova')
-                    .assertElementAppears('.access .form-group.has-error', 200, 'Invalid field marked as error')
-                    .assertElementExists('.subtab-link-access i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid')
+                    .assertElementAppears('.security .form-group.has-error', 200, 'Invalid field marked as error')
+                    .assertElementExists('.subtab-link-security i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid')
                     .assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled in case of validation error')
                     // revert the change
                     .clickByCssSelector('.btn-revert-changes')
-                    .assertElementNotExists('.access .form-group.has-error', 'Validation error is cleared after resetting changes')
-                    .assertElementNotExists('.subtab-link-access i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
+                    .assertElementNotExists('.security .form-group.has-error', 'Validation error is cleared after resetting changes')
+                    .assertElementNotExists('.subtab-link-security i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
             },
             'Test repositories custom control': function() {
                 var repoAmount,
                     self = this;
                 return this.remote
-                    .clickLinkByText('Repositories')
+                    .clickLinkByText('General')
                     // get amount of default repositories
-                    .findAllByCssSelector('.repos .form-inline')
+                    .findAllByCssSelector('.general .form-inline')
                         .then(function(elements) {
                             repoAmount = elements.length;
                         })
                         .end()
-                    .assertElementNotExists('.repos .form-inline:nth-of-type(1) .btn-link', 'The first repo can not be deleted')
+                    .assertElementNotExists('.general .form-inline:nth-of-type(1) .btn-link', 'The first repo can not be deleted')
                     // delete some repo
-                    .clickByCssSelector('.repos .form-inline .btn-link')
+                    .clickByCssSelector('.general .form-inline .btn-link')
                     .then(function() {
-                        return self.remote.assertElementsExist('.repos .form-inline', repoAmount - 1, 'Repo was deleted');
+                        return self.remote.assertElementsExist('.general .form-inline', repoAmount - 1, 'Repo was deleted');
                     })
                     // add new repo
                     .clickByCssSelector('.btn-add-repo')
                     .then(function() {
-                        return self.remote.assertElementsExist('.repos .form-inline', repoAmount, 'New repo placeholder was added');
+                        return self.remote.assertElementsExist('.general .form-inline', repoAmount, 'New repo placeholder was added');
                     })
-                    .assertElementExists('.repos .form-inline .repo-name.has-error', 'Empty repo marked as invalid')
+                    .assertElementExists('.general .form-inline .repo-name.has-error', 'Empty repo marked as invalid')
                     // revert the change
                     .clickByCssSelector('.btn-revert-changes');
             }

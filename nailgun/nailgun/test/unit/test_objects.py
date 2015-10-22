@@ -207,7 +207,7 @@ class TestNodeObject(BaseIntegrationTest):
             nodes_kwargs=[{'role': 'controller'}] * 3)
         new_cluster = self.env.create(
             cluster_kwargs={'api': False},
-            release_kwargs={'version': '2015.1.0-8.0'},
+            release_kwargs={'version': 'liberty-8.0'},
         )
 
         net_template = self.env.read_fixtures(['network_template_80'])[0]

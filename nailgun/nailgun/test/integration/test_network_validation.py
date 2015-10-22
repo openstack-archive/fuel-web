@@ -530,7 +530,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.assertEqual(
             task['message'],
             "Address space intersection between ranges "
-            "of public and external network."
+            "of public and floating network."
         )
 
     def test_network_checking_public_network_cidr_became_smaller(self):

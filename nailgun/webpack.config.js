@@ -38,5 +38,9 @@ module.exports = {
     postcss: function() {
         return [require('autoprefixer')];
     },
-    devtool: 'cheap-source-map'
+    devtool: 'cheap-source-map',
+    watchOptions: {
+        aggregateTimeout: 300,
+        poll: 1000
+    }
 };

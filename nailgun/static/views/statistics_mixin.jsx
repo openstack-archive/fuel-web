@@ -176,7 +176,7 @@ define([
                     ],
                     settings: [
                         'envronments_amount',
-                        'nistribution',
+                        'distribution',
                         'network_type',
                         'kernel_parameters',
                         'admin_network_parameters',

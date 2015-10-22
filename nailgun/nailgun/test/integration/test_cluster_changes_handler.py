@@ -482,7 +482,7 @@ class TestHandlers(BaseIntegrationTest):
             "use_namespaces": True
         }
         predefined_networks = {
-            "net04_ext": {
+            'admin_floating_net': {
                 'shared': False,
                 'L2': {
                     'router_ext': True,
@@ -497,7 +497,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gateway': '172.16.0.1'},
                 'tenant': 'admin'
             },
-            "net04": {
+            'admin_internal_net': {
                 'shared': False,
                 'L2': {
                     'router_ext': False,
@@ -518,7 +518,9 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs['quantum_settings'].update(
             L2=L2,
             L3=L3,
-            predefined_networks=predefined_networks)
+            predefined_networks=predefined_networks,
+            default_private_net='admin_internal_net',
+            default_floating_net='admin_floating_net')
 
         # Common attrs calculation
         nodes_list = []
@@ -965,7 +967,7 @@ class TestHandlers(BaseIntegrationTest):
             "use_namespaces": True
         }
         predefined_networks = {
-            "net04_ext": {
+            'admin_floating_net': {
                 'shared': False,
                 'L2': {
                     'router_ext': True,
@@ -980,7 +982,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gateway': '172.16.0.1'},
                 'tenant': 'admin'
             },
-            "net04": {
+            'admin_internal_net': {
                 'shared': False,
                 'L2': {
                     'router_ext': False,
@@ -1001,7 +1003,9 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs['quantum_settings'].update(
             L2=L2,
             L3=L3,
-            predefined_networks=predefined_networks)
+            predefined_networks=predefined_networks,
+            default_private_net='admin_internal_net',
+            default_floating_net='admin_floating_net')
 
         # Common attrs calculation
         nodes_list = []

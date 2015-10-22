@@ -127,6 +127,7 @@ NEUTRON_NETWORK_CONFIGURATION = {
                     ]
                 },
                 "dns_nameservers": base_types.IP_ADDRESS_LIST,
+                "floating_name": {"type": "string"},
                 "floating_ranges": {
                     "type": "array",
                     "items": base_types.IP_ADDRESS_RANGE
@@ -144,6 +145,7 @@ NEUTRON_NETWORK_CONFIGURATION = {
                         "exclusiveMaximum": False
                     },
                 },
+                "internal_name": {"type": "string"},
                 "internal_cidr": base_types.NULLABLE_NET_ADDRESS,
                 "internal_gateway": base_types.NULLABLE_IP_ADDRESS,
                 "net_l23_provider": {

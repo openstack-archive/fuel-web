@@ -415,7 +415,7 @@ class TestAttributes(BaseIntegrationTest):
         )
         self.assertEqual(
             set(editable["workloads_collector"]["metadata"].keys()),
-            set(["label", "weight", "restrictions"])
+            set(["label", "weight", "restrictions", "group"])
         )
 
 

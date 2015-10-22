@@ -595,6 +595,7 @@
           metadata:
             label: "Access"
             weight: 10
+            group: "security"
           user:
             value: "admin"
             label: "Username"
@@ -635,6 +636,7 @@
           metadata:
             label: "Workloads Collector User"
             weight: 10
+            group: "general"
             restrictions:
               - condition: "true"
                 action: "hide"
@@ -655,6 +657,7 @@
           metadata:
             label: "Murano Settings"
             weight: 20
+            group: "openstack_services"
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
                 message: "Murano is not enabled on the Additional Components section"
@@ -669,6 +672,7 @@
           metadata:
             label: "External MongoDB"
             weight: 20
+            group: "openstack_services"
             restrictions:
               - condition: "settings:additional_components.mongo.value == false"
                 message: "Ceilometer and MongoDB are not enabled on the Additional Components section"
@@ -721,6 +725,7 @@
             enabled: true
             label: "Mellanox Neutron components"
             weight: 50
+            group: "network"
             restrictions:
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
@@ -757,6 +762,7 @@
           metadata:
             label: "Additional Components"
             weight: 20
+            group: "openstack_services"
           sahara:
             value: false
             label: "Install Sahara"
@@ -805,24 +811,28 @@
           debug:
             value: false
             label: "OpenStack debug logging"
+            group: "logging"
             description: "Debug logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
           puppet_debug:
             value: true
             label: "Puppet debug logging"
+            group: "logging"
             description: "Debug puppet logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
           nova_quota:
             value: false
             label: "Nova quotas"
+            group: "compute"
             description: "Quotas are used to limit CPU and memory usage for tenants. Enabling quotas will increase load on the Nova database."
             weight: 25
             type: "checkbox"
           auto_assign_floating_ip:
             value: false
             label: "Auto assign floating IP"
+            group: "network"
             description: "If selected, OpenStack will automatically assign a floating IP to a new instance"
             weight: 40
             type: "checkbox"
@@ -845,23 +855,27 @@
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
             label: "Hypervisor type"
+            group: "compute"
             weight: 30
             type: "radio"
           resume_guests_state_on_host_boot:
             value: true
             label: "Resume guests state on host boot"
+            group: "compute"
             description: "Whether to resume previous guests state when the host reboots. If enabled, this option causes guests assigned to the host to resume their previous state. If the guest was running a restart will be attempted when nova-compute starts. If the guest was not running previously, a restart will not be attempted."
             weight: 60
             type: "checkbox"
           use_cow_images:
             value: true
             label: "Use qcow format for images"
+            group: "storage"
             description: "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting."
             weight: 50
             type: "checkbox"
           auth_key:
             value: ""
             label: "Public Key"
+            group: "security"
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
             type: "textarea"
@@ -869,6 +883,7 @@
           metadata:
             weight: 50
             label: "Public network assignment"
+            group: "network"
             restrictions:
               - condition: "cluster:net_provider != 'neutron'"
                 action: "hide"
@@ -882,6 +897,7 @@
           metadata:
             weight: 45
             label: "Neutron Advanced Configuration"
+            group: "network"
             restrictions:
               - condition: "cluster:net_provider != 'neutron'"
                 action: "hide"
@@ -906,6 +922,7 @@
           metadata:
             label: "Corosync"
             weight: 50
+            group: "general"
             restrictions:
               - condition: "true"
                 action: "hide"
@@ -931,6 +948,7 @@
           metadata:
             label: "Syslog"
             weight: 50
+            group: "logging"
             toggleable: true
             enabled: false
           syslog_transport:
@@ -967,6 +985,7 @@
           metadata:
             label: "Provision"
             weight: 80
+            group: "general"
             restrictions:
               - condition: "true"
                 action: "hide"
@@ -977,6 +996,7 @@
           metadata:
             label: "Host OS DNS Servers"
             weight: 90
+            group: "general"
           dns_list:
             value:
               generator: "from_settings"
@@ -992,6 +1012,7 @@
           metadata:
             label: "Host OS NTP Servers"
             weight: 100
+            group: "general"
           ntp_list:
             value:
               generator: "from_settings"
@@ -1007,6 +1028,7 @@
           metadata:
             label: "Public TLS"
             weight: 110
+            group: "security"
           horizon:
             value: true
             label: "HTTPS for Horizon"
@@ -1057,6 +1079,7 @@
           metadata:
             label: "Kernel parameters"
             weight: 40
+            group: "general"
           kernel:
             value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset"
             label: "Initial parameters"
@@ -1067,6 +1090,7 @@
           metadata:
             label: "Storage"
             weight: 60
+            group: "storage"
           volumes_lvm:
             value: true
             label: "Cinder LVM over iSCSI for volumes"
@@ -1551,6 +1575,7 @@
           metadata:
             label: "Repositories"
             weight: 50
+            group: "general"
             always_editable: true
           repos:
             type: "custom_repo_configuration"
@@ -1607,6 +1632,7 @@
           metadata:
             label: "Repositories"
             weight: 50
+            group: "general"
             always_editable: true
           repos:
             type: "custom_repo_configuration"

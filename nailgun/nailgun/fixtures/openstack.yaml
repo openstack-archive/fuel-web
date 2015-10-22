@@ -595,6 +595,7 @@
           metadata:
             label: "Access"
             weight: 10
+            group_id: "base_settings"
           user:
             value: "admin"
             label: "Username"
@@ -721,6 +722,7 @@
             enabled: true
             label: "Mellanox Neutron components"
             weight: 50
+            group_id: "network_settings"
             restrictions:
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
@@ -757,6 +759,7 @@
           metadata:
             label: "Additional Components"
             weight: 20
+            group_id: "base_settings"
           sahara:
             value: false
             label: "Install Sahara"
@@ -802,6 +805,7 @@
           metadata:
             label: "Common"
             weight: 30
+            group_id: "base_settings"
           debug:
             value: false
             label: "OpenStack debug logging"
@@ -869,6 +873,7 @@
           metadata:
             weight: 50
             label: "Public network assignment"
+            group_id: "network_settings"
             restrictions:
               - condition: "cluster:net_provider != 'neutron'"
                 action: "hide"
@@ -882,6 +887,7 @@
           metadata:
             weight: 45
             label: "Neutron Advanced Configuration"
+            group_id: "network_settings"
             restrictions:
               - condition: "cluster:net_provider != 'neutron'"
                 action: "hide"
@@ -931,6 +937,7 @@
           metadata:
             label: "Syslog"
             weight: 50
+            group_id: "network_settings"
             toggleable: true
             enabled: false
           syslog_transport:
@@ -977,6 +984,7 @@
           metadata:
             label: "Host OS DNS Servers"
             weight: 90
+            group_id: "network_settings"
           dns_list:
             value:
               generator: "from_settings"
@@ -992,6 +1000,7 @@
           metadata:
             label: "Host OS NTP Servers"
             weight: 100
+            group_id: "network_settings"
           ntp_list:
             value:
               generator: "from_settings"
@@ -1007,6 +1016,7 @@
           metadata:
             label: "Public TLS"
             weight: 110
+            group_id: "network_settings"
           horizon:
             value: true
             label: "HTTPS for Horizon"
@@ -1057,6 +1067,7 @@
           metadata:
             label: "Kernel parameters"
             weight: 40
+            group_id: "base_settings"
           kernel:
             value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset"
             label: "Initial parameters"
@@ -1067,6 +1078,7 @@
           metadata:
             label: "Storage"
             weight: 60
+            group_id: "storage_settings"
           volumes_lvm:
             value: true
             label: "Cinder LVM over iSCSI for volumes"
@@ -1553,6 +1565,7 @@
           metadata:
             label: "Repositories"
             weight: 50
+            group_id: "base_settings"
             always_editable: true
           repos:
             type: "custom_repo_configuration"
@@ -1609,6 +1622,7 @@
           metadata:
             label: "Repositories"
             weight: 50
+            group_id: "base_settings"
             always_editable: true
           repos:
             type: "custom_repo_configuration"

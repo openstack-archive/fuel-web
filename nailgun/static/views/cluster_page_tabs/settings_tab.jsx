@@ -188,9 +188,12 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         render: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
-                sortedSettingGroups = _.sortBy(_.keys(settings.attributes), function(groupName) {
+                sortedSettingTabs = _.sortByAll(_.keys(settings.attributes), function(groupName) {
+                    return settings.get(groupName + '.metadata.group_id');
+                }, function(groupName) {
                     return settings.get(groupName + '.metadata.weight');
                 }),
+                groupedSortedTabs = _.groupBy(sortedSettingTabs.map(function(groupName) {return {name: groupName, group_id: settings.get(groupName + '.metadata.group_id')}}), 'group_id'),
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 someSettingsEditable = _.any(settings.attributes, function(group) {return group.metadata.always_editable;}),
@@ -200,20 +203,19 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     row: true,
                     'changes-locked': lockedCluster
                 };
-
             return (
                 <div key={this.state.key} className={utils.classNames(classes)}>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
                     <SettingSubtabs
                         settings={settings}
-                        groupNames={sortedSettingGroups}
+                        groupedSortedTabs={groupedSortedTabs}
                         makePath={settings.makePath}
                         configModels={this.state.configModels}
                         setActiveGroupName={this.props.setActiveGroupName}
                         activeGroupName={this.props.activeGroupName}
                         checkRestrictions={this.checkRestrictions}
                     />
-                    {_.compact(_.map(sortedSettingGroups, function(groupName) {
+                    {_.compact(_.map(sortedSettingTabs, function(groupName) {
                         if (groupName != this.props.activeGroupName) {
                             return null;
                         }
@@ -260,32 +262,40 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             _.forEach(errors, function(error, key) {
                 invalidSections[_.first(key.split('.'))] = true;
             });
+
             return (
                 <div className='col-xs-2'>
-                    <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
-                    {
-                        this.props.groupNames.map(function(groupName) {
-                            var group = this.props.settings.get(groupName),
-                                metadata = group.metadata;
-                            if (this.props.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) {
-                                return null;
-                            }
-                            var hasErrors = invalidSections[groupName];
-                            return (
-                                <li
-                                    key={groupName}
-                                    role='presentation'
-                                    className={utils.classNames({active: groupName == this.props.activeGroupName})}
-                                    onClick={_.partial(this.props.setActiveGroupName, groupName)}
-                                >
-                                    <a className={'subtab-link-' + groupName}>
-                                        {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
-                                        {metadata.label}
-                                    </a>
-                                </li>
-                            );
-                        }, this)
-                    }
+                    <CSSTransitionGroup component='div' transitionName='subtab-item' className='settings-nav'>
+                    {_.map(this.props.groupedSortedTabs, function(group, groupname) {
+                        return (
+                            <ul className={'nav nav-pills nav-stacked ' + groupname}>
+                                {groupname != 'undefined' && <li className='group-title'>{i18n('cluster_page.settings_tab.groups.' + groupname)}</li>}
+                                {_.map(this.props.groupedSortedTabs[groupname], function(groupInfo) {
+                                    var groupTabName = groupInfo.name,
+                                        group = this.props.settings.get(groupTabName),
+                                        metadata = group.metadata;
+                                    if (this.props.checkRestrictions('hide', this.props.makePath(groupTabName, 'metadata')).result) {
+                                        return null;
+                                    }
+
+                                    var hasErrors = invalidSections[groupTabName];
+                                    return (
+                                        <li
+                                            key={groupTabName}
+                                            role='presentation'
+                                            className={utils.classNames({active: groupTabName == this.props.activeGroupName})}
+                                            onClick={_.partial(this.props.setActiveGroupName, groupTabName)}
+                                        >
+                                            <a className={'subtab-link-' + groupTabName}>
+                                                {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
+                                                {metadata.label}
+                                            </a>
+                                        </li>
+                                    );
+                                }, this)}
+                            </ul>
+                        );
+                    }, this)}
                     </CSSTransitionGroup>
                 </div>
             );

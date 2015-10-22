@@ -15,7 +15,7 @@ Prefix: %{_prefix}
 BuildRequires:  python-setuptools
 BuildRequires:  python-yaml
 BuildRequires:  git
-BuildRequires: nodejs
+#BuildRequires: nodejs
 BuildArch: noarch
 Requires:    python-alembic >= 0.6.2
 Requires:    python-amqplib >= 1.0.2
@@ -59,49 +59,7 @@ Requires:    python-ordereddict >= 1.1
 # Workaroud for babel bug
 Requires:    pytz
 
-BuildRequires: nodejs-backbone
-BuildRequires: nodejs-backbone.stickit
-BuildRequires: nodejs-bootstrap
-BuildRequires: nodejs-casperjs
-BuildRequires: nodejs-classnames
-BuildRequires: nodejs-es5-shim
-BuildRequires: nodejs-eslint
-BuildRequires: nodejs-eslint-plugin-react
-BuildRequires: nodejs-esprima-fb
-BuildRequires: nodejs-event-stream
-BuildRequires: nodejs-glob
-BuildRequires: nodejs-gulp
-BuildRequires: nodejs-gulp-autoprefixer
-BuildRequires: nodejs-gulp-eslint
-BuildRequires: nodejs-gulp-filter
-BuildRequires: nodejs-gulp-intermediate
-BuildRequires: nodejs-gulp-jison
-BuildRequires: nodejs-gulp-jscs
-BuildRequires: nodejs-gulp-less
-BuildRequires: nodejs-gulp-lintspaces
-BuildRequires: nodejs-gulp-react
-BuildRequires: nodejs-gulp-replace
-BuildRequires: nodejs-gulp-shell
-BuildRequires: nodejs-gulp-util
-BuildRequires: nodejs-i18next
-BuildRequires: nodejs-intern
-BuildRequires: nodejs-jquery
-BuildRequires: nodejs-js-cookie
-BuildRequires: nodejs-less
-BuildRequires: nodejs-lodash
-BuildRequires: nodejs-minimist
-BuildRequires: nodejs-open-sans-fontface
-BuildRequires: nodejs-phantomjs
-BuildRequires: nodejs-react
-BuildRequires: nodejs-react-dnd
-BuildRequires: nodejs-require-css
-BuildRequires: nodejs-requirejs
-BuildRequires: nodejs-requirejs-plugins
-BuildRequires: nodejs-rimraf
-BuildRequires: nodejs-run-sequence
-BuildRequires: nodejs-selenium-standalone
-BuildRequires: nodejs-sinon
-BuildRequires: nodejs-uglify-js
+BuildRequires: nodejs-nailgun
 
 %description
 Nailgun package
@@ -109,10 +67,16 @@ Nailgun package
 %prep
 %setup -cq -n %{name}-%{version}
 
-cp -R /usr/lib/node_modules/ %{_builddir}/%{name}-%{version}/nailgun/node_modules/
+mkdir -p %{_builddir}/%{name}-%{version}/nailgun/node_modules/
+ls -la /usr/lib/node_modules/
+
+cp -pr /usr/lib/node_modules/ /usr/lib/node_modules/.bin %{_builddir}/%{name}-%{version}/nailgun/node_modules/
+
+ls -la %{_builddir}/%{name}-%{version}/nailgun
+ls -la %{_builddir}/%{name}-%{version}/nailgun/node_modules/
 
 %build
-cd %{_builddir}/%{name}-%{version}/nailgun && %{_builddir}/%{name}-%{version}/nailgun/node_modules/gulp/bin/gulp.js build --static-dir=compressed_static
+cd %{_builddir}/%{name}-%{version}/nailgun && %{_builddir}/%{name}-%{version}/nailgun/node_modules/.bin/gulp build --static-dir=compressed_static
 [ -n %{_builddir} ] && rm -rf %{_builddir}/%{name}-%{version}/nailgun/static
 mv %{_builddir}/%{name}-%{version}/nailgun/compressed_static %{_builddir}/%{name}-%{version}/nailgun/static
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py build

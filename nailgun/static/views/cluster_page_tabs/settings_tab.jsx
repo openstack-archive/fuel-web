@@ -188,9 +188,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         render: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
-                sortedSettingGroups = _.sortBy(_.keys(settings.attributes), function(groupName) {
-                    return settings.get(groupName + '.metadata.weight');
-                }),
+                groupsList = settings.getGroupsList(),
+                groupedSettings = {},
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 someSettingsEditable = _.any(settings.attributes, function(group) {return group.metadata.always_editable;}),
@@ -199,40 +198,79 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 classes = {
                     row: true,
                     'changes-locked': lockedCluster
-                };
+                },
+                errors = settings.validationError,
+                invalidSections = {};
 
+            _.forEach(errors, function(error, key) {
+                invalidSections[_.first(key.split('.'))] = true;
+            });
+            // Prepare list of settings organized by groups
+            _.each(settings.attributes, _.bind(function(setting, settingName) {
+                var group = setting.metadata.group,
+                    isHidden = this.checkRestrictions('hide', settings.makePath(settingName, 'metadata')).result,
+                    hasErrors = invalidSections[settingName]
+                if (group) {
+                    if (!groupedSettings[group]) groupedSettings[group] = {};
+                    groupedSettings[group][settingName] = {hidden: isHidden, hasError: hasErrors};
+                } else {
+                    var subGroupsDefined = _.chain(setting).pluck('group').compact().value();
+                    // Settings with undefined groups and subgroups goes to 'Other' group
+                    if (_.isEmpty(subGroupsDefined)) {
+                        if (!groupedSettings[group]) groupedSettings.other = {};
+                        groupedSettings.other[settingName] = {hidden: isHidden, hasError: hasErrors};
+                    // Settings like 'Common' can splitted to different groups
+                    } else {
+                        _.each(subGroupsDefined, function(group) {
+                            if (!groupedSettings[group]) groupedSettings[group] = {};
+                            groupedSettings[group][settingName] = {hidden: isHidden, hasError: hasErrors};
+                        })
+                    }
+                }
+            }, this));
             return (
                 <div key={this.state.key} className={utils.classNames(classes)}>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
                     <SettingSubtabs
                         settings={settings}
-                        groupNames={sortedSettingGroups}
+                        groupsList={groupsList}
+                        groupedSettings={groupedSettings}
                         makePath={settings.makePath}
                         configModels={this.state.configModels}
                         setActiveGroupName={this.props.setActiveGroupName}
                         activeGroupName={this.props.activeGroupName}
                         checkRestrictions={this.checkRestrictions}
                     />
-                    {_.compact(_.map(sortedSettingGroups, function(groupName) {
+                    {_.map(groupedSettings, function(group, groupName) {
                         if (groupName != this.props.activeGroupName) {
                             return null;
                         }
-                        return <SettingGroup
-                            key={groupName}
-                            cluster={this.props.cluster}
-                            groupName={groupName}
-                            onChange={_.bind(this.onChange, this, groupName)}
-                            allocatedRoles={allocatedRoles}
-                            settings={settings}
-                            settingsForChecks={this.state.settingsForChecks}
-                            makePath={settings.makePath}
-                            getValueAttribute={settings.getValueAttribute}
-                            locked={locked}
-                            lockedCluster={lockedCluster}
-                            configModels={this.state.configModels}
-                            checkRestrictions={this.checkRestrictions}
-                        />;
-                    }, this))}
+                        var sortedSettings = _.sortBy(_.keys(group), function(name) {
+                            return settings.get(name + '.metadata.weight');
+                        });
+                        return (
+                            <div className={'col-xs-10 forms-box ' + groupName}>
+                                {_.map(sortedSettings, function(settingName) {
+                                    return <SettingSection
+                                            key={settingName}
+                                            cluster={this.props.cluster}
+                                            group={groupName}
+                                            groupName={settingName}
+                                            groupInfo={group}
+                                            onChange={_.bind(this.onChange, this, settingName)}
+                                            allocatedRoles={allocatedRoles}
+                                            settings={settings}
+                                            settingsForChecks={this.state.settingsForChecks}
+                                            makePath={settings.makePath}
+                                            getValueAttribute={settings.getValueAttribute}
+                                            locked={locked}
+                                            lockedCluster={lockedCluster}
+                                            configModels={this.state.configModels}
+                                            checkRestrictions={this.checkRestrictions}/>;
+                                }, this)}
+                            </div>
+                        );
+                    }, this)}
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
@@ -255,22 +293,15 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
 
     var SettingSubtabs = React.createClass({
         render: function() {
-            var errors = this.props.settings.validationError,
-                invalidSections = {};
-            _.forEach(errors, function(error, key) {
-                invalidSections[_.first(key.split('.'))] = true;
-            });
             return (
                 <div className='col-xs-2'>
                     <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
                     {
-                        this.props.groupNames.map(function(groupName) {
-                            var group = this.props.settings.get(groupName),
-                                metadata = group.metadata;
-                            if (this.props.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) {
-                                return null;
-                            }
-                            var hasErrors = invalidSections[groupName];
+                        this.props.groupsList.map(function(groupName) {
+                            var settings = this.props.groupedSettings[groupName],
+                                isHidden = _.chain(settings).map(function(data) {return !data.hidden}).compact().isEmpty().value();
+                            if (isHidden) return null;
+                            var hasErrors = !_.chain(settings).map(function(data) {return data.hasError}).compact().isEmpty().value();
                             return (
                                 <li
                                     key={groupName}
@@ -280,7 +311,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 >
                                     <a className={'subtab-link-' + groupName}>
                                         {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
-                                        {metadata.label}
+                                        {i18n('cluster_page.settings_tab.groups.' + groupName, {defaultValue: groupName})}
                                     </a>
                                 </li>
                             );
@@ -292,7 +323,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         }
     });
 
-    var SettingGroup = React.createClass({
+    var SettingSection = React.createClass({
         processRestrictions: function(groupName, settingName) {
             var result = false,
                 path = this.props.makePath(groupName, settingName),
@@ -415,7 +446,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             });
         },
         render: function() {
-            if (this.props.checkRestrictions('hide', this.props.makePath(this.props.groupName, 'metadata')).result) return null;
+            if (this.props.groupInfo[this.props.groupName].hidden) return null;
             var group = this.props.settings.get(this.props.groupName),
                 metadata = group.metadata,
                 sortedSettings = _.chain(_.keys(group))
@@ -427,8 +458,18 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
                 showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable,
                 groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
+
+                // Collect settings splitted to several groups (like Common)
+                if (!group.metadata.group && this.props.group != 'other') {
+                    sortedSettings = _.compact(_.map(sortedSettings, function(settingName) {
+                        if (!this.props.checkRestrictions('hide', this.props.makePath(this.props.groupName, settingName)).result) {
+                            return group[settingName].group == this.props.group && settingName;
+                        }
+                    }, this))
+                }
+                if (_.isEmpty(sortedSettings)) return null;
             return (
-                <div className={'col-xs-10 forms-box ' + this.props.groupName}>
+                <div className='setting-section'>
                     {showSettingGroupWarning && processedGroupRestrictions.message &&
                         <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>
                     }
@@ -444,7 +485,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 onChange={this.props.onChange}
                             />
                         :
-                            <span className={'subtab-group-' + this.props.groupName}>{metadata.label || this.props.groupName}</span>
+                            <span className={'subtab-group-' + this.props.groupName}>{this.props.groupName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || this.props.groupName}</span>
                         }
                     </h3>
                     <div>

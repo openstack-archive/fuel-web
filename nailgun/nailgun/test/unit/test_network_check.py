@@ -712,7 +712,7 @@ class TestCheckVIPsNames(BaseIntegrationTest):
         super(TestCheckVIPsNames, self).setUp()
 
         self.env.create(
-            release_kwargs={'version': '2015.1.0-8.0'},
+            release_kwargs={'version': 'liberty-8.0'},
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,

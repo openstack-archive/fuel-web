@@ -534,7 +534,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                 }]
             }
         })
-        self.cluster.release.version = '2015.1-8.0'
+        self.cluster.release.version = 'liberty-8.0'
         self.db.flush()
 
         resp = self.env.neutron_networks_get(self.cluster.id)

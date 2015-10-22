@@ -308,7 +308,7 @@ class TestClusterComponents(BaseIntegrationTest):
     def setUp(self):
         super(TestClusterComponents, self).setUp()
         self.release = self.env.create_release(
-            version='2015.1-8.0',
+            version='liberty-8.0',
             operating_system='Ubuntu',
             modes=[consts.CLUSTER_MODES.ha_compact],
             components_metadata=[
@@ -348,7 +348,7 @@ class TestClusterComponents(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             u"[u'storage:not_existing_component'] components are not "
-            "related to release \"release_name_2015.1-8.0\".",
+            "related to release \"release_name_liberty-8.0\".",
             resp.json_body['message']
         )
 

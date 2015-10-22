@@ -571,6 +571,7 @@ define([
         urlRoot: '/api/clusters/',
         root: 'editable',
         cacheFor: 60 * 1000,
+        predefinedGroupList: ['general', 'security', 'compute', 'network', 'storage', 'logging', 'openstack_services', 'other'],
         isNew: function() {
             return false;
         },
@@ -646,6 +647,19 @@ define([
                     return !_.isEqual(setting.value, initialAttributes[groupName][settingName].value);
                 }, this);
             }, this);
+        },
+        getGroupList: function() {
+            var groups = [];
+            _.each(this.attributes, function(section) {
+                if (section.metadata.group) {
+                    groups.push(section.metadata.group);
+                } else {
+                    _.each(section, function(setting) {
+                        groups.push(setting.group || 'other');
+                    });
+                }
+            });
+            return _.intersection(this.predefinedGroupList, _.uniq(groups));
         }
     });
 

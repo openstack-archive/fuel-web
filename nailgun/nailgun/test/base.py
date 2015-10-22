@@ -792,7 +792,7 @@ class EnvironmentManager(object):
                  'mode': ['ha', 'multinode'],
                  'deployment_scripts_path': 'deployment_scripts/'},
                 {'repository_path': 'repositories/ubuntu',
-                 'version': '2015.1-8.0', 'os': 'ubuntu',
+                 'version': 'liberty-8.0', 'os': 'ubuntu',
                  'mode': ['ha', 'multinode'],
                  'deployment_scripts_path': 'deployment_scripts/'},
             ]

@@ -24,7 +24,7 @@ class TestComponentHandler(base.BaseIntegrationTest):
     def setUp(self):
         super(TestComponentHandler, self).setUp()
         self.release = self.env.create_release(
-            version='2015.1-8.0',
+            version='liberty-8.0',
             operating_system='Ubuntu',
             modes=[consts.CLUSTER_MODES.ha_compact],
             components_metadata=self.env.get_default_components(
@@ -34,7 +34,7 @@ class TestComponentHandler(base.BaseIntegrationTest):
             fuel_version=['8.0'],
             releases=[{
                 'repository_path': 'repositories/ubuntu',
-                'version': '2015.1-8.0',
+                'version': 'liberty-8.0',
                 'os': 'ubuntu',
                 'mode': ['ha'],
                 'deployment_scripts_path': 'deployment_scripts/'}],

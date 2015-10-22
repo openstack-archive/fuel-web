@@ -474,7 +474,7 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
             {"name": "eth3", "mac": "00:00:00:00:22:99"}]
         )
         self.cluster = self.env.create(
-            release_kwargs={'version': '2015.1.0-8.0'},
+            release_kwargs={'version': 'liberty-8.0'},
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': net_type,

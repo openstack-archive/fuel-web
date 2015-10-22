@@ -207,7 +207,7 @@ class TestNodeObject(BaseIntegrationTest):
             nodes_kwargs=[{'role': 'controller'}] * 3)
         new_cluster = self.env.create(
             cluster_kwargs={'api': False},
-            release_kwargs={'version': '2015.1.0-8.0'},
+            release_kwargs={'version': 'liberty-8.0'},
         )
 
         net_template = self.env.read_fixtures(['network_template_80'])[0]
@@ -1345,7 +1345,7 @@ class TestClusterObject(BaseTestCase):
         }
 
         release = self.env.create_release(
-            version='2015.1-8.0',
+            version='liberty-8.0',
             operating_system=consts.RELEASE_OS.ubuntu,
             modes=[consts.CLUSTER_MODES.ha_compact],
             components_metadata=components)
@@ -1649,7 +1649,7 @@ class TestRelease(BaseTestCase):
 
     def test_get_all_components(self):
         release = self.env.create_release(
-            version='2015.1-8.0',
+            version='liberty-8.0',
             operating_system=consts.RELEASE_OS.ubuntu,
             modes=[consts.CLUSTER_MODES.ha_compact],
             components_metadata=self.env.get_default_components(
@@ -1661,7 +1661,7 @@ class TestRelease(BaseTestCase):
             fuel_version=['8.0'],
             releases=[{
                 'repository_path': 'repositories/ubuntu',
-                'version': '2015.1-8.0',
+                'version': 'liberty-8.0',
                 'os': 'ubuntu',
                 'mode': ['ha'],
                 'deployment_scripts_path': 'deployment_scripts/'}],

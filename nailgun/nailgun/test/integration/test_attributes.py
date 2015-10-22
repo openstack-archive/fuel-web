@@ -443,7 +443,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
         super(TestAlwaysEditable, self).setUp()
         self.env.create(
             release_kwargs={
-                'version': '2015.1.0-8.0',
+                'version': 'liberty-8.0',
                 'operating_system': consts.RELEASE_OS.centos})
         self.cluster = self.env.clusters[0]
 
@@ -489,7 +489,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
             {
                 'type': 'rpm',
                 'name': 'mos',
-                'uri': 'http://127.0.0.1:8080/2015.1.0-8.0/centos/x86_64',
+                'uri': 'http://127.0.0.1:8080/liberty-8.0/centos/x86_64',
                 'priority': None,
             },
             {
@@ -509,7 +509,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
             {
                 'type': 'rpm',
                 'name': 'Auxiliary',
-                'uri': 'http://127.0.0.1:8080/2015.1.0-8.0/centos/auxiliary',
+                'uri': 'http://127.0.0.1:8080/liberty-8.0/centos/auxiliary',
                 'priority': 15,
             },
         ])

@@ -1860,8 +1860,6 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                            'gateway': '199.10.1.1'},
             'storage': {'cidr': '199.10.2.0/24',
                         'gateway': '199.10.2.1'},
-            'private': {'cidr': '199.10.3.0/24',
-                        'gateway': '199.10.3.1'},
             'fuelweb_admin': {'cidr': '199.11.0.0/24',
                               'ip_ranges': [['199.11.0.5', '199.11.0.55']],
                               'gateway': '199.11.0.1'}
@@ -1876,11 +1874,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             if network['id'] in netw_ids and network['name'] in ng2_networks:
                 for pkey, pval in six.iteritems(ng2_networks[network['name']]):
                     network[pkey] = pval
-                    network['meta']['use_gateway'] = True
+                network['meta']['use_gateway'] = True
+            elif network['meta']['notation'] and not network['gateway']:
+                network['gateway'] = str(IPNetwork(network['cidr']).first)
+                network['meta']['use_gateway'] = True
         netconfig['networking_parameters']['floating_ranges'] = \
             [['199.10.0.77', '199.10.0.177']]
         resp = self.env.neutron_networks_put(cluster.id, netconfig)
-        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
+        self.assertEqual(resp.status_code, 200)
 
         self.prepare_for_deployment(cluster.nodes)
         facts = self.serializer.serialize(cluster, cluster.nodes)

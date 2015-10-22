@@ -1917,7 +1917,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'private' in (fact['network_scheme']['roles']), False)
 
     def test_tun_segmentation(self):
-        self.new_env_release_version = '2015.1.0-8.0'
+        self.new_env_release_version = 'liberty-8.0'
         cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'tun')
         facts = self.serializer.serialize(cluster, cluster.nodes)
 

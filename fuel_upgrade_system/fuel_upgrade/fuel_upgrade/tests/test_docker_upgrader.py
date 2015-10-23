@@ -110,8 +110,8 @@ class TestDockerUpgrader(BaseTestCase):
     def test_upload_images(self, _, exec_mock):
         self.upgrader.upload_images()
 
-        exec_mock.assert_call_with(
-            'docker load -i "/tmp/upgrade_path/images/fuel-images.tar"')
+        exec_mock.assert_called_with(
+            'docker load -i "/var/www/nailgun/docker/images/fuel-images.tar"')
 
     def test_create_containers(self):
         fake_containers = [
@@ -162,11 +162,14 @@ class TestDockerUpgrader(BaseTestCase):
             start_container_calls)
         self.called_once(self.upgrader.run_after_container_creation_command)
 
-    def test_run_after_container_creation_command(self):
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
+    def test_run_after_container_creation_command(self, exec_mock):
         self.upgrader.exec_with_retries = mock.MagicMock()
         self.upgrader.run_after_container_creation_command({
             'after_container_creation_command': 'cmd',
             'container_name': 'name'})
+
+        exec_mock.assert_called_with('dockerctl -V 9999 check name')
 
         args, kwargs = self.upgrader.exec_with_retries.call_args
 

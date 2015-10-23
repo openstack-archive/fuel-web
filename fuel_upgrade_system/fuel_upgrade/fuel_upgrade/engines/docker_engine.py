@@ -269,6 +269,12 @@ class DockerUpgrader(UpgradeEngine):
 
         :param container: dict with container information
         """
+        # wait until container is up, since our commands may break
+        # puppet inside, and it will fail
+        utils.exec_cmd('dockerctl -V {0} check {1}'.format(
+            self.config.new_version,
+            container['container_name']))
+
         command = container['after_container_creation_command']
 
         def execute():

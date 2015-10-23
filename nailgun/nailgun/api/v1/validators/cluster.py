@@ -15,6 +15,8 @@
 
 import copy
 from distutils.version import StrictVersion
+import re
+
 import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
@@ -201,6 +203,7 @@ class AttributesValidator(BasicValidator):
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
 
             cls._validate_net_provider(attrs, cluster)
+            cls._validate_custom_repos_format(attrs)
 
             # NOTE(agordeev): disable classic provisioning for 7.0 or higher
             if StrictVersion(cluster.release.environment_version) >= \
@@ -232,6 +235,45 @@ class AttributesValidator(BasicValidator):
                     raise errors.InvalidData(u'vCenter requires Nova Network '
                                              'to be set as a network provider',
                                              log_message=True)
+
+    @classmethod
+    def _validate_custom_repos_format(cls, data):
+        """Validate custom repositories format description
+
+        One of the cases - checking whether declaration is correct when
+        'flat' format of the description is used. By debian documentation
+        'flat' means suite name represents a directory where the meta
+        and indices are placed relatively to the repository root. Backslash
+        is present at the end of the suite string and section names are
+        omitted.
+        """
+        repos_setup = (
+            data.get('editable', {})
+            .get('repo_setup', {})
+            .get('repos', {})
+            .get('value', [])
+        )
+
+        regular_repo_suite_regex_string = r'^[^/\s]+$'
+        flat_repo_suite_regex_string = r'^[^/]+/?$'
+        for repo in repos_setup:
+            if repo.get('suite'):
+                # if section is non-empty - we are dealing with regular format
+                # of repository description
+                if repo.get('section'):
+                    suite_regex = regular_repo_suite_regex_string
+                # if section is absent - repository is described in "flat"
+                # format
+                else:
+                    suite_regex = flat_repo_suite_regex_string
+
+                if not re.search(suite_regex, repo['suite']):
+                    raise errors.InvalidData(
+                        'Incorrect description for custom repository with '
+                        'name {0}. Suite (distribution) does not match '
+                        'regular expression {1}'
+                        .format(repo['name'], suite_regex)
+                    )
 
     @classmethod
     def validate_editable_attributes(cls, data):

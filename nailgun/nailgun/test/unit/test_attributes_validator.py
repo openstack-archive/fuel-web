@@ -116,7 +116,7 @@ class TestAttributesValidator(BaseTestCase):
     def test_custom_repo_configuration_value(self):
         attrs = '''
         editable:
-          storage:
+          repo_setup:
             repos:
               description: desc
               type: custom_repo_configuration
@@ -138,6 +138,99 @@ class TestAttributesValidator(BaseTestCase):
         self.assertNotRaises(errors.InvalidData,
                              AttributesValidator.validate_editable_attributes,
                              yaml.load(attrs))
+
+    def test_custom_repo_configuration_incorrect_suite_name(self):
+        incorrect_suits = ('/trusty', 'tru/sty', 'tr//us/t/y',
+                           'tru sty', '/', '/trusty/')
+
+        attrs = '''
+        editable:
+          repo_setup:
+            repos:
+              description: desc
+              type: custom_repo_configuration
+              value:
+              - name: {suite}
+                priority: null
+                section: main universe multiverse
+                suite: {suite}
+                type: deb
+                uri: http://archive.ubuntu.com/ubuntu/
+        '''
+
+        err_msg = ('Incorrect description of the suite for repository '
+                   'with name {0}')
+        for custom_repos in [attrs.format(suite=suite)
+                             for suite in incorrect_suits]:
+
+            repo_settings = yaml.load(custom_repos)
+
+            with self.assertRaises(errors.InvalidData) as exc:
+                AttributesValidator._validate_custom_repos_format(
+                    repo_settings
+                )
+
+            repo_name = repo_settings.get('editable')\
+                .get('repo_setup')\
+                .get('repos')\
+                .get('value')[0]['name']
+
+            self.assertEqual(
+                err_msg.format(repo_name),
+                exc.exception.message
+            )
+
+    def test_custom_repo_configuration_incorrect_flat_repo(self):
+        suite_name = "//"
+        attrs = '''
+        editable:
+          repo_setup:
+            repos:
+              description: desc
+              type: custom_repo_configuration
+              value:
+              - name: {suite}
+                priority: null
+                section:
+                suite: {suite}
+                type: deb
+                uri: http://archive.ubuntu.com/ubuntu/
+        '''
+
+        err_msg = ('Incorrect description of the suite for '
+                   'flat repository with '
+                   'name {0}'.format(suite_name))
+
+        with self.assertRaises(errors.InvalidData) as exc:
+            AttributesValidator._validate_custom_repos_format(
+                yaml.load(attrs.format(suite=suite_name)))
+
+        self.assertEqual(exc.exception.message, err_msg)
+
+    def test_custom_repo_configuration_validate_flat_repo(self):
+        suites = ('/trusty', 'tru/sty', 'tru sty', '/', '/trusty/')
+
+        attrs = '''
+        editable:
+          repo_setup:
+            repos:
+              description: desc
+              type: custom_repo_configuration
+              value:
+              - name: {suite}
+                priority: null
+                section:
+                suite: {suite}
+                type: deb
+                uri: http://archive.ubuntu.com/ubuntu/
+        '''
+
+        for suite in suites:
+            self.assertNotRaises(
+                errors.InvalidData,
+                AttributesValidator._validate_custom_repos_format,
+                yaml.load(attrs.format(suite=suite))
+            )
 
     def test_password_value(self):
         attrs = '''

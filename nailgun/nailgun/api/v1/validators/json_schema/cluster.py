@@ -177,7 +177,7 @@ attribute_type_schemas = {
                         'name': {'type': 'string'},
                         'priority': {'type': ['integer', 'null']},
                         'section': {'type': 'string'},
-                        'suite': {'type': 'string'},
+                        'suite': {'type': 'string', 'pattern': '^[^\/]*$'},
                         'type': {'type': 'string'},
                         'uri': {'type': 'string'},
                     }

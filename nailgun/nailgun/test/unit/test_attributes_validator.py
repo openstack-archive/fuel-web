@@ -139,6 +139,30 @@ class TestAttributesValidator(BaseTestCase):
                              AttributesValidator.validate_editable_attributes,
                              yaml.load(attrs))
 
+    def test_custom_repo_configuration_incorrect_suit_name(self):
+        incorrect_suits = ('/trusty', 'tru/sty', 'trusty/', 'tr//us/t/y')
+
+        attrs = '''
+        editable:
+          storage:
+            repos:
+              description: desc
+              type: custom_repo_configuration
+              value:
+              - name: ubuntu
+                priority: null
+                section: main universe multiverse
+                suite: {suite}
+                type: deb
+                uri: http://archive.ubuntu.com/ubuntu/
+        '''
+
+        for custom_repos in [attrs.format(suite=suite)
+                             for suite in incorrect_suits]:
+            self.assertRaises(errors.InvalidData,
+                              AttributesValidator.validate_editable_attributes,
+                              yaml.load(custom_repos))
+
     def test_password_value(self):
         attrs = '''
         editable:

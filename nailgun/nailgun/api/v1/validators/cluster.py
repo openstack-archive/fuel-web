@@ -15,6 +15,8 @@
 
 import copy
 from distutils.version import StrictVersion
+import re
+
 import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
@@ -201,6 +203,7 @@ class AttributesValidator(BasicValidator):
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
 
             cls._validate_net_provider(attrs, cluster)
+            cls._validate_custom_repos_format(attrs)
 
             # NOTE(agordeev): disable classic provisioning for 7.0 or higher
             if StrictVersion(cluster.release.environment_version) >= \
@@ -232,6 +235,42 @@ class AttributesValidator(BasicValidator):
                     raise errors.InvalidData(u'vCenter requires Nova Network '
                                              'to be set as a network provider',
                                              log_message=True)
+
+    @classmethod
+    def _validate_custom_repos_format(cls, data):
+        repos_setup = data.get('editable', {})\
+            .get('repo_setup', {})\
+            .get('repos', {})\
+            .get('value', [])
+
+        # deb repository can be declared in
+        # 'flat' format in which case suit (destribution)
+        # is actually directory name where the meta index
+        # and indices are placed relatively to the repository
+        # root. In this case at the end of suit backslash is present
+        # and section names are omitted. '/' at any other position of the
+        # name string is considered as incorrect situation
+
+        suite_regex = '^[^\/]*(?P<end_slash>\/)?$'
+        for repo in repos_setup:
+            if repo.get('suite'):
+                m = re.match(suite_regex, repo['suite'])
+                if not m:
+                    raise errors.InvalidData(
+                        'Incorrect description for custom repository with '
+                        'name {0}. Suite (distribution) does not match '
+                        'regular expression {1}'
+                        .format(repo['name'], suite_regex)
+                    )
+
+                if m.group('end_slash'):
+                    if repo['section']:
+                        raise errors.InvalidData(
+                            'Incorrect description for custom repository with '
+                            'name {0}. Component names must be omitted '
+                            'in "flat" description format'
+                            .format(repo['name'])
+                        )
 
     @classmethod
     def validate_editable_attributes(cls, data):

@@ -32,14 +32,21 @@ ALLOWED_LOCKS_CHAINS = [
 
 
 class Lock(object):
-    """Locking table info. Includes traceback info of locking call"""
+    """Locking table info.
+
+    Lock is container for saving information about locked rows in DB table.
+    For each table only one Lock object must be created in the 'context'.
+    Lock contains table name, values of locked ids (primary keys of locked
+    rows), traceback info of locking queries.
+    """
 
     @staticmethod
     def _warnings_only():
         """Policy of deadlock detector errors propagation
 
         NOTE(akislitsky): Temporary function. Should be removed after
-        transactions scheme refactoring
+        transactions scheme refactoring. Made as function for mocking inside
+        tests.
         """
         return True
 
@@ -64,6 +71,10 @@ class Lock(object):
         self.last_locked_id = None
 
     def add_ids(self, ids):
+        """Traces ids of locked objects
+
+        :param ids: primary keys collection of locked DB objects
+        """
         if ids is None:
             return
 
@@ -72,6 +83,11 @@ class Lock(object):
             if id_val is None or id_val in self.locked_ids:
                 continue
 
+            # We have agreement on order of locking DB objects:
+            # they must be ordered in ascending order by primary key.
+            # If we'll try to lock object in wrong order (with
+            # id less than already locked) exception will be
+            # generated.
             if self.last_locked_id is not None \
                     and self.last_locked_id > id_val:
 
@@ -82,6 +98,8 @@ class Lock(object):
             self.locked_ids.add(id_val)
             self.last_locked_id = id_val
 
+# Thread local storage of current transaction locks.
+# Context info is cleared on SqlAlchemy session flush and commit.
 context = threading.local()
 
 
@@ -134,7 +152,12 @@ def clean_locks():
 
 
 def register_lock(table):
-    """Registers locking operations on table
+    """Registers locking operations on table.
+
+    We have policy on order of locking rows from different tables
+    (ALLOWED_LOCKS_CHAINS). If in one place we are locking records
+    in tables A, B and in the another in tables B, A, deadlock can
+    happen. Here we checking, that locking rows order is not broken.
 
     :param table: locking table name string value
     :return: returns registered lock
@@ -175,12 +198,21 @@ def handle_lock(table, ids=None):
 
     lock = find_lock(table, strict=False)
     if lock is None:
+        # Register lock and check tables order for locking queries
+        # is not broken
         lock = register_lock(table)
     else:
+        # In some cases we can try to acquire locks on already locked
+        # rows. In this case on the DB level we already have locks on
+        # these rows, thus this operation is legal and can't raise
+        # deadlock. For last table in context order of locking ids
+        # will be checked below in 'lock.add_ids' call. Thus here we
+        # perform checking only for locks in tables, traced before the
+        # last one.
         if ids is not None and lock != context.locks[-1]:
             # Lock is already acquired
             for id_val in ids:
-                # Rising error if trying to lock new ids in non last lock
+                # Rising error if trying to lock new ids in non last lock.
                 if id_val not in lock.locked_ids:
                     lock_chain = ', '.join(l.table for l in context.locks)
                     exception = TablesLockingOrderViolation(

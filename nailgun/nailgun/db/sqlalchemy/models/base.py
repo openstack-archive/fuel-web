@@ -30,10 +30,16 @@ from nailgun.settings import settings
 
 
 class ObserverModelBase(models.ModelBase):
+    """Model which traces modifications of DB objects."""
 
     def __setattr__(self, key, value):
         super(ObserverModelBase, self).__setattr__(key, value)
         state = object_state(self)
+        # If object exists in the DB (have id) and attached to
+        # the SqlAlchemy session (state.session_id is not None)
+        # UPDATE query will be generated on SqlAlchemy session
+        # flush or commit. Thus we should trace such DB object
+        # modifications.
         if self.id is not None and state.session_id is not None:
             dd.handle_lock(self.__tablename__, ids=(self.id,))
 

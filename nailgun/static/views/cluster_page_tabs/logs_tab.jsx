@@ -52,34 +52,30 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         getInitialState: function() {
             return {
                 showMoreLogsLink: false,
-                loading: null,
+                loading: 'loading',
                 from: -1,
                 to: 0
             };
         },
-        fetchLogs: function(data, callbacks) {
-            var options = {
+        fetchLogs: function(data) {
+            return $.ajax({
                 url: '/api/logs',
                 dataType: 'json',
-                data: _.omit(this.props.selectedLogs, 'type'),
+                data: _.extend(_.omit(this.props.selectedLogs, 'type'), data),
                 headers: {
                     'X-Auth-Token': app.keystoneClient.token
                 }
-            };
-            _.extend(options, callbacks);
-            _.extend(options.data, data);
-            return $.ajax(options);
+            });
         },
-        showLogs: function(selectedLogs, params) {
-            params = params || {};
-            var options = this.composeOptions(selectedLogs);
+        showLogs: function(params) {
             this.stopPolling();
-            this.props.cluster.set({log_options: options}, {silent: true});
-            app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
+            var logOptions = this.props.selectedLogs.type == 'remote' ? this.props.selectedLogs : _.omit(this.props.selectedLogs, 'node');
+            if (logOptions.level) logOptions.level = logOptions.level.toLowerCase();
+            app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(logOptions), {trigger: false, replace: true});
+            params = params || {};
             this.fetchLogs(params)
                 .done(_.bind(function(data) {
                     var logsEntries = this.state.logsEntries || [];
-
                     this.setState({
                         showMoreLogsLink: data.has_more || false,
                         logsEntries: params.fetch_older ? logsEntries.concat(data.entries) : data.entries,
@@ -96,27 +92,11 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     });
                 }, this));
         },
-        composeOptions: function(selectedLogs) {
-            var options = _.omit(selectedLogs, 'node');
-            if (options.level) {
-                options.level = options.level.toLowerCase();
-            }
-            if (options.type == 'remote') {
-                options.node = selectedLogs.node;
-            }
-            return options;
-        },
-        onShowButtonClick: function(states) {
-            if (states) this.props.changeLogSelection(states);
-            this.setState({loading: 'loading'}, _.partial(this.showLogs, states || this.props.selectedLogs));
+        onShowButtonClick: function() {
+            this.setState({loading: 'loading'}, this.showLogs);
         },
         onShowMoreClick: function(value) {
-            var options = {
-                max_entries: value,
-                fetch_older: true,
-                from: this.state.from
-            };
-            this.showLogs(this.props.selectedLogs, options);
+            this.showLogs({max_entries: value, fetch_older: true, from: this.state.from});
         },
         render: function() {
             return (
@@ -124,9 +104,10 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     <div className='title'>{i18n('cluster_page.logs_tab.title')}</div>
                     <div className='col-xs-12 content-elements'>
                         <LogFilterBar
-                            cluster={this.props.cluster}
-                            selectedLogs={this.props.selectedLogs}
-                            onShowButtonClick={this.onShowButtonClick} />
+                            {... _.pick(this.props, 'cluster', 'selectedLogs', 'changeLogSelection')}
+                            showLogs={this.showLogs}
+                            onShowButtonClick={this.onShowButtonClick}
+                        />
                         {this.state.loading == 'fail' &&
                             <div className='logs-fetch-error alert alert-danger'>
                                 {i18n('cluster_page.logs_tab.log_alert')}
@@ -137,7 +118,8 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                             <LogsTable
                                 logsEntries={this.state.logsEntries}
                                 showMoreLogsLink={this.state.showMoreLogsLink}
-                                onShowMoreClick={this.onShowMoreClick} />
+                                onShowMoreClick={this.onShowMoreClick}
+                            />
                         }
                     </div>
                 </div>
@@ -147,15 +129,11 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
 
     var LogFilterBar = React.createClass({
         getInitialState: function() {
-            return {
-                chosenType: this.props.selectedLogs.type,
-                chosenNodeId: this.props.selectedLogs.node,
-                chosenSourceId: this.props.selectedLogs.source,
-                chosenLevelId: this.props.selectedLogs.level,
+            return _.extend({}, this.props.selectedLogs, {
                 sourcesLoadingState: 'loading',
                 sources: [],
-                locked: false
-            };
+                locked: true
+            });
         },
         fetchSources: function(type, nodeId) {
             var cluster = this.props.cluster,
@@ -177,21 +155,21 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             }
             this.sources.deferred.done(_.bind(function() {
                 var filteredSources = this.sources.filter(function(source) {return source.get('remote') == (type != 'local');}),
-                    chosenSource = _.findWhere(filteredSources, {id: this.state.chosenSourceId}) || _.first(filteredSources),
-                    chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.chosenLevelId) ? this.state.chosenLevelId : _.first(chosenSource.get('levels')) : null;
+                    chosenSource = _.findWhere(filteredSources, {id: this.state.source}) || _.first(filteredSources),
+                    chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.level) ? this.state.level : _.first(chosenSource.get('levels')) : null;
                 this.setState({
-                    chosenType: type,
+                    type: type,
                     sources: this.sources,
                     sourcesLoadingState: 'done',
-                    chosenNodeId: chosenNodeId && type == 'remote' ? chosenNodeId : null,
-                    chosenSourceId: chosenSource ? chosenSource.id : null,
-                    chosenLevelId: chosenLevelId,
+                    node: chosenNodeId && type == 'remote' ? chosenNodeId : null,
+                    source: chosenSource ? chosenSource.id : null,
+                    level: chosenLevelId,
                     locked: false
                 });
             }, this));
             this.sources.deferred.fail(_.bind(function() {
                 this.setState({
-                    chosenType: type,
+                    type: type,
                     sources: {},
                     sourcesLoadingState: 'fail',
                     locked: false
@@ -200,8 +178,11 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             return this.sources.deferred;
         },
         componentDidMount: function() {
-            this.fetchSources(this.state.chosenType, this.state.chosenNodeId)
-                .done(this.handleShowButtonClick);
+            this.fetchSources(this.state.type, this.state.node)
+                .done(_.bind(function() {
+                    this.setState({locked: true});
+                    this.props.showLogs();
+                }, this));
         },
         onTypeChange: function(name, value) {
             this.fetchSources(value);
@@ -211,14 +192,14 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         },
         onLevelChange: function(name, value) {
             this.setState({
-                chosenLevelId: value,
+                level: value,
                 locked: false
             });
         },
         onSourceChange: function(name, value) {
             var levels = this.state.sources.get(value).get('levels'),
-                data = {locked: false, chosenSourceId: value};
-            if (!_.contains(levels, this.state.chosenLevelId)) data.chosenLevelId = _.first(levels);
+                data = {locked: false, source: value};
+            if (!_.contains(levels, this.state.level)) data.level = _.first(levels);
             this.setState(data);
         },
         getLocalSources: function() {
@@ -253,17 +234,13 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             }
             return options;
         },
-        handleShowButtonClick: function(updateStates) {
+        handleShowButtonClick: function() {
             this.setState({locked: true});
-            this.props.onShowButtonClick(updateStates && {
-                type: this.state.chosenType,
-                node: this.state.chosenNodeId,
-                source: this.state.chosenSourceId,
-                level: this.state.chosenLevelId
-            });
+            this.props.changeLogSelection(_.pick(this.state, 'type', 'node', 'source', 'level'));
+            this.props.onShowButtonClick();
         },
         render: function() {
-            var isRemote = this.state.chosenType == 'remote';
+            var isRemote = this.state.type == 'remote';
             return (
                 <div className='well well-sm'>
                     <div className='sticker row'>
@@ -290,8 +267,8 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 <label />
                 <button
                     className='btn btn-default pull-right'
-                    onClick={_.partial(this.handleShowButtonClick, true)}
-                    disabled={!this.state.chosenSourceId || this.state.locked}
+                    onClick={this.handleShowButtonClick}
+                    disabled={!this.state.source || this.state.locked}
                 >
                     {i18n('cluster_page.logs_tab.show')}
                 </button>
@@ -309,7 +286,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 <controls.Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.logs')}
-                    value={this.state.chosenType}
+                    value={this.state.type}
                     wrapperClassName='filter-bar-item log-type-filter'
                     name='type'
                     onChange={this.onTypeChange}
@@ -327,7 +304,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 <controls.Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.node')}
-                    value={this.state.chosenNodeId}
+                    value={this.state.node}
                     wrapperClassName='filter-bar-item log-node-filter'
                     name='node'
                     onChange={this.onNodeChange}
@@ -336,24 +313,24 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             </div>;
         },
         renderSourceSelect: function() {
-            var sourceOptions = this.state.chosenType == 'local' ? this.getLocalSources() : this.getRemoteSources();
+            var sourceOptions = this.state.type == 'local' ? this.getLocalSources() : this.getRemoteSources();
             return <div className='col-md-2 col-sm-3'>
                 <controls.Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.source')}
-                    value={this.state.chosenSourceId}
+                    value={this.state.source}
                     wrapperClassName='filter-bar-item log-source-filter'
                     name='source'
                     onChange={this.onSourceChange}
-                    disabled={!this.state.chosenSourceId}
+                    disabled={!this.state.source}
                     children={sourceOptions}
                 />
             </div>;
         },
         renderLevelSelect: function() {
             var levelOptions = {};
-            if (this.state.chosenSourceId && this.state.sources.length) {
-                levelOptions = this.state.sources.get(this.state.chosenSourceId).get('levels').map(function(level) {
+            if (this.state.source && this.state.sources.length) {
+                levelOptions = this.state.sources.get(this.state.source).get('levels').map(function(level) {
                     return <option value={level} key={level}>{level}</option>;
                 }, this);
             }
@@ -361,11 +338,11 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 <controls.Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.min_level')}
-                    value={this.state.chosenLevelId}
+                    value={this.state.level}
                     wrapperClassName='filter-bar-item log-level-filter'
                     name='level'
                     onChange={this.onLevelChange}
-                    disabled={!this.state.chosenLevelId}
+                    disabled={!this.state.level}
                     children={levelOptions}
                 />
             </div>;

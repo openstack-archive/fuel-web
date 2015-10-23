@@ -143,27 +143,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }
         },
         getInitialState: function() {
-            // FIXME(vkramskikh): we need to get rid of log_options - there
-            // should be single source of truth: tabOptions/URL parameters
-            var logOptions = this.props.tabOptions[0] ?
-                    utils.deserializeTabOptions(_.compact(this.props.tabOptions).join('/'))
-                :
-                    this.props.cluster.get('log_options') || {};
             return {
                 activeGroupName: this.pickDefaultSettingGroup(),
                 selectedNodeIds: {},
-                selectedLogs: {
-                    type: logOptions.type || 'local',
-                    node: logOptions.node || null,
-                    source: logOptions.source || null,
-                    level: logOptions.level ? logOptions.level.toUpperCase() : 'INFO'
-                }
+                selectedLogs: {type: 'local', node: null, source: 'app', level: 'INFO'}
             };
-        },
-        changeLogSelection: function(selectedLogs) {
-            this.setState({
-                selectedLogs: _.extend({}, this.state.selectedLogs, selectedLogs)
-            });
         },
         removeFinishedNetworkTasks: function(callback) {
             var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
@@ -211,6 +195,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     this.props.cluster.set({release: release});
                 }, this));
             }, this);
+            this.updateLogSettings();
+        },
+        componentWillReceiveProps: function(newProps) {
+            this.updateLogSettings(newProps);
+        },
+        updateLogSettings: function(props) {
+            props = props || this.props;
+            // FIXME: the following logs-related logic should be moved to Logs tab code
+            // to keep parent component tightly coupled to its children
+            if (props.activeTab == 'logs') {
+                var selectedLogs;
+                if (props.tabOptions[0]) {
+                    selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
+                    selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() : null;
+                    this.setState({selectedLogs: selectedLogs});
+                }
+            }
+        },
+        changeLogSelection: function(selectedLogs) {
+            this.setState({selectedLogs: selectedLogs});
         },
         getAvailableTabs: function(cluster) {
             return _.filter(this.constructor.getTabs(), function(tabData) {

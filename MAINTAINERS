@@ -26,11 +26,6 @@ description:
 
 maintainers:
 
-- fuelmenu/:
-    - name:   Matthew Mosesohn
-      email:  mmosesohn@mirantis.com
-      IRC:    mattymo
-
 - fuel_upgrade_system/fuel_package_updates/:
     - name:   Matthew Mosesohn
       email:  mmosesohn@mirantis.com

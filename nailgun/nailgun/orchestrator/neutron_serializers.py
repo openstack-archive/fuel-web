@@ -928,8 +928,9 @@ class NeutronNetworkDeploymentSerializer70(
         - 'get_network_role_mapping_to_ip'
         - 'get_network_role_mapping_to_interfaces'.
         """
+        nm = Cluster.get_network_manager(node.cluster)
         roles = dict()
-        for role in Cluster.get_network_roles(node.cluster):
+        for role in nm.get_network_roles(node):
             default_mapping = mapping.get(role['default_mapping'])
             if default_mapping:
                 roles[role['id']] = default_mapping

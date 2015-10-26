@@ -1,53 +1,29 @@
-#    Copyright 2014 Mirantis, Inc.
+# Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
 #
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#         http://www.apache.org/licenses/LICENSE-2.0
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+# THIS FILE IS MANAGED BY THE GLOBAL REQUIREMENTS REPO - DO NOT EDIT
 import setuptools
 
+# In python < 2.7.4, a lazy loading of package `pbr` will break
+# setuptools if some other modules registered functions in `atexit`.
+# solution from: http://bugs.python.org/issue15881#msg170215
+try:
+    import multiprocessing  # noqa
+except ImportError:
+    pass
 
 setuptools.setup(
-    name="nailgun-net-check",
-    version='8.0.0',
-    author="Mirantis Inc",
-    classifiers=[
-        "License :: OSI Approved :: Apache 2.0",
-        "Development Status :: 5 - Production/Stable",
-        "Environment :: Console",
-        "Operating System :: POSIX",
-        "Programming Language :: Python",
-        "Topic :: Software Development :: Testing"
-    ],
-    include_package_data=True,
-    packages=setuptools.find_packages(),
-    entry_points={
-        'console_scripts': [
-            'net_probe.py = network_checker.net_check.api:main',
-            'fuel-netcheck = network_checker.cli:main',
-            'dhcpcheck = dhcp_checker.cli:main',
-            'urlaccesscheck = url_access_checker.cli:main',
-        ],
-        'dhcp.check': [
-            'discover = dhcp_checker.commands:ListDhcpServers',
-            'request = dhcp_checker.commands:ListDhcpAssignment',
-            'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
-        ],
-        'network_checker': [
-            'multicast = network_checker.multicast.api:MulticastChecker',
-            'simple = network_checker.tests.simple:SimpleChecker'
-        ],
-        'urlaccesscheck': [
-            'check = url_access_checker.commands:CheckUrls',
-            'with_setup = url_access_checker.commands:CheckUrlsWithSetup'
-        ],
-    },
-)
+    setup_requires=['pbr'],
+    pbr=True)

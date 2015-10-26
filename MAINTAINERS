@@ -54,15 +54,6 @@ maintainers:
       email:  loles@mirantis.com
       IRC:    salmon_
 
-- shotgun/:
-    - name:   Maciej Kwiek
-      email:  mkwiek@mirantis.com
-      IRC:    mkwiek
-
-    - name:   Vladimir Kozhukalov
-      email:  vkozhukalov@mirantis.com
-      IRC:    kozhukalov
-
 - nailgun/:
     - name:   Aleksandr Kislitskii
       email:  akislitsky@mirantis.com

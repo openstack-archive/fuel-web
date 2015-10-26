@@ -26,8 +26,6 @@ function usage {
   echo "  -x, --performance           Run NAILGUN performance tests"
   echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
   echo "  -P, --no-flake8             Don't run static code checks"
-  echo "  -s, --shotgun               Run SHOTGUN tests"
-  echo "  -S, --no-shotgun            Don't run SHOTGUN tests"
   echo "  -t, --tests                 Run a given test files"
   echo "  -u, --upgrade               Run tests for UPGRADE system"
   echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
@@ -59,8 +57,6 @@ function process_options {
       -x|--performance) performance_tests=1;;
       -u|--upgrade) upgrade_system=1;;
       -U|--no-upgrade) no_upgrade_system=1;;
-      -s|--shotgun) shotgun_tests=1;;
-      -S|--no-shotgun) no_shotgun_tests=1;;
       -p|--flake8) flake8_checks=1;;
       -P|--no-flake8) no_flake8_checks=1;;
       -w|--webui) ui_lint_checks=1; ui_unit_tests=1; ui_func_tests=1;;
@@ -100,7 +96,6 @@ testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 # nosetest xunit options
 NAILGUN_XUNIT=${NAILGUN_XUNIT:-"$ROOT/nailgun.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
-SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 EXTENSIONS_XUNIT=${EXTENSIONS_XUNIT:-"$ROOT/extensions.xml"}
 NAILGUN_PORT=${NAILGUN_PORT:-5544}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
@@ -118,8 +113,6 @@ no_nailgun_tests=0
 performance_tests=0
 upgrade_system=0
 no_upgrade_system=0
-shotgun_tests=0
-no_shotgun_tests=0
 flake8_checks=0
 no_flake8_checks=0
 ui_lint_checks=0
@@ -162,7 +155,6 @@ function run_tests {
       $ui_unit_tests -eq 0 && \
       $ui_func_tests -eq 0 && \
       $upgrade_system -eq 0 && \
-      $shotgun_tests -eq 0 && \
       $extensions_tests -eq 0 && \
       $flake8_checks -eq 0 ]]; then
 
@@ -171,7 +163,6 @@ function run_tests {
     if [ $no_ui_unit_tests -ne 1 ];    then ui_unit_tests=1;  fi
     if [ $no_ui_func_tests -ne 1 ];    then ui_func_tests=1;  fi
     if [ $no_upgrade_system -ne 1 ];   then upgrade_system=1; fi
-    if [ $no_shotgun_tests -ne 1 ];    then shotgun_tests=1;  fi
     if [ $no_flake8_checks -ne 1 ];    then flake8_checks=1;  fi
     if [ $no_extensions_tests -ne 1 ]; then extensions_tests=1; fi
 
@@ -206,11 +197,6 @@ function run_tests {
   if [ $upgrade_system -eq 1 ]; then
     echo "Starting upgrade system tests..."
     run_upgrade_system_tests || errors+=" upgrade_system_tests"
-  fi
-
-  if [ $shotgun_tests -eq 1 ]; then
-    echo "Starting Shotgun tests..."
-    run_shotgun_tests || errors+=" shotgun_tests"
   fi
 
   if [ $extensions_tests -eq 1 ]; then
@@ -377,25 +363,6 @@ function run_upgrade_system_tests {
 }
 
 
-# Run shotgun tests
-#
-# Arguments:
-#
-#   $@ -- tests to be run; with no arguments all tests will be run
-function run_shotgun_tests {
-  local result=0
-
-  pushd $ROOT/shotgun >> /dev/null
-
-  # run tests
-  TOXENV=$TOXENV \
-  tox || result=1
-
-  popd >> /dev/null
-
-  return $result
-}
-
 function run_flake8_subproject {
   local DIRECTORY=$1
   local result=0
@@ -435,7 +402,6 @@ function run_flake8 {
   run_flake8_subproject network_checker && \
   run_flake8_subproject fuel_upgrade_system/fuel_upgrade && \
   run_flake8_subproject fuel_upgrade_system/fuel_package_updates && \
-  run_flake8_subproject shotgun || result=1
   return $result
 }
 
@@ -619,8 +585,6 @@ function guess_test_run {
     run_ui_func_tests $1
   elif [[ $1 == *fuel_upgrade_system* ]]; then
     run_upgrade_system_tests $1
-  elif [[ $1 == *shotgun* ]]; then
-    run_shotgun_tests $1
   else
     run_nailgun_tests $1
   fi

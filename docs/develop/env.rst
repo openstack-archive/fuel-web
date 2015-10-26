@@ -273,7 +273,6 @@ Now you can create the virtual environment and activate it.
 And then install the dependencies.
 ::
 
-    pip install ./shotgun
     pip install -r nailgun/test-requirements.txt
 
 Now you can look at the list of available formats and generate

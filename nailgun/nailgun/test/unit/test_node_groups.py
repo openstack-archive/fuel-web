@@ -355,3 +355,20 @@ class TestNodeGroups(BaseIntegrationTest):
         message = resp.json_body['message']
         self.assertEquals(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
+
+    def test_assign_nodegroup_to_node_not_in_cluster(self):
+        node = self.env.create_node()
+
+        resp = self.env.create_node_group()
+        ng_id = resp.json_body['id']
+
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node['id']}),
+            json.dumps({'group_id': ng_id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        message = resp.json_body['message']
+        self.assertEquals(resp.status_code, 400)
+        self.assertRegexpMatches(message, 'Cannot assign node group')

@@ -74,6 +74,18 @@ class TestGetSerializerForCluster(BaseIntegrationTest):
 
         self.assertIs(serializer, ps.ProvisioningSerializer61)
 
+    def test_env_7_0(self):
+        cluster = self._get_cluster('2015.1-7.0')
+        serializer = ps.get_serializer_for_cluster(cluster)
+
+        self.assertIs(serializer, ps.ProvisioningSerializer70)
+
+    def test_env_8_0(self):
+        cluster = self._get_cluster('2015.1-8.0')
+        serializer = ps.get_serializer_for_cluster(cluster)
+
+        self.assertIs(serializer, ps.ProvisioningSerializer80)
+
 
 class TestProvisioningSerializer(BaseIntegrationTest):
 
@@ -331,3 +343,60 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
         node_info = serialized_info['nodes'][0]
         self.assertIn('kernel_lt', node_info['ks_meta'])
         self.assertEqual(1, node_info['ks_meta']['kernel_lt'])
+
+
+class TestProvisioningSerializer80(BaseIntegrationTest):
+
+    serializer = ps.ProvisioningSerializer80
+
+    def test_generate_ironic_bootstrap_keys_task(self):
+        release = self.env.create_release(
+            api=False,
+            operating_system=consts.RELEASE_OS.ubuntu)
+        self.cluster = self.env.create_cluster(
+            api=False, release_id=release.id)
+        editable = self.cluster.attributes.editable
+        editable['additional_components']['ironic']['value'] = True
+
+        serialized_info = self.serializer.serialize(self.cluster, [])
+
+        self.assertIn('pre_provision', serialized_info)
+        self.assertTrue(filter(
+            lambda task: all([
+                task['uids'] == ['master'],
+                task['type'] == 'shell',
+                task['parameters']['cmd'].startswith(
+                    'sh /etc/puppet/modules/osnailyfacter/modular/'
+                    'astute/generate_keys.sh')
+            ]),
+            serialized_info['pre_provision']))
+
+        self.assertTrue(filter(
+            lambda task: all([
+                'fuel-bootstrap-image' in task['parameters']['cmd'],
+                'ironic.pub' in task['parameters']['cmd']]),
+            serialized_info['pre_provision']))
+
+    def test_do_not_generate_ironic_bootstrap_keys_task(self):
+        release = self.env.create_release(
+            api=False,
+            operating_system=consts.RELEASE_OS.ubuntu)
+        self.cluster = self.env.create_cluster(
+            api=False, release_id=release.id)
+        editable = self.cluster.attributes.editable
+        editable['additional_components']['ironic']['value'] = False
+
+        serialized_info = self.serializer.serialize(self.cluster, [])
+
+        self.assertIn('pre_provision', serialized_info)
+        self.assertFalse(filter(
+            lambda task: task['parameters']['cmd'].startswith(
+                'sh /etc/puppet/modules/osnailyfacter/modular/'
+                'astute/generate_keys.sh'),
+            serialized_info['pre_provision']))
+
+        self.assertFalse(filter(
+            lambda task: all([
+                'fuel-bootstrap-image' in task['parameters']['cmd'],
+                'ironic.pub' in task['parameters']['cmd']]),
+            serialized_info['pre_provision']))

@@ -269,6 +269,22 @@ class CopyHaproxyKeys(CopyKeys):
     identity = 'copy_haproxy_keys'
 
 
+class IronicUploadImages(GenericRolesHook):
+
+    identity = 'ironic_upload_images'
+
+    def serialize(self):
+        uids = self.get_uids()
+        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
+            CLUSTER_ID=self.cluster.id)
+        yield templates.make_shell_task(uids, self.task)
+
+
+class IronicCopyBootstrapKey(CopyKeys):
+
+    identity = 'ironic_copy_bootstrap_key'
+
+
 class RestartRadosGW(GenericRolesHook):
 
     identity = 'restart_radosgw'
@@ -359,7 +375,8 @@ class TaskSerializers(object):
     stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, RestartRadosGW,
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys,
-                         GenerateCephKeys, CopyCephKeys]
+                         GenerateCephKeys, CopyCephKeys, IronicUploadImages,
+                         IronicCopyBootstrapKey]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

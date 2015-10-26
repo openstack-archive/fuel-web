@@ -431,6 +431,28 @@ class AstuteGraph(object):
         priority.one_by_one(serialized)
         return serialized
 
+    def get_node_net_roles(self, node):
+        tasks = []
+        net_roles = []
+        cluster_net_roles = objects.Cluster.get_network_roles(self.cluster)
+        for role in node.all_roles:
+            tasks.extend(self.graph.get_group_tasks(role))
+        for task in tasks:
+            serializer = self.serializers.get_deploy_serializer(task)(
+                task, self.cluster, node)
+            if not serializer.should_execute():
+                continue
+            for net_role in task.get('network_roles', []):
+                net_role_description = filter(
+                    lambda cnr: cnr['id'] == net_role, cluster_net_roles)
+                if not len(net_role_description):
+                    raise errors.InvalidData(
+                        "Network role '{0}' for deployment task '{1}' is "
+                        "missing in cluster network roles".format(net_role,
+                                                                  task['id']))
+                net_roles.extend(net_role_description)
+        return net_roles
+
 
 class DeploymentGraphValidator(object):
 

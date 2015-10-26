@@ -1,3 +1,4 @@
+pbr<2.0,>=1.4
 argparse
 cliff-tablib
 scapy==2.2.0-dev

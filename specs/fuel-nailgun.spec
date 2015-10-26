@@ -118,20 +118,16 @@ mv %{_builddir}/%{name}-%{version}/nailgun/compressed_static %{_builddir}/%{name
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py build
 cd %{_builddir}/%{name}-%{version}/network_checker && python setup.py build
 cd %{_builddir}/%{name}-%{version}/shotgun && python setup.py build
-cd %{_builddir}/%{name}-%{version}/fuelmenu && python setup.py build
 cd %{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates && python setup.py build
 
 %install
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
 cd %{_builddir}/%{name}-%{version}/network_checker && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/network_checker/INSTALLED_FILES
 cd %{_builddir}/%{name}-%{version}/shotgun && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/shotgun/INSTALLED_FILES
-cd %{_builddir}/%{name}-%{version}/fuelmenu && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/fuelmenu/INSTALLED_FILES
 cd %{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates/INSTALLED_FILES
 mkdir -p %{buildroot}/opt/nailgun/bin
 mkdir -p %{buildroot}/etc/cron.d
 mkdir -p %{buildroot}/etc/fuel
-install -d -m 755 %{buildroot}/etc/fuel
-install -m 600 %{_builddir}/%{name}-%{version}/fuelmenu/fuelmenu/settings.yaml %{buildroot}/etc/fuel/astute.yaml
 install -m 755 %{_builddir}/%{name}-%{version}/bin/fencing-agent.rb %{buildroot}/opt/nailgun/bin/fencing-agent.rb
 install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/etc/cron.d/fencing-agent
 install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/download-debian-installer %{buildroot}%{_bindir}/download-debian-installer
@@ -214,38 +210,6 @@ Shotgun package.
 
 %files -n shotgun -f  %{_builddir}/%{name}-%{version}/shotgun/INSTALLED_FILES
 %defattr(-,root,root)
-
-%package -n fuelmenu
-
-Summary: Console utility for pre-configuration of Fuel server
-Version: %{version}
-Release: %{release}
-License: Apache
-Group: Development/Libraries
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Prefix: %{_prefix}
-BuildArch: noarch
-Vendor: Matthew Mosesohn <mmosesohn@mirantis.com>
-BuildRequires:  python-setuptools
-Requires: bind-utils
-Requires: nailgun-net-check
-Requires: ntp
-Requires: python-setuptools
-Requires: python-netaddr
-Requires: python-netifaces
-Requires: python-urwid >= 1.1.0
-Requires: PyYAML
-Requires: python-ordereddict
-Requires: screen
-Requires: python-six
-
-%description -n fuelmenu
-Summary: Console utility for pre-configuration of Fuel server
-
-%files -n fuelmenu -f %{_builddir}/%{name}-%{version}/fuelmenu/INSTALLED_FILES
-%defattr(-,root,root)
-%config(noreplace) /etc/fuel/astute.yaml
-
 
 %package -n fencing-agent
 Summary:   Fencing agent

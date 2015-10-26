@@ -1,1 +1,2 @@
-recursive-include network_checker *
+include setup.py
+include tox.ini

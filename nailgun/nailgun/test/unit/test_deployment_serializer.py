@@ -55,4 +55,4 @@ class TestGetSerializer(BaseUnitTest):
         cluster.release.environment_version = '9999.0'
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
-            ds.DeploymentHASerializer70)
+            ds.DeploymentHASerializer80)

@@ -45,6 +45,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.orchestrator import deployment_graph
 from nailgun.utils.zabbix import ZabbixManager
 from nailgun.settings import settings
 
@@ -1492,6 +1493,18 @@ class NetworkManager(object):
         return [x[0] for x in
                 db().query(IPAddr.ip_addr).filter_by(
                     network=network_id)]
+
+    @classmethod
+    def get_node_network_roles(cls, node):
+        """Method for receiving network roles for particular node
+
+        Returns only network roles which needed by assigned deployment tasks
+
+        :param node: nailgun.db.sqlalchemy.models.Node instance
+        :returns: List of network roles descriptions
+        """
+        graph = deployment_graph.AstuteGraph(node.cluster)
+        return graph.get_node_net_roles(node)
 
 
 class AllocateVIPs70Mixin(object):

@@ -277,6 +277,13 @@ class NodeValidator(BasicValidator):
                     .format(d["group_id"], d.get("id"))
                 )
 
+            if instance and not instance.cluster:
+                raise errors.InvalidData(
+                    "Cannot assign node group (ID={0}) to node {1}. "
+                    "Node is not allocated to cluster."
+                    .format(d["group_id"], d.get("id"))
+                )
+
         return d
 
     @classmethod

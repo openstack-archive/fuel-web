@@ -267,6 +267,13 @@ class NodeValidator(BasicValidator):
                     .format(d["group_id"], instance.id)
                 )
 
+            if not instance.cluster_id:
+                raise errors.InvalidData(
+                    "Cannot assign node group (ID={0}) to node {1}. "
+                    "Node is not allocated to cluster."
+                    .format(d["group_id"], d.get("id"))
+                )
+
             if instance.cluster_id != ng.cluster_id:
                 raise errors.InvalidData(
                     "Cannot assign node group (ID={0}) to node {1}. "

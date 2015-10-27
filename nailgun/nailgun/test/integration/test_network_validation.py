@@ -27,6 +27,7 @@ from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.errors import errors
 from nailgun.network.checker import NetworkCheck
+from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 
 
@@ -125,7 +126,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.assertEqual(len(ngs_created), len(self.nets['networks']))
 
     def test_network_checking_fails_if_admin_intersection(self):
-        admin_ng = self.env.network_manager.get_admin_network_group()
+        admin_ng = objects.NetworkGroup.get_admin_network_group()
         self.nets['networking_parameters']["fixed_networks_cidr"] = \
             admin_ng.cidr
 
@@ -137,7 +138,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.assertIn("fixed", task['message'])
 
     def test_network_checking_fails_if_admin_intersection_ip_range(self):
-        admin_ng = self.env.network_manager.get_admin_network_group()
+        admin_ng = objects.NetworkGroup.get_admin_network_group()
         cidr = IPNetwork(admin_ng.cidr)
         flt_r0 = str(IPAddress(cidr.first + 2))
         flt_r1 = str(IPAddress(cidr.last))
@@ -423,7 +424,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
     #      network to the Admin interface.
 
     def test_network_checking_fails_if_admin_intersection(self):
-        admin_ng = self.env.network_manager.get_admin_network_group()
+        admin_ng = objects.NetworkGroup.get_admin_network_group()
         self.find_net_by_name('storage')["cidr"] = admin_ng.cidr
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)

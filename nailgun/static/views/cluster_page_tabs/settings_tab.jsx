@@ -73,10 +73,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         componentWillMount: function() {
             var settings = this.props.cluster.get('settings');
-            if (this.checkRestrictions('hide', settings.makePath(this.props.activeGroupName, 'metadata')).result) {
+            if (this.checkRestrictions('hide', settings.makePath(this.props.activeSettingsGroupName, 'metadata')).result) {
                 // FIXME: First group might also be hidded by restrictions
                 // which would cause no group selected
-                this.props.setActiveGroupName();
+                this.props.setActiveSettingsGroupName();
             }
         },
         componentDidMount: function() {
@@ -209,12 +209,12 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                         groupNames={sortedSettingGroups}
                         makePath={settings.makePath}
                         configModels={this.state.configModels}
-                        setActiveGroupName={this.props.setActiveGroupName}
-                        activeGroupName={this.props.activeGroupName}
+                        setActiveSettingsGroupName={this.props.setActiveSettingsGroupName}
+                        activeSettingsGroupName={this.props.activeSettingsGroupName}
                         checkRestrictions={this.checkRestrictions}
                     />
                     {_.compact(_.map(sortedSettingGroups, function(groupName) {
-                        if (groupName != this.props.activeGroupName) {
+                        if (groupName != this.props.activeSettingsGroupName) {
                             return null;
                         }
                         return <SettingGroup
@@ -275,8 +275,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 <li
                                     key={groupName}
                                     role='presentation'
-                                    className={utils.classNames({active: groupName == this.props.activeGroupName})}
-                                    onClick={_.partial(this.props.setActiveGroupName, groupName)}
+                                    className={utils.classNames({active: groupName == this.props.activeSettingsGroupName})}
+                                    onClick={_.partial(this.props.setActiveSettingsGroupName, groupName)}
                                 >
                                     <a className={'subtab-link-' + groupName}>
                                         {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}

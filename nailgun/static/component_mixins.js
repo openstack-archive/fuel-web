@@ -128,7 +128,13 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                 startRenaming: function(e) {
                     e.preventDefault();
                     $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
-                        if (e && !$(e.target).closest(this.refs[refname].getDOMNode()).length) {
+                        var domElement;
+                        if (refname) {
+                            domElement = e && !$(e.target).closest(this.refs[refname].getDOMNode());
+                        } else {
+                            domElement = e && !$(e.target).closest('input[type=text]');
+                        }
+                        if (domElement.length) {
                             this.endRenaming();
                         } else {
                             e.preventDefault();

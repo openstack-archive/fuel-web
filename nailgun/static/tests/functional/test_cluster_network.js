@@ -20,8 +20,9 @@ define([
     'intern/chai!assert',
     'tests/functional/pages/common',
     'tests/functional/pages/networks',
-    'tests/functional/pages/cluster'
-], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage) {
+    'tests/functional/pages/cluster',
+    'tests/functional/pages/modal'
+], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow) {
     'use strict';
 
     registerSuite(function() {
@@ -252,4 +253,88 @@ define([
             }
         };
     });
+    registerSuite(function() {
+        var common,
+            networksPage,
+            clusterPage,
+            clusterName,
+            modal;
+
+        return {
+            name: 'Networks page Node network group tests',
+            setup: function() {
+                common = new Common(this.remote);
+                networksPage = new NetworksPage(this.remote);
+                clusterPage = new ClusterPage(this.remote);
+                clusterName = common.pickRandomName('Test Cluster');
+                modal = new ModalWindow(this.remote);
+
+                return this.remote
+                    .then(function() {
+                        return common.getIn();
+                    })
+                    .then(function() {
+                        return common.createCluster(clusterName);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    });
+            },
+            'Node network group creation': function() {
+                return this.remote
+                    .clickByCssSelector('.add-nodegroup-btn')
+                    .then(function() {
+                        return modal.waitToOpen();
+                    })
+                    .assertElementContainsText('h4.modal-title', 'Add New Node Network Group', 'Add New Node Network Group modal expected')
+                    .setInputValue('[name=node_network_group_name]', 'Node_Network_Group_1')
+                    .then(function() {
+                        return modal.clickFooterButton('Add Group');
+                    })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
+                    .assertElementAppears('.node-network-groups-list', 2000, 'Node network groups title appears')
+                    .assertElementDisplayed('.subtab-link-Node_Network_Group_1', 'New subtab is shown')
+                    .assertElementTextEquals('.network-group-name .btn-link', 'Node_Network_Group_1', 'New Node Network group title is shown');
+            },
+            'Node network group renaming': function() {
+                return this.remote
+                    .clickByCssSelector('.glyphicon-pencil')
+                    .assertElementAppears('.network-group-name input[type=text]', 2000, 'Node network group renaming control is rendered')
+                    .findByCssSelector('.node-group-renaming input[type=text]')
+                    .clearValue()
+                    .type( 'Node_Network_Group_2')
+                    // Enter
+                    .type('\uE007')
+                    .end()
+                    .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'New subtab title is shown');
+            },
+            'Show all Networks': function() {
+                return this.remote
+                    .clickByCssSelector('input[name=show_all]')
+                    .assertElementsExist('.network-tab h3', 6, 'All networks are present after clicking "show all"')
+                    .clickByCssSelector('input[name=show_all]')
+                    .assertElementsExist('.network-tab h3', 3, 'Only current networks are present after unchecking "show all"');
+            },
+            'Node network group deletion': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-Node_Network_Group_2')
+                    .clickByCssSelector('.glyphicon-remove')
+                    .then(function() {
+                        return modal.waitToOpen();
+                    })
+                    .assertElementContainsText('h4.modal-title', 'Remove Node Network Group', 'Remove Node Network Group modal expected')
+                    .then(function() {
+                        return modal.clickFooterButton('Delete');
+                    })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
+                    .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000, 'Node network groups title disappears')
+                    .assertElementDisappears('.network-group-name .btn-link', 1000, 'Default Node Network group title disappers');
+            }
+        };
+    });
+    
 });

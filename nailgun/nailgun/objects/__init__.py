@@ -38,6 +38,9 @@ from nailgun.objects.task import TaskCollection
 from nailgun.objects.notification import Notification
 from nailgun.objects.notification import NotificationCollection
 
+from nailgun.objects.network_group import NetworkGroup
+from nailgun.objects.network_group import NetworkGroupCollection
+
 from nailgun.objects.node import Node
 from nailgun.objects.node import NodeCollection
 
@@ -57,3 +60,15 @@ from nailgun.objects.network_group import NetworkGroupCollection
 
 from nailgun.objects.dashboard_entry import DashboardEntry
 from nailgun.objects.dashboard_entry import DashboardEntryCollection
+
+from nailgun.objects.component import Component
+from nailgun.objects.component import ComponentCollection
+
+from nailgun.objects.interface import Interface
+from nailgun.objects.interface import InterfaceCollection
+
+from nailgun.objects.ip_address import IPAddress
+from nailgun.objects.ip_address import IPAddressCollection
+
+from nailgun.objects.bond import Bond
+from nailgun.objects.bond import BondCollection

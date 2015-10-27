@@ -20,6 +20,7 @@ from distutils import version
 import six
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.objects.serializers import network_configuration
 from nailgun import utils
 
@@ -173,13 +174,12 @@ class UpgradeHelper(object):
             node.cluster_id)
 
         orig_manager = orig_cluster.get_network_manager()
-        seed_manager = seed_cluster.get_network_manager()
 
         netgroups_id_mapping = cls.get_netgroups_id_mapping(
             orig_cluster, seed_cluster)
 
         node.update_cluster_assignment(seed_cluster)
-        seed_manager.set_node_netgroups_ids(node, netgroups_id_mapping)
+        objects.Node.set_netgroups_ids(node, netgroups_id_mapping)
         orig_manager.set_nic_assignment_netgroups_ids(
             node, netgroups_id_mapping)
         orig_manager.set_bond_assignment_netgroups_ids(

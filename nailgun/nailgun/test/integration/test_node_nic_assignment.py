@@ -464,7 +464,7 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
 
     def test_admin_nic_and_ip_assignment(self):
         cluster = self.env.create_cluster(api=True)
-        admin_ng = self.env.network_manager.get_admin_network_group()
+        admin_ng = objects.NetworkGroup.get_admin_network_group()
         admin_ip = str(IPNetwork(admin_ng.cidr)[0])
         mac1, mac2 = (self.env.generate_random_mac(),
                       self.env.generate_random_mac())
@@ -517,7 +517,7 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
     def create_node_and_check_assignment(self):
         meta = self.env.default_metadata()
         admin_ip = str(IPNetwork(
-            self.env.network_manager.get_admin_network_group().cidr)[1])
+            objects.NetworkGroup.get_admin_network_group().cidr)[1])
         admin_mac = self.env.generate_random_mac()
         meta['interfaces'] = [
             {'name': 'eth3', 'mac': self.env.generate_random_mac()},

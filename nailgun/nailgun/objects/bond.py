@@ -56,6 +56,7 @@ class Bond(NailgunObject):
         instance.offloading_modes = data.get('offloading_modes', {})
         db().add(instance)
         db().flush()
+        db().refresh(instance)
         return instance
 
 

@@ -156,7 +156,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         getInitialState: function() {
             return {
-                activeGroupName: this.pickDefaultSettingGroup(),
+                activeSettingsGroupName: this.pickDefaultSettingGroup(),
+                activeNetworkGroupName: '',
+                showAllNodeNetworkGroups: false,
                 selectedNodeIds: {},
                 selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
             };
@@ -241,7 +243,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         setActiveSettingsGroupName: function(value) {
             if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
-            this.setState({activeGroupName: value});
+            this.setState({activeSettingsGroupName: value});
+        },
+        setActiveNetworkSectionName: function(name, value) {
+            var showAll = name == 'show_all',
+                state = {showAllNodeNetworkGroups: showAll && value};
+            if (!showAll) {
+                state = _.extend(state, {activeNetworkGroupName: name});
+            }
+            dispatcher.trigger('closeRenaming');
+            this.setState(state);
         },
         selectNodes: function(ids, checked) {
             if (ids && ids.length) {
@@ -295,7 +306,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             ref='tab'
                             cluster={cluster}
                             tabOptions={this.props.tabOptions}
-                            setActiveGroupName={this.setActiveSettingsGroupName}
+                            setActiveSettingsGroupName={this.setActiveSettingsGroupName}
+                            setActiveNetworkSectionName={this.setActiveNetworkSectionName}
                             selectNodes={this.selectNodes}
                             changeLogSelection={this.changeLogSelection}
                             {...this.state}

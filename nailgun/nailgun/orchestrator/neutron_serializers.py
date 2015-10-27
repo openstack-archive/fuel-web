@@ -351,7 +351,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             attrs['transformations'].append({
                 'action': 'add-patch',
                 'bridges': [
-                    'br-%s' % nm.get_node_interface_by_netname(
+                    'br-%s' % objects.Node.get_interface_by_net_name(
                         node.id,
                         'private'
                     ).name,

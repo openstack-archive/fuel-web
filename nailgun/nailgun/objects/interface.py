@@ -41,6 +41,7 @@ class NIC(NailgunObject):
         ngs = db().query(models.NetworkGroup).filter(
             models.NetworkGroup.id.in_(net_ids)).all()
         instance.assigned_networks_list = ngs
+        db().flush()
 
 
 class NICCollection(NailgunCollection):

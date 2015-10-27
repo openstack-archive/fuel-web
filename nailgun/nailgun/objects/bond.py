@@ -41,6 +41,7 @@ class Bond(NailgunObject):
         ngs = db().query(models.NetworkGroup).filter(
             models.NetworkGroup.id.in_(net_ids)).all()
         instance.assigned_networks_list = ngs
+        db().flush()
 
     @classmethod
     def update(cls, instance, data):
@@ -54,6 +55,7 @@ class Bond(NailgunObject):
         instance.offloading_modes = data.get('offloading_modes', {})
         db().add(instance)
         db().flush()
+        db().refresh(instance)
         return instance
 
 

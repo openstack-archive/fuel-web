@@ -37,10 +37,8 @@ class Bond(NailgunObject):
         :type networks: list
         :returns: None
         """
-        net_ids = [net['id'] for net in networks]
-        ngs = db().query(models.NetworkGroup).filter(
-            models.NetworkGroup.id.in_(net_ids)).all()
-        instance.assigned_networks_list = ngs
+        instance.assigned_networks_list = networks
+        db().flush()
 
     @classmethod
     def update(cls, instance, data):

@@ -1338,6 +1338,30 @@ class Cluster(NailgunObject):
         attrs = cls.get_editable_attributes(instance, False)
         return attrs['common'].get('task_deploy', {}).get('value')
 
+    @classmethod
+    def get_network_groups_and_node_ids(cls, instance_id):
+        """Get network group information for the given cluster
+
+        The admin network group will not be included.
+
+        :param instance: Cluster instance
+        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :returns: tuple of Node ID, and NetworkGroup ID, name, meta
+        """
+        query = (db().query(
+            models.Node.id,
+            models.NetworkGroup.id,
+            models.NetworkGroup.name,
+            models.NetworkGroup.meta)
+            .join(models.NodeGroup.nodes)
+            .join(models.NodeGroup.networks)
+            .filter(models.NodeGroup.cluster_id == instance_id,
+                    models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
+            .order_by(models.NetworkGroup.id)
+        )
+
+        return query
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

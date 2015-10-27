@@ -253,7 +253,8 @@ class NodeNICInterface(Base):
     interface_properties = Column(
         MutableDict.as_mutable(JSON), default={}, nullable=False,
         server_default='{}')
-    parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
+    parent_id = Column(
+        Integer, ForeignKey('node_bond_interfaces.id', ondelete='SET NULL'))
     driver = Column(Text)
     bus_info = Column(Text)
     pxe = Column(Boolean, default=False, nullable=False)

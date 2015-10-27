@@ -47,6 +47,7 @@ from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects import NetworkGroup
 from nailgun.objects import Notification
 
 from nailgun.settings import settings
@@ -67,6 +68,115 @@ class Node(NailgunObject):
     def delete(cls, instance):
         fire_callback_on_node_delete(instance)
         super(Node, cls).delete(instance)
+
+    @classmethod
+    def get_admin_ips_count(cls, node_id, network_id):
+        return db().query(models.IPAddr).filter_by(
+            node=node_id, network=network_id).count()
+
+    @classmethod
+    def assign_ip(cls, node_id, ip, network_id):
+        ip_addr = models.IPAddr(node=node_id,
+                               ip_addr=ip,
+                               network=network_id)
+        db().add(ip_addr)
+        db().flush()
+        return ip_addr
+
+    @classmethod
+    def get_node_networks_ips(cls, node):
+        return dict(
+            db().query(models.NetworkGroup.name, models.IPAddr.ip_addr).\
+            filter(models.NetworkGroup.group_id == node.group_id).\
+            filter(models.IPAddr.network == models.NetworkGroup.id).\
+            filter(models.IPAddr.node == node.id))
+
+    @classmethod
+    def set_node_networks_ips(cls, instance, ips_by_network_name):
+        ngs = db().query(models.NetworkGroup.name, models.IPAddr).\
+            filter(models.NetworkGroup.group_id == instance.group_id).\
+            filter(models.IPAddr.network == models.NetworkGroup.id).\
+            filter(models.IPAddr.node == instance.id).\
+            filter(models.NetworkGroup.name.in_(ips_by_network_name))
+        for ng_name, ip_addr in ngs: 
+            ip_addr.ip_addr = ips_by_network_name[ng_name]
+        db().flush()
+
+    @classmethod
+    def set_node_netgroups_ids(cls, instance, netgroups_id_mapping):
+        ip_addrs = db().query(models.IPAddr).filter(
+            models.IPAddr.node == instance.id)
+        for ip_addr in ip_addrs:
+            ip_addr.network = netgroups_id_mapping[ip_addr.network]
+        db().flush()
+
+    @classmethod
+    def set_nic_assignment_netgroups_ids(cls, instance, netgroups_id_mapping):
+        nic_assignments = db.query(models.NetworkNICAssignment).\
+            join(models.NodeNICInterface).\
+            filter(models.NodeNICInterface.node_id == instance.id)
+        for nic_assignment in nic_assignments:
+            nic_assignment.network_id = \
+                netgroups_id_mapping[nic_assignment.network_id]
+        db().flush()
+
+    @classmethod
+    def set_bond_assignment_netgroups_ids(cls, instance, netgroups_id_mapping):
+        bond_assignments = db.query(models.NetworkBondAssignment).\
+            join(models.NodeBondInterface).\
+            filter(models.NodeBondInterface.node_id == instance.id)
+        for bond_assignment in bond_assignments:
+            bond_assignment.network_id = \
+                netgroups_id_mapping[bond_assignment.network_id]
+        db().flush()
+
+    @classmethod
+    def get_interface_by_net_name(cls, instance_id, netname):
+        iface = db().query(models.NodeNICInterface).join(
+            (models.NetworkGroup,
+             models.NodeNICInterface.assigned_networks_list)
+        ).filter(
+            models.NetworkGroup.name == netname
+        ).filter(
+            models.NodeNICInterface.node_id == instance_id
+        ).first()
+        if iface:
+            return iface
+
+        return db().query(models.NodeBondInterface).join(
+            (models.NetworkGroup,
+             models.NodeBondInterface.assigned_networks_list)
+        ).filter(
+            models.NetworkGroup.name == netname
+        ).filter(
+            models.NodeBondInterface.node_id ==  instance_id
+        ).first()
+
+
+    @classmethod
+    def get_admin_ip(cls, node_id):
+        admin_net = NetworkGroup.get_admin_network_group(node_id=node_id)
+        admin_ip = db().query(models.IPAddr).order_by(
+            models.IPAddr.id
+        ).filter_by(
+            node=node_id
+        ).filter_by(
+            network=admin_net.id
+        ).first()
+
+        return getattr(admin_ip, 'ip_addr', None)
+
+    @classmethod
+    def get_admin_ips_by_node(cls, node, admin_net_id):
+        return set([
+            i.ip_addr for i in db().query(models.IPAddr).
+            order_by(models.IPAddr.id).
+            filter_by(node=node).
+            filter_by(network=admin_net_id)])
+
+    @classmethod
+    def get_all_node_admin_ips(cls):
+        return db().query(models.Node.ip).all()
 
     @classmethod
     def get_by_mac_or_uid(cls, mac=None, node_uid=None):

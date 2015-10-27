@@ -22,8 +22,7 @@ from netaddr import IPNetwork
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
-from nailgun.objects import Cluster
-from nailgun.objects import Node
+from nailgun import objects
 from nailgun.settings import settings
 
 
@@ -46,14 +45,14 @@ class MellanoxMixin(object):
         :returns: None
         """
 
-        cluster_attrs = Cluster.get_editable_attributes(cluster)
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
         neutron_mellanox_data = cluster_attrs.get('neutron_mellanox', {})
         # We need to support mellanox for releases < 8.0. So if mellanox
         # attributes exist (primary in old releases) then merge them with
         # common node attributes.
         if neutron_mellanox_data:
             storage_data = cluster_attrs.get('storage', {})
-            nm = Cluster.get_network_manager(cluster)
+            nm = objects.Cluster.get_network_manager(cluster)
             node_attrs['neutron_mellanox'] = {}
 
             # Find Physical port for VFs generation
@@ -166,7 +165,7 @@ class VmwareDeploymentSerializerMixin(object):
             'cinder-vmware'
         ]
 
-        all_roles = Node.all_roles(node)
+        all_roles = objects.Node.all_roles(node)
         use_vcenter = node.cluster.attributes.editable.get('common', {}) \
             .get('use_vcenter', {}).get('value')
 
@@ -261,12 +260,12 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node."""
-        for node in Cluster.get_nodes_not_for_deletion(cluster):
+        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
             netw_data = node.network_data
             addresses = {}
             for net in node.cluster.network_groups:
                 if net.name == 'public' and \
-                        not Node.should_have_public_with_ip(node):
+                        not objects.Node.should_have_public_with_ip(node):
                     continue
                 if net.meta.get('render_addr_mask'):
                     addresses.update(cls.get_addr_mask(
@@ -282,7 +281,7 @@ class NetworkDeploymentSerializer(object):
         """Cluster network attributes."""
         common = cls.network_provider_cluster_attrs(cluster)
         common.update(
-            cls.network_ranges(Cluster.get_default_group(cluster).id))
+            cls.network_ranges(objects.Cluster.get_default_group(cluster).id))
         common.update({'master_ip': settings.MASTER_IP})
 
         common['nodes'] = deepcopy(attrs['nodes'])
@@ -347,13 +346,13 @@ class NetworkDeploymentSerializer(object):
     @staticmethod
     def get_admin_ip_w_prefix(node):
         """Getting admin ip and assign prefix from admin network."""
-        network_manager = Cluster.get_network_manager(node.cluster)
+        network_manager = objects.Cluster.get_network_manager(node.cluster)
         admin_ip = network_manager.get_admin_ip_for_node(node.id)
         admin_ip = IPNetwork(admin_ip)
 
         # Assign prefix from admin network
         admin_net = IPNetwork(
-            network_manager.get_admin_network_group(node.id).cidr
+            objects.NetworkGroup.get_admin_network_group(node.id).cidr
         )
         admin_ip.prefixlen = admin_net.prefixlen
 

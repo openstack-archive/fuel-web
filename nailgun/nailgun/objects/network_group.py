@@ -301,6 +301,35 @@ class NetworkGroup(NailgunObject):
         for node in cluster.nodes:
             nm.assign_networks_by_template(node)
 
+    @classmethod
+    def get_node_network_by_name(cls, node, network_name):
+        if network_name == consts.NETWORKS.fuelweb_admin:
+            return cls.get_admin_network_group(node.id)
+        else:
+            return cls.get_from_node_group_by_name(node.group_id, network_name)
+
+    @classmethod
+    def get_network_by_name_and_nodegroup(cls, name, nodegroup):
+        """Find a network that matches a specified name and a nodegroup.
+
+        :param name: Name of a network
+        :param nodegroup: The nodegroup object
+        :return: Network object that matches a specified name and a nodegroup.
+                 Admin network, if nothing found.
+
+        """
+        network = cls.get_from_node_group_by_name(nodegroup.id, name)
+
+        # FIXME:
+        #   Built-in fuelweb_admin network doesn't belong to any node
+        #   group, since it's shared between all clusters. So we need
+        #   to handle this very special case if we want to be able
+        #   to allocate VIP in default admin network.
+        if not network and name == consts.NETWORKS.fuelweb_admin:
+            network = cls.get_admin_network_group()
+
+        return network
+
 
 class NetworkGroupCollection(NailgunCollection):
 

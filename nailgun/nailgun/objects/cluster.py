@@ -1392,6 +1392,7 @@ class Cluster(NailgunObject):
         q = db().query(models.Node).filter_by(cluster_id=instance.id)
         return q.filter(models.Node.status != status).count()
 
+    @classmethod
     def get_network_groups_and_node_ids(cls, instance_id):
         """Get network group information for the given cluster
 

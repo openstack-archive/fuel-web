@@ -54,6 +54,7 @@ class NodeGroup(NailgunObject):
             raise errors.CannotCreate(exc.message)
 
         db().flush()
+        db().refresh(cluster)
         return new_group
 
 

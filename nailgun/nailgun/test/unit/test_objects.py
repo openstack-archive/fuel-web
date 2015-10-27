@@ -1881,8 +1881,11 @@ class TestNICObject(BaseTestCase):
         self.assertEqual(len(nic_2.assigned_networks), 1)
 
         new_nets = nic_1.assigned_networks + nic_2.assigned_networks
-        objects.NIC.replace_assigned_networks(nic_1, new_nets)
-        objects.NIC.replace_assigned_networks(nic_2, [])
+        new_nets = [
+            objects.NetworkGroup.get_by_uid(ng['id']) for ng in new_nets
+        ]
+        objects.NIC.assign_networks(nic_1, new_nets)
+        objects.NIC.assign_networks(nic_2, [])
 
         self.assertEqual(len(nic_1.assigned_networks), 5)
         self.assertEqual(len(nic_2.assigned_networks), 0)

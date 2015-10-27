@@ -164,7 +164,7 @@ class NeutronManager70(
                 'meta': ng.meta,
                 'gateway': ng.gateway
             }
-        admin_ng = cls.get_admin_network_group(node.id)
+        admin_ng = objects.NetworkGroup.get_admin_network_group(node.id)
         if admin_ng:
             networks[admin_ng.name] = {
                 'ip': cls.get_ip_w_cidr_prefix_len(
@@ -398,7 +398,7 @@ class NeutronManager70(
 
             # Default admin network has no node group
             if network == consts.NETWORKS.fuelweb_admin:
-                net_db = cls.get_admin_network_group(node.id)
+                net_db = objects.NetworkGroup.get_admin_network_group(node.id)
             else:
                 net_db = objects.NetworkGroup.get_from_node_group_by_name(
                     node.group_id, network)

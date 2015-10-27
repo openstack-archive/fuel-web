@@ -1284,6 +1284,30 @@ class Cluster(NailgunObject):
             instance.nodes if nodes is None else nodes
         )
 
+    @classmethod
+    def get_single_controller(cls, cluster_id):
+        return db().query(models.Node).filter_by(
+            cluster_id=cluster_id
+        ).filter(
+            models.Node.roles.any('controller')
+        ).first()
+
+    @classmethod
+    def get_network_groups_by_node_group(cls, instance_id):
+        query = (db().query(
+            models.Node.id,
+            models.NetworkGroup.id,
+            models.NetworkGroup.name,
+            models.NetworkGroup.meta)
+            .join(models.NodeGroup.nodes)
+            .join(models.NodeGroup.networks)
+            .filter(models.NodeGroup.cluster_id == instance_id,
+                    models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
+            .order_by(models.NetworkGroup.id)
+        )
+
+        return query
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

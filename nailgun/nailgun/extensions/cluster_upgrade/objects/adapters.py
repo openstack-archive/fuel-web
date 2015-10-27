@@ -79,8 +79,7 @@ class NailgunClusterAdapter(object):
                 for ng in self.cluster.network_groups)
 
     def get_admin_network_group(self):
-        manager = self.get_network_manager()
-        return manager.get_admin_network_group()
+        return objects.NetworkGroup.get_admin_network_group()
 
 
 class NailgunReleaseAdapter(object):
@@ -125,18 +124,18 @@ class NailgunNetworkManager(object):
         self.net_manager.assign_given_vips_for_net_groups(self.cluster, vips)
 
     def get_admin_network_group(self, node_id=None):
-        ng = self.net_manager.get_admin_network_group(node_id)
+        ng = objects.NetworkGroup.get_admin_network_group(node_id)
         return NailgunNetworkGroupAdapter(ng)
 
     def set_node_netgroups_ids(self, node, mapping):
-        return self.net_manager.set_node_netgroups_ids(node.node, mapping)
+        return objects.Node.set_netgroups_ids(node.node, mapping)
 
     def set_nic_assignment_netgroups_ids(self, node, mapping):
-        return self.net_manager.set_nic_assignment_netgroups_ids(
+        return objects.Node.set_nic_assignment_netgroups_ids(
             node.node, mapping)
 
     def set_bond_assignment_netgroups_ids(self, node, mapping):
-        return self.net_manager.set_bond_assignment_netgroups_ids(
+        return objects.Node.set_bond_assignment_netgroups_ids(
             node.node, mapping)
 
 

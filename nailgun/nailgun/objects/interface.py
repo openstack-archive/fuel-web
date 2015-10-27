@@ -30,17 +30,14 @@ class NIC(NailgunObject):
     serializer = BasicSerializer
 
     @classmethod
-    def replace_assigned_networks(cls, instance, assigned_nets):
+    def assign_networks(cls, instance, assigned_nets):
         """Replaces assigned networks list for specified interface.
 
         :param instance: Interface object
         :type instance: Interface model
         :returns: None
         """
-        net_ids = [net['id'] for net in assigned_nets]
-        ngs = db().query(models.NetworkGroup).filter(
-            models.NetworkGroup.id.in_(net_ids)).all()
-        instance.assigned_networks_list = ngs
+        instance.assigned_networks_list = assigned_nets
         db().flush()
 
 

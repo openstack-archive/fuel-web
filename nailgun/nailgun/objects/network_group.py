@@ -16,6 +16,7 @@
 
 from netaddr import IPNetwork
 
+from sqlalchemy.sql import or_
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -43,6 +44,50 @@ class NetworkGroup(NailgunObject):
             .filter_by(name=consts.NETWORKS.fuelweb_admin)\
             .filter_by(group_id=None)\
             .first()
+
+    @classmethod
+    def get_by_node_group(cls, node_group_id):
+        return db().query(models.NetworkGroup).filter_by(
+            group_id=node_group_id,
+        ).filter(
+            NetworkGroup.name != 'fuelweb_admin'
+        ).order_by(models.NetworkGroup.id).all()
+
+    @classmethod
+    def get_admin_network_group(cls, node_id=None):
+        """Method for receiving Admin NetworkGroup.
+
+        :type  fail_if_not_found: bool
+        :returns: Admin NetworkGroup or None.
+        :raises: errors.AdminNetworkNotFound
+        """
+        admin_ng = None
+        admin_ngs = db().query(models.NetworkGroup).filter_by(
+            name="fuelweb_admin",
+        )
+        if node_id:
+            node_db = db().query(models.Node).get(node_id)
+            admin_ng = admin_ngs.filter_by(group_id=node_db.group_id).first()
+
+        admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
+
+        if not admin_ng:
+            raise errors.AdminNetworkNotFound()
+        return admin_ng
+
+    @classmethod
+    def get_assigned_ips(cls, network_id):
+        return [x[0] for x in
+                db().query(
+                    models.IPAddr.ip_addr
+                ).filter(
+                    models.IPAddr.network == network_id,
+                    or_(
+                        models.IPAddr.node.isnot(None),
+                        models.IPAddr.vip_type.isnot(None)
+                    )
+                )]
+
 
     @classmethod
     def create(cls, data):

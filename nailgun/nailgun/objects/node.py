@@ -152,6 +152,11 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
+    def clear_bonds(cls, instance):
+        instance.bond_interfaces = []
+        db().flush()
+
+    @classmethod
     def set_bond_assignment_netgroups_ids(cls, instance, netgroups_id_mapping):
         """Set network group mapping for bond assignments
 

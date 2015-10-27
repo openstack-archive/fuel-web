@@ -40,6 +40,7 @@ class NIC(NailgunObject):
         :returns: None
         """
         instance.assigned_networks_list = networks
+        db().flush()
 
 
 class NICCollection(NailgunCollection):

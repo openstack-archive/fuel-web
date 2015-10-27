@@ -29,8 +29,17 @@ import sqlalchemy as sa  # noqa
 
 
 def upgrade():
-    pass
-
+    op.drop_constraint(
+        'node_nic_interfaces_parent_id_fkey',
+        'node_nic_interfaces',
+        type_='foreignkey'
+    )
+    op.create_foreign_key(
+        'node_nic_interfaces_parent_id_fkey',
+        'node_nic_interfaces', 'node_bond_interfaces',
+        ['parent_id'], ['id'],
+        ondelete='SET NULL'
+    )
 
 def downgrade():
     pass

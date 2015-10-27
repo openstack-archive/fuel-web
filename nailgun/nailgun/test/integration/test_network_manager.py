@@ -834,6 +834,20 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
                                     cluster.network_groups)), 0)
 
+    def test_clear_assigned_networks(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True},
+            ]
+        )
+
+        node = self.env.nodes[0]
+        self.env.network_manager.clear_assigned_networks(node)
+
+        for iface in node.interfaces:
+            self.assertEqual([], iface.assigned_networks_list)
+
 
 class TestNovaNetworkManager(BaseIntegrationTest):
 

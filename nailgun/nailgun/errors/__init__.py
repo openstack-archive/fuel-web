@@ -55,6 +55,7 @@ default_messages = {
     "ControllerInErrorState": ("One of the cluster controllers is in error "
                                "state, please, eliminate the problem prior "
                                "to proceeding further"),
+    "NodesNotBelongToCluster": "Trying to deploy nodes which not belong to current cluster",
 
     # mongo errors
     "ExtMongoCheckerError": "Mongo nodes shouldn`t be used with external mongo",

@@ -85,7 +85,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """
         net_manager = Cluster.get_network_manager(node.cluster)
         fixed_interface = net_manager._get_interface_by_network_name(
-            node.id, 'fixed')
+            node, 'fixed')
 
         attrs = {'fixed_interface': fixed_interface.name,
                  'vlan_interface': fixed_interface.name}

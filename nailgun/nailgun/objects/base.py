@@ -104,6 +104,12 @@ class NailgunObject(object):
         db().flush()
 
     @classmethod
+    def bulk_delete(cls, instances):
+        for instance in instances:
+            db().delete(instance)
+        db().commit()
+
+    @classmethod
     def save(cls, instance=None):
         """Save current changes for instance in DB.
 

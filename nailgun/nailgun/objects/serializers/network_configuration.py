@@ -39,7 +39,8 @@ class NetworkConfigurationSerializer(BasicSerializer):
     def serialize_net_groups_and_vips(cls, cluster):
         result = {}
         net_manager = objects.Cluster.get_network_manager(cluster)
-        nets = cluster.network_groups + [net_manager.get_admin_network_group()]
+        nets = cluster.network_groups + [
+            objects.NetworkGroup.get_admin_network_group()]
 
         result['networks'] = map(
             cls.serialize_network_group,

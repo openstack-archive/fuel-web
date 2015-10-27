@@ -247,7 +247,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['post_deployment'] = []
 
         provision_nodes = []
-        admin_net = self.env.network_manager.get_admin_network_group()
+        admin_net = objects.NetworkGroup.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join(
@@ -307,7 +307,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    objects.NetworkGroup.get_admin_network_group(n.id).cidr
                 }
             }
 
@@ -711,7 +711,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['post_deployment'] = []
 
         provision_nodes = []
-        admin_net = self.env.network_manager.get_admin_network_group()
+        admin_net = objects.NetworkGroup.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join(
@@ -771,7 +771,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    objects.NetworkGroup.get_admin_network_group(n.id).cidr
                 }
             }
 
@@ -1216,7 +1216,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['post_deployment'] = []
 
         provision_nodes = []
-        admin_net = self.env.network_manager.get_admin_network_group()
+        admin_net = objects.NetworkGroup.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join(
@@ -1276,7 +1276,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    objects.NetworkGroup.get_admin_network_group(n.id).cidr
                 }
             }
 

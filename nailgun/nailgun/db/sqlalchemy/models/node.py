@@ -359,21 +359,6 @@ class NodeBondInterface(Base):
 
         return self._apply_intersection(tmp, intersection_dict)
 
-    @offloading_modes.setter
-    def offloading_modes(self, new_modes):
-        new_modes_dict = \
-            NodeNICInterface.offloading_modes_as_flat_dict(new_modes)
-        for interface in self.slaves:
-            self._update_modes(interface.offloading_modes, new_modes_dict)
-            interface.offloading_modes.changed()
-
-    def _update_modes(self, modes, update_dict):
-        for mode in modes:
-            if mode['name'] in update_dict:
-                mode['state'] = update_dict[mode['name']]
-            if mode['sub']:
-                self._update_modes(mode['sub'], update_dict)
-
     def _intersect_offloading_dicts(self, dict1, dict2):
         result = dict()
         for mode in dict1:

@@ -1137,6 +1137,20 @@ class Cluster(NailgunObject):
             '1', '2'
         )
 
+    def has_bonds(cls, cluster_id):
+        return db().query(models.Node).filter(
+            models.Node.cluster_id == cluster_id
+        ).filter(
+            models.Node.bond_interfaces.any()).count() > 0
+
+    @classmethod
+    def get_single_controller(cls, cluster_id):
+        return db().query(models.Node).filter_by(
+            cluster_id=cluster_id
+        ).filter(
+            models.Node.roles.any('controller')
+        ).first()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

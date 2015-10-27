@@ -806,6 +806,20 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
                                     cluster.network_groups)), 0)
 
+    def test_clear_assigned_networks(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True},
+            ]
+        )
+
+        node = self.env.nodes[0]
+        self.env.network_manager.clear_assigned_networks(node)
+
+        for iface in node.interfaces:
+            self.assertEqual([], iface.assigned_networks_list)
+
 
 class TestNovaNetworkManager(BaseIntegrationTest):
 
@@ -1227,7 +1241,7 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         )
 
     def _check_nic_mapping(self, node, expected_mapping):
-        for nic in node.nic_interfaces + node.bond_interfaces:
+        for nic in node.interfaces:
             assigned_nets = [net['name'] for net in nic.assigned_networks]
             self.assertItemsEqual(assigned_nets, expected_mapping[nic.name])
 

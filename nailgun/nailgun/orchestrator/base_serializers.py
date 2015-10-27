@@ -19,9 +19,12 @@
 from copy import deepcopy
 from netaddr import IPNetwork
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
+from nailgun.network.manager import NetworkManager
+from nailgun import objects
 from nailgun.objects import Cluster
 from nailgun.objects import Node
 from nailgun.settings import settings
@@ -163,13 +166,40 @@ class NetworkDeploymentSerializer(object):
 
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
-        """Adds information about networks to each node."""
-        for node in Cluster.get_nodes_not_for_deletion(cluster):
-            netw_data = node.network_data
+        """Adds information about networks to each node
+
+        :param cluster: Cluster DB object
+        :param nodes: list of nodes data dicts
+        """
+        alien_nodes = []
+        for node in nodes:
+            cluster_id = node.get('cluster_id')
+            if cluster_id is not None and cluster_id != cluster.id:
+                alien_nodes.append(node)
+
+        if alien_nodes:
+            alien_names = ', '.join(n.get('name') for n in alien_nodes)
+            raise errors.NodesNotBelongToCluster(
+                'Nodes {0} not belongs to cluster {1}'.format(
+                    alien_names, cluster.id))
+
+        network_groups = cluster.network_groups
+        assign_public_to_all_nodes = \
+            objects.Cluster.should_assign_public_to_all_nodes(cluster)
+
+        nodes_db = Cluster.get_nodes_not_for_deletion(cluster)
+
+        # Creating nodes networks index by node id
+        nodes_networks_data = NetworkManager.get_nodes_networks(nodes_db)
+
+        for node in nodes_db:
+            netw_data = nodes_networks_data[node.id]
             addresses = {}
-            for net in node.cluster.network_groups:
-                if net.name == 'public' and \
-                        not Node.should_have_public_with_ip(node):
+
+            for net in network_groups:
+                if (net.name == consts.NETWORKS.public and
+                        not (assign_public_to_all_nodes or
+                             Node.should_have_public_with_ip(node))):
                     continue
                 if net.meta.get('render_addr_mask'):
                     addresses.update(cls.get_addr_mask(

@@ -15,39 +15,34 @@
 #    under the License.
 
 from collections import defaultdict
-
-from itertools import imap
 from itertools import islice
+import operator
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
-
 import six
-
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
-from sqlalchemy.sql import or_
 
-from nailgun import objects
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
-from nailgun.db.sqlalchemy.models import IPAddrRange
+from nailgun.db.sqlalchemy.models import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
+from nailgun import objects
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.settings import settings
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
-from nailgun.settings import settings
 
 
 class NetworkManager(object):
@@ -56,7 +51,8 @@ class NetworkManager(object):
     def get_admin_network_group_id(cls, node_id=None):
         """Method for receiving Admin NetworkGroup ID.
 
-        :type  fail_if_not_found: bool
+        :param node_id: Node id
+        :type  node_id: int
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
         """
@@ -66,13 +62,14 @@ class NetworkManager(object):
     def get_admin_network_group(cls, node_id=None):
         """Method for receiving Admin NetworkGroup.
 
-        :type  fail_if_not_found: bool
+        :param node_id: Node id
+        :type  node_id: int
         :returns: Admin NetworkGroup or None.
         :raises: errors.AdminNetworkNotFound
         """
         admin_ng = None
         admin_ngs = db().query(NetworkGroup).filter_by(
-            name="fuelweb_admin",
+            name=consts.NETWORKS.fuelweb_admin,
         )
         if node_id:
             node_db = db().query(Node).get(node_id)
@@ -102,10 +99,8 @@ class NetworkManager(object):
     def assign_admin_ips(cls, nodes):
         """Method for assigning admin IP addresses to nodes.
 
-        :param node_id: Node database ID.
-        :type  node_id: int
-        :param num: Number of IP addresses for node.
-        :type  num: int
+        :param nodes: Nodes DB objects
+        :type  nodes: list
         :returns: None
         """
         # Check which nodes need ips
@@ -113,18 +108,27 @@ class NetworkManager(object):
         # to one of the ranges of required to be able to reuse admin ip address
         # also such approach is backward compatible
         nodes_need_ips = defaultdict(list)
+
+        # Creating index for admin network groups by nodegroup id
+        admin_nw_groups_idx = IndexedData.get_network_groups_index(
+            names=(consts.NETWORKS.fuelweb_admin,))
+
+        # Creating index for ips by node id and network id
+        ips_node_network_idx = IndexedData.get_ips_node_nw_group_index(
+            db().query(IPAddr))
+
         for node in nodes:
-            node_id = node.id
-            admin_net = cls.get_admin_network_group(node_id)
-            node_admin_ips = db().query(IPAddr).filter_by(
-                node=node_id, network=admin_net.id)
-            logger.debug(u"Trying to assign admin ip: node=%s", node_id)
-            if not db().query(node_admin_ips.exists()).scalar():
+            admin_net = IndexedData.get_admin_nw_group(
+                admin_nw_groups_idx, node)
+            ips_key = IndexedData.ips_node_nw_group_key(node, admin_net)
+            node_admin_ips = ips_node_network_idx[ips_key]
+            logger.debug(u"Trying to assign admin ip: node=%s", node.id)
+            if not node_admin_ips:
                 reusable_ip = cls.reusable_ip_address(node, admin_net)
                 if reusable_ip:
                     db().add(reusable_ip)
                 else:
-                    nodes_need_ips[admin_net].append(node_id)
+                    nodes_need_ips[admin_net].append(node.id)
         db().flush()
 
         for admin_net, nodes in six.iteritems(nodes_need_ips):
@@ -138,10 +142,10 @@ class NetworkManager(object):
 
     @classmethod
     def get_node_networks_ips(cls, node):
-        return dict(db().query(NetworkGroup.name, IPAddr.ip_addr).\
-            filter(NetworkGroup.group_id == node.group_id).\
-            filter(IPAddr.network == NetworkGroup.id).\
-            filter(IPAddr.node == node.id))
+        return dict(db().query(NetworkGroup.name, IPAddr.ip_addr).
+                    filter(NetworkGroup.group_id == node.group_id).
+                    filter(IPAddr.network == NetworkGroup.id).
+                    filter(IPAddr.node == node.id))
 
     @classmethod
     def set_node_networks_ips(cls, node, ips_by_network_name):
@@ -191,8 +195,8 @@ class NetworkManager(object):
         it remains unchanged. If one of the nodes is the
         node from other cluster, this func will fail.
 
-        :param node_ids: List of nodes IDs in database.
-        :type  node_ids: list
+        :param nodes: List of nodes DB objects
+        :type  nodes: list
         :param network_name: Network name
         :type  network_name: str
         :returns: None
@@ -217,37 +221,53 @@ class NetworkManager(object):
                 (network_name, cluster_id)
             )
 
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        default_group_id = objects.Cluster.get_default_group(cluster).id
+
         # Check which nodes need ips
         nodes_need_ips = defaultdict(list)
+
+        # Creating index for network groups by nodegroup id
+        nw_group_nodegroup_id_idx = IndexedData.build_index(
+            network_groups, operator.attrgetter('group_id'))
+
+        # Creating index for non admin ips by node id and network id
+        non_admin_ips_node_network_idx = IndexedData.\
+            get_ips_node_nw_group_index(cls._get_ips_except_admin())
+
+        def get_index_in_network_group_id_idx(node_db):
+            """Returns key in networks index for given Node DB object
+
+            If node doesn't belongs to any nodegroup default nodegroup
+            will be selected
+
+            :param node_db: Node DB object
+            :return: key for networks index
+            """
+            g_id = node_db.group_id or default_group_id
+            nw = (nw_group_nodegroup_id_idx.get(g_id) or
+                  nw_group_nodegroup_id_idx.get(None))
+            return '{0}_{1}'.format(node_db.id, nw.id)
+
         for node in nodes:
             node_id = node.id
 
             if network_name == 'public' and \
                     not objects.Node.should_have_public_with_ip(node):
                 continue
-            group_id = (node.group_id or
-                objects.Cluster.get_default_group(node.cluster).id)
 
-            network = network_groups.filter(
-                or_(
-                    NetworkGroup.group_id == group_id,
-                    NetworkGroup.group_id == None  # flake8: noqa
-                )
-            ).first()
+            group_id = node.group_id or default_group_id
+            network = (nw_group_nodegroup_id_idx.get(group_id) or
+                       nw_group_nodegroup_id_idx.get(None))
 
-            node_ips = imap(
-                lambda i: i.ip_addr,
-                cls._get_ips_except_admin(
-                    node_id=node_id,
-                    network_id=network.id
-                )
-            )
+            idx_key = get_index_in_network_group_id_idx(node)
+            node_ips = non_admin_ips_node_network_idx[idx_key]
 
             # check if any of node_ips in required ranges
             ip_already_assigned = False
 
             for ip in node_ips:
-                if cls.check_ip_belongs_to_net(ip, network):
+                if cls.check_ip_belongs_to_net(ip.ip_addr, network):
                     logger.info(
                         u"Node id='{0}' already has an IP address "
                         "inside '{1}' network.".format(
@@ -266,25 +286,27 @@ class NetworkManager(object):
         # Get and assign ips for nodes
         for network, nodes in six.iteritems(nodes_need_ips):
             free_ips = cls.get_free_ips(network, len(nodes))
-            for ip, n in zip(free_ips, nodes):
+            ip_addrs = []
+            for ip, n_id in zip(free_ips, nodes):
                 logger.info(
                     "Assigning IP for node '{0}' in network '{1}'".format(
-                        n,
+                        n_id,
                         network_name
                     )
                 )
-                ip_db = IPAddr(node=n,
-                               ip_addr=ip,
-                               network=network.id)
-                db().add(ip_db)
+                ip_addrs.append({'node': n_id, 'ip_addr': ip,
+                                 'network': network.id})
+            # TODO(akislitsky): use bulk_insert_mappings after
+            # SQLAlchemy >= 1.0.0 will be used
+            db().execute(IPAddr.__table__.insert(), ip_addrs)
             db().flush()
 
     @classmethod
     def assign_vip(cls, nodegroup, network_name,
                    vip_type=consts.NETWORK_VIP_TYPES.haproxy):
         """Idempotent assignment of VirtualIP addresses to nodegroup.
-        Returns VIP for given nodegroup and network.
 
+        Returns VIP for given nodegroup and network.
         It's required for HA deployment to have IP address
         not assigned to any of nodes. Currently we need one
         VIP per network in cluster. If cluster already has
@@ -449,9 +471,10 @@ class NetworkManager(object):
 
     @classmethod
     def check_ips_belong_to_ranges(cls, ips, ranges):
-        """
-        Returns *True* if every of provided IPs belongs \
-        to any of provided ranges.
+        """Checks ips belong to ranges
+
+        Returns *True* if every of provided IPs belongs to any of
+        provided ranges.
 
         :param ips: list of IPs (e.g. ['192.168.1.1', '127.0.0.1'], ...)
         :param ranges: list of IP ranges (e.g. [(first_ip, last_ip), ...])
@@ -467,6 +490,7 @@ class NetworkManager(object):
     @classmethod
     def _iter_free_ips(cls, ip_ranges, ips_in_use):
         """Iterator over free IP addresses in given IP ranges.
+
         IP addresses which exist in ips_in_use are excluded from output.
         """
         for ip_range in ip_ranges:
@@ -477,9 +501,10 @@ class NetworkManager(object):
 
     @classmethod
     def get_free_ips_from_ranges(cls, net_name, ip_ranges, ips_in_use, count):
-        """Returns list of free IP addresses for given IP ranges. Required
-        quantity of IPs is set in "count". IP addresses which exist in
-        ips_in_use or exist in DB are excluded.
+        """Returns list of free IP addresses for given IP ranges.
+
+        Required quantity of IPs is set in "count". IP addresses which exist
+        in ips_in_use or exist in DB are excluded.
         """
         result = []
         ip_iterator = cls._iter_free_ips(ip_ranges, ips_in_use)
@@ -511,8 +536,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_free_ips(cls, network_group, num=1, ips_in_use=None):
-        """Returns list of free IP addresses for given Network Group
-        """
+        """Returns list of free IP addresses for given Network Group"""
         ips_in_use = ips_in_use or set()
         ip_ranges = [IPRange(r.first, r.last)
                      for r in network_group.ip_ranges]
@@ -522,8 +546,7 @@ class NetworkManager(object):
     @classmethod
     def _get_ips_except_admin(cls, node_id=None,
                               network_id=None, joined=False):
-        """Method for receiving IP addresses for node or network
-        excluding Admin Network IP address.
+        """Returns IP addresses for node or network wo Admin Network IPs
 
         :param node_id: Node database ID.
         :type  node_id: int
@@ -617,8 +640,9 @@ class NetworkManager(object):
 
     @classmethod
     def get_default_interfaces_configuration(cls, node):
-        """Returns default Networks-to-NICs assignment for given node based on
-        networks' configuration and metadata, default NICs'
+        """Returns default Networks-to-NICs assignment for given node
+
+        Based on networks' configuration and metadata, default NICs'
         interface_properties, with no bonds configured.
         """
         nics = []
@@ -639,7 +663,7 @@ class NetworkManager(object):
         ng_wo_admin_ids = \
             ng_ids ^ set([cls.get_admin_network_group_id(node.id)])
         pxe_iface = next(six.moves.filter(
-            lambda i: i.pxe == True,
+            lambda i: i.pxe is True,
             node.nic_interfaces
         ), None)
         for nic in node.nic_interfaces:
@@ -730,19 +754,24 @@ class NetworkManager(object):
 
     @classmethod
     def get_node_networkgroups_ids(cls, node):
-        """Get ids of all networks assigned to node's interfaces
-        """
+        """Get ids of all networks assigned to node's interfaces"""
         return [ng.id for nic in node.interfaces
                 for ng in nic.assigned_networks_list]
 
     @classmethod
-    def _get_admin_node_network(cls, node):
-        node_db = db().query(Node).get(node.id)
-        net = cls.get_admin_network_group(node_id=node.id)
+    def _get_admin_node_network_data(cls, node, admin_nw_groups_nodegroup_idx,
+                                     ips_node_network_idx):
+        net = IndexedData.get_admin_nw_group(admin_nw_groups_nodegroup_idx,
+                                             node)
         net_cidr = IPNetwork(net.cidr)
-        ip_addr = cls.get_admin_ip_for_node(node.id)
-        if ip_addr:
+
+        ips_key = IndexedData.ips_node_nw_group_key(node, net)
+        node_admin_ips = ips_node_network_idx[ips_key]
+        if node_admin_ips:
+            ip_addr = node_admin_ips[0].ip_addr
             ip_addr = cls.get_ip_w_cidr_prefix_len(ip_addr, net)
+        else:
+            ip_addr = None
 
         return {
             'name': net.name,
@@ -787,7 +816,7 @@ class NetworkManager(object):
     @classmethod
     def _get_networks_except_admin(cls, networks):
         return (net for net in networks
-                if net.name != 'fuelweb_admin')
+                if net.name != consts.NETWORKS.fuelweb_admin)
 
     @classmethod
     def get_node_networks(cls, node):
@@ -809,9 +838,117 @@ class NetworkManager(object):
                     network_data.append(cls._get_network_data_wo_ip(
                         node, interface, net))
 
-        network_data.append(cls._get_admin_node_network(node))
+        admin_nw_groups_nodegroup_idx = \
+            IndexedData.get_admin_networks_nodegroup_index()
+        ips_node_network_idx = IndexedData.get_ips_node_nw_group_index(
+            db().query(IPAddr).filter(IPAddr.node.in_((node.id,))))
+
+        admin_network_data = cls._get_admin_node_network_data(
+            node, admin_nw_groups_nodegroup_idx, ips_node_network_idx)
+        network_data.append(admin_network_data)
 
         return network_data
+
+    @classmethod
+    def _get_network_data(cls, node, network_groups, interface,
+                          ips_node_index):
+        """Gets node network data from indexes
+
+        :param node: node DB object
+        :param network_groups: network groups DB objects list
+        :param interface: DB nic or bond object
+        :param ips_node_index: indexed ips by node id
+        :return: list of network data dicts
+        """
+        result = []
+        for net in network_groups:
+            ip = None
+            for cur_ip in ips_node_index[node.id]:
+                if cur_ip.network == net.id and node.group_id == net.group_id:
+                    ip = cur_ip
+                    break
+
+            if ip is not None:
+                result.append(cls._get_network_data_with_ip(
+                    node, interface, net, ip))
+            else:
+                result.append(cls._get_network_data_wo_ip(
+                    node, interface, net))
+        return result
+
+    @classmethod
+    def get_nodes_networks(cls, nodes):
+        """High performance nodes networks data fetcher
+
+        Uses indexed data.
+
+        :param nodes: nodes DB objects
+        :return: dict of {node_id: [network_data]}
+        """
+        result = {}
+        nodes_ids = set(node.id for node in nodes)
+
+        # Creating network groups index by network group id
+        nw_groups_idx = IndexedData.get_network_groups_index(index_by='id')
+
+        # Creating admin network groups index by nodegroup id
+        admin_nw_groups_nodegroup_idx = \
+            IndexedData.get_admin_networks_nodegroup_index()
+
+        # Creating index for nodes nic ifaces
+        nic_ifaces_idx = IndexedData.get_nic_ifaces_index(nodes)
+        nic_ifaces_ids = set(IndexedData.extract_attr_from_dict_of_lists(
+            nic_ifaces_idx))
+        nw_groups_nic_idx = IndexedData.get_network_groups_nic_iface_index(
+            nw_groups_idx, nic_ifaces_ids=nic_ifaces_ids)
+
+        # Creating indexes for nodes bonds
+        bonds_idx = IndexedData.get_bonds_index(nodes)
+        bonds_ids = set(IndexedData.extract_attr_from_dict_of_lists(
+            bonds_idx))
+        nw_groups_bond_idx = IndexedData.get_network_groups_bond_index(
+            nw_groups_idx, bonds_ids=bonds_ids)
+
+        # Creating ips index by node id
+        ips_node_index = IndexedData.get_ips_node_index(
+            nodes_ids=nodes_ids)
+
+        # Creating index for ips by node id and network id
+        ips_node_network_idx = IndexedData.get_ips_node_nw_group_index(
+            db().query(IPAddr).filter(IPAddr.node.in_(nodes_ids)))
+
+        for node in nodes:
+            if node.cluster_id is None:
+                result[node.id] = []
+                continue
+
+            network_data = []
+
+            for interface in nic_ifaces_idx[node.id]:
+                network_groups = nw_groups_nic_idx[interface.id]
+                networks_wo_admin = cls._get_networks_except_admin(
+                    network_groups)
+
+                nw_data = cls._get_network_data(node, networks_wo_admin,
+                                                interface, ips_node_index)
+                network_data.extend(nw_data)
+
+            for interface in bonds_idx[node.id]:
+                network_groups = nw_groups_bond_idx[interface.id]
+                networks_wo_admin = cls._get_networks_except_admin(
+                    network_groups)
+
+                nw_data = cls._get_network_data(node, networks_wo_admin,
+                                                interface, ips_node_index)
+                network_data.extend(nw_data)
+
+            admin_node_network = cls._get_admin_node_network_data(
+                node, admin_nw_groups_nodegroup_idx, ips_node_network_idx)
+            network_data.append(admin_node_network)
+
+            result[node.id] = network_data
+
+        return result
 
     @classmethod
     def _update_attrs(cls, node_data):
@@ -883,8 +1020,9 @@ class NetworkManager(object):
 
     @classmethod
     def update_interfaces_info(cls, node, update_by_agent=False):
-        """Update interfaces in case of correct interfaces
-        in meta field in node's model
+        """Update interfaces info
+
+        In case of correct interfaces in meta field in node's model
         """
         try:
             cls.check_interfaces_correctness(node)
@@ -955,7 +1093,8 @@ class NetworkManager(object):
 
     @classmethod
     def check_interfaces_correctness(cls, node):
-        """Check that
+        """Check node interfaces:
+
         * interface list in meta field is not empty
         * at least one interface has ip which
           includes to admin subnet. It can happens in
@@ -1069,8 +1208,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_admin_ip_for_node(cls, node_id):
-        """Returns first admin IP address for node
-        """
+        """Returns first admin IP address for node"""
         admin_net_id = cls.get_admin_network_group_id(node_id=node_id)
         admin_ip = db().query(IPAddr).order_by(
             IPAddr.id
@@ -1084,8 +1222,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_admin_ips_for_interfaces(cls, node):
-        """Returns mapping admin {"inteface name" => "admin ip"}
-        """
+        """Returns mapping admin {"inteface name" => "admin ip"}"""
         admin_net_id = cls.get_admin_network_group_id(node)
         admin_ips = set([
             i.ip_addr for i in db().query(IPAddr).
@@ -1116,7 +1253,7 @@ class NetworkManager(object):
     def get_admin_interface(cls, node):
         try:
             return cls._get_interface_by_network_name(
-                node, 'fuelweb_admin')
+                node, consts.NETWORKS.fuelweb_admin)
         except errors.CanNotFindInterface:
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
@@ -1131,9 +1268,7 @@ class NetworkManager(object):
 
     @classmethod
     def _get_interface_by_network_name(cls, node, network_name):
-        """Return network device which has appointed
-        network with specified network name
-        """
+        """Return network device by specified network name"""
         if not isinstance(node, Node):
             node = db().query(Node).get(node)
         for interface in node.interfaces:
@@ -1213,14 +1348,12 @@ class NetworkManager(object):
 
     @classmethod
     def is_cidr_intersection(cls, cidr1, cidr2):
-        """Checks intersection of two CIDRs (IPNetwork objects)
-        """
+        """Checks intersection of two CIDRs (IPNetwork objects)"""
         return cidr2 in cidr1 or cidr1 in cidr2
 
     @classmethod
     def is_range_intersection(cls, range1, range2):
-        """Checks intersection of two IP ranges (IPNetwork or IPRange objects)
-        """
+        """Checks intersection of IP ranges (IPNetwork or IPRange objects)"""
         return range1.first <= range2.last and range2.first <= range1.last
 
     @classmethod
@@ -1290,13 +1423,15 @@ class NetworkManager(object):
             if net.get('restrictions'):
                 present_nets = filter(lambda ng: ng.name == net['name'],
                                       cluster.network_groups)
-                if cls.check_network_restrictions(cluster, net['restrictions']):
+                if cls.check_network_restrictions(
+                        cluster, net['restrictions']):
                     for ng in present_nets:
                         objects.NetworkGroup.delete(ng)
                 else:
                     if not len(present_nets):
                         for node_group in cluster.node_groups:
-                            cls.create_network_group(cluster, net, node_group.id)
+                            cls.create_network_group(
+                                cluster, net, node_group.id)
 
     @classmethod
     def create_network_group(cls, cluster, net, gid=None):
@@ -1435,8 +1570,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_default_gateway(cls, node_id):
-        """Returns GW from Admin network if it's set, else returns Admin IP.
-        """
+        """Returns GW from Admin network if it's set, else returns Admin IP"""
         return cls.get_admin_network_group(node_id).gateway \
             or settings.MASTER_IP
 
@@ -1444,9 +1578,9 @@ class NetworkManager(object):
     def get_networks_not_on_node(cls, node, networks=None):
         networks = networks or cls.get_node_networks(node)
         node_net = [(n['name'], n['cidr'])
-                for n in networks if n.get('cidr')]
+                    for n in networks if n.get('cidr')]
         all_nets = [(n.name, n.cidr)
-                for n in node.cluster.network_groups if n.cidr]
+                    for n in node.cluster.network_groups if n.cidr]
 
         admin_net = cls.get_admin_network_group()
         all_nets.append((admin_net.name, admin_net.cidr))
@@ -1501,6 +1635,7 @@ class NetworkManager(object):
     @classmethod
     def find_nic_assoc_with_ng(cls, node, network_group):
         """Will find iface on node that is associated with network_group.
+
         If interface is a part of bond - check network on that bond
         """
         for iface in node.nic_interfaces:
@@ -1525,21 +1660,18 @@ class NetworkManager(object):
 
     @classmethod
     def get_ip_w_cidr_prefix_len(cls, ip, network_group):
-        """Returns IP with address space prefix, e.g. "10.20.0.1/24"
-        """
+        """Returns IP with address space prefix, e.g. "10.20.0.1/24"""
         return "{0}/{1}".format(ip, IPNetwork(network_group.cidr).prefixlen)
 
     @classmethod
     def get_assigned_ips_by_network_id(cls, network_id):
-        """Returns IPs related to network with provided ID.
-        """
+        """Returns IPs related to network with provided ID"""
         return [x[0] for x in
                 db().query(IPAddr.ip_addr).filter_by(
                     network=network_id)]
 
 
 class AllocateVIPs70Mixin(object):
-
 
     @classmethod
     def _build_advanced_vip_info(cls, vip_info, role, address):
@@ -1549,7 +1681,6 @@ class AllocateVIPs70Mixin(object):
                 'node_roles': vip_info.get('node_roles',
                                            ['controller',
                                             'primary-controller'])}
-
 
     @classmethod
     def find_network_role_by_id(cls, cluster, role_id):
@@ -1628,6 +1759,7 @@ class AllocateVIPs70Mixin(object):
     @classmethod
     def assign_vips_for_net_groups_for_api(cls, cluster):
         """Calls cls.assign_vip for all vips in network roles.
+
         Returns dict with vip definitions in API compatible format::
 
             {
@@ -1663,6 +1795,7 @@ class AllocateVIPs70Mixin(object):
     @classmethod
     def assign_vips_for_net_groups(cls, cluster):
         """Calls cls.assign_vip for all vips in network roles.
+
         To be used for the output generation for orchestrator.
         Returns dict with vip definitions like::
 
@@ -1696,11 +1829,13 @@ class AllocateVIPs70Mixin(object):
 
     @classmethod
     def check_unique_vip_names_for_cluster(cls, cluster):
-        """ Detect situation when VIPs with same names
-        are present in vip_info. We must stop processing
-        immediately because rewritting of existing VIP data
-        by another VIP info could lead to failed deployment
+        """Detects same VIPs for the cluster.
 
+        We must stop processing immediately if VIPs with same names
+        are present in vip_info. Because rewriting of existing VIP data
+        by another VIP info could lead to failed deployment.
+
+        :param cluster: cluster DB object
         """
         vip_names = []
         duplicate_vip_names = set()
@@ -1721,3 +1856,192 @@ class AllocateVIPs70Mixin(object):
                 "Conflicting names: {1}"
                 .format(cluster.id, ', '.join(duplicate_vip_names))
             )
+
+
+class IndexedData(object):
+    @staticmethod
+    def build_index(collection, key_getter):
+        """Builds index on collection by keys, returned by key_getter
+
+        :param collection: source collection
+        :param key_getter: function for getting index keys
+        :return: dict of {key: collection_item}
+        """
+        return dict((key_getter(obj), obj) for obj in collection)
+
+    @staticmethod
+    def build_index_of_lists(collection, key_getter):
+        """Builds index on collection by keys, returned by key_getter
+
+        :param collection: source collection
+        :param key_getter: function for getting index keys
+        :return: dict of lists {key: [collection_items]}
+        """
+        result = defaultdict(list)
+        for obj in collection:
+            result[key_getter(obj)].append(obj)
+        return result
+
+    @staticmethod
+    def extract_attr_from_dict_of_lists(
+            d, attrgetter=operator.attrgetter('id')):
+        """Extracts attributes from dict of object lists
+
+        :param d: dict of {key: [items]}
+        :param attrgetter: attribute getter applied for items
+        :return: list of items attributes: [item1.attr, item2.attr, ...]
+        """
+        for objs in six.itervalues(d):
+            for obj in objs:
+                yield attrgetter(obj)
+
+    @staticmethod
+    def get_network_groups_index(names=None, index_by='group_id'):
+        """Returns network groups indexed by 'index_by'
+
+        :param names: list of network groups names to be filtered
+        :param index_by: key for indexing
+        :return: dict of {index_by: network group}
+        """
+        nw_groups = db().query(NetworkGroup)
+        if names is not None:
+            nw_groups = nw_groups.filter(
+                NetworkGroup.name.in_(names))
+        return IndexedData.build_index(
+            nw_groups, operator.attrgetter(index_by))
+
+    @staticmethod
+    def get_admin_nw_group(admin_networks_index, node_db):
+        """Returns admin network group for given node
+
+        :param admin_networks_index: admin networks indexed by nodegroup id
+        :param node_db: Node DB object
+        :return: NetworkGroup DB object
+        """
+        node_admin_nw_group = (admin_networks_index.get(node_db.group_id) or
+                               admin_networks_index.get(None))
+        if node_admin_nw_group is None:
+            raise errors.AdminNetworkNotFound()
+        return node_admin_nw_group
+
+    @staticmethod
+    def get_nic_ifaces_index(nodes):
+        """Returns nic interfaces indexed by node_id
+
+        :param nodes: nodes DB objects
+        :return: dict of lists {node_id: [nic interfaces]}
+        """
+        nodes_ids = set(n.id for n in nodes)
+        nic_ifaces = db().query(NodeNICInterface).filter(
+            NodeNICInterface.node_id.in_(nodes_ids))
+
+        return IndexedData.build_index_of_lists(
+            nic_ifaces, operator.attrgetter('node_id'))
+
+    @staticmethod
+    def get_bonds_index(nodes):
+        """Returns bonds indexed by node_id
+
+        :param nodes: nodes DB objects
+        :return: dict of lists {node_id: [nic interfaces]}
+        """
+        nodes_ids = set(n.id for n in nodes)
+        bonds = db().query(NodeBondInterface).filter(
+            NodeNICInterface.node_id.in_(nodes_ids))
+
+        return IndexedData.build_index_of_lists(
+            bonds, operator.attrgetter('node_id'))
+
+    @staticmethod
+    def _ifaces_network_groups_index(network_groups_index, assignment_model,
+                                     id_getter, ids=None):
+        """Implementation of fetching network groups index
+
+        Index can be built by nic iface or bond id
+
+        :param network_groups_index: indexed by id network groups
+        :param assignment_model: SQLAlchemy nic of bonds assignments model
+        :param id_getter: index key getter
+        :param ids: object ids to be filtered
+        :return: dict of {id_getter: [network groups]}
+        """
+        assignments = db().query(assignment_model)
+        if ids is not None:
+            assignments = assignments.filter(
+                id_getter(assignment_model).in_(ids)
+            )
+        result = defaultdict(list)
+        for assignment in assignments:
+            obj_id = id_getter(assignment)
+            result[obj_id].append(
+                network_groups_index[assignment.network_id])
+        return result
+
+    @staticmethod
+    def get_network_groups_nic_iface_index(network_groups_index,
+                                           nic_ifaces_ids=None):
+        """Returns network groups indexed by nic iface id
+
+        :param network_groups_index: network groups index by id
+        :param nic_ifaces_ids: nic ifaces ids to be filtered
+        :return: indexed network groups: {nic.id: [network groups]}
+        """
+        return IndexedData._ifaces_network_groups_index(
+            network_groups_index, NetworkNICAssignment,
+            operator.attrgetter('interface_id'), ids=nic_ifaces_ids)
+
+    @staticmethod
+    def get_network_groups_bond_index(network_groups_index,
+                                      bonds_ids=None):
+        """Returns network groups indexed by bond id
+
+        :param network_groups_index: network groups index by id
+        :param bonds_ids: nic bonds ids to be filtered
+        :return: indexed network groups: {bond.id: [network groups]}
+        """
+        return IndexedData._ifaces_network_groups_index(
+            network_groups_index, NetworkBondAssignment,
+            operator.attrgetter('bond_id'), ids=bonds_ids)
+
+    @staticmethod
+    def get_ips_node_index(nodes_ids=None):
+        """Returns ips indexed by node id
+
+        :param nodes_ids: nodes ids to be filtered
+        :return: dict of {node.id: [ips]}
+        """
+        ips = db().query(IPAddr)
+        if nodes_ids is not None:
+            ips = ips.filter(IPAddr.node.in_(nodes_ids))
+        return IndexedData.build_index_of_lists(
+            ips, operator.attrgetter('node'))
+
+    @staticmethod
+    def get_ips_node_nw_group_index(ips):
+        """Returns ips indexed by node id and network id
+
+        :param ips: ips DB objects to be indexed
+        :return: dict of {node.id_network.id: [ips]}
+        """
+
+        def ip_key_getter(obj):
+            return '{0}_{1}'.format(obj.node, obj.network)
+
+        return IndexedData.build_index_of_lists(
+            ips, ip_key_getter
+        )
+
+    @staticmethod
+    def ips_node_nw_group_key(node, network):
+        """Returns key for ips index for given node and network
+
+        :param node: Node DB object
+        :param network: network DB object
+        :return: key for ips index
+        """
+        return '{0}_{1}'.format(node.id, network.id)
+
+    @staticmethod
+    def get_admin_networks_nodegroup_index():
+        return IndexedData.get_network_groups_index(
+            names=(consts.NETWORKS.fuelweb_admin,), index_by='group_id')

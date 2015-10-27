@@ -66,6 +66,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.objects import Cluster
 from nailgun.objects import ClusterPlugins
 from nailgun.objects import MasterNodeSettings
+from nailgun.objects import NetworkGroup
 from nailgun.objects import Node
 from nailgun.objects import NodeGroup
 from nailgun.objects import OpenstackConfig
@@ -651,7 +652,7 @@ class EnvironmentManager(object):
             if self.network_manager.is_ip_belongs_to_admin_subnet(ip)]
 
         if not admin_ips:
-            admin_cidr = self.network_manager.get_admin_network_group().cidr
+            admin_cidr = NetworkGroup.get_admin_network_group().cidr
             interfaces[0]['ip'] = str(IPNetwork(admin_cidr).ip)
 
     def set_interfaces_in_meta(self, meta, interfaces):

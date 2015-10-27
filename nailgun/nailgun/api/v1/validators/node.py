@@ -227,6 +227,7 @@ class NodeValidator(BasicValidator):
                 log_message=True
             )
 
+        existent_node = None
         q = db().query(Node)
         if "mac" in d:
             existent_node = q.filter_by(mac=d["mac"].lower()).first() \
@@ -244,6 +245,9 @@ class NodeValidator(BasicValidator):
                     "Invalid ID specified",
                     log_message=True
                 )
+
+        if not existent_node:
+            existent_node = instance
 
         if d.get("hostname") is not None:
             if instance:
@@ -274,7 +278,14 @@ class NodeValidator(BasicValidator):
                 raise errors.InvalidData(
                     "Cannot assign node group (ID={0}) to node {1}. "
                     "The specified node group does not exist."
-                    .format(d["group_id"], d.get("id"))
+                    .format(d["group_id"], existent_node.get("id"))
+                )
+
+            if existent_node and existent_node.cluster.id != ng.cluster.id:
+                raise errors.InvalidData(
+                    "Cannot assign node group (ID={0}) to node {1}. "
+                    "Node belongs to other cluster than node group"
+                    .format(d["group_id"], existent_node.get("id"))
                 )
 
         return d

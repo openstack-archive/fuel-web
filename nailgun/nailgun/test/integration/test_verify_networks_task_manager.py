@@ -74,7 +74,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         nets = resp.json_body
 
-        admin_ng = self.env.network_manager.get_admin_network_group()
+        admin_ng = objects.NetworkGroup.get_admin_network_group()
 
         # find first non-admin network
         network = next((

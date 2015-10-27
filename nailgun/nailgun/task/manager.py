@@ -423,7 +423,6 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 supertask.uuid
             )
         )
-
     def check_before_deployment(self, supertask):
         """Performs checks before deployment
 

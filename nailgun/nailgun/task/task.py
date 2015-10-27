@@ -142,7 +142,8 @@ class DeploymentTask(object):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
         deployment_tasks = deployment_tasks or []
 
-        nodes_ids = [n.id for n in nodes]
+        nodes_ids = set(n.id for n in nodes)
+
         for n in db().query(Node).filter_by(
                 cluster=task.cluster).order_by(Node.id):
 

@@ -320,3 +320,37 @@ class TestNodeGroups(BaseIntegrationTest):
             3,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
+
+    def test_assign_nodegroup_to_node_in_another_cluster(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[{
+                'roles': [],
+                'pending_roles': ['controller'],
+                'pending_addition': True,
+                'api': True}]
+        )
+
+        empty_cluster = self.env.create_cluster(
+            net_provider='neutron',
+            net_segment_type='gre'
+        )
+        node = self.env.nodes[0]
+
+        resp = self.env.create_node_group(cluster_id=empty_cluster.get('id'))
+        ng_id = resp.json_body['id']
+
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node['id']}),
+            json.dumps({'group_id': ng_id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        message = resp.json_body['message']
+        self.assertEquals(resp.status_code, 400)
+        self.assertRegexpMatches(message, 'Cannot assign node group')

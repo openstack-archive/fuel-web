@@ -21,7 +21,6 @@ from itertools import product
 import netaddr
 
 from nailgun import consts
-from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
@@ -44,8 +43,8 @@ class NetworkCheck(object):
         self.data = data
         self.net_man = objects.Cluster.get_network_manager(self.cluster)
         self.net_provider = self.cluster.net_provider
-        admin_ng = self.net_man.get_admin_network_group()
-        fields = models.NetworkGroup.__mapper__.columns.keys() + ['meta']
+        admin_ng = objects.NetworkGroup.get_admin_network_group()
+        fields = objects.NetworkGroup.fields()
         net = NetworkConfigurationSerializer.serialize_network_group(admin_ng,
                                                                      fields)
         # change Admin name for UI

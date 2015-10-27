@@ -428,6 +428,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             // Network
             function(cluster) {
                 var networkVerificationTask = cluster.task({group: 'network'}),
+                    isMultiRack = cluster.get('networkConfiguration').get('networks').length > 5,
                     makeComponent = _.bind(function(text, isError) {
                         var span = (
                             <span>
@@ -441,7 +442,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         return isError ? {error: [span]} : {warning: [span]};
                     }, this);
 
-                if (_.isUndefined(networkVerificationTask)) {
+                if (isMultiRack) {
+                    return null;
+                } else if (_.isUndefined(networkVerificationTask)) {
                     return makeComponent(i18n(this.ns + 'verification_not_performed'));
                 } else if (networkVerificationTask.match({status: 'error'})) {
                     return makeComponent(i18n(this.ns + 'verification_failed'), true);

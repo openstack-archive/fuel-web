@@ -15,17 +15,18 @@
 #    under the License.
 
 from nailgun.db.sqlalchemy.models import plugin_link as plugin_link_db_model
-from nailgun.objects import base
+from nailgun.objects.base import NailgunCollection
+from nailgun.objects.base import NailgunObject
 from nailgun.objects.serializers import plugin_link
 
 
-class PluginLink(base.NailgunObject):
+class PluginLink(NailgunObject):
 
     model = plugin_link_db_model.PluginLink
     serializer = plugin_link.PluginLinkSerializer
 
 
-class PluginLinkCollection(base.NailgunCollection):
+class PluginLinkCollection(NailgunCollection):
 
     single = PluginLink
 

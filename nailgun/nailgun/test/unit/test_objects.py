@@ -600,6 +600,23 @@ class TestNodeObject(BaseIntegrationTest):
                     template, group_name)
             )
 
+    def test_update_w_error(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['compute', 'cinder']}
+            ]
+        )
+        cluster_2 = self.env.create_cluster()
+
+        node_0 = self.env.nodes[0]
+        data = {
+            'cluster_id': cluster_2['id']
+        }
+
+        self.assertRaises(
+            errors.CannotUpdate, objects.Node.update, node_0, data)
+
 
 class TestTaskObject(BaseIntegrationTest):
 

@@ -189,6 +189,8 @@ class BaseHandler(object):
             errors.NodeOffline,
             errors.NoDeploymentTasks,
             errors.UnavailableRelease,
+            errors.CannotCreate,
+            errors.CannotUpdate,
             errors.CannotDelete
         ) as exc:
             raise cls.http(400, exc.message)

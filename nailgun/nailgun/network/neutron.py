@@ -149,10 +149,7 @@ class NeutronManager70(
         if not node.group_id:
             return {}
 
-        ngs = db().query(models.NetworkGroup, models.IPAddr.ip_addr).\
-            filter(models.NetworkGroup.group_id == node.group_id). \
-            filter(models.IPAddr.network == models.NetworkGroup.id). \
-            filter(models.IPAddr.node == node.id)
+        ngs = objects.Node.get_networks_ips(node)
         if not ngs:
             return {}
 
@@ -164,7 +161,7 @@ class NeutronManager70(
                 'meta': ng.meta,
                 'gateway': ng.gateway
             }
-        admin_ng = cls.get_admin_network_group(node.id)
+        admin_ng = objects.NetworkGroup.get_admin_network_group(node.id)
         if admin_ng:
             networks[admin_ng.name] = {
                 'ip': cls.get_ip_w_cidr_prefix_len(
@@ -242,12 +239,7 @@ class NeutronManager70(
     @classmethod
     def assign_ips_in_node_group(cls, net_id, net_name, node_ids, ip_ranges):
         """Assigns IP addresses for nodes in given network."""
-        ips_by_node_id = db().query(
-            models.IPAddr.ip_addr,
-            models.IPAddr.node
-        ).filter_by(
-            network=net_id
-        )
+        ips_by_node_id = objects.IPAddr.get_by_node_for_network(net_id)
 
         nodes_dont_need_ip = set()
         ips_in_use = set()
@@ -270,11 +262,12 @@ class NeutronManager70(
                     net_name
                 )
             )
-            ip_db = models.IPAddr(node=node_id,
-                                  ip_addr=ip,
-                                  network=net_id)
-            db().add(ip_db)
-        db().flush()
+            new_ip = {
+                'node': node_id,
+                'ip_addr': ip,
+                'network': net_id
+            }
+            objects.IPAddr.create(new_ip)
 
     @classmethod
     def assign_ips_for_nodes_w_template(cls, cluster, nodes):
@@ -283,26 +276,8 @@ class NeutronManager70(
         IPs for every node are allocated only for networks which are mapped
         to the particular node according to the template.
         """
-        network_by_group = db().query(
-            models.NetworkGroup.id,
-            models.NetworkGroup.name,
-            models.NetworkGroup.meta,
-        ).join(
-            models.NetworkGroup.nodegroup
-        ).filter(
-            models.NodeGroup.cluster_id == cluster.id,
-            models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin
-        )
-
-        ip_ranges_by_network = db().query(
-            models.IPAddrRange.first,
-            models.IPAddrRange.last,
-        ).join(
-            models.NetworkGroup.ip_ranges,
-            models.NetworkGroup.nodegroup
-        ).filter(
-            models.NodeGroup.cluster_id == cluster.id
-        )
+        network_by_group = objects.NetworkGroup.get_by_group(cluster.id)
+        ip_ranges_by_network = objects.IPAddrRange.get_by_network(cluster.id)
 
         for group_id, nodes_in_group in itertools.groupby(
                 nodes, lambda n: n.group_id):
@@ -430,7 +405,7 @@ class NeutronManager70(
 
             # Default admin network has no node group
             if network == consts.NETWORKS.fuelweb_admin:
-                net_db = cls.get_admin_network_group(node.id)
+                net_db = objects.NetworkGroup.get_admin_network_group(node.id)
             else:
                 net_db = objects.NetworkGroup.get_from_node_group_by_name(
                     node.group_id, network)
@@ -443,9 +418,8 @@ class NeutronManager70(
                 # Ensure network_group configuration is consistent
                 # with the template
                 if vlan != net_db.vlan_start:
-                    net_db.vlan_start = vlan
-                    db().add(net_db)
-                    db().flush()
+                    data = {'vlan_start': vlan}
+                    objects.NetworkGroup.update(net_db, data)
 
                 ng = {'id': net_db.id}
                 node_ifaces[iface]['assigned_networks'].append(ng)

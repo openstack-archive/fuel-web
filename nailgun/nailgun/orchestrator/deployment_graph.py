@@ -368,7 +368,7 @@ class AstuteGraph(object):
     def stage_tasks_serialize(self, tasks, nodes):
         """Serialize tasks for certain stage
 
-        :param stage: oneof consts.STAGES
+        :param tasks: list of tasks data
         :param nodes: list of node db objects
         """
         serialized = []

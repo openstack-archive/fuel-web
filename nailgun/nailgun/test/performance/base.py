@@ -349,7 +349,6 @@ def evaluate_unit_performance(f):
                         previous_test_results[call_number]['expect_time'] *
                         (1.0 + settings.PERFORMANCE_TESTS_TOLERANCE))
             expect_time = prev_time or results['expect_time']
-            test.tests_results[str(test)]
             test.assertTrue(
                 avg_time <= expect_time,
                 "Average execution time: {exec_time} is greater, "

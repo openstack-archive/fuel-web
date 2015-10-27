@@ -1007,6 +1007,41 @@ input[type=range] {
   }
 }
 
+.nav-pills li {
+  overflow: hidden;
+  user-select: none;
+  width: 100%;
+  &:not(.active) {
+    cursor: pointer;
+  }
+  &.active {
+    & > a {
+      background-color: @navbar-color-active;
+      color: @white;
+      font-weight: 600;
+      &:hover {
+        background-color: @navbar-color-active;
+      }
+    }
+  }
+  & > a {
+    padding-left: 25px;
+    line-height: 1.2;
+    color: @navbar-color-active;
+    font-weight: 600;
+    &:hover {
+      color: @white;
+      background-color: @base-light-color;
+    }
+  }
+  &.group-title {
+    font-weight: 600;
+    margin: 20px 0 10px 0px;
+    cursor: default;
+    text-transform: capitalize;
+  }
+}
+
 // FORMS
 
 .forms-box {
@@ -1352,6 +1387,17 @@ input[type=range] {
     height: 40px;
   }
 
+  .network-tab,
+  .settings-tab {
+    .subtab-icon {
+      position: absolute;
+      left: 5px;
+      top: 10px;
+      z-index: 1;
+      width: 15px;
+      height: 15px;
+    }
+  }
   .settings-tab {
     .forms-box {
       .form-group {
@@ -1366,34 +1412,7 @@ input[type=range] {
     .nav-pills:after {
       margin-bottom: 20px;
     }
-    .nav-pills li {
-      overflow: hidden;
-      user-select: none;
-      width: 100%;
-      &:not(.active) {
-        cursor: pointer;
-      }
-      &.active {
-        & > a {
-          background-color: @navbar-color-active;
-          color: @white;
-          font-weight: 600;
-          &:hover {
-            background-color: @navbar-color-active;
-          }
-        }
-      }
-      & > a {
-        padding-left: 25px;
-        line-height: 1.2;
-        color: @navbar-color-active;
-        font-weight: 600;
-        &:hover {
-          color: @white;
-          background-color: @base-light-color;
-        }
-      }
-    }
+
     .subtab-icon {
       position: absolute;
       left: 5px;
@@ -3639,6 +3658,14 @@ input[type=range] {
 // Networks tab
 .network-tab {
   @base-indent: 10px;
+  .title {
+    margin-bottom: 20px;
+    .segmentation-type {
+      font-size: 17px;
+      color: @gray;
+      display: inline;
+    }
+  }
   .forms-box {
     margin-left: 15px;
     margin-right: 15px;
@@ -3652,6 +3679,24 @@ input[type=range] {
   }
   .nova-managers {
     margin: @base-indent * 2 0 @base-indent * 2 -@base-indent;
+  }
+  .network-group-name {
+    margin: 10px 0 10px 0;
+    font-size: @base-font-size + 12;
+    .name {
+      display: inline;
+    }
+    .glyphicon {
+      margin: 0 10px 0 10px;
+      font-size: @base-font-size + 4;
+      cursor: pointer;
+    }
+  }
+  .show-all-networks {
+    margin-top: 7px;
+    label {
+      font-weight: normal;
+    }
   }
 
   // range control

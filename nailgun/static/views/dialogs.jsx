@@ -1300,5 +1300,78 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         }
     });
 
+    dialogs.CreateNodeNetworkGroup = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {
+                title: i18n('cluster_page.network_tab.add_node_network_group'),
+                ns: 'cluster_page.network_tab.'
+            };
+        },
+        getInitialState: function() {
+            return {
+                validationError: null
+            };
+        },
+        renderBody: function() {
+            var name = 'node_network_group_name';
+            return (
+                <div className='forms-box'>
+                    <controls.Input
+                        key={name}
+                        name={name}
+                        ref={name}
+                        type='text'
+                        label={i18n(this.props.ns + 'node_network_group_name')}
+                        onChange={this.handleChange}
+                        onKeyDown={this.handleKeyDown}
+                        error={this.state.validationError}
+                        autoFocus
+                    />
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return [
+                <button key='cancel' className='btn btn-default' onClick={this.close}>
+                    {i18n('common.cancel_button')}
+                </button>,
+                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup}>
+                    {i18n(this.props.ns + 'add')}
+                </button>
+            ];
+        },
+        handleKeyDown: function(e) {
+            if (e.key == 'Enter') {
+                e.preventDefault();
+                this.createNodeNetworkGroup();
+            }
+            if (e.key == 'Escape') {
+                e.stopPropagation();
+                this.close();
+            }
+        },
+        handleChange: function(name, value) {
+            this.setState({
+                validationError: _.contains(this.props.nodeNetworkGroups.pluck('name'), value) ?
+                    i18n(this.props.ns + 'node_network_group_duplicate_error') : null,
+                name: value
+            });
+        },
+        createNodeNetworkGroup: function() {
+            var name = this.state.name,
+                nodeNetworkGroup = new models.NodeNetworkGroup({
+                cluster_id: this.props.cluster.id,
+                name: name
+            });
+            nodeNetworkGroup.save();
+            this.props.setActiveNetworkSectionName(name);
+            this.props.nodeNetworkGroups.add(nodeNetworkGroup);
+            this.props.networkConfiguration.fetch();
+            dispatcher.trigger('networkConfigurationUpdatedNewNodeGroup')
+            this.close();
+        }
+    });
+
     return dialogs;
 });

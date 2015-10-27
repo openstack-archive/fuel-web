@@ -23,11 +23,16 @@ define(
     'models',
     'dispatcher',
     'utils',
+    'jsx!views/dialogs',
     'jsx!component_mixins',
     'jsx!views/controls'
 ],
-function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins, controls) {
+function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, componentMixins, controls) {
     'use strict';
+
+    var CSSTransitionGroup = React.addons.CSSTransitionGroup,
+        networkingParametersNamespace = 'cluster_page.network_tab.networking_parameters.',
+        networkTabNamespace = 'cluster_page.network_tab.';
 
     var NetworkModelManipulationMixin = {
         setValue: function(attribute, value, options) {
@@ -45,10 +50,14 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             }
             this.getModel().set(attribute, value);
             dispatcher.trigger('hideNetworkVerificationResult');
-            this.props.networkConfiguration.isValid();
+            var networkConfiguration = this.props.networkConfiguration ? this.props.networkConfiguration :
+                this.props.cluster.get('networkConfiguration');
+            networkConfiguration.isValid();
         },
         getModel: function() {
-            return this.props.network || this.props.networkConfiguration.get('networking_parameters');
+            return this.props.network || (this.props.networkConfiguration ?
+                this.props.networkConfiguration.get('networking_parameters') :
+                this.props.cluster.get('networkConfiguration').get('networking_parameters'));
         }
     };
 
@@ -86,7 +95,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             );
         },
         getError: function(attribute) {
-            var validationErrors = this.props.networkConfiguration.validationError;
+            var networkConfiguration = this.props.networkConfiguration,
+                validationErrors = networkConfiguration ? networkConfiguration.validationError :
+                    this.props.cluster.get('networkConfiguration').validationError;
             if (!validationErrors) return null;
 
             var network = this.props.network,
@@ -231,7 +242,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     mini: this.props.mini
                 },
                 verificationError = this.props.verificationError || null,
-                ns = 'cluster_page.network_tab.',
                 startInputError = error && error[0],
                 endInputError = error && error[1];
             wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
@@ -239,8 +249,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 <div className={utils.classNames(wrapperClasses)}>
                     {!this.props.hiddenHeader &&
                         <div className='range-row-header col-xs-12'>
-                            <div>{i18n(ns + 'range_start')}</div>
-                            <div>{i18n(ns + 'range_end')}</div>
+                            <div>{i18n(networkTabNamespace + 'range_start')}</div>
+                            <div>{i18n(networkTabNamespace + 'range_end')}</div>
                         </div>
                     }
                     <div className='col-xs-12'>
@@ -348,8 +358,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
     });
 
     // FIXME(morale): this component is a lot of copy-paste from Range component
-    // and should be rewritten either as a mixin or as separate componet for
-    // multiflying other components (eg accepting Range, Input etc)
+    // and should be rewritten either as a mixin or as separate component for
+    // multiplying other components (eg accepting Range, Input etc)
     var MultipleValuesInput = React.createClass({
         mixins: [
             NetworkModelManipulationMixin
@@ -449,31 +459,67 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
 
     var NetworkTab = React.createClass({
         mixins: [
+            NetworkInputsMixin,
+            NetworkModelManipulationMixin,
             componentMixins.backboneMixin('cluster', 'change:status'),
+            componentMixins.backboneMixin('cluster', 'change:networkConfiguration'),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {
+                    return props.cluster.get('networkConfiguration').get('networking_parameters');
+                },
+                renderOn: 'change'
+            }),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {
+                    return props.cluster.get('networkConfiguration').get('networks');
+                },
+                renderOn: 'change reset'
+            }),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change:status'
             }),
+            componentMixins.backboneMixin('nodeNetworkGroups', 'change update'),
             componentMixins.dispatcherMixin('hideNetworkVerificationResult', function() {
                 this.setState({hideVerificationResult: true});
             }),
             componentMixins.dispatcherMixin('networkConfigurationUpdated', function() {
                 this.setState({hideVerificationResult: false});
-            })
+            }),
+            componentMixins.dispatcherMixin('networkConfigurationUpdatedNewNodeGroup', function() {
+                this.setState({nodeNetworkGroupNameChangingError: false});
+            }),
+            componentMixins.pollingMixin(3),
+            componentMixins.unsavedChangesMixin,
+            componentMixins.renamingMixin('node-network-group-name')
         ],
         statics: {
             fetchData: function(options) {
-                return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
-                    return {};
+                var nodeNetworkGroups = new models.NodeNetworkGroups(),
+                    cluster = options.cluster;
+                return $.when(
+                    cluster.get('settings').fetch({cache: true}),
+                    cluster.get('networkConfiguration').fetch({cache: true}),
+                    nodeNetworkGroups.fetch()
+                ).then(function() {
+                    return {nodeNetworkGroups: nodeNetworkGroups};
                 });
             }
+        },
+        shouldDataBeFetched: function() {
+            return !!this.props.cluster.task({group: 'network', status: 'running'});
+        },
+        fetchData: function() {
+            return this.props.cluster.task({group: 'network', status: 'running'}).fetch();
         },
         getInitialState: function() {
             return {
                 initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
-                hideVerificationResult: false
+                hideVerificationResult: false,
+                actionInProgress: false,
+                nodeNetworkGroupNameChangingError: null
             };
         },
         componentDidMount: function() {
@@ -512,88 +558,32 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         isLocked: function() {
             return !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}) ||
-                !this.props.cluster.isAvailableForSettingsChanges();
-        },
-        render: function() {
-            var isLocked = this.isLocked(),
-                classes = {
-                    row: true,
-                    'changes-locked': isLocked
-                },
-                ns = 'cluster_page.network_tab.';
-            return (
-                <div className={utils.classNames(classes)}>
-                    <div className='title'>{i18n(ns + 'title')}</div>
-                    <NetworkTabContent
-                        networkConfiguration={this.props.cluster.get('networkConfiguration')}
-                        initialConfiguration={this.state.initialConfiguration}
-                        tasks={this.props.cluster.get('tasks')}
-                        cluster={this.props.cluster}
-                        isLocked={isLocked}
-                        updateInitialConfiguration={this.updateInitialConfiguration}
-                        revertChanges={this.revertChanges}
-                        hasChanges={this.hasChanges}
-                        hideVerificationResult={this.state.hideVerificationResult}
-                    />
-                </div>
-            );
-        }
-    });
-
-    var NetworkTabContent = React.createClass({
-        mixins: [
-            componentMixins.backboneMixin('networkConfiguration', 'change'),
-            componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
-                    return props.networkConfiguration.get('networking_parameters');
-                },
-                renderOn: 'change'
-            }),
-            componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
-                    return props.networkConfiguration.get('networks');
-                },
-                renderOn: 'change reset'
-            }),
-            componentMixins.pollingMixin(3),
-            componentMixins.unsavedChangesMixin
-        ],
-        shouldDataBeFetched: function() {
-            return !!this.props.cluster.task({group: 'network', status: 'running'});
-        },
-        fetchData: function() {
-            return this.props.cluster.task({group: 'network', status: 'running'}).fetch();
-        },
-        getInitialState: function() {
-            return {
-                actionInProgress: false
-            };
-        },
-        isLocked: function() {
-            return this.props.isLocked || this.state.actionInProgress;
+                !this.props.cluster.isAvailableForSettingsChanges() || this.state.actionInProgress;
         },
         prepareIpRanges: function() {
             var removeEmptyRanges = function(ranges) {
-                return _.filter(ranges, function(range) {return _.compact(range).length;});
-            };
-            this.props.networkConfiguration.get('networks').each(function(network) {
+                    return _.filter(ranges, function(range) {return _.compact(range).length;});
+                },
+                networkConfiguration = this.props.cluster.get('networkConfiguration');
+            networkConfiguration.get('networks').each(function(network) {
                 if (network.get('meta').notation == 'ip_ranges') {
                     network.set({ip_ranges: removeEmptyRanges(network.get('ip_ranges'))});
                 }
             });
-            var floatingRanges = this.props.networkConfiguration.get('networking_parameters').get('floating_ranges');
+            var floatingRanges = networkConfiguration.get('networking_parameters').get('floating_ranges');
             if (floatingRanges) {
-                this.props.networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
+                networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
             }
         },
         onManagerChange: function(name, value) {
-            var networkingParams = this.props.networkConfiguration.get('networking_parameters'),
-                fixedAmount = this.props.networkConfiguration.get('networking_parameters').get('fixed_networks_amount') || 1;
+            var networkConfiguration = this.props.cluster.get('networkConfiguration'),
+                networkingParams = networkConfiguration.get('networking_parameters'),
+                fixedAmount = networkConfiguration.get('networking_parameters').get('fixed_networks_amount') || 1;
             networkingParams.set({
                 net_manager: value,
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
-            this.props.networkConfiguration.isValid();
+            networkConfiguration.isValid();
             dispatcher.trigger('hideNetworkVerificationResult');
         },
         verifyNetworks: function() {
@@ -602,11 +592,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             dispatcher.trigger('networkConfigurationUpdated', this.startVerification);
         },
         startVerification: function() {
-            var task = new models.Task(),
+            var networkConfiguration = this.props.cluster.get('networkConfiguration'),
+                task = new models.Task(),
                 options = {
                     method: 'PUT',
-                    url: _.result(this.props.networkConfiguration, 'url') + '/verify',
-                    data: JSON.stringify(this.props.networkConfiguration)
+                    url: _.result(networkConfiguration, 'url') + '/verify',
+                    data: JSON.stringify(networkConfiguration)
                 },
                 ns = 'cluster_page.network_tab.verify_networks.verification_error.';
 
@@ -637,12 +628,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         getStayMessage: function() {
             return this.props.cluster.task({group: 'network', status: 'running'}) && i18n('dialog.dismiss_settings.verify_message');
         },
-        hasChanges: function() {
-            return this.props.hasChanges();
-        },
-        revertChanges: function() {
-            return this.props.revertChanges();
-        },
         applyChanges: function() {
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
@@ -651,59 +636,57 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
 
             var result = $.Deferred();
             dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
-                return Backbone.sync('update', this.props.networkConfiguration)
-                    .then(_.bind(function(response) {
-                        this.props.updateInitialConfiguration();
-                        result.resolve(response);
-                    }, this), _.bind(function() {
-                        result.reject();
-                        // FIXME(vkramskikh): the same hack for check_networks task:
-                        // remove failed tasks immediately, so they won't be taken into account
-                        return this.props.cluster.fetchRelated('tasks')
-                            .done(_.bind(function() {
-                                this.props.cluster.task('check_networks').set('unsaved', true);
-                            }, this));
-                    }, this))
-                    .always(_.bind(function() {
-                        this.setState({actionInProgress: false});
-                    }, this));
+                    return Backbone.sync('update', this.props.cluster.get('networkConfiguration'))
+                        .then(_.bind(function(response) {
+                            this.updateInitialConfiguration();
+                            result.resolve(response);
+                        }, this), _.bind(function() {
+                            result.reject();
+                            // FIXME(vkramskikh): the same hack for check_networks task:
+                            // remove failed tasks immediately, so they won't be taken into account
+                            return this.props.cluster.fetchRelated('tasks')
+                                .done(_.bind(function() {
+                                    this.props.cluster.task('check_networks').set('unsaved', true);
+                                }, this));
+                        }, this))
+                        .always(_.bind(function() {
+                            this.setState({actionInProgress: false});
+                        }, this));
                 }, this)
             );
             return result;
         },
         isSavingPossible: function() {
-            return _.isNull(this.props.networkConfiguration.validationError) &&
+            return _.isNull(this.props.cluster.get('networkConfiguration').validationError) &&
                 !this.isLocked() &&
                 this.hasChanges();
         },
         renderButtons: function() {
-            var error = this.props.networkConfiguration.validationError,
+            var error = this.props.cluster.get('networkConfiguration').validationError,
                 isLocked = this.isLocked(),
                 isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
                 isCancelChangesDisabled = isLocked || !this.hasChanges();
             return (
-                <div className='col-xs-12 page-buttons content-elements'>
-                    <div className='well clearfix'>
-                        <div className='btn-group pull-right'>
-                            <button key='verify_networks' className='btn btn-default verify-networks-btn' onClick={this.verifyNetworks}
-                                    disabled={isVerificationDisabled}>
-                                {i18n('cluster_page.network_tab.verify_networks_button')}
-                            </button>
-                            <button key='revert_changes' className='btn btn-default btn-revert-changes' onClick={this.props.revertChanges}
-                                    disabled={isCancelChangesDisabled}>
-                                {i18n('common.cancel_changes_button')}
-                            </button>
-                            <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
+                <div className='well clearfix'>
+                    <div className='btn-group pull-right'>
+                        <button key='verify_networks' className='btn btn-default verify-networks-btn' onClick={this.verifyNetworks}
+                                disabled={isVerificationDisabled}>
+                            {i18n('cluster_page.network_tab.verify_networks_button')}
+                        </button>
+                        <button key='revert_changes' className='btn btn-default btn-revert-changes' onClick={this.revertChanges}
+                                disabled={isCancelChangesDisabled}>
+                            {i18n('common.cancel_changes_button')}
+                        </button>
+                        <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
                                 disabled={!this.isSavingPossible()}>
-                                    {i18n('common.save_settings_button')}
-                            </button>
-                        </div>
+                            {i18n('common.save_settings_button')}
+                        </button>
                     </div>
                 </div>
             );
         },
         getVerificationErrors: function() {
-            var task = this.props.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
+            var task = this.state.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
             // @TODO(morale): soon response format will be changed and this part should be rewritten
             if (task && task.get('result').length) {
@@ -717,45 +700,166 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             }
             return fieldsWithVerificationErrors;
         },
-        renderNetworks: function() {
-            var verificationErrors = this.getVerificationErrors();
-            return this.props.networkConfiguration.get('networks').map(function(network) {
-                return (
-                    <Network
-                        key={network.id}
-                        network={network}
-                        networkConfiguration={this.props.networkConfiguration}
-                        validationErrors={(this.props.networkConfiguration.validationError || {}).networks}
-                        disabled={this.isLocked()}
-                        verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
-                    />
-                );
-            }, this);
+        removeNodeNetworkGroup: function() {
+            var currentNodeNetworkGroup = this.props.nodeNetworkGroups.findWhere({name: this.props. activeNetworkGroupName});
+            this.props.nodeNetworkGroups.remove(currentNodeNetworkGroup);
+            currentNodeNetworkGroup.destroy();
+        },
+        onNodeNetworkGroupNameKeyDown: function(e) {
+            this.setState({nodeNetworkGroupNameChangingError: null});
+            if (e.key == 'Enter') {
+                this.setState({actionInProgress: true});
+                var nodeNetworkGroupName = _.trim(this.refs['node-network-group-name'].getInputDOMNode().value);
+                var currentNodeNetworkGroup = this.props.nodeNetworkGroups.findWhere({name: this.props.activeNetworkGroupName});
+                (nodeNetworkGroupName != this.props.activeNetworkGroupName ?
+                        currentNodeNetworkGroup.save({
+                            name: nodeNetworkGroupName
+                        })
+                    :
+                        $.Deferred().resolve()
+                )
+                    .fail(_.bind(function(response) {
+                        this.setState({
+                            nodeNetworkGroupNameChangingError: utils.getResponseText(response),
+                            actionInProgress: false
+                        });
+                        this.refs['node-network-group-name'].getInputDOMNode().focus();
+                    }, this))
+                    .done(this.endRenaming);
+            } else if (e.key == 'Escape') {
+                this.endRenaming();
+                e.stopPropagation();
+                this.getDOMNode().focus();
+            }
+        },
+        renderNetworks: function(networks, nodeNetworkGroups, currentNodeNetworkGroup) {
+            var verificationErrors = this.getVerificationErrors(),
+                networkConfiguration = this.props.cluster.get('networkConfiguration'),
+                isMultiRack = nodeNetworkGroups.length > 1;
+            return ([
+                isMultiRack &&
+                    (<div className='network-group-name' key={currentNodeNetworkGroup.id}>
+                        {this.state.isRenaming ?
+                            <controls.Input
+                                ref='node-network-group-name'
+                                type='text'
+                                defaultValue={currentNodeNetworkGroup.get('name')}
+                                error={this.state.nodeNetworkGroupNameChangingError}
+                                disabled={this.state.actionInProgress}
+                                onKeyDown={this.onNodeNetworkGroupNameKeyDown}
+                                selectOnFocus
+                                autoFocus
+                            />
+                        :
+                            <div className='name' onClick={this.startRenaming}>
+                                <button className='btn-link'>
+                                    {currentNodeNetworkGroup.get('name')}
+                                </button>
+                                <i className='glyphicon glyphicon-pencil'></i>
+                            </div>
+                        }
+                        {isMultiRack && (_.min(nodeNetworkGroups.pluck('id')) != currentNodeNetworkGroup.id) &&
+                            <i className='glyphicon glyphicon-remove' onClick={this.removeNodeNetworkGroup}></i>
+                        }
+                    </div>),
+                networks.map(function(network) {
+                    return (
+                        <Network
+                            key={network.id}
+                            network={network}
+                            networkConfiguration={networkConfiguration}
+                            validationErrors={(networkConfiguration.validationError || {}).networks}
+                            disabled={this.isLocked()}
+                            verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
+                        />
+                    );
+                }, this)
+            ])
+        },
+        addNodeGroup: function() {
+            dialogs.CreateNodeNetworkGroup.show({
+                cluster: this.props.cluster,
+                nodeNetworkGroups: this.props.nodeNetworkGroups,
+                setActiveNetworkSectionName: this.props.setActiveNetworkSectionName,
+                networkConfiguration: this.props.cluster.get('networkConfiguration')
+            });
         },
         render: function() {
-            var ns = 'cluster_page.network_tab.',
-                isLocked = this.isLocked(),
+            var isLocked = this.isLocked(),
                 cluster = this.props.cluster,
-                networkingParameters = this.props.networkConfiguration.get('networking_parameters'),
+                networkConfiguration = this.props.cluster.get('networkConfiguration'),
+                networkingParameters = networkConfiguration.get('networking_parameters'),
                 manager = networkingParameters.get('net_manager'),
                 managers = [
                     {
-                        label: i18n(ns + 'flatdhcp_manager'),
+                        label: i18n(networkTabNamespace + 'flatdhcp_manager'),
                         data: 'FlatDHCPManager',
                         checked: manager == 'FlatDHCPManager',
                         disabled: isLocked
                     },
                     {
-                        label: i18n(ns + 'vlan_manager'),
+                        label: i18n(networkTabNamespace + 'vlan_manager'),
                         data: 'VlanManager',
                         checked: manager == 'VlanManager',
                         disabled: isLocked
                     }
-                ];
+                ],
+                classes = {
+                    row: true,
+                    'changes-locked': isLocked
+                },
+                activeNetworkGroupName = this.props.activeNetworkGroupName,
+                nodeNetworkGroups = new Backbone.Collection(this.props.nodeNetworkGroups.where({cluster_id: cluster.id})),
+                isNovaEnvironment = cluster.get('net_provider') == 'nova_network',
+                networks = networkConfiguration.get('networks');
+
+            if (!activeNetworkGroupName || (
+                activeNetworkGroupName && !nodeNetworkGroups.findWhere({name: activeNetworkGroupName}) &&
+                !_.contains(['neutron_l2', 'neutron_l3', 'network_verification'], activeNetworkGroupName))) {
+                activeNetworkGroupName = _.first(nodeNetworkGroups.pluck('name'));
+            }
+
+            var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkGroupName}),
+                nodeNetworkGroupId = currentNodeNetworkGroup && currentNodeNetworkGroup.id;
 
             return (
-                <div>
-                    {(cluster.get('net_provider') == 'nova_network') ?
+                <div className={utils.classNames(classes)}>
+                    <div className='col-xs-12'>
+                        <div className='row'>
+                            <div className='title col-xs-7'>
+                                {i18n(networkTabNamespace + 'title')}
+                                {!isNovaEnvironment &&
+                                    <div className='forms-box segmentation-type'>
+                                        {'(' + i18n('common.network.neutron_' +
+                                            this.props.cluster.get('networkConfiguration').get('networking_parameters').get('segmentation_type')) + ')'}
+                                    </div>
+                                }
+                            </div>
+                            <div className='col-xs-5'>
+                                {(nodeNetworkGroups.length > 1) &&
+                                    <controls.Input
+                                        key='show_all'
+                                        type='checkbox'
+                                        name='show_all'
+                                        label={i18n(networkTabNamespace + 'show_all_networks')}
+                                        wrapperClassName='show-all-networks pull-left'
+                                        onChange={this.props.setActiveNetworkSectionName}
+                                    />
+                                }
+                                {!isNovaEnvironment &&
+                                    <button
+                                        key='add_node_group'
+                                        className='btn btn-default add-nodegroup-btn pull-right'
+                                        onClick={this.addNodeGroup}
+                                        disabled={false}
+                                    >
+                                        {i18n(networkTabNamespace + 'add_node_network_group')}
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    {isNovaEnvironment &&
                         <div className='col-xs-12 forms-box nova-managers'>
                             <controls.RadioGroup
                                 key='net_provider'
@@ -765,28 +869,164 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 wrapperClassName='pull-left'
                             />
                         </div>
-                    :
-                        <div className='forms-box segmentation-type'>
-                            <em>
-                                {i18n('common.network.neutron_' + networkingParameters.get('segmentation_type'))}
-                            </em>
-                        </div>
                     }
-                    {this.renderNetworks()}
-                    <NetworkingParameters
-                        networkConfiguration={this.props.networkConfiguration}
-                        validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
-                        disabled={this.isLocked()}
+                    <NetworkSubtabs
+                        cluster={this.props.cluster}
+                        setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
+                        nodeNetworkGroups={nodeNetworkGroups}
+                        activeGroupName={activeNetworkGroupName}
+                        showAllNodeNetworkGroups={this.props.showAllNodeNetworkGroups}
                     />
-                    <div className='verification-control col-xs-12'>
-                        <NetworkVerificationResult
-                            key='network_verification'
-                            task={cluster.task({group: 'network'})}
-                            networks={this.props.networkConfiguration.get('networks')}
-                            hideVerificationResult={this.props.hideVerificationResult}
-                        />
+                    <div className='col-xs-10'>
+                        {!_.contains(['neutron_l2', 'neutron_l3', 'network_verification'], activeNetworkGroupName) &&
+                            (this.props.showAllNodeNetworkGroups ?
+                                nodeNetworkGroups.map(function(networkGroup) {
+                                    return this.renderNetworks(networks.where({group_id: networkGroup.id}), nodeNetworkGroups, networkGroup);
+                                }, this)
+                            :
+                                this.renderNetworks(networks.where({group_id: nodeNetworkGroupId}), nodeNetworkGroups, currentNodeNetworkGroup)
+                            )
+                        }
+                        {activeNetworkGroupName == 'network_verification' &&
+                            <div className='verification-control'>
+                                <NetworkVerificationResult
+                                    key='network_verification'
+                                    task={cluster.task({group: 'network'})}
+                                    networks={networkConfiguration.get('networks')}
+                                    hideVerificationResult={this.state.hideVerificationResult}
+                                />
+                            </div>
+                        }
+                        {!manager ?
+                            [
+                                activeNetworkGroupName == 'neutron_l2' &&
+                                    <NetworkingL2Parameters
+                                        networkConfiguration={networkConfiguration}
+                                        validationError={(networkConfiguration.validationError || {}).networking_parameters}
+                                        disabled={this.isLocked()}
+                                    />,
+                                activeNetworkGroupName == 'neutron_l3' &&
+                                    <NetworkingL3Parameters
+                                        networkConfiguration={networkConfiguration}
+                                        validationError={(networkConfiguration.validationError || {}).networking_parameters}
+                                        disabled={this.isLocked()}
+                                    />
+                            ]
+                        :
+                            [activeNetworkGroupName == 'nova_configuration' &&
+                                <NovaParameters
+                                    networkConfiguration={networkConfiguration}
+                                />
+                            ]
+                        }
                     </div>
-                    {this.renderButtons()}
+                    <div className='col-xs-12 page-buttons content-elements'>
+                        {this.renderButtons()}
+                    </div>
+                </div>
+            );
+        }
+    });
+
+    var NetworkSubtabs = React.createClass({
+        renderClickablePills: function(sections, isNetworkGroupPill) {
+            var cluster = this.props.cluster,
+                networkConfiguration = cluster.get('networkConfiguration');
+
+            var errors,
+                networks = networkConfiguration.get('networks'),
+                nodeNetworkGroups = this.props.nodeNetworkGroups,
+                invalidSections = {},
+                isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
+
+                networkConfiguration.isValid();
+                errors = networkConfiguration.validationError;
+
+            if (isNovaEnvironment) {
+                invalidSections.nova_configuration = errors && errors.networking_parameters;
+                invalidSections.default = errors && errors.networks
+            } else if (isNetworkGroupPill) {
+                _.forEach(errors && errors.networks, function(error, networkId) {
+                    var errorGroupId = networks.get(networkId).get('group_id'),
+                        errorNodeNetworkGroup = nodeNetworkGroups.get(errorGroupId);
+                    if (errorNodeNetworkGroup) {
+                        invalidSections[errorNodeNetworkGroup.get('name')] = true;
+                    }
+                }, this);
+            } else {
+                _.forEach(errors && errors.networking_parameters, function(error, name) {
+                    if (_.contains(['vlan_range', 'base_mac'], name)) {
+                        invalidSections.neutron_l2 = true;
+                    } else {
+                        invalidSections.neutron_l3 = true;
+                    }
+                }, this);
+            }
+
+            invalidSections.network_verification = this.props.cluster.task({group: 'network', status: 'error'});
+
+            return (sections.map(function(groupName) {
+                var tabLabel = i18n(networkTabNamespace + 'tabs.networks'),
+                    showAll = this.props.showAllNodeNetworkGroups,
+                    isActive = groupName == this.props.activeGroupName ||
+                        showAll && isNetworkGroupPill && (sections.length == 1) &&
+                        !_.contains(['neutron_l2', 'neutron_l3', 'network_verification'],
+                            this.props.activeGroupName);
+
+                if (!isNetworkGroupPill) {
+                    tabLabel = i18n(networkTabNamespace + 'tabs.' + groupName);
+                } else if ((this.props.nodeNetworkGroups.length > 1) && !this.props.showAllNodeNetworkGroups) {
+                    tabLabel = groupName;
+                }
+
+                return (
+                    <li
+                        key={groupName}
+                        role='presentation'
+                        className={utils.classNames({active: isActive})}
+                        onClick={_.partial(this.props.setActiveNetworkSectionName, groupName)}
+                    >
+                        <a className={'subtab-link-' + groupName}>
+                            {invalidSections[groupName] && <i className='subtab-icon glyphicon-danger-sign' />}
+                            {tabLabel}
+                        </a>
+                    </li>
+                );
+            }, this));
+        },
+        render: function() {
+            var nodeNetworkGroups = this.props.nodeNetworkGroups,
+                isMultiRack = nodeNetworkGroups.length > 1,
+                settingsSections = [],
+                nodeGroupSections = [];
+
+                if (isMultiRack && !this.props.showAllNodeNetworkGroups) {
+                    nodeGroupSections = nodeGroupSections.concat(nodeNetworkGroups.pluck('name'));
+                } else {
+                    nodeGroupSections.push(nodeNetworkGroups.pluck('name')[0]);
+                }
+
+                if (this.props.cluster.get('net_provider') == 'nova_network') {
+                    settingsSections.push('nova_configuration');
+                } else {
+                    settingsSections = settingsSections.concat(['neutron_l2', 'neutron_l3']);
+                }
+                settingsSections.push('network_verification');
+
+            return (
+                <div className='col-xs-2'>
+                    <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
+                        {nodeNetworkGroups.length > 1 && !this.props.showAllNodeNetworkGroups &&
+                            <li className='group-title'>
+                                {i18n(networkTabNamespace + 'tabs.node_network_groups')}
+                            </li>
+                        }
+                        {this.renderClickablePills(nodeGroupSections, true)}
+                        <li className='group-title'>
+                            {i18n(networkTabNamespace + 'tabs.settings')}
+                        </li>
+                        {this.renderClickablePills(settingsSections)}
+                    </CSSTransitionGroup>
                 </div>
             );
         }
@@ -803,8 +1043,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 networkConfig = network.get('meta');
             if (!networkConfig.configurable) return null;
             var vlanTagging = network.get('vlan_start'),
-                ipRangesLabel = 'ip_ranges',
-                ns = 'cluster_page.network_tab.network.';
+                ipRangesLabel = 'ip_ranges';
 
             return (
                 <div className={'forms-box ' + networkName}>
@@ -819,7 +1058,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     {this.renderInput('cidr')}
                     <VlanTagInput
                         {...this.composeProps('vlan_start')}
-                        label={i18n(ns + 'use_vlan_tagging')}
+                        label={i18n(networkTabNamespace + 'network.use_vlan_tagging')}
                         value={vlanTagging}
                     />
                     {networkConfig.use_gateway &&
@@ -830,96 +1069,106 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         }
     });
 
-    var NetworkingParameters = React.createClass({
+    var NovaParameters = React.createClass({
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin
         ],
-        getDefaultProps: function() {
-            return {fixedNetworkSizeValues: _.map(_.range(3, 12), _.partial(Math.pow, 2))};
-        },
         render: function() {
-            var networkParameters = this.props.networkConfiguration.get('networking_parameters'),
-                manager = networkParameters.get('net_manager'),
-                idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id',
-                ns = 'cluster_page.network_tab.networking_parameters.';
-
+            var networkConfiguration = this.props.networkConfiguration,
+                networkingParameters = networkConfiguration.get('networking_parameters'),
+                manager = networkingParameters.get('net_manager'),
+                fixedNetworkSizeValues = _.map(_.range(3, 12), _.partial(Math.pow, 2));
             return (
-                <div>
-                    {manager ?
-                        <div className='forms-box'>
-                            <h3 className='networks'>{i18n(ns + 'nova_configuration')}</h3>
-                            <Range
-                                {...this.composeProps('floating_ranges', true)}
-                                rowsClassName='floating-ranges-rows'
-                                hiddenControls={false}
-                            />
+                <div className='forms-box' key='nova-config'>
+                    <h3 className='networks'>{i18n(networkingParametersNamespace + 'nova_configuration')}</h3>
+                    <Range
+                        {...this.composeProps('floating_ranges', true)}
+                        rowsClassName='floating-ranges-rows'
+                        hiddenControls={false}
+                    />
+                    <div>
+                        {this.renderInput('fixed_networks_cidr')}
+                        {(manager == 'VlanManager') ?
                             <div>
-                                {this.renderInput('fixed_networks_cidr')}
-                                {(manager == 'VlanManager') ?
-                                    <div>
-                                        <controls.Input
-                                            {...this.composeProps('fixed_network_size', false, true)}
-                                            type='select'
-                                            children={_.map(this.props.fixedNetworkSizeValues, function(value) {
+                                <controls.Input
+                                    {...this.composeProps('fixed_network_size', false, true)}
+                                    type='select'
+                                    children={_.map(fixedNetworkSizeValues, function(value) {
                                                 return <option key={value} value={value}>{value}</option>;
                                             })}
-                                            inputClassName='pull-left'
-                                        />
-                                        {this.renderInput('fixed_networks_amount', true)}
-                                        <Range
-                                            {...this.composeProps('fixed_networks_vlan_start', true)}
-                                            wrapperClassName='clearfix vlan-id-range'
-                                            label={i18n(ns + 'fixed_vlan_range')}
-                                            extendable={false}
-                                            autoIncreaseWith={parseInt(networkParameters.get('fixed_networks_amount')) || 0}
-                                            integerValue={true}
-                                            placeholder=''
-                                            mini={true}
-                                        />
-                                    </div>
-                                :
-                                    <VlanTagInput
-                                        {...this.composeProps('fixed_networks_vlan_start')}
-                                        label={i18n(ns + 'use_vlan_tagging_fixed')}
+                                    inputClassName='pull-left'
                                     />
-                                }
-                            </div>
-                        </div>
-                    :
-                        [
-                            <div className='forms-box' key='neutron-l2'>
-                                <h3 className='networks'>{i18n(ns + 'l2_configuration')}</h3>
-                                <div>
-                                    <Range
-                                        {...this.composeProps(idRangePrefix + '_range', true)}
-                                        extendable={false}
-                                        placeholder=''
-                                        integerValue={true}
-                                        mini={true}
-                                    />
-                                    {this.renderInput('base_mac')}
-                                </div>
-                            </div>,
-                            <div className='forms-box' key='neutron-l3'>
-                                <h3 className='networks'>{i18n(ns + 'l3_configuration')}</h3>
+                                {this.renderInput('fixed_networks_amount', true)}
                                 <Range
-                                    {...this.composeProps('floating_ranges', true)}
-                                    rowsClassName='floating-ranges-rows'
-                                    hiddenControls={true}
+                                    {...this.composeProps('fixed_networks_vlan_start', true)}
+                                    wrapperClassName='clearfix vlan-id-range'
+                                    label={i18n(networkingParametersNamespace + 'fixed_vlan_range')}
+                                    extendable={false}
+                                    autoIncreaseWith={parseInt(networkingParameters.get('fixed_networks_amount')) || 0}
+                                    integerValue={true}
+                                    placeholder=''
+                                    mini={true}
                                 />
-                                <div>
-                                    {this.renderInput('internal_cidr')}
-                                    {this.renderInput('internal_gateway')}
-                                </div>
                             </div>
-                        ]
-                    }
-                    <div className='forms-box'>
-                        <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
+                        :
+                                <VlanTagInput
+                                    {...this.composeProps('fixed_networks_vlan_start')}
+                                    label={i18n(networkingParametersNamespace + 'use_vlan_tagging_fixed')}
+                                />
+                        }
+                    </div>
+                </div>);
+        }
+    });
+
+    var NetworkingL2Parameters = React.createClass({
+        mixins: [
+            NetworkInputsMixin,
+            NetworkModelManipulationMixin
+        ],
+        render: function() {
+            var networkParameters = this.props.networkConfiguration.get('networking_parameters'),
+                idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id';
+
+            return (
+                <div className='forms-box' key='neutron-l2'>
+                    <h3 className='networks'>{i18n(networkingParametersNamespace + 'l2_configuration')}</h3>
+                    <div>
+                        <Range
+                            {...this.composeProps(idRangePrefix + '_range', true)}
+                            extendable={false}
+                            placeholder=''
+                            integerValue={true}
+                            mini={true}
+                        />
+                        {this.renderInput('base_mac')}
                     </div>
                 </div>
             );
+        }
+    });
+
+    var NetworkingL3Parameters = React.createClass({
+        mixins: [
+            NetworkInputsMixin,
+            NetworkModelManipulationMixin
+        ],
+        render: function() {
+            return (
+                <div className='forms-box' key='neutron-l3'>
+                    <h3 className='networks'>{i18n(networkingParametersNamespace + 'l3_configuration')}</h3>
+                    <Range
+                        {...this.composeProps('floating_ranges', true)}
+                        rowsClassName='floating-ranges-rows'
+                        hiddenControls={true}
+                    />
+                    <div>
+                        {this.renderInput('internal_cidr')}
+                        {this.renderInput('internal_gateway')}
+                    </div>
+                    <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
+                </div>);
         }
     });
 

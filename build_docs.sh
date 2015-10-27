@@ -88,7 +88,6 @@ prepare_venv() {
   virtualenv "${VENV}"  # you can use any name instead of 'fuel'
   . "${VENV}/bin/activate" # command selects the particular environment
   # install dependencies
-  pip install ./shotgun  # this fuel project is listed in setup.py requirements
   pip install -r 'nailgun/test-requirements.txt'
 }
 

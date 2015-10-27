@@ -78,7 +78,6 @@ Preparing Development Environment
     sudo apt-get install --yes git
     git clone https://github.com/openstack/fuel-web.git
     cd fuel-web
-    pip install ./shotgun  # this fuel project is listed in setup.py requirements
     pip install --allow-all-external -r nailgun/test-requirements.txt
 
 #. Create required folder for log files::
@@ -302,4 +301,3 @@ you could only run dropdb with *./run_tests.sh* script.
 Now you need to run dropdb for each slave node:
 the *py.test --cleandb <path to the tests>* command is introduced for this
 purpose.
-

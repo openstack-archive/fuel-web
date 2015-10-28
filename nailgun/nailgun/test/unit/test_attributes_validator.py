@@ -279,7 +279,8 @@ class TestAttributesValidator(BaseTestCase):
         attrs = {'editable': {'provision': {'method':
                  {'value': 'not_image', 'type': 'text'}}}}
         mock_cluster_attrs.return_value = attrs
-        cluster_mock = Mock(release=Mock(environment_version='7.0'))
+        cluster_mock = Mock(release=Mock(environment_version='7.0'),
+                            plugins=[])
         self.assertRaises(errors.InvalidData,
                           AttributesValidator.validate,
                           json.dumps(attrs), cluster_mock)
@@ -289,7 +290,8 @@ class TestAttributesValidator(BaseTestCase):
         attrs = {'editable': {'method':
                  {'value': 'not_image', 'type': 'text'}}}
         mock_cluster_attrs.return_value = attrs
-        cluster_mock = Mock(release=Mock(environment_version='7.0'))
+        cluster_mock = Mock(release=Mock(environment_version='7.0'),
+                            plugins=[])
         self.assertRaises(errors.InvalidData,
                           AttributesValidator.validate,
                           json.dumps(attrs), cluster_mock)
@@ -299,7 +301,8 @@ class TestAttributesValidator(BaseTestCase):
         attrs = {'editable': {'provision': {'method':
                  {'value': 'image', 'type': 'text'}}}}
         mock_cluster_attrs.return_value = attrs
-        cluster_mock = Mock(release=Mock(environment_version='7.0'))
+        cluster_mock = Mock(release=Mock(environment_version='7.0'),
+                            plugins=[])
         self.assertNotRaises(errors.InvalidData,
                              AttributesValidator.validate,
                              json.dumps(attrs), cluster_mock)
@@ -309,7 +312,8 @@ class TestAttributesValidator(BaseTestCase):
         attrs = {'editable': {'provision': {'method':
                  {'value': 'image', 'type': 'text'}}}}
         mock_cluster_attrs.return_value = attrs
-        cluster_mock = Mock(release=Mock(environment_version='6.0'))
+        cluster_mock = Mock(release=Mock(environment_version='6.0'),
+                            plugins=[])
         self.assertNotRaises(errors.InvalidData,
                              AttributesValidator.validate,
                              json.dumps(attrs), cluster_mock)

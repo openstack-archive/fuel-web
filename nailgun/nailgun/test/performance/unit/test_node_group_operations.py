@@ -22,6 +22,21 @@ from nailgun.test.performance import base
 
 class NodeGroupOperationsLoadTest(base.BaseUnitLoadTestCase):
 
+    class NameGenerator(object):
+
+        def __init__(self, base_name):
+            self.base_name = base_name
+            self.counter = 0
+
+        @property
+        def next_name(self):
+            self.counter += 1
+            return '{0}_{1}'.format(self.base_name, self.counter)
+
+        @property
+        def name(self):
+            return '{0}_{1}'.format(self.base_name, self.counter)
+
     @classmethod
     def setUpClass(cls):
         super(NodeGroupOperationsLoadTest, cls).setUpClass()
@@ -34,7 +49,7 @@ class NodeGroupOperationsLoadTest(base.BaseUnitLoadTestCase):
             net_segment_type=consts.NEUTRON_SEGMENT_TYPES.gre,
         )
         cls.group = cls.env.create_node_group()
-
+        cls.name_gen = cls.NameGenerator('test_nodegroup')
         cls.env.create_nodes(cls.NODES_NUM, cluster_id=cls.cluster['id'])
 
     @base.evaluate_unit_performance
@@ -47,14 +62,13 @@ class NodeGroupOperationsLoadTest(base.BaseUnitLoadTestCase):
         self.check_time_exec(func)
 
     @base.evaluate_unit_performance
-    def test_node_group_collection_create(self):
+    def test_node_group_collection_creation(self):
         func = functools.partial(
             self.post_handler,
             'NodeGroupCollectionHandler',
             {
                 'cluster_id': self.cluster.id,
-                'name': 'test_group',
+                'name': self.name_gen.next_name
             }
         )
-
         self.check_time_exec(func)

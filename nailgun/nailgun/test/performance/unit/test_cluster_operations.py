@@ -265,18 +265,22 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
 
     @base.evaluate_unit_performance
     def test_get_nova_network_configuration(self):
+        nova_cluster = self.env.create_cluster(
+            api=False, net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         func = functools.partial(
             self.get_handler,
             'NovaNetworkConfigurationHandler',
-            handler_kwargs={'cluster_id': self.cluster['id']}
+            handler_kwargs={'cluster_id': nova_cluster['id']}
         )
         self.check_time_exec(func)
 
     @base.evaluate_unit_performance
     def test_put_nova_network_configuration(self):
+        nova_cluster = self.env.create_cluster(
+            api=False, net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
         resp = self.get_handler(
             'NovaNetworkConfigurationHandler',
-            handler_kwargs={'cluster_id': self.cluster['id']}
+            handler_kwargs={'cluster_id': nova_cluster['id']}
         )
         self.assertEquals(200, resp.status_code)
         network_data = jsonutils.loads(resp.body)
@@ -284,7 +288,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
             self.put_handler,
             'NovaNetworkConfigurationHandler',
             network_data,
-            handler_kwargs={'cluster_id': self.cluster['id']}
+            handler_kwargs={'cluster_id': nova_cluster['id']}
         )
         self.check_time_exec(func)
 

@@ -70,7 +70,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         showLogs: function(params) {
             this.stopPolling();
             var logOptions = this.props.selectedLogs.type == 'remote' ? this.props.selectedLogs : _.omit(this.props.selectedLogs, 'node');
-            if (logOptions.level) logOptions.level = logOptions.level.toLowerCase();
+            logOptions.level = logOptions.level.toLowerCase();
             app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(logOptions), {trigger: false, replace: true});
             params = params || {};
             this.fetchLogs(params)

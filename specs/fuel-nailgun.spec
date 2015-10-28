@@ -116,12 +116,10 @@ cd %{_builddir}/%{name}-%{version}/nailgun && %{_builddir}/%{name}-%{version}/na
 [ -n %{_builddir} ] && rm -rf %{_builddir}/%{name}-%{version}/nailgun/static
 mv %{_builddir}/%{name}-%{version}/nailgun/compressed_static %{_builddir}/%{name}-%{version}/nailgun/static
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py build
-cd %{_builddir}/%{name}-%{version}/network_checker && python setup.py build
 cd %{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates && python setup.py build
 
 %install
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
-cd %{_builddir}/%{name}-%{version}/network_checker && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/network_checker/INSTALLED_FILES
 cd %{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates/INSTALLED_FILES
 mkdir -p %{buildroot}/opt/nailgun/bin
 mkdir -p %{buildroot}/etc/cron.d
@@ -154,35 +152,6 @@ This package currently installs just a single file openstack.yaml
 %defattr(-,root,root)
 %{_datadir}/fuel-openstack-metadata/*
 %{_sysconfdir}/fuel_openstack_version
-
-%package -n nailgun-net-check
-
-Summary:   Network checking package for CentOS6.x
-Version:   %{version}
-Release:   %{release}
-License:   GPLv2
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-URL:       http://github.com/Mirantis
-Requires:  vconfig
-Requires:  scapy
-Requires:  python-argparse
-Requires:  python-pypcap
-Requires:  python-cliff-tablib
-Requires:  python-stevedore
-Requires:  python-daemonize
-Requires:  python-yaml
-Requires:  tcpdump
-Requires:  python-requests
-Requires:  python-netifaces
-
-
-%description -n nailgun-net-check
-This is a network tool that helps to verify networks connectivity
-between hosts in network.
-
-%files -n nailgun-net-check -f %{_builddir}/%{name}-%{version}/network_checker/INSTALLED_FILES
-%defattr(-,root,root)
-
 
 %package -n fencing-agent
 Summary:   Fencing agent

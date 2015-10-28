@@ -40,15 +40,6 @@ maintainers:
       email:  ikalnitsky@mirantis.com
       IRC:    ikalnitsky
 
-- network_checker/:
-    - name:   Dmytro Shuliak
-      email:  dshulyak@mirantis.com
-      IRC:    dshulyak
-
-    - name:   Lukasz Oles
-      email:  loles@mirantis.com
-      IRC:    salmon_
-
 - nailgun/:
     - name:   Aleksandr Kislitskii
       email:  akislitsky@mirantis.com

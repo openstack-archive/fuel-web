@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils.version import StrictVersion
 from netaddr import IPNetwork
-import six
-
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.network_template import \
@@ -188,12 +188,15 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)
         np = d.get('networking_parameters')
-
-        cls._check_multiple_floating_ip_ranges(np)
-
         cluster_id = kwargs.get("cluster_id")
-        if cluster_id:
-            cls._check_segmentation_type_changing(cluster_id, np)
+
+        cluster = db().query(Cluster).get(cluster_id)
+        cluster_version = cluster.release.environment_version
+        if StrictVersion(cluster_version) < StrictVersion(
+                consts.FUEL_MULTIPLE_FLOATING_IP_RANGES):
+            cls._check_multiple_floating_ip_ranges(np)
+
+        cls._check_segmentation_type_changing(cluster_id, np)
 
         return d
 

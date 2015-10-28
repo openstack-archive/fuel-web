@@ -32,6 +32,22 @@ from nailgun.utils import reverse
 
 class TestNetworkModels(BaseIntegrationTest):
 
+    network_config = {
+        "net_l23_provider": consts.NEUTRON_L23_PROVIDERS.ovs,
+        "segmentation_type": consts.NEUTRON_SEGMENT_TYPES.gre,
+        "vlan_range": [1000, 1030],
+        "gre_id_range": [2, 65534],
+        "base_mac": "fa:16:3e:00:00:00",
+        "internal_cidr": "192.168.111.0/24",
+        "internal_gateway": "192.168.111.1",
+        "floating_ranges": [
+            ["172.16.0.130", "172.16.0.150"],
+            ["172.16.0.160", "172.16.0.254"]
+        ],
+        "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+        "configuration_template": {}
+    }
+
     def tearDown(self):
         self._wait_for_threads()
         super(TestNetworkModels, self).tearDown()
@@ -158,25 +174,14 @@ class TestNetworkModels(BaseIntegrationTest):
         kw.pop("cluster_id")
         self.assertEqual(nw_params, kw)
 
-    def test_neutron_networking_parameters(self):
+    def check_neutron_networking_parameters(self, floating_ranges):
         cluster = self.env.create_cluster(
             api=False,
             net_provider=consts.CLUSTER_NET_PROVIDERS.neutron)
         self.db.delete(cluster.network_config)
-        kw = {
-            "net_l23_provider": consts.NEUTRON_L23_PROVIDERS.ovs,
-            "segmentation_type": consts.NEUTRON_SEGMENT_TYPES.gre,
-            "vlan_range": [1000, 1030],
-            "gre_id_range": [2, 65534],
-            "base_mac": "fa:16:3e:00:00:00",
-            "internal_cidr": "192.168.111.0/24",
-            "internal_gateway": "192.168.111.1",
-            "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
-            "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
-            "cluster_id": cluster.id,
-            "configuration_template": {}
-        }
-        nc = NeutronConfig(**kw)
+        self.network_config['floating_ranges'] = floating_ranges
+        self.network_config['cluster_id'] = cluster.id
+        nc = NeutronConfig(**self.network_config)
         self.db.add(nc)
         self.db.flush()
         self.db.refresh(cluster)
@@ -184,5 +189,15 @@ class TestNetworkModels(BaseIntegrationTest):
         nw_params = NeutronNetworkConfigurationSerializer. \
             serialize_network_params(cluster)
 
-        kw.pop("cluster_id")
-        self.assertEqual(nw_params, kw)
+        self.network_config.pop("cluster_id")
+        self.assertEqual(nw_params, self.network_config)
+
+    def test_neutron_networking_parameters_w_single_floating_ranges(self):
+        floating_ranges = [["172.16.0.130", "172.16.0.150"]]
+        self.check_neutron_networking_parameters(floating_ranges)
+
+    def test_neutron_networking_parameters_w_multiple_floating_ranges(self):
+        floating_ranges = [
+            ["172.16.0.130", "172.16.0.150"],
+            ["172.16.0.160", "172.16.0.254"]]
+        self.check_neutron_networking_parameters(floating_ranges)

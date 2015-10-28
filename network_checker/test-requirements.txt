@@ -1,6 +1,0 @@
--r requirements.txt
-hacking==0.7
-mock==1.0.1
-pytest
-unittest2
-requests-mock

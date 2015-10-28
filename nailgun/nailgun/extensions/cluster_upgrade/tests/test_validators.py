@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.settings import settings
 from nailgun.test import base
 
 from .. import validators
@@ -35,11 +36,12 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
         self.validator.validate_release_upgrade(self.release_61,
                                                 self.release_70)
 
+    @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
     def test_validate_release_upgrade_deprecated_release(self):
         release_511 = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,
             version="2014.1.3-5.1.1",
-            is_deployable=False,
+            state=consts.RELEASE_STATES.manageonly
         )
         msg = "^Upgrade to the given release \({0}\).*is deprecated and " \
               "cannot be installed\.$".format(self.release_61.id)
@@ -48,7 +50,7 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
                                                     self.release_61)
 
     def test_validate_release_upgrade_to_older_release(self):
-        self.release_61.is_deployable = True
+        self.release_61.state = consts.RELEASE_STATES.available
         msg = "^Upgrade to the given release \({0}\).*release is equal or " \
               "lower than the release of the original cluster\.$" \
               .format(self.release_61.id)

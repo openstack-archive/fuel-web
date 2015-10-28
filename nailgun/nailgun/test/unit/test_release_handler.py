@@ -71,11 +71,15 @@ class TestHandlers(BaseIntegrationTest):
     def test_release_put_deployable(self):
         release = self.env.create_release(api=False)
 
-        for deployable in (False, True):
+        for state, deployable in (
+            ('available', True),
+            ('unavailable', False),
+            ('manageonly', False)
+        ):
             resp = self.app.put(
                 reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
                 params=jsonutils.dumps({
-                    'is_deployable': deployable,
+                    'state': state,
                 }),
                 headers=self.default_headers)
             self.assertEqual(200, resp.status_code)
@@ -88,7 +92,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
             params=jsonutils.dumps({
-                'is_deployable': False,
+                'state': consts.RELEASE_STATES.manageonly,
             }),
             headers=self.default_headers)
         self.assertEqual(200, resp.status_code)
@@ -108,7 +112,6 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
             params=jsonutils.dumps({
-                'is_deployable': False,
                 'state': consts.RELEASE_STATES.unavailable
             }),
             headers=self.default_headers)

@@ -205,7 +205,7 @@ class TestOpenStackUpgrader(BaseTestCase):
                     "name": "Undeployable releases name",
                     "version": "2014.1",
                     "operating_system": "CentOS",
-                    "is_deployable": False,
+                    "state": "unavailable",
                 }
             }
         ]

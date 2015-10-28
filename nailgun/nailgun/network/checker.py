@@ -17,11 +17,15 @@
 
 from itertools import combinations
 from itertools import product
-
 import netaddr
+import six
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun import objects
+from nailgun.task.helpers import TaskHelper
 
 from nailgun.objects.serializers.network_configuration \
     import NetworkConfigurationSerializer
@@ -29,11 +33,6 @@ from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
-
-from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.errors import errors
-from nailgun.logger import logger
-from nailgun.task.helpers import TaskHelper
 
 
 class NetworkCheck(object):
@@ -387,26 +386,25 @@ class NetworkCheck(object):
                     })
         self.expose_error_messages()
 
-        # check Floating Start and Stop IPs belong to Public CIDR
+        # check Floating ranges belong to the same Public CIDR
         publics = filter(lambda ng: ng['name'] == consts.NETWORKS.public,
                          self.networks)
         public_cidrs = [netaddr.IPNetwork(p['cidr']).cidr for p in publics]
-        fl_ip_ranges = []
 
-        for start, end in self.network_config['floating_ranges']:
-            fl_ip_range = netaddr.IPRange(start, end)
-            fl_in_public = any(fl_ip_range in cidr for cidr in public_cidrs)
-            if not fl_in_public:
-                self.err_msgs.append(
-                    u"Floating address range {0}:{1} is not in public "
-                    u"address space {2}.".format(
-                        start, end,
-                        ','.join(str(cidr) for cidr in public_cidrs)
-                    )
-                )
-                self.result = [{"ids": [],
-                                "errors": ["cidr", "ip_ranges"]}]
-            fl_ip_ranges.append(fl_ip_range)
+        floating_ip_ranges = [
+            netaddr.IPRange(r1, r2)
+            for r1, r2 in self.network_config['floating_ranges']]
+
+        for cidr in public_cidrs:
+            if all(six.moves.map(cidr.__contains__, floating_ip_ranges)):
+                break
+        else:
+            self.err_msgs.append(
+                "Floating address ranges {0} are not in the same public CIDR."
+                "".format(', '.join(str(cidr) for cidr in floating_ip_ranges))
+            )
+            self.result = [{"ids": [],
+                            "errors": ["cidr", "ip_ranges"]}]
         self.expose_error_messages()
 
         # Check intersection of networks address spaces inside
@@ -417,11 +415,12 @@ class NetworkCheck(object):
 
             ranges = [netaddr.IPRange(start, end)
                       for start, end in public['ip_ranges']]
-            ranges.extend(r for r in fl_ip_ranges if r in public_cidr)
+            ranges.extend(r for r in floating_ip_ranges if r in public_cidr)
 
             for npair in combinations(ranges, 2):
                 if self.net_man.is_range_intersection(npair[0], npair[1]):
-                    if npair[0] in fl_ip_ranges or npair[1] in fl_ip_ranges:
+                    if (npair[0] in floating_ip_ranges or
+                            npair[1] in floating_ip_ranges):
                         self.err_msgs.append(
                             u"Address space intersection between ranges "
                             u"of public and floating network."
@@ -463,7 +462,8 @@ class NetworkCheck(object):
                 u"Internal gateway {0} is not in internal "
                 u"address space {1}.".format(str(gw), str(cidr))
             )
-        if self.net_man.is_range_intersection(fl_ip_range, cidr):
+        if floating_ip_ranges and self.net_man.is_range_intersection(
+                floating_ip_ranges[0], cidr):
             self.result.append({"ids": [],
                                 "name": ["internal", "external"],
                                 "errors": ["cidr", "ip_ranges"]})

@@ -171,7 +171,10 @@ class TestNetworkModels(BaseIntegrationTest):
             "base_mac": "fa:16:3e:00:00:00",
             "internal_cidr": "192.168.111.0/24",
             "internal_gateway": "192.168.111.1",
-            "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
+            "floating_ranges": [
+                ["172.16.0.130", "172.16.0.150"],
+                ["172.16.0.160", "172.16.0.254"]
+            ],
             "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
             "cluster_id": cluster.id,
             "configuration_template": {}

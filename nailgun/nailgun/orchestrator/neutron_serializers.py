@@ -391,7 +391,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         return iface_attrs
 
     @classmethod
-    def _generate_external_network(cls, cluster):
+    def generate_external_network(cls, cluster):
         floating_range = cluster.network_config.floating_ranges[0]
         floating_iprange = netaddr.IPRange(
             floating_range[0], floating_range[1])
@@ -452,7 +452,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     @classmethod
     def generate_predefined_networks(cls, cluster):
         return {
-            "net04_ext": cls._generate_external_network(cluster),
+            "net04_ext": cls.generate_external_network(cluster),
             "net04": cls._generate_internal_network(cluster)
         }
 
@@ -510,9 +510,9 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 class NeutronNetworkDeploymentSerializer51(NeutronNetworkDeploymentSerializer):
 
     @classmethod
-    def _generate_external_network(cls, cluster):
+    def generate_external_network(cls, cluster):
         ext_netw = super(NeutronNetworkDeploymentSerializer51, cls).\
-            _generate_external_network(cluster)
+            generate_external_network(cluster)
         ext_netw["L2"] = {
             "network_type": "local",
             "segment_id": None,
@@ -1298,7 +1298,51 @@ class NeutronNetworkTemplateSerializer70(
 class NeutronNetworkDeploymentSerializer80(
     NeutronNetworkDeploymentSerializer70
 ):
-    pass
+
+    @classmethod
+    def generate_external_network(cls, cluster):
+        floating_ranges = [
+            netaddr.IPRange(r1, r2)
+            for r1, r2 in cluster.network_config.floating_ranges
+        ]
+
+        floating_cidr, floating_gw = None, None
+        networks = db().query(
+            models.NetworkGroup.cidr,
+            models.NetworkGroup.gateway
+        ).join(
+            models.NetworkGroup.nodegroup
+        ).filter(
+            models.NodeGroup.cluster_id == cluster.id
+        )
+        for net in networks:
+            if net[0] and floating_ranges[0] in netaddr.IPNetwork(net[0]):
+                floating_cidr, floating_gw = net[0], net[1]
+                break
+
+        floating_ranges_rendered = [
+            utils.join_range(fr)
+            for fr in cluster.network_config.floating_ranges]
+
+        external_network = {
+            "L3": {
+                "subnet": floating_cidr,
+                "gateway": floating_gw,
+                "nameservers": [],
+                "floating": floating_ranges_rendered,
+                "enable_dhcp": False
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": True,
+                "physnet": "physnet1"
+            },
+            "tenant": Cluster.get_creds(cluster)['tenant']['value'],
+            "shared": False
+        }
+
+        return external_network
 
 
 class NeutronNetworkTemplateSerializer80(NeutronNetworkTemplateSerializer70):

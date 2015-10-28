@@ -489,8 +489,13 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         return data
 
     def test_validation_passed(self):
+        self.env.create(
+            cluster_kwargs={'net_provider': 'neutron'},
+            release_kwargs={'version': "1111-8.0"}
+        )
+        self.nc['networking_parameters'].pop('segmentation_type')
         serialized_data = self.serialize(self.nc)
-        self.validator(serialized_data, mock.Mock(id=1))
+        self.validator(serialized_data, self.env.clusters[0])
 
     # networking parameters
     def test_networking_parameters_additional_property(self):
@@ -590,15 +595,6 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
 
         self.nc['networking_parameters']['vlan_range'] = [2, 2]
         self.assertRaisesNonUnique(self.nc, "[2, 2]")
-
-    def test_error_setting_multiple_floating_ip_ranges(self):
-        self.nc['networking_parameters']['floating_ranges'] = [
-            ["172.16.0.130", "172.16.0.254"],
-            ["172.16.1.1", "172.16.1.10"]
-        ]
-        context = self.get_invalid_data_context(self.nc)
-        err_msg = "Setting of multiple floating IP ranges is prohibited"
-        self.assertEqual(context.exception.message, err_msg)
 
 
 class TestNeutronNetworkConfigurationValidator(base.BaseIntegrationTest):

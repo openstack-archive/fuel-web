@@ -340,6 +340,21 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             'Setting of multiple floating IP ranges is prohibited'
         )
 
+    @patch('nailgun.db.sqlalchemy.models.Release.environment_version', "8.0")
+    def test_setting_multiple_floating_ip_ranges_8_0(self):
+        initial_data = self.env.neutron_networks_get(self.cluster.id).json_body
+        initial_data['networking_parameters']['floating_ranges'] = [
+            ["172.16.0.130", "172.16.0.150"],
+            ["172.16.0.200", "172.16.0.254"]
+        ]
+
+        resp = self.env.neutron_networks_put(self.cluster.id, initial_data)
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            initial_data['networking_parameters']['floating_ranges'],
+            resp.json_body['networking_parameters']['floating_ranges']
+        )
+
     def test_network_group_update_changes_network(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body

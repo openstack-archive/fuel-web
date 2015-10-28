@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import MagicMock
+from mock import patch
+
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -22,9 +25,6 @@ from nailgun.network.checker import NetworkCheck
 from nailgun.task import helpers
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.test.base import BaseIntegrationTest
-
-from mock import MagicMock
-from mock import patch
 
 
 class FakeTask(object):
@@ -195,6 +195,39 @@ class TestNetworkCheck(BaseIntegrationTest):
 
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.check_public_floating_ranges_intersection)
+
+        checker = NetworkCheck(self.task, {})
+
+        # 'floating_ranges' and 'ip_ranges' have to be in the same 'cidr'
+        # but don't intersect.
+        checker.networks = [
+            {'id': 1,
+             'cidr': '192.168.0.0/25',
+             'name': 'public',
+             'gateway': '192.168.0.1',
+             'ip_ranges': [['192.168.0.10', '192.168.0.40']],
+             'meta': {'notation': 'cidr'}
+             },
+            {'id': 2,
+             'cidr': '192.168.0.128/25',
+             'name': 'public',
+             'gateway': '192.168.0.1',
+             'ip_ranges': [['192.168.0.130', '192.168.0.150']],
+             'meta': {'notation': 'cidr'}
+             }
+        ]
+
+        checker.network_config['floating_ranges'] = [
+            ['192.168.0.50', '192.168.0.100'],
+            ['192.168.0.160', '192.168.0.200']
+        ]
+
+        with self.assertRaises(errors.NetworkCheckError) as e:
+            checker.neutron_check_network_address_spaces_intersection()
+            self.assertEqual(
+                e.exception.message,
+                "Floating address ranges 192.168.0.55-192.168.0.65, "
+                "192.168.0.200-192.168.0.220 are not in the same public CIDR.")
 
     @patch.object(helpers, 'db')
     def test_check_vlan_ids_range_and_intersection_failed(self, mocked_db):

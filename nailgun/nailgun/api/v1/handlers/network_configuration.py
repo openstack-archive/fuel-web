@@ -100,6 +100,8 @@ class ProviderHandler(BaseHandler):
             return self.serializer.serialize_for_cluster(cluster)
         except errors.OutOfIPs as exc:
             raise self.http(400, six.text_type(exc))
+        except errors.DuplicatedVIPNames as exc:
+            raise self.http(400, six.text_type(exc))
         except Exception:
             logger.exception('Serialization failed')
             raise

@@ -70,7 +70,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
 
     def serialize(self, cluster, nodes, ignore_customized=False):
-        """Method generates facts which are passed to puppet"""
+        """Method generates facts which are passed to puppet."""
         def keyfunc(node):
             return bool(node.replaced_deployment_info)
 
@@ -240,7 +240,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         return serialized_nodes
 
     def serialize_node(self, node, role):
-        """Serialize node, then it will be merged with common attributes"""
+        """Serialize node, then it will be merged with common attributes."""
         node_attrs = {
             # Yes, uid is really should be a string
             'uid': node.uid,
@@ -342,7 +342,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
     @classmethod
     def node_list(cls, nodes):
-        """Node list"""
+        """Node list."""
         node_list = super(
             DeploymentHASerializer,
             cls
@@ -354,7 +354,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         return node_list
 
     def get_common_attrs(self, cluster):
-        """Common attributes for all facts"""
+        """Common attributes for all facts."""
         common_attrs = super(
             DeploymentHASerializer,
             self
@@ -372,7 +372,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         return common_attrs
 
     def get_assigned_vips(self, cluster):
-        """Assign and get vips for net groups"""
+        """Assign and get vips for net groups."""
         return objects.Cluster.get_network_manager(cluster).\
             assign_vips_for_net_groups(cluster)
 
@@ -563,7 +563,7 @@ def get_serializer_for_cluster(cluster):
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
-    """Serialization depends on deployment mode"""
+    """Serialization depends on deployment mode."""
     objects.Cluster.set_primary_roles(cluster, nodes)
     env_version = cluster.release.environment_version
 

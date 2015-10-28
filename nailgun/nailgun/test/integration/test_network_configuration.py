@@ -589,6 +589,35 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         ipaddr = resp.json_body['vips']['my-vip']['ipaddr']
         self.assertEqual('10.42.0.2', ipaddr)
 
+    def test_get_returns_error_if_vip_names_are_intersected(self):
+        cluster = self.env.create(
+            release_kwargs={'version': '2015.1.0-7.0'},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
+                'api': False,
+            },
+            nodes_kwargs=[{'roles': ['controller']}]
+        )
+        cluster.release.network_roles_metadata.append({
+            'id': 'mymgmt/vip',
+            'default_mapping': consts.NETWORKS.management,
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': [{
+                    'name': 'management',
+                    'node_roles': ['compute'],
+                }]
+            }})
+        self.db.flush()
+        resp = self.env.neutron_networks_get(cluster.id, expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertIn(
+            'Duplicate VIP names found in network configuration',
+            resp.json_body['message']
+        )
+
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 

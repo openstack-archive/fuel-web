@@ -131,7 +131,9 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def get_node_networks_with_ips(cls, node):
-        """Returns IP and network data (meta, gateway) for each node network"""
+        """Returns IP and network data (meta, gateway) for each node network.
+
+        """
         if not node.group_id:
             return {}
 
@@ -226,7 +228,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
     @classmethod
     def assign_ips_in_node_group(
             cls, net_id, net_name, node_ids, ip_ranges):
-        "Assigns IP addresses for nodes in given network"
+        """Assigns IP addresses for nodes in given network."""
         ips_by_node_id = db().query(
             models.IPAddr.ip_addr,
             models.IPAddr.node

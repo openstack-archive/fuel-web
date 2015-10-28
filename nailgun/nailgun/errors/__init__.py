@@ -82,6 +82,8 @@ default_messages = {
     "NetworkRoleConflict": "Cannot override existing network role",
     "NetworkTemplateMissingRoles": "Roles are missing from network template",
     "NetworkTemplateMissingNetRoles": "Network roles are missing",
+    "DuplicatedVIPNames": ("Cannot assign VIPs for the cluster due to "
+                           "overlapping of names of the VIPs"),
 
     # RPC errors
     "CannotFindTask": "Cannot find task",

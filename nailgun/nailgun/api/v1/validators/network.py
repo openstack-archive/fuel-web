@@ -189,8 +189,6 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
         d = cls.validate_json(data)
         np = d.get('networking_parameters')
 
-        cls._check_multiple_floating_ip_ranges(np)
-
         cluster_id = kwargs.get("cluster_id")
         if cluster_id:
             cls._check_segmentation_type_changing(cluster_id, np)
@@ -207,16 +205,6 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
                         "Change of '{0}' is prohibited".format(k),
                         log_message=True
                     )
-
-    @classmethod
-    def _check_multiple_floating_ip_ranges(cls, net_params):
-        """Check that there is only one floating IP range in the input data"""
-        # TODO(aroma): if only one IP range is supported
-        # by the protocol we should get rid of the nested
-        # list then
-        if len(net_params.get('floating_ranges', [])) > 1:
-            raise errors.InvalidData(
-                "Setting of multiple floating IP ranges is prohibited")
 
     @classmethod
     def additional_network_validation(cls, data, cluster):

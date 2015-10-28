@@ -16,7 +16,7 @@ from mock import patch
 
 from nailgun.test import base
 
-from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator import deployment_serializers as ds
 
 
 CREDS = {'tenant': {'value': 'NONDEFAULT'}}
@@ -28,8 +28,7 @@ class TestNeutronDeploymentSerializer(base.BaseTestCase):
         super(TestNeutronDeploymentSerializer, self).setUp()
         self.env.create(cluster_kwargs={'net_provider': 'neutron'})
         self.cluster = self.env.clusters[0]
-        self.serializer = (deployment_serializers.
-                           NeutronNetworkDeploymentSerializer)
+        self.serializer = ds.NeutronNetworkDeploymentSerializer
 
     def verify_network_tenant(self, network):
         self.assertEqual(network['tenant'], CREDS['tenant']['value'])
@@ -53,3 +52,23 @@ class TestNeutronDeploymentSerializer(base.BaseTestCase):
             self.cluster)
         self.verify_network_tenant(predefined_network['net04'])
         self.verify_network_tenant(predefined_network['net04_ext'])
+
+
+class TestNeutronDeploymentSerializer80(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestNeutronDeploymentSerializer80, self).setUp()
+        self.env.create(cluster_kwargs={'net_provider': 'neutron'})
+        self.cluster = self.env.clusters[0]
+        self.serializer = ds.NeutronNetworkDeploymentSerializer80
+
+    def test_floating_ranges_transformation_in_external_network(self):
+        self.cluster.network_config.floating_ranges = [
+            ["172.16.0.130", "172.16.0.150"],
+            ["172.16.0.200", "172.16.0.254"]
+        ]
+        ext_network = self.serializer._generate_external_network(self.cluster)
+        self.assertEqual(
+            ext_network['L3']['floating'],
+            ['172.16.0.130:172.16.0.150', '172.16.0.200:172.16.0.254'],
+        )

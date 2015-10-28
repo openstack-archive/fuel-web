@@ -324,20 +324,18 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             "Change of 'segmentation_type' is prohibited"
         )
 
-    def test_prohibit_setting_multiple_floating_ip_ranges(self):
-        resp = self.env.neutron_networks_get(self.cluster.id)
-        data = resp.json_body
-        data['networking_parameters']['floating_ranges'] = [
-            ["172.16.0.130", "172.16.0.254"],
-            ["172.16.1.1", "172.16.1.10"]
+    def test_setting_multiple_floating_ip_ranges(self):
+        initial_data = self.env.neutron_networks_get(self.cluster.id).json_body
+        initial_data['networking_parameters']['floating_ranges'] = [
+            ["172.16.0.130", "172.16.0.150"],
+            ["172.16.0.200", "172.16.0.254"]
         ]
-        resp = self.env.neutron_networks_put(self.cluster.id, data,
-                                             expect_errors=True)
-        self.assertEqual(400, resp.status_code)
-        task = resp.json_body
+
+        resp = self.env.neutron_networks_put(self.cluster.id, initial_data)
+        self.assertEqual(200, resp.status_code)
         self.assertEqual(
-            task['message'],
-            'Setting of multiple floating IP ranges is prohibited'
+            initial_data['networking_parameters']['floating_ranges'],
+            resp.json_body['networking_parameters']['floating_ranges']
         )
 
     def test_network_group_update_changes_network(self):

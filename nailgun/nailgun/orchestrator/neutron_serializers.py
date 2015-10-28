@@ -1298,7 +1298,52 @@ class NeutronNetworkTemplateSerializer70(
 class NeutronNetworkDeploymentSerializer80(
     NeutronNetworkDeploymentSerializer70
 ):
-    pass
+
+    @classmethod
+    def _generate_external_network(cls, cluster):
+        floating_ranges = (
+            netaddr.IPRange(r1, r2)
+            for r1, r2 in cluster.network_config.floating_ranges
+        )
+
+        floating_cidr, floating_gw = None, None
+        networks = db().query(
+            models.NetworkGroup.cidr,
+            models.NetworkGroup.gateway
+        ).join(
+            models.NetworkGroup.nodegroup
+        ).filter(
+            models.NodeGroup.cluster_id == cluster.id
+        )
+        for net in networks:
+            for ip_range in floating_ranges:
+                if net[0] and ip_range in netaddr.IPNetwork(net[0]):
+                    floating_cidr, floating_gw = net[0], net[1]
+                    break
+
+        floating_ranges_rendered = [
+            utils.join_range(fr)
+            for fr in cluster.network_config.floating_ranges]
+
+        external_network = {
+            "L3": {
+                "subnet": floating_cidr,
+                "gateway": floating_gw,
+                "nameservers": [],
+                "floating": floating_ranges_rendered,
+                "enable_dhcp": False
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": True,
+                "physnet": "physnet1"
+            },
+            "tenant": Cluster.get_creds(cluster)['tenant']['value'],
+            "shared": False
+        }
+
+        return external_network
 
 
 class NeutronNetworkTemplateSerializer80(NeutronNetworkTemplateSerializer70):

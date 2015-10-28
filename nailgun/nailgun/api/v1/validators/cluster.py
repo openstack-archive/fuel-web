@@ -28,7 +28,10 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.plugins.manager import PluginManager
+from nailgun.objects.serializers import network_configuration
 from nailgun.utils import restrictions
+
 
 
 class ClusterValidator(BasicValidator):
@@ -201,6 +204,7 @@ class AttributesValidator(BasicValidator):
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
 
             cls._validate_net_provider(attrs, cluster)
+            cls._check_plugin_network_config_compartible(attrs, cluster)
 
             # NOTE(agordeev): disable classic provisioning for 7.0 or higher
             if StrictVersion(cluster.release.environment_version) >= \
@@ -221,6 +225,27 @@ class AttributesValidator(BasicValidator):
         cls.validate_editable_attributes(attrs)
 
         return d
+
+    def _check_plugin_network_config_compartible(self, attrs, cluster):
+        plugins = set(cluster.plugins)
+        PluginManager.process_cluster_attributes(cluster, attrs['editable'])
+        plugins_to_check = set(cluster.plugins) - plugins
+        try:
+            # Try to serialize network configuration to be sure that
+            # new installing plugins will keep it in consistent sate
+            if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
+                network_configuration.NeutronNetworkConfigurationSerializer\
+                    .serialize_for_cluster(cluster)
+            elif cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
+                network_configuration.NovaNetworkConfigurationSerializer\
+                    .serialize_for_cluster(cluster)
+        except Exception as e:
+            # Rollback
+            cluster.plugins = list(plugins)
+            raise errors.InvalidData(
+                'Can not add plugins %s to cluster.\nReason: "%s"'
+                '' % (list(plugins_to_check), str(e)), log_message=True
+            )
 
     @classmethod
     def _validate_net_provider(cls, data, cluster):

@@ -28,6 +28,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.plugins.manager import PluginManager
 from nailgun.utils import restrictions
 
 
@@ -201,6 +202,12 @@ class AttributesValidator(BasicValidator):
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
 
             cls._validate_net_provider(attrs, cluster)
+            # TODO(sslypushenko) This check in necessary, because serialization
+            #  of network configuration can failed after activating one more
+            # plugin. It is mainly because serialization contains some logic
+            # for assigning VIPs. After removing this logic this check can
+            # be also removed.
+            cls._check_plugin_network_config_compatible(attrs, cluster)
 
             # NOTE(agordeev): disable classic provisioning for 7.0 or higher
             if StrictVersion(cluster.release.environment_version) >= \
@@ -221,6 +228,29 @@ class AttributesValidator(BasicValidator):
         cls.validate_editable_attributes(attrs)
 
         return d
+
+    @classmethod
+    def _check_plugin_network_config_compatible(cls, attrs, cluster):
+        plugins = set(cluster.plugins)
+        PluginManager.process_cluster_attributes(cluster, attrs['editable'])
+        plugins_to_check = set(cluster.plugins) - plugins
+        try:
+            # Try to serialize network configuration to be sure that
+            # new installing plugins will keep it in consistent sate
+            net_manager = objects.Cluster.get_network_manager(cluster)
+            net_manager.assign_vips_for_net_groups_for_api(cluster)
+        except (errors.OutOfIPs,
+                errors.DuplicatedVIPNames,
+                errors.NetworkRoleConflict) as e:
+            raise errors.InvalidData(
+                'Can not add plugins %s to cluster. Reason: "%s"'
+                '' % (','.join(["'%s'" % plugin.name
+                                for plugin in plugins_to_check]),
+                      str(e)), log_message=True
+            )
+        finally:
+            # Rollback
+            cluster.plugins = list(plugins)
 
     @classmethod
     def _validate_net_provider(cls, data, cluster):

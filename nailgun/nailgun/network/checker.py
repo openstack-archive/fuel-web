@@ -387,26 +387,25 @@ class NetworkCheck(object):
                     })
         self.expose_error_messages()
 
-        # check Floating Start and Stop IPs belong to Public CIDR
+        # check Floating ranges belong to the same Public CIDR
         publics = filter(lambda ng: ng['name'] == consts.NETWORKS.public,
                          self.networks)
         public_cidrs = [netaddr.IPNetwork(p['cidr']).cidr for p in publics]
-        fl_ip_ranges = []
 
-        for start, end in self.network_config['floating_ranges']:
-            fl_ip_range = netaddr.IPRange(start, end)
-            fl_in_public = any(fl_ip_range in cidr for cidr in public_cidrs)
-            if not fl_in_public:
-                self.err_msgs.append(
-                    u"Floating address range {0}:{1} is not in public "
-                    u"address space {2}.".format(
-                        start, end,
-                        ','.join(str(cidr) for cidr in public_cidrs)
-                    )
-                )
-                self.result = [{"ids": [],
-                                "errors": ["cidr", "ip_ranges"]}]
-            fl_ip_ranges.append(fl_ip_range)
+        fl_ip_ranges = [
+            netaddr.IPRange(r1, r2)
+            for r1, r2 in self.network_config['floating_ranges']]
+
+        for public_cidr in public_cidrs:
+            if all(filter(lambda i: i in public_cidr, fl_ip_ranges)):
+                break
+        else:
+            self.err_msgs.append(
+                "Floating address ranges {0} are not in the same public "
+                "CIDR.".format(', '.join(str(cidr) for cidr in fl_ip_ranges))
+            )
+            self.result = [{"ids": [],
+                            "errors": ["cidr", "ip_ranges"]}]
         self.expose_error_messages()
 
         # Check intersection of networks address spaces inside
@@ -463,7 +462,7 @@ class NetworkCheck(object):
                 u"Internal gateway {0} is not in internal "
                 u"address space {1}.".format(str(gw), str(cidr))
             )
-        if self.net_man.is_range_intersection(fl_ip_range, cidr):
+        if self.net_man.is_range_intersection(fl_ip_ranges[0], cidr):
             self.result.append({"ids": [],
                                 "name": ["internal", "external"],
                                 "errors": ["cidr", "ip_ranges"]})

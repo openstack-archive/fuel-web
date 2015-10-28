@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils.version import StrictVersion
 from netaddr import IPNetwork
-import six
-
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.network_template import \
@@ -188,12 +188,20 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)
         np = d.get('networking_parameters')
-
-        cls._check_multiple_floating_ip_ranges(np)
-
         cluster_id = kwargs.get("cluster_id")
-        if cluster_id:
-            cls._check_segmentation_type_changing(cluster_id, np)
+
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        cluster_version = cluster.release.environment_version
+
+        if StrictVersion(cluster_version) < StrictVersion(
+                consts.FUEL_MULTIPLE_FLOATING_IP_RANGES
+        ) and len(np.get('floating_ranges', [])) > 1:
+            raise errors.InvalidData(
+                "Setting of multiple floating IP ranges is prohibited. "
+                "We support it since {0} version of environment."
+                .format(consts.FUEL_MULTIPLE_FLOATING_IP_RANGES))
+
+        cls._check_segmentation_type_changing(cluster_id, np)
 
         return d
 
@@ -207,16 +215,6 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
                         "Change of '{0}' is prohibited".format(k),
                         log_message=True
                     )
-
-    @classmethod
-    def _check_multiple_floating_ip_ranges(cls, net_params):
-        """Check that there is only one floating IP range in the input data"""
-        # TODO(aroma): if only one IP range is supported
-        # by the protocol we should get rid of the nested
-        # list then
-        if len(net_params.get('floating_ranges', [])) > 1:
-            raise errors.InvalidData(
-                "Setting of multiple floating IP ranges is prohibited")
 
     @classmethod
     def additional_network_validation(cls, data, cluster):

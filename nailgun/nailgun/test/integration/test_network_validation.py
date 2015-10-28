@@ -484,8 +484,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEqual(
             task['message'],
-            "Floating address range 172.16.0.130:172.16.0.254 is not in "
-            "public address space 172.16.10.0/24."
+            "Floating address ranges 172.16.0.130-172.16.0.254 "
+            "are not in the same public CIDR."
         )
 
     def test_network_checking_fails_if_network_ranges_intersect(self):
@@ -577,7 +577,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEqual(
             task['message'],
-            "Intersection between internal CIDR and floating range."
+            "Intersection between internal CIDR 172.16.0.128/26 and "
+            "floating range 172.16.0.130-172.16.0.254."
         )
 
     def test_network_fit_abc_classes_exclude_loopback(self):

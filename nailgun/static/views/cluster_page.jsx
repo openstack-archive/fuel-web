@@ -142,11 +142,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 });
             }
         },
+        getDefaultProps: function() {
+            return {
+                defaultLogLevel: 'INFO'
+            };
+        },
         getInitialState: function() {
             return {
                 activeGroupName: this.pickDefaultSettingGroup(),
                 selectedNodeIds: {},
-                selectedLogs: {type: 'local', node: null, source: 'app', level: 'INFO'}
+                selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
             };
         },
         removeFinishedNetworkTasks: function(callback) {
@@ -208,7 +213,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 var selectedLogs;
                 if (props.tabOptions[0]) {
                     selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
-                    selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() : null;
+                    selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() : props.defaultLogLevel;
                     this.setState({selectedLogs: selectedLogs});
                 }
             }

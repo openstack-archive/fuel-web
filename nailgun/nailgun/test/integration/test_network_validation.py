@@ -477,17 +477,6 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             "public network."
         )
 
-    def test_network_checking_fails_if_public_float_range_not_in_cidr(self):
-        self.find_net_by_name('public')['cidr'] = '172.16.10.0/24'
-        self.find_net_by_name('public')['gateway'] = '172.16.10.1'
-
-        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEqual(
-            task['message'],
-            "Floating address range 172.16.0.130:172.16.0.254 is not in "
-            "public address space 172.16.10.0/24."
-        )
-
     def test_network_checking_fails_if_network_ranges_intersect(self):
         self.find_net_by_name('management')['cidr'] = \
             self.find_net_by_name('storage')['cidr']

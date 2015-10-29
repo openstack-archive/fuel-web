@@ -14,17 +14,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-from nailgun.objects import Plugin
+from nailgun import consts
 from nailgun.objects import PluginCollection
 from nailgun.test import base
 
 
 class TestPluginCollection(base.BaseTestCase):
 
-    def test_all_newest(self):
-        self._create_test_plugins()
+    def setUp(self):
+        super(TestPluginCollection, self).setUp()
+        self.release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact])
+        self.plugin_ids = self._create_test_plugins()
 
+    def test_all_newest(self):
         newest_plugins = PluginCollection.all_newest()
         self.assertEqual(len(newest_plugins), 2)
 
@@ -41,8 +46,7 @@ class TestPluginCollection(base.BaseTestCase):
         self.assertEqual(multiversion_plugin[0].version, '3.0.0')
 
     def test_get_by_uids(self):
-        plugin_ids = self._create_test_plugins()
-        ids = plugin_ids[:2]
+        ids = self.plugin_ids[:2]
         plugins = PluginCollection.get_by_uids(ids)
         self.assertEqual(len(list(plugins)), 2)
         self.assertListEqual(
@@ -51,15 +55,12 @@ class TestPluginCollection(base.BaseTestCase):
     def _create_test_plugins(self):
         plugin_ids = []
         for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0']:
-            plugin_data = self.env.get_default_plugin_metadata(
+            plugin = self.env.create_plugin(
                 version=version,
                 name='multiversion_plugin')
-            plugin = Plugin.create(plugin_data)
             plugin_ids.append(plugin.id)
 
-        single_plugin_data = self.env.get_default_plugin_metadata(
-            name='single_plugin')
-        plugin = Plugin.create(single_plugin_data)
+        plugin = self.env.create_plugin(name='single_plugin')
         plugin_ids.append(plugin.id)
 
         return plugin_ids

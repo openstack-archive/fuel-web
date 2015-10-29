@@ -34,13 +34,6 @@ from nailgun.db import db
 from nailgun.db import NoCacheQuery
 from nailgun.errors import errors
 
-from nailgun.openstack.common.db import api as db_api
-
-
-_BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
-
-IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
-
 
 class NailgunObject(object):
     """Base class for objects"""

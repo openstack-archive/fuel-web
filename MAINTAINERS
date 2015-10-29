@@ -31,15 +31,6 @@ maintainers:
       email:  mmosesohn@mirantis.com
       IRC:    mattymo
 
-- fuel_upgrade_system/fuel_upgrade/:
-    - name:   Evgeny Li
-      email:  eli@mirantis.com
-      IRC:    evgeniyl
-
-    - name:   Igor Kalnitsky
-      email:  ikalnitsky@mirantis.com
-      IRC:    ikalnitsky
-
 - network_checker/:
     - name:   Dmytro Shuliak
       email:  dshulyak@mirantis.com

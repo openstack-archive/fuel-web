@@ -1,5 +1,0 @@
-[${name}]
-name=${name}
-baseurl=${baseurl}
-gpgcheck=${gpgcheck}
-skip_if_unavailable=${skip_if_unavailable}

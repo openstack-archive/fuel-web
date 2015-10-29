@@ -3,7 +3,6 @@ Jinja2==2.7
 Mako==0.9.1
 MarkupSafe==0.18
 PyYAML==3.10
-SQLAlchemy>=0.9.4
 alembic>=0.6.2
 amqplib==1.0.2
 anyjson==0.3.3
@@ -16,6 +15,11 @@ kombu==3.0.16
 netaddr>=0.7.10
 oslo.config>=1.6.0,<1.10.0
 oslo.serialization>=1.2.0,<1.5.0
+SQLAlchemy<=0.9.99
+# oslo.db has no upper bound for sqlalchemy-migrate, and latest
+# sqlalchemy-migrate requires conflicting version of pbr.
+sqlalchemy-migrate>=0.9.5,!=0.9.8,<0.10.0
+oslo.db<1.8.0
 ply==3.4
 psycopg2==2.5.1
 pycrypto==2.6.1

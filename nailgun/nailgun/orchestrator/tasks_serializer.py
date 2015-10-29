@@ -426,7 +426,7 @@ class TaskSerializers(object):
             # deployment engine, therefore exception should be raised,
             # but it should be verified by validation as well
             raise errors.SerializerNotSupported(
-                'Serialization of type {0} not supported. Task {1}'.format(
+                'Serialization of type {0} is not supported. Task {1}'.format(
                     task['type'], task))
 
     def get_stage_serializer(self, task):

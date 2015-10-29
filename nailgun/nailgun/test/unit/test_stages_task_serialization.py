@@ -18,6 +18,7 @@ import mock
 import yaml
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.orchestrator import deployment_graph
@@ -535,3 +536,20 @@ class TestConditionalTasksSerializers(BaseTaskSerializationTest):
 
         tasks = self.graph.pre_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 0)
+
+
+class TestSerializationIsNotSupportedError(base.BaseTestCase):
+
+    def test_error_is_raised(self):
+        task_type = 'fake_type'
+        task = {'id': 'fake_task', 'type': task_type}
+
+        ts = tasks_serializer.TaskSerializers()
+
+        err_msg = 'Serialization of type {0} is not supported.'\
+            .format(task_type)
+
+        with self.assertRaises(errors.SerializerNotSupported) as exc:
+            ts.get_deploy_serializer(task)
+
+        self.assertIn(err_msg, exc.exception.message)

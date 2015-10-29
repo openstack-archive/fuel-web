@@ -135,5 +135,34 @@ define([
                 'Attempting to highlight non-existent step keeps text as it is'
             );
         });
+
+        test('Test getDefaultGatewayForCidr', function() {
+            var getGateway = utils.getDefaultGatewayForCidr;
+
+            assert.equal(getGateway('172.16.0.0/24'), '172.16.0.1', 'Getting default gateway for CIDR');
+            //FIXME: the following test should be restored within #1514493 fix
+            //assert.equal(getGateway('192.168.0.0/10'), '192.128.0.1', 'Getting default gateway for CIDR');
+            assert.equal(getGateway('172.16.0.0/31'), '', 'No gateway returned for inappropriate CIDR (network is too small)');
+            assert.equal(getGateway('172.16.0.0/'), '', 'No gateway returned for invalid CIDR');
+        });
+
+        test('Test getDefaultIPRangeForCidr', function() {
+            var getRange = utils.getDefaultIPRangeForCidr;
+
+            assert.deepEqual(getRange('172.16.0.0/24'), [['172.16.0.1', '172.16.0.254']], 'Getting default IP range for CIDR');
+            //FIXME: the following test should be restored within #1514493 fix
+            //assert.deepEqual(getRange('192.168.0.0/10', true), [['192.128.0.2', '192.191.255.254']], 'Gateway address excluded from default IP range');
+            assert.deepEqual(getRange('172.16.0.0/31'), [['', '']], 'No IP range returned for inappropriate CIDR (network is too small)');
+            assert.deepEqual(getRange('172.16.0.0/', true), [['', '']], 'No IP range returned for invalid CIDR');
+        });
+
+        test('Test validateIpCorrespondsToCIDR', function() {
+            var validate = utils.validateIpCorrespondsToCIDR;
+
+            assert.ok(validate('172.16.0.0/20', '172.16.0.2'), 'Check IP, that corresponds to CIDR');
+            assert.ok(validate('172.16.0.5/24', '172.16.0.2'), 'Check IP, that corresponds to CIDR');
+            assert.ok(validate('172.16.0.0/20', '172.16.15.255'), 'Check boundary value');
+            assert.notOk(validate('192.168.0.0/10', '192.231.255.254'), 'Check IP, that does not correspond to CIDR');
+        });
     });
 });

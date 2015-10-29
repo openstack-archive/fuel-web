@@ -243,19 +243,35 @@ define([
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
-            var result = true;
-            if (cidr) {
-                /* jshint bitwise: false */
-                var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
-                var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
-                var ipToInt = utils.ipIntRepresentation(ip);
-                result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
-                /* jshint bitwise: true */
-            }
-            return result;
+            cidr = cidr.split('/');
+            var ipInt = utils.ipIntRepresentation(ip),
+                startIPInt = utils.ipIntRepresentation(cidr[0]),
+                endIPInt = Math.pow(2, 32 - cidr[1]) + startIPInt - 1;
+            return ipInt >= startIPInt && ipInt <= endIPInt;
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;
+        },
+        intToIP: function(ipInt) {
+            /* jshint bitwise: false */
+            var ip = [ipInt >>> 24, ipInt >>> 16 & 0xFF, ipInt >>> 8 & 0xFF, ipInt & 0xFF].join('.');
+            /* jshint bitwise: true */
+            return ip;
+        },
+        getDefaultGatewayForCidr: function(cidr) {
+            if (!_.isEmpty(utils.validateCidr(cidr))) return '';
+            var gatewayInt = utils.ipIntRepresentation(cidr.split('/')[0]) + 1; // the first address isn't used
+            return utils.intToIP(gatewayInt);
+        },
+        getDefaultIPRangeForCidr: function(cidr, excludeGateway) {
+            if (!_.isEmpty(utils.validateCidr(cidr))) return [['', '']];
+            cidr = cidr.split('/');
+            var netAddressInt = utils.ipIntRepresentation(cidr[0]);
+            var startIPInt = netAddressInt + 1;
+            if (excludeGateway) startIPInt++;
+            var endIPInt = Math.pow(2, 32 - cidr[1]) + netAddressInt - 1;
+            endIPInt--; // broadcast address isn't used
+            return [[utils.intToIP(startIPInt), utils.intToIP(endIPInt)]];
         },
         sortEntryProperties: function(entry, sortOrder) {
             sortOrder = sortOrder || ['name'];

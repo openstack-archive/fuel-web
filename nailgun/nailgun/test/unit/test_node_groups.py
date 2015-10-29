@@ -16,6 +16,7 @@
 
 import json
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun import objects
@@ -29,8 +30,8 @@ class TestNodeGroups(BaseIntegrationTest):
         super(TestNodeGroups, self).setUp()
         self.cluster = self.env.create_cluster(
             api=False,
-            net_provider='neutron',
-            net_segment_type='gre'
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.gre
         )
 
     def test_nodegroup_creation(self):
@@ -51,11 +52,11 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
     def test_nodegroup_assignment(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'api': True,
-                'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre
             },
             nodes_kwargs=[{
                 'roles': [],
@@ -65,7 +66,7 @@ class TestNodeGroups(BaseIntegrationTest):
         )
         node = self.env.nodes[0]
 
-        resp = self.env.create_node_group()
+        resp = self.env.create_node_group(cluster_id=cluster.get('id'))
         ng_id = resp.json_body['id']
 
         resp = self.app.put(
@@ -119,8 +120,8 @@ class TestNodeGroups(BaseIntegrationTest):
     def test_nodegroup_vlan_segmentation_type(self):
         cluster = self.env.create_cluster(
             api=False,
-            net_provider='neutron',
-            net_segment_type='vlan'
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.vlan
         )
         resp = self.app.post(
             reverse('NodeGroupCollectionHandler'),
@@ -140,8 +141,8 @@ class TestNodeGroups(BaseIntegrationTest):
     def test_nodegroup_tun_segmentation_type(self):
         cluster = self.env.create_cluster(
             api=False,
-            net_provider='neutron',
-            net_segment_type='tun'
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.tun
         )
         resp = self.app.post(
             reverse('NodeGroupCollectionHandler'),
@@ -320,3 +321,37 @@ class TestNodeGroups(BaseIntegrationTest):
             3,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
+
+    def test_assign_nodegroup_to_node_in_another_cluster(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': True,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre
+            },
+            nodes_kwargs=[{
+                'roles': [],
+                'pending_roles': ['controller'],
+                'pending_addition': True,
+                'api': True}]
+        )
+
+        empty_cluster = self.env.create_cluster(
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.gre
+        )
+        node = self.env.nodes[0]
+
+        resp = self.env.create_node_group(cluster_id=empty_cluster.get('id'))
+        ng_id = resp.json_body['id']
+
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node['id']}),
+            json.dumps({'group_id': ng_id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        message = resp.json_body['message']
+        self.assertEquals(resp.status_code, 400)
+        self.assertRegexpMatches(message, 'Cannot assign node group')

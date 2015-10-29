@@ -380,7 +380,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         render: function() {
             var cluster = this.props.cluster,
-                locked = !!cluster.tasks({group: 'deployment', status: 'running'}).length,
+                locked = !!cluster.getDeployingTask(),
                 nodes = this.props.nodes,
                 processedRoleData = this.processRoleLimits();
 

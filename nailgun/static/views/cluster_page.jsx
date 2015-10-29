@@ -173,14 +173,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             return $.when.apply($, requests);
         },
         shouldDataBeFetched: function() {
-            return this.props.cluster.task({group: ['deployment', 'network'], status: 'running'});
+            return this.props.cluster.getDeployingTask();
         },
         fetchData: function() {
-            var task = this.props.cluster.task({group: 'deployment', status: 'running'});
+            var task = this.props.cluster.getDeployingTask();
             if (task) {
                 return task.fetch()
                     .done(_.bind(function() {
-                        if (!task.match({status: 'running'})) dispatcher.trigger('deploymentTaskFinished');
+                        if (!(task.match({status: 'running'}) || task.match({status: 'pending'}))) dispatcher.trigger('deploymentTaskFinished');
                     }, this))
                     .then(_.bind(function() {
                         return this.props.cluster.fetchRelated('nodes');

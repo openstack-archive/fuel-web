@@ -1,3 +1,0 @@
-include fuel_upgrade/templates/*
-include fuel_upgrade/*.yaml
-include requirements.txt

@@ -257,6 +257,27 @@ define([
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;
         },
+        intToIP: function(ipInt) {
+            /* jshint bitwise: false */
+            var ip = [ipInt >>> 24, ipInt >>> 16 & 0xFF, ipInt >>> 8 & 0xFF, ipInt & 0xFF].join('.');
+            /* jshint bitwise: true */
+            return ip;
+        },
+        getDefaultGatewayForCidr: function(cidr) {
+            if (!_.isEmpty(utils.validateCidr(cidr))) return '';
+            var gatewayInt = utils.ipIntRepresentation(cidr.split('/')[0]) + 1; // the first address isn't used
+            return utils.intToIP(gatewayInt);
+        },
+        getDefaultIPRangeForCidr: function(cidr, excludeGateway) {
+            if (!_.isEmpty(utils.validateCidr(cidr))) return [['', '']];
+            cidr = cidr.split('/');
+            var netAddressInt = utils.ipIntRepresentation(cidr[0]);
+            var startIPInt = netAddressInt + 1;
+            if (excludeGateway) startIPInt++;
+            var endIPInt = _.min([Math.pow(2, 32 - cidr[1]) + netAddressInt - 1, utils.ipIntRepresentation('255.255.255.255')]);
+            endIPInt--; // broadcast address isn't used
+            return [[utils.intToIP(startIPInt), utils.intToIP(endIPInt)]];
+        },
         sortEntryProperties: function(entry, sortOrder) {
             sortOrder = sortOrder || ['name'];
             var properties = _.keys(entry);

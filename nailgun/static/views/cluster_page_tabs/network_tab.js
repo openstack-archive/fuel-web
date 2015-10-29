@@ -345,6 +345,37 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         }
     });
 
+    var CidrControl = React.createClass({
+        mixins: [NetworkModelManipulationMixin],
+        onCidrChange: function(name, cidr) {
+            this.props.onChange(name, cidr);
+            if (this.props.network.get('meta').notation == 'cidr') {
+                this.props.autoUpdateParameters(cidr);
+            }
+        },
+        render: function() {
+            return (
+                <div className='form-group cidr'>
+                    <label>{i18n('cluster_page.network_tab.network.cidr')}</label>
+                    <controls.Input
+                        {...this.props}
+                        type='text'
+                        label={null}
+                        onChange={this.onCidrChange}
+                        wrapperClassName='pull-left'
+                    />
+                    <controls.Input
+                        type='checkbox'
+                        checked={this.props.network.get('meta').notation == 'cidr'}
+                        label={i18n('cluster_page.network_tab.network.use_whole_cidr')}
+                        onChange={this.props.changeNetworkNotation}
+                        wrapperClassName='pull-left'
+                    />
+                </div>
+            );
+        }
+    });
+
     // FIXME(morale): this component is a lot of copy-paste from Range component
     // and should be rewritten either as a mixin or as separate componet for
     // multiflying other components (eg accepting Range, Input etc)
@@ -795,34 +826,52 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             NetworkInputsMixin,
             NetworkModelManipulationMixin
         ],
+        autoUpdateParameters: function(cidr) {
+            var useGateway = this.props.network.get('meta').use_gateway;
+            if (useGateway) this.setValue('gateway', utils.getDefaultGatewayForCidr(cidr));
+            this.setValue('ip_ranges', utils.getDefaultIPRangeForCidr(cidr, useGateway));
+        },
+        changeNetworkNotation: function(name, value) {
+            var meta = _.clone(this.props.network.get('meta'));
+            meta.notation = value ? 'cidr' : 'ip_ranges';
+            this.setValue('meta', meta);
+            if (value) this.autoUpdateParameters(this.props.network.get('cidr'));
+        },
         render: function() {
-            var network = this.props.network,
-                networkName = network.get('name'),
-                networkConfig = network.get('meta');
-            if (!networkConfig.configurable) return null;
-            var vlanTagging = network.get('vlan_start'),
-                ipRangesLabel = 'ip_ranges',
-                ns = 'cluster_page.network_tab.network.';
+            var meta = this.props.network.get('meta');
+            if (!meta.configurable) return null;
 
+            var ns = 'cluster_page.network_tab.network.',
+                networkName = this.props.network.get('name');
+
+            var ipRangeProps = this.composeProps('ip_ranges', true),
+                gatewayProps = this.composeProps('gateway');
             return (
                 <div className={'forms-box ' + networkName}>
                     <h3 className='networks'>{i18n('network.' + networkName)}</h3>
-                    {(networkConfig.notation == ipRangesLabel) &&
-                        <Range
-                            {...this.composeProps(ipRangesLabel, true)}
-                            rowsClassName='ip-ranges-rows'
-                            verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
+                    <CidrControl
+                        {... this.composeProps('cidr')}
+                        changeNetworkNotation={this.changeNetworkNotation}
+                        autoUpdateParameters={this.autoUpdateParameters}
+                    />
+                    <Range
+                        {...ipRangeProps}
+                        disabled={ipRangeProps.disabled || meta.notation == 'cidr'}
+                        rowsClassName='ip-ranges-rows'
+                        verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
+                    />
+                    {meta.use_gateway &&
+                        <controls.Input
+                            {...gatewayProps}
+                            type='text'
+                            disabled={gatewayProps.disabled || meta.notation == 'cidr'}
                         />
                     }
-                    {this.renderInput('cidr')}
                     <VlanTagInput
                         {...this.composeProps('vlan_start')}
                         label={i18n(ns + 'use_vlan_tagging')}
-                        value={vlanTagging}
+                        value={this.props.network.get('vlan_start')}
                     />
-                    {networkConfig.use_gateway &&
-                        this.renderInput('gateway')
-                    }
                 </div>
             );
         }

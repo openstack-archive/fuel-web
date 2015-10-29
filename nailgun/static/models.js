@@ -855,25 +855,28 @@ define([
             attrs.networks.each(function(network) {
                 if (network.get('meta').configurable) {
                     var networkErrors = {};
-                    _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
-                    if (network.get('meta').notation == 'ip_ranges' && !_.has(networkErrors, 'cidr')) {
-                        var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), network.get('cidr'));
-                        if (ipRangesErrors.length) {
-                            networkErrors.ip_ranges = ipRangesErrors;
+
+                    var cidr = network.get('cidr');
+                    _.extend(networkErrors, utils.validateCidr(cidr));
+
+                    if (network.get('meta').notation == 'ip_ranges') {
+                        if (!_.has(networkErrors, 'cidr')) {
+                            var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), cidr);
+                            if (ipRangesErrors.length) networkErrors.ip_ranges = ipRangesErrors;
+                        }
+                        if (network.get('meta').use_gateway) {
+                            if (utils.validateIP(network.get('gateway'))) {
+                                networkErrors.gateway = i18n(ns + 'invalid_gateway');
+                            } else if (!utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
+                                networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
+                            }
                         }
                     }
-                    if (network.get('meta').use_gateway) {
-                        if (utils.validateIP(network.get('gateway'))) {
-                            networkErrors.gateway = i18n(ns + 'invalid_gateway');
-                        } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
-                            networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
-                        }
-                    }
+
                     var forbiddenVlans = attrs.networks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;});
                     _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
-                    if (!_.isEmpty(networkErrors)) {
-                        networksErrors[network.id] = networkErrors;
-                    }
+
+                    if (!_.isEmpty(networkErrors)) networksErrors[network.id] = networkErrors;
                 }
             }, this);
             if (!_.isEmpty(networksErrors)) {
@@ -955,6 +958,7 @@ define([
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
             }
+
             var baremetalNetwork = attrs.networks.findWhere({name: 'baremetal'});
             if (baremetalNetwork && !_.has(networksErrors[baremetalNetwork.id], 'cidr')) {
                 var baremetalGateway = attrs.networking_parameters.get('baremetal_gateway');
@@ -969,9 +973,11 @@ define([
                     networkingParametersErrors.baremetal_range = [start, end];
                 }
             }
+
             if (!_.isEmpty(networkingParametersErrors)) {
                 errors.networking_parameters = networkingParametersErrors;
             }
+
             return _.isEmpty(errors) ? null : errors;
         }
     });

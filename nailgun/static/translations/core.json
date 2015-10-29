@@ -639,6 +639,7 @@
                         "ip_ranges": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
+                        "use_whole_cidr": "Use the whole CIDR",
                         "use_vlan_tagging": "Use VLAN tagging"
                     },
                     "networking_parameters": {

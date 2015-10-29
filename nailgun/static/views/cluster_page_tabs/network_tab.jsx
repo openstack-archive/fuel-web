@@ -470,6 +470,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 });
             }
         },
+        fetchNetworkConfiguration: function() {
+            return this.props.cluster.get('networkConfiguration').fetch({cache: false});
+        },
         getInitialState: function() {
             return {
                 initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
@@ -477,6 +480,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             };
         },
         componentDidMount: function() {
+            if (this.props.areClusterSettingsUpdated) {
+                this.props.cluster.get('networkConfiguration').fetch({cache: false});
+                this.props.clusterSettingsUpdated(false);
+            }
             this.props.cluster.get('tasks').on('change:status change:unsaved', this.removeUnsavedNetworkVerificationTasks, this);
         },
         componentWillUnmount: function() {
@@ -842,7 +849,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             var networkParameters = this.props.networkConfiguration.get('networking_parameters'),
                 manager = networkParameters.get('net_manager'),
                 idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id',
-                ns = 'cluster_page.network_tab.networking_parameters.';
+                ns = 'cluster_page.network_tab.networking_parameters.',
+                networkingParametersKeys = _.keys(networkParameters.toJSON());
 
             return (
                 <div>
@@ -918,6 +926,17 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     <div className='forms-box'>
                         <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
                     </div>
+                    {/* FIXME(amorozova): these checks are a kind of hacky and should be fixed ASAP */}
+                    {_.contains(networkingParametersKeys, 'baremetal_range') && _.contains(networkingParametersKeys, 'baremetal_gateway') &&
+                        <div className='forms-box'>
+                            <Range
+                                {...this.composeProps('baremetal_range', true)}
+                                placeholder=''
+                                hiddenControls={true}
+                            />
+                            {this.renderInput('baremetal_gateway')}
+                        </div>
+                    }
                 </div>
             );
         }

@@ -158,7 +158,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             return {
                 activeGroupName: this.pickDefaultSettingGroup(),
                 selectedNodeIds: {},
-                selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
+                selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel},
+                areClusterSettingsUpdated: false
             };
         },
         removeFinishedNetworkTasks: function(callback) {
@@ -243,6 +244,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
             this.setState({activeGroupName: value});
         },
+        clusterSettingsUpdated: function(areUpdated) {
+            this.setState({areClusterSettingsUpdated: areUpdated});
+        },
         selectNodes: function(ids, checked) {
             if (ids && ids.length) {
                 var nodeSelection = this.state.selectedNodeIds;
@@ -298,6 +302,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             setActiveGroupName={this.setActiveSettingsGroupName}
                             selectNodes={this.selectNodes}
                             changeLogSelection={this.changeLogSelection}
+                            clusterSettingsUpdated={this.clusterSettingsUpdated}
+                            areClusterSettingsUpdated={this.state.areClusterSettingsUpdated}
                             {...this.state}
                             {...this.props.tabData} />
                     </div>

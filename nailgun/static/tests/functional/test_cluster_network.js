@@ -112,6 +112,13 @@ define([
                     .assertElementNotExists(sizeSelector, 'Size field was hidden after revert to FlatDHCP')
                     .assertElementDisabled(networksPage.applyButtonSelector, 'Save changes button is disabled again after revert to FlatDHCP');
             },
+            'Testing cluster networks: network notation change': function() {
+                return this.remote
+                    .assertElementSelected('.storage .cidr input[type=checkbox]', 'Storage network has "cidr" notation by default')
+                    .assertElementNotExists('.storage .ip_ranges input[type=text]:not(:disabled)', 'It is impossible to configure IP ranges for network with "cidr" notation')
+                    .clickByCssSelector('.storage .cidr input[type=checkbox]')
+                    .assertElementNotExists('.storage .ip_ranges input[type=text]:disabled', 'Network notation was changed to "ip_ranges"');
+            },
             'Testing cluster networks: VLAN range fields': function() {
                 return this.remote
                     .then(function() {
@@ -141,9 +148,9 @@ define([
             },
             'Check VlanID field validation': function() {
                 return this.remote
-                    .clickByCssSelector('.management input[type=checkbox]')
-                    .clickByCssSelector('.management input[type=checkbox]')
-                    .assertElementExists('.management .has-error input[name=vlan_start]',
+                    .clickByCssSelector('.management input[type=checkbox][name=vlan_start]')
+                    .clickByCssSelector('.management input[type=checkbox][name=vlan_start]')
+                    .assertElementExists('.management .has-error input[type=text][name=vlan_start]',
                         'Field validation has worked properly in case of empty value');
             },
             'Testing cluster networks: data validation': function() {

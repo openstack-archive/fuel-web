@@ -55,6 +55,8 @@ default_messages = {
     "ControllerInErrorState": ("One of the cluster controllers is in error "
                                "state, please, eliminate the problem prior "
                                "to proceeding further"),
+    "SerializerNotSupported": ("Serialization of the task is not supported "
+                               "because of unknown type"),
 
     # mongo errors
     "ExtMongoCheckerError": "Mongo nodes shouldn`t be used with external mongo",

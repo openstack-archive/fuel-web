@@ -257,6 +257,29 @@ define([
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;
         },
+        getDefaultGatewayForCidr: function(cidr) {
+            if (!_.isEmpty(utils.validateCidr(cidr))) return '';
+
+            cidr = cidr.split('/');
+            var gatewayInt = utils.ipIntRepresentation(cidr[0]) + 1; // network base address isn't used
+            /* jshint bitwise: false */
+            var gateway = [gatewayInt >>> 24, gatewayInt >>> 16 & 0xFF, gatewayInt >>> 8 & 0xFF, gatewayInt & 0xFF].join('.');
+            /* jshint bitwise: true */
+            return gateway;
+        },
+        getDefaultIPRangeForCidr: function(cidr) {
+            if (!_.isEmpty(utils.validateCidr(cidr))) return [['', '']];
+
+            cidr = cidr.split('/');
+            var netAddressInt = utils.ipIntRepresentation(cidr[0]),
+                startIPInt = netAddressInt + 2, // gateway should not be included
+                endIPInt = Math.pow(2, 32 - cidr[1]) + netAddressInt - 2; // broadcast address isn't used
+            /* jshint bitwise: false */
+            var startIP = [startIPInt >>> 24, startIPInt >>> 16 & 0xFF, startIPInt >>> 8 & 0xFF, startIPInt & 0xFF].join('.');
+            var endIP = [endIPInt >>> 24, endIPInt >>> 16 & 0xFF, endIPInt >>> 8 & 0xFF, endIPInt & 0xFF].join('.');
+            /* jshint bitwise: true */
+            return [[startIP, endIP]];
+        },
         sortEntryProperties: function(entry, sortOrder) {
             sortOrder = sortOrder || ['name'];
             var properties = _.keys(entry);

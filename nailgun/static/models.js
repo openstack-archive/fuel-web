@@ -843,7 +843,7 @@ define([
                 if (network.get('meta').configurable) {
                     var networkErrors = {};
                     _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
-                    if (network.get('meta').notation == 'ip_ranges' && !_.has(networkErrors, 'cidr')) {
+                    if (!_.has(networkErrors, 'cidr')) {
                         var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), network.get('cidr'));
                         if (ipRangesErrors.length) {
                             networkErrors.ip_ranges = ipRangesErrors;
@@ -863,9 +863,7 @@ define([
                     }
                 }
             }, this);
-            if (!_.isEmpty(networksErrors)) {
-                errors.networks = networksErrors;
-            }
+            if (!_.isEmpty(networksErrors)) errors.networks = networksErrors;
 
             // validate networking parameters
             var novaNetManager = attrs.networking_parameters.get('net_manager');
@@ -942,9 +940,9 @@ define([
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
             }
-            if (!_.isEmpty(networkingParametersErrors)) {
-                errors.networking_parameters = networkingParametersErrors;
-            }
+
+            if (!_.isEmpty(networkingParametersErrors)) errors.networking_parameters = networkingParametersErrors;
+
             return _.isEmpty(errors) ? null : errors;
         }
     });

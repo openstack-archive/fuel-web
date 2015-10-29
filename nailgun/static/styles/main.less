@@ -3648,6 +3648,14 @@ input[type=range] {
       &.floating_ranges {
         margin-bottom: 10px;
       }
+      &.cidr {
+        .form-group, .checkbox-group {
+          margin-bottom: 0;
+          input[type=checkbox] {
+            width: auto;
+          }
+        }
+      }
     }
   }
   .nova-managers {

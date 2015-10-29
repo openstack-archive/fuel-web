@@ -202,7 +202,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 <div className='ip-ranges-control'>
                     <button
                         className='btn btn-link ip-ranges-add'
-                        disabled={this.props.disabled}
                         onClick={_.partial(this.addRange, attributeName, index)}
                     >
                         <i className='glyphicon glyphicon-plus-sign'></i>
@@ -210,7 +209,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     {(length > 1) &&
                         <button
                             className='btn btn-link ip-ranges-delete'
-                            disabled={this.props.disabled}
                             onClick={_.partial(this.removeRange, attributeName, index)}
                         >
                             <i className='glyphicon glyphicon-minus-sign'></i>
@@ -267,7 +265,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                             onFocus={_.partial(this.autoCompleteIPRange, rangeError && rangeError.start, range[0])}
                                             disabled={this.props.disabled || !!this.props.autoIncreaseWith}
                                             placeholder={rangeError.end ? '' : this.props.placeholder}
-                                            extraContent={!this.props.hiddenControls && this.renderRangeControls(attributeName, index, ranges.length)}
+                                            extraContent={!this.props.hiddenControls && !this.props.disabled && this.renderRangeControls(attributeName, index, ranges.length)}
                                         />
                                         <div className='validation-error text-danger pull-left'>
                                             <span className='help-inline'>
@@ -342,6 +340,30 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             label={null}
                         />
                     }
+                </div>
+            );
+        }
+    });
+
+    var CidrControl = React.createClass({
+        mixins: [NetworkModelManipulationMixin],
+        render: function() {
+            return (
+                <div className={'form-group ' + this.props.name}>
+                    <label>{i18n('cluster_page.network_tab.network.' + this.props.name)}</label>
+                    <controls.Input
+                        {...this.props}
+                        type='text'
+                        label={null}
+                        wrapperClassName='pull-left'
+                    />
+                    <controls.Input
+                        type='checkbox'
+                        checked={this.props.fitToCidr}
+                        label='Fit to CIDR'
+                        onChange={this.props.changeNetworkNotation}
+                        wrapperClassName='pull-left'
+                    />
                 </div>
             );
         }
@@ -577,13 +599,15 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 return _.filter(ranges, function(range) {return _.compact(range).length;});
             };
             this.props.networkConfiguration.get('networks').each(function(network) {
-                if (network.get('meta').notation == 'ip_ranges') {
-                    network.set({ip_ranges: removeEmptyRanges(network.get('ip_ranges'))});
-                }
+                network.set({
+                    ip_ranges: removeEmptyRanges(network.get('ip_ranges'))
+                });
             });
             var floatingRanges = this.props.networkConfiguration.get('networking_parameters').get('floating_ranges');
             if (floatingRanges) {
-                this.props.networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
+                this.props.networkConfiguration.get('networking_parameters').set({
+                    floating_ranges: removeEmptyRanges(floatingRanges)
+                });
             }
         },
         onManagerChange: function(name, value) {
@@ -797,34 +821,57 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             NetworkInputsMixin,
             NetworkModelManipulationMixin
         ],
+        getInitialState: function() {
+            return {fitToCidr: false};
+        },
+        parseCidr: function(cidr) {
+            cidr = cidr || this.props.network.get('cidr');
+            this.setValue('ip_ranges', utils.getDefaultIPRangeForCidr(cidr));
+            this.setValue('gateway', utils.getDefaultGatewayForCidr(cidr));
+        },
+        changeNetworkNotation: function(name, value) {
+            this.setState({fitToCidr: value});
+            if (value) this.parseCidr();
+        },
         render: function() {
-            var network = this.props.network,
-                networkName = network.get('name'),
-                networkConfig = network.get('meta');
-            if (!networkConfig.configurable) return null;
-            var vlanTagging = network.get('vlan_start'),
-                ipRangesLabel = 'ip_ranges',
-                ns = 'cluster_page.network_tab.network.';
+            if (!this.props.network.get('meta').configurable) return null;
 
+            var ns = 'cluster_page.network_tab.network.',
+                networkName = this.props.network.get('name');
+
+            var cidrProps = this.composeProps('cidr'),
+                ipRangeProps = this.composeProps('ip_ranges', true),
+                gatewayProps = this.composeProps('gateway');
             return (
                 <div className={'forms-box ' + networkName}>
                     <h3 className='networks'>{i18n('network.' + networkName)}</h3>
-                    {(networkConfig.notation == ipRangesLabel) &&
-                        <Range
-                            {...this.composeProps(ipRangesLabel, true)}
-                            rowsClassName='ip-ranges-rows'
-                            verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
+                    <CidrControl
+                        {...cidrProps}
+                        fitToCidr={this.state.fitToCidr}
+                        changeNetworkNotation={this.changeNetworkNotation}
+                        onChange={_.bind(function(name, value) {
+                            cidrProps.onChange(name, value);
+                            if (this.state.fitToCidr) this.parseCidr(value);
+                        }, this)}
+                    />
+                    <Range
+                        {...ipRangeProps}
+                        disabled={ipRangeProps.disabled || this.state.fitToCidr}
+                        rowsClassName='ip-ranges-rows'
+                        verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
+                    />
+                    {this.props.network.get('meta').use_gateway &&
+                        <controls.Input
+                            {...gatewayProps}
+                            type='text'
+                            disabled={gatewayProps.disabled || this.state.fitToCidr}
                         />
                     }
-                    {this.renderInput('cidr')}
                     <VlanTagInput
                         {...this.composeProps('vlan_start')}
                         label={i18n(ns + 'use_vlan_tagging')}
-                        value={vlanTagging}
+                        value={this.props.network.get('vlan_start')}
                     />
-                    {networkConfig.use_gateway &&
-                        this.renderInput('gateway')
-                    }
                 </div>
             );
         }

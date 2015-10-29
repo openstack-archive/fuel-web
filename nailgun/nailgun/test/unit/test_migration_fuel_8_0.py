@@ -13,6 +13,7 @@
 #    under the License.
 
 import alembic
+import six
 import sqlalchemy as sa
 from sqlalchemy.exc import DataError
 from sqlalchemy.exc import IntegrityError
@@ -105,14 +106,15 @@ class TestComponentTableMigration(base.BaseAlembicMigrationTest):
             self.assertEqual(db_value, column_with_default_values[idx][1])
 
     def test_unique_name_type_constraint(self):
-        test_name = str(uuid.uuid4())
+        test_name = six.text_type(uuid.uuid4())
         test_type = 'storage'
         component_table = self.meta.tables['components']
         insert_table_row(component_table,
                          {'name': test_name, 'type': test_type})
 
         insert_table_row(component_table,
-                         {'name': str(uuid.uuid4()), 'type': test_type})
+                         {'name': six.text_type(uuid.uuid4()),
+                          'type': test_type})
         same_type_components_count = db.execute(
             sa.select([sa.func.count(component_table.c.name)]).
             where(component_table.c.type == test_type)
@@ -130,7 +132,7 @@ class TestComponentTableMigration(base.BaseAlembicMigrationTest):
                            'additional_service')
         component_table = self.meta.tables['components']
         for type in allow_type_name:
-            name = str(uuid.uuid4())
+            name = six.text_type(uuid.uuid4())
             insert_table_row(component_table, {'name': name, 'type': type})
             inserted_count = db.execute(
                 sa.select([sa.func.count(component_table.c.name)]).
@@ -218,7 +220,7 @@ class TestReleaseComponentTableMigration(base.BaseAlembicMigrationTest):
         )
         component_id = insert_table_row(
             self.meta.tables['components'],
-            {'name': str(uuid.uuid4()), 'type': 'hypervisor'}
+            {'name': six.text_type(uuid.uuid4()), 'type': 'hypervisor'}
         )
         insert_table_row(
             release_component_table,
@@ -260,7 +262,7 @@ class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):
                        self.meta.tables['nodegroups'].c.name])).fetchone()
         db.execute(self.meta.tables['nodegroups'].insert(),
                    [{'cluster_id': nodegroup['cluster_id'],
-                     'name': uuid.uuid4()}])
+                     'name': six.text_type(uuid.uuid4())}])
 
 
 class TestReleaseMigrations(base.BaseAlembicMigrationTest):

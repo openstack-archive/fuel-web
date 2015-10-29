@@ -141,9 +141,9 @@ define([
             },
             'Check VlanID field validation': function() {
                 return this.remote
-                    .clickByCssSelector('.management input[type=checkbox]')
-                    .clickByCssSelector('.management input[type=checkbox]')
-                    .assertElementExists('.management .has-error input[name=vlan_start]',
+                    .clickByCssSelector('.management input[type=checkbox][name=vlan_start]')
+                    .clickByCssSelector('.management input[type=checkbox][name=vlan_start]')
+                    .assertElementExists('.management .has-error input[type=text][name=vlan_start]',
                         'Field validation has worked properly in case of empty value');
             },
             'Testing cluster networks: data validation': function() {

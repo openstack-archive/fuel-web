@@ -96,6 +96,7 @@ define([
                         return dashboardPage.startDeployment();
                     })
                     .assertElementAppears('div.deploy-process div.progress', 2000, 'Deployment started')
+                    .assertElementAppears('button.stop-deployment-btn', 5000, 'Stop button appears')
                     .then(function() {
                         return dashboardPage.stopDeployment();
                     })

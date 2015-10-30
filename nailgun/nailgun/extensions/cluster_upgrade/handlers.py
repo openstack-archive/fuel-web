@@ -25,7 +25,7 @@ from . import validators
 from .objects import adapters
 
 
-class ClusterUpgradeHandler(base.BaseHandler):
+class ClusterUpgradeCloneHandler(base.BaseHandler):
     single = objects.Cluster
     validator = validators.ClusterUpgradeValidator
 

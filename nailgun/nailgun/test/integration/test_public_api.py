@@ -15,11 +15,11 @@
 #    under the License.
 
 from mock import patch
+from mock import Mock
 from oslo_serialization import jsonutils
 
 from nailgun.test.base import BaseAuthenticationIntegrationTest
 from nailgun.utils import reverse
-
 
 class TestPublicHandlers(BaseAuthenticationIntegrationTest):
 
@@ -54,30 +54,3 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-
-    @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
-    def test_500_no_html_dev(self, handler_get):
-        exc_text = "Here goes an exception"
-        handler_get.side_effect = Exception(exc_text)
-        resp = self.app.get(
-            reverse('VersionHandler'),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(500, resp.status_code)
-        self.assertIn(exc_text, resp.body)
-        self.assertIn("Traceback", resp.body)
-        self.assertNotIn("html", resp.body)
-
-    @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
-    def test_500_no_html_production(self, handler_get):
-        exc_text = "Here goes an exception"
-        handler_get.side_effect = Exception(exc_text)
-        with patch('nailgun.settings.settings.DEVELOPMENT', 0):
-            resp = self.app.get(
-                reverse('VersionHandler'),
-                headers=self.default_headers,
-                expect_errors=True
-            )
-        self.assertEqual(500, resp.status_code)
-        self.assertEqual(exc_text, resp.body)

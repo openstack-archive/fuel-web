@@ -17,6 +17,8 @@ BuildRequires:  python-yaml
 BuildRequires:  git
 BuildRequires: nodejs
 BuildArch: noarch
+Requires:    fuel-openstack-metadata
+Requires:    fuel-release
 Requires:    python-alembic >= 0.6.2
 Requires:    python-amqplib >= 1.0.2
 Requires:    python-anyjson >= 0.3.3

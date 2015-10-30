@@ -127,10 +127,7 @@ class InstallationInfo(object):
     )
 
     def fuel_release_info(self):
-        versions = utils.get_fuel_release_versions(settings.FUEL_VERSION_FILE)
-        if settings.FUEL_VERSION_KEY not in versions:
-            versions[settings.FUEL_VERSION_KEY] = settings.VERSION
-        return versions[settings.FUEL_VERSION_KEY]
+        return settings.VERSION
 
     def get_network_configuration_info(self, cluster):
         network_config = cluster.network_config

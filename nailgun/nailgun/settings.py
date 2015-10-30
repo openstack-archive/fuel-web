@@ -18,6 +18,7 @@ import os
 
 import yaml
 
+from nailgun import consts
 from nailgun.logger import logger
 
 
@@ -31,16 +32,6 @@ class NailgunSettings(object):
         settings_files.append(project_settings_file)
         settings_files.append('/etc/nailgun/settings.yaml')
 
-        version_paths = ["/etc/fuel/version.yaml",
-                         "/etc/fuel/nailgun/version.yaml",
-                         "/etc/nailgun/version.yaml"]
-        for path in version_paths:
-            if os.access(path, os.R_OK):
-                settings_files.append(path)
-                break
-        else:
-            logger.error("'version.yaml' config file is not found")
-
         test_config = os.environ.get('NAILGUN_CONFIG')
         if test_config:
             settings_files.append(test_config)
@@ -53,6 +44,20 @@ class NailgunSettings(object):
             except Exception as e:
                 logger.error("Error while reading config file %s: %s" %
                              (sf, str(e)))
+
+        self.config['VERSION']['api'] = self.config['API']
+        self.config['VERSION']['feature_groups'] = \
+            self.config['FEATURE_GROUPS']
+
+        fuel_release = self.get_file_content(consts.FUEL_RELEASE_FILE)
+        if fuel_release:
+            self.config['VERSION']['release'] = fuel_release
+
+        fuel_openstack_version = self.get_file_content(
+            consts.FUEL_OPENSTACK_VERSION_FILE)
+        if fuel_openstack_version:
+            self.config['VERSION']['openstack_version'] = \
+                fuel_openstack_version
 
         if int(self.config.get("DEVELOPMENT")):
             logger.info("DEVELOPMENT MODE ON:")
@@ -74,6 +79,13 @@ class NailgunSettings(object):
             self.config.update(
                 yaml.load(custom_config.read())
             )
+
+    def get_file_content(self, path):
+        try:
+            with open(path, "r") as f:
+                return f.read().strip()
+        except Exception:
+            logger.error("Error while reading file: %s", path)
 
     def dump(self):
         return yaml.dump(self.config)

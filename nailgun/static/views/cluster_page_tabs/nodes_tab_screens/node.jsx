@@ -49,7 +49,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (status == 'discover') {
                 options.source = 'bootstrap/messages';
             } else if (status == 'provisioning' || status == 'provisioned' || (status == 'error' && error == 'provision')) {
-                options.source = 'install/anaconda';
+                options.source = 'install/fuel-agent';
             } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
                 options.source = 'install/puppet';
             }

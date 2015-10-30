@@ -13,6 +13,7 @@
 #    under the License.
 
 import copy
+import subprocess
 
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
@@ -22,7 +23,11 @@ from nailgun.objects import NodeCollection
 from nailgun.settings import settings
 from nailgun.statistics.utils import get_attr_value
 from nailgun.statistics.utils import WhiteListRule
-from nailgun import utils
+
+
+FUEL_PACKAGES = [
+    'fuel-nailgun',
+]
 
 
 class InstallationInfo(object):
@@ -127,10 +132,13 @@ class InstallationInfo(object):
     )
 
     def fuel_release_info(self):
-        versions = utils.get_fuel_release_versions(settings.FUEL_VERSION_FILE)
-        if settings.FUEL_VERSION_KEY not in versions:
-            versions[settings.FUEL_VERSION_KEY] = settings.VERSION
-        return versions[settings.FUEL_VERSION_KEY]
+        return settings.VERSION
+
+    def fuel_packages_info(self):
+        command = ['rpm', '-q']
+        command.extend(FUEL_PACKAGES)
+        out, _ = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()
+        return out.strip().split()
 
     def get_network_configuration_info(self, cluster):
         network_config = cluster.network_config
@@ -295,6 +303,7 @@ class InstallationInfo(object):
             'user_information': self.get_user_info(),
             'master_node_uid': self.get_master_node_uid(),
             'fuel_release': self.fuel_release_info(),
+            'fuel_packages': self.fuel_packages_info(),
             'clusters': clusters_info,
             'clusters_num': len(clusters_info),
             'allocated_nodes_num': allocated_nodes_num,

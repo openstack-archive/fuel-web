@@ -179,6 +179,10 @@ class NailgunNodeAdapter(object):
         return cls(objects.Node.get_by_uid(node_id))
 
     @property
+    def get_node_fqdn(self):
+        return objects.Node.get_node_fqdn(self.node)
+
+    @property
     def roles(self):
         return self.node.roles
 

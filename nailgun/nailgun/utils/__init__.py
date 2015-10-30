@@ -193,31 +193,6 @@ class AttributesGenerator(object):
         )
         return base64.b64encode(header + key)
 
-def get_fuel_release_versions(path_mask):
-    """Returns release versions from files match to path_mask
-
-    :param path_mask: mask of path to release version files
-    :type path_mask: string
-    :returns: dicts with file names as keys and release
-    versions info as values
-    """
-
-    result = {}
-    for fl in glob.glob(path_mask):
-        with open(fl, "r") as release_version:
-            file_name = os.path.splitext(os.path.basename(fl))[0]
-            try:
-                result[file_name] = yaml.load(release_version.read())
-            except Exception as exc:
-                logger.warning(
-                    u"Failed to load release version "
-                    "info from '{0}': {1}".format(
-                        fl,
-                        six.text_type(exc)
-                    )
-                )
-    return result
-
 
 def camel_to_snake_case(name):
     """Convert camel case format into snake case

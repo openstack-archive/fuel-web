@@ -236,18 +236,18 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             componentMixins.pollingMixin(2)
         ],
         getInitialState: function() {
-            return {generating: this.isDumpTaskRunning()};
+            return {generating: this.isDumpTaskActive()};
         },
         shouldDataBeFetched: function() {
-            return this.isDumpTaskRunning();
+            return this.isDumpTaskActive();
         },
         fetchData: function() {
             return this.props.task.fetch().done(_.bind(function() {
-                if (!this.isDumpTaskRunning()) this.setState({generating: false});
+                if (!this.isDumpTaskActive()) this.setState({generating: false});
             }, this));
         },
-        isDumpTaskRunning: function() {
-            return this.props.task && this.props.task.match({status: 'running'});
+        isDumpTaskActive: function() {
+            return this.props.task && this.props.task.match({active: true});
         },
         downloadLogs: function() {
             this.setState({generating: true});

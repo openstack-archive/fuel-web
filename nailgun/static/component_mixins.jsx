@@ -156,7 +156,7 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                 if (nodes.length && nodes.length == ids.length) {return nodes;}
             },
             isLocked: function() {
-                return !!this.props.cluster.task({group: 'deployment', status: 'running'}) || !_.all(this.props.nodes.invoke('isConfigurable'));
+                return !!this.props.cluster.task({group: 'deployment', active: true}) || !_.all(this.props.nodes.invoke('isConfigurable'));
             },
             renderBackToNodeListButton: function() {
                 return (

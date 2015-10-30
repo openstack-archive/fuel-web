@@ -44,7 +44,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 return props.cluster.get('tasks');
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.cluster.task({group: 'deployment', status: 'running'});
+                return props.cluster.task({group: 'deployment', active: true});
             }}),
             componentMixins.unsavedChangesMixin
         ],
@@ -182,7 +182,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         isSavingPossible: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
-                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'});
+                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true});
             return !locked && this.hasChanges() && _.isNull(settings.validationError);
         },
         render: function() {
@@ -191,7 +191,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 sortedSettingGroups = _.sortBy(_.keys(settings.attributes), function(groupName) {
                     return settings.get(groupName + '.metadata.weight');
                 }),
-                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
+                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 someSettingsEditable = _.any(settings.attributes, function(group) {return group.metadata.always_editable;}),
                 hasChanges = this.hasChanges(),

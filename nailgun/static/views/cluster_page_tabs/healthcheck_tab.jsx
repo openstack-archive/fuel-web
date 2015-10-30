@@ -106,7 +106,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         },
         isLocked: function() {
             var cluster = this.props.cluster;
-            return cluster.get('status') != 'operational' || !!cluster.task({group: 'deployment', status: 'running'});
+            return cluster.get('status') != 'operational' || !!cluster.getDeployingTask();
         },
         getNumberOfCheckedTests: function() {
             return this.props.tests.where({checked: true}).length;

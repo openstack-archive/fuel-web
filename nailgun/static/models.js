@@ -366,6 +366,9 @@ define([
             var nodes = this.get('nodes');
             return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
                 (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', status: 'running'});
+        },
+        getDeployingTask: function() {
+            return this.task({group: 'deployment', status: ['running', 'pending']});
         }
     });
 
@@ -522,7 +525,8 @@ define([
             return _.contains(['stop_deployment', 'reset_environment'], this.get('name'));
         },
         isStoppableTask: function() {
-            return !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], this.get('name'));
+            return !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], this.get('name')) &&
+                this.match({status: 'running'});
         }
     });
 

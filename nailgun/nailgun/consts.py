@@ -52,7 +52,9 @@ CLUSTER_STATUSES = Enum(
     'error',
     'remove',
     'update',
-    'update_error'
+    'update_error',
+    'upgrade',
+    'upgrade_error'
 )
 
 NETWORKS = Enum(
@@ -244,6 +246,7 @@ TASK_NAMES = Enum(
     'reset_environment',
     'update',
     'spawn_vms',
+    'upgrade',
 
     'node_deletion',
     'cluster_deletion',

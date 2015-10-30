@@ -16,17 +16,8 @@ AUTH:
   admin_password: "nailgun"
   admin_tenant_name: "services"
 
-
-VERSION:
-  release: "6.1"
-  api: "1"
-  nailgun_sha: "Unknown build"
-  astute_sha: "Unknown build"
-  fuellib_sha: "Unknown build"
-  ostf_sha: "Unknown build"
-  feature_groups:
-    - experimental
-    - advanced
+FEATURE_GROUPS:
+  - mirantis
 
 FUEL_KEY: "Unknown"
 
@@ -73,6 +64,7 @@ PLUGINS_SLAVES_RSYNC: 'rsync://{master_ip}:/plugins/{plugin_name}/'
 
 APP_LOG: &nailgun_log "/var/log/nailgun/app.log"
 API_LOG: &api_log "/var/log/nailgun/api.log"
+API: "1.0"
 SYSLOG_DIR: &remote_syslog_dir "/var/log/remote/"
 
 MIRANTIS_REGISTRATION_URL: "https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/"
@@ -149,9 +141,6 @@ OPENSTACK_INFO_COLLECTOR_PROXY_PORT: 8888
 # port of keystone service inside of particular OpenStack installation
 # (is used for OpenStack info collector)
 AUTH_PORT: 5000
-
-FUEL_VERSION_FILE: "/etc/fuel/version.yaml"
-FUEL_VERSION_KEY: "VERSION"
 
 PATH_TO_SSH_KEY: = "/root/.ssh/id_rsa"
 PATH_TO_BOOTSTRAP_SSH_KEY: "/root/.ssh/bootstrap.rsa"

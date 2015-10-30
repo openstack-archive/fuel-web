@@ -370,6 +370,11 @@ FUEL_EXTERNAL_MONGO = '6.1'
 # version of Fuel when classic provisioning is not available anymore.
 FUEL_IMAGE_BASED_ONLY = '7.0'
 
+# this file is provided by the fuel-release package
+FUEL_RELEASE_FILE = '/etc/fuel_release'
+
+FUEL_OPENSTACK_VERSION_FILE = '/etc/fuel_openstack_version'
+
 OSWL_RESOURCE_TYPES = Enum(
     'vm',
     'tenant',

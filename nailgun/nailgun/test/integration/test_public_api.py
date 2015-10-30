@@ -55,7 +55,7 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
 
-    @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
+    @patch('nailgun.api.v1.handlers.version.VersionHandler.GET')
     def test_500_no_html_dev(self, handler_get):
         exc_text = "Here goes an exception"
         handler_get.side_effect = Exception(exc_text)
@@ -69,7 +69,7 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
         self.assertIn("Traceback", resp.body)
         self.assertNotIn("html", resp.body)
 
-    @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
+    @patch('nailgun.api.v1.handlers.version.VersionHandler.GET')
     def test_500_no_html_production(self, handler_get):
         exc_text = "Here goes an exception"
         handler_get.side_effect = Exception(exc_text)

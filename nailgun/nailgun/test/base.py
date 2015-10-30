@@ -1262,6 +1262,12 @@ class BaseTestCase(TestCase):
 
 class BaseIntegrationTest(BaseTestCase):
 
+    @mock.patch('nailgun.statistics.fuel_statistics.installation_info'
+                '.InstallationInfo.fuel_packages_info')
+    def setUp(self, mfpi):
+        mfpi.return_value = []
+        super(BaseIntegrationTest, self).setUp()
+
     def tearDown(self):
         self._wait_for_threads()
         super(BaseIntegrationTest, self).tearDown()

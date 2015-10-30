@@ -365,7 +365,7 @@ define([
         isDeploymentPossible: function() {
             var nodes = this.get('nodes');
             return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
-                (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', status: 'running'});
+                (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', active: true});
         }
     });
 
@@ -500,29 +500,35 @@ define([
         extendGroups: function(filters) {
             return _.union(utils.composeList(filters.name), _.flatten(_.map(utils.composeList(filters.group), _.bind(function(group) {return this.groups[group];}, this))));
         },
+        extendStatuses: function(filters) {
+            var activeTaskStatuses = ['running', 'pending'],
+                completedTaskStatuses = ['ready', 'error'],
+                statuses = utils.composeList(filters.status);
+            if (_.isEmpty(statuses)) {
+                statuses = _.union(activeTaskStatuses, completedTaskStatuses);
+            }
+            if (_.isBoolean(filters.active)) {
+                return _.intersection(statuses, filters.active ? activeTaskStatuses : completedTaskStatuses);
+            }
+            return statuses;
+        },
         match: function(filters) {
             filters = filters || {};
-            var result = false;
-            if (filters.group || filters.name) {
-                if (_.contains(this.extendGroups(filters), this.get('name'))) {
-                    result = true;
-                    if (filters.status) {
-                        result = _.contains(utils.composeList(filters.status), this.get('status'));
-                    }
-                    if (filters.release) {
-                        result = result && this.releaseId() == filters.release;
-                    }
+            if (!_.isEmpty(filters)) {
+                if ((filters.group || filters.name) && !_.contains(this.extendGroups(filters), this.get('name'))) {
+                    return false;
                 }
-            } else if (filters.status) {
-                result = _.contains(utils.composeList(filters.status), this.get('status'));
+                if ((filters.status || _.isBoolean(filters.active)) && !_.contains(this.extendStatuses(filters), this.get('status'))) {
+                    return false;
+                }
             }
-            return result;
+            return true;
         },
         isInfinite: function() {
-            return _.contains(['stop_deployment', 'reset_environment'], this.get('name'));
+            return this.match({name: ['stop_deployment', 'reset_environment']});
         },
-        isStoppableTask: function() {
-            return !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], this.get('name'));
+        isStoppable: function() {
+            return this.match({name: 'deploy', status: 'running'});
         }
     });
 

@@ -17,12 +17,14 @@
 import six
 
 from nailgun.api.v1.handlers import base
+from nailgun import errors
 from nailgun import objects
 from nailgun.task import manager
 
 from . import upgrade
 from . import validators
 from .objects import adapters
+from .task import manager as task_manager
 
 
 class ClusterUpgradeCloneHandler(base.BaseHandler):
@@ -88,3 +90,11 @@ class NodeReassignHandler(base.BaseHandler):
         upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
 
         self.handle_task(cluster_id, [node.node, ])
+
+
+class ClusterUpgradeHandler(base.DeferredTaskHandler):
+
+    log_message = u"Trying to upgrade environment '{env_id}'"
+    log_error = u"Error during execution of upgrade task "\
+                u"on environment '{env_id}': '{error}'"
+    task_manager = task_manager.UpgradeEnvironmentTaskManager

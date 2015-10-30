@@ -1,6 +1,0 @@
-argparse==1.2.1
-PyYAML==3.10
-Mako==0.9.1
-requests==2.2.1
-six==1.5.2
-docker-py==0.3.2

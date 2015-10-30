@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 import six
 from sqlalchemy.inspection import inspect
 
@@ -29,6 +30,17 @@ from nailgun.statistics.fuel_statistics.installation_info \
 
 
 class TestInstallationInfo(BaseTestCase):
+
+    def setUp(self):
+        self.patcher = mock.patch(
+            'nailgun.statistics.fuel_statistics.installation_info'
+            '.InstallationInfo.fuel_packages_info', return_value=[])
+        self.patcher.start()
+        super(TestInstallationInfo, self).setUp()
+
+    def tearDown(self):
+        super(TestInstallationInfo, self).tearDown()
+        self.patcher.stop()
 
     def test_release_info(self):
         info = InstallationInfo()

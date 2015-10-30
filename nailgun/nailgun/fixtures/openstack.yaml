@@ -1547,7 +1547,7 @@
     name: "Kilo on CentOS 6.5"
     state: "unavailable"
     version: "2015.1.0-8.0"
-    can_update_from_versions: []
+    can_update_from_versions: ['7.0',]
     operating_system: "CentOS"
     description: "This option will install the OpenStack Kilo packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
@@ -1620,7 +1620,7 @@
   fields:
     name: "Kilo on Ubuntu 14.04"
     version: "2015.1.0-8.0"
-    can_update_from_versions: []
+    can_update_from_versions: ['7.0',]
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Kilo packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:

@@ -81,6 +81,28 @@ task_names_old = (
 )
 task_names_new = task_names_old + (
     'update_dnsmasq',
+    'upgrade',
+)
+
+
+node_statuses_old = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+)
+node_statuses_new = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+    'upgrade'
 )
 
 
@@ -94,6 +116,7 @@ node_errors_new = (
     'provision',
     'deletion',
     'discover',
+    'upgrade'
 )
 
 
@@ -105,9 +128,11 @@ def upgrade():
     task_statuses_upgrade()
     task_names_upgrade()
     add_node_discover_error_upgrade()
+    node_statuses_upgrade()
 
 
 def downgrade():
+    node_statuses_downgrade()
     add_node_discover_error_downgrade()
     task_names_downgrade()
     task_statuses_downgrade()
@@ -268,3 +293,13 @@ def add_node_discover_error_downgrade():
         node_errors_new,
         node_errors_old
     )
+
+
+def node_statuses_upgrade():
+    upgrade_enum("nodes", "status", "node_status",
+                 node_statuses_old, node_statuses_new)
+
+
+def node_statuses_downgrade():
+    upgrade_enum("nodes", "status", "node_status",
+                 node_statuses_new, node_statuses_old)

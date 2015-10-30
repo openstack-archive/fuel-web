@@ -27,11 +27,7 @@ from nailgun.utils import reverse
 class TestVersionHandler(BaseIntegrationTest):
 
     @patch('nailgun.api.v1.handlers.version.settings.VERSION', {
-        'release': '0.1b',
-        'nailgun_sha': '12345',
-        "astute_sha": "Unknown build",
-        "fuellib_sha": "Unknown build",
-        "ostf_sha": "Unknown build",
+        "release": "0.1b",
         "feature_groups": [],
     })
     def test_version_handler(self):
@@ -55,14 +51,7 @@ class TestVersionHandler(BaseIntegrationTest):
             resp.json_body,
             {
                 "release": "0.1b",
-                "nailgun_sha": "12345",
-                "astute_sha": "Unknown build",
-                "fuellib_sha": "Unknown build",
-                "ostf_sha": "Unknown build",
-                "auth_required": True,
                 "feature_groups": [],
-                "release_versions": {
-                    "test": "test_data"
-                }
+                "auth_required": True,
             }
         )

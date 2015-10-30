@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun import objects
 
 
@@ -25,6 +27,9 @@ class NailgunClusterAdapter(object):
     def create(cls, data):
         cluster = objects.Cluster.create(data)
         return cls(cluster)
+
+    def update(self, data):
+        self.cluster = objects.Cluster.update(self.cluster, data)
 
     @property
     def id(self):
@@ -41,6 +46,10 @@ class NailgunClusterAdapter(object):
     @property
     def release(self):
         return NailgunReleaseAdapter(self.cluster.release)
+
+    @property
+    def pending_release_id(self):
+        return self.cluster.pending_release_id
 
     @property
     def generated_attrs(self):
@@ -70,8 +79,9 @@ class NailgunClusterAdapter(object):
         return objects.Cluster.to_json(self.cluster)
 
     @classmethod
-    def get_by_uid(cls, cluster_id):
-        cluster = objects.Cluster.get_by_uid(cluster_id)
+    def get_by_uid(cls, cluster_id, lock_for_update=False):
+        cluster = objects.Cluster.get_by_uid(cluster_id,
+                                             lock_for_update=lock_for_update)
         return cls(cluster)
 
     def get_network_groups(self):
@@ -81,6 +91,10 @@ class NailgunClusterAdapter(object):
     def get_admin_network_group(self):
         manager = self.get_network_manager()
         return manager.get_admin_network_group()
+
+    @property
+    def nodes(self):
+        return six.moves.map(NailgunNodeAdapter, self.cluster.nodes)
 
 
 class NailgunReleaseAdapter(object):
@@ -177,6 +191,10 @@ class NailgunNodeAdapter(object):
     @classmethod
     def get_by_uid(cls, node_id):
         return cls(objects.Node.get_by_uid(node_id))
+
+    @property
+    def fqdn(self):
+        return objects.Node.get_node_fqdn(self.node)
 
     @property
     def roles(self):

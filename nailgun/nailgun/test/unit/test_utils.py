@@ -27,7 +27,6 @@ from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
 from nailgun.utils import flatten
-from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import grouper
 from nailgun.utils import http_get
 from nailgun.utils import traverse
@@ -58,24 +57,6 @@ class TestUtils(base.BaseIntegrationTest):
                                            "transparency": 100,
                                            "dict": {"stuff": "hz",
                                                     "another_stuff": "hz"}}})
-
-    @patch('nailgun.utils.glob.glob', return_value=['test.yaml'])
-    @patch('__builtin__.open', mock_open(read_data='test_data'))
-    def test_get_release_versions(self, _):
-        versions = get_fuel_release_versions(None)
-        self.assertDictEqual({'test': 'test_data'}, versions)
-
-    def test_get_release_versions_empty_file(self):
-        with tempfile.NamedTemporaryFile() as tf:
-            versions = get_fuel_release_versions(tf.name)
-            self.assertDictEqual({os.path.basename(tf.name): None}, versions)
-
-    def test_get_release_no_file(self):
-        with tempfile.NamedTemporaryFile() as tf:
-            file_path = tf.name
-        self.assertFalse(os.path.exists(file_path))
-        versions = get_fuel_release_versions(file_path)
-        self.assertDictEqual({}, versions)
 
     def test_camel_case_to_snake_case(self):
         self.assertTrue(

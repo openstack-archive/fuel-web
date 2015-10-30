@@ -375,6 +375,12 @@ FUEL_IMAGE_BASED_ONLY = '7.0'
 # version of Fuel when multiple floating IP ranges support is added
 FUEL_MULTIPLE_FLOATING_IP_RANGES = '8.0'
 
+# this file is provided by the fuel-release package
+FUEL_RELEASE_FILE = '/etc/fuel_release'
+
+# this file is provided by the fuel-openstack-metadata package
+FUEL_OPENSTACK_VERSION_FILE = '/etc/fuel_openstack_version'
+
 OSWL_RESOURCE_TYPES = Enum(
     'vm',
     'tenant',

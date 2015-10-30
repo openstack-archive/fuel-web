@@ -91,12 +91,14 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
                 return props.cluster.get('tasks');
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.cluster.task({group: 'deployment', status: 'running'});
+                return props.cluster.task({group: 'deployment', active: true});
             }}),
             componentMixins.pollingMixin(3)
         ],
         shouldDataBeFetched: function() {
-            return this.props.cluster.task('cluster_deletion', ['running', 'ready']) || this.props.cluster.task({group: 'deployment', status: 'running'});
+            return this.props.cluster.task({group: 'deployment', active: true}) ||
+                this.props.cluster.task({name: 'cluster_deletion', active: true}) ||
+                this.props.cluster.task({name: 'cluster_deletion', status: 'ready'});
         },
         fetchData: function() {
             var request, requests = [];
@@ -111,11 +113,11 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
                 }, this));
                 requests.push(request);
             }
-            var deploymentTask = this.props.cluster.task({group: 'deployment', status: 'running'});
+            var deploymentTask = this.props.cluster.task({group: 'deployment', active: true});
             if (deploymentTask) {
                 request = deploymentTask.fetch();
                 request.done(_.bind(function() {
-                    if (deploymentTask.get('status') != 'running') {
+                    if (deploymentTask.match({active: false})) {
                         this.props.cluster.fetch();
                         dispatcher.trigger('updateNodeStats');
                     }
@@ -128,8 +130,8 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
             var cluster = this.props.cluster;
             var status = cluster.get('status');
             var nodes = cluster.get('nodes');
-            var deletionTask = cluster.task('cluster_deletion', ['running', 'ready']);
-            var deploymentTask = cluster.task({group: 'deployment', status: 'running'});
+            var deletionTask = cluster.task({name: 'cluster_deletion', active: true}) || cluster.task({name: 'cluster_deletion', status: 'ready'});
+            var deploymentTask = cluster.task({group: 'deployment', active: true});
             return (
                 <div className='col-xs-3'>
                     <a className={utils.classNames({clusterbox: true, 'cluster-disabled': !!deletionTask})} href={!deletionTask ? '#cluster/' + cluster.id : 'javascript:void 0'}>

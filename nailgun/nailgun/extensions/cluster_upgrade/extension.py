@@ -23,9 +23,11 @@ from . import handlers
 
 class ClusterUpgradeExtension(extensions.BaseExtension):
     name = 'cluster_upgrade'
-    version = '0.0.1'
+    version = '0.0.2'
 
     urls = [
+        {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/?$',
+         'handler': handlers.ClusterUpgradeHandler},
         {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/clone/?$',
          'handler': handlers.ClusterUpgradeCloneHandler},
         {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/assign/?$',

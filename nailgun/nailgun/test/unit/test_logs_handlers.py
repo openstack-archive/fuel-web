@@ -409,7 +409,8 @@ class TestLogs(BaseIntegrationTest):
     def test_snapshot_conf(self):
         self.env.create_node(
             status='ready',
-            hostname='node111'
+            hostname='node111',
+            ip='10.109.0.2',
         )
         conf = {
             'dump': {
@@ -426,7 +427,8 @@ class TestLogs(BaseIntegrationTest):
                 },
                 'slave': {
                     'hosts': [{
-                        'address': 'node111.example.com',
+                        'hostname': 'node111',
+                        'address': '10.109.0.2',
                         'ssh-key': '/root/.ssh/id_rsa',
                     }],
                     'objects': [],

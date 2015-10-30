@@ -13,6 +13,7 @@
 #    under the License.
 
 import copy
+import mock
 
 from oslo_serialization import jsonutils
 
@@ -24,6 +25,17 @@ from nailgun.utils import reverse
 
 
 class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
+
+    def setUp(self):
+        self.patcher = mock.patch(
+            'nailgun.statistics.fuel_statistics.installation_info'
+            '.InstallationInfo.fuel_packages_info', return_value=[])
+        self.patcher.start()
+        super(TestMasterNodeSettingsHandler, self).setUp()
+
+    def tearDown(self):
+        super(TestMasterNodeSettingsHandler, self).tearDown()
+        self.patcher.stop()
 
     def test_get_controller(self):
         expected = self.master_node_settings

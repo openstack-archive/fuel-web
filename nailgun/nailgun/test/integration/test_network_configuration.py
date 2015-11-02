@@ -256,12 +256,15 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNeutronNetworkConfigurationHandler, self).setUp()
-        cluster = self.env.create_cluster(api=True,
-                                          net_provider='neutron',
-                                          net_segment_type='gre',
-                                          mode='ha_compact'
-                                          )
-        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
+        self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={
+                'api': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            }
+        )
+        self.cluster = self.env.clusters[0]
 
     def test_get_request_should_return_net_provider_segment_and_networks(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
@@ -324,23 +327,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(
             task['message'],
             "Change of 'segmentation_type' is prohibited"
-        )
-
-    def test_prohibit_setting_multiple_floating_ip_ranges(self):
-        resp = self.env.neutron_networks_get(self.cluster.id)
-        data = resp.json_body
-        data['networking_parameters']['floating_ranges'] = [
-            ["172.16.0.130", "172.16.0.254"],
-            ["172.16.1.1", "172.16.1.10"]
-        ]
-        resp = self.env.neutron_networks_put(self.cluster.id, data,
-                                             expect_errors=True)
-        self.assertEqual(400, resp.status_code)
-        task = resp.json_body
-        self.assertEqual(
-            task['message'],
-            "Setting of multiple floating IP ranges is prohibited. "
-            "We support it since 8.0 version of environment."
         )
 
     @patch('nailgun.db.sqlalchemy.models.Release.environment_version', "8.0")
@@ -548,7 +534,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                 }]
             }
         })
-        self.cluster.release.version = '2015.1-7.0'
+        self.cluster.release.version = '2015.1-8.0'
         self.db.flush()
 
         resp = self.env.neutron_networks_get(self.cluster.id)
@@ -584,7 +570,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                 ]
             }
         })
-        self.cluster.release.version = '2015.1-7.0'
         self.db.flush()
 
         # check that we return 400 Bad Request
@@ -644,7 +629,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                     'node_roles': ['compute'],
                 }]
             }})
-        self.cluster.release.version = '2015.1-7.0'
         self.db.flush()
 
         resp = self.env.neutron_networks_get(self.cluster.id)

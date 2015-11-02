@@ -24,7 +24,6 @@ from distutils.version import StrictVersion
 import six
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
-import yaml
 
 
 from nailgun import consts
@@ -38,7 +37,6 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Release
 from nailgun.objects.serializers.cluster import ClusterSerializer
-from nailgun.orchestrator import graph_configuration
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
@@ -812,8 +810,6 @@ class Cluster(NailgunObject):
         """
         if instance.deployment_tasks:
             return instance.deployment_tasks
-        elif instance.pending_release_id:
-            return yaml.load(graph_configuration.PATCHING)
         else:
             release_deployment_tasks = \
                 Release.get_deployment_tasks(instance.release)

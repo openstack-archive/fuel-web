@@ -16,6 +16,7 @@
 
 import mock
 
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun.plugins.adapters import PluginAdapterV3
 from nailgun.plugins.manager import PluginManager
@@ -157,3 +158,26 @@ class TestPluginManager(base.BaseIntegrationTest):
     def test_sync_metadata_for_specific_plugin(self, sync_mock):
         PluginManager.sync_plugins_metadata([self.env.plugins[0].id])
         self.assertEqual(sync_mock.call_count, 1)
+
+    def test_get_components_metadata(self):
+        release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact])
+
+        self.env.create_plugin(
+            name='plugin_with_components',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            releases=[{
+                'repository_path': 'repositories/ubuntu',
+                'version': '2015.1-8.0',
+                'os': 'ubuntu',
+                'mode': ['ha'],
+                'deployment_scripts_path': 'deployment_scripts/'}],
+            components_metadata=self.env.get_default_components()
+        )
+
+        components_metadata = PluginManager.get_components_metadata(release)
+        self.assertEqual(
+            components_metadata, self.env.get_default_components())

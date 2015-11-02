@@ -1516,6 +1516,22 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
+    components_metadata:
+      - name: hypervisor:libvirt:kvm
+        compatible:
+          - name: hypervisor:*
+          - name: network:*
+          - name: storage:*
+          - name: additional_service:*
+      - name: hypervisor:vmware
+        compatible:
+          - name: hypervisor:*
+          - name: network:nova_network
+          - name: storage:*
+          - name: additional_service:sahara
+          - name: additional_service:murano
+          - name: additional_service:ceilometer
+        incompatible:
     modes: ['ha_compact']
     extensions: ['volume_manager']
 - pk: 1

@@ -15,20 +15,26 @@
 #    under the License.
 
 from nailgun.api.v1.handlers import base
-from nailgun.objects import ComponentCollection
+from nailgun.objects import Release
 
 
 class ComponentCollectionHandler(base.CollectionHandler):
     """Component collection handler"""
+
+    fields = (
+        "components",
+    )
 
     @base.content
     def GET(self, release_id):
         """:returns: JSONized component data for release and releated plugins.
 
         :http: * 200 (OK)
+               * 404 (release not found in db)
         """
-        components = ComponentCollection.get_all_by_release(release_id)
-        return ComponentCollection.to_json(components)
+        release = self.get_object_or_404(Release, release_id)
+        components = Release.get_components_metadata(release)
+        return self.render(components)
 
     def POST(self, release_id):
         """Creating of components is disallowed

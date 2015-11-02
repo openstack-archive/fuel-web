@@ -66,6 +66,7 @@ class Release(Base):
         cascade="all,delete")
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    components_metadata = Column(JSON, server_default='[]')
 
     # TODO(enchantner): get rid of properties
 

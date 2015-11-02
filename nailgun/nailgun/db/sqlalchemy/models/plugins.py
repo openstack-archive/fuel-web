@@ -65,6 +65,7 @@ class Plugin(Base):
     # attribute). In future `deployment_tasks` and `tasks` should have
     # one format and this attribute will be removed.
     tasks = Column(JSON, server_default='[]', nullable=False)
+    components_metadata = Column(JSON, server_default='[]')
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")

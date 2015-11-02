@@ -25,7 +25,6 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects.component import Component
 from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
 
@@ -208,6 +207,14 @@ class PluginAdapterBase(object):
         return self.plugin.volumes_metadata
 
     @property
+    def components(self):
+        return self.plugin.components
+
+    @property
+    def releases(self):
+        return self.plugin.releases
+
+    @property
     def normalized_roles_metadata(self):
         """Block plugin disabling if nodes with plugin-provided roles exist"""
         result = {}
@@ -318,7 +325,6 @@ class PluginAdapterV3(PluginAdapterV2):
         """Sync metadata from all config yaml files to DB"""
         super(PluginAdapterV3, self).sync_metadata_to_db()
 
-        data_to_update = {}
         db_config_metadata_mapping = {
             'attributes_metadata': self.environment_config_name,
             'roles_metadata': self.node_roles_config_name,
@@ -328,7 +334,12 @@ class PluginAdapterV3(PluginAdapterV2):
             'tasks': self.task_config_name
         }
 
-        for attribute, config in six.iteritems(db_config_metadata_mapping):
+        self._update_plugin(db_config_metadata_mapping)
+
+    def _update_plugin(self, mapping):
+        data_to_update = {}
+
+        for attribute, config in six.iteritems(mapping):
             config_file_path = os.path.join(self.plugin_path, config)
             attribute_data = self._load_config(config_file_path)
             # Plugin columns have constraints for nullable data, so
@@ -346,23 +357,12 @@ class PluginAdapterV4(PluginAdapterV3):
 
     def sync_metadata_to_db(self):
         super(PluginAdapterV4, self).sync_metadata_to_db()
-        components_file_path = os.path.join(
-            self.plugin_path, self.components)
 
-        components = self._load_config(components_file_path) or []
-        for component in components:
-            component_name = component.get('name')
-            component_type = component.get('type')
-            db_component = Component.get_by_name_and_type(
-                component_name, component_type)
-            if not db_component:
-                components_data = component.get('compatible', {})
-                components_data.update({
-                    'name': component_name,
-                    'type': component_type,
-                    'plugin_id': self.plugin.id
-                })
-                Component.create(components_data)
+        db_config_metadata_mapping = {
+            'components_metadata': self.components
+        }
+
+        self._update_plugin(db_config_metadata_mapping)
 
 
 __version_mapping = {

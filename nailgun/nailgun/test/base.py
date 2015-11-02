@@ -60,7 +60,6 @@ from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
 from nailgun.objects import Cluster
-from nailgun.objects import Component
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import Node
 from nailgun.objects import NodeGroup
@@ -431,23 +430,6 @@ class EnvironmentManager(object):
 
         return plugin
 
-    def create_component(self, release=None, plugin=None, **kwargs):
-        component = self.get_default_components(**kwargs)[0]
-        component_data = component.get('compatible', {})
-        component_data.update({
-            'name': component.get('name'),
-            'type': component.get('type')
-        })
-        component = Component.create(component_data)
-        if release:
-            component.releases.append(release)
-
-        if plugin:
-            component.plugin = plugin
-        self.db.flush()
-
-        return component
-
     def default_metadata(self):
         item = self.find_item_by_pk_model(
             self.read_fixtures(("sample_environment",)),
@@ -698,14 +680,16 @@ class EnvironmentManager(object):
     def get_default_components(self, **kwargs):
         default_components = [
             {
-                'name': 'test_hypervisor',
+                'name': 'hypervisor:test_hypervisor',
                 'type': 'hypervisor',
-                'compatible': {
-                    'hypervisors': ['*'],
-                    'networks': [],
-                    'storages': ['object:block:swift'],
-                    'additional_services': []
-                }
+                'compatible': [
+                    {'name': 'hypervisors:*'},
+                    {'name': 'storages:object:block:swift'}
+                ],
+                'uncompatible': [
+                    {'name': 'networks:*'},
+                    {'name': 'additional_services:*'}
+                ]
             }
         ]
 

@@ -1395,3 +1395,48 @@ class TestNetworkGroup(BaseTestCase):
     def test_get_default_networkgroup(self):
         ng = objects.NetworkGroup.get_default_admin_network()
         self.assertIsNotNone(ng)
+
+
+class TestRelease(BaseTestCase):
+
+    def test_get_all_components(self):
+        release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact],
+            components_metadata=self.env.get_default_components(
+                name='hypervisor:test_component_1'))
+
+        self.env.create_plugin(
+            name='plugin_with_components',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            releases=[{
+                'repository_path': 'repositories/ubuntu',
+                'version': '2015.1-8.0',
+                'os': 'ubuntu',
+                'mode': ['ha'],
+                'deployment_scripts_path': 'deployment_scripts/'}],
+            components_metadata=self.env.get_default_components(
+                name='storage:test_component_2')
+        )
+
+        components = objects.Release.get_all_components(release)
+
+        self.assertListEqual(components, [
+            {
+                'name': 'hypervisor:test_component_1',
+                'compatible': [
+                    {'name': 'hypervisors:*'},
+                    {'name': 'storages:object:block:swift'}],
+                'uncompatible': [
+                    {'name': 'networks:*'},
+                    {'name': 'additional_services:*'}]},
+            {
+                'name': 'storage:test_component_2',
+                'compatible': [
+                    {'name': 'hypervisors:*'},
+                    {'name': 'storages:object:block:swift'}],
+                'uncompatible': [
+                    {'name': 'networks:*'},
+                    {'name': 'additional_services:*'}]}])

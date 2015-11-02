@@ -26,10 +26,8 @@ down_revision = '1e50a4903910'
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql as psql
 
-from nailgun.utils.migration import drop_enum
-
+from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils.migration import upgrade_enum
 
 
@@ -98,24 +96,21 @@ node_errors_new = (
 
 
 def upgrade():
-    create_components_table()
-    create_release_components_table()
     upgrade_nodegroups_name_cluster_constraint()
     upgrade_release_state()
     task_statuses_upgrade()
     task_names_upgrade()
     add_node_discover_error_upgrade()
+    upgrade_with_components()
 
 
 def downgrade():
+    downgrade_with_components()
     add_node_discover_error_downgrade()
     task_names_downgrade()
     task_statuses_downgrade()
     downgrade_release_state()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
-    op.drop_table('release_components')
-    op.drop_table('components')
-    drop_enum('component_types')
 
 
 def upgrade_release_state():
@@ -158,42 +153,23 @@ def upgrade_nodegroups_name_cluster_constraint():
     )
 
 
-def create_components_table():
-    op.create_table('components',
-                    sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('name', sa.String(), nullable=False),
-                    sa.Column('type', sa.Enum('hypervisor', 'network',
-                                              'storage', 'additional_service',
-                                              name='component_types'),
-                              nullable=False),
-                    sa.Column('hypervisors', psql.ARRAY(sa.String()),
-                              server_default='{}', nullable=False),
-                    sa.Column('networks', psql.ARRAY(sa.String()),
-                              server_default='{}', nullable=False),
-                    sa.Column('storages', psql.ARRAY(sa.String()),
-                              server_default='{}', nullable=False),
-                    sa.Column('additional_services', psql.ARRAY(sa.String()),
-                              server_default='{}', nullable=False),
-                    sa.Column('plugin_id', sa.Integer(), nullable=True),
-                    sa.ForeignKeyConstraint(
-                        ['plugin_id'], ['plugins.id'], ondelete='CASCADE'),
-                    sa.PrimaryKeyConstraint('id'),
-                    sa.UniqueConstraint('name', 'type',
-                                        name='_component_name_type_uc')
-                    )
-
-
-def create_release_components_table():
-    op.create_table('release_components',
-                    sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('release_id', sa.Integer(), nullable=False),
-                    sa.Column('component_id', sa.Integer(), nullable=False),
-                    sa.ForeignKeyConstraint(
-                        ['component_id'], ['components.id'], ),
-                    sa.ForeignKeyConstraint(
-                        ['release_id'], ['releases.id'], ondelete='CASCADE'),
-                    sa.PrimaryKeyConstraint('id')
-                    )
+def upgrade_with_components():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'components_metadata',
+            fields.JSON(),
+            server_default='[]'
+        )
+    )
+    op.add_column(
+        'releases',
+        sa.Column(
+            'components_metadata',
+            fields.JSON(),
+            server_default='[]'
+        )
+    )
 
 
 def downgrade_release_state():
@@ -268,3 +244,9 @@ def add_node_discover_error_downgrade():
         node_errors_new,
         node_errors_old
     )
+
+
+def downgrade_with_components():
+    op.drop_column('plugins', 'components_metadata')
+    op.drop_column('releases', 'components_metadata')
+

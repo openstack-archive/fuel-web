@@ -29,6 +29,7 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
 from nailgun.orchestrator import graph_configuration
+from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 
 
@@ -161,6 +162,17 @@ class Release(NailgunObject):
     @classmethod
     def get_min_controller_count(cls, instance):
         return instance.roles_metadata['controller']['limits']['min']
+
+    @classmethod
+    def get_all_components(cls, instance):
+        """Get all components related to release
+
+        :param instance: Release instance
+        :type instance: Release DB instance
+        :returns: list -- list of all components
+        """
+        plugin_components = PluginManager.get_components_metadata(instance)
+        return instance.components_metadata + plugin_components
 
 
 class ReleaseCollection(NailgunCollection):

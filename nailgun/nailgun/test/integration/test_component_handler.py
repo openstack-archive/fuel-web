@@ -26,7 +26,9 @@ class TestComponentHandler(base.BaseIntegrationTest):
         self.release = self.env.create_release(
             version='2015.1-8.0',
             operating_system='Ubuntu',
-            modes=[consts.CLUSTER_MODES.ha_compact])
+            modes=[consts.CLUSTER_MODES.ha_compact],
+            components_metadata=self.env.get_default_components(
+                name='hypervisor:test_component_1'))
         self.plugin = self.env.create_plugin(
             name='compatible_plugin',
             fuel_version=['8.0'],
@@ -35,47 +37,35 @@ class TestComponentHandler(base.BaseIntegrationTest):
                 'version': '2015.1-8.0',
                 'os': 'ubuntu',
                 'mode': ['ha'],
-                'deployment_scripts_path': 'deployment_scripts/'}])
-        self.core_component = self.env.create_component(
-            release=self.release,
-            name='test_component_1')
-        self.plugin_component = self.env.create_component(
-            plugin=self.plugin,
-            name='test_component_2',
-            type='additional_service')
+                'deployment_scripts_path': 'deployment_scripts/'}],
+            components_metadata=self.env.get_default_components(
+                name='storage:test_component_2'))
 
     def test_get_components(self):
-        release_id = self.release.id
-        plugin_id = self.plugin.id
-
         resp = self.app.get(
             reverse(
                 'ComponentCollectionHandler',
-                kwargs={'release_id': release_id}),
+                kwargs={'release_id': self.release.id}),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(resp.json_body, [
             {
-                'name': 'test_component_1',
-                'type': 'hypervisor',
-                'releases_ids': [release_id],
-                'plugin_id': None,
-                'compatible': {
-                    'hypervisors': '*',
-                    'networks': [],
-                    'storages': ['object:block:swift'],
-                    'additional_services': []}},
+                'name': 'hypervisor:test_component_1',
+                'compatible': [
+                    {'name': 'hypervisors:*'},
+                    {'name': 'storages:object:block:swift'}],
+                'incompatible': [
+                    {'name': 'networks:*'},
+                    {'name': 'additional_services:*'}]},
             {
-                'name': 'test_component_2',
-                'type': 'additional_service',
-                'releases_ids': [],
-                'plugin_id': plugin_id,
-                'compatible': {
-                    'hypervisors': '*',
-                    'networks': [],
-                    'storages': ['object:block:swift'],
-                    'additional_services': []}}])
+                'name': 'storage:test_component_2',
+                'compatible': [
+                    {'name': 'hypervisors:*'},
+                    {'name': 'storages:object:block:swift'}],
+                'incompatible': [
+                    {'name': 'networks:*'},
+                    {'name': 'additional_services:*'}]}])
 
     def test_404_for_get_components_with_none_release_id(self):
         resp = self.app.get(
@@ -89,12 +79,10 @@ class TestComponentHandler(base.BaseIntegrationTest):
         self.assertEqual(404, resp.status_code)
 
     def test_post_components_not_allowed(self):
-        release_id = self.release.id
-
         resp = self.app.post(
             reverse(
                 'ComponentCollectionHandler',
-                kwargs={'release_id': release_id}),
+                kwargs={'release_id': self.release.id}),
             headers=self.default_headers,
             expect_errors=True
         )

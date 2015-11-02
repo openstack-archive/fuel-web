@@ -261,9 +261,8 @@ class PluginManager(object):
         """Get volumes metadata for cluster from all plugins which enabled it.
 
         :param cluster: A cluster instance
-        :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
-        :return: Object with merged volumes data from plugins
-        :rtype: dict
+        :type cluster: Cluster model
+        :return: dict -- Object with merged volumes data from plugins
         """
         volumes_metadata = {
             'volumes': [],
@@ -300,6 +299,35 @@ class PluginManager(object):
                 metadata.get('volumes', []))
 
         return volumes_metadata
+
+    @classmethod
+    def get_components_metadata(cls, release):
+        """Get components metadata for all plugins which related to release.
+
+        :param release: A release instance
+        :type release: Release model
+        :return: list -- List of plugins components
+        """
+        components = []
+        seen_components = \
+            dict((c['name'], 'release') for c in release.components_metadata)
+
+        for plugin_adapter in map(
+                wrap_plugin, PluginCollection.get_by_release(release)):
+            for component in plugin_adapter.components_metadata:
+                name = component['name']
+                if name in seen_components:
+                    raise errors.AlreadyExists(
+                        'Plugin {0} is overlapping with {1} by introducing '
+                        'the same component with name "{2}"'
+                        .format(plugin_adapter.full_name,
+                                seen_components[name],
+                                name))
+
+                seen_components[name] = plugin_adapter.full_name
+                components.append(component)
+
+        return components
 
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):

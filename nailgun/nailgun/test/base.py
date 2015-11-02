@@ -1602,6 +1602,21 @@ class BaseValidatorTest(BaseTestCase):
             "On instance{0}".format(instance),
             context.exception.message)
 
+    def assertRaisesInvalidOneOf(self, obj, passed_value, instance):
+        context = self.get_invalid_data_context(obj)
+        self.assertIn(
+            "Failed validating 'oneOf' in schema",
+            context.exception.message)
+
+        err_msg = "{0} is not valid under any of the given schemas"
+        self.assertIn(
+            err_msg.format(passed_value),
+            context.exception.message)
+
+        self.assertIn(
+            "On instance{0}".format(instance),
+            context.exception.message)
+
     def assertRaisesInvalidEnum(self, obj, value, expected_value):
         context = self.get_invalid_data_context(obj)
         self.assertIn(

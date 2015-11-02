@@ -414,10 +414,3 @@ CLOUD_INIT_TEMPLATES = Enum(
     'cloud_config',
     'meta_data',
 )
-
-COMPONENT_TYPES = Enum(
-    'hypervisor',
-    'network',
-    'storage',
-    'additional_service',
-)

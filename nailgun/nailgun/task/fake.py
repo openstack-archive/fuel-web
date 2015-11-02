@@ -362,6 +362,7 @@ class FakeProvisionThread(FakeThread):
 
 
 class FakeDeletionThread(FakeThread):
+
     def run(self):
         super(FakeDeletionThread, self).run()
         receiver = NailgunReceiver
@@ -370,7 +371,7 @@ class FakeDeletionThread(FakeThread):
             'nodes': self.data['args']['nodes'],
             'status': 'ready'
         }
-        nodes_to_restore = self.data['args'].get('nodes_to_restore', [])
+        nodes_to_restore = self.format_nodes_to_restore(kwargs['nodes'])
         resp_method = getattr(receiver, self.respond_to)
         try:
             resp_method(**kwargs)
@@ -396,6 +397,37 @@ class FakeDeletionThread(FakeThread):
             node_data["status"] = "discover"
             objects.Node.create(node_data)
         db().commit()
+
+    def format_nodes_to_restore(self, nodes):
+        """Convert node to dict for restoring, works only in fake mode
+
+        Fake mode can optionally restore the removed node (this simulates
+        the node being rediscovered). This method creates the appropriate
+        input for that procedure.
+        :param node:
+        :return: dict
+
+        """
+        prop_to_reset = ('id',
+                         'uid',
+                         'cluster_id',
+                         'roles',
+                         'pending_deletion',
+                         'pending_addition',
+                         'group_id',
+                         'hostname')
+        formatted_nodes = []
+
+        for node in nodes:
+            new_node = {}
+
+            for prop in node:
+                if prop not in prop_to_reset:
+                    new_node[prop] = node[prop]
+
+            formatted_nodes.append(new_node)
+
+        return formatted_nodes
 
 
 class FakeStopDeploymentThread(FakeThread):

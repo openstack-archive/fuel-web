@@ -51,7 +51,7 @@
             message: "Ceph RBD cannot be used with Cinder"
       cinder-vmware:
         name: "Storage - Cinder Proxy to VMware Datastore"
-        description: "Cinder-VMware provides scheduling of block storage resources delivered over VMware vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+        description: "Cinder-VMware provides scheduling of block storage resources delivered over VMWare vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
         weight: 40
         limits:
           recommended: 1
@@ -114,18 +114,6 @@
         restrictions:
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
-      ironic:
-        name: "Ironic"
-        description: "Ironic conductor"
-        weight: 100
-        limits:
-          min: 1
-          recommended: 3
-        conflicts:
-          - compute
-        restrictions:
-          - condition: "settings:additional_components.ironic.value == false"
-            message: "Ironic should be enabled."
 
     network_roles_metadata:
       -
@@ -296,21 +284,6 @@
         id: "nova/migration"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
-      -
-        id: "ironic/api"
-        default_mapping: "management"
-        properties: *default_network_roles_metadata_properties
-      -
-        id: "ironic/baremetal"
-        default_mapping: "baremetal"
-        properties:
-          subnet: true
-          gateway: false
-          vip:
-            -
-              name: "baremetal"
-              namespace: "haproxy"
-              alias: "baremetal_vip"
 
     networks_metadata:
       bonding:
@@ -444,28 +417,13 @@
             render_addr_mask: null
             map_priority: 2
             configurable: true
-          - name: "baremetal"
-            cidr: "192.168.3.0/24"
-            ip_range: ["192.168.3.1", "192.168.3.50"]
-            vlan_start: 104
-            use_gateway: false
-            notation: "ip_ranges"
-            render_type: null
-            map_priority: 2
-            configurable: true
-            restrictions:
-              - condition: "settings:additional_components.ironic.value == false"
         config:
           vlan_range: [1000, 1030]
           gre_id_range: [2, 65535]
           base_mac: "fa:16:3e:00:00:00"
-          internal_name: "admin_internal_net"
           internal_cidr: "192.168.111.0/24"
           internal_gateway: "192.168.111.1"
-          floating_name: "admin_floating_net"
           floating_ranges: [["172.16.0.130", "172.16.0.254"]]
-          baremetal_gateway: "192.168.3.51"
-          baremetal_range: ["192.168.3.52", "192.168.3.254"]
           parameters:
             amqp:
               provider: "rabbitmq"
@@ -518,8 +476,6 @@
           - {allocate_size: "all", id: "vm"}
         compute-vmware:
           - {allocate_size: "min", id: "os"}
-        ironic:
-          - {allocate_size: "all", id: "os"}
       volumes:
         - id: "os"
           type: "vg"
@@ -625,7 +581,6 @@
           metadata:
             label: "Access"
             weight: 10
-            group: "security"
           user:
             value: "admin"
             label: "Username"
@@ -633,7 +588,7 @@
             weight: 10
             type: "text"
             regex:
-              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?!ironic$)(?![Gg]uest$)(?!.* +.*$).+'
+              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$)(?!.* +.*$).+'
               error: "Invalid username"
           email:
             value: "admin@localhost"
@@ -666,7 +621,6 @@
           metadata:
             label: "Workloads Collector User"
             weight: 10
-            group: "general"
             restrictions:
               - condition: "true"
                 action: "hide"
@@ -687,7 +641,6 @@
           metadata:
             label: "Murano Settings"
             weight: 20
-            group: "openstack_services"
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
                 message: "Murano is not enabled on the Additional Components section"
@@ -702,7 +655,6 @@
           metadata:
             label: "External MongoDB"
             weight: 20
-            group: "openstack_services"
             restrictions:
               - condition: "settings:additional_components.mongo.value == false"
                 message: "Ceilometer and MongoDB are not enabled on the Additional Components section"
@@ -755,7 +707,6 @@
             enabled: true
             label: "Mellanox Neutron components"
             weight: 50
-            group: "network"
             restrictions:
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
@@ -792,7 +743,6 @@
           metadata:
             label: "Additional Components"
             weight: 20
-            group: "openstack_services"
           sahara:
             value: false
             label: "Install Sahara"
@@ -825,15 +775,6 @@
             type: "checkbox"
             restrictions:
               - "settings:additional_components.ceilometer.value == false"
-          ironic:
-            value: false
-            label: "Install Ironic"
-            description: "If selected, Ironic component will be installed"
-            weight: 50
-            type: "checkbox"
-            restrictions:
-              - "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
-              - "settings:storage.images_ceph.value == true and settings:storage.objects_ceph.value == false": "Ironic requires Swift or RadosGW for Glance images."
         common:
           metadata:
             label: "Common"
@@ -841,28 +782,24 @@
           debug:
             value: false
             label: "OpenStack debug logging"
-            group: "logging"
             description: "Debug logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
           puppet_debug:
             value: true
             label: "Puppet debug logging"
-            group: "logging"
             description: "Debug puppet logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
           nova_quota:
             value: false
             label: "Nova quotas"
-            group: "compute"
             description: "Quotas are used to limit CPU and memory usage for tenants. Enabling quotas will increase load on the Nova database."
             weight: 25
             type: "checkbox"
           auto_assign_floating_ip:
             value: false
             label: "Auto assign floating IP"
-            group: "network"
             description: "If selected, OpenStack will automatically assign a floating IP to a new instance"
             weight: 40
             type: "checkbox"
@@ -885,27 +822,23 @@
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
             label: "Hypervisor type"
-            group: "compute"
             weight: 30
             type: "radio"
           resume_guests_state_on_host_boot:
             value: true
             label: "Resume guests state on host boot"
-            group: "compute"
             description: "Whether to resume previous guests state when the host reboots. If enabled, this option causes guests assigned to the host to resume their previous state. If the guest was running a restart will be attempted when nova-compute starts. If the guest was not running previously, a restart will not be attempted."
             weight: 60
             type: "checkbox"
           use_cow_images:
             value: true
             label: "Use qcow format for images"
-            group: "storage"
             description: "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting."
             weight: 50
             type: "checkbox"
           auth_key:
             value: ""
             label: "Public Key"
-            group: "security"
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
             type: "textarea"
@@ -913,7 +846,6 @@
           metadata:
             weight: 50
             label: "Public network assignment"
-            group: "network"
             restrictions:
               - condition: "cluster:net_provider != 'neutron'"
                 action: "hide"
@@ -927,7 +859,6 @@
           metadata:
             weight: 45
             label: "Neutron Advanced Configuration"
-            group: "network"
             restrictions:
               - condition: "cluster:net_provider != 'neutron'"
                 action: "hide"
@@ -948,20 +879,10 @@
             type: "checkbox"
             restrictions:
               - "networking_parameters:segmentation_type != 'vlan' and settings:neutron_advanced_configuration.neutron_l2_pop.value == false": "DVR requires L2 population to be enabled."
-          neutron_l3_ha:
-            value: false
-            label: "Neutron L3 HA"
-            description: "Enable High Availability Features for Virtual Routers in Neutron"
-            weight: 30
-            type: "checkbox"
-            restrictions:
-              - condition: "settings:neutron_advanced_configuration.neutron_dvr.value == true"
-                message: "Neutron DVR must be disabled in order to use Neutron L3 HA"
         corosync:
           metadata:
             label: "Corosync"
             weight: 50
-            group: "general"
             restrictions:
               - condition: "true"
                 action: "hide"
@@ -987,9 +908,6 @@
           metadata:
             label: "Syslog"
             weight: 50
-            group: "logging"
-            toggleable: true
-            enabled: false
           syslog_transport:
             value: "tcp"
             values:
@@ -1008,9 +926,6 @@
             description: "Remote syslog hostname"
             weight: 10
             type: "text"
-            regex:
-              source: &ipv4_or_hostname_regex '^[a-zA-Z\d]+[-\.\da-zA-Z]*$'
-              error: "Invalid hostname"
           syslog_port:
             value: "514"
             label: "Port"
@@ -1024,7 +939,6 @@
           metadata:
             label: "Provision"
             weight: 80
-            group: "general"
             restrictions:
               - condition: "true"
                 action: "hide"
@@ -1035,7 +949,6 @@
           metadata:
             label: "Host OS DNS Servers"
             weight: 90
-            group: "general"
           dns_list:
             value:
               generator: "from_settings"
@@ -1051,7 +964,6 @@
           metadata:
             label: "Host OS NTP Servers"
             weight: 100
-            group: "general"
           ntp_list:
             value:
               generator: "from_settings"
@@ -1067,7 +979,6 @@
           metadata:
             label: "Public TLS"
             weight: 110
-            group: "security"
           horizon:
             value: true
             label: "HTTPS for Horizon"
@@ -1118,7 +1029,6 @@
           metadata:
             label: "Kernel parameters"
             weight: 40
-            group: "general"
           kernel:
             value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset"
             label: "Initial parameters"
@@ -1129,7 +1039,6 @@
           metadata:
             label: "Storage"
             weight: 60
-            group: "storage"
           volumes_lvm:
             value: true
             label: "Cinder LVM over iSCSI for volumes"
@@ -1166,7 +1075,7 @@
               - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
           images_vcenter:
             value: false
-            label: "VMware vCenter/ESXi datastore for images (Glance)"
+            label: "VMWare vCenter/ESXi datastore for images (Glance)"
             description: "Configures Glance to use the vCenter/ESXi backend to store images. If enabled, this option will prevent Swift from installing."
             weight: 35
             type: "checkbox"
@@ -1287,13 +1196,6 @@
           metadata:
             metadata_proxy_shared_secret:
               generator: "password"
-        ironic:
-          user_password:
-            generator: "password"
-          db_password:
-            generator: "password"
-          swift_tempurl_key:
-            generator: "password"
         puppet:
           manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
           modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"
@@ -1403,14 +1305,6 @@
           description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
-        ironic:
-          type: "checkbox"
-          label: "dialog.create_cluster_wizard.additional.install_ironic"
-          description: "dialog.create_cluster_wizard.additional.install_ironic_description"
-          bind: "settings:additional_components.ironic.value"
-          weight: 40
-          restrictions:
-            - "Network.manager != 'neutron-vlan'": "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
       Ready: {}
     vmware_attributes_metadata:
       editable:
@@ -1436,7 +1330,7 @@
                 label: "vCenter host"
                 description: "vCenter host or IP"
                 regex:
-                  source: *ipv4_or_hostname_regex
+                  source: &ipv4_or_hostname_regex '^[a-zA-Z\d]+[-\.\da-zA-Z]*$'
                   error: "Invalid vCenter host"
               -
                 name: "vcenter_username"
@@ -1472,7 +1366,7 @@
                     label: "Service name"
                     description: "Service name"
                     regex:
-                      source: '^\w[\w\-]+$'
+                      source: '^\w+$'
                       error: "Invalid service name"
                   -
                     name: "datastore_regex"
@@ -1568,6 +1462,8 @@
                     current:
                       id: "controllers"
                       label: "controllers"
+              cinder:
+                enable: true
           network:
             esxi_vlan_interface: ""
           glance:
@@ -1583,7 +1479,8 @@
   fields:
     name: "Kilo on CentOS 6.5"
     state: "unavailable"
-    version: "2015.1.0-8.0"
+    version: "2015.1.0-7.0"
+    is_deployable: false
     can_update_from_versions: []
     operating_system: "CentOS"
     description: "This option will install the OpenStack Kilo packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -1612,7 +1509,6 @@
           metadata:
             label: "Repositories"
             weight: 50
-            group: "general"
             always_editable: true
           repos:
             type: "custom_repo_configuration"
@@ -1620,7 +1516,7 @@
             description: |
               To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-package-updates --help" on the Fuel master node.
               Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
-              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-8.0/reference-architecture.html#fuel-rep-mirror).
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-7.0/reference-architecture.html#fuel-rep-mirror).
             value:
               - type: "rpm"
                 name: "mos"
@@ -1656,7 +1552,7 @@
   extend: *base_release
   fields:
     name: "Kilo on Ubuntu 14.04"
-    version: "2015.1.0-8.0"
+    version: "2015.1.0-7.0"
     can_update_from_versions: []
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Kilo packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -1669,7 +1565,6 @@
           metadata:
             label: "Repositories"
             weight: 50
-            group: "general"
             always_editable: true
           repos:
             type: "custom_repo_configuration"
@@ -1678,7 +1573,7 @@
               Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
               To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
               Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
-              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-8.0/operations.html#external-ubuntu-ops).
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-7.0/operations.html#external-ubuntu-ops).
             value:
               - type: "deb"
                 name: "ubuntu"
@@ -1701,25 +1596,25 @@
               - type: "deb"
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
-                suite: "mos8.0"
+                suite: "mos7.0"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-updates"
                 uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos8.0-updates"
+                suite: "mos7.0-updates"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-security"
                 uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos8.0-security"
+                suite: "mos7.0-security"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-holdback"
                 uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos8.0-holdback"
+                suite: "mos7.0-holdback"
                 section: "main restricted"
                 priority: 1100
               - type: "deb"

@@ -329,36 +329,6 @@ class DeletionTask(object):
             'mclient_remove': mclient_remove,
         }
 
-    # TODO(ikalnitsky): Get rid of this, maybe move to fake handlers?
-    @classmethod
-    def format_node_to_restore(cls, node):
-        """Convert node to dict for restoring, works only in fake mode.
-
-        Fake mode can optionally restore the removed node (this simulates
-        the node being rediscovered). This method creates the appropriate
-        input for that procedure.
-        :param node:
-        :return: dict
-        """
-        # only fake tasks
-        if cls.use_fake():
-            new_node = {}
-            reset_attrs = (
-                'id',
-                'cluster_id',
-                'roles',
-                'pending_deletion',
-                'pending_addition',
-                'group_id',
-                'hostname',
-            )
-            for prop in object_mapper(node).iterate_properties:
-                if isinstance(
-                    prop, ColumnProperty
-                ) and prop.key not in reset_attrs:
-                    new_node[prop.key] = getattr(node, prop.key)
-            return new_node
-        # /only fake tasks
 
     @classmethod
     def prepare_nodes_for_task(cls, nodes, mclient_remove=True):
@@ -369,7 +339,6 @@ class DeletionTask(object):
         :return: dict
         """
         nodes_to_delete = []
-        nodes_to_restore = []
 
         for node in nodes:
             nodes_to_delete.append(
@@ -380,14 +349,7 @@ class DeletionTask(object):
                 objects.Node.update(node, {'pending_deletion': True})
                 db().flush()
 
-            node_to_restore = cls.format_node_to_restore(node)
-            if node_to_restore:
-                nodes_to_restore.append(node_to_restore)
-
-        return {
-            'nodes_to_delete': nodes_to_delete,
-            'nodes_to_restore': nodes_to_restore,
-        }
+        return {'nodes_to_delete': nodes_to_delete}
 
     @classmethod
     def get_task_nodes_for_cluster(cls, cluster):
@@ -456,21 +418,7 @@ class DeletionTask(object):
         task_uuid = task.uuid
         logger.debug("Nodes deletion task is running")
 
-        # TODO(ikalnitsky): remove this, let the flow always go through Astute
-        # No need to call Astute if no nodes are specified
-        if task.name == consts.TASK_NAMES.cluster_deletion and \
-                not (nodes and nodes['nodes_to_delete']):
-            logger.debug("No nodes specified, exiting")
-            rcvr = rpc.receiver.NailgunReceiver()
-            rcvr.remove_cluster_resp(
-                task_uuid=task_uuid,
-                status=consts.TASK_STATUSES.ready,
-                progress=100
-            )
-            return
-
         nodes_to_delete = nodes['nodes_to_delete']
-        nodes_to_restore = nodes['nodes_to_restore']
 
         # check if there's a Zabbix server in an environment
         # and if there is, remove hosts
@@ -513,18 +461,9 @@ class DeletionTask(object):
         )
         db().flush()
 
-        # only fake tasks
-        if cls.use_fake() and nodes_to_restore:
-            msg_delete['args']['nodes_to_restore'] = nodes_to_restore
-        # /only fake tasks
-
         logger.debug("Calling rpc remove_nodes method with nodes %s",
                      nodes_to_delete)
         rpc.cast('naily', msg_delete)
-
-    @classmethod
-    def use_fake(cls):
-        return settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
 
 
 class DeleteIBPImagesTask(object):

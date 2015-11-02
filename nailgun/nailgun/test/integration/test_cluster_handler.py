@@ -157,9 +157,9 @@ class TestHandlers(BaseIntegrationTest):
     def test_cluster_deletion(self):
         self.env.create(
             cluster_kwargs={},
-            nodes_kwargs=[
-                {"pending_addition": True},
-                {"status": "ready"}])
+            nodes_kwargs=[{'pending_addition': True,
+                           'status': consts.NODE_STATUSES.ready},
+                          {'status': consts.NODE_STATUSES.ready}])
 
         resp = self.delete(self.env.clusters[0].id)
         self.assertEqual(resp.status_code, 202)
@@ -184,9 +184,10 @@ class TestHandlers(BaseIntegrationTest):
     def test_cluster_deletion_with_offline_nodes(self):
         self.env.create(
             cluster_kwargs={},
-            nodes_kwargs=[
-                {'pending_addition': True},
-                {'online': False, 'status': 'ready'}])
+            nodes_kwargs=[{'pending_addition': True,
+                           'status': consts.NODE_STATUSES.ready},
+                          {'online': False,
+                           'status': consts.NODE_STATUSES.ready}])
 
         resp = self.delete(self.env.clusters[0].id)
         self.assertEqual(resp.status_code, 202)

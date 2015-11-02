@@ -613,10 +613,6 @@ class TestTaskManagers(BaseIntegrationTest):
             nodes['nodes_to_delete'],
             DeletionTask.prepare_nodes_for_task([node_db])['nodes_to_delete']
         )
-        self.assertItemsEqual(
-            nodes['nodes_to_restore'],
-            DeletionTask.prepare_nodes_for_task([node_db])['nodes_to_restore']
-        )
 
     @fake_tasks()
     @mock.patch.object(DeletionTask, 'execute')
@@ -688,13 +684,20 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks(recover_offline_nodes=False, tick_interval=1)
     def test_deletion_three_offline_nodes_and_one_online(self):
         cluster = self.env.create(
-            nodes_kwargs=[
-                {"online": False, "pending_deletion": True},
-                {"online": False, "pending_deletion": True},
-                {"online": False, "pending_deletion": True},
-                {"online": True, "pending_deletion": True}
-            ]
+            nodes_kwargs=[{"online": False,
+                           "pending_deletion": True,
+                           "status": consts.NODE_STATUSES.ready},
+                          {"online": False,
+                           "pending_deletion": True,
+                           "status": consts.NODE_STATUSES.ready},
+                          {"online": False,
+                           "pending_deletion": True,
+                           "status": consts.NODE_STATUSES.ready},
+                          {"online": True,
+                           "pending_deletion": True,
+                           "status": consts.NODE_STATUSES.ready}]
         )
+        self.db.commit()
 
         supertask = self.env.launch_deployment()
         self.db.flush()
@@ -731,11 +734,15 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks(tick_interval=1)
     def test_delete_offile_nodes_and_recover_them(self):
         self.env.create(
-            nodes_kwargs=[
-                {"online": False, "pending_deletion": True},
-                {"online": False, "pending_deletion": True},
-                {"online": True, "pending_deletion": True}
-            ]
+            nodes_kwargs=[{"online": False,
+                           "pending_deletion": True,
+                           "status": consts.NODE_STATUSES.ready},
+                          {"online": False,
+                           "pending_deletion": True,
+                           "status": consts.NODE_STATUSES.ready},
+                          {"online": True,
+                           "pending_deletion": True,
+                           "status": consts.NODE_STATUSES.ready}]
         )
 
         supertask = self.env.launch_deployment()

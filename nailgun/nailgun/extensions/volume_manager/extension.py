@@ -18,6 +18,7 @@ import os
 
 import six
 
+from nailgun import consts
 from nailgun.extensions import BaseExtension
 from nailgun.logger import logger
 from nailgun.objects import Node
@@ -86,11 +87,8 @@ class VolumeManagerExtension(BaseExtension):
 
     @classmethod
     def on_node_update(cls, node):
-        cls.set_default_node_volumes(node)
-
-    @classmethod
-    def on_node_reset(cls, node):
-        cls.set_default_node_volumes(node)
+        if node.status == consts.NODE_STATUSES.discover:
+            cls.set_default_node_volumes(node)
 
     @classmethod
     def on_node_delete(cls, node):

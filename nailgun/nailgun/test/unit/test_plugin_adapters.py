@@ -23,7 +23,6 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.expression import Expression
-from nailgun.objects import Component
 from nailgun.objects import Plugin
 from nailgun.plugins import adapters
 from nailgun.settings import settings
@@ -309,26 +308,8 @@ class TestPluginV4(TestPluginBase):
                 self.plugin.deployment_tasks, deployment_tasks)
             self.assertEqual(
                 self.plugin.tasks, tasks)
-
-            component = Component.get_by_name_and_type(
-                components_metadata[0].get('name'),
-                components_metadata[0].get('type'))
-            compatible = components_metadata[0].get('compatible')
-
             self.assertEqual(
-                component.name, components_metadata[0].get('name'))
-            self.assertEqual(
-                component.type, components_metadata[0].get('type'))
-            self.assertEqual(
-                component.hypervisors, compatible.get('hypervisors'))
-            self.assertEqual(
-                component.networks, compatible.get('networks'))
-            self.assertEqual(
-                component.storages, compatible.get('storages'))
-            self.assertEqual(
-                component.additional_services,
-                compatible.get('additional_services'))
-            self.assertEqual(component.plugin_id, self.plugin.id)
+                self.plugin.components_metadata, components_metadata)
 
 
 class TestClusterCompatibilityValidation(base.BaseTestCase):

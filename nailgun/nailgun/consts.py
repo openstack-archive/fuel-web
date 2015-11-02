@@ -421,13 +421,6 @@ CLOUD_INIT_TEMPLATES = Enum(
     'meta_data',
 )
 
-COMPONENT_TYPES = Enum(
-    'hypervisor',
-    'network',
-    'storage',
-    'additional_service',
-)
-
 # NOTE(kozhukalov): This constant is used to collect
 # the information about installed fuel packages (rpm -q).
 # This information is necessary for fuel-stats.

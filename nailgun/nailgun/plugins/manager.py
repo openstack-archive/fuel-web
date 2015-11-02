@@ -317,6 +317,41 @@ class PluginManager(object):
         return volumes_metadata
 
     @classmethod
+    def get_components_metadata(cls, release):
+        components = []
+        processed_components = {}
+        release_components_names = \
+            [c['name'] for c in release.components_metadata]
+        release_os = release.operating_system.lower()
+        release_version = release.version
+
+        for plugin_adapter in map(wrap_plugin, PluginCollection.all()):
+            for plugin_release in plugin_adapter.releases:
+                if (release_os == plugin_release.get('os') and
+                        release_version == plugin_release.get('version')):
+                    for component in plugin_adapter.components_metadata:
+                        name = component['name']
+                        if name in release_components_names:
+                            raise errors.AlreadyExists(
+                                'Plugin {0} is overlapping with release '
+                                'by introducing the same component with name '
+                                '"{1}"'.format(plugin_adapter.full_name,
+                                               name))
+                        elif name in processed_components:
+                            raise errors.AlreadyExists(
+                                'Plugin {0} is overlapping with plugin {1} '
+                                'by introducing the same component with name '
+                                '"{2}"'.format(plugin_adapter.full_name,
+                                               processed_components[name],
+                                               name))
+
+                        processed_components[name] = plugin_adapter.full_name
+
+                    components.extend(plugin_adapter.components_metadata)
+
+        return components
+
+    @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
         """Sync metadata for plugins by given ids.
 

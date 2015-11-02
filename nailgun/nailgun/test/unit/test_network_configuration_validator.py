@@ -28,9 +28,13 @@ from nailgun.test import base
 
 class BaseNetworkConfigurationValidatorProtocolTest(base.BaseValidatorTest):
 
-    @mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
-                new_callable=mock.PropertyMock,
-                return_value=False)
+    def setUp(self):
+        super(BaseNetworkConfigurationValidatorProtocolTest, self).setUp()
+
+        self.cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron)
+
     def get_invalid_data_context(self, data, *args):
         """Get invalid data context for assertRaises
 
@@ -39,7 +43,7 @@ class BaseNetworkConfigurationValidatorProtocolTest(base.BaseValidatorTest):
         should be mocked.
         """
         return super(BaseNetworkConfigurationValidatorProtocolTest, self).\
-            get_invalid_data_context(data, args[0])
+            get_invalid_data_context(data, self.cluster, *args)
 
 
 class TestNetworkConfigurationValidatorProtocol(
@@ -592,7 +596,7 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
             ["172.16.0.130", "172.16.0.254"],
             ["172.16.1.1", "172.16.1.10"]
         ]
-        context = self.get_invalid_data_context(self.nc, mock.Mock(id=1))
+        context = self.get_invalid_data_context(self.nc)
         err_msg = "Setting of multiple floating IP ranges is prohibited"
         self.assertEqual(context.exception.message, err_msg)
 

@@ -1528,7 +1528,7 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
         self.db.commit()
 
 
-class BaseValidatorTest(TestCase):
+class BaseValidatorTest(BaseTestCase):
     """JSON-schema validation policy:
 
        1) All required properties are present;

@@ -1575,6 +1575,9 @@ class AllocateVIPs70Mixin(object):
                 net_group = cls.get_network_group_for_role(
                     role,
                     nodegroup_networks[nodegroup.name])
+                if net_group == 'baremetal' and not db().query(NetworkGroup).\
+                        filter_by(name=net_group, group_id=nodegroup.id).first():
+                    continue
                 vip_name = vip_info['name']
 
                 # do allocation

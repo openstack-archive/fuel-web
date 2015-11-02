@@ -51,6 +51,3 @@ from nailgun.db.sqlalchemy.models.master_node_settings \
 
 from nailgun.db.sqlalchemy.models.plugins import ClusterPlugins
 from nailgun.db.sqlalchemy.models.plugins import Plugin
-
-from nailgun.db.sqlalchemy.models.component import Component
-from nailgun.db.sqlalchemy.models.component import ReleaseComponent

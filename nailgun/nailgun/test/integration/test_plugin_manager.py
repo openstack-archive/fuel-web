@@ -161,6 +161,71 @@ class TestPluginManager(base.BaseIntegrationTest):
         PluginManager.sync_plugins_metadata([self.env.plugins[0].id])
         self.assertEqual(sync_mock.call_count, 1)
 
+    def test_get_components_metadata(self):
+        release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact])
+
+        self.env.create_plugin(
+            name='plugin_with_components',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            components_metadata=self.env.get_default_components())
+
+        components_metadata = PluginManager.get_components_metadata(release)
+        self.assertEqual(
+            components_metadata, self.env.get_default_components())
+
+    def test_raise_exception_when_plugin_overlap_release_component(self):
+        release = self.env.create_release(
+            version='2015.1-8.0.1',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact],
+            components_metadata=self.env.get_default_components())
+
+        self.env.create_plugin(
+            name='plugin_with_components',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            components_metadata=self.env.get_default_components())
+
+        expected_message = (
+            'Plugin plugin_with_components-0.1.0 is overlapping with release '
+            'by introducing the same component with name '
+            '"hypervisor:test_hypervisor"')
+
+        with self.assertRaisesRegexp(errors.AlreadyExists,
+                                     expected_message):
+            PluginManager.get_components_metadata(release)
+
+    def test_raise_exception_when_plugin_overlap_another_component(self):
+        release = self.env.create_release(
+            version='2015.1-8.0.2',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact])
+
+        self.env.create_plugin(
+            name='plugin_with_components_1',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            components_metadata=self.env.get_default_components())
+
+        self.env.create_plugin(
+            name='plugin_with_components_2',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            components_metadata=self.env.get_default_components())
+
+        expected_message = (
+            'Plugin plugin_with_components_2-0.1.0 is overlapping with plugin '
+            'plugin_with_components_1-0.1.0 by introducing the same component '
+            'with name "hypervisor:test_hypervisor"')
+
+        with self.assertRaisesRegexp(errors.AlreadyExists,
+                                     expected_message):
+            PluginManager.get_components_metadata(release)
+
 
 class TestClusterPluginIntegration(base.BaseTestCase):
 

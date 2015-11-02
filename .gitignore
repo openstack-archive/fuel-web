@@ -28,6 +28,7 @@ nailgun/static/css/styles.css
 
 .idea
 .DS_Store
+.tox
 
 *.egg-info
 

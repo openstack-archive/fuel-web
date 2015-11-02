@@ -25,6 +25,8 @@ from fysom import Fysom
 from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
+from sqlalchemy.orm import ColumnProperty
+from sqlalchemy.orm import object_mapper
 
 from nailgun import objects
 
@@ -370,7 +372,7 @@ class FakeDeletionThread(FakeThread):
             'nodes': self.data['args']['nodes'],
             'status': 'ready'
         }
-        nodes_to_restore = self.data['args'].get('nodes_to_restore', [])
+        nodes_to_restore = self.format_nodes_to_restore()
         resp_method = getattr(receiver, self.respond_to)
         try:
             resp_method(**kwargs)
@@ -396,6 +398,38 @@ class FakeDeletionThread(FakeThread):
             node_data["status"] = "discover"
             objects.Node.create(node_data)
         db().commit()
+
+    def format_nodes_to_restore(self):
+        """Convert node to dict for restoring, works only in fake mode
+
+        Fake mode can optionally restore the removed node (this simulates
+        the node being rediscovered). This method creates the appropriate
+        input for that procedure.
+        :param node:
+        :return: dict
+
+        """
+        reset_attrs = ('id',
+                       'cluster_id',
+                       'roles',
+                       'pending_deletion',
+                       'pending_addition',
+                       'group_id',
+                       'hostname')
+        formatted_nodes = []
+
+        for node_json in self.data['args']['nodes']:
+            new_node = {}
+
+            node = objects.Node.get_by_uid(node_json['uid'])
+
+            for prop in object_mapper(node).iterate_properties:
+                if isinstance(prop, ColumnProperty) and prop.key not in reset_attrs:
+                    new_node[prop.key] = getattr(node, prop.key)
+
+            formatted_nodes.append(new_node)
+
+        return formatted_nodes
 
 
 class FakeStopDeploymentThread(FakeThread):

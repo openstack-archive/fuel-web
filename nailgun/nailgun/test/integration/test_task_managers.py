@@ -613,10 +613,6 @@ class TestTaskManagers(BaseIntegrationTest):
             nodes['nodes_to_delete'],
             DeletionTask.prepare_nodes_for_task([node_db])['nodes_to_delete']
         )
-        self.assertItemsEqual(
-            nodes['nodes_to_restore'],
-            DeletionTask.prepare_nodes_for_task([node_db])['nodes_to_restore']
-        )
 
     @fake_tasks()
     @mock.patch.object(DeletionTask, 'execute')

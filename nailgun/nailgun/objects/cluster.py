@@ -350,9 +350,12 @@ class Cluster(NailgunObject):
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:
-            if StrictVersion(ver) >= StrictVersion('7.0'):
+            if StrictVersion(ver) == StrictVersion('7.0'):
                 from nailgun.network.nova_network import NovaNetworkManager70
                 return NovaNetworkManager70
+            elif StrictVersion(ver) >= StrictVersion('8.0'):
+                from nailgun.network.nova_network import NovaNetworkManager80
+                return NovaNetworkManager80
             from nailgun.network.nova_network import NovaNetworkManager
             return NovaNetworkManager
 

@@ -318,6 +318,31 @@
         id: "nova/migration"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
+      -
+        id: "ironic/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ironic/baremetal"
+        default_mapping: "baremetal"
+        properties:
+          subnet: true
+          gateway: false
+          vip:
+            -
+              name: "baremetal"
+              namespace: "haproxy"
+              alias: "baremetal_vip"
+              vendor_specific:
+                iptables_rules:
+                  start:
+                    - "iptables -A INPUT -i NS_VETH -s NS_CIDR -d NS_VIP -p tcp -m multiport --dports 6385,8080 -m state --state NEW -j ACCEPT"
+                    - "iptables -A INPUT -i NS_VETH -s NS_CIDR -d NS_VIP -m state --state ESTABLISHED,RELATED -j ACCEPT"
+                    - "iptables -A INPUT -i NS_VETH -j DROP"
+                  stop:
+                    - "iptables -D INPUT -i NS_VETH -s NS_CIDR -d NS_VIP -p tcp -m multiport --dports 6385,8080 -m state --state NEW -j ACCEPT"
+                    - "iptables -D INPUT -i NS_VETH -s NS_CIDR -d NS_VIP -m state --state ESTABLISHED,RELATED -j ACCEPT"
+                    - "iptables -D INPUT -i NS_VETH -j DROP"
 
     networks_metadata:
       bonding:

@@ -209,6 +209,21 @@ class PluginManager(object):
         return volumes_metadata
 
     @classmethod
+    def get_components_metadata(cls, release):
+        components = []
+        release_os = release.operating_system.lower()
+        release_version = release.version
+        plugins = PluginCollection.all()
+
+        for plugin_adapter in map(wrap_plugin, plugins):
+            for plugin_release in plugin_adapter.releases:
+                if (release_os == plugin_release.get('os') and
+                        release_version == plugin_release.get('version')):
+                    components.extend(plugin_adapter.components_metadata)
+
+        return components
+
+    @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
         """Sync metadata for plugins by given ids.
 

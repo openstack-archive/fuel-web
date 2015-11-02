@@ -28,9 +28,13 @@ from alembic import op
 from nailgun.db.sqlalchemy.models import fields
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
+<<<<<<< HEAD
 from sqlalchemy.dialects import postgresql as psql
 
 from nailgun.utils.migration import drop_enum
+=======
+
+>>>>>>> 25f5397... Refactor component model
 from nailgun.utils.migration import upgrade_enum
 
 
@@ -99,8 +103,6 @@ node_errors_new = (
 
 
 def upgrade():
-    create_components_table()
-    create_release_components_table()
     upgrade_nodegroups_name_cluster_constraint()
     upgrade_release_state()
     task_statuses_upgrade()
@@ -108,9 +110,11 @@ def upgrade():
     add_node_discover_error_upgrade()
     upgrade_neutron_parameters()
     upgrade_cluster_plugins()
+    upgrade_with_components()
 
 
 def downgrade():
+    downgrade_with_components()
     downgrade_cluster_plugins()
     downgrade_neutron_parameters()
     add_node_discover_error_downgrade()
@@ -118,11 +122,14 @@ def downgrade():
     task_statuses_downgrade()
     downgrade_release_state()
 
+<<<<<<< HEAD
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
     op.drop_table('release_components')
     op.drop_table('components')
     drop_enum('component_types')
 
+=======
+>>>>>>> 25f5397... Refactor component model
 
 def upgrade_release_state():
     connection = op.get_bind()
@@ -164,6 +171,7 @@ def upgrade_nodegroups_name_cluster_constraint():
     )
 
 
+<<<<<<< HEAD
 def create_components_table():
     op.create_table('components',
                     sa.Column('id', sa.Integer(), nullable=False),
@@ -200,6 +208,29 @@ def create_release_components_table():
                         ['release_id'], ['releases.id'], ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id')
                     )
+=======
+def downgrade_nodegroups_name_cluster_constraint():
+    op.drop_constraint('_name_cluster_uc', 'nodegroups',)
+
+
+def upgrade_with_components():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'components_metadata',
+            fields.JSON(),
+            server_default='[]'
+        )
+    )
+    op.add_column(
+        'releases',
+        sa.Column(
+            'components_metadata',
+            fields.JSON(),
+            server_default='[]'
+        )
+    )
+>>>>>>> 25f5397... Refactor component model
 
 
 def downgrade_release_state():
@@ -474,3 +505,8 @@ def downgrade_cluster_plugins():
         'cluster_id',
         nullable=None
     )
+
+
+def downgrade_with_components():
+    op.drop_column('plugins', 'components_metadata')
+    op.drop_column('releases', 'components_metadata')

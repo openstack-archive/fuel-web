@@ -17,6 +17,7 @@
 import copy
 import mock
 
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun.extensions import BaseExtension
 from nailgun.extensions import BasePipeline
@@ -28,6 +29,7 @@ from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.extensions import get_extension
 from nailgun.extensions import node_extension_call
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
@@ -66,6 +68,28 @@ class TestBaseExtension(BaseExtensionCase):
         self.assertEqual(
             self.extension.full_name(),
             'ext_name-1.0.0')
+
+
+class TestVolumeManagerExtension(BaseTestCase):
+
+    @mock.patch.object(VolumeManagerExtension, 'set_default_node_volumes')
+    def test_on_node_update(self, mock_set_default_node_volumes):
+        ext = VolumeManagerExtension()
+        should_reset_env_statuses = set([consts.NODE_STATUSES.discover])
+        should_not_reset_env_statuses = \
+            set(consts.NODE_STATUSES) - should_reset_env_statuses
+
+        for status in should_reset_env_statuses:
+            node = mock.MagicMock(status=status)
+            mock_set_default_node_volumes.reset_mock()
+            ext.on_node_update(node)
+            ext.set_default_node_volumes.assert_called_once_with(node)
+
+        for status in should_not_reset_env_statuses:
+            node = mock.MagicMock(status=status)
+            mock_set_default_node_volumes.reset_mock()
+            ext.on_node_update(node)
+            self.assertFalse(ext.set_default_node_volumes.called)
 
 
 def make_mock_extensions(names=('ex1', 'ex2')):
@@ -174,6 +198,7 @@ class TestExtensionUtils(BaseTestCase):
 
         for ext in get_m.return_value:
             ext.on_node_reset.assert_called_once_with(node)
+            ext.set_default_node_volumes.assert_not_called()
 
     @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())

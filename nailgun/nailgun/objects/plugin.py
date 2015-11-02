@@ -97,6 +97,26 @@ class PluginCollection(NailgunCollection):
         """
         return cls.filter_by_id_list(cls.all(), plugin_ids)
 
+    @classmethod
+    def get_by_release(cls, release):
+        """ Returns plugins by given release
+
+        :param release: Release instance
+        :type release: Release DB model
+        :returns: list -- list of sorted plugins
+        """
+        release_plugins = set()
+        release_os = release.operating_system.lower()
+        release_version = release.version
+
+        for plugin in PluginCollection.all():
+            for plugin_release in plugin.releases:
+                if (release_os == plugin_release.get('os') and
+                        release_version == plugin_release.get('version')):
+                    release_plugins.add(plugin)
+
+        return sorted(release_plugins, key=lambda plugin: plugin.name)
+
 
 class ClusterPlugins(NailgunObject):
 

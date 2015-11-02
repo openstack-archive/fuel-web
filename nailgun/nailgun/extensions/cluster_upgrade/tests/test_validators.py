@@ -34,7 +34,7 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
 
     def test_validate_release_upgrade(self):
         self.validator.validate_release_upgrade(self.release_61,
-                                                self.release_70)
+                                                self.release_80)
 
     @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
     def test_validate_release_upgrade_deprecated_release(self):
@@ -55,7 +55,7 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
               "lower than the release of the original cluster\.$" \
               .format(self.release_61.id)
         with self.assertRaisesRegexp(errors.InvalidData, msg):
-            self.validator.validate_release_upgrade(self.release_70,
+            self.validator.validate_release_upgrade(self.release_80,
                                                     self.release_61)
 
     def test_validate_cluster_name(self):
@@ -71,12 +71,12 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
         self.validator.validate_cluster_status(self.cluster_61)
 
     def test_validate_cluster_status_invalid(self):
-        cluster_70 = self.env.create_cluster(
+        cluster_80 = self.env.create_cluster(
             api=False,
-            release_id=self.release_70.id,
+            release_id=self.release_80.id,
         )
         relations.UpgradeRelationObject.create_relation(self.cluster_61.id,
-                                                        cluster_70.id)
+                                                        cluster_80.id)
         msg = "^Upgrade is not possible because of the original cluster " \
               "\({0}\) is already involved in the upgrade routine\.$" \
               .format(self.cluster_61.id)

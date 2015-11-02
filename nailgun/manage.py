@@ -224,9 +224,9 @@ def action_migrate(params):
 
 
 def action_extensions(params):
-    from nailgun.logger import logger
     from nailgun.db.migration import action_migrate_alembic_extension
     from nailgun.extensions import get_all_extensions
+    from nailgun.logger import logger
 
     for extension in get_all_extensions():
         if extension.alembic_migrations_path():

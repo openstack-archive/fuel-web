@@ -43,7 +43,8 @@ def pytest_configure(config):
     settings.DATABASE['name'] = db_name
     cleandb = config.getoption('cleandb')
     if cleandb:
-        from nailgun.db import dropdb, syncdb
+        from nailgun.db import dropdb
+        from nailgun.db import syncdb
         dropdb()
         syncdb()
 

@@ -1,0 +1,1647 @@
+---
+- &base_release
+  model: "nailgun.release"
+  fields:
+    state: "available"
+    modes_metadata:
+      ha_compact:
+        description: "This configuration Deploys OpenStack ready for high availability (HA). Controller services are prepared for HA by setting up a base MySQL/Galera, RabbitMQ and HAProxy so that additional controllers can be deployed NOW, or scaled out LATER. 3 or more controllers are required for a true HA environment."
+    roles_metadata:
+      controller:
+        name: "Controller"
+        description: "The Controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
+        weight: 10
+        conflicts:
+          - compute
+        update_required:
+          - compute
+          - cinder
+        has_primary: true
+        public_ip_required: true
+        public_for_dvr_required: true
+        limits:
+          min: 1
+          overrides:
+            - condition: "cluster:mode == 'multinode'"
+              max: 1
+              message: "Multi-node environment can not have more than one Controller node."
+            - condition: "cluster:mode == 'ha_compact'"
+              recommended: 3
+              message: "At least 3 Controller nodes are recommended for Highly Available (HA) environments. Deployments with less than 3 Controller nodes are not recommended for production environments."
+      compute:
+        name: "Compute"
+        description: "A Compute node creates, manages, and terminates virtual machine instances."
+        weight: 20
+        public_for_dvr_required: true
+        limits:
+          recommended: 1
+        fault_tolerance: "2%"
+      cinder:
+        # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
+        name: "Storage - Cinder"
+        description: "Cinder provides scheduling of block storage resources, typically delivered over iSCSI and other compatible backend storage systems. Block storage can be used for database storage, expandable file systems, or to provide a server with access to raw block level devices."
+        weight: 30
+        limits:
+          recommended: 1
+        restrictions:
+          - condition: "settings:storage.volumes_lvm.value == false"
+            message: "Cinder LVM should be enabled in settings"
+          # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
+          - condition: "settings:storage.volumes_ceph.value == true"
+            message: "Ceph RBD cannot be used with Cinder"
+      cinder-vmware:
+        name: "Storage - Cinder Proxy to VMware Datastore"
+        description: "Cinder-VMware provides scheduling of block storage resources delivered over VMWare vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+        weight: 40
+        limits:
+          recommended: 1
+        restrictions:
+          - condition: "settings:common.use_vcenter.value == false"
+            action: "hide"
+      ceph-osd:
+        name: "Storage - Ceph OSD"
+        description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+        weight: 50
+        limits:
+            min: "settings:storage.osd_pool_size.value"
+        restrictions:
+          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false"
+            message: "Ceph must be enabled in settings"
+        update_once:
+          - controller
+      mongo:
+        name: "Telemetry - MongoDB"
+        description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
+        weight: 60
+        conflicts:
+          - compute
+          - ceph-osd
+        has_primary: true
+        limits:
+          min: 1
+          overrides:
+            - condition: "cluster:mode != 'ha_compact'"
+              max: 1
+              message: "At most 1 MongoDB node can be added for non-HA deployment"
+            - condition: "cluster:mode == 'ha_compact'"
+              recommended: 3
+              message: "At least 3 MongoDB nodes are recommended for HA deployment."
+        restrictions:
+          - condition: "settings:additional_components.ceilometer.value == false"
+            message: "Ceilometer should be enabled."
+          - condition: "settings:additional_components.mongo.value == true"
+            message: "You are already using external MongoDB."
+      base-os:
+        name: "Operating System"
+        description: "Install base Operating System without additional packages and configuration."
+        weight: 70
+      virt:
+        name: "Virtual"
+        description: "ADVANCED: Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
+        weight: 80
+        public_ip_required: true
+        conflicts:
+          - controller
+          - base-os
+        restrictions:
+          - condition: "not ('advanced' in version:feature_groups)"
+            action: "hide"
+      compute-vmware:
+        name: "Compute VMware"
+        description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
+        weight: 90
+        conflicts: "*"
+        restrictions:
+          - condition: "settings:common.use_vcenter.value == false"
+            action: "hide"
+
+    network_roles_metadata:
+      -
+        id: "keystone/api"
+        default_mapping: "management"
+        properties: &default_network_roles_metadata_properties
+          subnet: true
+          gateway: false
+          vip: []
+      -
+        id: "admin/pxe"
+        default_mapping: "fuelweb_admin"
+        properties:
+          subnet: true
+          gateway: true
+          vip: []
+      -
+        id: "swift/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "neutron/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "sahara/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceilometer/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "cinder/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "glance/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "heat/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "nova/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "murano/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "horizon"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/memcache"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/database"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/messaging"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/corosync"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/vip"
+        default_mapping: "management"
+        properties:
+          subnet: true
+          gateway: false
+          vip:
+            -
+              name: "vrouter"
+              namespace: "vrouter"
+              alias: "management_vrouter_vip"
+            -
+              name: "management"
+              namespace: "haproxy"
+              alias: "management_vip"
+      -
+        id: "public/vip"
+        default_mapping: "public"
+        properties:
+          subnet: true
+          gateway: true
+          vip:
+            -
+              name: "vrouter_pub"
+              namespace: "vrouter"
+              alias: "public_vrouter_vip"
+            -
+              name: "public"
+              namespace: "haproxy"
+              alias: "public_vip"
+      -
+        id: "neutron/private"
+        default_mapping: "private"
+        properties:
+          subnet: false
+          gateway: false
+          vip: []
+      -
+        id: "neutron/mesh"
+        default_mapping: "private"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "neutron/floating"
+        default_mapping: "public"
+        properties:
+          subnet: false
+          gateway: false
+          vip: []
+      -
+        id: "swift/replication"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceph/public"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceph/radosgw"
+        default_mapping: "public"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceph/replication"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "cinder/iscsi"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mongo/db"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "fw-admin"
+        default_mapping: "fuelweb_admin"
+        properties:
+          subnet: true
+          gateway: true
+          vip: []
+      -
+        id: "management"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ex"
+        default_mapping: "public"
+        properties:
+          subnet: true
+          gateway: true
+          vip: []
+      -
+        id: "storage"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "nova/migration"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+
+    networks_metadata:
+      bonding:
+        availability:
+          - linux: "settings:storage.iser.value == false and settings:neutron_mellanox.plugin.value != 'ethernet'"
+          - ovs: "false"
+        properties:
+          linux:
+            mode:
+              - values: ["balance-rr", "active-backup"]
+              - values: ["802.3ad"]
+                condition: "'experimental' in version:feature_groups or
+                             interface:pxe == false"
+              - values: ["balance-xor", "broadcast", "balance-tlb", "balance-alb"]
+                condition: "'experimental' in version:feature_groups"
+            xmit_hash_policy:
+              - values: ["layer2", "layer2+3", "layer3+4", "encap2+3", "encap3+4"]
+                for_modes: ["802.3ad", "balance-xor", "balance-tlb", "balance-alb"]
+            lacp_rate:
+              - values: ["slow", "fast"]
+                for_modes: ["802.3ad"]
+      nova_network:
+        networks:
+          - name: "public"
+            cidr: "172.16.0.0/24"
+            gateway: "172.16.0.1"
+            ip_range: ["172.16.0.2", "172.16.0.127"]
+            vlan_start: null
+            use_gateway: true
+            notation: "ip_ranges"
+            render_type: null
+            render_addr_mask: "public"
+            map_priority: 1
+            configurable: true
+            vips: ["haproxy", "vrouter"]
+          - name: "management"
+            cidr: "192.168.0.0/24"
+            vlan_start: 101
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "internal"
+            map_priority: 2
+            configurable: true
+            vips: ["haproxy", "vrouter"]
+          - name: "storage"
+            cidr: "192.168.1.0/24"
+            vlan_start: 102
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "storage"
+            map_priority: 2
+            configurable: true
+          - name: "fixed"
+            vlan_start: null
+            use_gateway: false
+            notation: null
+            render_type: null
+            render_addr_mask: null
+            map_priority: 2
+            ext_net_data: ["fixed_networks_vlan_start", "fixed_networks_amount"]
+            configurable: false
+        config:
+          net_manager: "FlatDHCPManager"
+          fixed_networks_cidr: "10.0.0.0/16"
+          fixed_networks_vlan_start: 103
+          fixed_network_size: 256
+          fixed_networks_amount: 1
+          floating_ranges: [["172.16.0.128", "172.16.0.254"]]
+      neutron:
+        networks:
+          - name: "public"
+            cidr: "172.16.0.0/24"
+            ip_range: ["172.16.0.2", "172.16.0.126"]
+            vlan_start: null
+            use_gateway: true
+            notation: "ip_ranges"
+            render_type: null
+            render_addr_mask: "public"
+            map_priority: 1
+            configurable: true
+            floating_range_var: "floating_ranges"
+            vips: ["haproxy", "vrouter"]
+          - name: "management"
+            cidr: "192.168.0.0/24"
+            vlan_start: 101
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "internal"
+            map_priority: 2
+            configurable: true
+            vips: ["haproxy", "vrouter"]
+          - name: "storage"
+            cidr: "192.168.1.0/24"
+            vlan_start: 102
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "storage"
+            map_priority: 2
+            configurable: true
+          - name: "private"
+            seg_type: "vlan"
+            vlan_start: null
+            use_gateway: false
+            notation: null
+            render_type: null
+            render_addr_mask: null
+            map_priority: 2
+            neutron_vlan_range: true
+            configurable: false
+          - name: "private"
+            seg_type: "gre"
+            cidr: "192.168.2.0/24"
+            vlan_start: 103
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: null
+            map_priority: 2
+            configurable: true
+          - name: "private"
+            seg_type: "tun"
+            cidr: "192.168.2.0/24"
+            vlan_start: 103
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: null
+            map_priority: 2
+            configurable: true
+        config:
+          vlan_range: [1000, 1030]
+          gre_id_range: [2, 65535]
+          base_mac: "fa:16:3e:00:00:00"
+          internal_cidr: "192.168.111.0/24"
+          internal_gateway: "192.168.111.1"
+          floating_ranges: [["172.16.0.130", "172.16.0.254"]]
+          parameters:
+            amqp:
+              provider: "rabbitmq"
+              username: null
+              passwd: ""
+              hosts: "hostname1:5672, hostname2:5672"
+            database:
+              provider: "mysql"
+              port: "3306"
+              database: null
+              username: null
+              passwd:   ""
+            keystone:
+              admin_user: null
+              admin_password: ""
+            metadata:
+              metadata_proxy_shared_secret: ""
+    volumes_metadata:
+      volumes_roles_mapping:
+        controller:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "logs"}
+          - {allocate_size: "all", id: "image"}
+          - {allocate_size: "min", id: "mysql"}
+        compute:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "vm"}
+        cinder:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "cinder"}
+        cinder-vmware:
+          - {allocate_size: "min", id: "os"}
+        ceph-osd:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "cephjournal"}
+          - {allocate_size: "full-disk", id: "ceph"}
+        mongo:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "mongo"}
+        other:
+          - {allocate_size: "all", id: "os"}
+        # NOTE(eli): it's better to use entire disk
+        # for OS, but currently we have a bug for
+        # Ubuntu which doesn't allow to do that:
+        # https://bugs.launchpad.net/fuel/+bug/1278964
+        base-os:
+          - {allocate_size: "min", id: "os"}
+        virt:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "vm"}
+        compute-vmware:
+          - {allocate_size: "min", id: "os"}
+      volumes:
+        - id: "os"
+          type: "vg"
+          min_size: {generator: "calc_min_os_size"}
+          label: "Base System"
+          volumes:
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size: {generator: "calc_total_root_vg"}
+              file_system: "ext4"
+            - mount: "swap"
+              type: "lv"
+              name: "swap"
+              size: {generator: "calc_swap_size"}
+              file_system: "swap"
+        - id: "logs"
+          type: "vg"
+          min_size:
+            generator: "calc_gb_to_mb"
+            generator_args: [10]
+          label: "Logs"
+          volumes:
+            - mount: "/var/log"
+              type: "lv"
+              name: "log"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["logs"]
+              file_system: "ext4"
+        - id: "mongo"
+          type: "vg"
+          label: "MongoDB"
+          min_size: {generator: "calc_min_mongo_size"}
+          volumes:
+            - mount: "/var/lib/mongo"
+              type: "lv"
+              name: "mongodb"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["mongo"]
+              file_system: "ext4"
+        - id: "ceph"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_size"}
+          label: "Ceph"
+          name: "Ceph"
+          mount: "none"
+          partition_guid: "4fbd7e29-9d25-41b8-afd0-062c0ceff05d"
+          file_system: "none"
+        - id: "cephjournal"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_journal_size"}
+          name: "Ceph Journal"
+          label: "Ceph Journal"
+          mount: "none"
+          partition_guid: "45b0969e-9b03-4f30-b4c6-b4b80ceff106"
+          file_system: "none"
+        - id: "mysql"
+          type: "vg"
+          min_size: {generator: "calc_min_mysql_size"}
+          label: "Mysql Database"
+          volumes:
+            - mount: "/var/lib/mysql"
+              type: "lv"
+              name: "root"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["mysql"]
+              file_system: "ext4"
+        - id: "vm"
+          type: "vg"
+          min_size: {generator: "calc_min_vm_size"}
+          label: "Virtual Storage"
+          volumes:
+            - mount: "/var/lib/nova"
+              type: "lv"
+              name: "nova"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["vm"]
+              file_system: "xfs"
+        - id: "image"
+          type: "vg"
+          min_size: {generator: "calc_min_glance_size"}
+          label: "Image Storage"
+          volumes:
+            - mount: "/var/lib/glance"
+              type: "lv"
+              name: "glance"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["image"]
+              file_system: "xfs"
+        - id: "cinder"
+          type: "vg"
+          label: "Cinder"
+          min_size: {generator: "calc_min_cinder_size"}
+          volumes: []
+    attributes_metadata:
+      editable:
+        access:
+          metadata:
+            label: "Access"
+            weight: 10
+          user:
+            value: "admin"
+            label: "Username"
+            description: "Username for Administrator"
+            weight: 10
+            type: "text"
+            regex:
+              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$)(?!.* +.*$).+'
+              error: "Invalid username"
+          email:
+            value: "admin@localhost"
+            label: "Email"
+            description: "Email address for Administrator"
+            weight: 40
+            type: "text"
+            regex:
+              source: "^\\S+@\\S+$"
+              error: "Invalid email"
+          tenant:
+            value: "admin"
+            label: "Tenant"
+            description: "Tenant (project) name for Administrator"
+            weight: 30
+            type: "text"
+            regex:
+              source: *user_tenant_blacklist
+              error: "Invalid tenant name"
+          password:
+            value: "admin"
+            label: "Password"
+            description: "Password for Administrator"
+            weight: 20
+            type: "password"
+            regex:
+              source: &non_empty_string '\S'
+              error: "Empty password"
+        workloads_collector:
+          metadata:
+            label: "Workloads Collector User"
+            weight: 10
+            restrictions:
+              - condition: "true"
+                action: "hide"
+          enabled:
+            value: true
+            type: "hidden"
+          user:
+            value: "fuel_stats_user"
+            type: "text"
+          password:
+            value:
+              generator: "password"
+            type: "password"
+          tenant:
+            value: "services"
+            type: "text"
+        murano_settings:
+          metadata:
+            label: "Murano Settings"
+            weight: 20
+            restrictions:
+              - condition: "settings:additional_components.murano.value == false"
+                message: "Murano is not enabled on the Additional Components section"
+                action: "hide"
+          murano_repo_url:
+            value: "http://storage.apps.openstack.org/"
+            label: "Murano Repository URL"
+            description: ""
+            weight: 10
+            type: "text"
+        external_mongo:
+          metadata:
+            label: "External MongoDB"
+            weight: 20
+            restrictions:
+              - condition: "settings:additional_components.mongo.value == false"
+                message: "Ceilometer and MongoDB are not enabled on the Additional Components section"
+                action: "hide"
+          hosts_ip:
+            value: ""
+            label: "MongoDB hosts IP"
+            description: "IP Addresses of MongoDB. Use comma to split IPs"
+            weight: 30
+            type: "text"
+            regex:
+              source: '^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?),)*((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+              error: "Invalid hosts ip sequence"
+          mongo_user:
+            value: "ceilometer"
+            label: "Username"
+            description: "Mongo database username"
+            weight: 30
+            type: "text"
+            regex:
+              source: '^\w+$'
+              error: "Empty username"
+          mongo_password:
+            value: "ceilometer"
+            label: "Password"
+            description: "Mongo database password"
+            weight: 30
+            type: "password"
+            regex:
+              source: '^\S*$'
+              error: "Password contains spaces"
+          mongo_db_name:
+            value: "ceilometer"
+            label: "Database name"
+            description: "Mongo database name"
+            weight: 30
+            type: "text"
+            regex:
+              source: '^\w+$'
+              error: "Invalid database name"
+          mongo_replset:
+            value: ""
+            label: "Replset"
+            description: "Name for Mongo replication set"
+            weight: 30
+            type: "text"
+        neutron_mellanox:
+          metadata:
+            toggleable: false
+            enabled: true
+            label: "Mellanox Neutron components"
+            weight: 50
+            restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
+          plugin:
+            value: "disabled"
+            label: "Mellanox drivers and SR-IOV plugin"
+            weight: 60
+            type: "radio"
+            values:
+              - data: "disabled"
+                label: "Mellanox drivers and plugins disabled"
+                description: "If selected, Mellanox drivers, Neutron and Cinder plugin will not be installed."
+                restrictions:
+                  - "settings:storage.iser.value == true"
+              - data: "drivers_only"
+                label: "Install only Mellanox drivers"
+                description: "If selected, Mellanox Ethernet drivers will be installed to support networking over Mellanox NIC. Mellanox Neutron plugin will not be installed."
+                restrictions:
+                  - "settings:common.libvirt_type.value != 'kvm'"
+              - data: "ethernet"
+                label: "Install Mellanox drivers and SR-IOV plugin"
+                description: "If selected, both Mellanox Ethernet drivers and Mellanox network acceleration (Neutron) plugin will be installed."
+                restrictions:
+                  - "settings:common.libvirt_type.value != 'kvm' or not (cluster:net_provider == 'neutron' and networking_parameters:segmentation_type == 'vlan')"
+          vf_num:
+            value: "16"
+            label: "Number of virtual NICs"
+            description: "Note that one virtual function will be reserved to the storage network, in case of choosing iSER."
+            weight: 70
+            type: "text"
+            restrictions:
+              - "settings:neutron_mellanox.plugin.value != 'ethernet'"
+        additional_components:
+          metadata:
+            label: "Additional Components"
+            weight: 20
+          sahara:
+            value: false
+            label: "Install Sahara"
+            description: "If selected, Sahara component will be installed"
+            weight: 10
+            type: "checkbox"
+          murano:
+            value: false
+            label: "Install Murano"
+            description: "If selected, Murano component will be installed"
+            weight: 20
+            type: "checkbox"
+          heat:
+            value: true
+            label: ""
+            description: ""
+            weight: 30
+            type: "hidden"
+          ceilometer:
+            value: false
+            label: "Install Ceilometer"
+            description: "If selected, Ceilometer component will be installed"
+            weight: 40
+            type: "checkbox"
+          mongo:
+            value: false
+            label: "Use external Mongo DB"
+            description: "If selected, You can use external Mongo DB as ceilometer backend"
+            weight: 40
+            type: "checkbox"
+            restrictions:
+              - "settings:additional_components.ceilometer.value == false"
+        common:
+          metadata:
+            label: "Common"
+            weight: 30
+          debug:
+            value: false
+            label: "OpenStack debug logging"
+            description: "Debug logging mode provides more information, but requires more disk space."
+            weight: 20
+            type: "checkbox"
+          puppet_debug:
+            value: true
+            label: "Puppet debug logging"
+            description: "Debug puppet logging mode provides more information, but requires more disk space."
+            weight: 20
+            type: "checkbox"
+          nova_quota:
+            value: false
+            label: "Nova quotas"
+            description: "Quotas are used to limit CPU and memory usage for tenants. Enabling quotas will increase load on the Nova database."
+            weight: 25
+            type: "checkbox"
+          auto_assign_floating_ip:
+            value: false
+            label: "Auto assign floating IP"
+            description: "If selected, OpenStack will automatically assign a floating IP to a new instance"
+            weight: 40
+            type: "checkbox"
+            restrictions:
+              - condition: "cluster:net_provider == 'neutron'"
+                action: "hide"
+          use_vcenter:
+            value: false
+            weight: 30
+            type: "hidden"
+            restrictions:
+              - condition: "cluster:net_provider == 'nova_network'"
+          libvirt_type:
+            value: "qemu"
+            values:
+              - data: "kvm"
+                label: "KVM"
+                description: "Choose this type of hypervisor if you run OpenStack on hardware"
+              - data: "qemu"
+                label: "QEMU"
+                description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+            label: "Hypervisor type"
+            weight: 30
+            type: "radio"
+          resume_guests_state_on_host_boot:
+            value: true
+            label: "Resume guests state on host boot"
+            description: "Whether to resume previous guests state when the host reboots. If enabled, this option causes guests assigned to the host to resume their previous state. If the guest was running a restart will be attempted when nova-compute starts. If the guest was not running previously, a restart will not be attempted."
+            weight: 60
+            type: "checkbox"
+          use_cow_images:
+            value: true
+            label: "Use qcow format for images"
+            description: "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting."
+            weight: 50
+            type: "checkbox"
+          auth_key:
+            value: ""
+            label: "Public Key"
+            description: "Public key(s) to include in authorized_keys on deployed nodes"
+            weight: 70
+            type: "textarea"
+        public_network_assignment:
+          metadata:
+            weight: 50
+            label: "Public network assignment"
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
+          assign_to_all_nodes:
+            value: false
+            label: "Assign public network to all nodes"
+            description: "When disabled, public network will be assigned to controllers only"
+            weight: 10
+            type: "checkbox"
+        neutron_advanced_configuration:
+          metadata:
+            weight: 45
+            label: "Neutron Advanced Configuration"
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
+          neutron_l2_pop:
+            value: false
+            label: "Neutron L2 population"
+            description: "Enable L2 population mechanism in Neutron"
+            weight: 10
+            type: "checkbox"
+            restrictions:
+              - condition: "networking_parameters:segmentation_type == 'vlan'"
+                action: "hide"
+          neutron_dvr:
+            value: false
+            label: "Neutron DVR"
+            description: "Enable Distributed Virtual Routers in Neutron"
+            weight: 20
+            type: "checkbox"
+            restrictions:
+              - "networking_parameters:segmentation_type != 'vlan' and settings:neutron_advanced_configuration.neutron_l2_pop.value == false": "DVR requires L2 population to be enabled."
+        corosync:
+          metadata:
+            label: "Corosync"
+            weight: 50
+            restrictions:
+              - condition: "true"
+                action: "hide"
+          group:
+            value: "226.94.1.1"
+            label: "Group"
+            description: ""
+            weight: 10
+            type: "text"
+          port:
+            value: "12000"
+            label: "Port"
+            description: ""
+            weight: 20
+            type: "text"
+          verified:
+            value: false
+            label: "Need to pass network verification."
+            description: "Set True only if multicast is configured correctly on router."
+            weight: 10
+            type: "checkbox"
+        syslog:
+          metadata:
+            label: "Syslog"
+            weight: 50
+          syslog_transport:
+            value: "tcp"
+            values:
+              - data: "udp"
+                label: "UDP"
+                description: ""
+              - data: "tcp"
+                label: "TCP"
+                description: ""
+            label: "Syslog transport protocol"
+            weight: 30
+            type: "radio"
+          syslog_server:
+            value: ""
+            label: "Hostname"
+            description: "Remote syslog hostname"
+            weight: 10
+            type: "text"
+          syslog_port:
+            value: "514"
+            label: "Port"
+            description: "Remote syslog port"
+            weight: 20
+            type: "text"
+            regex:
+              source: "^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+              error: "Invalid syslog port"
+        provision:
+          metadata:
+            label: "Provision"
+            weight: 80
+            restrictions:
+              - condition: "true"
+                action: "hide"
+          method:
+            type: "hidden"
+            value: "image"
+        external_dns:
+          metadata:
+            label: "Host OS DNS Servers"
+            weight: 90
+          dns_list:
+            value:
+              generator: "from_settings"
+              generator_arg: "DNS_UPSTREAM"
+            label: "DNS list"
+            description: "List of upstream DNS servers, separated by comma"
+            weight: 10
+            type: "text"
+            regex:
+              source: '^\*$|^(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3}(?:\s*,\s*(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3})*$'
+              error: "Invalid IP address list"
+        external_ntp:
+          metadata:
+            label: "Host OS NTP Servers"
+            weight: 100
+          ntp_list:
+            value:
+              generator: "from_settings"
+              generator_arg: "NTP_UPSTREAM"
+            label: "NTP server list"
+            description: "List of upstream NTP servers, separated by comma"
+            weight: 10
+            type: "text"
+            regex:
+              source: '^\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+|\d{1,3}(?:\.\d{1,3}){3})\s*(?:,\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+|\d{1,3}(\.\d{1,3}){3})\s*)*$'
+              error: "Invalid NTP server list"
+        public_ssl:
+          metadata:
+            label: "Public TLS"
+            weight: 110
+          horizon:
+            value: true
+            label: "HTTPS for Horizon"
+            description: "Secure access to Horizon enabling HTTPS instead of HTTP"
+            weight: 10
+            type: "checkbox"
+          services:
+            value: true
+            label: "TLS for OpenStack public endpoints"
+            description: "Enable TLS termination on HAProxy for OpenStack services"
+            weight: 20
+            type: "checkbox"
+          cert_source:
+            type: "radio"
+            weight: 30
+            label: "Select source for certificate"
+            description: "From where we'll get certificate and private key"
+            value: "self_signed"
+            values:
+              - data: "self_signed"
+                label: "Self-signed"
+                description: "Generate private key and certificate that will be signed by this key"
+              - data: "user_uploaded"
+                label: "I have my own keypair with certificate"
+                description: "Use pre-generated key and certificate"
+            restrictions:
+                - condition: "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
+                  action: "hide"
+          cert_data:
+            value: ""
+            label: "Certificate"
+            description: "Certificate and private key data, concatenated into a single file"
+            weight: 40
+            type: "file"
+            restrictions:
+              - condition: "(settings:public_ssl.cert_source.value != 'user_uploaded') or (settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false)"
+                action: "hide"
+          hostname:
+            value: "public.fuel.local"
+            label: "DNS hostname for public TLS endpoints"
+            description: "Your DNS entries should point to this name. Self-signed certificates also will use this hostname"
+            weight: 50
+            type: "text"
+            restrictions:
+              - condition: "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
+                action: "hide"
+        kernel_params:
+          metadata:
+            label: "Kernel parameters"
+            weight: 40
+          kernel:
+            value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset"
+            label: "Initial parameters"
+            description: "Default kernel parameters"
+            weight: 45
+            type: "text"
+        storage:
+          metadata:
+            label: "Storage"
+            weight: 60
+          volumes_lvm:
+            value: true
+            label: "Cinder LVM over iSCSI for volumes"
+            description: "It is recommended to have at least one Storage - Cinder LVM node."
+            weight: 10
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.volumes_ceph.value == true"
+          iser:
+            value: false
+            label: "iSER protocol for volumes (Cinder)"
+            description: "High performance block storage: Cinder volumes over iSER protocol (iSCSI over RDMA). This feature requires SR-IOV capabilities in the NIC, and will use a dedicated virtual function for the storage network."
+            weight: 11
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.volumes_lvm.value != true or settings:common.libvirt_type.value != 'kvm'"
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
+          volumes_ceph:
+            value: false
+            label: "Ceph RBD for volumes (Cinder)"
+            description: "Configures Cinder to store volumes in Ceph RBD images."
+            weight: 20
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.volumes_lvm.value == true"
+          images_ceph:
+            value: false
+            label: "Ceph RBD for images (Glance)"
+            description: "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing."
+            weight: 30
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
+          images_vcenter:
+            value: false
+            label: "VMWare vCenter/ESXi datastore for images (Glance)"
+            description: "Configures Glance to use the vCenter/ESXi backend to store images. If enabled, this option will prevent Swift from installing."
+            weight: 35
+            type: "checkbox"
+            restrictions:
+              - condition: "settings:common.use_vcenter.value != true"
+                action: "hide"
+              - condition: "settings:storage.images_ceph.value == true"
+                message: "Only one Glance backend could be selected."
+          ephemeral_ceph:
+            value: false
+            label: "Ceph RBD for ephemeral volumes (Nova)"
+            description: "Configures Nova to store ephemeral volumes in RBD. This works best if Ceph is enabled for volumes and images, too. Enables live migration of all types of Ceph backed VMs (without this option, live migration will only work with VMs launched from Cinder volumes)."
+            weight: 75
+            type: "checkbox"
+          objects_ceph:
+            value: false
+            label: "Ceph RadosGW for objects (Swift API)"
+            description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
+            weight: 80
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.images_ceph.value == false"
+          osd_pool_size:
+            value: "2"
+            label: "Ceph object replication factor"
+            description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes."
+            weight: 85
+            type: "text"
+            regex:
+              source: '^[1-9]\d*$'
+              error: "Invalid number"
+      generated:
+        mysql:
+          root_password:
+            generator: "password"
+          wsrep_password:
+            generator: "password"
+        keystone:
+          db_password:
+            generator: "password"
+          admin_token:
+            generator: "password"
+        glance:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+        nova:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+          state_path: "/var/lib/nova"
+        rabbit:
+          password:
+            generator: "password"
+        swift:
+          user_password:
+            generator: "password"
+        cinder:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+          fixed_key:
+            generator: "hexstring"
+            generator_arg: "64"
+        horizon:
+          secret_key:
+            generator: "hexstring"
+            generator_arg: "64"
+        base_syslog:
+          syslog_server:
+            generator: "ip"
+            generator_arg: "admin"
+          syslog_port:
+            generator: "identical"
+            generator_arg: "514"
+        cobbler:
+          profile:
+            generator: "identical"
+        sahara:
+          user_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+        murano:
+          user_password:
+            generator: "password"
+          rabbit_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+        heat:
+          user_password:
+            generator: "password"
+          rabbit_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+          auth_encryption_key:
+            generator: "hexstring"
+            generator_arg: "32"
+        ceilometer:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+          metering_secret:
+            generator: "password"
+        quantum_settings:
+          database:
+            passwd:
+              generator: "password"
+          keystone:
+            admin_password:
+              generator: "password"
+          metadata:
+            metadata_proxy_shared_secret:
+              generator: "password"
+        puppet:
+          manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
+          modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"
+    wizard_metadata:
+      Mode:
+        metadata:
+          restrictions:
+            - condition: "true"
+              action: "hide"
+        mode:
+          type: "radio"
+          bind: "cluster:mode"
+          values:
+          - data: "ha_compact"
+            label: "cluster.mode.ha_compact"
+      Compute:
+        hypervisor:
+          type: "radio"
+          value: "qemu"
+          weight: 5
+          bind: "settings:common.libvirt_type.value"
+          values:
+            - data: "kvm"
+              label: "dialog.create_cluster_wizard.compute.kvm"
+              description: "dialog.create_cluster_wizard.compute.kvm_description"
+              bind:
+                - "wizard:Storage.ceph": "disable"
+                - "wizard:Network.manager": "neutron-vlan"
+            - data: "qemu"
+              label: "dialog.create_cluster_wizard.compute.qemu"
+              description: "dialog.create_cluster_wizard.compute.qemu_description"
+              bind:
+                - "wizard:Storage.ceph": "disable"
+                - "wizard:Network.manager": "neutron-vlan"
+        vcenter:
+          type: "checkbox"
+          weight: 10
+          label: "dialog.create_cluster_wizard.compute.vcenter"
+          description: "dialog.create_cluster_wizard.compute.vcenter_description"
+          bind:
+            - "wizard:Storage.ceph": "disable"
+            - "wizard:Network.manager": "nova-network"
+            - "settings:common.use_vcenter.value"
+      Network:
+        manager:
+          type: "radio"
+          values:
+            - data: "neutron-vlan"
+              label: "common.network.neutron_vlan"
+              description: "dialog.create_cluster_wizard.network.neutron_vlan_description"
+              restrictions:
+                - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
+              bind:
+                - "cluster:net_provider": "neutron"
+                - "cluster:net_segment_type": "vlan"
+            - data: "neutron-tun"
+              label: "common.network.neutron_tun"
+              description: "dialog.create_cluster_wizard.network.neutron_tun_description"
+              restrictions:
+                - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
+              bind:
+                - "cluster:net_provider": "neutron"
+                - "cluster:net_segment_type": "tun"
+            - data: "nova-network"
+              label: "dialog.create_cluster_wizard.network.nova_network"
+              description: "dialog.create_cluster_wizard.network.nova_network_description"
+              restrictions:
+                - "Compute.vcenter == false": "dialog.create_cluster_wizard.network.nove_network_vcenter_alert"
+              bind:
+                - "cluster:net_provider": "nova_network"
+      Storage:
+        ceph:
+          type: "radio"
+          values:
+            - data: "disable"
+              label: "dialog.create_cluster_wizard.storage.ceph_disable"
+              bind:
+                - "settings:storage.volumes_lvm.value": true
+                - "settings:storage.volumes_ceph.value": false
+                - "settings:storage.objects_ceph.value": false
+                - "settings:storage.ephemeral_ceph.value": false
+                - "settings:storage.images_ceph.value": false
+            - data: "enable"
+              label: "dialog.create_cluster_wizard.storage.ceph_enable"
+              bind:
+                - "settings:storage.volumes_ceph.value": true
+                - "settings:storage.objects_ceph.value": true
+                - "settings:storage.ephemeral_ceph.value": true
+                - "settings:storage.images_ceph.value": true
+                - "settings:storage.volumes_lvm.value": false
+      AdditionalServices:
+        sahara:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_sahara"
+          description: "dialog.create_cluster_wizard.additional.install_sahara_description"
+          bind: "settings:additional_components.sahara.value"
+          weight: 10
+        murano:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_murano"
+          description: "dialog.create_cluster_wizard.additional.install_murano_description"
+          bind: "settings:additional_components.murano.value"
+          weight: 20
+        ceilometer:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_ceilometer"
+          description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
+          bind: "settings:additional_components.ceilometer.value"
+          weight: 30
+      Ready: {}
+    vmware_attributes_metadata:
+      editable:
+        metadata:
+          -
+            name: "availability_zones"
+            type: "array"
+            restrictions:
+              - condition: "settings:common.use_vcenter.value == false"
+                message: "VMware vCenter not enabled for cluster"
+            fields:
+              -
+                name: "az_name"
+                type: "text"
+                label: "Availability zone"
+                description: "Availability zone name"
+                regex:
+                  source: &availability_zone_blacklist '^(?!nova$)\w+$'
+                  error: "Invalid availability zone name"
+              -
+                name: "vcenter_host"
+                type: "text"
+                label: "vCenter host"
+                description: "vCenter host or IP"
+                regex:
+                  source: &ipv4_or_hostname_regex '^[a-zA-Z\d]+[-\.\da-zA-Z]*$'
+                  error: "Invalid vCenter host"
+              -
+                name: "vcenter_username"
+                type: "text"
+                label: "vCenter username"
+                description: "vCenter username"
+                regex:
+                  source: *non_empty_string
+                  error: "Empty vCenter username"
+              -
+                name: "vcenter_password"
+                type: "password"
+                label: "vCenter password"
+                description: "vCenter password"
+                regex:
+                  source: *non_empty_string
+                  error: "Empty vCenter password"
+              -
+                name: "nova_computes"
+                type: "array"
+                fields:
+                  -
+                    name: "vsphere_cluster"
+                    type: "text"
+                    label: "vSphere cluster"
+                    description: "vSphere cluster"
+                    regex:
+                      source: *non_empty_string
+                      error: "Invalid vSphere cluster"
+                  -
+                    name: "service_name"
+                    type: "text"
+                    label: "Service name"
+                    description: "Service name"
+                    regex:
+                      source: '^\w+$'
+                      error: "Invalid service name"
+                  -
+                    name: "datastore_regex"
+                    type: "text"
+                    label: "Datastore regex"
+                    description: "Datastore regex"
+                    regex:
+                      source: *non_empty_string
+                      error: "Invalid datastore regex"
+                  -
+                    name: "target_node"
+                    type: "select"
+                    label: "Target node"
+                    description: "Target node for nova-compute service"
+          -
+            name: "network"
+            type: "object"
+            restrictions:
+              - condition: "cluster:net_provider != 'nova_network' or networking_parameters:net_manager != 'VlanManager' or settings:common.use_vcenter.value == false"
+                action: "hide"
+            fields:
+              -
+                name: "esxi_vlan_interface"
+                type: "text"
+                label: "VLAN interface"
+                description: "VLAN interface"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid network interface"
+          -
+            name: "glance"
+            type: "object"
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false or settings:common.use_vcenter.value == false"
+                message: "VMware vCenter datastore for images is not enabled in Settings tab"
+            fields:
+              -
+                name: "vcenter_host"
+                type: "text"
+                label: "vCenter host"
+                description: "vCenter host or IP"
+                regex:
+                  source: *ipv4_or_hostname_regex
+                  error: "Invalid vCenter host"
+              -
+                name: "vcenter_username"
+                type: "text"
+                label: "vCenter username"
+                description: "vCenter username"
+                regex:
+                  source: *non_empty_string
+                  error: "Empty vCenter username"
+              -
+                name: "vcenter_password"
+                type: "password"
+                label: "vCenter password"
+                description: "vCenter password"
+                regex:
+                  source: *non_empty_string
+                  error: "Empty vCenter password"
+              -
+                name: "datacenter"
+                type: "text"
+                label: "Datacenter"
+                description: "Datacenter"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid datacenter"
+              -
+                name: "datastore"
+                type: "text"
+                label: "Datastore"
+                description: "Datastore"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid datastore"
+        value:
+          availability_zones:
+            -
+              az_name: "vcenter"
+              vcenter_host: ""
+              vcenter_username: ""
+              vcenter_password: ""
+              nova_computes:
+                -
+                  vsphere_cluster: ""
+                  service_name: ""
+                  datastore_regex: ""
+                  target_node:
+                    options:
+                      - id: "controllers"
+                        label: "controllers"
+                    current:
+                      id: "controllers"
+                      label: "controllers"
+              cinder:
+                enable: true
+          network:
+            esxi_vlan_interface: ""
+          glance:
+            vcenter_host: ""
+            vcenter_username: ""
+            vcenter_password: ""
+            datacenter: ""
+            datastore: ""
+    modes: ['ha_compact']
+    extensions: ['volume_manager']
+- pk: 1
+  extend: *base_release
+  fields:
+    name: "Kilo on CentOS 6.5"
+    state: "unavailable"
+    version: "2015.1.0-7.0"
+    is_deployable: false
+    can_update_from_versions: []
+    operating_system: "CentOS"
+    description: "This option will install the OpenStack Kilo packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      editable:
+        kernel_params:
+          kernel:
+            value: "console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset"
+        use_fedora_lt:
+          metadata:
+            label: "Use Fedora longterm kernel"
+            weight: 50
+          kernel:
+            label: "Select kernel"
+            weight: 55
+            type: "radio"
+            value: "default_kernel"
+            values:
+              - data: "default_kernel"
+                label: "CentOS default kernel"
+                description: "Install default 2.6.32 kernel."
+              - data: "fedora_lt_kernel"
+                label: "Fedora LT kernel"
+                description: "EXPERIMENTAL: Install the Fedora 3.10 longterm kernel instead of the default 2.6.32 kernel. This kernel may not work with all hardware platforms, use with caution."
+        repo_setup:
+          metadata:
+            label: "Repositories"
+            weight: 50
+            always_editable: true
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: null
+            description: |
+              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-package-updates --help" on the Fuel master node.
+              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-7.0/reference-architecture.html#fuel-rep-mirror).
+            value:
+              - type: "rpm"
+                name: "mos"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/x86_64"
+                priority: null
+              - type: "rpm"
+                name: "mos-updates"
+                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos6/updates/x86_64"
+                priority: null
+              - type: "rpm"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos6/security/x86_64"
+                priority: null
+              - type: "rpm"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/auxiliary"
+                priority: 15
+      generated:
+        cobbler:
+          profile:
+            generator_arg: "centos-x86_64"
+        provision:
+          image_data:
+            /:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64.img.gz"
+              format: "ext4"
+              container: "gzip"
+            /boot:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
+              format: "ext2"
+              container: "gzip"
+- pk: 2
+  extend: *base_release
+  fields:
+    name: "Kilo on Ubuntu 14.04"
+    version: "2015.1.0-7.0"
+    can_update_from_versions: []
+    operating_system: "Ubuntu"
+    description: "This option will install the OpenStack Kilo packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      editable:
+        kernel_params:
+          kernel:
+            value: "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
+        repo_setup:
+          metadata:
+            label: "Repositories"
+            weight: 50
+            always_editable: true
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: null
+            description: |
+              Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
+              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
+              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-7.0/operations.html#external-ubuntu-ops).
+            value:
+              - type: "deb"
+                name: "ubuntu"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-updates"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty-updates"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-security"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty-security"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "mos"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
+                suite: "mos7.0"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-updates"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos7.0-updates"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos7.0-security"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-holdback"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos7.0-holdback"
+                section: "main restricted"
+                priority: 1100
+              - type: "deb"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
+                suite: "auxiliary"
+                section: "main restricted"
+                priority: 1150
+      generated:
+        repo_setup:
+          installer_kernel:
+            remote_relative: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux"
+            local: "/var/www/nailgun/ubuntu/x86_64/images/linux"
+          installer_initrd:
+            remote_relative: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz"
+            local: "/var/www/nailgun/ubuntu/x86_64/images/initrd.gz"
+        cobbler:
+          profile:
+            generator_arg: "ubuntu_1404_x86_64"
+        provision:
+          codename: "trusty"
+          image_data:
+            /:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64.img.gz"
+              format: "ext4"
+              container: "gzip"
+            /boot:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64-boot.img.gz"
+              format: "ext2"
+              container: "gzip"

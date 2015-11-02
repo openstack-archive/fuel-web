@@ -1859,7 +1859,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     @mock.patch('nailgun.rpc.cast')
     def test_neutron_l3_floating_w_multiple_node_groups(self, _):
 
-        self.new_env_release_version = '1111-7.0'
+        self.new_env_release_version = '1111-8.0'
         self.prepare_for_deployment = \
             objects.NodeCollection.prepare_for_deployment
 
@@ -1925,7 +1925,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'private' in (fact['network_scheme']['roles']), False)
 
     def test_tun_segmentation(self):
-        self.new_env_release_version = '2015.1.0-7.0'
+        self.new_env_release_version = '2015.1.0-8.0'
         self.prepare_for_deployment = \
             objects.NodeCollection.prepare_for_deployment
         cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'tun')

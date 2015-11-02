@@ -48,7 +48,22 @@ from nailgun.test.integration.test_orchestrator_serializer import \
     TestSerializeInterfaceDriversData
 
 
-class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
+class PrepareDataMixin(object):
+
+    def patch_net_roles_for_release(self):
+        rel_id = self.env.create_release(version=self.env_version).id
+        rel_db = self.db.query(models.Release).filter_by(id=rel_id).one()
+
+        version_to_use = self.env_version.split('-')[-1]
+        attrs_to_patch = ('network_roles_metadata',)
+        self.env.patch_release_by_different_version(
+            rel_db, version_to_use, attrs_to_patch
+        )
+        return rel_db
+
+
+class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer,
+                                                  PrepareDataMixin):
     management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
                   'ceilometer/api', 'cinder/api', 'glance/api', 'heat/api',
                   'nova/api', 'murano/api', 'horizon', 'management',
@@ -82,9 +97,11 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def create_env(self, mode):
+        release = self.patch_net_roles_for_release()
+
         return self.env.create(
-            release_kwargs={'version': self.env_version},
             cluster_kwargs={
+                'release_id': release.id,
                 'mode': mode,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': self.segmentation_type},
@@ -365,9 +382,10 @@ class TestDeploymentSerializationForNovaNetwork70(
 ):
 
     def create_env(self, mode):
+        release = self.patch_net_roles_for_release()
         return self.env.create(
-            release_kwargs={'version': self.env_version},
             cluster_kwargs={
+                'release_id': release.id,
                 'mode': mode,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=[
@@ -555,12 +573,10 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
     def setUp(self):
         super(TestPluginDeploymentTasksInjection, self).setUp()
 
+        release = self._prepare_release()
         self.env.create(
-            release_kwargs={
-                'version': '2015.1.0-7.0',
-                'deployment_tasks': self.release_deployment_tasks,
-            },
             cluster_kwargs={
+                'release_id': release.id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
@@ -584,6 +600,20 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
                 },
             ],
         }
+
+    def _prepare_release(self):
+        rel_id = self.env.create_release(
+            version='1111-7.0',
+            deployment_tasks=self.release_deployment_tasks).id
+        rel_db = self.db.query(models.Release).filter_by(id=rel_id).one()
+
+        version_to_use = '7.0'
+        attrs_to_patch = ('network_roles_metadata',)
+        self.env.patch_release_by_different_version(
+            rel_db, version_to_use, attrs_to_patch
+        )
+
+        return rel_db
 
     def prepare_plugins_for_cluster(self, cluster, plugins_kw_list):
         for kw in plugins_kw_list:
@@ -838,7 +868,8 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         self.assertItemsEqual(release_depl_tasks_ids, serialized_tasks_ids)
 
 
-class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
+class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
+                                        PrepareDataMixin):
 
     env_version = '2015.1.0-7.0'
     prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
@@ -883,11 +914,10 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
     def setUp(self):
         super(TestRolesSerializationWithPlugins, self).setUp()
 
+        release = self.patch_net_roles_for_release()
         self.env.create(
-            release_kwargs={
-                'version': self.env_version,
-            },
             cluster_kwargs={
+                'release_id': release.id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
@@ -974,7 +1004,8 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
         }])
 
 
-class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
+class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
+                                      PrepareDataMixin):
 
     env_version = '2015.1.0-7.0'
     prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
@@ -982,7 +1013,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
         self.cluster = self.create_env(consts.NEUTRON_SEGMENT_TYPES.vlan)
-        self.net_template = self.env.read_fixtures(['network_template'])[0]
+        self.net_template = self._get_net_template()
 
         objects.Cluster.set_network_template(
             self.cluster,
@@ -996,10 +1027,11 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
 
     def create_env(self, segment_type):
+        release = self.patch_net_roles_for_release()
         cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'api': False,
+                'release_id': release.id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': segment_type},
@@ -1015,6 +1047,12 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         self.env.create_nodes_w_interfaces_count(1, 4, **nodes_kwargs)
 
         return cluster
+
+    def _get_net_template(self):
+        fxt_name = 'network_template'
+        version_to_use = self.env_version.split('-')[-1]
+        fxt70 = self.env.read_fxt_by_version(fxt_name, version_to_use)
+        return fxt70[0]
 
     def create_more_nodes(self, iface_count=2):
         self.env.create_nodes_w_interfaces_count(
@@ -1628,8 +1666,31 @@ class TestSerializer70Mixin(object):
 
 
 class TestNovaOrchestratorSerializer70(TestSerializer70Mixin,
-                                       TestNovaOrchestratorSerializer):
-    pass
+                                       TestNovaOrchestratorSerializer,
+                                       PrepareDataMixin):
+
+    def create_env(self, mode, network_manager='FlatDHCPManager'):
+        node_args = [
+            {'roles': ['controller', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute'], 'pending_addition': True},
+            {'roles': ['mongo'], 'pending_addition': True},
+            {'roles': [], 'pending_roles': ['cinder'],
+             'pending_addition': True}]
+
+        release = self.patch_net_roles_for_release()
+        cluster = self.env.create(
+            cluster_kwargs={
+                'release_id': release.id,
+                'mode': mode,
+                'net_manager': network_manager,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
+            nodes_kwargs=node_args)
+
+        cluster_db = self.db.query(models.Cluster).get(cluster['id'])
+        self.prepare_for_deployment(cluster_db.nodes)
+        self.db.flush()
+        return cluster_db
 
 
 class TestSerializeInterfaceDriversData70(TestSerializer70Mixin,

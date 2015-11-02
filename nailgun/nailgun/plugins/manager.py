@@ -261,9 +261,8 @@ class PluginManager(object):
         """Get volumes metadata for cluster from all plugins which enabled it.
 
         :param cluster: A cluster instance
-        :type cluster: nailgun.objects.cluster.Cluster
-        :return: Object with merged volumes data from plugins
-        :rtype: dict
+        :type cluster: Cluster model
+        :return: dict -- Object with merged volumes data from plugins
         """
         volumes_metadata = {
             'volumes': [],
@@ -300,6 +299,43 @@ class PluginManager(object):
                 metadata.get('volumes', []))
 
         return volumes_metadata
+
+    @classmethod
+    def get_components_metadata(cls, release):
+        """Get components metadata for all plugins which related to release.
+
+        :param release: A release instance
+        :type release: Release model
+        :return: list -- List of plugins components
+        """
+        components = []
+        processed_components = {}
+        release_components_names = \
+            set(c['name'] for c in release.components_metadata)
+
+        for plugin_adapter in map(
+                wrap_plugin, PluginCollection.get_by_release(release)):
+            for component in plugin_adapter.components_metadata:
+                name = component['name']
+                if name in release_components_names:
+                    raise errors.AlreadyExists(
+                        'Plugin {0} is overlapping with release '
+                        'by introducing the same component with name '
+                        '"{1}"'.format(plugin_adapter.full_name,
+                                       name))
+                elif name in processed_components:
+                    raise errors.AlreadyExists(
+                        'Plugin {0} is overlapping with plugin {1} '
+                        'by introducing the same component with name '
+                        '"{2}"'.format(plugin_adapter.full_name,
+                                       processed_components[name],
+                                       name))
+
+                processed_components[name] = plugin_adapter.full_name
+
+            components.extend(plugin_adapter.components_metadata)
+
+        return components
 
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):

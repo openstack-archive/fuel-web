@@ -44,14 +44,12 @@ class TestDeletionTask(BaseIntegrationTest):
         nodes = DeletionTask.get_task_nodes_for_cluster(self.cluster_db)
 
         self.assertEqual(len(nodes['nodes_to_delete']), 0)
-        self.assertEqual(len(nodes['nodes_to_restore']), 0)
 
         self.add_node(consts.NODE_STATUSES.ready)
 
         nodes = DeletionTask.get_task_nodes_for_cluster(self.cluster_db)
 
         self.assertEqual(len(nodes['nodes_to_delete']), 1)
-        self.assertEqual(len(nodes['nodes_to_restore']), 0)
 
     def test_undeployed_node_removal(self):
         self.add_node(consts.NODE_STATUSES.discover)
@@ -59,7 +57,6 @@ class TestDeletionTask(BaseIntegrationTest):
         nodes = DeletionTask.get_task_nodes_for_cluster(self.cluster_db)
 
         self.assertEqual(len(nodes['nodes_to_delete']), 1)
-        self.assertEqual(len(nodes['nodes_to_restore']), 0)
 
         ret = DeletionTask.remove_undeployed_nodes_from_db(
             nodes['nodes_to_delete']
@@ -104,7 +101,6 @@ class TestDeletionTask(BaseIntegrationTest):
         nodes = DeletionTask.get_task_nodes_for_cluster(self.cluster_db)
 
         self.assertEqual(len(nodes['nodes_to_delete']), 1)
-        self.assertEqual(len(nodes['nodes_to_restore']), 0)
 
         task = models.Task(
             name=consts.TASK_NAMES.cluster_deletion,
@@ -137,7 +133,6 @@ class TestDeletionTask(BaseIntegrationTest):
                         if node['id'] != n_discover.id]
 
         self.assertEqual(len(nodes['nodes_to_delete']), 3)
-        self.assertEqual(len(nodes['nodes_to_restore']), 0)
 
         task = models.Task(
             name=consts.TASK_NAMES.cluster_deletion,

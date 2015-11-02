@@ -14,17 +14,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import functools
 from itertools import chain
 from itertools import repeat
 from random import randrange
 import threading
 import time
+import types
 
 from fysom import Fysom
 
 from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
+from sqlalchemy.orm import ColumnProperty
+from sqlalchemy.orm import object_mapper
 
 from nailgun import objects
 
@@ -362,6 +366,25 @@ class FakeProvisionThread(FakeThread):
 
 
 class FakeDeletionThread(FakeThread):
+
+    def __init__(self, *args, **kwargs):
+        super(FakeDeletionThread, self).__init__(*args, **kwargs)
+
+        self.patch_remove_undeployed_nodes()
+
+    def patch_remove_undeployed_nodes(method):
+        from nailgun.task import task
+
+        @functools.wraps(method)
+        def wrapper(node_to_delete):
+            return nodes_to_delete
+
+        return classmethod(wrapper)
+
+        task.DeletionTask.remove_undeployed_nodes_from_db = types.MethodType(
+            wrapper, task.DeletionTask
+        )
+
     def run(self):
         super(FakeDeletionThread, self).run()
         receiver = NailgunReceiver
@@ -370,7 +393,7 @@ class FakeDeletionThread(FakeThread):
             'nodes': self.data['args']['nodes'],
             'status': 'ready'
         }
-        nodes_to_restore = self.data['args'].get('nodes_to_restore', [])
+        nodes_to_restore = self.format_nodes_to_restore()
         resp_method = getattr(receiver, self.respond_to)
         try:
             resp_method(**kwargs)
@@ -396,6 +419,40 @@ class FakeDeletionThread(FakeThread):
             node_data["status"] = "discover"
             objects.Node.create(node_data)
         db().commit()
+
+    def format_nodes_to_restore(self):
+        """Convert node to dict for restoring, works only in fake mode
+
+        Fake mode can optionally restore the removed node (this simulates
+        the node being rediscovered). This method creates the appropriate
+        input for that procedure.
+        :param node:
+        :return: dict
+
+        """
+        reset = ('id',
+                 'cluster_id',
+                 'roles',
+                 'pending_deletion',
+                 'pending_addition',
+                 'group_id',
+                 'hostname')
+        formatted_nodes = []
+
+        uids_to_restore = [n['uid'] for n in self.data['args']['nodes']]
+        query = db().query(Node).filter(Node.id.in_(uids_to_restore))
+        nodes = query.all()
+
+        for node in nodes:
+            new_node = {}
+
+            for prop in object_mapper(node).iterate_properties:
+                if isinstance(prop, ColumnProperty) and prop.key not in reset:
+                    new_node[prop.key] = getattr(node, prop.key)
+
+            formatted_nodes.append(new_node)
+
+        return formatted_nodes
 
 
 class FakeStopDeploymentThread(FakeThread):

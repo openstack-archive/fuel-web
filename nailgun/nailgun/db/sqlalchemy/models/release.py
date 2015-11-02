@@ -27,6 +27,7 @@ from sqlalchemy.orm import relationship
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableList
 
 
 class Release(Base):
@@ -58,6 +59,8 @@ class Release(Base):
     wizard_metadata = Column(JSON, default={})
     deployment_tasks = Column(JSON, default=[])
     vmware_attributes_metadata = Column(JSON, default=[])
+    components_metadata = Column(
+        MutableList.as_mutable(JSON), default=[], server_default='[]')
     modes = Column(JSON, default=[])
     clusters = relationship(
         "Cluster",

@@ -58,6 +58,7 @@ class Release(Base):
     wizard_metadata = Column(JSON, default={})
     deployment_tasks = Column(JSON, default=[])
     vmware_attributes_metadata = Column(JSON, default=[])
+    components_metadata = Column(JSON, default=[], server_default='[]')
     modes = Column(JSON, default=[])
     clusters = relationship(
         "Cluster",

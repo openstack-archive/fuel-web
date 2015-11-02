@@ -1556,8 +1556,8 @@ class BaseValidatorTest(BaseTestCase):
 
         return context
 
-    def assertRaisesAdditionalProperty(self, obj, key):
-        context = self.get_invalid_data_context(obj)
+    def assertRaisesAdditionalProperty(self, obj, key, *args):
+        context = self.get_invalid_data_context(obj, *args)
 
         self.assertIn(
             "Additional properties are not allowed".format(key),
@@ -1591,6 +1591,21 @@ class BaseValidatorTest(BaseTestCase):
         context = self.get_invalid_data_context(obj)
         self.assertIn(
             "Failed validating 'anyOf' in schema",
+            context.exception.message)
+
+        err_msg = "{0} is not valid under any of the given schemas"
+        self.assertIn(
+            err_msg.format(passed_value),
+            context.exception.message)
+
+        self.assertIn(
+            "On instance{0}".format(instance),
+            context.exception.message)
+
+    def assertRaisesInvalidOneOf(self, obj, passed_value, instance, *args):
+        context = self.get_invalid_data_context(obj, *args)
+        self.assertIn(
+            "Failed validating 'oneOf' in schema",
             context.exception.message)
 
         err_msg = "{0} is not valid under any of the given schemas"

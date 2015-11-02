@@ -36,7 +36,7 @@ class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(body["name"],
                          "cluster-clone-{0}".format(self.cluster_61.id))
-        self.assertEqual(body["release_id"], self.release_70.id)
+        self.assertEqual(body["release_id"], self.release_80.id)
 
     def test_clone_cluster_not_found_error(self):
         resp = self.app.post(

@@ -142,6 +142,56 @@ class EnvironmentManager(object):
             )
         return cluster
 
+    def read_fxt_by_version(self, fxt_name, version):
+        """Read fixture of particular version
+
+        Names of fixtures consists of base name of the fixture and
+        version of Fuel release to which it belongs. The fixture
+        for current release has no version part. E.g. -
+        'openstack70.yaml', 'network_template70.json'
+
+        In case the method has not been able to find fixture
+        with given version the one for current will be returned
+
+        :param fxt_name: base name for the fixture
+        :param version: version of Fuel release in format 'x.x'
+        :return: loaded fixture data
+        """
+        looked_fxt = fxt_name + ''.join(version.split('.'))
+
+        if next(self.fxtr_paths_by_names((looked_fxt,)), None):
+            return self.read_fixtures((looked_fxt,))
+        return self.read_fixtures((fxt_name,))
+
+    def patch_release_by_different_version(self, rel_to_patch, version,
+                                           attrs_to_patch):
+        """Patch given release data with that from given version
+
+        As for now there are no mechanisms to use fixtures for
+        different releases simultaneously so we must patch
+        existing data to be used by tests for
+        components adhered to those releases (e.g. serializators)
+
+        :param rel_to_patch: release object which data must be patched
+        :param version: version of the release which fixture will be using
+            for patching
+        :param attrs_to_patch: list of attributes of the release to be
+            patched
+        """
+        fxt_name = 'openstack'
+        read_fxt = self.read_fxt_by_version(fxt_name, version)
+        fxt_data = next(
+            (
+                r for r in read_fxt
+                if r['fields']['operating_system'] ==
+                rel_to_patch.operating_system
+            ),
+            read_fxt[0])['fields']
+
+        for attr_name in attrs_to_patch:
+            setattr(rel_to_patch, attr_name, fxt_data[attr_name])
+        self.db.flush()
+
     def create_release(self, api=False, **kwargs):
         os = kwargs.get(
             'operating_system', consts.RELEASE_OS.centos)

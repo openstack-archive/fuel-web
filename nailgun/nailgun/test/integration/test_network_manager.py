@@ -38,7 +38,7 @@ from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
-from nailgun.logger import logger
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
 from nailgun.network.neutron import NeutronManager80
@@ -1019,13 +1019,25 @@ class TestNeutronManager70(BaseNetworkManagerTest):
         self.net_manager = objects.Cluster.get_network_manager(self.cluster)
 
     def _create_env(self):
+        release = self._prepare_release()
+
         return self.env.create(
-            release_kwargs={'version': '1111-7.0'},
             cluster_kwargs={
                 'api': False,
+                'release_id': release.id,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
             }
         )
+
+    def _prepare_release(self):
+        rel_id = self.env.create_release(version='1111-7.0').id
+        rel_db = self.db.query(Release).filter_by(id=rel_id).one()
+
+        self.env.patch_release_by_different_version(
+            rel_db, '7.0', ('network_roles_metadata',)
+        )
+
+        return rel_db
 
     def _check_vip_configuration(self, expected_vips, real_vips):
         for vip in expected_vips:
@@ -1176,9 +1188,11 @@ class TestNeutronManager70(BaseNetworkManagerTest):
 class TestNovaNetworkManager70(TestNeutronManager70):
 
     def _create_env(self):
+        release = self._prepare_release()
+
         return self.env.create(
-            release_kwargs={'version': '1111-7.0'},
             cluster_kwargs={
+                'release_id': release.id,
                 'api': False,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
             }
@@ -1417,8 +1431,9 @@ class TestNeutronManager80(BaseNetworkManagerTest):
          namespace: "haproxy"
         """)
         self.env._add_plugin_network_roles(self.cluster, unmapped_roles)
-        with patch.object(logger, 'warning') as mock_warn:
-            assigned_vips = self.net_manager.assign_vips_for_net_groups(
-                self.cluster)
-            mock_warn.assert_called_once_with(mock.ANY)
+        assigned_vips = self.net_manager.assign_vips_for_net_groups(
+            self.cluster)
+
+        self.assertNotIn('unmapped_vip', assigned_vips)
+
         self._check_vip_configuration(expected_vips, assigned_vips)

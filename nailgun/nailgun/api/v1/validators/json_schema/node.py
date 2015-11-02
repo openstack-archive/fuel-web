@@ -140,7 +140,15 @@ single_schema = {
         "online": {"type": "boolean"},
         "labels": {
             "type": "object",
-            "additionalProperties": base_types.NULLABLE_STRING
+            "patternProperties": {
+                "^.{1,100}$": {
+                    "oneOf": [
+                        {"type": "string", "maxLength": 100, "minLength": 1},
+                        {"type": "null"},
+                    ]
+                },
+            },
+            "additionalProperties": False,
         },
         "roles": {"type": "array"},
         "pending_roles": {"type": "array"},

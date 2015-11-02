@@ -204,11 +204,20 @@ class VolumeManagerExtension(VolumeObjectMethodsMixin, BaseExtension):
 
     @classmethod
     def on_node_update(cls, node):
-        cls.set_default_node_volumes(node)
+        """Is called during update node instance with specified
+        parameters in DB.
 
-    @classmethod
-    def on_node_reset(cls, node):
-        cls.set_default_node_volumes(node)
+        Is called only if node NOT in deploying or provisioning
+        state and if one of conditions is true:
+
+        * roles changed;
+        * pending roles changed;
+        * cluster changed;
+        * disks changed.
+
+        """
+        if node.status == consts.NODE_STATUSES.discover:
+            cls.set_default_node_volumes(node)
 
     @classmethod
     def on_node_delete(cls, node):

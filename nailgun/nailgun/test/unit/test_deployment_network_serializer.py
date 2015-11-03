@@ -99,16 +99,14 @@ class TestNeutronDeploymentSerializer80(BaseTestNeutronDeploymentSerializer,
             ["172.16.0.130", "172.16.0.150"],
             ["172.16.0.200", "172.16.0.254"]
         ]
-        external_net = self.serializer.generate_external_network(
-            self.cluster, multiple_floating_ranges=True)
 
+        external_net = self.serializer.generate_external_network(self.cluster)
         self.assertEqual(
             external_net['L3']['floating'],
             ['172.16.0.130:172.16.0.150', '172.16.0.200:172.16.0.254'],
         )
 
-        external_net = self.serializer.generate_external_network(
-            self.cluster, multiple_floating_ranges=True)
+        external_net = self.serializer.generate_external_network(self.cluster)
         self.assertEqual(
             external_net['L3'],
             {'enable_dhcp': False,

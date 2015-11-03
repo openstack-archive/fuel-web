@@ -135,6 +135,17 @@ class Release(NailgunObject):
                 StrictVersion(consts.FUEL_EXTERNAL_MONGO))
 
     @classmethod
+    def is_multiple_floating_ranges_enabled(cls, instance):
+        """Check if usage of multiple floating ranges is available for release
+
+
+        :param instance: a Release instance
+        :returns: boolean
+        """
+        return (StrictVersion(instance.environment_version) >=
+                StrictVersion(consts.FUEL_MULTIPLE_FLOATING_IP_RANGES))
+
+    @classmethod
     def get_deployment_tasks(cls, instance):
         """Get deployment graph based on release version."""
         env_version = instance.environment_version

@@ -97,9 +97,10 @@ class Task(NailgunObject):
         if len(subtasks):
             data = dict()
 
-            if all(map(lambda s: s.status == 'ready', subtasks)):
+            if all(map(lambda s: s.status == consts.TASK_STATUSES.ready,
+                       subtasks)):
 
-                data['status'] = 'ready'
+                data['status'] = consts.TASK_STATUSES.ready
                 data['progress'] = 100
                 data['message'] = u'\n'.join(map(
                     lambda s: s.message, filter(
@@ -108,25 +109,33 @@ class Task(NailgunObject):
                 cls.update(instance, data)
                 TaskHelper.update_action_log(instance)
 
-            elif any(map(lambda s: s.status in ('error',), subtasks)):
+            elif any(map(lambda s: s.status == consts.TASK_STATUSES.error,
+                         subtasks)):
                 for subtask in subtasks:
-                    if subtask.status not in ('error', 'ready'):
-                        subtask.status = 'error'
+                    if subtask.status not in (consts.TASK_STATUSES.error,
+                                              consts.TASK_STATUSES.ready):
+                        subtask.status = consts.TASK_STATUSES.error
                         subtask.progress = 100
-                        subtask.message = 'Task aborted'
+                        subtask.message = "Task aborted"
 
-                data['status'] = 'error'
+                data['status'] = consts.TASK_STATUSES.error
                 data['progress'] = 100
                 data['message'] = u'\n'.join(list(set(map(
                     lambda s: (s.message or ""), filter(
                         lambda s: (
-                            s.status == 'error' and not
+                            s.status == consts.TASK_STATUSES.error and not
                             # TODO(aroma): make this check less ugly
-                            s.message == 'Task aborted'
+                            s.message == "Task aborted"
                         ), subtasks)))))
 
                 cls.update(instance, data)
                 TaskHelper.update_action_log(instance)
+
+            elif instance.status == consts.TASK_STATUSES.pending and any(
+                    map(lambda s: s.status in (consts.TASK_STATUSES.running,
+                                               consts.TASK_STATUSES.ready),
+                        subtasks)):
+                instance.status = consts.TASK_STATUSES.running
 
             else:
                 subtasks_with_progress = filter(
@@ -273,12 +282,11 @@ class TaskCollection(NailgunCollection):
         return cls.filter_by(None, cluster_id=cluster_id)
 
     @classmethod
-    def lock_cluster_tasks(cls, cluster_id, names=None):
+    def get_cluster_tasks(cls, cluster_id, names=None):
         query = cls.get_by_cluster_id(cluster_id)
         if isinstance(names, (list, tuple)):
             query = cls.filter_by_list(query, 'name', names)
         query = cls.order_by(query, 'id')
-        query = cls.lock_for_update(query)
         return query.all()
 
     @classmethod

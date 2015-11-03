@@ -18,11 +18,10 @@ import os
 
 import yaml
 
-from nailgun.logger import logger
-
 
 class NailgunSettings(object):
     def __init__(self):
+        from nailgun.logger import logger
         settings_files = []
         logger.debug("Looking for settings.yaml package config "
                      "using old style __file__")

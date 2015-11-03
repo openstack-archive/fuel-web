@@ -59,7 +59,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             if (cluster.get('status') != 'new') {
                 title = null;
             }
-            if (cluster.task({group: 'deployment', status: 'running'})) {
+            if (cluster.task({group: 'deployment', active: true})) {
                 title = 'deploy_progress';
             }
             if (cluster.task({group: 'deployment', status: 'error'})) {
@@ -83,11 +83,11 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 isNew = clusterStatus == 'new',
                 isOperational = clusterStatus == 'operational',
                 title = this.getTitle(),
-                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'}),
+                runningDeploymentTask = cluster.task({group: 'deployment', active: true}),
                 failedDeploymentTask = cluster.task({group: 'deployment', status: 'error'}),
-                stopDeploymentTask = cluster.task({name: 'stop_deployment'}),
+                stopDeploymentTask = cluster.task('stop_deployment'),
                 hasOfflineNodes = nodes.any({online: false}),
-                resetDeploymentTask = cluster.task({name: 'reset_environment'}),
+                resetDeploymentTask = cluster.task('reset_environment'),
                 isDeploymentPossible = cluster.isDeploymentPossible();
 
             return (
@@ -177,7 +177,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 taskName = task.get('name'),
                 isInfiniteTask = task.isInfinite(),
                 taskProgress = task.get('progress'),
-                stoppableTask = task.isStoppableTask();
+                stoppableTask = task.isStoppable();
             return (
                 <div className='row'>
                     <div className='col-xs-12'>
@@ -191,7 +191,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 </div>
                                 <controls.ProgressBar
                                     progress={!isInfiniteTask && taskProgress}
-                                    wrapperClassName={isInfiniteTask ? '' : 'has-progress'}
+                                    wrapperClassName={stoppableTask ? 'has-stop-control' : ''}
                                 />
                                 {stoppableTask &&
                                     <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
@@ -255,13 +255,13 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
         render: function() {
-            var task = this.props.cluster.task({group: 'deployment', status: ['ready', 'error']});
+            var task = this.props.cluster.task({group: 'deployment', active: false});
             if (!task) return null;
             var error = task.match({status: 'error'}),
                 delimited = task.escape('message').split('\n\n'),
                 summary = delimited.shift(),
                 details = delimited.join('\n\n'),
-                warning = _.contains(['reset_environment', 'stop_deployment'], task.get('name')),
+                warning = task.match({name: ['reset_environment', 'stop_deployment']}),
                 classes = {
                     alert: true,
                     'alert-warning': warning,
@@ -445,7 +445,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     return makeComponent(i18n(this.ns + 'verification_not_performed'));
                 } else if (networkVerificationTask.match({status: 'error'})) {
                     return makeComponent(i18n(this.ns + 'verification_failed'), true);
-                } else if (networkVerificationTask.match({status: 'running'})) {
+                } else if (networkVerificationTask.match({active: true})) {
                     return makeComponent(i18n(this.ns + 'verification_in_progress'));
                 }
             }
@@ -776,9 +776,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             );
         },
         render: function() {
-            var cluster = this.props.cluster,
-                task = cluster.task({group: 'deployment', status: 'running'}),
-                runningDeploymentTask = cluster.task({group: 'deployment', status: 'running'});
+            var cluster = this.props.cluster;
             return (
                 <div className='cluster-information'>
                     <div className='row'>
@@ -817,9 +815,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     </div>
                                 }
                                 <div className='col-xs-12 dashboard-actions-wrapper'>
-                                    <DeleteEnvironmentAction cluster={cluster} disabled={runningDeploymentTask} />
+                                    <DeleteEnvironmentAction cluster={cluster} />
                                     {!this.props.isNew &&
-                                        <ResetEnvironmentAction cluster={cluster} task={task} disabled={runningDeploymentTask} />
+                                        <ResetEnvironmentAction
+                                            cluster={cluster}
+                                            task={cluster.task({group: 'deployment', active: true})}
+                                        />
                                     }
                                 </div>
                             </div>
@@ -836,7 +837,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
 
     var AddNodesButton = React.createClass({
         render: function() {
-            var disabled = !!this.props.cluster.task({group: 'deployment', status: 'running'});
+            var disabled = !!this.props.cluster.task({group: 'deployment', active: true});
             return (
                     <a
                         className='btn btn-success btn-add-nodes'
@@ -954,7 +955,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             dialogs.ResetEnvironmentDialog.show({cluster: this.props.cluster});
         },
         render: function() {
-            var isLocked = this.props.disabled;
+            var isLocked = !!this.props.task;
             return (
                 <div className='pull-right reset-environment'>
                     <button
@@ -987,7 +988,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     <button
                         className='btn delete-environment-btn btn-default'
                         onClick={this.applyAction}
-                        disabled={this.props.isLocked}
                     >
                         {i18n(namespace + 'delete_environment')}
                     </button>

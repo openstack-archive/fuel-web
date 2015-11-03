@@ -172,7 +172,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         removeFinishedTasks: function(tasks) {
             var requests = [];
             _.each(tasks, function(task) {
-                if (!task.match({status: 'running'})) {
+                if (task.match({active: false})) {
                     this.props.cluster.get('tasks').remove(task);
                     requests.push(task.destroy({silent: true}));
                 }
@@ -180,20 +180,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             return $.when.apply($, requests);
         },
         shouldDataBeFetched: function() {
-            return this.props.cluster.task({group: ['deployment', 'network'], status: 'running'});
+            return this.props.cluster.task({group: ['deployment', 'network'], active: true});
         },
         fetchData: function() {
-            var task = this.props.cluster.task({group: 'deployment', status: 'running'});
+            var task = this.props.cluster.task({group: 'deployment', active: true});
             if (task) {
                 return task.fetch()
                     .done(_.bind(function() {
-                        if (!task.match({status: 'running'})) dispatcher.trigger('deploymentTaskFinished');
+                        if (task.match({active: false})) dispatcher.trigger('deploymentTaskFinished');
                     }, this))
                     .then(_.bind(function() {
                         return this.props.cluster.fetchRelated('nodes');
                     }, this));
             } else {
-                task = this.props.cluster.task('verify_networks', 'running');
+                task = this.props.cluster.task({name: 'verify_networks', active: true});
                 return task ? task.fetch() : $.Deferred().resolve();
             }
         },

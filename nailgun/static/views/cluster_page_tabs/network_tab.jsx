@@ -488,7 +488,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             // immediately after completion, so they won't be taken into account when
             // we determine cluster verification status. They need to be removed silently
             // and kept in the collection to show verification result to the user
-            if (task.match({group: 'network', status: ['ready', 'error']}) && task.get('unsaved')) {
+            if (task.match({group: 'network', active: false}) && task.get('unsaved')) {
                 task.destroy({silent: true});
                 task.unset('id'); // hack to prevent issuing another DELETE requests after actual removal
                 this.props.cluster.get('tasks').add(task, {silent: true});
@@ -511,7 +511,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             this.setState({initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON())});
         },
         isLocked: function() {
-            return !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}) ||
+            return !!this.props.cluster.task({group: ['deployment', 'network'], active: true}) ||
                 !this.props.cluster.isAvailableForSettingsChanges();
         },
         render: function() {
@@ -559,10 +559,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             componentMixins.unsavedChangesMixin
         ],
         shouldDataBeFetched: function() {
-            return !!this.props.cluster.task({group: 'network', status: 'running'});
+            return !!this.props.cluster.task({group: 'network', active: true});
         },
         fetchData: function() {
-            return this.props.cluster.task({group: 'network', status: 'running'}).fetch();
+            return this.props.cluster.task({group: 'network', active: true}).fetch();
         },
         getInitialState: function() {
             return {
@@ -635,7 +635,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 }, this));
         },
         getStayMessage: function() {
-            return this.props.cluster.task({group: 'network', status: 'running'}) && i18n('dialog.dismiss_settings.verify_message');
+            return this.props.cluster.task({group: 'network', active: true}) && i18n('dialog.dismiss_settings.verify_message');
         },
         hasChanges: function() {
             return this.props.hasChanges();
@@ -679,7 +679,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
-                isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
+                isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], active: true}),
                 isCancelChangesDisabled = isLocked || !this.hasChanges();
             return (
                 <div className='col-xs-12 page-buttons content-elements'>
@@ -925,7 +925,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
 
     var NetworkVerificationResult = React.createClass({
         getConnectionStatus: function(task, isFirstConnectionLine) {
-            if (!task || (task && task.match({status: 'ready'}))) return 'stop';
+            if (!task || task.match({status: 'ready'})) return 'stop';
             if (task && task.match({status: 'error'}) && !(isFirstConnectionLine &&
                 !(task.match({name: 'verify_networks'}) && !task.get('result').length))) return 'error';
             return 'success';

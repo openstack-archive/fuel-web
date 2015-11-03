@@ -362,7 +362,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         getText: function() {
             var cluster = this.props.cluster,
                 ns = 'dialog.remove_cluster.';
-            if (cluster.tasks({status: 'running'}).length) return i18n(ns + 'incomplete_actions_text');
+            if (cluster.task({active: true})) return i18n(ns + 'incomplete_actions_text');
             if (cluster.get('nodes').length) return i18n(ns + 'node_returned_text');
             return i18n(ns + 'default_text');
         },

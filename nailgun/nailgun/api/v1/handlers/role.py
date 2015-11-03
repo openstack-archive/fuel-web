@@ -121,7 +121,7 @@ class RoleCollectionHandler(base.CollectionHandler):
 class ClusterRolesHandler(base.BaseHandler):
 
     def _check_role(self, cluster, role_name):
-        available_roles = six.iterkeys(objects.Cluster.get_roles(cluster))
+        available_roles = six.iterkeys(objects.Cluster.get_all_roles(cluster))
         if role_name not in available_roles:
             raise self.http(404, 'Role is not found for the cluster')
 
@@ -149,6 +149,6 @@ class ClusterRolesCollectionHandler(base.BaseHandler):
             * 404 (no such object found)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        roles_names = six.iterkeys(objects.Cluster.get_roles(cluster))
+        roles_names = six.iterkeys(objects.Cluster.get_all_roles(cluster))
         return [RoleSerializer.serialize_from_cluster(cluster, name)
                 for name in roles_names]

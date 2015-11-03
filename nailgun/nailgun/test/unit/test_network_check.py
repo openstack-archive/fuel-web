@@ -580,7 +580,7 @@ class TestCheckVIPsNames(BaseIntegrationTest):
         cluster_net_roles = self.cluster.release.network_roles_metadata
 
         with patch(
-                'nailgun.objects.cluster.PluginManager.get_network_roles',
+                'nailgun.objects.cluster.PluginManager.get_all_network_roles',
                 new=MagicMock(return_value=cluster_net_roles)
         ):
 

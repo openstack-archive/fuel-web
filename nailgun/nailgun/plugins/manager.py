@@ -85,7 +85,7 @@ class PluginManager(object):
         return cluster_plugins
 
     @classmethod
-    def get_network_roles(cls, cluster):
+    def get_all_network_roles(cls, cluster):
         core_roles = cluster.release.network_roles_metadata
         known_roles = set(role['id'] for role in core_roles)
 

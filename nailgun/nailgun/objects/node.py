@@ -425,8 +425,8 @@ class Node(NailgunObject):
             # current session and we lose the meta changes.
             db().flush()
             if cls.hardware_info_locked(instance):
-                logger.info("Interfaces are locked for update on node %s",
-                            instance.human_readable_name)
+                logger.debug("Interfaces are locked for update on node %s",
+                             instance.human_readable_name)
             else:
                 instance.ip = data.pop("ip", None) or instance.ip
                 instance.mac = data.pop("mac", None) or instance.mac
@@ -590,8 +590,8 @@ class Node(NailgunObject):
 
         # don't update volume information, if it is locked by node status
         if 'disks' in meta and cls.hardware_info_locked(instance):
-            logger.info("Volume information is locked for update on node %s",
-                        instance.human_readable_name)
+            logger.debug("Volume information is locked for update on node %s",
+                         instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
         # (dshulyak) change this verification to NODE_STATUSES.deploying

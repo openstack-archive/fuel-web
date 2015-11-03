@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from distutils.version import StrictVersion
 from netaddr import IPNetwork
 from oslo_serialization import jsonutils
 import six
@@ -189,13 +188,10 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
         d = cls.validate_json(data)
         np = d.get('networking_parameters')
         cluster_id = kwargs.get("cluster_id")
-
         cluster = objects.Cluster.get_by_uid(cluster_id)
-        cluster_version = cluster.release.environment_version
 
-        if StrictVersion(cluster_version) < StrictVersion(
-                consts.FUEL_MULTIPLE_FLOATING_IP_RANGES
-        ) and len(np.get('floating_ranges', [])) > 1:
+        if not objects.Release.is_multiple_floating_ranges_enabled(cluster) \
+                and len(np.get('floating_ranges', [])) > 1:
             raise errors.InvalidData(
                 "Setting of multiple floating IP ranges is prohibited. "
                 "We support it since {0} version of environment."

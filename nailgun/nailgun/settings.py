@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import os
-
 import yaml
 
 from nailgun.logger import logger
@@ -65,6 +65,10 @@ class NailgunSettings(object):
             })
             logger.info("Static dir is %s" % self.config.get("STATIC_DIR"))
             logger.info("Template dir is %s" % self.config.get("TEMPLATE_DIR"))
+
+        loglevel = self.config.get("APP_LOGLEVEL")
+        if isinstance(loglevel, basestring):
+            logger.setLevel(getattr(logging, loglevel.upper()))
 
     def update(self, dct):
         self.config.update(dct)

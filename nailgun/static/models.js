@@ -498,7 +498,11 @@ define([
             deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
         },
         extendGroups: function(filters) {
-            return _.union(utils.composeList(filters.name), _.flatten(_.map(utils.composeList(filters.group), _.bind(function(group) {return this.groups[group];}, this))));
+            var names = utils.composeList(filters.name);
+            if (_.isEmpty(names)) names = _.flatten(_.values(this.groups));
+            var groups = utils.composeList(filters.group);
+            if (_.isEmpty(groups)) return names;
+            return _.intersection(names, _.flatten(_.values(_.pick(this.groups, groups))));
         },
         extendStatuses: function(filters) {
             var activeTaskStatuses = ['running', 'pending'],

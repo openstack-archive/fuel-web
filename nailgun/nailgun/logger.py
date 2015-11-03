@@ -31,11 +31,24 @@ formatter = logging.Formatter(LOGFORMAT, DATEFORMAT)
 def make_nailgun_logger():
     """Make logger for nailgun app writes logs to stdout"""
     logger = logging.getLogger("nailgun")
-    logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logger
+
+
+def set_logger_loglevel(logger):
+    """Set loglevel for nailgun logger from settings"""
+    # Circular import dependency problem
+    # we import logger module in settings
+    from nailgun.settings import settings
+
+    loglevel = settings.APP_LOGLEVEL
+
+    if isinstance(loglevel, basestring):
+        logger.setLevel(getattr(logging, loglevel.upper(), logging.DEBUG))
+    else:
+        logger.setLevel(logging.DEBUG)
 
 
 def make_api_logger():
@@ -53,6 +66,7 @@ def make_api_logger():
 
 
 logger = make_nailgun_logger()
+set_logger_loglevel(logger)
 
 
 class WriteLogger(logging.Logger, object):

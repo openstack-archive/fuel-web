@@ -16,10 +16,9 @@ import re
 
 from psycopg2 import connect
 
-from nailgun.settings import settings
-
 
 def pytest_addoption(parser):
+    from nailgun.settings import settings
     parser.addoption("--dbname", default=settings.DATABASE['name'],
                      help="Overwrite database name")
     parser.addoption("--cleandb", default=False, action="store_true",
@@ -27,6 +26,7 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    from nailgun.settings import settings
     db_name = config.getoption('dbname')
     if hasattr(config, 'slaveinput'):
         #slaveid have next format gw1

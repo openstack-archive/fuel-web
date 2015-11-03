@@ -17,7 +17,6 @@
 import os
 
 import yaml
-
 from nailgun.logger import logger
 
 

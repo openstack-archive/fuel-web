@@ -85,6 +85,7 @@ def run_server(func, server_address=('0.0.0.0', 8080)):
 
 
 def appstart():
+    set_logger_loglevel(logger)
     logger.info("Fuel version: %s", str(settings.VERSION))
     if not engine.dialect.has_table(engine.connect(), "nodes"):
         logger.error(

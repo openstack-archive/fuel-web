@@ -262,7 +262,7 @@ class ProvisioningSerializer(object):
     @classmethod
     def fault_tolerance(cls, cluster, nodes):
         may_fail = []
-        roles_metadata = objects.Cluster.get_roles(cluster)
+        roles_metadata = objects.Cluster.get_all_node_roles(cluster)
         for role in roles_metadata:
             if 'fault_tolerance' in roles_metadata[role]:
                 tolerance = roles_metadata[role]['fault_tolerance']

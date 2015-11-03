@@ -160,7 +160,7 @@ class TaskHelper(object):
         update_required = set()
         update_once = set()
         cluster_roles = set()
-        roles_metadata = objects.Cluster.get_roles(cluster)
+        roles_metadata = objects.Cluster.get_all_node_roles(cluster)
 
         for node in cluster.nodes:
             cluster_roles.update(node.roles)

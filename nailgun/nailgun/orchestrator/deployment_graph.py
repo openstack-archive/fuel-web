@@ -431,6 +431,22 @@ class AstuteGraph(object):
         priority.one_by_one(serialized)
         return serialized
 
+    def get_enabled_deployment_tasks(self, role=None):
+        enabled_tasks = []
+        role_tasks = []
+        if role:
+            role_tasks = self.graph.get_group_tasks(role)
+        else:
+            for role in objects.Cluster.get_enabled_node_roles(self.cluster):
+                role_tasks.extend(self.graph.get_group_tasks(role))
+        for task in role_tasks:
+            serializer = self.serializers.get_deploy_serializer(task)(
+                task, self.cluster, None)
+            if not serializer.should_execute():
+                continue
+            enabled_tasks.append(task)
+        return enabled_tasks
+
 
 class DeploymentGraphValidator(object):
 

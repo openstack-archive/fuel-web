@@ -66,7 +66,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
             self.assertEqual(resp.status_code, 405)
             self.assertIn("Method Not Allowed", resp.status)
 
-    def test_get_all_roles(self):
+    def test_get_all_node_roles(self):
         roles = self.app.get(
             url=base.reverse(
                 'ClusterRolesCollectionHandler',

@@ -929,7 +929,7 @@ class NeutronNetworkDeploymentSerializer70(
         - 'get_network_role_mapping_to_interfaces'.
         """
         roles = dict()
-        for role in Cluster.get_network_roles(node.cluster):
+        for role in Cluster.get_all_network_roles(node.cluster):
             default_mapping = mapping.get(role['default_mapping'])
             if default_mapping:
                 roles[role['id']] = default_mapping
@@ -1298,7 +1298,20 @@ class NeutronNetworkTemplateSerializer70(
 class NeutronNetworkDeploymentSerializer80(
     NeutronNetworkDeploymentSerializer70
 ):
-    pass
+    @classmethod
+    def _get_network_role_mapping(cls, node, mapping):
+        nm = Cluster.get_network_manager(node.cluster)
+        net_roles = dict()
+        enabled_net_roles = []
+        for node_role in node.all_roles:
+            enabled_net_roles.extend(nm.get_enabled_network_roles(
+                node.cluster, role=node_role))
+        for net_role in enabled_net_roles:
+            default_mapping = mapping.get(net_role['default_mapping'])
+            if default_mapping:
+                net_roles[net_role['id']] = default_mapping
+
+        return net_roles
 
 
 class NeutronNetworkTemplateSerializer80(NeutronNetworkTemplateSerializer70):

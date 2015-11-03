@@ -150,7 +150,7 @@ class Node(NailgunObject):
             return True
 
         roles = itertools.chain(instance.roles, instance.pending_roles)
-        roles_metadata = Cluster.get_roles(instance.cluster)
+        roles_metadata = Cluster.get_all_node_roles(instance.cluster)
 
         for role in roles:
             if roles_metadata.get(role, {}).get('public_ip_required'):
@@ -176,7 +176,7 @@ class Node(NailgunObject):
         dvr_enabled = Cluster.neutron_dvr_enabled(instance.cluster)
         if dvr_enabled:
             roles = itertools.chain(instance.roles, instance.pending_roles)
-            roles_metadata = Cluster.get_roles(instance.cluster)
+            roles_metadata = Cluster.get_all_node_roles(instance.cluster)
 
             for role in roles:
                 if roles_metadata.get(role, {}).get('public_for_dvr_required'):

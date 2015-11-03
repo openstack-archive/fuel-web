@@ -45,6 +45,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.orchestrator import deployment_graph
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
 from nailgun.settings import settings
@@ -1537,6 +1538,23 @@ class NetworkManager(object):
                 db().query(IPAddr.ip_addr).filter_by(
                     network=network_id)]
 
+    @classmethod
+    def get_enabled_network_roles(cls, cluster, role=None):
+        net_roles = []
+        cluster_net_roles = objects.Cluster.get_all_network_roles(cluster)
+        graph = deployment_graph.AstuteGraph(cluster)
+        for task in graph.get_enabled_deployment_tasks(role=role):
+            for net_role in task.get('network_roles', []):
+                net_role_description = filter(
+                    lambda cnr: cnr['id'] == net_role, cluster_net_roles)
+                if not len(net_role_description):
+                    raise errors.InvalidData(
+                        "Network role '{0}' for deployment task '{1}' is "
+                        "missing in cluster network roles".format(net_role,
+                                                                  task['id']))
+                net_roles.extend(net_role_description)
+        return net_roles
+
 
 class AllocateVIPs70Mixin(object):
 
@@ -1560,7 +1578,7 @@ class AllocateVIPs70Mixin(object):
         :type role_id: str
         :return: Network role dict or None if not found
         """
-        net_roles = objects.Cluster.get_network_roles(cluster)
+        net_roles = objects.Cluster.get_all_network_roles(cluster)
         for role in net_roles:
             if role['id'] == role_id:
                 return role
@@ -1593,7 +1611,7 @@ class AllocateVIPs70Mixin(object):
 
         # iterate over all network roles, assign vip and yield information
         # about assignment
-        for role in objects.Cluster.get_network_roles(cluster):
+        for role in objects.Cluster.get_all_network_roles(cluster):
             properties = role.get('properties', {})
             for vip_info in properties.get('vip', ()):
                 noderoles = tuple(vip_info.get('node_roles', ['controller']))
@@ -1705,7 +1723,7 @@ class AllocateVIPs70Mixin(object):
         vip_names = []
         duplicate_vip_names = set()
 
-        for role in objects.Cluster.get_network_roles(cluster):
+        for role in objects.Cluster.get_all_network_roles(cluster):
             properties = role.get('properties', {})
 
             for vip_info in properties.get('vip', ()):
@@ -1721,3 +1739,49 @@ class AllocateVIPs70Mixin(object):
                 "Conflicting names: {1}"
                 .format(cluster.id, ', '.join(duplicate_vip_names))
             )
+
+
+class AllocateVIPs80Mixin(object):
+    @classmethod
+    def _assign_vips_for_net_groups(cls, cluster):
+        # noderole -> nodegroup mapping
+        #   is used for determine nodegroup where VIP should be allocated
+        noderole_nodegroup = {}
+        # nodegroup -> role-to-network mapping
+        #   is used for determine role-to-network mapping that is needed
+        #   for choosing proper network for VIP allocation
+        nodegroup_networks = {}
+
+        # iterate over all network roles, assign vip and yield information
+        # about assignment
+        for role in cls.get_enabled_network_roles(cluster):
+            properties = role.get('properties', {})
+            for vip_info in properties.get('vip', ()):
+                noderoles = tuple(vip_info.get('node_roles', ['controller']))
+
+                # Since we're iterating over all VIP requests, we most
+                # likely meet the same noderoles again and again. Let's
+                # calculate node group just once, cache and use cached
+                # value in order to reduce number of SQL queries.
+                if noderoles not in noderole_nodegroup:
+                    noderole_nodegroup[noderoles] = \
+                        objects.Cluster.get_node_group(cluster, noderoles)
+                nodegroup = noderole_nodegroup[noderoles]
+
+                # Since different node roles may have the same node group,
+                # it'd be ridiculous to build "role-to-network-group" mapping
+                # each time we retrieve the group. So let's save mapping
+                # in cache and retrieve it if necessary.
+                if nodegroup.name not in nodegroup_networks:
+                    nodegroup_networks[nodegroup.name] = \
+                        cls.build_role_to_network_group_mapping(
+                            cluster, nodegroup.name)
+
+                net_group = cls.get_network_group_for_role(
+                    role,
+                    nodegroup_networks[nodegroup.name])
+                vip_name = vip_info['name']
+
+                # do allocation
+                vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
+                yield role, vip_info, vip_addr

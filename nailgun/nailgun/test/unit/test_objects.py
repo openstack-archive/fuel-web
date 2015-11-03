@@ -1079,10 +1079,10 @@ class TestClusterObject(BaseTestCase):
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
 
-    def test_get_network_roles(self):
+    def test_get_all_network_roles(self):
         cluster = self.env.clusters[0]
         self.assertEqual(
-            objects.Cluster.get_network_roles(cluster),
+            objects.Cluster.get_all_network_roles(cluster),
             cluster.release.network_roles_metadata)
 
     def test_get_deployment_tasks(self):
@@ -1131,7 +1131,7 @@ class TestClusterObject(BaseTestCase):
             network_roles_metadata=network_roles)
         cluster = self._create_cluster_with_plugins([plugin_data])
         self.assertItemsEqual(
-            objects.Cluster.get_network_roles(cluster),
+            objects.Cluster.get_all_network_roles(cluster),
             cluster.release.network_roles_metadata + network_roles)
 
     def test_get_plugin_network_roles_fail(self):
@@ -1146,7 +1146,7 @@ class TestClusterObject(BaseTestCase):
         cluster = self._create_cluster_with_plugins(plugins_kw_list)
         self.assertRaises(
             errors.NetworkRoleConflict,
-            objects.Cluster.get_network_roles, cluster)
+            objects.Cluster.get_all_network_roles, cluster)
 
     def test_get_volumes_metadata_when_plugins_are_enabled(self):
         plugin_volumes_metadata = {
@@ -1248,7 +1248,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
         return plugin
 
     def test_no_plugins_no_additional_roles(self):
-        roles = objects.Cluster.get_roles(self.cluster)
+        roles = objects.Cluster.get_all_node_roles(self.cluster)
         self.assertItemsEqual(roles.keys(), ['role_a', 'role_b'])
 
     def test_plugin_adds_new_roles(self):
@@ -1257,7 +1257,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
                 'name': 'Role C', 'description': 'Role C is ...', },
         })
 
-        roles = objects.Cluster.get_roles(self.cluster)
+        roles = objects.Cluster.get_all_node_roles(self.cluster)
         self.assertItemsEqual(roles.keys(), ['role_a', 'role_b', 'role_c'])
 
     def test_plugin_role_conflict_with_core_roles(self):
@@ -1273,7 +1273,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
         )
         with self.assertRaisesRegexp(errors.AlreadyExists,
                                      expected_message):
-            objects.Cluster.get_roles(self.cluster)
+            objects.Cluster.get_all_node_roles(self.cluster)
 
     def test_plugin_role_conflict_with_other_plugins(self):
         self.create_plugin({
@@ -1291,7 +1291,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
         )
         with self.assertRaisesRegexp(errors.AlreadyExists,
                                      expected_message):
-            objects.Cluster.get_roles(self.cluster)
+            objects.Cluster.get_all_node_roles(self.cluster)
 
     def test_plugin_role_conflict_with_plugin_and_core(self):
         self.create_plugin({
@@ -1312,7 +1312,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
 
         with self.assertRaisesRegexp(
                 errors.AlreadyExists, message_pattern) as cm:
-            objects.Cluster.get_roles(self.cluster)
+            objects.Cluster.get_all_node_roles(self.cluster)
 
         # 0 - the whole message, 1 - is first match of (.*) pattern
         roles = re.match(message_pattern, str(cm.exception)).group(1)

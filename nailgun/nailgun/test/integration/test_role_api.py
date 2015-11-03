@@ -42,7 +42,7 @@ class TestRoleApi(BaseRoleTest):
           allocate_size: all
     """
 
-    def test_get_all_roles(self):
+    def test_get_all_node_roles(self):
         self.env.create_role(self.release.id, self.role_data)
 
         resp = self.app.get(

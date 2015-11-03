@@ -214,7 +214,7 @@ Depending on the Fuel release, you may need a different repository. In case of
 4. Prepare environment
 
 Download Fuel ISO from
-`Nightly builds <https://fuel-jenkins.mirantis.com/view/ISO/>`_
+`Nightly builds <https://ci.fuel-infra.org/view/ISO/>`_
 or build it yourself (please, refer to :ref:`building-fuel-iso`)
 
 Next, you need to define several variables for the future environment

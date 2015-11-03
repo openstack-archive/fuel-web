@@ -32,7 +32,7 @@ class RoleSerializer(BasicSerializer):
 
     @classmethod
     def serialize_from_cluster(cls, cluster, role_name):
-        role_metadata = objects.Cluster.get_roles(cluster)[role_name]
+        role_metadata = objects.Cluster.get_all_roles(cluster)[role_name]
         volumes_metadata = objects.Cluster.get_volumes_metadata(cluster)
         role_mapping = volumes_metadata.get('volumes_roles_mapping').get(
             role_name, [])

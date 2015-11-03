@@ -310,9 +310,12 @@ class Cluster(NailgunObject):
 
         ver = instance.release.environment_version
         if instance.net_provider == 'neutron':
-            if StrictVersion(ver) >= StrictVersion('7.0'):
+            if StrictVersion(ver) == StrictVersion('7.0'):
                 from nailgun.network.neutron import NeutronManager70
                 return NeutronManager70
+            elif StrictVersion(ver) >= StrictVersion('8.0'):
+                from nailgun.network.neutron import NeutronManager80
+                return NeutronManager80
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:
@@ -589,7 +592,7 @@ class Cluster(NailgunObject):
             return False
 
     @classmethod
-    def get_roles(cls, instance):
+    def get_all_roles(cls, instance):
         """Returns a dictionary of node roles available for deployment.
 
         :param instance: cluster instance
@@ -599,6 +602,13 @@ class Cluster(NailgunObject):
         available_roles.update(
             PluginManager.get_plugins_node_roles(instance))
         return available_roles
+
+    @classmethod
+    def get_enabled_roles(cls, instance):
+        roles = []
+        for node in instance.nodes:
+            roles.extend(node.all_roles)
+        return roles
 
     @classmethod
     def set_primary_role(cls, instance, nodes, role_name):
@@ -618,7 +628,7 @@ class Cluster(NailgunObject):
         :param nodes: list of Node db objects
         :param role_name: string with known role name
         """
-        if role_name not in cls.get_roles(instance):
+        if role_name not in cls.get_all_roles(instance):
             logger.warning(
                 'Trying to assign primary for non-existing role %s', role_name)
             return
@@ -657,7 +667,7 @@ class Cluster(NailgunObject):
         """
         if not instance.is_ha_mode:
             return
-        roles_metadata = cls.get_roles(instance)
+        roles_metadata = cls.get_all_roles(instance)
         for role, meta in six.iteritems(roles_metadata):
             if meta.get('has_primary'):
                 cls.set_primary_role(instance, nodes, role)
@@ -672,7 +682,7 @@ class Cluster(NailgunObject):
         :type: string
         """
 
-        if role_name not in cls.get_roles(instance):
+        if role_name not in cls.get_all_roles(instance):
             logger.warning("%s role doesn't exist", role_name)
             return []
 
@@ -700,7 +710,7 @@ class Cluster(NailgunObject):
         """
         logger.debug("Getting primary node for role: %s", role_name)
 
-        if role_name not in cls.get_roles(instance):
+        if role_name not in cls.get_all_roles(instance):
             logger.debug("Role not found: %s", role_name)
             return None
 
@@ -968,14 +978,14 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def get_network_roles(cls, instance):
+    def get_all_network_roles(cls, instance):
         """Method for receiving network roles for particular cluster
 
         :param instance: nailgun.db.sqlalchemy.models.Cluster instance
         :returns: List of network roles' descriptions
         """
         return (instance.release.network_roles_metadata +
-                PluginManager.get_network_roles(instance))
+                PluginManager.get_all_network_roles(instance))
 
     @classmethod
     def set_network_template(cls, instance, template):

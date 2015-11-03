@@ -102,7 +102,7 @@ class NodeAssignmentValidator(AssignmentValidator):
 
     @classmethod
     def validate_roles(cls, cluster, roles):
-        available_roles = objects.Cluster.get_roles(cluster)
+        available_roles = objects.Cluster.get_all_roles(cluster)
         roles = set(roles)
         not_valid_roles = roles - set(available_roles)
 

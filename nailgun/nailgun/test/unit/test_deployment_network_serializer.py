@@ -22,6 +22,7 @@ CREDS = {'tenant': {'value': 'NONDEFAULT'}}
 
 class BaseTestNeutronDeploymentSerializer(base.BaseTestCase):
     env_version = None
+    serializer = None
 
     def setUp(self):
         super(BaseTestNeutronDeploymentSerializer, self).setUp()
@@ -31,25 +32,34 @@ class BaseTestNeutronDeploymentSerializer(base.BaseTestCase):
         )
         self.cluster = self.env.clusters[0]
 
+    def check_shared_attrs_of_external_network(self, external_net):
+        self.assertEqual(
+            external_net['L2'],
+            {
+                'network_type': 'local',
+                'physnet': None,
+                'router_ext': True,
+                'segment_id': None
+            },
+        )
+        self.assertFalse(external_net['shared'])
+        self.assertEqual(external_net['tenant'], 'admin')
 
+
+@patch('nailgun.orchestrator.deployment_serializers.objects.Cluster.get_creds',
+       return_value=CREDS)
 class NetworkTenantNameMixin(object):
     def verify_network_tenant(self, network):
         self.assertEqual(network['tenant'], CREDS['tenant']['value'])
 
-    @patch(('nailgun.orchestrator.deployment_serializers.objects.'
-            'Cluster.get_creds'), return_value=CREDS)
     def test_internal_network_changes_tenant_name(self, creds):
         int_network = self.serializer._generate_internal_network(self.cluster)
         self.verify_network_tenant(int_network)
 
-    @patch(('nailgun.orchestrator.deployment_serializers.objects.'
-            'Cluster.get_creds'), return_value=CREDS)
     def test_external_network_changes_tenant_name(self, creds):
         ext_network = self.serializer.generate_external_network(self.cluster)
         self.verify_network_tenant(ext_network)
 
-    @patch(('nailgun.orchestrator.deployment_serializers.objects.'
-            'Cluster.get_creds'), return_value=CREDS)
     def test_predefined_networks_tenant_name(self, creds):
         predefined_network = self.serializer.generate_predefined_networks(
             self.cluster)
@@ -74,10 +84,7 @@ class TestNeutronDeploymentSerializer70(BaseTestNeutronDeploymentSerializer,
         ]
 
         external_net = self.serializer.generate_external_network(self.cluster)
-        self.assertEqual(
-            external_net['L3']['floating'], "172.16.0.130:172.16.0.150")
-
-        external_net = self.serializer.generate_external_network(self.cluster)
+        self.check_shared_attrs_of_external_network(external_net)
         self.assertEqual(
             external_net['L3'],
             {'enable_dhcp': False,
@@ -99,16 +106,9 @@ class TestNeutronDeploymentSerializer80(BaseTestNeutronDeploymentSerializer,
             ["172.16.0.130", "172.16.0.150"],
             ["172.16.0.200", "172.16.0.254"]
         ]
-        external_net = self.serializer.generate_external_network(
-            self.cluster, multiple_floating_ranges=True)
 
-        self.assertEqual(
-            external_net['L3']['floating'],
-            ['172.16.0.130:172.16.0.150', '172.16.0.200:172.16.0.254'],
-        )
-
-        external_net = self.serializer.generate_external_network(
-            self.cluster, multiple_floating_ranges=True)
+        external_net = self.serializer.generate_external_network(self.cluster)
+        self.check_shared_attrs_of_external_network(external_net)
         self.assertEqual(
             external_net['L3'],
             {'enable_dhcp': False,

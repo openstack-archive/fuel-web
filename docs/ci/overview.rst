@@ -152,6 +152,160 @@ The downside of the swarm slave plugin is that every time you reboot Jenkins
 master instance, slaves are recreated and, therefore, lose all the labels
 assigned to them via Jenkins WebUI.
 
+Jenkins Jobs
+------------
+
+Our CI requires many jobs and configuration, it is not convenient to configure
+everything with jenkins GUI. We use dedicated `repository <https://github.com/fuel-infra/jenkins-jobs>`_
+and `JJB <http://docs.openstack.org/infra/jenkins-job-builder/>`_ to store and manage our jobs.
+
+Install Jenkins Job Builder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To begin work with jenkins job builder we need to install it and configure.
+
+#. Download git repository and install JJB
+
+   ::
+
+    git clone https://github.com/fuel-infra/jenkins-jobs.git
+    virtualenv --system-site-packages venv-jjb
+    source venv-jjb/bin/activate
+    pip install -r jenkins-jobs/conf/requirements.txt
+
+#. Create file jenkins_jobs.ini with JJB configuration
+
+   ::
+
+    [jenkins]
+    user=<JENKINS USER>
+    password=<JENKINS PASSWORD>
+    url=https://<JENKINS URL>/
+
+    [job_builder]
+    ignore_cache=True
+    keep_descriptions=False
+    recursive=True
+    include_path=.:scripts
+
+Upload jobs to Jenkins
+~~~~~~~~~~~~~~~~~~~~~~
+
+When we have JJB installed and configured we can upload jobs to jenkins master.
+We can upload all jobs configured for one specified server, for example upload of fule-ci can be done in this way:
+
+   ::
+
+     cd jenkins-jobs
+     ../venv-jjb/bin/jenkins-jobs --conf ../jenkins_jobs.ini update servers/fuel-ci:common
+
+We can also upload only one selected job
+
+   ::
+
+     cd jenkins-jobs
+     ../venv-jjb/bin/jenkins-jobs --conf ../jenkins_jobs.ini update servers/fuel-ci/8.0/community.all.yaml:common
+
+Building ISO with Jenkins
+-------------------------
+
+Requirements
+~~~~~~~~~~~~
+
+For minimal environment we need 3 systems:
+
+* Jenkins master
+* Jenkins slave with enabled slave function for ISO building and BVT testing, hiera example:
+
+   ::
+
+    ---
+    classes:
+      - '::fuel_project::jenkins::slave'
+
+    fuel_project::jenkins::slave::run_test: true
+    fuel_project::jenkins::slave::build_fuel_iso: true
+
+* Seed server used to store builded ISO
+
+Create Jenkins jobs
+~~~~~~~~~~~~~~~~~~~
+
+To build your own ISO you need to create job configurations for it, it requires a few steps:
+
+#. Create your own jobs repository, for start we will use fuel-ci jobs
+
+   ::
+
+     cd jenkins-jobs/servers
+     cp -pr fuel-ci test-ci
+
+#. To build and test ISO we will use files:
+
+   * servers/test-ci/8.0/community.all.yaml
+   * servers/test-ci/8.0/fuel_community_publish_iso.yaml
+   * servers/test-ci/8.0/fuel_community.centos.bvt_2.yaml
+   * servers/test-ci/8.0/fuel_community.ubuntu.bvt_2.yaml
+
+#. In all files you need to make changes:
+
+   * Change email devops+alert@mirantis.com to your own
+
+   * If you don't need reporting jobs you should delete triggering of fuel_community_build_reports in all jobs
+
+    ::
+
+     - job:
+        ...
+        publishers:
+           ...
+           - trigger-parameterized-builds:
+             ...
+             - project: fuel_community_build_reports
+
+   * Update seed name server in file servers/test-ci/8.0/fuel_community_publish_iso.yaml
+
+    ::
+
+     - job:
+        ...
+        publishers:
+           ...
+           - trigger-parameterized-builds:
+             ...
+             - project:  8.0.fuel_community.centos.bvt_2, 8.0.fuel_community.ubuntu.bvt_2
+                ...
+                predefined-parameters: |
+                   ISO_TORRENT=http://seed.fuel-infra.org/fuelweb-iso/fuel-community-$ISO_ID.iso.torrent
+
+   * Update seed name server in file servers/test-ci/8.0/builders/publish_fuel_community_iso.sh
+
+    ::
+
+      sed -i 's/seed-us1.fuel-infra.org/seed.test.local/g' servers/test-ci/8.0/builders/publish_fuel_community_iso.sh
+      sed -i 's/seed-cz1.fuel-infra.org/seed.test.local/g' servers/test-ci/8.0/builders/publish_fuel_community_iso.sh
+
+#. Create jobs on jenkins master
+
+   ::
+
+     cd jenkins-jobs
+     ../venv-jjb/bin/jenkins-jobs --conf ../jenkins_jobs.ini update servers/test-ci/8.0/community.all.yaml:common
+     ../venv-jjb/bin/jenkins-jobs --conf ../jenkins_jobs.ini update servers/test-ci/8.0/fuel_community_publish_iso.yaml:common
+     ../venv-jjb/bin/jenkins-jobs --conf ../jenkins_jobs.ini update servers/test-ci/8.0/fuel_community.centos.bvt_2.yaml:common
+     ../venv-jjb/bin/jenkins-jobs --conf ../jenkins_jobs.ini update servers/test-ci/8.0/fuel_community.ubuntu.bvt_2.yaml:common
+
+Start ISO building
+~~~~~~~~~~~~~~~~~~
+
+When you finish on jenkins master should be created project with name 8.0-community.all, to start
+ISO build you need to run it. Build and test procedure have 3 steps:
+
+* ISO building (8.0-community.all)
+* when ISO is successfully created it will be uploaded to seed server (8.0.publish_fuel_community_iso)
+* successful upload will start BVT test (8.0.fuel_community.centos.bvt_2 and 8.0.fuel_community.ubuntu.bvt_2)
+
+
 Gerrit
 ------
 

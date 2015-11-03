@@ -109,7 +109,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     cluster.get('nodes').fetch = function(options) {
                         return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
                     };
-                    promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.get('roles').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'))
+                    promise = $.when(
+                            cluster.fetch(),
+                            cluster.get('settings').fetch(),
+                            cluster.get('roles').fetch(),
+                            cluster.fetchRelated('nodes'),
+                            cluster.fetchRelated('tasks'),
+                            app.nodeNetworkGroups.fetch({cache: true})
+                        )
                         .then(function() {
                             var networkConfiguration = new models.NetworkConfiguration();
                             networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');

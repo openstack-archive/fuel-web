@@ -337,6 +337,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                             }, this))
                             .done(_.bind(function() {
                                 this.close();
+                                app.nodeNetworkGroups.fetch();
                                 app.navigate('#cluster/' + this.cluster.id, {trigger: true});
                             }, this))
                             .fail(_.bind(function() {

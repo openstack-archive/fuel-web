@@ -169,9 +169,6 @@ class TestNetworkConfigurationValidatorProtocol(
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1"]
         self.assertRaisesTooShort(self.nc, "[u'1.1.1.1']")
 
-        self.nc['networks'][0]['meta']['ip_range'] = ['1.2.3.4', '1.2.3.4']
-        self.assertRaisesNonUnique(self.nc, "[u'1.2.3.4', u'1.2.3.4']")
-
         self.nc['networks'][0]['meta']['ip_range'] = ["1.1.1.1", "1.2.3.x"]
         self.assertRaisesInvalidAnyOf(
             self.nc, "'1.2.3.x'", "['networks'][0]['meta']['ip_range']")

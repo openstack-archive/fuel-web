@@ -80,7 +80,6 @@ IP_ADDRESS_RANGE = {
     "type": "array",
     "minItems": 2,
     "maxItems": 2,
-    "uniqueItems": True,
     "items": IP_ADDRESS
 }
 

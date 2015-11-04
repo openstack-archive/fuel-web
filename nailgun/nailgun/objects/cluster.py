@@ -18,6 +18,7 @@
 Cluster-related objects and collections
 """
 
+import collections
 import copy
 from distutils.version import StrictVersion
 
@@ -817,6 +818,27 @@ class Cluster(NailgunObject):
             plugin_deployment_tasks = \
                 PluginManager.get_plugins_deployment_tasks(instance)
             return release_deployment_tasks + plugin_deployment_tasks
+
+    @classmethod
+    def get_refreshable_tasks(cls, instance, filter_by_configs=None):
+        """Return dict with refreshable tasks
+
+        Keys are names of config resources and values are lists of tasks
+        need to be triggered for update specified config resource
+
+        If 'configs' specified then only config resources from this list
+        will be returned in results otherwise
+
+        :param instance: a Cluster instance
+        :param filter_by_configs: a list with configs resources
+        :return: dict with tasks
+        """
+        tasks_to_refresh = collections.defaultdict(list)
+        for task in cls.get_deployment_tasks(instance):
+            for config in task.get(consts.REFRESH_FIELD, []):
+                if filter_by_configs is None or config in filter_by_configs:
+                    tasks_to_refresh[config].append(task)
+        return tasks_to_refresh
 
     @classmethod
     def get_volumes_metadata(cls, instance):

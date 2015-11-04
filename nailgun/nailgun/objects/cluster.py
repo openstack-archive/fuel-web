@@ -819,6 +819,11 @@ class Cluster(NailgunObject):
             return release_deployment_tasks + plugin_deployment_tasks
 
     @classmethod
+    def get_refreshable_tasks(cls, instance):
+        return [task for task in cls.get_deployment_tasks(instance)
+                if task.get(consts.REFRESH_FIELD)]
+
+    @classmethod
     def get_volumes_metadata(cls, instance):
         """Return proper volumes metadata for cluster
 

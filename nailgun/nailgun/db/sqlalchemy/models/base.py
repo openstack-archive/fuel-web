@@ -16,6 +16,8 @@
 
 from datetime import datetime
 
+from oslo.db.sqlalchemy import models
+
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
@@ -25,7 +27,6 @@ from sqlalchemy.orm.base import object_state
 
 from nailgun.db import deadlock_detector as dd
 from nailgun.db.sqlalchemy.models.fields import JSON
-from nailgun.openstack.common.db.sqlalchemy import models
 from nailgun.settings import settings
 
 

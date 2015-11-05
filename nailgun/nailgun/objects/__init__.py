@@ -57,3 +57,5 @@ from nailgun.objects.network_group import NetworkGroupCollection
 
 from nailgun.objects.dashboard_entry import DashboardEntry
 from nailgun.objects.dashboard_entry import DashboardEntryCollection
+from nailgun.objects.openstack_config import OpenstackConfig
+from nailgun.objects.openstack_config import OpenstackConfigCollection

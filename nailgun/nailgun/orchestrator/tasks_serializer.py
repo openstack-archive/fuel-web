@@ -370,6 +370,16 @@ class UpdateHosts(GenericRolesHook):
         yield templates.make_puppet_task(uids, self.task)
 
 
+class UploadConfiguration(GenericRolesHook):
+    """Hook that uploads yaml file with configuration on nodes."""
+
+    identity = 'upload_configuration'
+
+    def serialize(self):
+        # TODO(asaprykin): TBD
+        pass
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
@@ -377,7 +387,7 @@ class TaskSerializers(object):
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys,
                          GenerateCephKeys, CopyCephKeys, IronicUploadImages,
-                         IronicCopyBootstrapKey]
+                         IronicCopyBootstrapKey, UploadConfiguration]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

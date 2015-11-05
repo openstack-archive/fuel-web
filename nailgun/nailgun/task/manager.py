@@ -1290,3 +1290,41 @@ class UpdateDnsmasqTaskManager(TaskManager):
             tasks.UpdateDnsmasqTask
         )
         return task
+
+
+class OpenstackConfigTaskManager(TaskManager):
+
+    def execute(self, nodes, refreshable_tasks):
+        self.check_running_task(consts.TASK_NAMES.deploy)
+
+        task = Task(name=consts.TASK_NAMES.deployment,
+                    cluster=self.cluster,
+                    status=consts.TASK_STATUSES.pending)
+        db().add(task)
+
+        message = self._call_silently(
+            task, tasks.UpdateOpenstackConfigTask,
+            nodes, refreshable_tasks, method_name='message')
+
+        db().refresh(task)
+
+        # locking task
+        task = objects.Task.get_by_uid(
+            task.id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+        # locking nodes
+        objects.NodeCollection.lock_nodes(nodes)
+
+        task.cache = message
+
+        for node in nodes:
+            node.status = consts.NODE_STATUSES.deploying
+            node.progress = 0
+
+        db().commit()
+
+        rpc.cast('naily', message)
+
+        return task

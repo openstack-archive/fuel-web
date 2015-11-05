@@ -116,6 +116,18 @@ SUBTASKS = """
   requires: [setup_anything]
 """
 
+SUBTASKS_WITH_REGEXP = """
+- id: setup_something
+  type: puppet
+  groups: ['cinder|compute', '.*controller']
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    puppet_manifest: run_setup_something.pp
+    puppet_modules: /etc/puppet
+    timeout: 120
+"""
+
 
 class TestGraphDependencies(base.BaseTestCase):
 
@@ -123,6 +135,7 @@ class TestGraphDependencies(base.BaseTestCase):
         super(TestGraphDependencies, self).setUp()
         self.tasks = yaml.load(TASKS)
         self.subtasks = yaml.load(SUBTASKS)
+        self.subtasks_with_regexp = yaml.load(SUBTASKS_WITH_REGEXP)
         self.graph = deployment_graph.DeploymentGraph()
 
     def test_build_deployment_graph(self):
@@ -147,6 +160,13 @@ class TestGraphDependencies(base.BaseTestCase):
         self.assertItemsEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
+
+    def test_groups_regexp_resolution(self):
+        self.graph.add_tasks(self.tasks + self.subtasks_with_regexp)
+        self.assertItemsEqual(
+            self.graph.succ['setup_something'],
+            {'deploy_end': {}, 'cinder': {}, 'compute': {},
+             'primary-controller': {}, 'controller': {}})
 
 
 class TestAddDependenciesToNodes(base.BaseTestCase):

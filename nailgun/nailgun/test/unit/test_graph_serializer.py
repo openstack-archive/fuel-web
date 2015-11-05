@@ -15,6 +15,7 @@
 #    under the License.
 
 from collections import defaultdict
+import copy
 from itertools import groupby
 
 import mock
@@ -105,7 +106,6 @@ SUBTASKS = """
     puppet_manifest: run_setup_network.pp
     puppet_modules: /etc/puppet
     timeout: 120
-
 - id: setup_anything
   requires: [pre_deployment_start]
   required_for: [pre_deployment]
@@ -116,6 +116,18 @@ SUBTASKS = """
   requires: [setup_anything]
 """
 
+SUBTASKS_WITH_REGEXP = """
+- id: setup_something
+  type: puppet
+  groups: ['/cinder|compute/', '/(?=controller)(?=^((?!^primary).)*$)/']
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    puppet_manifest: run_setup_something.pp
+    puppet_modules: /etc/puppet
+    timeout: 120
+"""
+
 
 class TestGraphDependencies(base.BaseTestCase):
 
@@ -123,6 +135,7 @@ class TestGraphDependencies(base.BaseTestCase):
         super(TestGraphDependencies, self).setUp()
         self.tasks = yaml.load(TASKS)
         self.subtasks = yaml.load(SUBTASKS)
+        self.subtasks_with_regexp = yaml.load(SUBTASKS_WITH_REGEXP)
         self.graph = deployment_graph.DeploymentGraph()
 
     def test_build_deployment_graph(self):
@@ -147,6 +160,40 @@ class TestGraphDependencies(base.BaseTestCase):
         self.assertItemsEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
+
+
+class TestUpdateGraphDependencies(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestUpdateGraphDependencies, self).setUp()
+        self.tasks = yaml.load(TASKS)
+        self.subtasks = yaml.load(SUBTASKS_WITH_REGEXP)
+
+    def test_groups_regexp_resolution(self):
+        graph = deployment_graph.DeploymentGraph()
+        graph.add_tasks(self.tasks + self.subtasks)
+        self.assertItemsEqual(
+            graph.succ['setup_something'],
+            {'deploy_end': {}, 'cinder': {}, 'compute': {}, 'controller': {}})
+
+    def test_support_for_all_groups(self):
+        graph = deployment_graph.DeploymentGraph()
+        subtasks = copy.deepcopy(self.subtasks)
+        subtasks[0]['groups'] = ['/.*/']
+        graph.add_tasks(self.tasks + subtasks)
+        self.assertItemsEqual(
+            graph.succ['setup_something'],
+            {'deploy_end': {}, 'primary-controller': {}, 'network': {},
+             'cinder': {}, 'compute': {}, 'controller': {}})
+
+    def test_simple_string_in_group(self):
+        graph = deployment_graph.DeploymentGraph()
+        subtasks = copy.deepcopy(self.subtasks)
+        subtasks[0]['groups'] = ['controller']
+        graph.add_tasks(self.tasks + subtasks)
+        self.assertItemsEqual(
+            graph.succ['setup_something'],
+            {'deploy_end': {}, 'controller': {}})
 
 
 class TestAddDependenciesToNodes(base.BaseTestCase):

@@ -361,12 +361,10 @@ define([
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
         },
         isAvailableForSettingsChanges: function() {
-            return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
+            return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').any({status: 'ready'}));
         },
         isDeploymentPossible: function() {
-            var nodes = this.get('nodes');
-            return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
-                (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', active: true});
+            return this.get('release').get('state') != 'unavailable' && !this.get('nodes').all({status: 'ready'}) && !this.task({group: 'deployment', active: true});
         }
     });
 
@@ -428,7 +426,7 @@ define([
             return _.contains(roles, role);
         },
         hasChanges: function() {
-            return this.get('pending_addition') || this.get('pending_deletion');
+            return this.get('pending_addition') || this.get('pending_deletion') || !!this.get('pending_roles').length;
         },
         isConfigurable: function() {
             return this.get('pending_addition') || this.get('status') == 'error';
@@ -489,9 +487,7 @@ define([
         ],
         viewModes: ['standard', 'compact'],
         hasChanges: function() {
-            return !!this.filter(function(node) {
-                return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
-            }).length;
+            return this.any((node) => node.hasChanges());
         },
         nodesAfterDeployment: function() {
             return this.filter(function(node) {return !node.get('pending_deletion');});
@@ -538,7 +534,7 @@ define([
         },
         groups: {
             network: ['verify_networks', 'check_networks'],
-            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
+            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms', 'provision']
         },
         extendGroups: function(filters) {
             var names = utils.composeList(filters.name);

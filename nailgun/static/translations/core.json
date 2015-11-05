@@ -605,7 +605,7 @@
                     "technical_bulletins": "Technical Bulletins",
                     "cluster_information": "Cluster Information",
                     "summary": "Summary",
-                    "changes_header": "List of Changes",
+                    "changes_header": "List of changes:",
                     "new_environment_welcome": "Welcome to the New OpenStack Environment!",
                     "add_nodes": "Add nodes to the OpenStack Environment.",
                     "not_deployed_instruction": "Before you proceed, review the environment configuration, including the node disk partitioning and network settings. You will not be able to change these settings after Fuel deploys the OpenStack environment.",
@@ -750,6 +750,8 @@
                 "deploy_changes": "Deploy Changes",
                 "provision_vms": "Provision VMs",
                 "deploy": "Deploying",
+                "provision": "Provisioning",
+                "run_provision": "Run provisioning only",
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
@@ -886,6 +888,8 @@
                     "title": "Deploy Changes",
                     "added_node": "Added __count__ node.",
                     "added_node_plural": "Added __count__ nodes.",
+                    "provisioned_node": "Provisioned __count__ node.",
+                    "provisioned_node_plural": "Provisioned __count__ nodes.",
                     "deleted_node": "Deleted __count__ node.",
                     "deleted_node_plural": "Deleted __count__ nodes.",
                     "settings_changes": {
@@ -908,6 +912,11 @@
                     "invalid_settings": "Environment settings are invalid.",
                     "settings_link": "Settings tab",
                     "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes."
+                },
+                "provision_nodes": {
+                    "title": "Provision Nodes",
+                    "are_you_sure_provision": "Click Start Provisioning to provision the operating system onto the environment nodes, or Cancel to make changes.",
+                    "start_provisioning": "Start Provisioning"
                 },
                 "provision_vms": {
                     "title": "Provision VMs",

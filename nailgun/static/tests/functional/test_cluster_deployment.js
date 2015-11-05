@@ -60,6 +60,66 @@ define([
                 return this.remote
                     .assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added')
             },
+            'Provision nodes': function() {
+                return this.remote
+                    .then(function() {
+                        return common.addNodesToCluster(3, ['Controller']);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .assertElementAppears('.dashboard-tab', 200, 'Dashboard tab opened')
+                    .clickByCssSelector('.deploy-btn-group .dropdown-toggle')
+                    .clickByCssSelector('.btn-provision')
+                    .then(function() {
+                        return modal.waitToOpen();
+                    })
+                    .then(function() {
+                        return modal.checkTitle('Provision Nodes');
+                    })
+                    .then(function() {
+                        return modal.clickFooterButton('Start Provisioning');
+                    })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
+                    .assertElementAppears('div.deploy-process div.progress', 2000, 'Provisioning started')
+                    .assertElementDisappears('div.deploy-process div.progress', 5000, 'Provisioning finished')
+                    .assertElementContainsText('div.alert-success strong', 'Success', 'Provisioning successfully finished')
+                    // select a node
+                    .clickByCssSelector('.node > label')
+                    .assertElementNotExists('.control-buttons-box .btn.btn-configure-interfaces', 'Interfaces of provisioned node can not be configured')
+                    .assertElementNotExists('.control-buttons-box .btn.btn-configure-disks', 'Disks of provisioned node can not be configured')
+                    // delete provisioned node from environment
+                    .clickByCssSelector('.control-buttons-box .btn.btn-delete-nodes')
+                    .then(function() {
+                        return modal.waitToOpen();
+                    })
+                    .then(function() {
+                        return modal.clickFooterButton('Delete');
+                    })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
+                    .assertElementsExist('.node', 2, 'Provisioned node was succesfully deleted from environment')
+                    .then(function() {
+                        return clusterPage.isTabLocked('Networks');
+                    })
+                    .then(function(isLocked) {
+                        assert.isFalse(isLocked, 'Networks tab is not locked after nodes were provisioned');
+                    })
+                    .then(function() {
+                        return clusterPage.isTabLocked('Settings');
+                    })
+                    .then(function(isLocked) {
+                        assert.isFalse(isLocked, 'Settings tab is not locked after nodes were provisioned');
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .assertElementExists('.deploy-btn', 'Provisioned nodes can be deployed')
+                    .assertElementNotExists('.deploy-btn-group .dropdown-toggle', 'Only deployment available for provisioned nodes');
+            },
             'Discard changes': function() {
                 return this.remote
                     .then(function() {

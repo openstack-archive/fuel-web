@@ -85,9 +85,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 title = this.getTitle(),
                 runningDeploymentTask = cluster.task({group: 'deployment', active: true}),
                 failedDeploymentTask = cluster.task({group: 'deployment', status: 'error'}),
-                stopDeploymentTask = cluster.task('stop_deployment'),
-                hasOfflineNodes = nodes.any({online: false}),
-                resetDeploymentTask = cluster.task('reset_environment'),
+                finishedDeploymentTask = cluster.task({group: 'deployment', active: false}),
                 isDeploymentPossible = cluster.isDeploymentPossible();
 
             return (
@@ -99,8 +97,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     }
                     {!runningDeploymentTask &&
                         [
-                            (failedDeploymentTask || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask || isOperational) &&
-                                <DeploymentResult cluster={cluster} />,
+                            finishedDeploymentTask && <DeploymentResult cluster={cluster} />,
                             isOperational && <HorizonBlock cluster={cluster} />
                         ]
                     }
@@ -468,7 +465,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 hasNodes = !!nodes.length,
                 alerts = this.validate(cluster),
                 isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length,
-                isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
+                isProvisionPossible = nodes.any({status: 'discover'}),
+                isVMsProvisioningAvailable = nodes.any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
 
@@ -478,13 +476,16 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         <div className='row'>
                             {hasNodes &&
                                 <div className='col-xs-12 changes-list'>
-                                    <h4>
-                                        {i18n(namespace + 'changes_header') + ':'}
-                                    </h4>
-                                    <ul>
-                                        {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
-                                        {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                                    </ul>
+                                    {nodes.hasChanges() &&
+                                        <div>
+                                            <h4>{i18n(namespace + 'changes_header')}</h4>
+                                            <ul>
+                                                {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
+                                                {this.renderChangedNodesAmount(nodes.where({status: 'provisioned'}), 'provisioned_node')}
+                                                {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                                            </ul>
+                                        </div>
+                                    }
                                     {isVMsProvisioningAvailable ?
                                         (
                                             <button
@@ -492,22 +493,45 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 className='btn btn-primary deploy-btn'
                                                 onClick={_.partial(this.showDialog, dialogs.ProvisionVMsDialog)}
                                             >
-                                                <div className='deploy-icon'></div>
+                                                <div className='deploy-icon' />
                                                 {i18n('cluster_page.provision_vms')}
                                             </button>
                                         )
                                     :
-                                        isDeploymentPossible &&
-                                            (
+                                        isDeploymentPossible && (
+                                            isProvisionPossible ?
+                                                <div className='btn-group deploy-btn-group' key='deploy-changes'>
+                                                    <button
+                                                        className='btn btn-primary deploy-btn'
+                                                        onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
+                                                    >
+                                                        <div className='deploy-icon' />
+                                                        {i18n('cluster_page.deploy_changes')}
+                                                    </button>
+                                                    <button className='btn btn-primary dropdown-toggle' data-toggle='dropdown'>
+                                                        <span className='caret' />
+                                                    </button>
+                                                    <ul className='dropdown-menu'>
+                                                        <li>
+                                                            <button
+                                                                className='btn btn-link btn-provision'
+                                                                onClick={_.partial(this.showDialog, dialogs.ProvisionNodesDialog)}
+                                                            >
+                                                                {i18n('cluster_page.run_provision')}
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            :
                                                 <button
                                                     key='deploy-changes'
                                                     className='btn btn-primary deploy-btn'
                                                     onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
                                                 >
-                                                    <div className='deploy-icon'></div>
+                                                    <div className='deploy-icon' />
                                                     {i18n('cluster_page.deploy_changes')}
                                                 </button>
-                                            )
+                                        )
                                     }
                                     {nodes.hasChanges() &&
                                         <button

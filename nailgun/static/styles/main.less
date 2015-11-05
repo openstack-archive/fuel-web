@@ -4035,11 +4035,6 @@ input[type=range] {
         }
       }
     }
-    .deploy-control {
-      .deploy-btn {
-        margin-right: 10px;
-      }
-    }
     .discard-changes {
       padding-left: 0;
       border-left: 0;
@@ -4061,9 +4056,25 @@ input[type=range] {
       .changes-item {
         margin-bottom: 5px;
       }
-      .deploy-btn {
+      .deploy-btn, .deploy-btn-group {
         margin-right: 20px;
         padding-top: 2px;
+        .dropdown-toggle {
+          margin-left: 1px;
+        }
+        ul li {
+          .btn {
+            width: 100%;
+            text-align: left;
+          }
+          &.no-button {
+            background-color: @gray + 95%;
+            .btn {
+              color: @base-text-color - 40%;
+              .font-semibold;
+            }
+          }
+        }
       }
     }
     .deploy-readiness {

@@ -40,10 +40,10 @@ from nailgun.objects.plugin import ClusterPlugins
 from nailgun.objects import Release
 from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.plugins.manager import PluginManager
-from nailgun.plugins.merge_policies import NetworkRoleMergePolicy
 from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
+from nailgun.utils.policies import NetworkRoleMergePolicy
 from nailgun.utils import traverse
 
 

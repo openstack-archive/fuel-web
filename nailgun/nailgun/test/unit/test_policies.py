@@ -17,11 +17,14 @@
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.plugins.merge_policies import NetworkRoleMergePolicy
-from nailgun.test.base import BaseTestCase
+from nailgun.test.base import BaseUnitTest
+from nailgun.utils.policies import ExactMatch
+from nailgun.utils.policies import NameMatchPolicy
+from nailgun.utils.policies import NetworkRoleMergePolicy
+from nailgun.utils.policies import PatternMatch
 
 
-class TestNetworkRoleMergePolicy(BaseTestCase):
+class TestNetworkRoleMergePolicy(BaseUnitTest):
     def setUp(self):
         super(TestNetworkRoleMergePolicy, self).setUp()
         self.policy = NetworkRoleMergePolicy()
@@ -88,3 +91,17 @@ class TestNetworkRoleMergePolicy(BaseTestCase):
                     vip=[{"name": "test", "value": 2}]
                 )
             )
+
+
+class TestNameMatchPolicy(BaseUnitTest):
+    def test_exact_match(self):
+        match_policy = NameMatchPolicy.create("controller")
+        self.assertIsInstance(match_policy, ExactMatch)
+        self.assertTrue(match_policy.match("controller"))
+        self.assertFalse(match_policy.match("controller1"))
+
+    def test_pattern_match(self):
+        match_policy = NameMatchPolicy.create("/controller/")
+        self.assertIsInstance(match_policy, PatternMatch)
+        self.assertTrue(match_policy.match("controller"))
+        self.assertTrue(match_policy.match("controller1"))

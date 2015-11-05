@@ -2855,20 +2855,36 @@ input[type=range] {
 }
 
 .notifications-page {
-  hr {
-    margin: 10px 0;
-  }
-  .notification {
-    &.unread {
-      .font-semibold;
-      cursor: pointer;
+  .notification-group {
+    &:not(:last-child) {
+      margin-bottom: 30px;
     }
-    .glyphicon {
-      margin-right: 10px;
-    }
-    .btn-link {
-      padding: 0;
-      border: 0;
+    .notification {
+      cursor: default;
+      &.unread {
+        .font-semibold;
+        cursor: pointer;
+      }
+      > div {
+        display: block;
+        float: left;
+        &.notification-time {
+          width: 6%;
+        }
+        &.notification-type {
+          width: 3%;
+          .glyphicon {
+            margin: 2px 0px;
+          }
+        }
+        &.notification-message {
+          width: 91%;
+          .btn-link {
+            padding: 0;
+            border: 0;
+          }
+        }
+      }
     }
   }
 }

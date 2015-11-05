@@ -69,6 +69,24 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     env_version = '2015.1.0-7.0'
     prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
+    custom_network = {
+        'name': 'baremetal',
+        'role': 'ironic/baremetal',
+        'cidr': '192.168.3.0/24',
+        'vlan_start': 50,
+        'bridge': 'br-baremetal',
+    }
+    plugin_network_roles = yaml.safe_load("""
+- id: "{role}"
+  default_mapping: "{name}"
+  properties:
+    subnet: true
+    gateway: false
+    vip:
+       - name: "{name}"
+         namespace: "haproxy"
+    """.format(**custom_network))
+
     def setUp(self):
         super(BaseTestDeploymentAttributesSerialization70, self).setUp()
         self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
@@ -137,6 +155,12 @@ class TestDeploymentAttributesSerialization70(
         plugin = objects.Plugin.create(plugin_data)
         self.cluster_db.plugins.append(plugin)
         self.db.commit()
+
+
+class TestDeploymentAttributesSerialization70(
+    BaseTestDeploymentAttributesSerialization70
+):
+    segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
 
     def test_non_default_bridge_mapping(self):
         expected_mapping = {

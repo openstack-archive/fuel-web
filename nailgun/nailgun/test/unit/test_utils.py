@@ -24,6 +24,7 @@ from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
 from nailgun.utils import flatten
+from nailgun.utils import get_group_pattern
 from nailgun.utils import grouper
 from nailgun.utils import http_get
 from nailgun.utils import traverse
@@ -83,6 +84,13 @@ class TestUtils(base.BaseIntegrationTest):
 
         self.assertEqual(
             list(grouper([0, 1, 2, 3, 4], 3, 'x')), [(0, 1, 2), (3, 4, 'x')])
+
+    def test_get_group_pattern(self):
+        self.assertEqual(
+            '^controller$', get_group_pattern('controller'))
+
+        self.assertEqual(
+            '(?=controller)', get_group_pattern('/(?=controller)/'))
 
 
 class TestTraverse(base.BaseUnitTest):

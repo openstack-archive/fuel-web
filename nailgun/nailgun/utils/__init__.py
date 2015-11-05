@@ -249,3 +249,18 @@ def http_get(url, retries_on=[500, 502], retries=3, timeout=2):
         time.sleep(timeout)
 
     return response
+
+
+def get_group_pattern(group):
+    """Return specific pattern for deployment group
+
+    Deployment group can have two types of items: simple
+    string and regexp which distinguished by '/' on the ends
+    of group name.
+
+    :param group: Deployment group name
+    :type group: str
+    :returns: str -- proper pattern
+    """
+    return group[1:-1] if group.startswith('/') and group.endswith('/') \
+        else r"^{0}$".format(group)

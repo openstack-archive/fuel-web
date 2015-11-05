@@ -15,6 +15,8 @@
 #    under the License.
 
 import abc
+from collections import defaultdict
+import os
 import six
 import yaml
 
@@ -370,6 +372,48 @@ class UpdateHosts(GenericRolesHook):
         yield templates.make_puppet_task(uids, self.task)
 
 
+class UploadConfiguration(GenericRolesHook):
+    """Hook that uploads yaml file with configuration on nodes."""
+
+    identity = 'upload_configuration'
+
+    def __init__(self, task, cluster, nodes, configs):
+        super(UploadConfiguration, self).__init__(task, cluster, nodes)
+        self.configs = configs
+
+    def serialize(self):
+
+        node_configs = defaultdict(lambda: defaultdict(dict))
+        nodes_to_update = dict((node.uid, node) for node in self.nodes)
+
+        for config in self.configs:
+
+            if config.config_type == consts.OPENSTACK_CONFIG_TYPES.cluster:
+                for node_id in nodes_to_update:
+                    node_configs[node_id]['cluster'] = config.configuration
+
+            elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.role:
+                for node in self.nodes:
+                    if config.role in sorted(node.roles):
+                        node_configs[node.uid]['role'].update(
+                            config.configuration)
+
+            elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:
+                if config.node_id in nodes_to_update:
+                    fqdn = objects.Node.get_node_fqdn(
+                        nodes_to_update[config.node_id])
+                    node_configs[config.node_id][fqdn] = config.configuration
+
+        for node_id in node_configs:
+            for config_dest in node_configs[node_id]:
+                path = os.path.join(consts.OVERRIDE_CONFIG_BASE_PATH,
+                                    config_dest)
+                data = {'configuration': node_configs[node_id][config_dest]}
+
+                yield templates.make_upload_task(
+                    [node_id], path=path, data=yaml.safe_dump(data))
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
@@ -377,7 +421,7 @@ class TaskSerializers(object):
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys,
                          GenerateCephKeys, CopyCephKeys, IronicUploadImages,
-                         IronicCopyBootstrapKey]
+                         IronicCopyBootstrapKey, UploadConfiguration]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

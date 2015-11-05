@@ -1712,6 +1712,39 @@ class UpdateDnsmasqTask(object):
         )
 
 
+class UpdateOpenstackConfigTask(object):
+
+    @classmethod
+    def message(cls, task, cluster, filters, nodes):
+        configs = objects.OpenstackConfig.find_configs_for_nodes(
+            cluster, nodes, **filters)
+
+        refresh_on = set()
+        for config in configs:
+            refresh_on.update(config.configuration.keys())
+
+        refreshable_tasks = objects.Cluster.get_refreshable_tasks(
+            cluster, refresh_on)
+
+        upload_serializer = tasks_serializer.UploadConfiguration(
+            task, task.cluster, nodes, configs)
+        tasks_to_execute = list(upload_serializer.serialize())
+
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        orchestrator_graph.only_tasks(refreshable_tasks)
+
+        serialized_cluster = deployment_serializers.serialize(
+            orchestrator_graph, task.cluster, nodes)
+        tasks_to_execute.extend(serialized_cluster)
+
+        rpc_message = make_astute_message(
+            task, 'execute_tasks', 'deploy_resp', {
+                'tasks': tasks_to_execute,
+            })
+
+        return rpc_message
+
+
 if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
     rpc.cast = fake_cast
     CheckRepositoryConnectionFromMasterNodeTask\

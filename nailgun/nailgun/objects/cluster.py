@@ -310,9 +310,12 @@ class Cluster(NailgunObject):
 
         ver = instance.release.environment_version
         if instance.net_provider == 'neutron':
-            if StrictVersion(ver) >= StrictVersion('7.0'):
+            if StrictVersion(ver) == StrictVersion('7.0'):
                 from nailgun.network.neutron import NeutronManager70
                 return NeutronManager70
+            elif StrictVersion(ver) >= StrictVersion('8.0'):
+                from nailgun.network.neutron import NeutronManager80
+                return NeutronManager80
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:
@@ -976,6 +979,26 @@ class Cluster(NailgunObject):
         """
         return (instance.release.network_roles_metadata +
                 PluginManager.get_network_roles(instance))
+
+    @classmethod
+    def get_mapped_network_roles(cls, instance):
+        """Returns list of network roles which mapped to existing networks
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :returns: List of network roles' descriptions
+        """
+        roles = []
+        all_network_names = [ng.name for ng in instance.network_groups]
+        all_network_names.append(consts.NETWORKS.fuelweb_admin)
+        for role in cls.get_network_roles(instance):
+            if role['default_mapping'] in all_network_names:
+                roles.append(role)
+            else:
+                logger.warning(
+                    "Skip network role '{0}' which mapped to non-existing"
+                    " network '{1}'".format(role['id'],
+                                            role['default_mapping']))
+        return roles
 
     @classmethod
     def set_network_template(cls, instance, template):

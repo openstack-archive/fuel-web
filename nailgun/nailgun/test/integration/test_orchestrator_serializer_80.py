@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import yaml
+
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
@@ -28,6 +30,8 @@ from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 from nailgun.test.integration.test_orchestrator_serializer import \
     TestSerializeInterfaceDriversData
+from nailgun.test.integration.test_orchestrator_serializer_70 import \
+    BaseTestDeploymentAttributesSerialization70
 from nailgun.test.integration.test_orchestrator_serializer_70 import \
     TestDeploymentHASerializer70
 
@@ -74,3 +78,50 @@ class TestDeploymentHASerializer80(
     TestDeploymentHASerializer70
 ):
     pass
+
+
+class TestDeploymentAttributesSerialization80(
+    BaseTestDeploymentAttributesSerialization70
+):
+    env_version = '2015.1.0-8.0'
+    plugin_network_roles = yaml.safe_load("""
+- id: "unmapped_role"
+  default_mapping: "non_existing_net"
+  properties:
+    subnet: true
+    gateway: false
+    vip:
+       - name: "unmapped_vip"
+         namespace: "haproxy"
+        """)
+
+    def test_network_scheme(self):
+        self._add_plugin_network_roles()
+        self.serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in self.serialized_for_astute:
+            roles = node['network_scheme']['roles']
+            node = objects.Node.get_by_uid(node['uid'])
+
+            expected_roles = zip(
+                self.management, ['br-mgmt'] * len(self.management))
+            expected_roles += zip(
+                self.fuelweb_admin, ['br-fw-admin'] * len(self.fuelweb_admin))
+            expected_roles += zip(
+                self.storage, ['br-storage'] * len(self.storage))
+
+            if objects.Node.should_have_public(node):
+                expected_roles += zip(
+                    self.public, ['br-ex'] * len(self.public))
+                expected_roles += [('neutron/floating', 'br-floating')]
+
+            if node.cluster.network_config.segmentation_type == \
+                    consts.NEUTRON_SEGMENT_TYPES.vlan:
+                expected_roles += [('neutron/private', 'br-prv')]
+
+            if node.cluster.network_config.segmentation_type in \
+                    (consts.NEUTRON_SEGMENT_TYPES.gre,
+                     consts.NEUTRON_SEGMENT_TYPES.tun):
+                expected_roles += [('neutron/mesh', 'br-mesh')]
+
+            self.assertEqual(roles, dict(expected_roles))

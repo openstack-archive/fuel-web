@@ -49,7 +49,7 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
                     <div className='content-box'>
                         {this.props.notifications.map(function(notification, index) {
                             return [
-                                !!index && <hr />,
+                                
                                 <Notification
                                     {...this.props}
                                     key={'notification' + notification.id}
@@ -101,14 +101,15 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
                 }[notification.get('topic')] || 'glyphicon-info-sign';
             return (
                 <div className={'row notification ' + utils.classNames(notificationClasses)} onClick={this.onNotificationClick}>
-                    <div className='col-xs-12 col-md-2'>
-                        <i className={'glyphicon ' + iconClass}></i>
-                        {notification.get('date')} {notification.get('time')}
+                                     
+                    <div className="title">Today {notification.get('date')}</div>
+                    <div className='col-xs-12'>
+                      <div className='notification-time'>{notification.get('time')}</div>
+                      <div className='notification-type'><i className={'glyphicon ' + iconClass}></i></div>
+                      <div className='notification-message'>
+                        <span className={notification.get('node_id') && 'btn btn-link'} dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span></div>
+                      </div>
                     </div>
-                    <div className='col-xs-12 col-md-10'>
-                        <span className={notification.get('node_id') && 'btn btn-link'} dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span>
-                    </div>
-                </div>
             );
         }
     });

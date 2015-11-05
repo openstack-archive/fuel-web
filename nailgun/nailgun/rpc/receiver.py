@@ -408,6 +408,36 @@ class NailgunReceiver(object):
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
+    def update_config_resp(cls, **kwargs):
+        logger.info(
+            "RPC method update_config_resp received: %s" %
+            jsonutils.dumps(kwargs))
+
+        task_uuid = kwargs['task_uuid']
+        message = kwargs.get('error')
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+
+        task = objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
+        if status in (consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error):
+            # lock nodes for updating
+            q_nodes = objects.NodeCollection.filter_by_id_list(
+                None, task.cache['nodes'])
+            nodes = objects.NodeCollection.lock_for_update(q_nodes).all()
+
+            for node in nodes:
+                node.status = status
+                node.progress = 100
+
+        data = {'status': status, 'progress': progress, 'message': message}
+        objects.Task.update(task, data)
+
+    @classmethod
     def _update_action_log_entry(cls, task_status, task_name, task_uuid,
                                  nodes_from_resp):
         try:

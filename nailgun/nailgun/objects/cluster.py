@@ -1143,6 +1143,20 @@ class Cluster(NailgunObject):
             '1', '2'
         )
 
+    @classmethod
+    def get_nodes_to_update_config(cls, cluster, node_id=None, node_role=None):
+        query = (
+            cls.get_nodes_not_for_deletion(cluster)
+            .filter_by(status=consts.NODE_STATUSES.ready))
+
+        if node_id:
+            query = query.filter_by(id=node_id)
+        elif node_role:
+            query = query.filter(
+                models.Node.roles.any(node_role))
+
+        return query.all()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

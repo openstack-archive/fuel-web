@@ -2858,12 +2858,28 @@ input[type=range] {
     margin: 10px 0;
   }
   .notification {
+    margin-bottom: 30px;
     &.unread {
       .font-semibold;
       cursor: pointer;
     }
-    .glyphicon {
-      margin-right: 10px;
+    .notification-time {
+      display: block;
+      float: left;
+      width: 6%;
+    }
+    .notification-type {
+      display: block;
+      float: left;
+      width: 3%;
+      .glyphicon {
+        margin: 2px 0px;
+      }
+    }
+    .notification-message {
+      display: block;
+      float: left;
+      width: 91%;
     }
     .btn-link {
       padding: 0;

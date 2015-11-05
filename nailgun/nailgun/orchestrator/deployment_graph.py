@@ -21,6 +21,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 import networkx as nx
+import re
 import six
 
 from nailgun import consts
@@ -88,6 +89,8 @@ class DeploymentGraph(nx.DiGraph):
         for task in tasks:
             self.add_task(task)
 
+        self.update_dependencies()
+
     def add_task(self, task):
         self.add_node(task['id'], **task)
 
@@ -98,16 +101,33 @@ class DeploymentGraph(nx.DiGraph):
         for req in task.get('requires', ()):
             self.add_edge(req, task['id'])
 
-        # tasks and groups should be used for declaring dependencies between
-        # tasks and roles (which are simply group of tasks)
-        for req in task.get('groups', ()):
-            self.add_edge(task['id'], req)
-        for req in task.get('tasks', ()):
-            self.add_edge(req, task['id'])
-
         # FIXME(dshulyak) remove it after change in library will be merged
         if 'stage' in task:
             self.add_edge(task['id'], task['stage'])
+
+    def update_dependencies(self):
+        """Create dependencies that rely on regexp matching."""
+        available_groups = self.get_groups_subgraph().nodes()
+
+        for task in six.itervalues(self.node):
+            # tasks and groups should be used for declaring dependencies
+            # between tasks and roles (which are simply group of tasks)
+
+            available_groups = self.get_groups_subgraph().nodes()
+            for group in task.get('groups', ()):
+                group_re = re.compile(group)
+                not_matched = []
+                for group_ in available_groups:
+                    if group_re.search(group_):
+                        self.add_edge(task['id'], group_)
+                    else:
+                        not_matched.append(group_)
+                if len(available_groups) == len(not_matched):
+                    self.add_edge(task['id'], group)
+                available_groups = not_matched
+
+            for req in task.get('tasks', ()):
+                self.add_edge(req, task['id'])
 
     def is_acyclic(self):
         """Verify that graph doesnot contain any cycles in it."""
@@ -135,7 +155,7 @@ class DeploymentGraph(nx.DiGraph):
 
     def get_groups_subgraph(self):
         roles = [t['id'] for t in self.node.values()
-                 if t['type'] == consts.ORCHESTRATOR_TASK_TYPES.group]
+                 if t.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group]
         return self.subgraph(roles)
 
     def get_group_tasks(self, group_name):

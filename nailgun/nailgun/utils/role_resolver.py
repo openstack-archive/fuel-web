@@ -16,64 +16,13 @@
 
 import abc
 from collections import defaultdict
-import re
 
 import six
 
 from nailgun import consts
 from nailgun.logger import logger
 from nailgun import objects
-
-
-@six.add_metaclass(abc.ABCMeta)
-class NameMatchPolicy(object):
-    @abc.abstractmethod
-    def match(self, name):
-        """Tests that name is acceptable.
-
-        :param name: the name to test
-        :type name: str
-        :returns: True if yes otherwise False
-        """
-
-    @staticmethod
-    def create(pattern):
-        """Makes name match policy.
-
-        the string wrapped with '/' treats as pattern
-        '/abc/' - pattern
-        'abc' - the string for exact match
-
-        :param pattern: the pattern to match
-        :return: the NameMatchPolicy instance
-        """
-        if pattern.startswith("/") and pattern.endswith("/"):
-            return PatternMatch(pattern[1:-1])
-        return ExactMatch(pattern)
-
-
-class ExactMatch(NameMatchPolicy):
-    """Tests that name exact match to argument."""
-
-    def __init__(self, name):
-        """Initializes.
-
-        :param name: the name to match
-        """
-        self.name = name
-
-    def match(self, name):
-        return self.name == name
-
-
-class PatternMatch(NameMatchPolicy):
-    """Tests that pattern matches to argument."""
-
-    def __init__(self, patten):
-        self.pattern = re.compile(patten)
-
-    def match(self, name):
-        return self.pattern.match(name)
+from nailgun.policy.name_match import NameMatchingPolicy
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -140,7 +89,7 @@ class RoleResolver(BaseRoleResolver):
         elif isinstance(roles, (list, tuple)):
             result = set()
             for role in roles:
-                pattern = NameMatchPolicy.create(role)
+                pattern = NameMatchingPolicy.create(role)
                 for node_role, nodes_ids in six.iteritems(self.__mapping):
                     if pattern.match(node_role):
                         result.update(nodes_ids)

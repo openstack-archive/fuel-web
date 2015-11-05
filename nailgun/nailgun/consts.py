@@ -417,3 +417,10 @@ COMPONENT_TYPES = Enum(
     'storage',
     'additional_service',
 )
+
+
+OPENSTACK_CONFIG_TYPES = Enum(
+    'cluster',
+    'role',
+    'node',
+)

@@ -166,7 +166,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var nodes = new models.Nodes(_.compact(this.props.cluster.get('nodes').map(function(node) {
                 if (node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length) {
                     var data = {id: node.id, pending_roles: [], pending_addition: false, pending_deletion: false};
-                    if (node.get('pending_addition')) data.cluster_id = null;
+                    if (!node.get('pending_deletion')) data.cluster_id = null;
                     return data;
                 }
             })));
@@ -195,9 +195,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     <br/>
                     {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
                     {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                    {this.renderChangedNodeAmount(nodes.filter(function(node) {
-                        return !node.get('pending_addition') && !node.get('pending_deletion') && node.get('pending_roles').length;
-                    }), 'reconfigured_node')}
                 </div>
             );
         },
@@ -245,19 +242,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                     {i18n('cluster_page.dashboard_tab.locked_settings_alert') + ' '}
                                 </div>
                             </div>
-                            <div className='text-warning'>
-                                <i className='glyphicon glyphicon-warning-sign' />
-                                <div className='instruction'>
-                                    {i18n('cluster_page.dashboard_tab.package_information') + ' '}
-                                    <a
-                                        target='_blank'
-                                        href={utils.composeDocumentationLink('operations.html#troubleshooting')}
-                                    >
-                                        {i18n('cluster_page.dashboard_tab.operations_guide')}
-                                    </a>
-                                    {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+                            {cluster.get('nodes').any({status: 'discover'}) &&
+                                <div className='text-warning'>
+                                    <i className='glyphicon glyphicon-warning-sign' />
+                                    <div className='instruction'>
+                                        {i18n('cluster_page.dashboard_tab.package_information') + ' '}
+                                        <a
+                                            target='_blank'
+                                            href={utils.composeDocumentationLink('operations.html#troubleshooting')}
+                                        >
+                                            {i18n('cluster_page.dashboard_tab.operations_guide')}
+                                        </a>
+                                        {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+                                    </div>
                                 </div>
-                            </div>
+                            }
                         </div>
                     }
                     <div className='confirmation-question'>
@@ -274,6 +273,57 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
                 >{i18n(this.ns + 'deploy')}</button>
+            ]);
+        }
+    });
+
+    dialogs.ProvisionNodesDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.provision_nodes.title')};
+        },
+        ns: 'dialog.provision_nodes.',
+        provisionNodes: function() {
+            this.setState({actionInProgress: true});
+            dispatcher.trigger('deploymentTasksUpdated');
+            var task = new models.Task();
+            task.save({}, {url: _.result(this.props.cluster, 'url') + '/provision', type: 'PUT'})
+                .done(function() {
+                    this.close();
+                    dispatcher.trigger('deploymentTaskStarted');
+                }.bind(this))
+                .fail(this.showError);
+        },
+        renderBody: function() {
+            return (
+                <div className='provision-nodes-dialog'>
+                    <div className='text-warning'>
+                        <i className='glyphicon glyphicon-warning-sign' />
+                        <div className='instruction'>
+                            {i18n('cluster_page.dashboard_tab.package_information') + ' '}
+                            <a
+                                target='_blank'
+                                href={utils.composeDocumentationLink('operations.html#troubleshooting')}
+                            >
+                                {i18n('cluster_page.dashboard_tab.operations_guide')}
+                            </a>
+                            {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+                        </div>
+                    </div>
+                    <div className='confirmation-question'>
+                        {i18n(this.ns + 'are_you_sure_provision')}
+                    </div>
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
+                <button key='provisioning'
+                    className='btn start-provision-btn btn-success'
+                    disabled={this.state.actionInProgress}
+                    onClick={this.provisionNodes}
+                >{i18n(this.ns + 'start_provisioning')}</button>
             ]);
         }
     });

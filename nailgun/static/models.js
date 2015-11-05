@@ -495,7 +495,7 @@ define([
         },
         groups: {
             network: ['verify_networks', 'check_networks'],
-            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
+            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms', 'provision']
         },
         extendGroups: function(filters) {
             var names = utils.composeList(filters.name);

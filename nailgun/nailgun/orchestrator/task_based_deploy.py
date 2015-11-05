@@ -28,7 +28,7 @@ from nailgun.orchestrator.tasks_serializer import CreateVMsOnCompute
 from nailgun.orchestrator.tasks_serializer import StandartConfigRolesHook
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
 from nailgun.orchestrator.tasks_templates import make_noop_task
-from nailgun.utils.role_resolver import NameMatchPolicy
+from nailgun.utils.role_resolver import NameMatchingPolicy
 from nailgun.utils.role_resolver import NullResolver
 from nailgun.utils.role_resolver import RoleResolver
 
@@ -468,7 +468,7 @@ class TasksSerializer(object):
         :param is_required_for: means task from required_for section
         """
         found = False
-        match_policy = NameMatchPolicy.create(name)
+        match_policy = NameMatchingPolicy.create(name)
         for node_id in node_ids:
             applied_tasks = set()
             for task_name in self.tasks_per_node[node_id]:

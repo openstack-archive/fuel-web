@@ -1335,6 +1335,22 @@ class NeutronNetworkDeploymentSerializer80(
         mapping.update(cls.get_node_non_default_bridge_mapping(node))
         return mapping
 
+    @classmethod
+    def _get_network_role_mapping(cls, node, mapping):
+        """Aggregates common logic for mapping retrieval methods
+
+        these methods are:
+        - 'get_network_role_mapping_to_ip'
+        - 'get_network_role_mapping_to_interfaces'.
+        """
+        roles = dict()
+        for role in Cluster.get_mapped_network_roles(node.cluster):
+            default_mapping = mapping.get(role['default_mapping'])
+            if default_mapping:
+                roles[role['id']] = default_mapping
+
+        return roles
+
 
 class NeutronNetworkTemplateSerializer80(NeutronNetworkTemplateSerializer70):
     pass

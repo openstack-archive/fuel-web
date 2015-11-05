@@ -30,6 +30,7 @@ import jsonschema
 from oslo_serialization import jsonutils
 import six
 from six.moves import range
+import yaml
 
 from nailgun.api.v1.validators.json_schema import action_log
 
@@ -49,6 +50,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.network.manager import NetworkManager
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
+from nailgun.network.neutron import NeutronManager80
 
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
@@ -958,6 +960,23 @@ class TestClusterObject(BaseTestCase):
         network_role.update(kwargs)
         return network_role
 
+    def _add_unmapped_network_roles(self):
+        plugin_network_roles = yaml.safe_load("""
+- id: "unmapped_role"
+  default_mapping: "non_existing_net"
+  properties:
+    subnet: true
+    gateway: false
+    vip:
+       - name: "unmapped_vip"
+         namespace: "haproxy"
+        """)
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['network_roles_metadata'] = plugin_network_roles
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+        self.db.commit()
+
     def test_network_defaults(self):
         cluster = objects.Cluster.get_by_uid(self.env.create(api=True)['id'])
 
@@ -1083,6 +1102,13 @@ class TestClusterObject(BaseTestCase):
         cluster = self.env.clusters[0]
         self.assertEqual(
             objects.Cluster.get_network_roles(cluster),
+            cluster.release.network_roles_metadata)
+
+    def test_get_mapped_network_roles(self):
+        cluster = self.env.clusters[0]
+        self._add_unmapped_network_roles()
+        self.assertEqual(
+            objects.Cluster.get_mapped_network_roles(cluster),
             cluster.release.network_roles_metadata)
 
     def test_get_deployment_tasks(self):
@@ -1338,6 +1364,11 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
         self.env.clusters[0].release.version = '2014.2.2-7.0'
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])
         self.assertEqual(nm, NeutronManager70)
+
+    def test_get_neutron_80(self):
+        self.env.clusters[0].release.version = '2014.2.2-8.0'
+        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        self.assertEqual(nm, NeutronManager80)
 
 
 class TestNetworkGroup(BaseTestCase):

@@ -222,7 +222,8 @@
                 "capacity": "Capacity"
             },
             "notifications_page": {
-                "title": "Notifications"
+                "title": "Notifications",
+                "today": "Today"
             },
             "notifications_popover": {
                 "view_all_button": "View all",

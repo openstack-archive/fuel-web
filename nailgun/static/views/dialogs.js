@@ -165,9 +165,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         discardNodeChanges: function() {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(_.compact(this.props.cluster.get('nodes').map(function(node) {
-                if (node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length) {
+                if (node.hasChanges()) {
                     var data = {id: node.id, pending_roles: [], pending_addition: false, pending_deletion: false};
-                    if (node.get('pending_addition')) data.cluster_id = null;
+                    // remove cluster assignment from not deployed node
+                    if (node.get('pending_roles').length) data.cluster_id = null;
                     return data;
                 }
             })));
@@ -195,10 +196,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     </div>
                     <br/>
                     {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
+                    {this.renderChangedNodeAmount(nodes.where({status: 'provisioned'}), 'provisioned_node')}
                     {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                    {this.renderChangedNodeAmount(nodes.filter(function(node) {
-                        return !node.get('pending_addition') && !node.get('pending_deletion') && node.get('pending_roles').length;
-                    }), 'reconfigured_node')}
                 </div>
             );
         },
@@ -227,7 +226,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.setState({actionInProgress: true});
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
-            task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
+            task
+                .save({}, {
+                    url: _.result(this.props.cluster, 'url') + (this.props.cluster.get('nodes').all({status: 'provisioned'}) ? '/deploy' : '/changes'),
+                    type: 'PUT'
+                })
                 .done(function() {
                     this.close();
                     dispatcher.trigger('deploymentTaskStarted');
@@ -275,6 +278,57 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
                 >{i18n(this.ns + 'deploy')}</button>
+            ]);
+        }
+    });
+
+    dialogs.ProvisionNodesDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.provision_nodes.title')};
+        },
+        ns: 'dialog.provision_nodes.',
+        provisionNodes: function() {
+            this.setState({actionInProgress: true});
+            dispatcher.trigger('deploymentTasksUpdated');
+            var task = new models.Task();
+            task.save({}, {url: _.result(this.props.cluster, 'url') + '/provision', type: 'PUT'})
+                .done(function() {
+                    this.close();
+                    dispatcher.trigger('deploymentTaskStarted');
+                }.bind(this))
+                .fail(this.showError);
+        },
+        renderBody: function() {
+            return (
+                <div className='provision-nodes-dialog'>
+                    <div className='text-warning'>
+                        <i className='glyphicon glyphicon-warning-sign' />
+                        <div className='instruction'>
+                            {i18n('cluster_page.dashboard_tab.package_information') + ' '}
+                            <a
+                                target='_blank'
+                                href={utils.composeDocumentationLink('operations.html#troubleshooting')}
+                            >
+                                {i18n('cluster_page.dashboard_tab.operations_guide')}
+                            </a>
+                            {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+                        </div>
+                    </div>
+                    <div className='confirmation-question'>
+                        {i18n(this.ns + 'are_you_sure_provision')}
+                    </div>
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
+                <button key='provisioning'
+                    className='btn start-provision-btn btn-success'
+                    disabled={this.state.actionInProgress}
+                    onClick={this.provisionNodes}
+                >{i18n(this.ns + 'start_provisioning')}</button>
             ]);
         }
     });

@@ -429,3 +429,11 @@ CLOUD_INIT_TEMPLATES = Enum(
 STAT_FUEL_PACKAGES = (
     'fuel-nailgun',
 )
+
+OPENSTACK_CONFIG_TYPES = Enum(
+    'cluster',
+    'role',
+    'node',
+)
+
+OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/config/'

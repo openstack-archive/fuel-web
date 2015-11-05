@@ -91,14 +91,14 @@ define([
                 });
         },
         checkNodes: function(amount, status) {
-            var self = this;
-            status = status || 'discover';
+            var self = this,
+                nodeSelector = (status ? '.node.' + status : '.node') + ' > label';
             return this.remote
                 .then(function() {
                     return _.range(amount).reduce(
                         function(result, index) {
                             return self.remote
-                                .findAllByCssSelector('.node' + '.' + status + ' > label')
+                                .findAllByCssSelector(nodeSelector)
                                     .then(function(nodes) {
                                         return nodes[index].click();
                                     })

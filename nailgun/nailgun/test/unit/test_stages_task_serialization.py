@@ -220,6 +220,46 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertItemsEqual(serialized_uids, self.all_uids)
         self.assertNotIn(discovered_node.uid, serialized_uids)
 
+    def test_upload_configuration(self):
+        task_config = {
+            'id': 'upload_configuration',
+            'type': 'upload_file',
+            'role': '*',
+        }
+
+        configs = [
+            mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.cluster,
+                      configuration={'cluster': 'foo'}),
+            mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.role,
+                      role='compute',
+                      configuration={'compute': 'bar'}),
+            mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.role,
+                      role='cinder',
+                      configuration={'cinder': 'buzz'}),
+            mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.node,
+                      node_id=self.env.nodes[0].id,
+                      configuration={'node_0': 'quux'})
+        ]
+
+        task = tasks_serializer.UploadConfiguration(
+            task_config, self.cluster, self.nodes, configs)
+        serialized_tasks = list(task.serialize())
+        self.assertEqual(len(serialized_tasks), 5)
+        cluster_uids = []
+        role_uids = []
+        node_uids = []
+        for task in serialized_tasks:
+            self.assertEqual('upload_file', task['type'])
+            if '/cluster' in task['parameters']['path']:
+                cluster_uids.extend(task['uids'])
+            if '/role' in task['parameters']['path']:
+                role_uids.extend(task['uids'])
+            if '/node' in task['parameters']['path']:
+                node_uids.extend(task['uids'])
+        self.assertItemsEqual(self.all_uids, cluster_uids)
+        self.assertItemsEqual([self.nodes[2].uid], role_uids)
+        self.assertItemsEqual([self.nodes[0].uid], node_uids)
+
     def test_update_hosts(self):
         # mark one node as ready so we can test for duplicates
         self.env.nodes[0].status = consts.NODE_STATUSES.ready

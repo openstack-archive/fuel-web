@@ -29,6 +29,7 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
 
+from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
 
@@ -79,6 +80,7 @@ task_names_old = (
     'create_stats_user',
     'remove_stats_user',
 )
+
 task_names_new = task_names_old + (
     'update_dnsmasq',
 )
@@ -89,11 +91,18 @@ node_errors_old = (
     'provision',
     'deletion',
 )
+
 node_errors_new = (
     'deploy',
     'provision',
     'deletion',
     'discover',
+)
+
+openstack_config_types = (
+    'cluster',
+    'role',
+    'node',
 )
 
 
@@ -106,6 +115,7 @@ def upgrade():
     task_names_upgrade()
     add_node_discover_error_upgrade()
     upgrade_neutron_parameters()
+    create_openstack_configs_table()
 
 
 def downgrade():
@@ -119,6 +129,8 @@ def downgrade():
     op.drop_table('release_components')
     op.drop_table('components')
     drop_enum('component_types')
+    op.drop_table('openstack_configs')
+    drop_enum('openstack_config_types')
 
 
 def upgrade_release_state():
@@ -197,6 +209,26 @@ def create_release_components_table():
                         ['release_id'], ['releases.id'], ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id')
                     )
+
+
+def create_openstack_configs_table():
+    op.create_table(
+        'openstack_configs',
+        sa.Column('id', sa.Integer, nullable=False),
+        sa.Column('is_active', sa.Boolean, nullable=False),
+        sa.Column(
+            'config_type',
+            sa.Enum(*openstack_config_types, name='openstack_config_types'),
+            nullable=False),
+        sa.Column('cluster_id', sa.Integer, nullable=False),
+        sa.Column('node_id', sa.Integer, nullable=True),
+        sa.Column('node_role', sa.String(length=64), nullable=True),
+        sa.Column('created_at', sa.DateTime, nullable=False),
+        sa.Column('config', fields.JSON, nullable=False, server_default='{}'),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id']),
+        sa.ForeignKeyConstraint(['node_id'], ['nodes.id']),
+        sa.PrimaryKeyConstraint('id')
+    )
 
 
 def downgrade_release_state():

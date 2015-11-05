@@ -56,3 +56,5 @@ from nailgun.objects.network_group import NetworkGroupCollection
 
 from nailgun.objects.component import Component
 from nailgun.objects.component import ComponentCollection
+
+from nailgun.objects.openstack_config import OpenstackConfig

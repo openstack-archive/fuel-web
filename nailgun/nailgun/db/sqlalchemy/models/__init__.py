@@ -54,3 +54,5 @@ from nailgun.db.sqlalchemy.models.plugins import Plugin
 
 from nailgun.db.sqlalchemy.models.component import Component
 from nailgun.db.sqlalchemy.models.component import ReleaseComponent
+
+from nailgun.db.sqlalchemy.models.openstack_config import OpenstackConfig

@@ -121,6 +121,13 @@ from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 from nailgun.api.v1.handlers.master_node_settings \
     import MasterNodeSettingsHandler
 
+from nailgun.api.v1.handlers.openstack_config \
+    import OpenstackConfigCollectionHandler
+from nailgun.api.v1.handlers.openstack_config \
+    import OpenstackConfigExecuteHandler
+from nailgun.api.v1.handlers.openstack_config import OpenstackConfigHandler
+
+
 from nailgun.settings import settings
 
 urls = (
@@ -295,6 +302,14 @@ urls = (
 
     r'/settings/?$',
     MasterNodeSettingsHandler,
+
+    r'/openstack-config/?$',
+    OpenstackConfigCollectionHandler,
+    r'/openstack-config/(?P<obj_id>\d+)/?$',
+    OpenstackConfigHandler,
+    r'/openstack-config/execute/?$',
+    OpenstackConfigExecuteHandler,
+
 )
 
 feature_groups_urls = {

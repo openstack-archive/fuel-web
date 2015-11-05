@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,9 +15,19 @@
 #    under the License.
 
 import abc
+import re
 import six
 
+
 from nailgun.errors import errors
+
+
+@six.add_metaclass(abc.ABCMeta)
+class NameMatchPolicy(object):
+    """Policy to match deployment group name"""
+
+    def match(self, text):
+        """Match group name"""
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -101,3 +113,21 @@ class NetworkRoleMergePolicy(MergePolicy):
                     "Cannot apply patch for attribute {0}: {1}"
                     .format(name, e)
                 )
+
+
+class GroupExactMatch(NameMatchPolicy):
+
+    def __init__(self, name):
+        self.name = name
+
+    def match(self, text):
+        return self.name == text
+
+
+class GroupPatternMatch(NameMatchPolicy):
+
+    def __init__(self, pattern):
+        self.pattern = re.compile(pattern)
+
+    def match(self, text):
+        return self.pattern.match(text)

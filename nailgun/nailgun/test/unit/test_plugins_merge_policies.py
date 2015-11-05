@@ -17,8 +17,8 @@
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.plugins.merge_policies import NetworkRoleMergePolicy
 from nailgun.test.base import BaseTestCase
+from nailgun.utils.policies import NetworkRoleMergePolicy
 
 
 class TestNetworkRoleMergePolicy(BaseTestCase):

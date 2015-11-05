@@ -36,6 +36,8 @@ from uuid import uuid4
 
 from nailgun.logger import logger
 from nailgun.settings import settings
+from nailgun.utils.policies import GroupExactMatch
+from nailgun.utils.policies import GroupPatternMatch
 
 
 def reverse(name, kwargs=None):
@@ -249,3 +251,20 @@ def http_get(url, retries_on=[500, 502], retries=3, timeout=2):
         time.sleep(timeout)
 
     return response
+
+
+def get_group_match(group):
+    """Return specific pattern for deployment group
+
+    Deployment group can have two types of items: simple
+    string and regexp which distinguished by '/' on the ends
+    of group name.
+
+    :param group: Deployment group name
+    :type group: str
+    :returns: str -- proper pattern
+    """
+    if group.startswith('/') and group.endswith('/'):
+        return GroupPatternMatch(group[1:-1])
+    else:
+        return GroupExactMatch(group)

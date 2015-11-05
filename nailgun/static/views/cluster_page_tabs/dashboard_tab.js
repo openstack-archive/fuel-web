@@ -85,9 +85,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 title = this.getTitle(),
                 runningDeploymentTask = cluster.task({group: 'deployment', active: true}),
                 failedDeploymentTask = cluster.task({group: 'deployment', status: 'error'}),
-                stopDeploymentTask = cluster.task('stop_deployment'),
+                finishedDeploymentTask = cluster.task({group: 'deployment', active: false}),
                 hasOfflineNodes = nodes.any({online: false}),
-                resetDeploymentTask = cluster.task('reset_environment'),
                 isDeploymentPossible = cluster.isDeploymentPossible();
 
             return (
@@ -99,9 +98,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     }
                     {!runningDeploymentTask &&
                         [
-                            (failedDeploymentTask || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask || isOperational) &&
+                            (finishedDeploymentTask || hasOfflineNodes || isOperational) &&
                                 <DeploymentResult cluster={cluster} />,
-                            isOperational && <HorizonBlock cluster={cluster} />
+                            isOperational && cluster.task({name: 'deploy', status: 'ready'}) && <HorizonBlock cluster={cluster} />
                         ]
                     }
                     {release.get('state') == 'unavailable' &&
@@ -468,7 +467,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 hasNodes = !!nodes.length,
                 alerts = this.validate(cluster),
                 isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length,
-                isVMsProvisioningAvailable = cluster.get('nodes').any(function(node) {
+                isProvisionPossible = nodes.any({status: 'discover'}),
+                isVMsProvisioningAvailable = nodes.any(function(node) {
                     return node.get('pending_addition') && node.hasRole('virt');
                 });
 
@@ -489,7 +489,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         (
                                             <button
                                                 key='provision-vms'
-                                                className='btn btn-primary deploy-btn'
+                                                className='btn btn-primary deploy-btn no-dropdown'
                                                 onClick={_.partial(this.showDialog, dialogs.ProvisionVMsDialog)}
                                             >
                                                 <div className='deploy-icon'></div>
@@ -497,17 +497,42 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             </button>
                                         )
                                     :
-                                        isDeploymentPossible &&
-                                            (
+                                        isDeploymentPossible && (
+                                            isProvisionPossible ?
+                                                <div className='btn-group deploy-btn-group' key='deploy-changes'>
+                                                    <button
+                                                        className='btn btn-primary deploy-btn'
+                                                        onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
+                                                    >
+                                                        {i18n('cluster_page.deploy_changes')}
+                                                    </button>
+                                                    <button className='btn btn-primary dropdown-toggle' data-toggle='dropdown'>
+                                                        <span className='caret' />
+                                                    </button>
+                                                    <ul className='dropdown-menu'>
+                                                        <li className='no-button'>
+                                                            <button className='btn btn-link' disabled>{i18n('cluster_page.run_separate_task')}</button>
+                                                        </li>
+                                                        <li>
+                                                            <button
+                                                                className='btn btn-link btn-provision'
+                                                                onClick={_.partial(this.showDialog, dialogs.ProvisionNodesDialog)}
+                                                            >
+                                                                {i18n('cluster_page.provision')}
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            :
                                                 <button
                                                     key='deploy-changes'
-                                                    className='btn btn-primary deploy-btn'
+                                                    className='btn btn-primary deploy-btn no-dropdown'
                                                     onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
                                                 >
                                                     <div className='deploy-icon'></div>
                                                     {i18n('cluster_page.deploy_changes')}
                                                 </button>
-                                            )
+                                        )
                                     }
                                     {nodes.hasChanges() &&
                                         <button

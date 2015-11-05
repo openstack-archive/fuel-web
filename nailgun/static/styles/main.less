@@ -1304,26 +1304,6 @@ input[type=range] {
     .font-normal;
     color: @base-text-color;
   }
-  .deploy-box {
-    display: block;
-    height: 60px;
-    overflow: hidden;
-    padding-right: 0px;
-    padding-top: 20px;
-    box-sizing: border-box;
-  }
-  .deploy-icon {
-    position: relative;
-    top: 3px;
-    display: inline-block;
-    margin-right: 6px;
-    background: url(@common-icons-sprite) no-repeat -10px -90px;
-    width: 22px;
-    height: 18px;
-    &:before {
-      content: " ";
-    }
-  }
   .deploy-process {
     display: block;
     height: 40px;
@@ -1334,22 +1314,6 @@ input[type=range] {
       width: 140px;
       height: 22px;
     }
-    .deploy-percents {
-      display: block;
-      width: 30px;
-      overflow: hidden;
-      margin: 3px 10px 0px 10px;
-      color: @white;
-      .font-light;
-      font-size: @base-font-size - 2;
-    }
-  }
-  .discard-changes-icon {
-    position: relative;
-    display: inline-block;
-    background: url(@common-icons-sprite) no-repeat 0px -40px;
-    width: 40px;
-    height: 40px;
   }
 
   .settings-tab {
@@ -3063,7 +3027,7 @@ input[type=range] {
   }
 }
 
-.display-changes-dialog {
+.display-changes-dialog, .provision-nodes-dialog {
   hr {
     margin: 8px 0 12px 0;
   }
@@ -4057,14 +4021,10 @@ input[type=range] {
         }
       }
     }
-    .deploy-control {
-      .deploy-btn {
-        margin-right: 10px;
-      }
-    }
     .discard-changes {
       padding-left: 0;
       border-left: 0;
+      margin-left: 20px;
     }
     .changes-list {
       padding: @dashboard-offset @dashboard-offset 0 @dashboard-offset;
@@ -4084,8 +4044,33 @@ input[type=range] {
         margin-bottom: 5px;
       }
       .deploy-btn {
-        margin-right: 20px;
-        padding-top: 2px;
+        padding-left: 40px;
+        position: relative;
+        margin-right: 0;
+        .deploy-icon {
+          position: absolute;
+          top: 5px;
+          left: 12px;
+          display: inline-block;
+          margin-right: 6px;
+          background: url(@common-icons-sprite) no-repeat -10px -90px;
+          width: 22px;
+          height: 18px;
+          &:before {
+            content: " ";
+          }
+        }
+      }
+      .deploy-btn-group {
+        .dropdown-toggle {
+          margin-left: 1px;
+        }
+        ul{
+          .btn {
+            width: 100%;
+            text-align: left;
+          }
+        }
       }
     }
     .deploy-readiness {

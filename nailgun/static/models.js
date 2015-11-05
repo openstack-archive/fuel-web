@@ -367,8 +367,9 @@ define([
         },
         isDeploymentPossible: function() {
             var nodes = this.get('nodes');
-            return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
-                (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', active: true});
+            return this.get('release').get('state') != 'unavailable' &&
+                (nodes.hasChanges() || !nodes.all({status: 'ready'})) &&
+                !this.task({group: 'deployment', active: true});
         }
     });
 
@@ -449,9 +450,7 @@ define([
         url: '/api/nodes',
         comparator: 'id',
         hasChanges: function() {
-            return !!this.filter(function(node) {
-                return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
-            }).length;
+            return this.any(function(node) {return node.hasChanges();});
         },
         nodesAfterDeployment: function() {
             return this.filter(function(node) {return !node.get('pending_deletion');});
@@ -498,7 +497,7 @@ define([
         },
         groups: {
             network: ['verify_networks', 'check_networks'],
-            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
+            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms', 'provision']
         },
         extendGroups: function(filters) {
             var names = utils.composeList(filters.name);

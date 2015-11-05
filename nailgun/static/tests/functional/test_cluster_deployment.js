@@ -82,12 +82,53 @@ define([
                     })
                     .assertElementAppears('div.deploy-readiness a.btn-add-nodes', 2000, 'All changes discarded, add nodes button gets visible in deploy readiness block');
             },
-            'Start/stop deployment': function() {
-                this.timeout = 60000;
+            'Provision nodes': function() {
                 return this.remote
                     .then(function() {
                         return common.addNodesToCluster(3, ['Controller']);
                     })
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .assertElementAppears('.dashboard-tab', 200, 'Dashboard tab opened')
+                    .clickByCssSelector('.deploy-btn-group .dropdown-toggle')
+                    .clickByCssSelector('.btn-provision')
+                    .then(function() {
+                        return modal.waitToOpen();
+                    })
+                    .then(function() {
+                        return modal.checkTitle('Provision Nodes');
+                    })
+                    .then(function() {
+                        return modal.clickFooterButton('Start Provisioning');
+                    })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
+                    .assertElementAppears('div.deploy-process div.progress', 2000, 'Provisioning started')
+                    .assertElementDisappears('div.deploy-process div.progress', 5000, 'Provisioning finished')
+                    .assertElementContainsText('div.alert-success strong', 'Success', 'Provisioning successfully finished')
+                    .then(function() {
+                        return clusterPage.isTabLocked('Networks');
+                    })
+                    .then(function(isLocked) {
+                        assert.isFalse(isLocked, 'Networks tab is not locked after nodes were provisioned');
+                    })
+                    .then(function() {
+                        return clusterPage.isTabLocked('Settings');
+                    })
+                    .then(function(isLocked) {
+                        assert.isFalse(isLocked, 'Settings tab is not locked after nodes were provisioned');
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .assertElementExists('.deploy-btn', 'Provisioned nodes can be deployed')
+                    .assertElementNotExists('.deploy-btn-group .dropdown-toggle', 'Only deployment available for provisioned nodes');
+            },
+            'Start/stop deployment': function() {
+                this.timeout = 60000;
+                return this.remote
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })

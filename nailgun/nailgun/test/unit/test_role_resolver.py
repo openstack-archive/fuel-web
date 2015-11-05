@@ -22,20 +22,6 @@ from nailgun.test.base import BaseUnitTest
 from nailgun.utils import role_resolver
 
 
-class TestNameMatchPolicy(BaseUnitTest):
-    def test_exact_match(self):
-        match_policy = role_resolver.NameMatchPolicy.create("controller")
-        self.assertIsInstance(match_policy, role_resolver.ExactMatch)
-        self.assertTrue(match_policy.match("controller"))
-        self.assertFalse(match_policy.match("controller1"))
-
-    def test_pattern_match(self):
-        match_policy = role_resolver.NameMatchPolicy.create("/controller/")
-        self.assertIsInstance(match_policy, role_resolver.PatternMatch)
-        self.assertTrue(match_policy.match("controller"))
-        self.assertTrue(match_policy.match("controller1"))
-
-
 class TestPatternBasedRoleResolver(BaseUnitTest):
     @classmethod
     def setUpClass(cls):

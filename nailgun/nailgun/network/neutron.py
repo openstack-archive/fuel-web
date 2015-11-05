@@ -25,6 +25,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 
 from nailgun.network.manager import AllocateVIPs70Mixin
+from nailgun.network.manager import AllocateVIPs80Mixin
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 
@@ -409,3 +410,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
             'interfaces': node_ifaces.values()
         }
         cls._update_attrs(node_data)
+
+
+class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):
+    pass

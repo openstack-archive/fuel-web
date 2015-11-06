@@ -105,7 +105,8 @@
                 "floating": "Floating",
                 "management": "Management",
                 "storage": "Storage",
-                "private": "Private"
+                "private": "Private",
+                "baremetal": "Baremetal"
             },
             "login_page": {
                 "username": "Username",
@@ -655,7 +656,9 @@
                         "base_mac": "Base MAC address",
                         "internal_cidr": "Internal network CIDR",
                         "internal_gateway": "Internal network gateway",
-                        "floating_ranges": "Floating IP ranges"
+                        "floating_ranges": "Floating IP ranges",
+                        "baremetal_gateway": "Ironic gateway",
+                        "baremetal_range": "Ironic IP range"
                     },
                     "validation": {
                         "large_network": "Network is too large",
@@ -671,8 +674,9 @@
                         "invalid_netmask": "Invalid netmask",
                         "invalid_gateway": "Invalid gateway",
                         "invalid_amount": "Invalid amount of networks",
-                        "gateway_is_out_of_ip_range": "The gateway address is outside of network CIDR.",
-                        "gateway_is_out_of_internal_ip_range": "This Gateway address is out of the internal network IP range.",
+                        "gateway_is_out_of_ip_range": "The gateway address is out of the network CIDR.",
+                        "gateway_is_out_of_baremetal_network": "The gateway address is out of the baremetal network CIDR.",
+                        "gateway_is_out_of_internal_network": "The gateway address is out of the internal network CIDR.",
                         "need_more_vlan": "Not enough VLAN IDs are available for the selected number of networks. Verify that the number of networks specified in the VLAN ID Range field is correct.",
                         "invalid_nameserver": "Invalid nameserver",
                         "invalid_id_start": "Invalid ID range start",
@@ -1966,7 +1970,7 @@
                         "invalid_gateway": "ゲートウェイが不正です",
                         "invalid_amount": "ネットワークの数が不正です",
                         "gateway_is_out_of_ip_range": "このゲートウェイアドレスはネットワークCIDRの範囲外です",
-                        "gateway_is_out_of_internal_ip_range": "このゲートウェイアドレスは内部ネットワークのIPレンジ外です",
+                        "gateway_is_out_of_internal_network": "このゲートウェイアドレスは内部ネットワークのIPレンジ外です",
                         "need_more_vlan": "定義されたネットワークの数は、利用可能なVLAN IDよりも多くのVLAN IDを必要とします。VLAN IDレンジのフィールドを確認してください。",
                         "invalid_nameserver": "ネームサーバが不正です",
                         "invalid_id_start": "IDレンジの開始が不正です",
@@ -2537,7 +2541,7 @@
                         "invalid_gateway": "잘못된 게이트웨이",
                         "invalid_amount": "잘못된 네트워크",
                         "gateway_is_out_of_ip_range": "게이트웨이 주소는 IP의 범위를 벗어납니다",
-                        "gateway_is_out_of_internal_ip_range": "게이트웨이 주소는 내부 네트워크의 IP 범위를 벗어납니다",
+                        "gateway_is_out_of_internal_network": "게이트웨이 주소는 내부 네트워크의 IP 범위를 벗어납니다",
                         "need_more_vlan": "정의 된 네트워크들의 수는 더 많은 VLAN ID를 필요로합니다. VLAN ID 범위필드를 확인하십시요.",
                         "invalid_nameserver": "잘못된 네임서버",
                         "invalid_id_start": "잘못된 ID 범위시작",

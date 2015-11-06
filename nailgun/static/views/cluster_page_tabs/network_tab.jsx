@@ -840,6 +840,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         render: function() {
             var networkParameters = this.props.networkConfiguration.get('networking_parameters'),
+                networks = this.props.networkConfiguration.get('networks'),
                 manager = networkParameters.get('net_manager'),
                 idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id',
                 ns = 'cluster_page.network_tab.networking_parameters.';
@@ -906,7 +907,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 <Range
                                     {...this.composeProps('floating_ranges', true)}
                                     rowsClassName='floating-ranges-rows'
-                                    hiddenControls={true}
+                                    hiddenControls
                                 />
                                 <div>
                                     {this.renderInput('internal_cidr')}
@@ -914,6 +915,16 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 </div>
                             </div>
                         ]
+                    }
+                    {networks.findWhere({name: 'baremetal'}) &&
+                        <div className='forms-box'>
+                            <Range
+                                {...this.composeProps('baremetal_range', true)}
+                                placeholder=''
+                                hiddenControls
+                            />
+                            {this.renderInput('baremetal_gateway')}
+                        </div>
                     }
                     <div className='forms-box'>
                         <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />

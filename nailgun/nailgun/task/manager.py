@@ -21,9 +21,9 @@ import traceback
 
 from oslo_serialization import jsonutils
 
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NeutronNetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NovaNetworkConfigurationSerializer
 
 from nailgun import consts

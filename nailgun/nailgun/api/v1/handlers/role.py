@@ -21,7 +21,7 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.role import RoleValidator
 from nailgun.errors import errors
 from nailgun import objects
-from nailgun.objects.serializers.role import RoleSerializer
+from nailgun.objects.serializers import RoleSerializer
 
 
 class RoleHandler(base.SingleHandler):

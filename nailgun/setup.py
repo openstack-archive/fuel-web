@@ -73,6 +73,9 @@ if __name__ == "__main__":
                   ('oswl_cleaner = nailgun.statistics.oswl.helpers:'
                    'delete_expired_oswl_entries'),
               ],
+              'nailgun.objects': [
+                  'core = nailgun.objects.core:import_all'
+              ]
           },
           data_files=recursive_data_files([('share/nailgun', 'static')])
           )

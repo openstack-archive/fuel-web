@@ -133,6 +133,12 @@ class ProviderHandler(BaseHandler):
 
         nm = objects.Cluster.get_network_manager(cluster)
         admin_nets = nm.get_admin_networks()
+
+        try:
+            network_config = self.serializer.serialize_for_cluster(cluster)
+        except errors.OutOfIPs as exc:
+            raise self.http(400, six.text_type(exc))
+
         nm.update(cluster, data)
         if admin_nets != nm.get_admin_networks():
             try:
@@ -142,7 +148,7 @@ class ProviderHandler(BaseHandler):
             if task.status == consts.TASK_STATUSES.error:
                 raise self.http(400, task.message)
 
-        return self.serializer.serialize_for_cluster(cluster)
+        return network_config
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):

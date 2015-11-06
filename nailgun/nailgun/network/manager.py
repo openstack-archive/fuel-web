@@ -44,7 +44,7 @@ from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
-from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.objects.serializers import NodeInterfacesSerializer
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
 from nailgun.settings import settings

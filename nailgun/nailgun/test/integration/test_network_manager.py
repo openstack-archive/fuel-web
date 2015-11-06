@@ -31,7 +31,8 @@ import nailgun
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
-from nailgun.objects.serializers import network_configuration
+from nailgun.objects.serializers \
+    import NeutronNetworkConfigurationSerializer
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
@@ -608,7 +609,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
             net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
         )
-        get_network_config = network_configuration.\
+        get_network_config = \
             NeutronNetworkConfigurationSerializer.serialize_for_cluster
         nets = get_network_config(cluster)
         self.env.network_manager.update_networks(nets)
@@ -638,7 +639,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
             net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
         )
-        get_network_config = network_configuration.\
+        get_network_config = \
             NeutronNetworkConfigurationSerializer.serialize_for_cluster
         nets = get_network_config(cluster)
         for net_name, net_changes in six.iteritems(updates):
@@ -667,7 +668,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
         )
 
-        get_network_config = network_configuration.\
+        get_network_config = \
             NeutronNetworkConfigurationSerializer.serialize_for_cluster
         nets = get_network_config(cluster)
 

@@ -16,7 +16,7 @@
 
 from nailgun import consts
 from nailgun.objects import ComponentCollection
-from nailgun.objects.serializers.component import ComponentSerializer
+from nailgun.objects.serializers import ComponentSerializer
 from nailgun.test import base
 
 

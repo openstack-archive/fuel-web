@@ -8,22 +8,22 @@ Objects Reference
 Base Objects
 ------------
 
-.. automodule:: nailgun.objects.base
+.. automodule:: nailgun.objects.core.base
 
 
 Release-related Objects
 -----------------------
 
-.. automodule:: nailgun.objects.release
+.. automodule:: nailgun.objects.core.release
 
 
 Cluster-related Objects
 -----------------------
 
-.. automodule:: nailgun.objects.cluster
+.. automodule:: nailgun.objects.core.cluster
 
 
 Node-related Objects
 --------------------
 
-.. automodule:: nailgun.objects.node
+.. automodule:: nailgun.objects.core.node

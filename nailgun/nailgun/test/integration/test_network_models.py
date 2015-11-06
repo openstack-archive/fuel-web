@@ -21,9 +21,9 @@ from oslo_serialization import jsonutils
 import yaml
 
 from nailgun.objects import Cluster
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NeutronNetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NovaNetworkConfigurationSerializer
 
 from nailgun import consts

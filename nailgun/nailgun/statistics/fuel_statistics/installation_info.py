@@ -21,9 +21,9 @@ from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.objects import ClusterCollection
+from nailgun.objects import ClusterPlugins
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
-from nailgun.objects.plugin import ClusterPlugins
 from nailgun.settings import settings
 from nailgun.statistics.utils import get_attr_value
 from nailgun.statistics.utils import WhiteListRule

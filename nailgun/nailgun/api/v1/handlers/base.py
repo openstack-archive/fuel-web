@@ -31,7 +31,7 @@ from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
-from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.objects.serializers import BasicSerializer
 from nailgun.orchestrator import deployment_graph
 from nailgun.settings import settings
 from nailgun import utils

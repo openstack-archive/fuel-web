@@ -24,9 +24,9 @@ import web
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NeutronNetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NovaNetworkConfigurationSerializer
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator

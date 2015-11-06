@@ -17,6 +17,8 @@ from mock import MagicMock
 from mock import patch
 
 from nailgun import consts
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import node
@@ -540,7 +542,7 @@ class TestNetworkCheck(BaseIntegrationTest):
                              checker.neutron_check_gateways)
 
     @patch.object(helpers, 'db')
-    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    @patch.object(objects.NodeGroupCollection, 'get_by_cluster_id')
     def test_neutron_check_gateways_gw_none(self, get_by_cluster_id_mock,
                                             mocked_db):
         checker = NetworkCheck(self.task, {})
@@ -555,7 +557,7 @@ class TestNetworkCheck(BaseIntegrationTest):
                           checker.neutron_check_gateways)
 
     @patch.object(helpers, 'db')
-    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    @patch.object(objects.NodeGroupCollection, 'get_by_cluster_id')
     def test_neutron_check_gateways_gw_outside(self, get_by_cluster_id_mock,
                                                mocked_db):
         checker = NetworkCheck(self.task, {})
@@ -570,7 +572,7 @@ class TestNetworkCheck(BaseIntegrationTest):
                           checker.neutron_check_gateways)
 
     @patch.object(helpers, 'db')
-    @patch('objects.NodeGroupCollection.get_by_cluster_id')
+    @patch.object(objects.NodeGroupCollection, 'get_by_cluster_id')
     def test_neutron_check_gateways_gw_in_range(self, get_by_cluster_id_mock,
                                                 mocked_db):
         checker = NetworkCheck(self.task, {})

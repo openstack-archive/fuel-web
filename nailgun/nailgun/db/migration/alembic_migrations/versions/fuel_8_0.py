@@ -32,6 +32,7 @@ from nailgun.utils.migration import drop_enum
 
 from nailgun.utils.migration import upgrade_enum
 
+
 release_states_old = (
     'available',
     'unavailable',
@@ -53,15 +54,47 @@ task_statuses_new = task_statuses_old + (
 )
 
 
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'spawn_vms',
+    'node_deletion',
+    'cluster_deletion',
+    'remove_images',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'dump',
+    'capacity_log',
+    'create_stats_user',
+    'remove_stats_user',
+)
+task_names_new = task_names_old + (
+    'update_dnsmasq',
+)
+
+
 def upgrade():
     create_components_table()
     create_release_components_table()
     upgrade_nodegroups_name_cluster_constraint()
     upgrade_release_state()
     task_statuses_upgrade()
+    task_names_upgrade()
 
 
 def downgrade():
+    task_names_downgrade()
     task_statuses_downgrade()
     downgrade_release_state()
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
@@ -180,3 +213,23 @@ def task_statuses_upgrade():
 def task_statuses_downgrade():
     upgrade_enum('tasks', 'status', 'task_status',
                  task_statuses_new, task_statuses_old)
+
+
+def task_names_upgrade():
+    upgrade_enum(
+        "tasks",
+        "name",
+        "task_name",
+        task_names_old,
+        task_names_new
+    )
+
+
+def task_names_downgrade():
+    upgrade_enum(
+        "tasks",
+        "name",
+        "task_name",
+        task_names_new,
+        task_names_old
+    )

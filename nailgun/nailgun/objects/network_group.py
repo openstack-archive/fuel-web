@@ -141,10 +141,6 @@ class NetworkGroup(NailgunObject):
         """
         notation = instance.meta['notation']
         data_meta = data.get('meta', {})
-        # if notation data is present change ip ranges and remove
-        # stalled ip addresses for the network group
-        if notation and not instance.nodegroup.cluster.is_locked:
-            cls._delete_ips(instance)
 
         notation = data_meta.get('notation', notation)
         if notation == consts.NETWORK_NOTATION.ip_ranges:

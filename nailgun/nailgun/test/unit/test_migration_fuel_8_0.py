@@ -306,3 +306,22 @@ class TestTaskStatus(base.BaseAlembicMigrationTest):
         for row in result.fetchall():
             status = row[0]
             self.assertEqual(status, consts.TASK_STATUSES.pending)
+
+
+class TestTaskNameMigration(base.BaseAlembicMigrationTest):
+
+    def test_task_name_enum(self):
+        added_task_names = ('update_dnsmasq',)
+        tasks_table = self.meta.tables['tasks']
+        for name in added_task_names:
+            insert_table_row(tasks_table,
+                             {'name': name,
+                              'uuid': str(uuid.uuid4()),
+                              'status': 'running'})
+
+        with self.assertRaisesRegexp(DataError, 'invalid input value for '
+                                                'enum task_name'):
+            insert_table_row(tasks_table,
+                             {'name': 'wrong_task_name',
+                              'uuid': str(uuid.uuid4()),
+                              'status': 'running'})

@@ -339,6 +339,11 @@ class NetworkManager(object):
         # IP address has not been assigned, let's do it
         vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
         ne_db = IPAddr(network=network.id, ip_addr=vip, vip_type=vip_type)
+
+        # delete stalled VIP address after new one was found.
+        if cluster_vip:
+            db().delete(cluster_vip)
+
         db().add(ne_db)
         db().flush()
 
@@ -1258,6 +1263,8 @@ class NetworkManager(object):
         )
         db().add(new_admin)
         db().flush()
+        objects.NetworkGroup._update_range_from_cidr(
+            new_admin, new_admin.cidr, use_gateway=True)
 
     @classmethod
     def check_network_restrictions(cls, cluster, restrictions):
@@ -1356,8 +1363,6 @@ class NetworkManager(object):
     def update_networks(cls, network_configuration):
         if 'networks' in network_configuration:
             for ng in network_configuration['networks']:
-                if ng['id'] == cls.get_admin_network_group_id():
-                    continue
 
                 ng_db = db().query(NetworkGroup).get(ng['id'])
 
@@ -1534,12 +1539,47 @@ class NetworkManager(object):
         """Returns IPs related to network with provided ID.
         """
         return [x[0] for x in
-                db().query(IPAddr.ip_addr).filter_by(
-                    network=network_id)]
+                db().query(
+                    IPAddr.ip_addr
+                ).filter(
+                    IPAddr.network == network_id,
+                    or_(
+                        IPAddr.node.isnot(None),
+                        IPAddr.vip_type.isnot(None)
+                    )
+                )]
+
+    @classmethod
+    def get_admin_networks(cls, cluster_nodegroup_info=False):
+        admin_db = db().query(
+            NetworkGroup
+        ).filter_by(
+            name=consts.NETWORKS.fuelweb_admin
+        )
+        result = []
+        for net in admin_db:
+            net_info = {
+                'id': net.id,
+                'cidr': net.cidr,
+                'gateway': net.gateway,
+                'ip_ranges': [[ir.first, ir.last]
+                              for ir in net.ip_ranges]
+            }
+            if cluster_nodegroup_info:
+                net_info.update({
+                    'node_group_id': net.group_id,
+                    'node_group_name':
+                        net.nodegroup.name if net.group_id else None,
+                    'cluster_id':
+                        net.nodegroup.cluster_id if net.group_id else None,
+                    'cluster_name':
+                        net.nodegroup.cluster.name if net.group_id else None,
+                })
+            result.append(net_info)
+        return result
 
 
 class AllocateVIPs70Mixin(object):
-
 
     @classmethod
     def _build_advanced_vip_info(cls, vip_info, role, address):

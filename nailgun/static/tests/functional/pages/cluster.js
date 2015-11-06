@@ -15,7 +15,7 @@
  **/
 
 define([
-    'underscore',
+    'intern/dojo/node!lodash',
     'tests/functional/pages/modal',
     'intern/dojo/node!leadfoot/helpers/pollUntil',
     '../../helpers'

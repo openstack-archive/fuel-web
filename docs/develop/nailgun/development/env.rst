@@ -86,6 +86,18 @@ Preparing Development Environment
     sudo chown -R `whoami`.`whoami` /var/log/nailgun
     sudo chmod -R a+w /var/log/nailgun
 
+#. Install NodeJS and JS dependencies::
+
+    sudo apt-get remove --yes nodejs nodejs-legacy
+    sudo apt-get install --yes software-properties-common
+    sudo add-apt-repository --yes ppa:chris-lea/node.js
+    sudo apt-get update
+    sudo apt-get install --yes nodejs
+    sudo npm install -g gulp
+    sudo chown -R `whoami`.`whoami` ~/.npm
+    cd nailgun
+    npm install
+
 Setup for Nailgun Unit Tests
 ----------------------------
 
@@ -155,18 +167,8 @@ Setup for Web UI Tests
 #. UI tests use Selenium server, so you need to install Java Runtime
    Environment (JRE) 1.6 or newer version.
 
-#. Install NodeJS and JS dependencies::
-
-    sudo apt-get remove --yes nodejs nodejs-legacy
-    sudo apt-get install --yes software-properties-common
-    sudo add-apt-repository --yes ppa:chris-lea/node.js
-    sudo apt-get update
-    sudo apt-get install --yes nodejs
-    sudo chown -R `whoami`.`whoami` ~/.npm
-    npm install
-    sudo npm install -g gulp
-    cd nailgun
-    npm install
+#. You also need to install Firefox - it is used as the default browser for
+   tests.
 
 #. Run full Web UI test suite (this will wipe your Nailgun database in
    PostgreSQL)::
@@ -229,13 +231,9 @@ Running Nailgun in Fake Mode
 
     workon fuel
 
-#. Fetch JS dependencies::
-
-    cd nailgun
-    npm install
-
 #. Populate the database from fixtures::
 
+    cd nailgun
     ./manage.py syncdb
     ./manage.py loaddefault # It loads all basic fixtures listed in settings.yaml
     ./manage.py loaddata nailgun/fixtures/sample_environment.json  # Loads fake nodes
@@ -250,9 +248,36 @@ Running Nailgun in Fake Mode
 
     python manage.py run -p 8000 --fake-tasks-amqp | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun.log 2>&1 &
 
-#. (optional) To create a compressed version of UI and put it into static_compressed dir::
+#. If you plan to use Fuel UI:
 
-    gulp build --static-dir=static_compressed
+  * Update JS dependencies::
+
+      npm install
+
+  * If you don't plan to modify Fuel UI, you may want just to build static
+    version which is served by nailgun::
+
+      gulp build
+
+    Please note that after pulling updates from fuel-web repo you may need to
+    run this command again.
+
+    To specify custom output directory location use
+    `static-dir` option::
+
+      gulp build --static-dir=static_compressed
+
+  * If you plan to modify Fuel UI, there is more convenient option --
+    a development server. It watches for file changes and automatically
+    rebuilds changed modules (significantly faster than full rebuild)
+    and triggers page refresh in browsers::
+
+      gulp dev-server
+
+    By default it runs on port 8080 and assumes that nailgun runs on
+    port 8000. You can override this by using the following options::
+
+      gulp dev-server --dev-server-host=127.0.0.1 --dev-server-port=8080 --nailgun-host=127.0.0.1 --nailgun-port=8000
 
 Note: Diagnostic Snapshot is not available in a Fake mode.
 

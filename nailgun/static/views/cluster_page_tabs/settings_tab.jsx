@@ -22,9 +22,9 @@ define(
     'utils',
     'models',
     'expression',
-    'jsx!component_mixins',
-    'jsx!views/controls',
-    'jsx!views/custom_controls'
+    'component_mixins',
+    'views/controls',
+    'views/custom_controls'
 ],
 function($, _, i18n, React, utils, models, Expression, componentMixins, controls, customControls) {
     'use strict';

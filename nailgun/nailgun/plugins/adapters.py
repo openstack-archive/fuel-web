@@ -25,8 +25,8 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects.component import Component
-from nailgun.objects.plugin import Plugin
+from nailgun.objects import Component
+from nailgun.objects import Plugin
 from nailgun.settings import settings
 
 

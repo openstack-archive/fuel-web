@@ -489,6 +489,14 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             self.assertEqual(ng_db.ip_ranges[1].first, net_template + '.55')
             self.assertEqual(ng_db.ip_ranges[1].last, net_template + '.99')
 
+    def test_set_ip_range_with_the_same_ip_address(self):
+        netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
+        storage = next((
+            net for net in netconfig['networks']
+            if net['name'] == consts.NETWORKS.storage))
+        storage['ip_ranges'] = [["172.16.0.19", "172.16.0.19"]]
+        self.env.neutron_networks_put(self.cluster.id, netconfig)
+
     def test_admin_public_untagged_others_tagged(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body

@@ -104,6 +104,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 deferred
                     .done(_.bind(function() {
                         this.setState({initialAttributes: _.cloneDeep(settings.attributes)});
+                        // some networks may have restrictions which are processed by nailgun,
+                        // so networks need to be refetched after updating cluster attributes
+                        this.props.cluster.get('networkConfiguration').cancelThrottling();
                     }, this))
                     .always(_.bind(function() {
                         this.setState({

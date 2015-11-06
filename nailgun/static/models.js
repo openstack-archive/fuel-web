@@ -93,6 +93,9 @@ define([
                 }, this));
             }
             return deferred;
+        },
+        cancelThrottling: function() {
+            delete this.lastSyncTime;
         }
     };
 
@@ -780,6 +783,8 @@ define([
         }
     });
 
+    var networkPreferredOrder = ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'];
+
     models.InterfaceNetwork = BaseModel.extend({
         constructorName: 'InterfaceNetwork',
         getFullNetwork: function(networks) {
@@ -790,9 +795,8 @@ define([
     models.InterfaceNetworks = BaseCollection.extend({
         constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
         comparator: function(network) {
-            return _.indexOf(this.preferredOrder, network.get('name'));
+            return _.indexOf(networkPreferredOrder, network.get('name'));
         }
     });
 
@@ -811,9 +815,8 @@ define([
     models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
         model: models.Network,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
         comparator: function(network) {
-            return _.indexOf(this.preferredOrder, network.get('name'));
+            return _.indexOf(networkPreferredOrder, network.get('name'));
         }
     });
 
@@ -947,6 +950,19 @@ define([
             });
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
+            }
+            var baremetalNetwork = attrs.networks.findWhere({name: 'baremetal'});
+            if (baremetalNetwork && !_.has(networksErrors[baremetalNetwork.id], 'cidr')) {
+                var baremetalGateway = attrs.networking_parameters.get('baremetal_gateway');
+                if (utils.validateIP(baremetalGateway)) {
+                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
+                } else if (!utils.validateIpCorrespondsToCIDR(baremetalNetwork.get('cidr'), baremetalGateway)) {
+                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_ip_range');
+                }
+                var baremetalRangeErrors = utils.validateIpRanges([attrs.networking_parameters.get('baremetal_range')], baremetalNetwork.get('cidr'), true);
+                if (baremetalRangeErrors.length) {
+                    networkingParametersErrors.baremetal_range = baremetalRangeErrors;
+                }
             }
             if (!_.isEmpty(networkingParametersErrors)) {
                 errors.networking_parameters = networkingParametersErrors;

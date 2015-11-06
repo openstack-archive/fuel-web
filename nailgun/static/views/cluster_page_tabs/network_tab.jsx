@@ -55,9 +55,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
     var NetworkInputsMixin = {
         composeProps: function(attribute, isRange, isInteger) {
             var network = this.props.network,
-                isFloatingIPRange = attribute == 'floating_ranges',
-                ns = 'cluster_page.network_tab.' + (network && !isFloatingIPRange ?
-                        'network' : 'networking_parameters') + '.',
+                ns = 'cluster_page.network_tab.' + (network ? 'network' : 'networking_parameters') + '.',
                 error = this.getError(attribute) || null;
 
             // in case of verification error we need to pass an empty string to highlight the field only
@@ -72,7 +70,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 name: attribute,
                 label: i18n(ns + attribute),
                 value: this.getModel().get(attribute),
-                network: isFloatingIPRange ? null : network,
+                network: network,
                 networkConfiguration: this.props.networkConfiguration,
                 wrapperClassName: isRange ? attribute : false,
                 error: error
@@ -92,7 +90,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             var network = this.props.network,
                 errors;
 
-            if (network && attribute != 'floating_ranges') {
+            if (network) {
                 errors = validationErrors.networks && validationErrors.networks[network.id];
                 return errors && errors[attribute] || null;
             }
@@ -223,8 +221,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             var error = this.props.error || null,
                 attributeName = this.props.name,
                 attribute = this.getModel().get(attributeName),
-                ranges = !_.isUndefined(this.props.autoIncreaseWith) ?
-                    [attribute || '', this.props.autoIncreaseWith ? (attribute + this.props.autoIncreaseWith - 1 || '') : ''] :
+                ranges = this.props.autoIncreaseWith ?
+                    [attribute || 0, (attribute + this.props.autoIncreaseWith - 1 || 0)] :
                     attribute,
                 wrapperClasses = {
                     'form-group range row': true,
@@ -287,7 +285,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 />
                                 <controls.Input
                                     {...this.getRangeProps(true)}
-                                    disabled={this.props.disabled || _.isNumber(this.props.autoIncreaseWith)}
+                                    disabled={this.props.disabled || !!this.props.autoIncreaseWith}
                                     value={ranges[1]}
                                     error={error && error[1] ? '' : null}
                                 />
@@ -840,6 +838,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         render: function() {
             var networkParameters = this.props.networkConfiguration.get('networking_parameters'),
+                networks = this.props.networkConfiguration.get('networks'),
                 manager = networkParameters.get('net_manager'),
                 idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id',
                 ns = 'cluster_page.network_tab.networking_parameters.';
@@ -906,7 +905,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 <Range
                                     {...this.composeProps('floating_ranges', true)}
                                     rowsClassName='floating-ranges-rows'
-                                    hiddenControls={true}
+                                    hiddenControls
                                 />
                                 <div>
                                     {this.renderInput('internal_cidr')}
@@ -914,6 +913,16 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 </div>
                             </div>
                         ]
+                    }
+                    {networks.findWhere({name: 'baremetal'}) &&
+                        <div className='forms-box'>
+                            <Range
+                                {...this.composeProps('baremetal_range', true)}
+                                extendable={false}
+                                hiddenControls
+                            />
+                            {this.renderInput('baremetal_gateway')}
+                        </div>
                     }
                     <div className='forms-box'>
                         <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />

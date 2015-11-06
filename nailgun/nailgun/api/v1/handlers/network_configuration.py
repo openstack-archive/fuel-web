@@ -142,7 +142,12 @@ class ProviderHandler(BaseHandler):
             if task.status == consts.TASK_STATUSES.error:
                 raise self.http(400, task.message)
 
-        return self.serializer.serialize_for_cluster(cluster)
+        try:
+            resp = self.serializer.serialize_for_cluster(cluster)
+        except errors.OutOfIPs as exc:
+            raise self.http(400, exc.message)
+
+        return resp
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):

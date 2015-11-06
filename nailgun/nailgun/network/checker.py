@@ -27,11 +27,11 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.task.helpers import TaskHelper
 
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NeutronNetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
+from nailgun.objects.serializers \
     import NovaNetworkConfigurationSerializer
 
 
@@ -507,6 +507,7 @@ class NetworkCheck(object):
 
     def neutron_check_gateways(self):
         """Check that gateways are set if non-default node groups are used."""
+        objects.NodeGroupCollection.get_by_cluster_id(self.cluster.id).count()
         if objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster.id).count() < 2:
             return

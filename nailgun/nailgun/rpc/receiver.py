@@ -39,7 +39,7 @@ from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
 from nailgun.network import connectivity_check
 from nailgun.network import utils as net_utils
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects import ClusterPlugins
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import logs as logs_utils
 from nailgun.utils import reverse

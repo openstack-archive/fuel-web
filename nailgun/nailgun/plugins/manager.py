@@ -18,9 +18,9 @@ from six.moves import map
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects.plugin import ClusterPlugins
-from nailgun.objects.plugin import Plugin
-from nailgun.objects.plugin import PluginCollection
+from nailgun.objects import ClusterPlugins
+from nailgun.objects import Plugin
+from nailgun.objects import PluginCollection
 from nailgun.plugins.adapters import wrap_plugin
 
 

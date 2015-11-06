@@ -18,6 +18,7 @@ import copy
 import datetime
 import hashlib
 import mock
+from mock import patch
 
 from itertools import cycle
 from itertools import ifilter
@@ -587,19 +588,20 @@ class TestNodeObject(BaseIntegrationTest):
         }
         self._assert_cluster_create_data(network_data)
 
-    def test_apply_network_template(self):
+    @patch.object(objects.NodeGroup, 'get_by_uid')
+    def test_apply_network_template(self, get_by_uid_mock):
         node = self.env.create_node()
         template = self.env.read_fixtures(['network_template'])[0]
 
         group_name = 'group-custom-1'
-        with mock.patch('objects.NodeGroup.get_by_uid',
-                        return_value=NodeGroup(name=group_name)):
-            objects.Node.apply_network_template(node, template)
-            self.assertDictEqual(
-                node.network_template['templates'],
-                base.get_nodegroup_network_schema_template(
-                    template, group_name)
-            )
+        get_by_uid_mock.return_value = NodeGroup(name=group_name)
+
+        objects.Node.apply_network_template(node, template)
+        self.assertDictEqual(
+            node.network_template['templates'],
+            base.get_nodegroup_network_schema_template(
+                template, group_name)
+        )
 
     def test_update_w_error(self):
         self.env.create(

@@ -249,10 +249,16 @@ gulp.task('build', function(cb) {
             new webpack.optimize.UglifyJsPlugin({compress: {warnings: false}})
         );
     }
+    if (argv.watch) {
+        config.watch = true;
+    }
 
     rimraf.sync(config.output.path);
 
-    webpack(config).run(function(err, stats) {
+    var compiler = webpack(config);
+    var run = config.watch ? compiler.watch.bind(compiler, config.watchOptions) : compiler.run.bind(compiler);
+
+    run(function(err, stats) {
         if (err) return cb(err);
 
         gutil.log(stats.toString(WEBPACK_STATS_OPTIONS));
@@ -274,7 +280,7 @@ gulp.task('build', function(cb) {
                 .pipe(indexFilter.restore())
                 .pipe(gulp.dest(targetDir))
                 .on('end', cb);
-        } else {
+        } else if (!config.watch) {
             cb();
         }
     });

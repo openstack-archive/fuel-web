@@ -3,7 +3,17 @@
         "react"
     ],
     "ecmaFeatures": {
-        "jsx": true
+        "jsx": true,
+        "arrowFunctions": true,
+        "classes": true,
+        "defaultParams": true,
+        "destructuring": true,
+        "objectLiteralComputedProperties": true,
+        "objectLiteralShorthandMethods": true,
+        "objectLiteralShorthandProperties": true,
+        "restParams": true,
+        "spread": true,
+        "superInFunctions": true
     },
     "rules": {
         "no-cond-assign": 2,

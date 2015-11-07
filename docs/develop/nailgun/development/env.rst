@@ -279,6 +279,17 @@ Running Nailgun in Fake Mode
 
       gulp dev-server --dev-server-host=127.0.0.1 --dev-server-port=8080 --nailgun-host=127.0.0.1 --nailgun-port=8000
 
+    If you don't want to use a development server but would like to recompile
+    the bundle on any change, use::
+
+      gulp build --watch
+
+    If automatic rebuild on change doesn't work, most likely you need to
+    increase the limit of inotify watches::
+
+      echo 100000 | sudo tee /proc/sys/fs/inotify/max_user_watches
+
+
 Note: Diagnostic Snapshot is not available in a Fake mode.
 
 Running the Fuel System Tests

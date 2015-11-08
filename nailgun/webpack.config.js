@@ -17,14 +17,14 @@ module.exports = {
             {test: /\.html$/, loader: 'raw'},
             {test: /\.json$/, loader: 'json'},
             {test: /\.jison$/, loader: 'jison'},
-            {test: /\.jsx$/, loader: 'babel', exclude: /(node_modules|bower_components)/},
+            {test: /\.js$/, loader: 'babel', exclude: /(node_modules|vendor\/custom)\//},
             {test: /\.(woff|woff2|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/, loader: 'file'},
             {test: /\.(gif|png)$/, loader: 'file'}
         ]
     },
     resolve: {
         modulesDirectories: ['static', 'node_modules', 'vendor/custom'],
-        extensions: ['', '.js', '.jsx'],
+        extensions: ['', '.js'],
         alias: {
             underscore: 'lodash',
             react: 'react/addons',

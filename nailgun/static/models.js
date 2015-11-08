@@ -705,7 +705,7 @@ define([
         getMaxSize: function() {
             var volumes = this.collection.disk.get('volumes'),
                 diskAllocatedSpace = volumes.reduce(function(total, volume) {return this.get('name') == volume.get('name') ? total : total + volume.get('size');}, 0, this);
-            return this.collection.disk.get('size') - diskAllocatedSpace ;
+            return this.collection.disk.get('size') - diskAllocatedSpace;
         },
         validate: function(attrs, options) {
             var min = this.getMinimalSize(options.minimum);
@@ -770,7 +770,7 @@ define([
         model: models.Interface,
         generateBondName: function(base) {
             var index, proposedName;
-            for (index = 0;; index += 1) {
+            for (index = 0; ; index += 1) {
                 proposedName = base + index;
                 if (!this.any({name: proposedName})) return proposedName;
             }

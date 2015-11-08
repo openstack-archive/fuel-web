@@ -432,7 +432,7 @@ function(require, $, _, i18n, Backbone, stickit, utils, models, createClusterWiz
                                     disabled: this.checkRestrictions(_.where(attributeConfig.restrictions, {action: 'disable'})) ? 'disabled' : '',
                                     descriptionClasses: configToUse.descriptionClasses,
                                     label: attributeConfig.label,
-                                    hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription ,
+                                    hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
                                     description: attributeConfig.description
                                 })));
                             break;

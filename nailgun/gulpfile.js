@@ -147,26 +147,10 @@ var styleFiles = [
     '!static/vendor/**'
 ];
 
-gulp.task('jscs:fix', function() {
-    var jscs = require('gulp-jscs');
-    var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
-    return gulp.src(jsFiles, {base: '.'})
-        .pipe(jscs(_.extend({fix: true}, jscsConfig)))
-        .pipe(gulp.dest('.'));
-});
-
-gulp.task('jscs', function() {
-    var jscs = require('gulp-jscs');
-    var jscsConfig = JSON.parse(fs.readFileSync('./.jscsrc'));
-    return gulp.src(jsFiles)
-        .pipe(jscs(jscsConfig));
-});
-
 gulp.task('eslint', function() {
     var eslint = require('gulp-eslint');
-    var eslintConfig = JSON.parse(fs.readFileSync('./.eslintrc'));
     return gulp.src(jsFiles)
-        .pipe(eslint(eslintConfig))
+        .pipe(eslint())
         .pipe(eslint.format())
         .pipe(eslint.failAfterError());
 });
@@ -200,7 +184,6 @@ gulp.task('lintspaces:styles', function() {
 });
 
 gulp.task('lint', [
-    'jscs',
     'eslint',
     'lintspaces:js',
     'lintspaces:styles'

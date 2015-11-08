@@ -214,8 +214,7 @@ define([
                                 event = createEvent('DragEvent');
                                 event.initDragEvent(eventName, true, true, window, 0, screenX, screenY, clientX,
                                     clientY, false, false, false, false, 0, null, dataTransfer);
-                            }
-                            catch (error) {
+                            } catch (error) {
                                 event = createCustomEvent(eventName, screenX, screenY, clientX, clientY);
                                 event.dataTransfer = dataTransfer;
                             }
@@ -234,8 +233,7 @@ define([
                                 event = createEvent('MouseEvent');
                                 event.initMouseEvent(eventName, true, true, window, 0, screenX, screenY, clientX, clientY,
                                     false, false, false, false, 0, null);
-                            }
-                            catch (error) {
+                            } catch (error) {
                                 event = createCustomEvent(eventName, screenX, screenY, clientX, clientY);
                             }
 
@@ -279,8 +277,7 @@ define([
                     try {
                         dragAndDrop(dragFrom, dragTo);
                         done(null);
-                    }
-                    catch (error) {
+                    } catch (error) {
                         done(error.message);
                     }
                 }, [dragSource, dragTarget]).finally(function(result) {

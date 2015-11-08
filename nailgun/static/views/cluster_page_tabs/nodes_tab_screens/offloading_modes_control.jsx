@@ -113,7 +113,7 @@ function($, _, React, i18n, utils) {
                 }
                 return excerpt;
             } else {
-                return states[null];
+                return states.null;
             }
         },
         renderChildModes: function(modes, level) {

@@ -147,11 +147,11 @@ define([
                     var activeFiltersPanelSelector = '.active-filters',
                         moreControlSelector = '.filters .more-control';
                     return this.remote
-                        .assertElementNotExists(activeFiltersPanelSelector , 'Environment has no active filters by default')
+                        .assertElementNotExists(activeFiltersPanelSelector, 'Environment has no active filters by default')
                         .clickByCssSelector(filtersButtonSelector)
                         .assertElementsExist('.filters .filter-control', 2, 'Filters panel has 2 default filters')
                         .clickByCssSelector('.filter-by-roles')
-                        .assertElementNotExists('.filter-by-roles [type=checkbox]:checked' , 'There are no active options in Roles filter')
+                        .assertElementNotExists('.filter-by-roles [type=checkbox]:checked', 'There are no active options in Roles filter')
                         .assertElementNotExists('.filters .filter-control .btn-remove-filter', 'Default filters can not be deleted from filters panel')
                         .assertElementNotExists('.filters .btn-reset-filters', 'No filters to be reset')
                         .clickByCssSelector(moreControlSelector + ' button')

@@ -61,7 +61,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                     Cookies.set('token', result.access.token.id);
 
                     return deferred;
-                } catch(e) {
+                } catch (e) {
                     return $.Deferred().reject();
                 }
             }, this)).fail(_.bind(function() {
@@ -92,7 +92,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                     Cookies.set('token', result.access.token.id);
 
                     return deferred;
-                } catch(e) {
+                } catch (e) {
                     return $.Deferred().reject();
                 }
             }, this));

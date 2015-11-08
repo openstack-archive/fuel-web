@@ -45,11 +45,10 @@
   "devDependencies": {
     "chai": "~3.2.0",
     "es5-shim": "4.1.11",
+    "eslint": "1.7.3",
     "eslint-plugin-react": "3.1.0",
-    "esprima-fb": "13001.1001.0-dev-harmony-fb",
     "glob": "~5.0.5",
     "gulp-eslint": "1.0.0",
-    "gulp-jscs": "1.6.0",
     "gulp-lintspaces": "0.3.1",
     "gulp-shell": "0.4.1",
     "intern": "2.2.2",

@@ -135,7 +135,6 @@ gulp.task('jison', function() {
 
 var jsFiles = [
     'static/**/*.js',
-    'static/**/*.jsx',
     '!static/build/**',
     '!static/vendor/**',
     '!static/expression/parser.js',

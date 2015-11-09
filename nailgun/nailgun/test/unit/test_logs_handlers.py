@@ -15,6 +15,7 @@
 #    under the License.
 
 import copy
+import gzip
 import os
 import shutil
 import tempfile
@@ -265,6 +266,7 @@ class TestLogs(BaseIntegrationTest):
             },
             headers=self.default_headers
         )
+
         self.assertEqual(200, resp.status_code)
         response = resp.json_body
         self.assertEqual(response['entries'], [log_entries[1]])
@@ -294,6 +296,291 @@ class TestLogs(BaseIntegrationTest):
         self.assertFalse(response['has_more'])
         self.assertEqual(response['to'], total_len)
         self.assertEqual(response['from'], 0)
+
+    def test_fetch_all_logs_logrotated_absent(self):
+        """Check fetching log entries when foo.log exists but foo.log.1.gz is
+        absent."""
+        log_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL111',
+                'text1',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL222',
+                'text2',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL333',
+                'text3',
+            ],
+        ]
+
+        self.env.create_cluster(api=False)
+        self._create_logfile_for_node(settings.LOGS[0], log_entries)
+
+        total_len = len(''.join(map(self._format_log_entry, log_entries)))
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={'source': settings.LOGS[0]['id']},
+            headers=self.default_headers
+        )
+
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(
+            response['entries'], list(reversed(log_entries)))
+        self.assertFalse(response['has_more'])
+        self.assertEqual(total_len, response['to'])
+        self.assertEqual(0, response['from'])
+
+    def test_fetch_all_logs_logrotated_is_present(self):
+        """Check fetching log entries when foo.log and foo.log.1.gz log files
+        are present."""
+        log_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL111',
+                'text1',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL222',
+                'text2',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL333',
+                'text3',
+            ],
+        ]
+
+        logrotated_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL444',
+                'text4',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL555',
+                'text5',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL666',
+                'text6',
+            ],
+        ]
+
+        self.env.create_cluster(api=False)
+        self._create_logfile_for_node(settings.LOGS[0], log_entries)
+        self._create_logrotated_logfile_for_node(
+            settings.LOGS[0], logrotated_entries)
+
+        total_len = len(''.join(map(self._format_log_entry, log_entries)))
+        total_len += len(''.join(map(
+            self._format_log_entry, logrotated_entries)))
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={'source': settings.LOGS[0]['id']},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(
+            list(reversed(log_entries)) + list(reversed(logrotated_entries)),
+            response['entries'])
+        self.assertFalse(response['has_more'])
+        self.assertEqual(0, response['from'])
+        self.assertEqual(total_len, response['to'])
+
+    def test_fetch_older_logs_from_logrotated_only(self):
+        """Check fetching older entries when foo.log and foo.log.1.gz log
+        files are present."""
+        log_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL1',
+                'text1',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL2',
+                'text2',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL3',
+                'text3',
+            ],
+        ]
+
+        logrotated_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL4444',
+                'text4',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL5555',
+                'text5',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL6666',
+                'text6',
+            ],
+        ]
+
+        self.env.create_cluster(api=False)
+        self._create_logfile_for_node(settings.LOGS[0], log_entries)
+        self._create_logrotated_logfile_for_node(
+            settings.LOGS[0], logrotated_entries)
+
+        log_len = len(''.join(map(self._format_log_entry, log_entries)))
+        logrotated_len = len(''.join(map(
+            self._format_log_entry, logrotated_entries)))
+        total_len = log_len + logrotated_len
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={'source': settings.LOGS[0]['id'],
+                    'fetch_older': True,
+                    'from': logrotated_len,
+                    'to': total_len},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(list(reversed(logrotated_entries)),
+                         response['entries'])
+        self.assertFalse(response['has_more'])
+        self.assertEqual(logrotated_len, response['from'])
+        self.assertEqual(total_len, response['to'])
+
+    def test_fetch_older_logs_from_current_and_logrotated(self):
+        """Check fetching older entries when foo.log and foo.log.1.gz log
+        files are present."""
+        log_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL111',
+                'text1',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL222',
+                'text2',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL333',
+                'text3',
+            ],
+        ]
+
+        logrotated_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL444',
+                'text4',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL555',
+                'text5',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL666',
+                'text6',
+            ],
+        ]
+
+        self.env.create_cluster(api=False)
+        self._create_logfile_for_node(settings.LOGS[0], log_entries)
+        self._create_logrotated_logfile_for_node(
+            settings.LOGS[0], logrotated_entries)
+
+        log_len = len(''.join(map(self._format_log_entry, log_entries)))
+        logrotated_len = len(''.join(map(
+            self._format_log_entry, logrotated_entries)))
+        total_len = log_len + logrotated_len
+
+        from_byte = logrotated_len + len(''.join(map(
+            self._format_log_entry, list(reversed(log_entries))[:2])))
+        to_byte = total_len
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={'source': settings.LOGS[0]['id'],
+                    'fetch_older': True,
+                    'from': from_byte,
+                    'to': to_byte},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(5, len(response['entries']))
+        self.assertEqual(list(reversed(log_entries[:2]))
+                         + list(reversed(logrotated_entries)),
+                         response['entries'])
+        self.assertFalse(response['has_more'])
+        self.assertEqual(from_byte, response['from'])
+        self.assertEqual(to_byte, response['to'])
+
+    def test_fetch_all_logs_current_log_is_empty(self):
+        """Check fetching all entries when foo.log and foo.log.1.gz log
+        files are present and current log is empty."""
+        log_entries = []
+
+        logrotated_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL444',
+                'text4',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL555',
+                'text5',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL666',
+                'text6',
+            ],
+        ]
+
+        self.env.create_cluster(api=False)
+        self._create_logfile_for_node(settings.LOGS[0], log_entries)
+        self._create_logrotated_logfile_for_node(
+            settings.LOGS[0], logrotated_entries)
+
+        log_len = len(''.join(map(self._format_log_entry, log_entries)))
+        logrotated_len = len(''.join(map(
+            self._format_log_entry, logrotated_entries)))
+        total_len = log_len + logrotated_len
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={'source': settings.LOGS[0]['id']},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(3, len(response['entries']))
+        self.assertEqual(list(reversed(logrotated_entries)),
+                         response['entries'])
+        self.assertFalse(response['has_more'])
+        self.assertEqual(0, response['from'])
+        self.assertEqual(total_len, response['to'])
 
     def test_backward_reader(self):
         f = tempfile.TemporaryFile(mode='r+')
@@ -379,6 +666,20 @@ class TestLogs(BaseIntegrationTest):
         else:
             log_file = log_config['path']
         with open(log_file, 'w') as f:
+            for log_entry in log_entries:
+                f.write(self._format_log_entry(log_entry))
+                f.flush()
+
+    def _create_logrotated_logfile_for_node(
+            self, log_config, log_entries, node=None):
+        if log_config['remote']:
+            log_dir = os.path.join(self.log_dir, node.ip)
+            not os.path.isdir(log_dir) and os.makedirs(log_dir)
+            log_file = os.path.join(log_dir, log_config['path'])
+        else:
+            log_file = log_config['path']
+        log_file = '{0}.1.gz'.format(log_file)
+        with gzip.open(log_file, 'wb') as f:
             for log_entry in log_entries:
                 f.write(self._format_log_entry(log_entry))
                 f.flush()

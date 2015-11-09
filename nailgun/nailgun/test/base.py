@@ -1169,6 +1169,16 @@ class EnvironmentManager(object):
             headers=self.default_headers
         )
 
+    def _delete_network_group(self, ng_id, expect_errors=False):
+        return self.app.delete(
+            reverse(
+                'NetworkGroupHandler',
+                kwargs={'obj_id': ng_id}
+            ),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+
 
 class BaseTestCase(TestCase):
 

@@ -1295,6 +1295,28 @@ class CheckBeforeDeploymentTask(object):
                          'configuration template').format(error_roles)
             raise errors.NetworkTemplateMissingNetRoles(error_msg)
 
+        template = (cluster.network_config.configuration_template
+                    ['adv_net_template'])
+        for node_group in cluster.node_groups:
+            required_nets = set(
+                template[node_group.name]['network_assignments'].keys())
+            ng_nets = set(ng.name for ng in node_group.networks)
+            # Admin net doesn't have a nodegroup so must be added to
+            # the default group
+            if node_group.name == consts.NODE_GROUPS.default:
+                ng_nets.add(consts.NETWORKS.fuelweb_admin)
+
+            missing_nets = required_nets - ng_nets
+            if missing_nets:
+                error_msg = ('The following network groups are missing: {0} '
+                             'from node group {1} and are required by the '
+                             'current network '
+                             'template.'.format(
+                                 ','.join(missing_nets),
+                                 node_group.name)
+                             )
+                raise errors.NetworkTemplateMissingNetworkGroup(error_msg)
+
     @classmethod
     def _check_deployment_graph_for_correctness(self, task):
         """Check that deployment graph doesn't have existing dependencies

@@ -18,10 +18,16 @@
 Handlers dealing with logs
 """
 
+from collections import deque
+from contextlib import contextmanager
+import glob
+import gzip
 from itertools import dropwhile
 import logging
 import os
 import re
+import struct
+import tempfile
 import time
 
 from oslo_serialization import jsonutils
@@ -39,6 +45,17 @@ from nailgun.task.task import DumpTask
 
 
 logger = logging.getLogger(__name__)
+
+
+# It turns out that strftime/strptime are costly functions in Python
+# http://stackoverflow.com/questions/13468126/a-faster-strptime
+# We don't call them if the log and UI date formats aren't very different
+STRPTIME_PERFORMANCE_HACK = {}
+if settings.UI_LOG_DATE_FORMAT == '%Y-%m-%d %H:%M:%S':
+    STRPTIME_PERFORMANCE_HACK = {
+        '%Y-%m-%dT%H:%M:%S': lambda date: date.replace('T', ' '),
+        '%Y-%m-%d %H:%M:%S': lambda date: date,
+    }
 
 
 def read_backwards(file, from_byte=None, bufsize=0x20000):
@@ -81,114 +98,195 @@ def read_backwards(file, from_byte=None, bufsize=0x20000):
             pass
 
 
-# It turns out that strftime/strptime are costly functions in Python
-# http://stackoverflow.com/questions/13468126/a-faster-strptime
-# We don't call them if the log and UI date formats aren't very different
-STRPTIME_PERFORMANCE_HACK = {}
-if settings.UI_LOG_DATE_FORMAT == '%Y-%m-%d %H:%M:%S':
-    STRPTIME_PERFORMANCE_HACK = {
-        '%Y-%m-%dT%H:%M:%S': lambda date: date.replace('T', ' '),
-        '%Y-%m-%d %H:%M:%S': lambda date: date,
-    }
+class LogParser(object):
+
+    def __init__(self, log_file, fetch_older=False, max_entries=None,
+                 log_config={}, regexp=None, level=None):
+
+        self.log_file = log_file
+        self.fetch_older = fetch_older
+        self.max_entries = max_entries
+        self.regexp = regexp
+        self.level = level
+
+        self.log_date_format = log_config['date_format']
+        self.multiline = log_config.get('multiline', False)
+        self.skip_regexp = None
+        if 'skip_regexp' in log_config:
+            self.skip_regexp = re.compile(log_config['skip_regexp'])
+
+        self.allowed_levels = log_config['levels']
+        if self.level:
+            self.allowed_levels = list(dropwhile(lambda l: l != self.level,
+                                                 log_config['levels']))
+
+        if self.log_date_format in STRPTIME_PERFORMANCE_HACK:
+            self.strptime_function = \
+                STRPTIME_PERFORMANCE_HACK[self.log_date_format]
+        else:
+            self.strptime_function = lambda date: time.strftime(
+                settings.UI_LOG_DATE_FORMAT,
+                time.strptime(date, self.log_date_format))
+
+    def read_lines(self, fileobj, from_byte=None):
+        return read_backwards(fileobj, from_byte=from_byte)
+
+    def parse_log_file(self, from_byte=-1, to_byte=0):
+        entries = []
+        has_more = False
+        with self.open_file() as f:
+            pos = self.get_file_pos(f)
+            if from_byte != -1 and self.fetch_older:
+                pos = from_byte
+            multilinebuf = []
+            for line in self.read_lines(f, from_byte=pos):
+                pos -= len(line)
+                if not self.fetch_older and pos < to_byte:
+                    has_more = pos > 0
+                    break
+                entry = line.rstrip('\n')
+                if not len(entry):
+                    continue
+                if self.skip_regexp and self.skip_regexp.match(entry):
+                    continue
+                m = self.regexp.match(entry)
+                if m is None:
+                    if self.multiline:
+                        #  Add next multiline part to last entry if it exist.
+                        multilinebuf.append(entry)
+                    else:
+                        logger.debug("Unable to parse log entry '%s' from %s",
+                                     entry, self.log_file)
+                    continue
+                entry_text = m.group('text')
+                if len(multilinebuf):
+                    multilinebuf.reverse()
+                    entry_text += '\n' + '\n'.join(multilinebuf)
+                    multilinebuf = []
+                entry_level = m.group('level').upper() or 'INFO'
+                if self.level and not (entry_level in self.allowed_levels):
+                    continue
+                try:
+                    entry_date = self.strptime_function(m.group('date'))
+                except ValueError:
+                    logger.debug("Unable to parse date from log entry."
+                                 " Date format: %r, date part of entry: %r",
+                                 self.log_date_format,
+                                 m.group('date'))
+                    continue
+
+                entries.append([
+                    entry_date,
+                    entry_level,
+                    entry_text
+                ])
+
+                if self.max_entries and len(entries) >= self.max_entries:
+                    has_more = True
+                    break
+
+            if self.fetch_older or (not self.fetch_older
+                                    and from_byte == -1):
+                if pos >= 0:
+                    from_byte = pos
+                if pos <= 0:
+                    has_more = False
+
+        return (entries, has_more, from_byte)
+
+    def open_file(self):
+        return open(self.log_file)
+
+    def get_file_pos(self, fileobj=None):
+        # we need to calculate current position manually instead
+        # of using tell() because read_backwards uses buffering
+        fileobj.seek(0, os.SEEK_END)
+        return fileobj.tell()
+
+    def get_file_size(self):
+        return os.stat(self.log_file).st_size
 
 
-def read_log(
-        log_file=None,
-        level=None,
-        log_config={},
-        max_entries=None,
-        regexp=None,
-        from_byte=-1,
-        fetch_older=False,
-        to_byte=0,
-        **kwargs):
-    has_more = False
+class GzipLogParser(LogParser):
+
+    @contextmanager
+    def open_file(self):
+        yield gzip.open(self.log_file)
+
+    def get_file_pos(self, fileobj=None):
+        with open(self.log_file) as f:
+            f.seek(-4, 2)
+            return struct.unpack("<I", f.read(4))[0]
+
+    def read_lines(self, fileobj, from_byte=None):
+        return reversed(deque(fileobj))
+
+    def get_file_size(self):
+        return self.get_file_pos()
+
+
+def read_log(log_file=None, level=None, log_config={},
+             max_entries=None, regexp=None, from_byte=-1,
+             fetch_older=False, to_byte=0, **kwargs):
+
     entries = []
-    log_date_format = log_config['date_format']
-    multiline = log_config.get('multiline', False)
-    skip_regexp = None
-    if 'skip_regexp' in log_config:
-        skip_regexp = re.compile(log_config['skip_regexp'])
+    log_parsers = []
+    filenames = glob.iglob(log_file + '*')
+    for filename in sorted(filenames):
+        if filename.endswith('.gz'):
+            log_parsers.append(
+                GzipLogParser(
+                    filename, fetch_older=fetch_older,
+                    max_entries=max_entries, log_config=log_config,
+                    regexp=regexp, level=level))
+        else:
+            log_parsers.append(
+                LogParser(
+                    filename, fetch_older=fetch_older, max_entries=max_entries,
+                    log_config=log_config, regexp=regexp, level=level))
 
-    allowed_levels = log_config['levels']
-    if level:
-        allowed_levels = list(dropwhile(lambda l: l != level,
-                                        log_config['levels']))
+    total_log_files_size = 0
+    for parser in log_parsers:
+        total_log_files_size += parser.get_file_size()
 
-    log_file_size = os.stat(log_file).st_size
+    if ((not fetch_older and to_byte >= total_log_files_size)
+            or (fetch_older and from_byte == 0)):
+        return jsonutils.dumps({
+            'entries': [],
+            'from': from_byte,
+            'to': total_log_files_size,
+            'has_more': False,
+        })
 
-    if log_date_format in STRPTIME_PERFORMANCE_HACK:
-        strptime_function = STRPTIME_PERFORMANCE_HACK[log_date_format]
-    else:
-        strptime_function = lambda date: time.strftime(
-            settings.UI_LOG_DATE_FORMAT,
-            time.strptime(date, log_date_format)
-        )
-
-    with open(log_file, 'r') as f:
-        # we need to calculate current position manually instead of using
-        # tell() because read_backwards uses buffering
-        f.seek(0, os.SEEK_END)
-        pos = f.tell()
-        if from_byte != -1 and fetch_older:
-            pos = from_byte
-        multilinebuf = []
-        for line in read_backwards(f, from_byte=pos):
-            pos -= len(line)
-            if not fetch_older and pos < to_byte:
-                has_more = pos > 0
+    entries = []
+    parse_from_byte = from_byte
+    logs_file_size = 0
+    parsed_from_byte = 0
+    for parser in log_parsers:
+        if not fetch_older:
+            items, has_more, from_byte = \
+                parser.parse_log_file(to_byte=to_byte)
+            if from_byte > 0:
+                parsed_from_byte += from_byte
+            entries += items
+            if to_byte:
+                to_byte -= parser.get_file_size()
+            if to_byte < 0:
                 break
-            entry = line.rstrip('\n')
-            if not len(entry):
-                continue
-            if skip_regexp and skip_regexp.match(entry):
-                continue
-            m = regexp.match(entry)
-            if m is None:
-                if multiline:
-                    #  Add next multiline part to last entry if it exist.
-                    multilinebuf.append(entry)
-                else:
-                    logger.debug("Unable to parse log entry '%s' from %s",
-                                 entry, log_file)
-                continue
-            entry_text = m.group('text')
-            if len(multilinebuf):
-                multilinebuf.reverse()
-                entry_text += '\n' + '\n'.join(multilinebuf)
-                multilinebuf = []
-            entry_level = m.group('level').upper() or 'INFO'
-            if level and not (entry_level in allowed_levels):
-                continue
-            try:
-                entry_date = strptime_function(m.group('date'))
-            except ValueError:
-                logger.debug("Unable to parse date from log entry."
-                             " Date format: %r, date part of entry: %r",
-                             log_date_format,
-                             m.group('date'))
-                continue
-
-            entries.append([
-                entry_date,
-                entry_level,
-                entry_text
-            ])
-
-            if len(entries) >= max_entries:
-                has_more = True
-                break
-
-        if fetch_older or (not fetch_older and from_byte == -1):
-            from_byte = pos
-            if from_byte == 0:
-                has_more = False
+        else:
+            logs_file_size += parser.get_file_size()
+            if parse_from_byte < logs_file_size:
+                items, has_more, from_byte = \
+                    parser.parse_log_file(from_byte=parse_from_byte)
+                if from_byte > 0:
+                    parsed_from_byte += from_byte
+                entries += items
 
     return {
         'entries': entries,
-        'from': from_byte,
-        'to': log_file_size,
-        'has_more': has_more,
+        'from': parsed_from_byte,
+        'to': total_log_files_size,
+        'has_more': has_more
     }
 
 
@@ -224,24 +322,8 @@ class LogEntryCollectionHandler(BaseHandler):
             * 500 (node has no assigned ip)
             * 500 (invalid regular expression in config)
         """
-        data = self.read_and_validate_data()
 
-        log_file = data['log_file']
-        fetch_older = data['fetch_older']
-        from_byte = data['from_byte']
-        to_byte = data['to_byte']
-
-        log_file_size = os.stat(log_file).st_size
-        if (not fetch_older and to_byte >= log_file_size) or \
-                (fetch_older and from_byte == 0):
-            return jsonutils.dumps({
-                'entries': [],
-                'from': from_byte,
-                'to': log_file_size,
-                'has_more': False,
-            })
-
-        return read_log(**data)
+        return read_log(**self.read_and_validate_data())
 
     def read_and_validate_data(self):
         user_data = web.input()

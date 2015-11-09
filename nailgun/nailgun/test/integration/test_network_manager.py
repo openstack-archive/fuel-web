@@ -1226,8 +1226,12 @@ class TestTemplateManager70(BaseNetworkManagerTest):
             self.net_template
         )
 
+    def _get_network_by_name(self, name, cluster=None):
+        cluster = cluster or self.env.clusters[0]
+        return [n for n in cluster.network_groups if n.name == name][0]
+
     def _check_nic_mapping(self, node, expected_mapping):
-        for nic in node.nic_interfaces + node.bond_interfaces:
+        for nic in node.interfaces:
             assigned_nets = [net['name'] for net in nic.assigned_networks]
             self.assertItemsEqual(assigned_nets, expected_mapping[nic.name])
 
@@ -1246,9 +1250,8 @@ class TestTemplateManager70(BaseNetworkManagerTest):
 
         # Network groups should have their vlan updated to match what
         # is defined in the template.
-        node_networks = self.nm.get_node_networks(node)
-        keystone_ng = self.nm.get_network_by_netname('keystone', node_networks)
-        self.assertEqual(keystone_ng['vlan'], 202)
+        keystone_ng = self._get_network_by_name('keystone')
+        self.assertEqual(keystone_ng.vlan_start, 202)
 
     def test_get_interfaces_from_template(self):
         expected_interfaces = {
@@ -1317,3 +1320,36 @@ class TestTemplateManager70(BaseNetworkManagerTest):
 
         interfaces = self.nm.get_interfaces_from_template(self.env.nodes[0])
         self.assertItemsEqual(interfaces, expected_interfaces)
+
+    def test_reassign_networks_based_on_template(self):
+        expected_mapping = {
+            'eth0': ['fuelweb_admin'],
+            'eth1': ['public', 'storage'],
+            'eth2': ['murano'],
+            'eth3': [],
+            'eth4': ['mongo', 'keystone'],
+            'eth5': [],
+            'lnxbond0': ['management']
+        }
+        node = self.env.nodes[0]
+
+        # All networks should be mapped as expected
+        self._check_nic_mapping(node, expected_mapping)
+
+        # When a network group is deleted it should be skipped
+        # when the template is applied.
+        keystone_ng = self._get_network_by_name('keystone')
+        self.env._delete_network_group(keystone_ng.id)
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template
+        )
+        missing_net_mapping = expected_mapping.copy()
+        missing_net_mapping['eth4'] = ['mongo']
+        self._check_nic_mapping(node, missing_net_mapping)
+
+        # Adding a new network group should reassign all networks on all
+        # nodes based on the current template
+        self.env._create_network_group(name='keystone', vlan_start=None)
+        self._check_nic_mapping(node, expected_mapping)

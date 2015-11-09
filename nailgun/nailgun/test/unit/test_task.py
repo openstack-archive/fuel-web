@@ -434,6 +434,49 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             task.CheckBeforeDeploymentTask._validate_network_template,
             self.task)
 
+    def test_missing_network_group_with_template(self):
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+        public = [n for n in self.cluster.network_groups
+                  if n.name == consts.NETWORKS.public][0]
+        self.env._delete_network_group(public.id)
+
+        self.assertRaisesRegexp(
+            errors.NetworkTemplateMissingNetworkGroup,
+            "The following network groups are missing: public",
+            task.CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+    def test_missing_network_group_with_template_multi_ng(self):
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        resp = self.env.create_node_group(name='group-custom-1',
+                                          cluster_id=self.cluster.id)
+        del self.cluster.nodes[0]
+        ng = objects.NodeGroup.get_by_uid(resp.json_body['id'])
+        self.env.create_nodes_w_interfaces_count(
+            1, 5,
+            roles=['controller'],
+            cluster_id=self.cluster.id,
+            group_id=ng.id
+        )
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+        public = [n for n in ng.networks
+                  if n.name == consts.NETWORKS.public][0]
+        self.env._delete_network_group(public.id)
+
+        self.assertRaisesRegexp(
+            errors.NetworkTemplateMissingNetworkGroup,
+            ("The following network groups are missing: public "
+             ".* group-custom-1"),
+            task.CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
     def test_check_public_networks(self):
         cluster = self.env.clusters[0]
         self.env.create_nodes(

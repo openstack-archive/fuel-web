@@ -528,7 +528,8 @@
                     ],
                     "roles": {
                         "storage": "br-storage",
-                        "ceph/public": "br-storage"
+                        "ceph/public": "br-storage",
+                        "ceph/replication": "br-storage"
                     }
                 },
                 "public": {
@@ -562,6 +563,7 @@
                     ],
                     "roles": {
                         "public/vip": "br-ex",
+                        "ceph/radosgw": "br-ex",
                         "neutron/floating": "br-floating",
                         "ex": "br-ex"
                     }

@@ -21,6 +21,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.network_group import NetworkGroupSerializer
@@ -56,6 +57,7 @@ class NetworkGroup(NailgunObject):
         """
         instance = super(NetworkGroup, cls).create(data)
         cls._create_ip_ranges_on_notation(instance)
+        cls._reassign_template_networks(instance)
         db().refresh(instance)
         return instance
 
@@ -212,6 +214,16 @@ class NetworkGroup(NailgunObject):
             models.IPAddr.network == instance.id
         ).delete()
         db().flush()
+
+    @classmethod
+    def _reassign_template_networks(cls, instance):
+        cluster = instance.nodegroup.cluster
+        if not cluster.network_config.configuration_template:
+            return
+
+        nm = Cluster.get_network_manager(cluster)
+        for node in cluster.nodes:
+            nm.assign_networks_by_template(node)
 
 
 class NetworkGroupCollection(NailgunCollection):

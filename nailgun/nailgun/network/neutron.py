@@ -362,9 +362,8 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
     def assign_networks_by_template(cls, node):
         """Configures a node's network-to-nic mapping based on its template.
 
-        This also creates bonds in the database, ensures network
-        groups match the data in the template and all networks
-        are assigned to the correct interface or bond.
+        This also creates bonds in the database and ensures network
+        groups are assigned to the correct interface or bond.
         """
         interfaces = cls.get_interfaces_from_template(node)
 
@@ -390,15 +389,20 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
                 net_db = objects.NetworkGroup.get_from_node_group_by_name(
                     node.group_id, network)
 
-            # Ensure network_group configuration is consistent
-            # with the template
-            if vlan != net_db.vlan_start:
-                net_db.vlan_start = vlan
-                db().add(net_db)
-                db().flush()
+            if not net_db:
+                logger.warning(
+                    ("Failed to assign network {0} on node {1}"
+                     " because it does not exist.").format(network, node.id))
+            else:
+                # Ensure network_group configuration is consistent
+                # with the template
+                if vlan != net_db.vlan_start:
+                    net_db.vlan_start = vlan
+                    db().add(net_db)
+                    db().flush()
 
-            ng = {'id': net_db.id}
-            node_ifaces[iface]['assigned_networks'].append(ng)
+                ng = {'id': net_db.id}
+                node_ifaces[iface]['assigned_networks'].append(ng)
 
             if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 nic = objects.Node.get_nic_by_name(node, iface)

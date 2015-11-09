@@ -797,7 +797,7 @@
             type: "checkbox"
             restrictions:
               - "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
-              - "settings:storage.images_ceph.value == true": "Ironic requires Swift as a backend for Glance image service."
+              - "settings:storage.images_ceph.value == true and settings:storage.objects_ceph.value == false": "Ironic requires Swift or RadosGW for Glance images."
         common:
           metadata:
             label: "Common"
@@ -1348,7 +1348,6 @@
           weight: 40
           restrictions:
             - "Network.manager != 'neutron-vlan'": "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
-            - "Storage.ceph == 'enable'": "dialog.create_cluster_wizard.additional.ironic_storage_mode_alert"
       Ready: {}
     vmware_attributes_metadata:
       editable:

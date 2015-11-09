@@ -15,10 +15,9 @@
 #    under the License.
 
 """
-Handlers dealing with logs
+Handlers dealing with logs.
 """
 
-from itertools import dropwhile
 import logging
 import os
 import re
@@ -36,164 +35,14 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 from nailgun.task.task import DumpTask
+from nailgun.utils.logs import LogrotatedLogParser
 
 
 logger = logging.getLogger(__name__)
 
 
-def read_backwards(file, from_byte=None, bufsize=0x20000):
-    cache_pos = file.tell()
-    file.seek(0, os.SEEK_END)
-    size = file.tell()
-    file.seek(cache_pos, os.SEEK_SET)
-    if size == 0:
-        return
-    if from_byte is None:
-        from_byte = size
-    lines = ['']
-    read_size = bufsize
-    rem = from_byte % bufsize
-    if rem == 0:
-        # Perform bufsize reads only
-        pos = max(0, (from_byte // bufsize - 1) * bufsize)
-    else:
-        # One more iteration will be done to read rem bytes so that we
-        # are aligned to exactly bufsize reads later on
-        read_size = rem
-        pos = (from_byte // bufsize) * bufsize
-
-    while pos >= 0:
-        file.seek(pos, os.SEEK_SET)
-        data = file.read(read_size) + lines[0]
-        lines = re.findall('[^\n]*\n?', data)
-        ix = len(lines) - 2
-        while ix > 0:
-            yield lines[ix]
-            ix -= 1
-        pos -= bufsize
-        read_size = bufsize
-    else:
-        yield lines[0]
-        # Set cursor position to last read byte
-        try:
-            file.seek(max(0, pos), os.SEEK_SET)
-        except IOError:
-            pass
-
-
-# It turns out that strftime/strptime are costly functions in Python
-# http://stackoverflow.com/questions/13468126/a-faster-strptime
-# We don't call them if the log and UI date formats aren't very different
-STRPTIME_PERFORMANCE_HACK = {}
-if settings.UI_LOG_DATE_FORMAT == '%Y-%m-%d %H:%M:%S':
-    STRPTIME_PERFORMANCE_HACK = {
-        '%Y-%m-%dT%H:%M:%S': lambda date: date.replace('T', ' '),
-        '%Y-%m-%d %H:%M:%S': lambda date: date,
-    }
-
-
-def read_log(
-        log_file=None,
-        level=None,
-        log_config={},
-        max_entries=None,
-        regexp=None,
-        from_byte=-1,
-        fetch_older=False,
-        to_byte=0,
-        **kwargs):
-    has_more = False
-    entries = []
-    log_date_format = log_config['date_format']
-    multiline = log_config.get('multiline', False)
-    skip_regexp = None
-    if 'skip_regexp' in log_config:
-        skip_regexp = re.compile(log_config['skip_regexp'])
-
-    allowed_levels = log_config['levels']
-    if level:
-        allowed_levels = list(dropwhile(lambda l: l != level,
-                                        log_config['levels']))
-
-    log_file_size = os.stat(log_file).st_size
-
-    if log_date_format in STRPTIME_PERFORMANCE_HACK:
-        strptime_function = STRPTIME_PERFORMANCE_HACK[log_date_format]
-    else:
-        strptime_function = lambda date: time.strftime(
-            settings.UI_LOG_DATE_FORMAT,
-            time.strptime(date, log_date_format)
-        )
-
-    with open(log_file, 'r') as f:
-        # we need to calculate current position manually instead of using
-        # tell() because read_backwards uses buffering
-        f.seek(0, os.SEEK_END)
-        pos = f.tell()
-        if from_byte != -1 and fetch_older:
-            pos = from_byte
-        multilinebuf = []
-        for line in read_backwards(f, from_byte=pos):
-            pos -= len(line)
-            if not fetch_older and pos < to_byte:
-                has_more = pos > 0
-                break
-            entry = line.rstrip('\n')
-            if not len(entry):
-                continue
-            if skip_regexp and skip_regexp.match(entry):
-                continue
-            m = regexp.match(entry)
-            if m is None:
-                if multiline:
-                    #  Add next multiline part to last entry if it exist.
-                    multilinebuf.append(entry)
-                else:
-                    logger.debug("Unable to parse log entry '%s' from %s",
-                                 entry, log_file)
-                continue
-            entry_text = m.group('text')
-            if len(multilinebuf):
-                multilinebuf.reverse()
-                entry_text += '\n' + '\n'.join(multilinebuf)
-                multilinebuf = []
-            entry_level = m.group('level').upper() or 'INFO'
-            if level and not (entry_level in allowed_levels):
-                continue
-            try:
-                entry_date = strptime_function(m.group('date'))
-            except ValueError:
-                logger.debug("Unable to parse date from log entry."
-                             " Date format: %r, date part of entry: %r",
-                             log_date_format,
-                             m.group('date'))
-                continue
-
-            entries.append([
-                entry_date,
-                entry_level,
-                entry_text
-            ])
-
-            if len(entries) >= max_entries:
-                has_more = True
-                break
-
-        if fetch_older or (not fetch_older and from_byte == -1):
-            from_byte = pos
-            if from_byte == 0:
-                has_more = False
-
-    return {
-        'entries': entries,
-        'from': from_byte,
-        'to': log_file_size,
-        'has_more': has_more,
-    }
-
-
 class LogEntryCollectionHandler(BaseHandler):
-    """Log entry collection handler"""
+    """Log entry collection handler."""
 
     @content
     def GET(self):
@@ -204,7 +53,9 @@ class LogEntryCollectionHandler(BaseHandler):
         - *source* - source of logs
         - *node* - node id (for getting node logs)
         - *level* - log level (all levels showed by default)
-        - *to* - number of entries
+        - *from* - parse a log file from the specific byte
+        - *to* - parse a log file to the specific byte
+        - *fetch_older* - retrieve older log entries
         - *max_entries* - max number of entries to load
 
         :returns: Collection of log entries, log file size
@@ -216,6 +67,7 @@ class LogEntryCollectionHandler(BaseHandler):
             * 400 (invalid *source* value)
             * 400 (invalid *node* value)
             * 400 (invalid *level* value)
+            * 400 (invalid *from* value)
             * 400 (invalid *to* value)
             * 400 (invalid *max_entries* value)
             * 404 (log file not found)
@@ -223,25 +75,112 @@ class LogEntryCollectionHandler(BaseHandler):
             * 404 (node not found)
             * 500 (node has no assigned ip)
             * 500 (invalid regular expression in config)
+
+        There are three uses cases regarding usage of this API entry
+        point. Let's investigate it from WebUI standpoint.
+
+        1) When a user opens log page, N most recent log entries are
+        loaded and displayed on the page;
+
+        2) When log page is opened, serial requests are repeatedly
+        being sent to fetch and display recently added log entries. So
+        a user is not required to reload a page and is able to see log
+        entries as they appear in the log file;
+
+        3) Not all log entries are loaded on the page at once. Only N
+        records. A user wants to investigate more log entries than N
+        records which are currently loaded and s/he clicks on
+        appropriate link to load more log entries.
+
+        To cover these three cases four parameters are used:
+        `max_entries`, `from_byte`, `to_byte` and
+        `fetch_older`. Please note that not only these mentioned
+        parameters are used, but all others doesn't distinguish
+        mentioned use cases, they are common for all of them.
+
+        In the first case `max_entries` is used. This parameter
+        defines maximum number of entries which is loaded on the
+        page. So, just for example, WebUI may request 100 entries and
+        for this purpose it sends `max_entries` with value `100`. As
+        the result it gets a response with `entries`, `from` and `to`
+        values which means from which and to which particular bytes
+        the entries were found in the log file.
+
+        Repeating requests are being sent in case of the second use
+        case and each request includes recently mentioned `from` and
+        `to` values. If `to` is equal (or greater) than size of the
+        log file then response with empty entries is being
+        received. When the log is enlarged then `to` will be less than
+        actual file size and the client receives in the response only
+        those log entries which are located between `to` byte and the
+        end of the file. This method allows the client to be received
+        only recently added log entries.
+
+        In the last, third, case, a request with `max_entries`,
+        `from_byte` and `fetch_older` is sent. In that case, a log
+        parser backward reads the log file from `from_byte` byte till
+        `max_entries` entries will be parsed. These entries are sent
+        in response.
+
+        Important appendix.
+
+        Current implementation does allow to fetch and view log
+        entries not only from the one log file but also from those log
+        files which are rotated (by means of `logrotate` Linux
+        tool). Just for example, a client may request to show most
+        recent 100 entries. The original log file has been just
+        recently rotated, so on the server there are two files:
+
+        - app.log (20 log entries)
+        - app.log.1.gz (40 log entries)
+
+        Current implementation treats these files as the one entire
+        log file. So, if a client requests 25 most recent log entries
+        (first use case) then log entries are fetched from the both
+        `app.log` (all 20 log entries) and `app.log.1.gz` (5 most
+        recent log entries) log files. A client, in response, receives
+        the following data:
+
+        - `from`, which equals to the length of `app.log` + the length
+        of the 5 most recent log entries parsed from `app.log.1.gz`;
+        - `to`, which equals to the total length of log files involved
+        in log parsing;
+        - `entries` with 25 most recent log entries.
+
+        So, in general, we could investigate the log parsing in the
+        following way. Let's assume that we have the list of log
+        files:
+
+        - app.log.N.gz
+        - ...
+        - app.log.2.gz
+        - app.log.1.gz
+        - app.log
+
+        Log parsing is always performed backward from the bottom to
+        the top of files stack. `to` and `from` which is included in
+        the responses contain values with appropriate offsets.
+
         """
+
         data = self.read_and_validate_data()
 
-        log_file = data['log_file']
-        fetch_older = data['fetch_older']
-        from_byte = data['from_byte']
-        to_byte = data['to_byte']
+        logrotated_log_parser = LogrotatedLogParser(
+            data.get('log_file'), data.get('fetch_older'),
+            data.get('log_config'), data.get('regexp'), data.get('level'))
 
-        log_file_size = os.stat(log_file).st_size
-        if (not fetch_older and to_byte >= log_file_size) or \
-                (fetch_older and from_byte == 0):
-            return jsonutils.dumps({
-                'entries': [],
-                'from': from_byte,
-                'to': log_file_size,
-                'has_more': False,
-            })
+        entries, parsed_from_byte, has_more, to_byte = \
+            logrotated_log_parser.parse(
+                data.get('from_byte'),
+                data.get('to_byte'),
+                data.get('max_entries'))
 
-        return read_log(**data)
+        return {
+            'entries': entries,
+            'from': parsed_from_byte,
+            'to': to_byte,
+            'has_more': has_more
+        }
 
     def read_and_validate_data(self):
         user_data = web.input()
@@ -376,7 +315,7 @@ class LogEntryCollectionHandler(BaseHandler):
 
 
 class LogPackageHandler(BaseHandler):
-    """Log package handler"""
+    """Log package handler."""
     @content
     def PUT(self):
         """:returns: JSONized Task object.
@@ -401,7 +340,7 @@ class LogPackageDefaultConfig(BaseHandler):
 
     @content
     def GET(self):
-        """Generates default config for snapshot
+        """Generates default config for snapshot.
 
         :http: * 200
         """
@@ -409,7 +348,7 @@ class LogPackageDefaultConfig(BaseHandler):
 
 
 class LogSourceCollectionHandler(BaseHandler):
-    """Log source collection handler"""
+    """Log source collection handler."""
 
     @content
     def GET(self):
@@ -436,7 +375,7 @@ class SnapshotDownloadHandler(BaseHandler):
 
 
 class LogSourceByNodeCollectionHandler(BaseHandler):
-    """Log source by node collection handler"""
+    """Log source by node collection handler."""
 
     @content
     def GET(self, node_id):

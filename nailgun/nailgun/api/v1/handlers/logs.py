@@ -18,10 +18,14 @@
 Handlers dealing with logs
 """
 
+from contextlib import contextmanager
+import glob
+import gzip
 from itertools import dropwhile
 import logging
 import os
 import re
+import struct
 import time
 
 from oslo_serialization import jsonutils
@@ -41,7 +45,19 @@ from nailgun.task.task import DumpTask
 logger = logging.getLogger(__name__)
 
 
+# It turns out that strftime/strptime are costly functions in Python
+# http://stackoverflow.com/questions/13468126/a-faster-strptime
+# We don't call them if the log and UI date formats aren't very different
+STRPTIME_PERFORMANCE_HACK = {}
+if settings.UI_LOG_DATE_FORMAT == '%Y-%m-%d %H:%M:%S':
+    STRPTIME_PERFORMANCE_HACK = {
+        '%Y-%m-%dT%H:%M:%S': lambda date: date.replace('T', ' '),
+        '%Y-%m-%d %H:%M:%S': lambda date: date,
+    }
+
+
 def read_backwards(file, from_byte=None, bufsize=0x20000):
+    """Backward read from given `file` starting from `from_byte`"""
     cache_pos = file.tell()
     file.seek(0, os.SEEK_END)
     size = file.tell()
@@ -81,114 +97,294 @@ def read_backwards(file, from_byte=None, bufsize=0x20000):
             pass
 
 
-# It turns out that strftime/strptime are costly functions in Python
-# http://stackoverflow.com/questions/13468126/a-faster-strptime
-# We don't call them if the log and UI date formats aren't very different
-STRPTIME_PERFORMANCE_HACK = {}
-if settings.UI_LOG_DATE_FORMAT == '%Y-%m-%d %H:%M:%S':
-    STRPTIME_PERFORMANCE_HACK = {
-        '%Y-%m-%dT%H:%M:%S': lambda date: date.replace('T', ' '),
-        '%Y-%m-%d %H:%M:%S': lambda date: date,
-    }
+class LogParser(object):
+
+    """Log parser"""
+
+    def __init__(self, log_file, fetch_older=False, max_entries=None,
+                 log_config={}, regexp=None, level=None):
+        """Initiate log parser
+
+        :param log_file: log file
+        :type log_file: string
+        :param fetch_older: indicates that parser will skip newest bytes
+        :type fetch_older: bool
+        :param max_entries: maximum entries to fetch from a log file
+        :type max_entries: int
+        :param log_config: log parsing configuration
+        :type log_config: dict
+        :param regexp: date, level, text are being discovered using this regexp
+        :type regexp: regular expression object
+        :param level: log level of entries which needs to be fetched
+        :type level: string
+        """
+        self.log_file = log_file
+        self.fetch_older = fetch_older
+        self.max_entries = max_entries
+        self.regexp = regexp
+        self.level = level
+
+        self.log_date_format = log_config['date_format']
+        self.multiline = log_config.get('multiline', False)
+        self.skip_regexp = None
+        if 'skip_regexp' in log_config:
+            self.skip_regexp = re.compile(log_config['skip_regexp'])
+
+        self.allowed_levels = log_config['levels']
+        if self.level:
+            self.allowed_levels = list(dropwhile(lambda l: l != self.level,
+                                                 log_config['levels']))
+
+        if self.log_date_format in STRPTIME_PERFORMANCE_HACK:
+            self.strptime_function = \
+                STRPTIME_PERFORMANCE_HACK[self.log_date_format]
+        else:
+            self.strptime_function = lambda date: time.strftime(
+                settings.UI_LOG_DATE_FORMAT,
+                time.strptime(date, self.log_date_format))
+
+    def read_backwards(self, f, from_byte=-1, to_byte=0):
+        """Backward read log file
+
+        :param f: log file to read from
+        :type f: fileobj
+        :param from_byte: read from `from_byte`
+        :type from_byte: int
+        :param to_byte: read to `to_byte`
+        :type to_byte: int"""
+        return read_backwards(f, from_byte=from_byte)
+
+    def parse_log_file(self, from_byte=-1, to_byte=0):
+        """Parse a log file from `from_byte` to `to_byte`.
+
+        Parse a log file from the end of a log file from `from_byte`
+        to `to_byte`. If `from_byte` is omitted then read from the end
+        of a file. If `to_byte` is omitted then read a log file to the
+        beginning of a log file.
+
+        :param from_byte: parse log file from `from_byte`. It is used in
+                          conjunction with `fetch_older` If `from_byte` is
+                          specified then `fetch_older` should be `True`.
+        :type from_byte: int
+        :param to_byte: parse the log file to `to_byte`
+        :type to_byte: int
+        """
+        entries = []
+        has_more = False
+        with self.open_file() as f:
+            pos = self.get_file_end_pos(f)
+            if from_byte != -1 and self.fetch_older:
+                pos = from_byte
+            multilinebuf = []
+            for line in self.read_backwards(f, from_byte=pos, to_byte=to_byte):
+                pos -= len(line)
+                if not self.fetch_older and pos < to_byte:
+                    has_more = pos > 0
+                    break
+                entry = line.rstrip('\n')
+                if not len(entry):
+                    continue
+                if self.skip_regexp and self.skip_regexp.match(entry):
+                    continue
+                m = self.regexp.match(entry)
+                if m is None:
+                    if self.multiline:
+                        #  Add next multiline part to last entry if it exist.
+                        multilinebuf.append(entry)
+                    else:
+                        logger.debug("Unable to parse log entry '%s' from %s",
+                                     entry, self.log_file)
+                    continue
+                entry_text = m.group('text')
+                if len(multilinebuf):
+                    multilinebuf.reverse()
+                    entry_text += '\n' + '\n'.join(multilinebuf)
+                    multilinebuf = []
+                entry_level = m.group('level').upper() or 'INFO'
+                if self.level and not (entry_level in self.allowed_levels):
+                    continue
+                try:
+                    entry_date = self.strptime_function(m.group('date'))
+                except ValueError:
+                    logger.debug("Unable to parse date from log entry."
+                                 " Date format: %r, date part of entry: %r",
+                                 self.log_date_format,
+                                 m.group('date'))
+                    continue
+
+                entries.append([
+                    entry_date,
+                    entry_level,
+                    entry_text
+                ])
+
+                if self.max_entries and len(entries) >= self.max_entries:
+                    has_more = True
+                    break
+
+            if self.fetch_older or (not self.fetch_older
+                                    and from_byte == -1):
+                if pos >= 0:
+                    from_byte = pos
+                if pos <= 0:
+                    has_more = False
+
+        return (entries, has_more, from_byte)
+
+    def open_file(self):
+        """Open log file for further parsing"""
+        return open(self.log_file)
+
+    def get_file_end_pos(self, fileobj=None):
+        """Get file's ending position"""
+        # we need to calculate current position manually instead
+        # of using tell() because read_backwards uses buffering
+        fileobj.seek(0, os.SEEK_END)
+        return fileobj.tell()
+
+    def get_file_size(self):
+        """Get file size"""
+        return os.stat(self.log_file).st_size
 
 
-def read_log(
-        log_file=None,
-        level=None,
-        log_config={},
-        max_entries=None,
-        regexp=None,
-        from_byte=-1,
-        fetch_older=False,
-        to_byte=0,
-        **kwargs):
-    has_more = False
+class GzipLogParser(LogParser):
+
+    @contextmanager
+    def open_file(self):
+        """Open gzip file using context manager"""
+        yield gzip.open(self.log_file)
+
+    def get_file_end_pos(self, fileobj=None):
+        return self.get_file_size()
+
+    def read_backwards(self, fileobj, from_byte=-1, to_byte=0):
+        lines = []
+        if from_byte == -1:
+            from_byte = self.get_file_size()
+        pos = 0
+        prev_line = None
+        for line in fileobj:
+            pos += len(line)
+            if pos <= to_byte:
+                prev_line = line
+                continue
+            elif prev_line:
+                lines.append(prev_line)
+                prev_line = None
+            if pos > from_byte:
+                lines.append(line)
+                break
+            lines.append(line)
+        return reversed(lines)
+
+    def get_file_size(self):
+        with open(self.log_file) as f:
+            f.seek(-4, 2)
+            return struct.unpack("<I", f.read(4))[0]
+
+
+def read_log(log_file=None, level=None, log_config={},
+             max_entries=None, regexp=None, from_byte=-1,
+             fetch_older=False, to_byte=0, **kwargs):
+    """Read log entries from a log file
+
+    Read log entries from the log files. `log_file` is the path to the
+    main log file (e.g. /var/log/puppet-apply.log). Using `log_file`
+    as the base path, gzip log files (created by `logrotate`) are
+    found (e.g. puppet-apply.log.1.gz) and are used for log entries
+    fetching as well. Log entries are fetched from the newest entries
+    to the older entries. They are fetched from `from_byte` to
+    `to_byte` byte positions. These positions relate to the all found
+    log files collected together.
+
+    `from_byte` is used in conjunction with `fetch_older`. If
+    `fetch_older` is specified then `from_byte` should be specified as
+    well. `to_byte` could be used independently. If `from_byte` is
+    omitted then log entries are fetched from the end of a file.
+
+    Please note, it is not intended to fetch log entries using
+    `from_byte` in conjunction with `to_byte` (i.e. using byte
+    ranges).
+
+    :param log_file: log file from which entries are fetched
+    :type log_file: string
+    :param level: log level of entries which needs to be fetched
+    :type level: string
+    :param log_config: log parsing configuration
+    :type log_config: dict
+    :param max_entries: maximum entries to fetch from a log file
+    :type max_entries: int
+    :param regexp: date, level, text are being discovered using this regexp
+    :type regexp: regular expression object
+    :param from_byte: parse log file from `from_byte`
+    :type from_byte: int
+    :param fetch_older: indicates that parser will skip newest bytes
+    :type fetch_older: bool
+    :param to_byte: parse the log file to `to_byte`
+    :type to_byte: int
+
+    """
     entries = []
-    log_date_format = log_config['date_format']
-    multiline = log_config.get('multiline', False)
-    skip_regexp = None
-    if 'skip_regexp' in log_config:
-        skip_regexp = re.compile(log_config['skip_regexp'])
+    log_parsers = []
+    filenames = glob.iglob(log_file + '*')
+    for filename in sorted(filenames):
+        # logrotate (when rotates a log file) copies a log file
+        # (e.g. puppet-apply.log) to the numbered file
+        # (puppet-apply.log.1) and only then it archives it (to the
+        # puppet-apply.log.1.gz). If that numbered file exists don't
+        # use archived log file because it is not completed.
+        numbered_log_file, _ = os.path.splitext(filename)
+        if filename.endswith('.gz') and not os.path.isfile(numbered_log_file):
+            parser_class = GzipLogParser
+        else:
+            parser_class = LogParser
+        log_parsers.append(
+            parser_class(
+                filename, fetch_older=fetch_older, max_entries=max_entries,
+                log_config=log_config, regexp=regexp, level=level))
 
-    allowed_levels = log_config['levels']
-    if level:
-        allowed_levels = list(dropwhile(lambda l: l != level,
-                                        log_config['levels']))
+    total_log_files_size = 0
+    for parser in log_parsers:
+        total_log_files_size += parser.get_file_size()
 
-    log_file_size = os.stat(log_file).st_size
+    if ((not fetch_older and to_byte >= total_log_files_size)
+            or (fetch_older and from_byte == 0)):
+        return jsonutils.dumps({
+            'entries': [],
+            'from': from_byte,
+            'to': total_log_files_size,
+            'has_more': False,
+        })
 
-    if log_date_format in STRPTIME_PERFORMANCE_HACK:
-        strptime_function = STRPTIME_PERFORMANCE_HACK[log_date_format]
-    else:
-        strptime_function = lambda date: time.strftime(
-            settings.UI_LOG_DATE_FORMAT,
-            time.strptime(date, log_date_format)
-        )
-
-    with open(log_file, 'r') as f:
-        # we need to calculate current position manually instead of using
-        # tell() because read_backwards uses buffering
-        f.seek(0, os.SEEK_END)
-        pos = f.tell()
-        if from_byte != -1 and fetch_older:
-            pos = from_byte
-        multilinebuf = []
-        for line in read_backwards(f, from_byte=pos):
-            pos -= len(line)
-            if not fetch_older and pos < to_byte:
-                has_more = pos > 0
+    entries = []
+    parse_from_byte = from_byte
+    logs_file_size = 0
+    parsed_from_byte = 0
+    for parser in log_parsers:
+        if not fetch_older:
+            items, has_more, from_byte = \
+                parser.parse_log_file(to_byte=to_byte)
+            if from_byte > 0:
+                parsed_from_byte += from_byte
+            entries += items
+            if to_byte:
+                to_byte -= parser.get_file_size()
+            if to_byte < 0:
                 break
-            entry = line.rstrip('\n')
-            if not len(entry):
-                continue
-            if skip_regexp and skip_regexp.match(entry):
-                continue
-            m = regexp.match(entry)
-            if m is None:
-                if multiline:
-                    #  Add next multiline part to last entry if it exist.
-                    multilinebuf.append(entry)
-                else:
-                    logger.debug("Unable to parse log entry '%s' from %s",
-                                 entry, log_file)
-                continue
-            entry_text = m.group('text')
-            if len(multilinebuf):
-                multilinebuf.reverse()
-                entry_text += '\n' + '\n'.join(multilinebuf)
-                multilinebuf = []
-            entry_level = m.group('level').upper() or 'INFO'
-            if level and not (entry_level in allowed_levels):
-                continue
-            try:
-                entry_date = strptime_function(m.group('date'))
-            except ValueError:
-                logger.debug("Unable to parse date from log entry."
-                             " Date format: %r, date part of entry: %r",
-                             log_date_format,
-                             m.group('date'))
-                continue
-
-            entries.append([
-                entry_date,
-                entry_level,
-                entry_text
-            ])
-
-            if len(entries) >= max_entries:
-                has_more = True
-                break
-
-        if fetch_older or (not fetch_older and from_byte == -1):
-            from_byte = pos
-            if from_byte == 0:
-                has_more = False
+        else:
+            logs_file_size += parser.get_file_size()
+            if parse_from_byte < logs_file_size:
+                items, has_more, from_byte = \
+                    parser.parse_log_file(from_byte=parse_from_byte)
+                if from_byte > 0:
+                    parsed_from_byte += from_byte
+                entries += items
 
     return {
         'entries': entries,
-        'from': from_byte,
-        'to': log_file_size,
-        'has_more': has_more,
+        'from': parsed_from_byte,
+        'to': total_log_files_size,
+        'has_more': has_more
     }
 
 
@@ -224,24 +420,8 @@ class LogEntryCollectionHandler(BaseHandler):
             * 500 (node has no assigned ip)
             * 500 (invalid regular expression in config)
         """
-        data = self.read_and_validate_data()
 
-        log_file = data['log_file']
-        fetch_older = data['fetch_older']
-        from_byte = data['from_byte']
-        to_byte = data['to_byte']
-
-        log_file_size = os.stat(log_file).st_size
-        if (not fetch_older and to_byte >= log_file_size) or \
-                (fetch_older and from_byte == 0):
-            return jsonutils.dumps({
-                'entries': [],
-                'from': from_byte,
-                'to': log_file_size,
-                'has_more': False,
-            })
-
-        return read_log(**data)
+        return read_log(**self.read_and_validate_data())
 
     def read_and_validate_data(self):
         user_data = web.input()

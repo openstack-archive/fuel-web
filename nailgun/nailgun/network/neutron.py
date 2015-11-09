@@ -362,9 +362,8 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
     def assign_networks_by_template(cls, node):
         """Configures a node's network-to-nic mapping based on its template.
 
-        This also creates bonds in the database, ensures network
-        groups match the data in the template and all networks
-        are assigned to the correct interface or bond.
+        This also creates bonds in the database and ensures network
+        groups are assigned to the correct interface or bond.
         """
         interfaces = cls.get_interfaces_from_template(node)
 
@@ -389,6 +388,12 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
             else:
                 net_db = objects.NetworkGroup.get_from_node_group_by_name(
                     node.group_id, network)
+
+            if not net_db:
+                logger.info(
+                    "Failed to assign network {0} because it does not exist."
+                    .format(network))
+                continue
 
             # Ensure network_group configuration is consistent
             # with the template

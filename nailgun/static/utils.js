@@ -21,10 +21,11 @@ define([
     'i18n',
     'backbone',
     'classnames',
+    'javascript-natural-sort',
     'expression',
     'expression/objects',
     'react'
-], function(require, $, _, i18n, Backbone, classNames, Expression, expressionObjects, React) {
+], function(require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React) {
     'use strict';
 
     var utils = {
@@ -282,55 +283,10 @@ define([
             }
             return '';
         },
-        // Natural sorting, code taken from
-        // https://github.com/javve/natural-sort
-        // options:
-        // insensitive (bool, default=false) -- case insensitive iff true
-        // desc        (bool, default=false) -- sort in descending order iff true
-        natsort: function(str1, str2, options) {
-            options = options || {};
-            var re = /(^-?[0-9]+(\.?[0-9]*)[df]?e?[0-9]?$|^0x[0-9a-f]+$|[0-9]+)/gi,
-                // whitestring token regexp
-                sre = /(^[ ]*|[ ]*$)/g,
-                // date regexp
-                dre = /(^([\w ]+,?[\w ]+)?[\w ]+,?[\w ]+\d+:\d+(:\d+)?[\w ]?|^\d{1,4}[\/\-]\d{1,4}[\/\-]\d{1,4}|^\w+, \w+ \d+, \d{4})/,
-                // hex regexp
-                hre = /^0x[0-9a-f]+$/i,
-                ore = /^0/,
-                caseInsensitive = function(s) {return options.insensitive && s.toLowerCase() || s;},
-                // convert all to strings strip whitespace
-                caseInsensitive1 = caseInsensitive(str1).replace(sre, '') || '',
-                caseInsensitive2 = caseInsensitive(str2).replace(sre, '') || '',
-                // chunk/tokenize
-                chunks1 = caseInsensitive1.replace(re, '\0$1\0').replace(/\0$/, '').replace(/^\0/, '').split('\0'),
-                chunks2 = caseInsensitive2.replace(re, '\0$1\0').replace(/\0$/, '').replace(/^\0/, '').split('\0'),
-                // numeric, hex or date detection
-                detect1 = parseInt(caseInsensitive1.match(hre)) || (chunks1.length != 1 && caseInsensitive1.match(dre) && Date.parse(caseInsensitive1)),
-                detect2 = parseInt(caseInsensitive2.match(hre)) || detect1 && caseInsensitive2.match(dre) && Date.parse(caseInsensitive2) || null,
-                numerical1, numerical2,
-                mult = options.desc ? -1 : 1;
-            // first try and sort Hex codes or Dates
-            if (detect2)
-                if (detect1 < detect2) return -1 * mult;
-                if (detect1 > detect2) return 1 * mult;
-            // natural sorting through split numeric strings and default strings
-            for (var cLoc = 0, numS = Math.max(chunks1.length, chunks2.length); cLoc < numS; cLoc++) {
-                // find floats not starting with '0', string or 0 if not defined (Clint Priest)
-                numerical1 = !(chunks1[cLoc] || '').match(ore) && parseFloat(chunks1[cLoc]) || chunks1[cLoc] || 0;
-                numerical2 = !(chunks2[cLoc] || '').match(ore) && parseFloat(chunks2[cLoc]) || chunks2[cLoc] || 0;
-                // handle numeric vs string comparison - number < string - (Kyle Adams)
-                if (isNaN(numerical1) !== isNaN(numerical2)) {
-                    return (isNaN(numerical1)) ? 1 : -1;
-                }
-                // rely on string comparison if different types - i.e. '02' < 2 != '02' < '2'
-                if (typeof numerical1 !== typeof numerical2) {
-                    numerical1 += '';
-                    numerical2 += '';
-                }
-                if (numerical1 < numerical2) return -1 * mult;
-                if (numerical1 > numerical2) return 1 * mult;
-            }
-            return 0;
+        natsort: function(str1, str2, options = {}) {
+            var {insensitive, desc} = options;
+            naturalSort.insensitive = insensitive;
+            return naturalSort(str1, str2) * (desc ? -1 : 1);
         },
         multiSort: function(model1, model2, attributes) {
             var result = utils.compare(model1, model2, attributes[0]);

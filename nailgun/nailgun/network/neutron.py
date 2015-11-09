@@ -392,7 +392,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
             # Ensure network_group configuration is consistent
             # with the template
-            if vlan != net_db.vlan_start:
+            if net_db and vlan != net_db.vlan_start:
                 net_db.vlan_start = vlan
                 db().add(net_db)
                 db().flush()

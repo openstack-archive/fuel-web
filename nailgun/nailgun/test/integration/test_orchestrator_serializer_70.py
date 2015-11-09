@@ -105,7 +105,8 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         for vip in vips_names:
             self.assertItemsEqual(
                 vips_data[vip],
-                ['network_role', 'namespace', 'ipaddr', 'node_roles']
+                ['network_role', 'namespace', 'ipaddr', 'node_roles',
+                 'vendor_specific']
             )
 
 

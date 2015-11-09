@@ -1586,6 +1586,7 @@ class AllocateVIPs70Mixin(object):
         return {'network_role': role['id'],
                 'namespace': vip_info.get('namespace'),
                 'ipaddr': address,
+                'vendor_specific': vip_info.get('vendor_specific'),
                 'node_roles': vip_info.get('node_roles',
                                            ['controller',
                                             'primary-controller'])}

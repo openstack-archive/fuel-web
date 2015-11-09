@@ -628,7 +628,8 @@ function(require, $, _, i18n, Backbone, stickit, utils, models, createClusterWiz
                     .parent('.parameter-control').addClass('input-append');
             });
         },
-        render: function(options) {
+        render: function(options = {}) {
+            _.defaults(options, {utils});
             this.$el.html(this.template(options));
             this.renderCustomElements();
             this.handleWarnings();

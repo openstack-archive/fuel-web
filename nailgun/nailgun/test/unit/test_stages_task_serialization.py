@@ -359,6 +359,27 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             CLUSTER_ID=self.cluster.id, CN_HOSTNAME=hostname)
         self.assertEqual(expected_cmd, serialized['parameters']['cmd'])
 
+    def test_delete_all_keys(self):
+        cmd_template = "rm -rf /var/lib/fuel/keys/{CLUSTER_ID}"
+        task_config = {
+            'id': 'delete_all_keys',
+            'type': 'shell',
+            'role': 'master',
+            'parameters': {
+                'cmd': cmd_template,
+                'timeout': 30
+                }
+        }
+        task = tasks_serializer.DeleteAllKeys(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'shell')
+        editable = self.cluster.attributes.editable
+        hostname = editable['public_ssl']['hostname']['value']
+        expected_cmd = cmd_template.format(
+            CLUSTER_ID=self.cluster.id, CN_HOSTNAME=hostname)
+        self.assertEqual(expected_cmd, serialized['parameters']['cmd'])
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
 

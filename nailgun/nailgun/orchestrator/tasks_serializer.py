@@ -369,6 +369,16 @@ class UpdateHosts(GenericRolesHook):
         yield templates.make_puppet_task(uids, self.task)
 
 
+class DeleteAllKeys(GenericRolesHook):
+
+    identity = 'delete_all_keys'
+
+    def serialize(self):
+        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
+            CLUSTER_ID=self.cluster.id)
+        yield templates.make_shell_task([], self.task)
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
@@ -376,7 +386,7 @@ class TaskSerializers(object):
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys,
                          GenerateCephKeys, CopyCephKeys, IronicUploadImages,
-                         IronicCopyBootstrapKey]
+                         IronicCopyBootstrapKey, DeleteAllKeys]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

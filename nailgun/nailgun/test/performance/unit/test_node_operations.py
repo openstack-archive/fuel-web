@@ -122,15 +122,15 @@ class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
         func = functools.partial(
             self.put_handler,
             'NodeCollectionHandler',
-            nodes_delete_list
-        )
-        self.check_time_exec(func, 40)
-        func = functools.partial(
-            self.put_handler,
-            'NodeCollectionHandler',
             nodes_add_list
         )
         self.check_time_exec(func, 30)
+        func = functools.partial(
+            self.delete_handler,
+            'NodeCollectionHandler',
+            nodes_delete_list
+        )
+        self.check_time_exec(func, 40)
 
     @fake_tasks()
     @base.evaluate_unit_performance

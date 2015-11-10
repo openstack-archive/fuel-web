@@ -120,7 +120,7 @@ class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
             nodes_add_list.append({'id': node.id,
                                    'cluster': self.cluster['id']})
         func = functools.partial(
-            self.put_handler,
+            self.delete_handler,
             'NodeCollectionHandler',
             nodes_delete_list
         )

@@ -83,6 +83,11 @@ class TestNetworkChecking(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         return resp.json_body
 
+    def verify_neutron_networks_w_error(self, nets):
+        task = self.env.launch_verify_networks(nets)
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
+        return task
+
 
 class TestNovaHandlers(TestNetworkChecking):
 
@@ -551,11 +556,15 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('management')['vlan_start'] = 111
         self.find_net_by_name('storage')['vlan_start'] = 111
 
-        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
+        self.update_neutron_networks_success(self.cluster.id, self.nets)
+
+        task = self.set_cluster_changes_w_error(self.cluster.id)
+
         self.assertIn(
-            " networks use the same VLAN tags. "
-            "You should assign different VLAN tag "
-            "to every network.",
+            " networks use the same VLAN tags."
+            " Different VLAN tags"
+            " should be assigned to the networks on the same"
+            " interface.",
             task['message'])
         self.assertIn("management", task['message'])
         self.assertIn("storage", task['message'])

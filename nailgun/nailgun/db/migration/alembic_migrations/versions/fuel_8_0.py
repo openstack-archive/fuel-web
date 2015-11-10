@@ -84,6 +84,19 @@ task_names_new = task_names_old + (
 )
 
 
+node_errors_old = (
+    'deploy',
+    'provision',
+    'deletion',
+)
+node_errors_new = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+)
+
+
 def upgrade():
     create_components_table()
     create_release_components_table()
@@ -91,9 +104,11 @@ def upgrade():
     upgrade_release_state()
     task_statuses_upgrade()
     task_names_upgrade()
+    add_node_discover_error_upgrade()
 
 
 def downgrade():
+    add_node_discover_error_downgrade()
     task_names_downgrade()
     task_statuses_downgrade()
     downgrade_release_state()
@@ -232,4 +247,24 @@ def task_names_downgrade():
         "task_name",
         task_names_new,
         task_names_old
+    )
+
+
+def add_node_discover_error_upgrade():
+    upgrade_enum(
+        "nodes",
+        "error_type",
+        "node_error_type",
+        node_errors_old,
+        node_errors_new
+    )
+
+
+def add_node_discover_error_downgrade():
+    upgrade_enum(
+        "nodes",
+        "error_type",
+        "node_error_type",
+        node_errors_new,
+        node_errors_old
     )

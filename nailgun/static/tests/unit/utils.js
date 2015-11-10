@@ -140,8 +140,7 @@ define([
             var getGateway = utils.getDefaultGatewayForCidr;
 
             assert.equal(getGateway('172.16.0.0/24'), '172.16.0.1', 'Getting default gateway for CIDR');
-            //FIXME: the following test should be restored within #1514493 fix
-            //assert.equal(getGateway('192.168.0.0/10'), '192.128.0.1', 'Getting default gateway for CIDR');
+            assert.equal(getGateway('192.168.0.0/10'), '192.128.0.1', 'Getting default gateway for CIDR');
             assert.equal(getGateway('172.16.0.0/31'), '', 'No gateway returned for inappropriate CIDR (network is too small)');
             assert.equal(getGateway('172.16.0.0/'), '', 'No gateway returned for invalid CIDR');
         });
@@ -150,8 +149,7 @@ define([
             var getRange = utils.getDefaultIPRangeForCidr;
 
             assert.deepEqual(getRange('172.16.0.0/24'), [['172.16.0.1', '172.16.0.254']], 'Getting default IP range for CIDR');
-            //FIXME: the following test should be restored within #1514493 fix
-            //assert.deepEqual(getRange('192.168.0.0/10', true), [['192.128.0.2', '192.191.255.254']], 'Gateway address excluded from default IP range');
+            assert.deepEqual(getRange('192.168.0.0/10', true), [['192.128.0.2', '192.191.255.254']], 'Gateway address excluded from default IP range');
             assert.deepEqual(getRange('172.16.0.0/31'), [['', '']], 'No IP range returned for inappropriate CIDR (network is too small)');
             assert.deepEqual(getRange('172.16.0.0/', true), [['', '']], 'No IP range returned for invalid CIDR');
         });

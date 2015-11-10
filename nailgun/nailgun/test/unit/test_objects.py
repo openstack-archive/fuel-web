@@ -1125,6 +1125,37 @@ class TestClusterObject(BaseTestCase):
                                      expected_message):
             objects.Cluster.get_deployment_tasks(cluster)
 
+    def test_get_refreshable_tasks(self):
+        deployment_tasks = [
+            self.env.get_default_plugin_deployment_tasks(**{
+                'id': 'refreshable_task_on_keystone',
+                consts.TASK_REFRESH_FIELD: ['keystone_config']
+            })[0],
+            self.env.get_default_plugin_deployment_tasks(**{
+                'id': 'refreshable_task_on_nova',
+                consts.TASK_REFRESH_FIELD: ['nova_config']
+            })[0],
+        ]
+        plugin_metadata = self.env.get_default_plugin_metadata(
+            deployment_tasks=deployment_tasks
+        )
+
+        cluster = self._create_cluster_with_plugins([plugin_metadata])
+
+        refreshable_tasks = \
+            objects.Cluster.get_refreshable_tasks(cluster)
+
+        tasks_ids = [t['id'] for t in refreshable_tasks]
+        self.assertIn(deployment_tasks[1]['id'], tasks_ids)
+        self.assertIn(deployment_tasks[0]['id'], tasks_ids)
+
+        refreshable_tasks_on_nova = \
+            objects.Cluster.get_refreshable_tasks(
+                cluster, filter_by_configs=('nova_config',))
+        tasks_ids = [t['id'] for t in refreshable_tasks_on_nova]
+        self.assertIn(deployment_tasks[1]['id'], tasks_ids)
+        self.assertNotIn(deployment_tasks[0]['id'], tasks_ids)
+
     def test_get_plugin_network_roles(self):
         network_roles = [self._get_network_role_metadata()]
         plugin_data = self.env.get_default_plugin_metadata(

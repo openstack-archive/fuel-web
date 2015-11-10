@@ -20,7 +20,8 @@ from itertools import product
 import netaddr
 
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
@@ -44,7 +45,7 @@ class NetworkCheck(object):
         self.net_man = objects.Cluster.get_network_manager(self.cluster)
         self.net_provider = self.cluster.net_provider
         admin_ng = self.net_man.get_admin_network_group()
-        fields = NetworkGroup.__mapper__.columns.keys() + ['meta']
+        fields = models.NetworkGroup.__mapper__.columns.keys() + ['meta']
         net = NetworkConfigurationSerializer.serialize_network_group(admin_ng,
                                                                      fields)
         # change Admin name for UI
@@ -327,9 +328,8 @@ class NetworkCheck(object):
     def neutron_check_segmentation_ids(self):
         """Check neutron segmentation ids
 
-        1. check networks VLAN IDs not in Neutron L2 private VLAN ID range
+        check networks VLAN IDs not in Neutron L2 private VLAN ID range
         for VLAN segmentation only
-        2. check networks VLAN IDs should not intersect
         (neutron)
         """
         tagged_nets = dict((n["name"], n["vlan_start"]) for n in filter(
@@ -351,15 +351,6 @@ class NetworkCheck(object):
                               u"with Neutron L2 VLAN ID range.". \
                         format(nets_with_errors)
                     raise errors.NetworkCheckError(err_msg)
-
-            # check networks VLAN IDs should not intersect
-            net_intersect = [name for name, vlan in tagged_nets.iteritems()
-                             if tagged_nets.values().count(vlan) >= 2]
-            if net_intersect:
-                err_msg = u"{0} networks use the same VLAN tags. " \
-                          u"You should assign different VLAN tag " \
-                          u"to every network.".format(", ".join(net_intersect))
-                raise errors.NetworkCheckError(err_msg)
 
     def neutron_check_network_address_spaces_intersection(self):
         """Check intersection of address spaces of all networks including admin
@@ -673,6 +664,45 @@ class NetworkCheck(object):
                 })
         self.expose_error_messages()
 
+    def check_vlan_ids_intersection(self):
+        """Networks VLAN IDs should not intersect for any node's interface."""
+        tagged_nets = dict((n["id"], n["vlan_start"]) for n in filter(
+            lambda n: (n["vlan_start"] is not None), self.networks))
+
+        print "tagged_nets",tagged_nets
+
+        # nothing to check
+        if not tagged_nets or len(tagged_nets.keys()) < 2:
+            return
+
+        if self.cluster.network_config.configuration_template is None:
+            nodes_networks = db().query(
+                models.Node.hostname,
+                models.NodeNICInterface.id,
+                models.NetworkGroup.id,
+            ).filter(
+                models.Node.cluster_id == self.cluster.id,
+                models.NodeNICInterface.node_id == models.Node.id,
+                models.NetworkNICAssignment.interface_id ==
+                models.NodeNICInterface.id,
+                models.NetworkNICAssignment.network_id ==
+                models.NetworkGroup.id,
+            ).order_by(
+                models.Node.hostname,
+                models.NodeNICInterface.id,
+            ).all()
+
+            print "nodes_networks",nodes_networks
+            for node_name, if_id, net_id in nodes_networks:
+                print node_name, if_id, net_id
+        net_intersect = [name for name, vlan in tagged_nets.iteritems()
+                         if tagged_nets.values().count(vlan) >= 2]
+        if net_intersect:
+            err_msg = u"{0} networks use the same VLAN tags. " \
+                      u"You should assign different VLAN tag " \
+                      u"to every network.".format(", ".join(net_intersect))
+            raise errors.NetworkCheckError(err_msg)
+
     def check_configuration(self):
         """check network configuration parameters"""
         if self.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
@@ -694,4 +724,5 @@ class NetworkCheck(object):
         """check mapping of networks to NICs"""
         self.check_untagged_intersection()
         self.check_bond_slaves_speeds()
+        self.check_vlan_ids_intersection()
         return self.err_msgs

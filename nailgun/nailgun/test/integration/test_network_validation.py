@@ -14,14 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 from netaddr import IPAddress
 from netaddr import IPNetwork
+import six
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
+from nailgun.errors import errors
+from nailgun.network.checker import NetworkCheck
 from nailgun.test.base import BaseIntegrationTest
 
 
@@ -82,6 +87,16 @@ class TestNetworkChecking(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(cluster_id, nets)
         self.assertEqual(resp.status_code, 200)
         return resp.json_body
+
+    def verify_neutron_networks_w_error(self, nets):
+        task = self.env.launch_verify_networks(nets)
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
+        return task
+
+
+class FakeTask(object):
+    def __init__(self, cluster):
+        self.cluster = cluster
 
 
 class TestNovaHandlers(TestNetworkChecking):
@@ -550,15 +565,85 @@ class TestNeutronHandlersGre(TestNetworkChecking):
     def test_network_checking_fails_on_network_vlan_match(self):
         self.find_net_by_name('management')['vlan_start'] = 111
         self.find_net_by_name('storage')['vlan_start'] = 111
+        self.update_neutron_networks_success(self.cluster.id, self.nets)
 
-        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertIn(
-            " networks use the same VLAN tags. "
-            "You should assign different VLAN tag "
-            "to every network.",
-            task['message'])
-        self.assertIn("management", task['message'])
-        self.assertIn("storage", task['message'])
+        checker = NetworkCheck(FakeTask(self.cluster), {})
+        self.assertRaisesWithMessageIn(
+            errors.NetworkCheckError,
+            " networks use the same VLAN tags."
+            " Different VLAN tags"
+            " should be assigned to the networks on the same"
+            " interface.",
+            checker.check_interface_mapping
+        )
+
+    def test_network_checking_ok_with_template_on_network_vlan_match(self):
+        self.find_net_by_name('management')['vlan_start'] = 111
+        self.find_net_by_name('storage')['vlan_start'] = 111
+        self.update_neutron_networks_success(self.cluster.id, self.nets)
+
+        checker = NetworkCheck(FakeTask(self.cluster), {})
+        self.cluster.network_config.configuration_template = {}
+
+        self.assertNotRaises(
+            errors.NetworkCheckError,
+            checker.check_interface_mapping
+        )
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_network_checking_with_equal_vlans_on_multi_groups(self, _):
+        new_nets = {'management': {'cidr': '199.99.20.0/24'},
+                    'storage': {'cidr': '199.98.20.0/24'},
+                    'private': {'cidr': '199.95.20.0/24'},
+                    'public': {'cidr': '199.96.20.0/24'}}
+
+        # save VLAN IDs from networks of default node group
+        # to set them for networks of new node group
+        nets = self.env.neutron_networks_get(self.cluster.id).json_body
+        for net in nets['networks']:
+            if net['name'] in new_nets.keys():
+                new_nets[net['name']]['vlan_start'] = net['vlan_start']
+
+        resp = self.env.create_node_group()
+        group_id = resp.json_body['id']
+
+        nets = self.env.neutron_networks_get(self.cluster.id).json_body
+        for net in nets['networks']:
+            if net['name'] in new_nets.keys():
+                if net['group_id'] == group_id:
+                    # set CIDRs and VLAN IDs for new networks
+                    # VLAN IDs are equal to those in default node group
+                    for param, value in six.iteritems(new_nets[net['name']]):
+                        net[param] = value
+                    if net['meta']['notation'] == 'ip_ranges':
+                        net['ip_ranges'] = [[
+                            str(IPAddress(IPNetwork(net['cidr']).first + 2)),
+                            str(IPAddress(IPNetwork(net['cidr']).first + 126)),
+                        ]]
+                if not net['meta']['use_gateway']:
+                    net['ip_ranges'] = [[
+                        str(IPAddress(IPNetwork(net['cidr']).first + 2)),
+                        str(IPAddress(IPNetwork(net['cidr']).first + 254)),
+                    ]]
+                    net['meta']['use_gateway'] = True
+                net['gateway'] = str(
+                    IPAddress(IPNetwork(net['cidr']).first + 1))
+        resp = self.env.neutron_networks_put(self.cluster.id, nets)
+        self.assertEqual(resp.status_code, 200)
+
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=3,
+            if_count=2,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=self.cluster.id,
+            group_id=group_id)
+
+        resp = self.env.cluster_changes_put(self.cluster.id)
+        self.assertEqual(resp.status_code, 202)
+        task = resp.json_body
+        self.assertEqual(task['status'], consts.TASK_STATUSES.pending)
+        self.assertEqual(task['name'], consts.TASK_NAMES.deploy)
 
     def test_network_checking_fails_if_internal_gateway_not_in_cidr(self):
         self.nets['networking_parameters']['internal_gateway'] = '172.16.10.1'

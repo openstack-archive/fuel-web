@@ -15,12 +15,16 @@
 #    under the License.
 
 
+from collections import defaultdict
 from itertools import combinations
+from itertools import groupby
 from itertools import product
 import netaddr
+import six
 
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
@@ -44,7 +48,7 @@ class NetworkCheck(object):
         self.net_man = objects.Cluster.get_network_manager(self.cluster)
         self.net_provider = self.cluster.net_provider
         admin_ng = self.net_man.get_admin_network_group()
-        fields = NetworkGroup.__mapper__.columns.keys() + ['meta']
+        fields = models.NetworkGroup.__mapper__.columns.keys() + ['meta']
         net = NetworkConfigurationSerializer.serialize_network_group(admin_ng,
                                                                      fields)
         # change Admin name for UI
@@ -327,9 +331,8 @@ class NetworkCheck(object):
     def neutron_check_segmentation_ids(self):
         """Check neutron segmentation ids
 
-        1. check networks VLAN IDs not in Neutron L2 private VLAN ID range
+        check networks VLAN IDs not in Neutron L2 private VLAN ID range
         for VLAN segmentation only
-        2. check networks VLAN IDs should not intersect
         (neutron)
         """
         tagged_nets = dict((n["name"], n["vlan_start"]) for n in filter(
@@ -351,15 +354,6 @@ class NetworkCheck(object):
                               u"with Neutron L2 VLAN ID range.". \
                         format(nets_with_errors)
                     raise errors.NetworkCheckError(err_msg)
-
-            # check networks VLAN IDs should not intersect
-            net_intersect = [name for name, vlan in tagged_nets.iteritems()
-                             if tagged_nets.values().count(vlan) >= 2]
-            if net_intersect:
-                err_msg = u"{0} networks use the same VLAN tags. " \
-                          u"You should assign different VLAN tag " \
-                          u"to every network.".format(", ".join(net_intersect))
-                raise errors.NetworkCheckError(err_msg)
 
     def neutron_check_network_address_spaces_intersection(self):
         """Check intersection of address spaces of all networks including admin
@@ -673,6 +667,75 @@ class NetworkCheck(object):
                 })
         self.expose_error_messages()
 
+    def check_vlan_ids_intersection(self):
+        """Networks VLAN IDs should not intersect for any node's interface."""
+        tagged_nets = dict((n["id"], n["vlan_start"]) for n in filter(
+            lambda n: (n["vlan_start"] is not None), self.networks))
+
+        # nothing to check
+        if not tagged_nets or len(tagged_nets.keys()) < 2:
+            return
+
+        if self.cluster.network_config.configuration_template is not None:
+            # TODO(akasatkin) checking of network templates to be considered
+            return
+
+        nodes_nics_networks = db().query(
+            models.Node.hostname,
+            models.NodeNICInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.nic_interfaces,
+            models.NodeNICInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == self.cluster.id,
+        )
+        nodes_bonds_networks = db().query(
+            models.Node.hostname,
+            models.NodeBondInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.bond_interfaces,
+            models.NodeBondInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == self.cluster.id,
+        )
+        nodes_networks = nodes_nics_networks.union(
+            nodes_bonds_networks
+        ).order_by(
+            # column 1 then 2 from the result. cannot call them by name as
+            # names for column 2 are different in this union
+            '1', '2'
+        ).all()
+
+        # first, group by node name
+        for node_name, data in groupby(nodes_networks, lambda x: x[0]):
+            # then group by interface name for particular node
+            for if_name, nic_nets in groupby(data, lambda x: x[1]):
+                net_ids = [net_id
+                           for _, _, net_id in nic_nets
+                           if tagged_nets.get(net_id, None) is not None]
+                if len(net_ids) < 2:
+                    # no more than 1 tagged network is on the interface
+                    continue
+                vlan_ids = [tagged_nets[n] for n in net_ids]
+                if len(set(vlan_ids)) < len(vlan_ids):
+                    # some VLAN IDs are not unique for this interface
+                    net_by_if = defaultdict(list)
+                    for idx in range(len(vlan_ids)):
+                        net_by_if[vlan_ids[idx]].append(net_ids[idx])
+                    net_names = []
+                    for net_ids in six.itervalues(net_by_if):
+                        if len(net_ids) > 1:
+                            net_names.extend(net['name']
+                                             for net in self.networks
+                                             if net['id'] in net_ids)
+                    err_msg = u"Node {0}, interface {1}: {2} networks use " \
+                        u"the same VLAN tags. Different VLAN tags should be " \
+                        u"assigned to the networks on the same interface.".\
+                        format(node_name, if_name, ", ".join(net_names))
+                    raise errors.NetworkCheckError(err_msg)
+
     def check_configuration(self):
         """check network configuration parameters"""
         if self.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
@@ -694,4 +757,5 @@ class NetworkCheck(object):
         """check mapping of networks to NICs"""
         self.check_untagged_intersection()
         self.check_bond_slaves_speeds()
+        self.check_vlan_ids_intersection()
         return self.err_msgs

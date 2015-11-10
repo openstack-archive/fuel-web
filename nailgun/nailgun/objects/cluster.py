@@ -1100,6 +1100,43 @@ class Cluster(NailgunObject):
         return bool(instance.attributes.editable['additional_components'].
                     get((component), {}).get('value'))
 
+    @classmethod
+    def get_networks_to_interfaces_mapping_on_all_nodes(cls, instance):
+        """Query networks to interfaces mapping on all nodes in cluster.
+
+        Returns combined results for NICs and bonds for every node.
+        Names are returned for node and interface (NIC or bond),
+        IDs are returned for networks. Results are sorted by node name then
+        interface name.
+        """
+        nodes_nics_networks = db().query(
+            models.Node.hostname,
+            models.NodeNICInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.nic_interfaces,
+            models.NodeNICInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == instance.id,
+        )
+        nodes_bonds_networks = db().query(
+            models.Node.hostname,
+            models.NodeBondInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.bond_interfaces,
+            models.NodeBondInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == instance.id,
+        )
+        return nodes_nics_networks.union(
+            nodes_bonds_networks
+        ).order_by(
+            # column 1 then 2 from the result. cannot call them by name as
+            # names for column 2 are different in this union
+            '1', '2'
+        )
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

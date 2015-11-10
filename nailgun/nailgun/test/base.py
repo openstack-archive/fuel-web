@@ -1213,6 +1213,14 @@ class BaseTestCase(TestCase):
             self.assertIsInstance(inst, exc)
             self.assertEqual(inst.message, msg)
 
+    def assertRaisesWithMessageIn(self, exc, msg, func, *args, **kwargs):
+        try:
+            func(*args, **kwargs)
+            self.assertFail()
+        except Exception as inst:
+            self.assertIsInstance(inst, exc)
+            self.assertIn(msg, inst.message)
+
     def assertValidJSON(self, data):
         self.assertNotRaises(ValueError, jsonutils.loads, data)
 

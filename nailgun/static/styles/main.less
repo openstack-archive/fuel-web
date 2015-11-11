@@ -2951,34 +2951,70 @@ input[type=range] {
 
 
 .role-panel {
-  .checkbox-group {
-    label {
-      width: 100%;
-      margin-bottom: 2px;
-      padding-top: 2px;
-      color: @base-text-color;
+  h4 {
+    margin: 0px 0px 20px 0px;
+  }
+  .roles-row {
+    .role-block {
+      @role-height: 46px;
+      float: left;
+      position: relative;
+      width: 19%;
+      height: 50px;
+      background-color: @white;
+      border: 2px solid @gray + 80%;
+      border-radius: 20px;
+      margin-bottom: 12px;
       cursor: pointer;
-      .custom-tumbler {
-        top: -1px;
+      .font-semibold;
+      &:not(:first-child) {
+        margin-left: 1%;
       }
-      .glyphicon {
-        .text-warning;
-        position: relative;
-        top: -5px;
-        left: 5px;
+      .role {
+        width: 100%;
+        height: @role-height;
+        display: table-cell;
+        vertical-align: middle;
+        padding: 0px 16px;
+        line-height: 16px;
+        .break-word;
+        i {
+          display: block;
+          position: absolute;
+          top: 14px;
+          & + span {
+            display: inline-block;
+            margin-left: 24px;
+          }
+        }
       }
-    }
-    &.disabled {
-      label {
+      .popover {
+        display: block;
+        top: @role-height;
+        color: @base-text-color;
+        font-size: @base-font-size - 2;
+        hr {
+          margin: 10px 0;
+        }
+      }
+      &:hover {
+        background-color: @gray + 100%;
+        border: 2px solid @gray + 60%;
+      }
+      &.selected {
+        background-color: @green;
+        border: 2px solid @green;
+        color: @white;
+        .font-semibold;
+        &:hover {
+          background-color: @green - 10%;
+          border: 2px solid @green - 10%;
+        }
+      }
+      &.disabled {
+        background-color: @gray + 80%;
         cursor: default;
-        color: @gray;
       }
-    }
-    .help-block {
-      color: @gray;
-      font-size: @base-font-size - 2;
-      margin-left: 28px;
-      margin-top: 0;
     }
   }
 }

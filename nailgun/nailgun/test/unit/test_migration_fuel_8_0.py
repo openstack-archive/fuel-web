@@ -243,12 +243,6 @@ class TestReleaseMigrations(base.BaseAlembicMigrationTest):
         for state in states:
             self.assertEqual(state, 'manageonly')
 
-    def test_new_component_metadata_field_exists_and_empty(self):
-        result = db.execute(
-            sa.select([self.meta.tables['releases'].c.components_metadata]))
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), [])
-
 
 class TestTaskStatus(base.BaseAlembicMigrationTest):
 
@@ -447,13 +441,21 @@ class TestBaremetalFields(base.BaseAlembicMigrationTest):
         self.assertIn((baremetal_gateway, baremetal_range), result)
 
 
-class TestPluginMigration(base.BaseAlembicMigrationTest):
+class TestComponentsMigration(base.BaseAlembicMigrationTest):
 
     def test_new_component_metadata_field_exists_and_empty(self):
-        result = db.execute(
-            sa.select([self.meta.tables['plugins'].c.components_metadata]))
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), [])
+        column_values = [
+            (self.meta.tables['plugins'].c.components_metadata, []),
+            (self.meta.tables['releases'].c.components_metadata, []),
+            (self.meta.tables['clusters'].c.components, [])
+        ]
+
+        result = db.execute(sa.select(
+            [item[0] for item in column_values]))
+        db_values = result.fetchone()
+
+        for idx, db_value in enumerate(db_values):
+            self.assertEqual(jsonutils.loads(db_value), column_values[idx][1])
 
 
 class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):

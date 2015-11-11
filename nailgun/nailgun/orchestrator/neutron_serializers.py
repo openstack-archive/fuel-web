@@ -1344,7 +1344,57 @@ class NeutronNetworkDeploymentSerializer80(
         if objects.Cluster.is_component_enabled(node.cluster, 'ironic'):
             transformations.append(cls.add_bridge(
                 consts.DEFAULT_BRIDGES_NAMES.br_baremetal))
+            transformations.append(cls.add_bridge(
+                consts.DEFAULT_BRIDGES_NAMES.br_ironic, provider='ovs'))
+            transformations.append(cls.add_patch(
+                bridges=[consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                         consts.DEFAULT_BRIDGES_NAMES.br_baremetal],
+                provider='ovs'))
         return transformations
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer80, cls).\
+            generate_l2(cluster)
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            l2["phys_nets"]["physnet-ironic"] = {
+                "bridge": consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                "vlan_range": None
+            }
+        return l2
+
+    @classmethod
+    def _generate_baremetal_network(cls, cluster):
+        ng = (objects.NetworkGroup.get_from_node_group_by_name(
+            objects.Cluster.get_default_group(cluster).id,
+            'baremetal'))
+        return {
+            "L3": {
+                "subnet": ng.cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": cluster.network_config.baremetal_gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_range),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": objects.Cluster.get_creds(
+                cluster)['tenant']['value'],
+            "shared": True
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = super(NeutronNetworkDeploymentSerializer80, cls).\
+            generate_predefined_networks(cluster)
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets
 
 
 class NeutronNetworkTemplateSerializer80(NeutronNetworkTemplateSerializer70):

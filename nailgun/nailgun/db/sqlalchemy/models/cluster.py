@@ -113,6 +113,7 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
     deployment_tasks = Column(JSON, default=[])
+    components = Column(JSON, default=[], server_default='[]')
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
 

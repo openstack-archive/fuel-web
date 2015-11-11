@@ -425,7 +425,7 @@ class EnvironmentManager(object):
             db().delete(ng)
             db().flush()
 
-    def create_plugin(self, api=False, cluster=None, **kwargs):
+    def create_plugin(self, api=False, cluster=None, enabled=True, **kwargs):
         plugin_data = self.get_default_plugin_metadata(**kwargs)
 
         if api:
@@ -444,7 +444,8 @@ class EnvironmentManager(object):
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
-            ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
+            ClusterPlugins.set_attributes(
+                cluster.id, plugin.id, enabled=enabled)
         return plugin
 
     def create_dashboard_entry(self, **kwargs):

@@ -1152,6 +1152,17 @@ class EnvironmentManager(object):
             expect_errors=expect_errors
         )
 
+    def _set_additional_component(self, cluster, component, value):
+        attrs = cluster.attributes.editable
+        attrs['additional_components'][component]['value'] = value
+        self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+
 
 class BaseTestCase(TestCase):
 

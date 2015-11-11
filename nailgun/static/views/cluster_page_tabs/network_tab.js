@@ -368,6 +368,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         type='checkbox'
                         checked={this.props.network.get('meta').notation == 'cidr'}
                         label={i18n('cluster_page.network_tab.network.use_whole_cidr')}
+                        disabled={this.props.disabled}
                         onChange={this.props.changeNetworkNotation}
                         wrapperClassName='pull-left'
                     />

@@ -32,6 +32,7 @@ class ReleaseSerializer(BasicSerializer):
         "state",
         "attributes_metadata",
         "vmware_attributes_metadata",
+        "components_metadata"
     )
 
     @classmethod
@@ -43,3 +44,12 @@ class ReleaseSerializer(BasicSerializer):
         release_dict["is_deployable"] = Release.is_deployable(instance)
 
         return release_dict
+
+
+class ComponentSerializer(BasicSerializer):
+
+    @classmethod
+    def serialize(cls, instance):
+        instance.pop('bind', None)
+
+        return instance

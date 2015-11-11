@@ -114,38 +114,45 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin_id = ClusterPlugins.get_connected_plugins(cluster.id)[0][0]
-        ClusterPlugins.set_attributes(cluster.id, plugin_id, enabled=True)
+        plugin = ClusterPlugins.get_connected_plugins(cluster)[0]
+        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
 
         columns = meta.tables['cluster_plugins'].c
         enabled = self.db.execute(
             sa.select([columns.enabled])
             .where(columns.cluster_id == cluster.id)
-            .where(columns.plugin_id == plugin_id)
+            .where(columns.plugin_id == plugin.id)
         ).fetchone()
         self.assertTrue(enabled[0])
+
+    def test_get_connected_plugins_data(self):
+        self._create_test_plugins()
+        cluster = self._create_test_cluster()
+        number_of_connected_plugins_data_items =\
+            ClusterPlugins.get_connected_plugins_data(cluster.id).count()
+        self.assertEqual(5, number_of_connected_plugins_data_items)
 
     def test_get_connected_plugins(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
-        connected_plugins =\
-            ClusterPlugins.get_connected_plugins(cluster.id).all()
-        self.assertEqual(len(connected_plugins), 5)
+        number_of_connected_plugins =\
+            ClusterPlugins.get_connected_plugins(cluster).count()
+        self.assertEqual(5, number_of_connected_plugins)
 
     def test_get_connected_clusters(self):
         plugin_id = self._create_test_plugins()[0]
         for _ in range(2):
             self._create_test_cluster()
-        connected_clusters =\
-            ClusterPlugins.get_connected_clusters(plugin_id).all()
-        self.assertEqual(len(connected_clusters), 2)
+        number_of_connected_clusters =\
+            ClusterPlugins.get_connected_clusters(plugin_id).count()
+        self.assertEqual(2, number_of_connected_clusters)
 
     def test_get_enabled(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin_id = ClusterPlugins.get_connected_plugins(cluster.id)[0][0]
-        ClusterPlugins.set_attributes(cluster.id, plugin_id, enabled=True)
+        plugin = ClusterPlugins.get_connected_plugins(cluster)[0]
+        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
 
         enabled_plugin = ClusterPlugins.get_enabled(cluster.id)[0].id
-        self.assertEqual(enabled_plugin, plugin_id)
+        self.assertEqual(enabled_plugin, plugin.id)

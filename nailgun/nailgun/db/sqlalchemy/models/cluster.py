@@ -34,6 +34,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.db.sqlalchemy.models.node import Node
 
 
@@ -113,6 +114,11 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
     deployment_tasks = Column(JSON, default=[])
+    components = Column(
+        MutableList.as_mutable(JSON),
+        default=[],
+        server_default='[]',
+        nullable=False)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
 

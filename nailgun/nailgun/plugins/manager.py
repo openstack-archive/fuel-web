@@ -115,7 +115,8 @@ class PluginManager(object):
 
         plugins_attributes = {}
         for pid, name, title, version, enabled, default_attrs, cluster_attrs\
-                in ClusterPlugins.get_connected_plugins(cluster.id):
+                in ClusterPlugins.get_connected_plugins_data(cluster.id):
+
             if all_versions:
                 enabled = enabled and not default
             data = plugins_attributes.get(name, {})
@@ -346,3 +347,22 @@ class PluginManager(object):
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
             plugin_adapter.sync_metadata_to_db()
+
+    @classmethod
+    def enable_plugins_by_components(cls, cluster):
+        """Enable plugin by components
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :return: None
+        """
+        cluster_components = set(cluster.components)
+        for plugin in ClusterPlugins.get_connected_plugins(cluster):
+            plugin_adapter = wrap_plugin(plugin)
+            plugin_components = set(
+                component['name']
+                for component in plugin_adapter.components_metadata)
+
+            for component in cluster_components & plugin_components:
+                ClusterPlugins.set_attributes(
+                    cluster.id, plugin.id, enabled=True)

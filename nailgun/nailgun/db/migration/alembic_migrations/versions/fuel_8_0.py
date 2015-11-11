@@ -177,6 +177,14 @@ def upgrade_with_components():
             server_default='[]'
         )
     )
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'components',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]')
+    )
 
 
 def downgrade_release_state():
@@ -405,5 +413,6 @@ def downgrade_cluster_plugins():
 
 
 def downgrade_with_components():
+    op.drop_column('clusters', 'components')
     op.drop_column('plugins', 'components_metadata')
     op.drop_column('releases', 'components_metadata')

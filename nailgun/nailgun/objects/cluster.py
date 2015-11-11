@@ -150,35 +150,36 @@ class Cluster(NailgunObject):
         assign_nodes = data.pop("nodes", [])
 
         data["fuel_version"] = settings.VERSION["release"]
-        new_cluster = super(Cluster, cls).create(data)
-        cls.create_default_group(new_cluster)
+        cluster = super(Cluster, cls).create(data)
+        cls.create_default_group(cluster)
 
-        cls.create_attributes(new_cluster)
-        cls.create_vmware_attributes(new_cluster)
-        cls.create_default_extensions(new_cluster)
+        cls.create_attributes(cluster)
+        cls.create_vmware_attributes(cluster)
+        cls.create_default_extensions(cluster)
 
         try:
-            cls.get_network_manager(new_cluster).\
-                create_network_groups_and_config(new_cluster, data)
-            cls.add_pending_changes(new_cluster, "attributes")
-            cls.add_pending_changes(new_cluster, "networks")
-            cls.add_pending_changes(new_cluster, "vmware_attributes")
+            cls.get_network_manager(cluster).\
+                create_network_groups_and_config(cluster, data)
+            cls.add_pending_changes(cluster, "attributes")
+            cls.add_pending_changes(cluster, "networks")
+            cls.add_pending_changes(cluster, "vmware_attributes")
 
             if assign_nodes:
-                cls.update_nodes(new_cluster, assign_nodes)
+                cls.update_nodes(cluster, assign_nodes)
         except (
             errors.OutOfVLANs,
             errors.OutOfIPs,
             errors.NoSuitableCIDR
         ) as exc:
-            db().delete(new_cluster)
+            db().delete(cluster)
             raise errors.CannotCreate(exc.message)
 
         db().flush()
 
-        PluginManager.add_compatible_plugins(new_cluster)
+        PluginManager.add_compatible_plugins(cluster)
+        PluginManager.enable_plugins_by_components(cluster)
 
-        return new_cluster
+        return cluster
 
     @classmethod
     def delete(cls, instance):

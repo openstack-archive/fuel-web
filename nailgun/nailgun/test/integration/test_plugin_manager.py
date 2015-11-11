@@ -227,6 +227,38 @@ class TestPluginManager(base.BaseIntegrationTest):
                                      expected_message):
             PluginManager.get_components_metadata(self.release)
 
+    def test_enable_plugins_by_component(self):
+        cluster = self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2015.1-8.0.3'},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'api': False,
+                'components': [
+                    'hypervisor:test_hypervisor',
+                    'storage:test_storage']})
+
+        plugin = self.env.create_plugin(
+            cluster=cluster,
+            enabled=False,
+            name='plugin_with_test_storage',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            releases=[{
+                'repository_path': 'repositories/ubuntu',
+                'version': '2015.1-8.0.3',
+                'os': 'ubuntu',
+                'mode': ['ha'],
+                'deployment_scripts_path': 'deployment_scripts/'}],
+            components_metadata=self.env.get_default_components(
+                name='storage:test_storage'))
+
+        PluginManager.enable_plugins_by_components(cluster)
+        enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
+        self.assertEqual(len(enabled_plugins), 1)
+        self.assertEqual(enabled_plugins[0], plugin)
+
 
 class TestClusterPluginIntegration(base.BaseTestCase):
 

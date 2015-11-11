@@ -98,7 +98,15 @@ single_schema = {
         "replaced_deployment_info": {"type": "object"},
         "replaced_provisioning_info": {"type": "object"},
         "is_customized": {"type": "boolean"},
-        "fuel_version": {"type": "string"}
+        "fuel_version": {"type": "string"},
+        "components": {
+            'type': 'array',
+            'minItems': 3,
+            'items': [{
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string'}}}]
+        }
     }
 }
 

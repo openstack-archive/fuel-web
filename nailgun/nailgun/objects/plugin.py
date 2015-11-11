@@ -246,12 +246,12 @@ class ClusterPlugins(NailgunObject):
         db().flush()
 
     @classmethod
-    def get_connected_plugins(cls, cluster_id):
-        """Returns plugins connected with given cluster.
+    def get_connected_plugins_data(cls, cluster_id):
+        """Returns plugins and cluster_plugins data connected with cluster.
 
         :param cluster_id: Cluster ID
         :type cluster_id: int
-        :returns: List of plugins
+        :returns: List of mixed data from plugins and cluster_plugins
         :rtype: iterable (SQLAlchemy query)
         """
         return db().query(
@@ -264,6 +264,22 @@ class ClusterPlugins(NailgunObject):
             cls.model.attributes
         ).join(cls.model)\
             .filter(cls.model.cluster_id == cluster_id)\
+            .order_by(models.Plugin.name)\
+            .order_by(models.Plugin.version)
+
+    @classmethod
+    def get_connected_plugins(cls, cluster):
+        """Returns plugins connected with given cluster.
+
+        :param cluster: Cluster instance
+        :type cluster: Cluster SQLAlchemy model
+        :returns: List of plugins
+        :rtype: iterable (SQLAlchemy query)
+        """
+        return db().query(
+            models.Plugin
+        ).join(cls.model)\
+            .filter(cls.model.cluster_id == cluster.id)\
             .order_by(models.Plugin.name)\
             .order_by(models.Plugin.version)
 

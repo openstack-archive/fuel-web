@@ -2925,6 +2925,73 @@ input[type=range] {
 
 
 .role-panel {
+  h4 {
+    margin: 0px 0px 20px 0px;
+  }
+  .roles-row {
+    display: block;
+    width: 101%;
+    min-height: 50px;
+    margin-left: -12px;
+    overflow: hidden;
+    .role-block {
+      display: block;
+      float: left;
+      position: relative;
+      width: 19%;
+      height: 50px;
+      background-color: @gray + 80%;
+      border: 2px solid @gray + 80%;
+      border-radius: 20px;
+      margin-left: 1%;
+      margin-bottom: 12px;
+      cursor: pointer;
+      overflow: hidden;
+      &:hover {
+        background-color: @gray + 70%;
+        border: 2px solid @gray + 70%;
+      }
+      .role {
+        width: 100%;
+        height: 46px;
+        display: table-cell;
+        vertical-align: middle;
+        padding: 0px 16px;
+        line-height: 16px;
+        i {
+          display: block;
+          position: absolute;
+          top: 14px;
+        }
+        span {
+          display: inline-block;
+          margin-left: 24px;
+        }
+      }
+    }
+    .selected {
+      background-color: @green;
+      border: 2px solid @green;
+      color: @white;
+      font-weight: 600;
+      &:hover {
+        background-color: @green - 10%;
+        border: 2px solid @green - 10%;
+      }
+    }
+    .disabled {
+      box-sizing: border-box;
+      background-color: @white;
+      color: @gray;
+      font-weight: 600;
+      border: 2px solid @orange;
+      cursor: default;
+      &:hover {
+        background-color: @white;
+        border: 2px solid @orange;
+      }
+    }
+  }
   .checkbox-group {
     label {
       width: 100%;

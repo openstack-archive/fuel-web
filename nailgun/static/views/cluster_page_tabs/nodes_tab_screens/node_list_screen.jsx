@@ -1540,6 +1540,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <div className='well role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
+                    
+                    <div className="roles-row">
+                      <div className="role-block selected"><div className="role">Controller</div></div>
+                      <div className="role-block"><div className="role">Compute</div></div>
+                    </div>
+                    
+                    <div className="roles-row">
+                      <div className="role-block" data-toggle="tooltip" data-placement="bottom" title="Tooltip on bottom"><div className="role">Storage - Cinder</div></div>
+                      <div className="role-block disabled"><div className="role"><i className="glyphicon glyphicon-warning-sign"></i>Storage - Ceph OSD</div></div>
+                      <div className="role-block"><div className="role">Telemetry - MongoDB</div></div>
+                      <div className="role-block"><div className="role">Operating System</div></div>
+                      <div className="role-block"><div className="role">Storage - Cinder Proxy to VMware Datastore</div></div>
+                      <div className="role-block"><div className="role">Demo - Test Role Name Example</div></div>
+                    </div>
                     {this.props.cluster.get('roles').map(function(role) {
                         if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
                             var name = role.get('name'),

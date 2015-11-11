@@ -75,7 +75,8 @@ class TestStopDeployment(BaseIntegrationTest):
 
         self.assertRegexpMatches(
             notification.message,
-            'Please reset the environment if you want to redeploy it.')
+            'Please make changes and reset the environment '
+            'if you want to redeploy it.')
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

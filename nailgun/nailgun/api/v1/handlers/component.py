@@ -29,7 +29,13 @@ class ComponentCollectionHandler(base.CollectionHandler):
                * 404 (release not found in db)
         """
         release = self.get_object_or_404(Release, release_id)
-        return Release.get_all_components(release)
+        components = Release.get_all_components(release)
+        # 'binds' proccess only on backend so should be excluded from API
+        for component in components:
+            if component.get('bind'):
+                component.pop('bind')
+
+        return components
 
     def POST(self, release_id):
         """Creating of components is disallowed

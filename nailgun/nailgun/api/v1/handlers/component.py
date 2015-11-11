@@ -16,6 +16,7 @@
 
 from nailgun.api.v1.handlers import base
 from nailgun.objects import Release
+from nailgun.objects.serializers.release import ComponentSerializer
 
 
 class ComponentCollectionHandler(base.CollectionHandler):
@@ -29,7 +30,9 @@ class ComponentCollectionHandler(base.CollectionHandler):
                * 404 (release not found in db)
         """
         release = self.get_object_or_404(Release, release_id)
-        return Release.get_all_components(release)
+        components = Release.get_all_components(release)
+
+        return [ComponentSerializer.serialize(c) for c in components]
 
     def POST(self, release_id):
         """Creating of components is disallowed

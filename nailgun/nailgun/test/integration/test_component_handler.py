@@ -39,7 +39,8 @@ class TestComponentHandler(base.BaseIntegrationTest):
                 'mode': ['ha'],
                 'deployment_scripts_path': 'deployment_scripts/'}],
             components_metadata=self.env.get_default_components(
-                name='storage:test_component_2'))
+                name='storage:test_component_2',
+                bind='some_action_to_process'))
 
     def test_get_components(self):
         resp = self.app.get(

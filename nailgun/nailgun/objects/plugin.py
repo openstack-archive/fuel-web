@@ -254,15 +254,8 @@ class ClusterPlugins(NailgunObject):
         :returns: List of plugins
         :rtype: iterable (SQLAlchemy query)
         """
-        return db().query(
-            models.Plugin.id,
-            models.Plugin.name,
-            models.Plugin.title,
-            models.Plugin.version,
-            cls.model.enabled,
-            models.Plugin.attributes_metadata,
-            cls.model.attributes
-        ).join(cls.model)\
+        return db().query(models.Plugin, cls.model)\
+            .join(cls.model)\
             .filter(cls.model.cluster_id == cluster_id)\
             .order_by(models.Plugin.name)\
             .order_by(models.Plugin.version)

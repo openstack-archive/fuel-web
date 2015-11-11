@@ -18,6 +18,11 @@ from nailgun import consts
 
 from nailgun.api.v1.validators.json_schema import base_types
 
+COMPONENTS_TYPES_STR = '|'.join(
+    ['hypervisor', 'network', 'storage', 'additional_service'])
+COMPONENT_NAME_PATTERN = \
+    '^({0}):([0-9a-z_-]+:)*[0-9a-z_-]+$'.format(COMPONENTS_TYPES_STR)
+
 CLUSTER_UI_SETTINGS = {
     "type": "object",
     "required": [
@@ -88,17 +93,19 @@ single_schema = {
             "type": "string",
             "enum": list(consts.CLUSTER_STATUSES)
         },
-        "net_provider": {
-            "type": "string",
-            "enum": list(consts.CLUSTER_NET_PROVIDERS)
-        },
         "ui_settings": CLUSTER_UI_SETTINGS,
         "release_id": {"type": "number"},
         "pending_release_id": base_types.NULLABLE_ID,
         "replaced_deployment_info": {"type": "object"},
         "replaced_provisioning_info": {"type": "object"},
         "is_customized": {"type": "boolean"},
-        "fuel_version": {"type": "string"}
+        "fuel_version": {"type": "string"},
+        "components": {
+            'type': 'array',
+            'items': [{
+                'type': 'string',
+                'pattern': COMPONENT_NAME_PATTERN}]
+        }
     }
 }
 

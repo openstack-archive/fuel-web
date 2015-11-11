@@ -1232,6 +1232,14 @@ class TestClusterObject(BaseTestCase):
             self.assertDictEqual(
                 volumes_metadata, expected_volumes_metadata)
 
+    def test_cluster_is_component_enabled(self):
+        cluster = self.env.clusters[0]
+        self.assertFalse(objects.Cluster.is_component_enabled(cluster,
+                                                              'ironic'))
+        self.env._set_additional_component(cluster, 'ironic', True)
+        self.assertTrue(objects.Cluster.is_component_enabled(cluster,
+                                                             'ironic'))
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 

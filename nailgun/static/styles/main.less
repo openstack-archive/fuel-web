@@ -2951,34 +2951,63 @@ input[type=range] {
 
 
 .role-panel {
-  .checkbox-group {
-    label {
-      width: 100%;
-      margin-bottom: 2px;
-      padding-top: 2px;
-      color: @base-text-color;
+  h4 {
+    margin: 0px 0px 20px 0px;
+  }
+  .roles-row {
+    .role-block {
+      float: left;
+      position: relative;
+      width: 19%;
+      height: 50px;
+      background-color: @gray + 80%;
+      border: 2px solid @gray + 80%;
+      border-radius: 20px;
+      margin-bottom: 12px;
       cursor: pointer;
-      .custom-tumbler {
-        top: -1px;
+      overflow: hidden;
+      &:not(:first-child) {
+        margin-left: 1%;
       }
-      .glyphicon {
-        .text-warning;
-        position: relative;
-        top: -5px;
-        left: 5px;
+      .role {
+        width: 100%;
+        height: 46px;
+        display: table-cell;
+        vertical-align: middle;
+        padding: 0px 16px;
+        line-height: 16px;
+        .break-word;
+        i {
+          display: block;
+          position: absolute;
+          top: 14px;
+          & + span {
+            display: inline-block;
+            margin-left: 24px;
+          }
+        }
       }
-    }
-    &.disabled {
-      label {
-        cursor: default;
+      &:hover {
+        background-color: @gray + 70%;
+        border: 2px solid @gray + 70%;
+      }
+      &.selected {
+        background-color: @green;
+        border: 2px solid @green;
+        color: @white;
+        .font-semibold;
+        &:hover {
+          background-color: @green - 10%;
+          border: 2px solid @green - 10%;
+        }
+      }
+      &.disabled {
+        background-color: @white;
         color: @gray;
+        border: 2px solid @orange;
+        cursor: default;
+        .font-semibold;
       }
-    }
-    .help-block {
-      color: @gray;
-      font-size: @base-font-size - 2;
-      margin-left: 28px;
-      margin-top: 0;
     }
   }
 }

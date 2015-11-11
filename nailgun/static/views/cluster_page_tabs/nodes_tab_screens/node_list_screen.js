@@ -1577,31 +1577,66 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 message: messages.join(' ')
             };
         },
-        render: function() {
+        renderRole(role) {
+            if (role.checkRestrictions(this.props.configModels, 'hide').result) return null;
+
+            var name = role.get('name'),
+                isSelected = _.contains(this.props.selectedRoles, name),
+                processedRestrictions = this.processRestrictions(role, this.props.configModels),
+                tooltipText = processedRestrictions.message || role.get('description');
+            return (
+                <controls.Tooltip
+                    key={tooltipText}
+                    text={tooltipText}
+                    placement='bottom'
+                >
+                    <div
+                        ref={name}
+                        className={utils.classNames({
+                            'role-block': true,
+                            [name]: true,
+                            selected: isSelected,
+                            disabled: !this.props.nodes.length || processedRestrictions.result
+                        })}
+                        onClick={_.partial(this.props.selectRoles, name, !isSelected)}
+                    >
+                        <div className='role'>
+                            {!!processedRestrictions.message && <i className='glyphicon glyphicon-warning-sign' />}
+                            {role.get('label')}
+                        </div>
+                    </div>
+                </controls.Tooltip>
+            );
+        },
+        render() {
+            var roles = this.props.cluster.get('roles');
             return (
                 <div className='well role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
-                    {this.props.cluster.get('roles').map(function(role) {
-                        if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
-                            var name = role.get('name'),
-                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.props.configModels) : {};
-                            return (
-                                <controls.Input
-                                    key={name}
-                                    ref={name}
-                                    type='checkbox'
-                                    name={name}
-                                    label={role.get('label')}
-                                    description={role.get('description')}
-                                    checked={_.contains(this.props.selectedRoles, name)}
-                                    disabled={!this.props.nodes.length || processedRestrictions.result}
-                                    tooltipText={!!this.props.nodes.length && processedRestrictions.message}
-                                    onChange={this.props.selectRoles}
-                                    wrapperClassName={name}
-                                />
-                            );
+                    <div className='roles-row clearfix'>
+                        {
+                            _.map(roles.filter((role) => {
+                                var limits = role.get('limits');
+                                return limits && !_.isUndefined(limits.min);
+                            }), this.renderRole, this)
                         }
-                    }, this)}
+                    </div>
+                    <div className='roles-row clearfix'>
+                        {
+                            _.map(roles.filter((role) => {
+                                var limits = role.get('limits');
+                                return limits && _.isUndefined(limits.min) && !_.isUndefined(limits.recommended);
+                            }), this.renderRole, this)
+                        }
+                    </div>
+                    <div className='roles-row clearfix'>
+                        {
+                            _.map(roles.filter((role) => {
+                                var limits = role.get('limits');
+                                return !limits || _.isUndefined(limits.min) && _.isUndefined(limits.recommended);
+                            }), this.renderRole, this)
+                        }
+                    </div>
                 </div>
             );
         }

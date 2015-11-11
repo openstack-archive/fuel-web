@@ -726,86 +726,116 @@ DUMP:
       objects:
       - type: dir
         path: /etc/nailgun
+        remote: True
       - type: dir
         path: /etc/astute
+        remote: True
       - type: dir
         path: /etc/fuel
+        remote: True
       - type: command
         command: df -h
         to_file: df.txt
+        remote: True
       - type: command
         command: mount
         to_file: mount.txt
+        remote: True
       - type: command
         command: iptables -t nat -S
         to_file: iptables_nat.txt
+        remote: True
       - type: command
         command: iptables -t filter -S
         to_file: iptables_filter.txt
+        remote: True
       - type: command
         command: dmidecode
         to_file: dmidecode.txt
+        remote: True
       - type: command
         command: uptime
         to_file: uptime.txt
+        remote: True
       - type: command
         command: ps auxwwf
         to_file: ps.txt
+        remote: True
       - type: command
         command: pvdisplay
         to_file: lvm_pvdisplay.txt
+        remote: True
       - type: command
         command: docker images
         to_file: docker_images.txt
+        remote: True
       - type: command
         command: docker ps
         to_file: docker_ps.txt
+        remote: True
       - type: command
         command: vgdisplay
         to_file: lvm_vgdisplay.txt
+        remote: True
       - type: command
         command: lvdisplay
         to_file: lvm_lvdisplay.txt
+        remote: True
       - type: command
         command: ip a
         to_file: ip_a.txt
+        remote: True
       - type: command
         command: ip r
         to_file: ip_r.txt
+        remote: True
       - type: command
         command: netstat -anp
         to_file: netstat.txt
+        remote: True
       - type: command
         command: brctl show
         to_file: brctl_show.txt
+        remote: True
       - type: command
         command: rpm -qa
         to_file: centos_installed_rpms.txt
+        remote: True
       - type: command
         command: yum repolist
         to_file: centos_repo_list.txt
+        remote: True
       - type: dir
         path: /etc/sysconfig/network-scripts
+        remote: True
       - type: file
         path: /etc/dnsmasq.conf
+        remote: True
       - type: file
         path: /root/*.log
+        remote: True
       - type: file
         path: /etc/cobbler*
+        remote: True
       - type: dir
         path: /var/log
         exclude:
           - atop/
+        remote: True
       - type: file
         path: /var/log/atop/atop_current
+        remote: True
       - type: command
         command: uname -a
         to_file: uname_a.txt
+        remote: True
       - type: command
         command: lsmod
         to_file: lsmod.txt
+        remote: True
       - type: file
         path: /etc/*-release
+        remote: True
 
     controller:
       hosts: []
@@ -814,20 +844,26 @@ DUMP:
       - type: command
         command: pcs status
         to_file: pcs_status.txt
+        remote: True
       - type: command
         command: rabbitmqctl report
         to_file: rabbitmqctl_report.txt
+        remote: True
       - type: file
         path: /var/log/neutron/neutron-ns-metadata-proxy*.log
+        remote: True
       - type: command
         command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} ip a; done"
         to_file: ip_a_ns.txt
+        remote: True
       - type: command
         command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} ip r; done"
         to_file: ip_r_ns.txt
+        remote: True
       - type: command
         command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} netstat -anp; done"
         to_file: netstat_ns.txt
+        remote: True
 
     slave:
       hosts: []
@@ -835,148 +871,205 @@ DUMP:
       objects:
       - type: file
         path: /etc/astute.yaml
+        remote: True
       - type: dir
         path: /etc/hiera
+        remote: True
       - type: file
         path: /var/log/puppet.log
+        remote: True
       - type: file
         path: /root/ceph*
+        remote: True
       - type: file
         path: /root/anaconda*
+        remote: True
       - type: file
         path: /root/*.log
+        remote: True
       - type: file
         path: /root/*.ks
+        remote: True
       - type: file
         path: /etc/ceph*
+        remote: True
       - type: file
         path: /etc/keystone*
+        remote: True
       - type: file
         path: /etc/nova*
+        remote: True
       - type: file
         path: /etc/neutron*
+        remote: True
       - type: file
         path: /etc/horizon*
+        remote: True
       - type: file
         path: /etc/cinder*
+        remote: True
       - type: file
         path: /etc/glance*
+        remote: True
       - type: file
         path: /etc/swift*
+        remote: True
       - type: file
         path: /etc/haproxy*
+        remote: True
       - type: file
         path: /var/log/ceph
+        remote: True
       - type: file
         path: /var/lib/puppet/state/last_run_summary.yaml
+        remote: True
       - type: file
         path: /etc/resolv.conf
+        remote: True
       - type: file
         path: /etc/mcollective/server.cfg
+        remote: True
       - type: dir
         path: /var/run/pcap_dir
+        remote: True
       - type: file
         path: /var/log/atop/atop_current
+        remote: True
       - type: command
         command: df -h
         to_file: df.txt
+        remote: True
       - type: command
         command: mount
         to_file: mount.txt
+        remote: True
       - type: command
         command: iptables -t nat -S
         to_file: iptables_nat.txt
+        remote: True
       - type: command
         command: iptables -t filter -S
         to_file: iptables_filter.txt
+        remote: True
       - type: command
         command: dmidecode
         to_file: dmidecode.txt
+        remote: True
       - type: command
         command: uptime
         to_file: uptime.txt
+        remote: True
       - type: command
         command: ps auxwwf
         to_file: ps.txt
+        remote: True
       - type: command
         command: pvdisplay
         to_file: lvm_pvdisplay.txt
+        remote: True
       - type: command
         command: vgdisplay
         to_file: lvm_vgdisplay.txt
+        remote: True
       - type: command
         command: lvdisplay
         to_file: lvm_lvdisplay.txt
+        remote: True
       - type: command
         command: ip a
         to_file: ip_a.txt
+        remote: True
       - type: command
         command: ip r
         to_file: ip_r.txt
+        remote: True
       - type: command
         command: arp -an
         to_file: arp.txt
+        remote: True
       - type: command
         command: netstat -anp
         to_file: netstat.txt
+        remote: True
       - type: command
         command: brctl show
         to_file: brctl_show.txt
+        remote: True
       - type: command
         command: rpm -qa
         to_file: centos_installed_rpms.txt
+        remote: True
       - type: command
         command: yum repolist
         to_file: centos_repo_list.txt
+        remote: True
       - type: command
         command: dpkg -l|cat
         to_file: ubuntu_installed_debs.txt
+        remote: True
       - type: command
         command: apt-cache policy
         to_file: ubuntu_repo_list.txt
+        remote: True
       - type: command
         command: sysctl -a
         to_file: sysctl.txt
+        remote: True
 
       - type: dir
         path: /var/lib/cloud
+        remote: True
       - type: file
         path: /var/log/cloud-init*.log
+        remote: True
 
       - type: dir
         path: /etc/sysconfig/network-scripts
+        remote: True
       - type: dir
         path: /etc/network/interfaces.d
+        remote: True
       - type: file
         path: /etc/network/interfaces
+        remote: True
       - type: file
         path: /root/post-partition.log
+        remote: True
       - type: command
         command: blkid -o list
         to_file: blkid_o_list.txt
+        remote: True
       - type: command
         command: ceph health
         to_file: ceph_health.txt
+        remote: True
       - type: command
         command: ceph -s
         to_file: ceph_s.txt
+        remote: True
       - type: command
         command: ceph osd tree
         to_file: ceph_osd_tree.txt
+        remote: True
       - type: command
         command: cat /proc/interrupts
         to_file: proc_interrupts.txt
+        remote: True
       - type: command
         command: uname -a
         to_file: uname_a.txt
+        remote: True
       - type: command
         command: lsmod
         to_file: lsmod.txt
+        remote: True
       - type: file
         path: /etc/*-release
+        remote: True
       - type: command
         command: dmesg
         to_file: dmesg.txt
+        remote: True
 
 # performance tests settings
 PERFORMANCE_TESTS_RUN_NUMBER: 10

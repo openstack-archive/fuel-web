@@ -51,8 +51,8 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Settings');
                     })
-                    // go to Common subtab to use checkboxes for tests
-                    .clickLinkByText('Common');
+                    // go to Storage subtab to use checkboxes for tests
+                    .clickLinkByText('Storage');
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
@@ -112,33 +112,33 @@ define([
             },
             'The choice of subgroup is preserved when user navigates through the cluster tabs': function() {
                 return this.remote
-                    .clickLinkByText('Syslog')
+                    .clickLinkByText('Logging')
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
                     .then(function() {
                         return clusterPage.goToTab('Settings');
                     })
-                    .assertElementExists('.nav-pills li.active a.subtab-link-syslog', 'The choice of subgroup is preserved when user navigates through the cluster tabs');
+                    .assertElementExists('.nav-pills li.active a.subtab-link-logging', 'The choice of subgroup is preserved when user navigates through the cluster tabs');
             },
             'The page reacts on invalid input': function() {
                 return this.remote
-                    .clickLinkByText('Access')
+                    .clickLinkByText('Security')
                     // "nova" is forbidden username
                     .setInputValue('[type=text][name=user]', 'nova')
-                    .assertElementAppears('.access .form-group.has-error', 200, 'Invalid field marked as error')
-                    .assertElementExists('.subtab-link-access i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid')
+                    .assertElementAppears('.security .form-group.has-error', 200, 'Invalid field marked as error')
+                    .assertElementExists('.subtab-link-security i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid')
                     .assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled in case of validation error')
                     // revert the change
                     .clickByCssSelector('.btn-revert-changes')
-                    .assertElementNotExists('.access .form-group.has-error', 'Validation error is cleared after resetting changes')
-                    .assertElementNotExists('.subtab-link-access i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
+                    .assertElementNotExists('.security .form-group.has-error', 'Validation error is cleared after resetting changes')
+                    .assertElementNotExists('.subtab-link-security i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
             },
             'Test repositories custom control': function() {
                 var repoAmount,
                     self = this;
                 return this.remote
-                    .clickLinkByText('Repositories')
+                    .clickLinkByText('General')
                     // get amount of default repositories
                     .findAllByCssSelector('.repos .form-inline')
                         .then(function(elements) {

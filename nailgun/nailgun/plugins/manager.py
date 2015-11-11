@@ -354,3 +354,18 @@ class PluginManager(object):
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
             plugin_adapter.sync_metadata_to_db()
+
+    @classmethod
+    def enable_plugins_by_components(cls, cluster):
+        """Enable plugin by components"""
+
+        for plugin in cls.get_compatible_plugins(cluster):
+            plugin_adapter = wrap_plugin(plugin)
+            plugin_components = [
+                component['name']
+                for component in plugin_adapter.components_metadata]
+
+            for component in cluster.components:
+                if component in plugin_components:
+                    PluginCollection.set_attributes(
+                        plugin.id, cluster.id, enabled=True)

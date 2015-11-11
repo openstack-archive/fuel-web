@@ -371,6 +371,12 @@ LOGS:
     <<: *bootstrap_log_group
     path: 'bootstrap/agent.log'
 # Openstack logs
+  - id: 'os/nova-api'
+    name: "nova-api"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "nova-api.log"
   - id: 'os/nova-cert'
     name: "nova-cert"
     <<: *remote_openstack_log_type

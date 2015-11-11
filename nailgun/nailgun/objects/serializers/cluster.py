@@ -32,6 +32,7 @@ class ClusterSerializer(BasicSerializer):
         "fuel_version",
         "pending_release_id",
         "is_locked",
+        "components"
     )
 
 

@@ -1358,6 +1358,21 @@ class NeutronNetworkDeploymentSerializer80(
         return [utils.join_range(x) for x in floating_ranges]
 
     @classmethod
+    def _get_network_role_mapping(cls, node, mapping):
+        """Aggregates common logic for mapping retrieval methods
+
+        these methods are:
+        - 'get_network_role_mapping_to_ip'
+        - 'get_network_role_mapping_to_interfaces'.
+        """
+        roles = dict()
+        for role in objects.Cluster.get_mapped_network_roles(node.cluster):
+            default_mapping = mapping.get(role['default_mapping'])
+            if default_mapping:
+                roles[role['id']] = default_mapping
+        return roles
+
+    @classmethod
     def get_network_to_endpoint_mapping(cls, node):
         mapping = {
             consts.NETWORKS.fuelweb_admin:

@@ -18,7 +18,7 @@ AUTH:
 
 
 VERSION:
-  release: "6.1"
+  release: "8.0"
   api: "1"
   nailgun_sha: "Unknown build"
   astute_sha: "Unknown build"

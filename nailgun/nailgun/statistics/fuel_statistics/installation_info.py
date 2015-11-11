@@ -198,7 +198,8 @@ class InstallationInfo(object):
                 'is_customized': cluster.is_customized,
                 'network_configuration': self.get_network_configuration_info(
                     cluster),
-                'installed_plugins': self.get_cluster_plugins_info(cluster)
+                'installed_plugins': self.get_cluster_plugins_info(cluster),
+                'components': cluster.components
             }
             clusters_info.append(cluster_info)
         return clusters_info

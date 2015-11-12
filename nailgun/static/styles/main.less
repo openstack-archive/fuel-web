@@ -1007,6 +1007,41 @@ input[type=range] {
   }
 }
 
+.nav-pills li {
+  overflow: hidden;
+  user-select: none;
+  width: 100%;
+  &:not(.active) {
+    cursor: pointer;
+  }
+  &.active {
+    & > a {
+      background-color: @navbar-color-active;
+      color: @white;
+      font-weight: 600;
+      &:hover {
+        background-color: @navbar-color-active;
+      }
+    }
+  }
+  & > a {
+    padding-left: 25px;
+    line-height: 1.2;
+    color: @navbar-color-active;
+    font-weight: 600;
+    &:hover {
+      color: @white;
+      background-color: @base-light-color;
+    }
+  }
+  &.group-title {
+    font-weight: 600;
+    margin: 20px 0 10px 0px;
+    cursor: default;
+    text-transform: capitalize;
+  }
+}
+
 // FORMS
 
 .forms-box {
@@ -1352,6 +1387,17 @@ input[type=range] {
     height: 40px;
   }
 
+  .network-tab,
+  .settings-tab {
+    .subtab-icon {
+      position: absolute;
+      left: 5px;
+      top: 10px;
+      z-index: 1;
+      width: 15px;
+      height: 15px;
+    }
+  }
   .settings-tab {
     .forms-box {
       .setting-section {margin-bottom: 40px;}
@@ -1367,34 +1413,7 @@ input[type=range] {
     .nav-pills:after {
       margin-bottom: 20px;
     }
-    .nav-pills li {
-      overflow: hidden;
-      user-select: none;
-      width: 100%;
-      &:not(.active) {
-        cursor: pointer;
-      }
-      &.active {
-        & > a {
-          background-color: @navbar-color-active;
-          color: @white;
-          font-weight: 600;
-          &:hover {
-            background-color: @navbar-color-active;
-          }
-        }
-      }
-      & > a {
-        padding-left: 25px;
-        line-height: 1.2;
-        color: @navbar-color-active;
-        font-weight: 600;
-        &:hover {
-          color: @white;
-          background-color: @base-light-color;
-        }
-      }
-    }
+
     .subtab-icon {
       position: absolute;
       left: 5px;
@@ -1429,6 +1448,10 @@ input[type=range] {
   .subtab-item-leave {
     max-height: 60px;
     &.subtab-item-leave-active {
+      max-height: 0px;
+      transition: max-height 0.3s ease-in;
+    }
+    .subtab-item-leave-active {
       max-height: 0px;
       transition: max-height 0.3s ease-in;
     }
@@ -3656,9 +3679,23 @@ input[type=range] {
 // Networks tab
 .network-tab {
   @base-indent: 10px;
+  .title {
+    margin-bottom: 20px;
+    .segmentation-type {
+      font-size: @base-font-size + 3px;
+      color: @gray;
+      display: inline;
+    }
+  }
+  .network-tab-content {
+    margin-bottom: 40px;
+  }
   .forms-box {
     margin-left: 15px;
     margin-right: 15px;
+    &.public {
+      margin-top: 5px;
+    }
     .form-group {
       padding: 0;
       .help-block {
@@ -3688,9 +3725,67 @@ input[type=range] {
         }
       }
     }
+    h3 {
+      margin-top: 15px;
+    }
+  }
+  .add-nodegroup-btn {
+    margin-top: 5px;
+    .glyphicon {
+      margin-right: 5px;
+    }
   }
   .nova-managers {
     margin: @base-indent * 2 0 @base-indent * 2 -@base-indent;
+  }
+  .network-group-name {
+    @node-group-title-height: 50px;
+    margin: 5px 0 10px 0;
+    font-size: @base-font-size + 12;
+    height: @node-group-title-height;
+    &.default {
+      height: @node-group-title-height + 20px;
+      .name {
+        height: @node-group-title-height;
+      }
+      .node-group-renaming {
+        height: @node-group-title-height - 4px;
+      }
+    }
+    .node-group-renaming {
+      margin-bottom: 0;
+      div {
+        width: 50%;
+        margin-left: 15px;
+      }
+    }
+    .name {
+      display: inline;
+      margin-left: 5px;
+    }
+    .glyphicon {
+      margin: 0 10px 0 10px;
+      font-size: @base-font-size + 4;
+      cursor: pointer;
+    }
+    .explanation {
+      color: @gray;
+      font-size: @base-font-size;
+      display: block;
+      margin-left: 15px;
+    }
+    .has-error {
+      .help-block {
+        font-size: @base-font-size - 2;
+        margin-left: 15px;
+      }
+    }
+  }
+  .show-all-networks {
+    margin-top: 13px;
+    label {
+      font-weight: normal;
+    }
   }
 
   // range control
@@ -3714,7 +3809,7 @@ input[type=range] {
         .help-block { display: none; }
       }
       .validation-error {
-        margin: 8px 0 0 10px;
+        margin: 8px 0 0;
         font-size: @base-font-size - 2;
       }
       .ip-ranges-control {
@@ -3806,6 +3901,7 @@ input[type=range] {
     .verification-network-placeholder {min-width: 605px;}
     .verification-text-placeholder {
       padding-left: 0;
+      margin-top: 40px;
       li:first-of-type {
         .font-bold;
       }
@@ -4184,6 +4280,30 @@ input[type=range] {
     .title {
       padding: 0;
       margin: 0;
+    }
+  }
+}
+
+.node-network-group-creation {
+  .node-group-name {
+    label {
+      display: inline;
+      width: 20%;
+      margin-right: 20px;
+      margin-left: 50px;
+    }
+    div {
+      display: inline;
+    }
+  }
+  .node-group-input-name {
+    display: inline;
+    width: 75%;
+  }
+  .has-error {
+    .help-block {
+      margin-left: 112px;
+      font-size: @base-font-size - 2;
     }
   }
 }

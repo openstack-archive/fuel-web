@@ -641,6 +641,16 @@
                     "untagged": "untagged",
                     "range_start": "Start",
                     "range_end": "End",
+                    "show_all_networks": "Show All Networks",
+                    "add_node_network_group": "Add New Node Network Group",
+                    "add": "Add Group",
+                    "node_network_group_name": "Name",
+                    "node_network_group_duplicate_error": "This node network group name is already taken",
+                    "node_network_group_default_name": "This name is assigned to default node network group",
+                    "node_network_group_creation_error": "Node Network Group Creation Error",
+                    "default_node_network_group_info": "This node network group uses shared admin network and cannot be deleted",
+                    "save_changes_warning": "It is necessary to save changes before creating a new node network group",
+                    "verification_multirack_warning": "Network verification is disabled for environments containing more than one node network group",
                     "verify_networks": {
                         "step_0": "Network verification checks the following:",
                         "step_1": "1. L2 connectivity checks between nodes in the environment.",
@@ -710,6 +720,15 @@
                         "invalid_mac": "Invalid MAC address",
                         "ip_start_is_out_of_ip_range": "The IP start value is out of the selected IP range.",
                         "ip_end_is_out_of_ip_range": "The IP end value is out of the selected IP range."
+                    },
+                    "tabs": {
+                        "nova_configuration": "Nova Configuration",
+                        "neutron_l2": "Neutron L2",
+                        "neutron_l3": "Neutron L3",
+                        "network_verification": "Network Verification",
+                        "node_network_groups": "Node network groups",
+                        "settings": "Settings",
+                        "networks": "Default Networks"
                     }
                 },
                 "logs_tab": {
@@ -999,6 +1018,10 @@
                     "submit_email": "Please submit your Mirantis Account email to receive your new password by email.",
                     "done": "Done.",
                     "check_email": "Please check your email for new password"
+                },
+                "remove_node_network_group": {
+                    "title": "Remove Node Network Group",
+                    "confirmation": "Are you sure, you want to delete this Node Network Group?"
                 }
             }
         }

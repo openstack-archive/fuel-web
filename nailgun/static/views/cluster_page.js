@@ -158,7 +158,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         getInitialState: function() {
             return {
-                activeGroupName: this.pickDefaultSettingGroup(),
+                activeSettingsSectionName: this.pickDefaultSettingGroup(),
+                activeNetworkSectionName: '',
+                showAllNetworks: false,
                 selectedNodeIds: {},
                 selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
             };
@@ -240,7 +242,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         setActiveSettingsGroupName: function(value) {
             if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
-            this.setState({activeGroupName: value});
+            this.setState({activeSettingsSectionName: value});
+        },
+        //@FIXME(amorozova): showAllNetworks has nothing to do on cluster page
+        // it should be stored in ui_settings for networks tab
+        setActiveNetworkSectionName: function(name, value) {
+            this.setState(name == 'show_all' ? {showAllNetworks: value} :
+                {showAllNetworks: false, activeNetworkSectionName: name});
         },
         selectNodes: function(ids, checked) {
             if (ids && ids.length) {
@@ -295,7 +303,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             cluster={cluster}
                             nodeNetworkGroups={this.props.nodeNetworkGroups}
                             tabOptions={this.props.tabOptions}
-                            setActiveGroupName={this.setActiveSettingsGroupName}
+                            setActiveSettingsGroupName={this.setActiveSettingsGroupName}
+                            setActiveNetworkSectionName={this.setActiveNetworkSectionName}
                             selectNodes={this.selectNodes}
                             changeLogSelection={this.changeLogSelection}
                             {...this.state}

@@ -883,6 +883,8 @@ DUMP:
         path: /var/run/pcap_dir
       - type: file
         path: /var/log/atop/atop_current
+      - type: file
+        path: /var/log/cron.log
       - type: command
         command: df -h
         to_file: df.txt

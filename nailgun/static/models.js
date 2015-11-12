@@ -904,59 +904,82 @@ define([
         },
         validate: function(attrs) {
             var errors = {},
-                networksErrors = {},
                 networkingParametersErrors = {},
-                ns = 'cluster_page.network_tab.validation.';
+                ns = 'cluster_page.network_tab.validation.',
+                networks = attrs.networks,
+                networkParameters = attrs.networking_parameters,
+                nodeNetworkGroupsErrors = {},
+                nodeNetworkGroups = app.nodeNetworkGroups;
 
-            // validate networks
-            attrs.networks.each(function(network) {
-                if (network.get('meta').configurable) {
+            nodeNetworkGroups.map(function(nodeNetworkGroup) {
+                var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
+                var nodeNetworkGroupErrors = {};
+                // validate networks
+                currentNetworks.each(function(network) {
                     var networkErrors = {};
-
-                    var cidr = network.get('cidr');
-                    _.extend(networkErrors, utils.validateCidr(cidr));
-
-                    if (network.get('meta').notation == 'ip_ranges') {
-                        if (!_.has(networkErrors, 'cidr')) {
-                            var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), cidr);
-                            if (ipRangesErrors.length) networkErrors.ip_ranges = ipRangesErrors;
+                    if (network.get('meta').configurable) {
+                        _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
+                        if (network.get('meta').notation == 'ip_ranges' && !_.has(networkErrors, 'cidr')) {
+                            var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), network.get('cidr'));
+                            if (ipRangesErrors.length) {
+                                networkErrors.ip_ranges = ipRangesErrors;
+                            }
                         }
                         if (network.get('meta').use_gateway) {
                             if (utils.validateIP(network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'invalid_gateway');
-                            } else if (!utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
+                            } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
                             }
                         }
+                        var forbiddenVlans = currentNetworks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;});
+                        _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
+                        if (!_.isEmpty(networkErrors)) {
+                            nodeNetworkGroupErrors[network.id] = networkErrors;
+                        }
+                        if (network.get('name') == 'baremetal') {
+                            if (!_.has(nodeNetworkGroupErrors[network.id], 'cidr')) {
+                                var baremetalGateway = networkParameters.get('baremetal_gateway');
+                                if (utils.validateIP(baremetalGateway)) {
+                                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
+                                } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), baremetalGateway)) {
+                                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_baremetal_network');
+                                }
+                                var baremetalRangeErrors = utils.validateIpRanges([networkParameters.get('baremetal_range')], network.get('cidr'), true);
+                                if (baremetalRangeErrors.length) {
+                                    var [{start, end}] = baremetalRangeErrors;
+                                    networkingParametersErrors.baremetal_range = [start, end];
+                                }
+                            }
+                        }
                     }
-
-                    var forbiddenVlans = attrs.networks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;});
-                    _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
-
-                    if (!_.isEmpty(networkErrors)) networksErrors[network.id] = networkErrors;
+                }, this);
+                if (!_.isEmpty(nodeNetworkGroupErrors)) {
+                    nodeNetworkGroupsErrors[nodeNetworkGroup.id] = nodeNetworkGroupErrors;
                 }
             }, this);
-            if (!_.isEmpty(networksErrors)) {
-                errors.networks = networksErrors;
+
+            if (!_.isEmpty(nodeNetworkGroupsErrors)) {
+                errors.networks = nodeNetworkGroupsErrors;
             }
 
             // validate networking parameters
-            var novaNetManager = attrs.networking_parameters.get('net_manager');
+            var novaNetManager = networkParameters.get('net_manager');
             if (novaNetManager) {
-                networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(attrs.networking_parameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
-                var fixedAmount = attrs.networking_parameters.get('fixed_networks_amount');
-                var fixedVlan = attrs.networking_parameters.get('fixed_networks_vlan_start');
+                networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(networkParameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
+                var fixedAmount = networkParameters.get('fixed_networks_amount');
+                var fixedVlan = networkParameters.get('fixed_networks_vlan_start');
                 if (!utils.isNaturalNumber(parseInt(fixedAmount))) {
                     networkingParametersErrors.fixed_networks_amount = i18n(ns + 'invalid_amount');
                 }
-                var vlanErrors = utils.validateVlan(fixedVlan, attrs.networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
+                var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
                 _.extend(networkingParametersErrors, vlanErrors);
                 if (_.isEmpty(vlanErrors)) {
                     if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
                         networkingParametersErrors.fixed_networks_amount = i18n(ns + 'need_more_vlan');
                     }
                     var vlanIntersection = false;
-                    _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
+                    _.each(_.compact(networks.pluck('vlan_start')), function(vlan) {
                         if (utils.validateVlanRange(fixedVlan, fixedVlan + fixedAmount - 1, vlan)) {
                             vlanIntersection = true;
                         }
@@ -967,10 +990,10 @@ define([
                 }
             } else {
                 var idRangeErrors = ['', ''];
-                var segmentation = attrs.networking_parameters.get('segmentation_type');
+                var segmentation = networkParameters.get('segmentation_type');
                 var idRangeAttr = segmentation == 'vlan' ? 'vlan_range' : 'gre_id_range';
                 var maxId = segmentation == 'vlan' ? 4094 : 65535;
-                var idRange = attrs.networking_parameters.get(idRangeAttr);
+                var idRange = networkParameters.get(idRangeAttr);
                 var idStart = Number(idRange[0]), idEnd = Number(idRange[1]);
                 if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {
                     idRangeErrors[0] = i18n(ns + 'invalid_id_start');
@@ -979,7 +1002,7 @@ define([
                 } else if (idStart > idEnd) {
                     idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'invalid_id_range');
                 } else if (segmentation == 'vlan') {
-                    _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
+                    _.each(_.compact(networks.pluck('vlan_start')), function(vlan) {
                         if (utils.validateVlanRange(idStart, idEnd, vlan)) {
                             idRangeErrors[0] = i18n(ns + 'vlan_intersection');
                         }
@@ -989,46 +1012,33 @@ define([
                 if (_.compact(idRangeErrors).length) {
                     networkingParametersErrors[idRangeAttr] = idRangeErrors;
                 }
-                if (!attrs.networking_parameters.get('base_mac').match(utils.regexes.mac)) {
+                if (!networkParameters.get('base_mac').match(utils.regexes.mac)) {
                     networkingParametersErrors.base_mac = i18n(ns + 'invalid_mac');
                 }
-                var cidr = attrs.networking_parameters.get('internal_cidr');
+                var cidr = networkParameters.get('internal_cidr');
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(cidr, 'internal_cidr'));
-                var gateway = attrs.networking_parameters.get('internal_gateway');
+                var gateway = networkParameters.get('internal_gateway');
                 if (utils.validateIP(gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'invalid_gateway');
                 } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'gateway_is_out_of_internal_network');
                 }
             }
-            var networkWithFloatingRange = attrs.networks.filter(function(network) {return network.get('meta').floating_range_var;})[0];
-            if (networkWithFloatingRange && !_.has(networksErrors[networkWithFloatingRange.id], 'cidr')) {
-                var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'), true);
+            var networkWithFloatingRange = networks.filter(function(network) {return network.get('meta').floating_range_var;})[0];
+            if (networkWithFloatingRange && !_.has(((errors.networks ||
+                {})[networkWithFloatingRange.get('group_id')] ||
+                {})[networkWithFloatingRange.id], 'cidr')) {
+                var floatingRangesErrors = utils.validateIpRanges(networkParameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'), true);
                 if (floatingRangesErrors.length) {
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
                 }
             }
             var nameserverErrors = [];
-            _.each(attrs.networking_parameters.get('dns_nameservers'), function(nameserver) {
+            _.each(networkParameters.get('dns_nameservers'), function(nameserver) {
                 nameserverErrors.push(utils.validateIP(nameserver) ? i18n(ns + 'invalid_nameserver') : null);
             });
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
-            }
-
-            var baremetalNetwork = attrs.networks.findWhere({name: 'baremetal'});
-            if (baremetalNetwork && !_.has(networksErrors[baremetalNetwork.id], 'cidr')) {
-                var baremetalGateway = attrs.networking_parameters.get('baremetal_gateway');
-                if (utils.validateIP(baremetalGateway)) {
-                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
-                } else if (!utils.validateIpCorrespondsToCIDR(baremetalNetwork.get('cidr'), baremetalGateway)) {
-                    networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_baremetal_network');
-                }
-                var baremetalRangeErrors = utils.validateIpRanges([attrs.networking_parameters.get('baremetal_range')], baremetalNetwork.get('cidr'), true);
-                if (baremetalRangeErrors.length) {
-                    var [{start, end}] = baremetalRangeErrors;
-                    networkingParametersErrors.baremetal_range = [start, end];
-                }
             }
 
             if (!_.isEmpty(networkingParametersErrors)) {

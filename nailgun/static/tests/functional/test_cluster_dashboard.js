@@ -123,7 +123,7 @@ define([
                         return clusterPage.goToTab('Networks');
                     })
                     .clickByCssSelector('.verify-networks-btn')
-                    .assertElementAppears('.verification-box .alert-danger', 200, 'Network verification warning appears if only one node added')
+                    .assertElementAppears('.network-alert.alert-danger', 200, 'Network verification warning appears if only one node added')
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })

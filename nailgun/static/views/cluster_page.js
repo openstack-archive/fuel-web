@@ -156,7 +156,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         getInitialState: function() {
             return {
-                activeGroupName: this.pickDefaultSettingGroup(),
+                activeSettingsGroupName: this.pickDefaultSettingGroup(),
+                activeNetworkGroupName: '',
+                showAllNetworks: false,
                 selectedNodeIds: {},
                 selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
             };
@@ -238,7 +240,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         setActiveSettingsGroupName: function(value) {
             if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
-            this.setState({activeGroupName: value});
+            this.setState({activeSettingsGroupName: value});
+        },
+        setActiveNetworkSectionName: function(name, value) {
+            this.setState(name == 'show_all' ? {showAllNetworks: value} :
+                {showAllNetworks: false, activeNetworkGroupName: name});
         },
         selectNodes: function(ids, checked) {
             if (ids && ids.length) {
@@ -292,7 +298,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             ref='tab'
                             cluster={cluster}
                             tabOptions={this.props.tabOptions}
-                            setActiveGroupName={this.setActiveSettingsGroupName}
+                            setActiveSettingsGroupName={this.setActiveSettingsGroupName}
+                            setActiveNetworkSectionName={this.setActiveNetworkSectionName}
                             selectNodes={this.selectNodes}
                             changeLogSelection={this.changeLogSelection}
                             {...this.state}

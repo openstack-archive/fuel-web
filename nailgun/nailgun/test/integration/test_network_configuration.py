@@ -560,7 +560,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             nm.assign_vip(nodegroup, consts.NETWORKS.fuelweb_admin, 'my-vip'),
             resp.json_body['vips']['my-vip']['ipaddr'])
 
-    def test_not_enough_ip_addresses_return_400(self):
+    def test_not_enough_ip_addresses_return_400_on_get(self):
         # restrict public network to have only 2 ip addresses
         netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
         public = next((
@@ -594,6 +594,20 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(400, resp.status_code)
         self.assertEqual(
             "Not enough free IP addresses in ranges [172.16.0.2-172.16.0.4] "
+            "of 'public' network",
+            resp.json_body['message'])
+
+    def test_not_enough_ip_addresses_return_400_on_put(self):
+        netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
+        public = next((
+            net for net in netconfig['networks']
+            if net['name'] == consts.NETWORKS.public))
+        public['ip_ranges'] = [["172.16.0.19", "172.16.0.19"]]
+        resp = self.env.neutron_networks_put(
+            self.cluster.id, netconfig, expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "Not enough free IP addresses in ranges [172.16.0.19-172.16.0.19] "
             "of 'public' network",
             resp.json_body['message'])
 

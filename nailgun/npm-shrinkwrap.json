@@ -8308,6 +8308,10 @@
         }
       }
     },
+    "ip": {
+      "version": "1.0.2",
+      "from": "ip@1.0.2"
+    },
     "javascript-natural-sort": {
       "version": "0.7.1",
       "from": "javascript-natural-sort@"

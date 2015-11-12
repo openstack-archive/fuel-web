@@ -24,8 +24,9 @@ define([
     'javascript-natural-sort',
     'expression',
     'expression/objects',
-    'react'
-], function(require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React) {
+    'react',
+    'ip'
+], function(require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React, IP) {
     'use strict';
 
     var utils = {
@@ -213,7 +214,7 @@ define([
             return !_.isString(ip) || !ip.match(utils.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
-            return utils.ipIntRepresentation(startIP) - utils.ipIntRepresentation(endIP) <= 0;
+            return IP.toLong(startIP) - IP.toLong(endIP) <= 0;
         },
         validateIpRanges: function(ranges, cidr, disallowSingleAddress) {
             var ipRangesErrors = [];
@@ -240,44 +241,28 @@ define([
             }
             return ipRangesErrors;
         },
-        ipIntRepresentation: function(ip) {
-            return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
-        },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
-            var result = true;
-            if (cidr) {
-                /* jshint bitwise: false */
-                var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
-                var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
-                var ipToInt = utils.ipIntRepresentation(ip);
-                result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
-                /* jshint bitwise: true */
-            }
-            return result;
+            if (!cidr) return true;
+            var networkData = IP.cidrSubnet(cidr),
+                ipInt = IP.toLong(ip);
+            return ipInt >= IP.toLong(networkData.firstAddress) && ipInt <= IP.toLong(networkData.lastAddress);
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;
         },
-        intToIP: function(ipInt) {
-            /* jshint bitwise: false */
-            var ip = [ipInt >>> 24, ipInt >>> 16 & 0xFF, ipInt >>> 8 & 0xFF, ipInt & 0xFF].join('.');
-            /* jshint bitwise: true */
-            return ip;
-        },
         getDefaultGatewayForCidr: function(cidr) {
             if (!_.isEmpty(utils.validateCidr(cidr))) return '';
-            var gatewayInt = utils.ipIntRepresentation(cidr.split('/')[0]) + 1; // the first address isn't used
-            return utils.intToIP(gatewayInt);
+            return IP.cidrSubnet(cidr).firstAddress;
         },
         getDefaultIPRangeForCidr: function(cidr, excludeGateway) {
             if (!_.isEmpty(utils.validateCidr(cidr))) return [['', '']];
-            cidr = cidr.split('/');
-            var netAddressInt = utils.ipIntRepresentation(cidr[0]);
-            var startIPInt = netAddressInt + 1;
-            if (excludeGateway) startIPInt++;
-            var endIPInt = _.min([Math.pow(2, 32 - cidr[1]) + netAddressInt - 1, utils.ipIntRepresentation('255.255.255.255')]);
-            endIPInt--; // broadcast address isn't used
-            return [[utils.intToIP(startIPInt), utils.intToIP(endIPInt)]];
+            var networkData = IP.cidrSubnet(cidr);
+            if (excludeGateway) {
+                var startIPInt = IP.toLong(networkData.firstAddress);
+                startIPInt++;
+                return [[IP.fromLong(startIPInt), networkData.lastAddress]];
+            }
+            return [[networkData.firstAddress, networkData.lastAddress]];
         },
         sortEntryProperties: function(entry, sortOrder) {
             sortOrder = sortOrder || ['name'];

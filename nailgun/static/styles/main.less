@@ -2959,13 +2959,59 @@ input[type=range] {
 }
 
 // wizard styles
-#wizard {
-  &.modal-dialog {
-    width: 830px;
-    height: 485px;
+.wizard {
+  .modal-dialog {
+    width: 840px;
+    height: 560px;
     color: @base-text-color;
+    .modal-body {
+      padding: 0px;
+    }
+    label {
+      .font-semibold;
+    }
+    h5 {
+      margin-bottom: 20px;
+    }
+    .forms-box {
+      margin-bottom: 0px;
+      .name-and-release {
+        .alert {
+          margin-left: 5px;
+          margin-right: 10px;
+        }
+        .release-description {
+          margin-left: 5px;
+        }
+        .help-block {
+          padding-left: 25%;
+          marging-right: 0;
+        }
+        .form-group {
+          label {
+            width: 25%;
+            text-align: right;
+          }
+          input, select {
+            max-width: 75%;
+            width: 75%;
+          }
+        }
+      }
+    }
+    .forms-box .form-group {
+      label {
+        width: 100%;
+      }
+      .help-block {
+        max-width: 95%;
+        width: 95%;
+        padding-top: 3px;
+        padding-bottom: 6px;
+      }
+    }
     .wizard-body {
-      @wizard-body-height: 315px;
+      @wizard-body-height: 364px;
       @wizard-body-padding: 15px;
       height: @wizard-body-height;
       padding: @wizard-body-padding;
@@ -3023,7 +3069,7 @@ input[type=range] {
     }
   }
   .alert {
-    margin: 10px 0;
+    margin: 0 0 10px 0;
     padding: 7px;
     line-height: 14px;
     font-size: @base-font-size - 2;
@@ -3045,6 +3091,7 @@ input[type=range] {
   }
   .network-pane-description {
     font-size: @base-font-size - 2;
+    margin-bottom: 10px;
   }
   .release-description,
   .mode-description,

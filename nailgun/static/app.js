@@ -23,7 +23,6 @@ define(
     'react',
     'utils',
     'views/layout',
-    'coccyx',
     'models',
     'keystone_client',
     'views/root',
@@ -42,7 +41,7 @@ define(
     'bootstrap',
     './styles/main.less'
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var Router = Backbone.Router.extend({
@@ -141,11 +140,6 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
     });
 
     function App() {
-        // remove stickit bindings on teardown
-        Coccyx.addTearDownCallback(function() {
-            this.unstickit();
-        });
-
         // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
         $.ajaxSetup({cache: false});
 

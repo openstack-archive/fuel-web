@@ -427,6 +427,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             },
             // Network
             function(cluster) {
+                if (app.nodeNetworkGroups.length > 1) return null;
                 var networkVerificationTask = cluster.task({group: 'network'}),
                     makeComponent = _.bind(function(text, isError) {
                         var span = (
@@ -440,7 +441,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         );
                         return isError ? {error: [span]} : {warning: [span]};
                     }, this);
-
                 if (_.isUndefined(networkVerificationTask)) {
                     return makeComponent(i18n(this.ns + 'verification_not_performed'));
                 } else if (networkVerificationTask.match({status: 'error'})) {

@@ -20,8 +20,9 @@ define([
     'intern/chai!assert',
     'tests/functional/pages/common',
     'tests/functional/pages/networks',
-    'tests/functional/pages/cluster'
-], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage) {
+    'tests/functional/pages/cluster',
+    'tests/functional/pages/modal'
+], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow) {
     'use strict';
 
     registerSuite(function() {
@@ -71,7 +72,7 @@ define([
                     .assertElementExists('.nova-managers .radio-group', 'Nova Network manager radiogroup is present')
                     .assertElementsExist('.checkbox-group input[name=net_provider]', 2, 'Network manager options are present')
                     .assertElementSelected('input[value=FlatDHCPManager]', 'Flat DHCP manager is chosen')
-                    .assertElementsExist('.network-tab h3', 4, 'All networks are present');
+                    .assertElementsExist('.network-tab h3', 3, 'All networks are present');
             },
             'Testing cluster networks: Save button interactions': function() {
                 var self = this,
@@ -102,6 +103,7 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
+                    .clickByCssSelector('.subtab-link-nova_configuration')
                     .assertElementExists(amountSelector, 'Amount field for a fixed network is present in VLAN mode')
                     .assertElementExists(sizeSelector, 'Size field for a fixed network is present in VLAN mode')
                     .assertElementEnabled(networksPage.applyButtonSelector, 'Save changes button is enabled after manager was changed')
@@ -114,6 +116,8 @@ define([
             },
             'Testing cluster networks: network notation change': function() {
                 return this.remote
+                    .clickByCssSelector('.subtab-link-default')
+                    .assertElementAppears('.storage', 2000, 'Storage network is shown')
                     .assertElementSelected('.storage .cidr input[type=checkbox]', 'Storage network has "cidr" notation by default')
                     .assertElementNotExists('.storage .ip_ranges input[type=text]:not(:disabled)', 'It is impossible to configure IP ranges for network with "cidr" notation')
                     .clickByCssSelector('.storage .cidr input[type=checkbox]')
@@ -124,7 +128,8 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
-                    .assertElementExists('input[name=range-end_fixed_networks_vlan_start]', 'VLAN range is displayed');
+                    .clickByCssSelector('.subtab-link-nova_configuration')
+                    .assertElementAppears('input[name=range-end_fixed_networks_vlan_start]', 2000, 'VLAN range is displayed');
             },
             'Testing cluster networks: save changes': function() {
                 return this.remote
@@ -138,19 +143,23 @@ define([
             'Testing cluster networks: verification': function() {
                 return this.remote
                     .clickByCssSelector('.verify-networks-btn:not(:disabled)')
+                    .clickByCssSelector('.subtab-link-network_verification')
                     .assertElementAppears('.connect-3.error', 2000,
                         'At least two nodes are required to be in the environment for network verification')
                     // Testing cluster networks: verification task deletion
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
+                    .clickByCssSelector('.subtab-link-network_verification')
                     .assertElementNotExists('.page-control-box .alert', 'Verification task was removed after settings has been changed');
             },
             'Check VlanID field validation': function() {
                 return this.remote
-                    .clickByCssSelector('.management input[type=checkbox][name=vlan_start]')
-                    .clickByCssSelector('.management input[type=checkbox][name=vlan_start]')
-                    .assertElementExists('.management .has-error input[type=text][name=vlan_start]',
+                    .clickByCssSelector('.subtab-link-default')
+                    .assertElementAppears('.management', 2000, 'Management network appears')
+                    .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
+                    .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
+                    .assertElementExists('.management .has-error input[name=vlan_start]',
                         'Field validation has worked properly in case of empty value');
             },
             'Testing cluster networks: data validation': function() {
@@ -158,6 +167,8 @@ define([
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
+                    .clickByCssSelector('.subtab-link-nova_configuration')
+                    .assertElementAppears('input[name=fixed_networks_vlan_start][type=checkbox]', 2000, 'Vlan range appearsse')
                     .clickByCssSelector('input[name=fixed_networks_vlan_start][type=checkbox]')
                     .then(function() {
                         return networksPage.switchNetworkManager();
@@ -227,16 +238,18 @@ define([
             'DNS nameservers manipulations': function() {
                 var dnsNameserversSelector = '.dns_nameservers ';
                 return this.remote
+                    .clickByCssSelector('.subtab-link-neutron_l3')
                     .clickByCssSelector(dnsNameserversSelector + '.ip-ranges-add')
                     .assertElementExists(dnsNameserversSelector + '.range-row .has-error',
                             'New nameserver is added and contains validation error');
             },
             'Segmentation types differences': function() {
                 return this.remote
+                    .clickByCssSelector('.subtab-link-default')
                     // Tunneling segmentation tests
                     .assertElementExists('.private',
                             'Private Network is visible for tunneling segmentation type')
-                    .assertElementTextEquals('.segmentation-type', 'Neutron with tunneling segmentation',
+                    .assertElementTextEquals('.segmentation-type', '(Neutron with tunneling segmentation)',
                             'Segmentation type is correct for tunneling segmentation')
                     // Vlan segmentation tests
                     .clickLinkByText('Environments')
@@ -247,8 +260,108 @@ define([
                         return clusterPage.goToTab('Networks');
                     })
                     .assertElementNotExists('.private', 'Private Network is not visible for vlan segmentation type')
-                    .assertElementTextEquals('.segmentation-type', 'Neutron with VLAN segmentation',
+                    .assertElementTextEquals('.segmentation-type', '(Neutron with VLAN segmentation)',
                             'Segmentation type is correct for VLAN segmentation');
+            }
+        };
+    });
+
+    registerSuite(function() {
+        var common,
+            clusterPage,
+            clusterName,
+            modal;
+
+        return {
+            name: 'Networks page Node network group tests',
+            setup: function() {
+                common = new Common(this.remote);
+                clusterPage = new ClusterPage(this.remote);
+                clusterName = common.pickRandomName('Test Cluster');
+                modal = new ModalWindow(this.remote);
+
+                return this.remote
+                    .then(function() {
+                        return common.getIn();
+                    })
+                    .then(function() {
+                        return common.createCluster(clusterName);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    });
+            },
+            'Node network group creation': function() {
+                return this.remote
+                    .clickByCssSelector('.add-nodegroup-btn')
+                    .then(function() {
+                        return modal.waitToOpen();
+                    })
+                    .assertElementContainsText('h4.modal-title', 'Add New Node Network Group', 'Add New Node Network Group modal expected')
+                    .setInputValue('[name=node_network_group_name]', 'Node_Network_Group_1')
+                    .then(function() {
+                        return modal.clickFooterButton('Add Group');
+                    })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
+                    .assertElementAppears('.node-network-groups-list', 2000, 'Node network groups title appears')
+                    .assertElementDisplayed('.subtab-link-Node_Network_Group_1', 'New subtab is shown')
+                    .assertElementTextEquals('.network-group-name .btn-link', 'Node_Network_Group_1', 'New Node Network group title is shown');
+            },
+            'Verification is disabled for multirack': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-network_verification')
+                    .assertElementExists('.alert-warning', 'Warning is shown')
+                    .clickByCssSelector('.subtab-link-default')
+                    .assertElementDisabled('.verify-networks-btn', 'Verify networks button is disabled');
+            },
+            'Node network group renaming': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-Node_Network_Group_1')
+                    .clickByCssSelector('.glyphicon-pencil')
+                    .assertElementAppears('.network-group-name input[type=text]', 2000, 'Node network group renaming control is rendered')
+                    .findByCssSelector('.node-group-renaming input[type=text]')
+                        .clearValue()
+                        .type('default')
+                        // Enter
+                        .type('\uE007')
+                        .end()
+                    .assertElementAppears('.has-error.node-group-renaming', 1000, 'Error is displayed in case of dublicate name')
+                    .findByCssSelector('.node-group-renaming input[type=text]')
+                        .clearValue()
+                        .type('Node_Network_Group_2')
+                        // Enter
+                        .type('\uE007')
+                        .end()
+                    .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'New subtab title is shown');
+            },
+            'Show all Networks': function() {
+                return this.remote
+                    .clickByCssSelector('input[name=show_all]')
+                    .assertElementsExist('.network-tab h3', 6, 'All networks are present after clicking "show all"')
+                    .clickByCssSelector('input[name=show_all]')
+                    .assertElementsExist('.network-tab h3', 3, 'Only current networks are present after unchecking "show all"');
+            },
+            'Node network group deletion': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-default')
+                    .assertElementNotExists('.glyphicon-remove', 'It is not possible to delete default node network group')
+                    .clickByCssSelector('.subtab-link-Node_Network_Group_2')
+                    .assertElementAppears('.glyphicon-remove', 1000, 'Remove icon is shown')
+                    .clickByCssSelector('.glyphicon-remove')
+                    .then(function() {
+                        return modal.waitToOpen();
+                    })
+                    .assertElementContainsText('h4.modal-title', 'Remove Node Network Group', 'Remove Node Network Group modal expected')
+                    .then(function() {
+                        return modal.clickFooterButton('Delete');
+                    })
+                    .then(function() {
+                        return modal.waitToClose();
+                    })
+                    .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000, 'Node network groups title disappears')
+                    .assertElementDisappears('.network-group-name .btn-link', 1000, 'Default Node Network group title disappers');
             }
         };
     });

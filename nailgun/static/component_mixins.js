@@ -128,7 +128,8 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                 startRenaming: function(e) {
                     e.preventDefault();
                     $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
-                        if (e && !$(e.target).closest(this.refs[refname].getDOMNode()).length) {
+                        var domElementPresent = e && !$(e.target).closest(refname ? this.refs[refname].getDOMNode() : 'input[type=text]').length;
+                        if (domElementPresent) {
                             this.endRenaming();
                         } else {
                             e.preventDefault();

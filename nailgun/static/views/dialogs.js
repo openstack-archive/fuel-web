@@ -1302,5 +1302,124 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         }
     });
 
+    dialogs.CreateNodeNetworkGroupDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {
+                title: i18n('cluster_page.network_tab.add_node_network_group'),
+                ns: 'cluster_page.network_tab.'
+            };
+        },
+        getInitialState: function() {
+            return {
+                error: null
+            };
+        },
+        renderBody: function() {
+            var name = 'node_network_group_name';
+            return (
+                <div className='node-network-group-creation'>
+                    <controls.Input
+                        key={name}
+                        name={name}
+                        ref={name}
+                        type='text'
+                        label={i18n(this.props.ns + 'node_network_group_name')}
+                        onChange={this.handleChange}
+                        onKeyDown={this.handleKeyDown}
+                        error={this.state.error}
+                        wrapperClassName='node-group-name'
+                        inputClassName='node-group-input-name'
+                        autoFocus
+                    />
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return [
+                <button key='cancel' className='btn btn-default' onClick={this.close}>
+                    {i18n('common.cancel_button')}
+                </button>,
+                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup}>
+                    {i18n(this.props.ns + 'add')}
+                </button>
+            ];
+        },
+        handleKeyDown: function(e) {
+            if (e.key == 'Enter') {
+                e.preventDefault();
+                this.createNodeNetworkGroup();
+            }
+        },
+        handleChange: function(name, value) {
+            var validationError = null,
+                nodeNetworkGroups = this.props.nodeNetworkGroups;
+            if (nodeNetworkGroups.findWhere({name: value})) {
+                validationError = i18n(this.props.ns + 'node_network_group_duplicate_error');
+                if (value == nodeNetworkGroups.min('id').get('name')) {
+                    validationError = i18n(this.props.ns + 'node_network_group_default_name');
+                }
+            }
+            this.setState({
+                error: validationError,
+                name: value
+            });
+        },
+        createNodeNetworkGroup: function() {
+            var name = this.state.name,
+                nodeNetworkGroup = new models.NodeNetworkGroup({
+                    cluster_id: this.props.cluster.id,
+                    name: name
+                });
+            nodeNetworkGroup.save()
+                .done(() => {
+                    app.nodeNetworkGroups.add(nodeNetworkGroup);
+                    this.props.setActiveNetworkSectionName(name);
+                    this.props.networkConfiguration.fetch()
+                        .done(this.props.updateInitialConfiguration);
+                    this.state.result.resolve();
+                    this.close();
+                });
+        }
+    });
+
+    dialogs.RemoveNodeNetworkGroupDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.remove_node_network_group.title')};
+        },
+        renderBody: function() {
+            return (
+                <div>
+                    <div className='text-danger'>
+                        {this.renderImportantLabel()}
+                        {i18n('dialog.remove_node_network_group.confirmation')}
+                    </div>
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button
+                    key='remove'
+                    className='btn btn-danger remove-cluster-btn'
+                    onClick={this.removeNodeNetworkGroup}
+                >
+                    {i18n('common.delete_button')}
+                </button>
+            ]);
+        },
+        removeNodeNetworkGroup: function() {
+            this.props.nodeNetworkGroups.remove(this.props.currentNodeNetworkGroup);
+            this.props.currentNodeNetworkGroup.destroy()
+                .done(this.props.updateInitialConfiguration())
+                .always(() => {
+                    this.state.result.resolve();
+                    this.close();
+                });
+        }
+    });
+
     return dialogs;
 });

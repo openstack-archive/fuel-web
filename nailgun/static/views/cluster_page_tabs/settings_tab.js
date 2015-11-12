@@ -73,10 +73,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         componentWillMount: function() {
             var settings = this.props.cluster.get('settings');
-            if (this.checkRestrictions('hide', settings.makePath(this.props.activeGroupName, 'metadata')).result) {
+            if (this.checkRestrictions('hide', settings.makePath(this.props.activeSettingsSectionName, 'metadata')).result) {
                 // FIXME: First group might also be hidded by restrictions
                 // which would cause no group selected
-                this.props.setActiveGroupName();
+                this.props.setActiveSettingsGroupName();
             }
         },
         componentDidMount: function() {
@@ -257,12 +257,12 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                         groupedSettings={groupedSettings}
                         makePath={settings.makePath}
                         configModels={this.state.configModels}
-                        setActiveGroupName={this.props.setActiveGroupName}
-                        activeGroupName={this.props.activeGroupName}
+                        setActiveSettingsGroupName={this.props.setActiveSettingsGroupName}
+                        activeSettingsSectionName={this.props.activeSettingsSectionName}
                         checkRestrictions={this.checkRestrictions}
                     />
                     {_.map(groupedSettings, function(selectedGroup, groupName) {
-                        if (groupName != this.props.activeGroupName) return null;
+                        if (groupName != this.props.activeSettingsSectionName) return null;
 
                         var sortedSections = _.sortBy(_.keys(selectedGroup), function(name) {
                             return settings.get(name + '.metadata.weight');
@@ -332,8 +332,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 <li
                                     key={groupName}
                                     role='presentation'
-                                    className={utils.classNames({active: groupName == this.props.activeGroupName})}
-                                    onClick={_.partial(this.props.setActiveGroupName, groupName)}
+                                    className={utils.classNames({active: groupName == this.props.activeSettingsSectionName})}
+                                    onClick={_.partial(this.props.setActiveSettingsGroupName, groupName)}
                                 >
                                     <a className={'subtab-link-' + groupName}>
                                         {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}

@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'underscore',
     'i18n',
     'react',
     'utils',
@@ -22,7 +23,7 @@ define(
     'views/dialogs',
     'component_mixins'
 ],
-function(i18n, React, utils, models, dialogs, componentMixins) {
+function(_, i18n, React, utils, models, dialogs, componentMixins) {
     'use strict';
 
     var NotificationsPage, Notification;
@@ -40,22 +41,32 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
                 });
             }
         },
+        checkDateIsToday: function(date) {
+            var today = new Date();
+            return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
+        },
         render: function() {
+            var notificationGroups = this.props.notifications.groupBy('date');
             return (
                 <div className='notifications-page'>
                     <div className='page-title'>
                         <h1 className='title'>{i18n('notifications_page.title')}</h1>
                     </div>
                     <div className='content-box'>
-                        {this.props.notifications.map(function(notification, index) {
-                            return [
-                                !!index && <hr />,
-                                <Notification
-                                    {...this.props}
-                                    key={'notification' + notification.id}
-                                    notification={notification}
-                                />
-                            ];
+                        {_.map(notificationGroups, function(notifications, date) {
+                            return (
+                                <div className='row notification-group' key={date}>
+                                    <div className='title col-xs-12'>
+                                        {this.checkDateIsToday(date) ? i18n('notifications_page.today') : date}
+                                    </div>
+                                    {_.map(notifications, function(notification) {
+                                        return <Notification
+                                            key={notification.id}
+                                            notification={notification}
+                                        />;
+                                    }, this)}
+                                </div>
+                            );
                         }, this)}
                     </div>
                 </div>
@@ -78,35 +89,33 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
             notification.save({status: 'read'});
         },
         onNotificationClick: function() {
-            var notification = this.props.notification;
-            if (notification.get('status') == 'unread') {
+            if (this.props.notification.get('status') == 'unread') {
                 this.markAsRead();
             }
-            var nodeId = notification.get('node_id');
+            var nodeId = this.props.notification.get('node_id');
             if (nodeId) {
                 this.showNodeInfo(nodeId);
             }
         },
         render: function() {
-            var notification = this.props.notification,
+            var topic = this.props.notification.get('topic'),
                 notificationClasses = {
-                    'text-danger': notification.get('topic') == 'error',
-                    'text-warning': notification.get('topic') == 'warning',
-                    unread: notification.get('status') == 'unread'
+                    'col-xs-12 notification': true,
+                    'text-danger': topic == 'error',
+                    'text-warning': topic == 'warning',
+                    unread: this.props.notification.get('status') == 'unread'
                 },
                 iconClass = {
                     error: 'glyphicon-exclamation-sign',
                     warning: 'glyphicon-warning-sign',
                     discover: 'glyphicon-bell'
-                }[notification.get('topic')] || 'glyphicon-info-sign';
+                }[topic] || 'glyphicon-info-sign';
             return (
-                <div className={'row notification ' + utils.classNames(notificationClasses)} onClick={this.onNotificationClick}>
-                    <div className='col-xs-12 col-md-2'>
-                        <i className={'glyphicon ' + iconClass}></i>
-                        {notification.get('date')} {notification.get('time')}
-                    </div>
-                    <div className='col-xs-12 col-md-10'>
-                        <span className={notification.get('node_id') && 'btn btn-link'} dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span>
+                <div className={utils.classNames(notificationClasses)} onClick={this.onNotificationClick}>
+                    <div className='notification-time'>{this.props.notification.get('time')}</div>
+                    <div className='notification-type'><i className={'glyphicon ' + iconClass} /></div>
+                    <div className='notification-message'>
+                        <span className={this.props.notification.get('node_id') && 'btn btn-link'} dangerouslySetInnerHTML={{__html: utils.urlify(this.props.notification.escape('message'))}}></span>
                     </div>
                 </div>
             );

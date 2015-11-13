@@ -198,7 +198,11 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                 });
         },
         renderLayout: function() {
-            var wrappedRootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), this.mountNode);
+            var wrappedRootComponent = utils.universalMount(
+                RootComponent,
+                _.pick(this, 'version', 'settings', 'user', 'statistics', 'notifications'),
+                this.mountNode
+            );
             // RootComponent is wrapped with React-DnD, extracting link to it using ref
             this.rootComponent = wrappedRootComponent.refs.child;
         },

@@ -108,7 +108,6 @@ class TestNeutronDeploymentSerializer80(BaseTestNeutronDeploymentSerializer,
         ]
 
         external_net = self.serializer.generate_external_network(self.cluster)
-        self.check_shared_attrs_of_external_network(external_net)
         self.assertEqual(
             external_net['L3'],
             {'enable_dhcp': False,
@@ -118,4 +117,26 @@ class TestNeutronDeploymentSerializer80(BaseTestNeutronDeploymentSerializer,
              'nameservers': [],
              'subnet': '172.16.0.0/24'
              }
+        )
+        self.assertEqual(
+            external_net["L2"],
+            {
+                'network_type': "flat",
+                'physnet': 'physnet1',
+                "segment_id": None,
+                "router_ext": True,
+            }
+        )
+        self.assertFalse(external_net['shared'])
+        self.assertEqual(external_net['tenant'], 'admin')
+
+    def test_generate_l2(self):
+        phys_nets = self.serializer.generate_l2(self.cluster)["phys_nets"]
+        self.assertIn("physnet1", phys_nets)
+        self.assertEqual(
+            phys_nets["physnet1"],
+            {
+                'bridge': 'br-floating',
+                'vlan_range': None
+            }
         )

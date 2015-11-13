@@ -331,7 +331,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     }
                 }
             };
-
+            this.stopHandlingKeys = false;
             this.wizard = new models.WizardModel(this.config);
             this.cluster = new models.Cluster();
             this.settings = new models.Settings();
@@ -477,6 +477,10 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             return success;
         },
         saveCluster: function() {
+            if (this.stopHandlingKeys) {
+                return;
+            }
+            this.stopHandlingKeys = true;
             this.setState({actionInProgress: true});
             var cluster = this.cluster;
             this.processBinds('cluster');
@@ -505,6 +509,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                             }, this))
                     }, this))
                     .fail(_.bind(function(response) {
+                        this.stopHandlingKeys = false;
                         this.setState({actionInProgress: false});
                         if (response.status == 409) {
                             this.updateState({disabled: false, activePaneIndex: 0});

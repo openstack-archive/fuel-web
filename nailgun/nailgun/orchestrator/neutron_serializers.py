@@ -1312,7 +1312,32 @@ class NeutronNetworkTemplateSerializer70(
         return nodes
 
 
+class GenerateL23Mixin80(object):
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(GenerateL23Mixin80, cls).generate_l2(cluster)
+        l2["phys_nets"]["physnet1"] = {
+            "bridge": consts.DEFAULT_BRIDGES_NAMES.br_floating,
+            "vlan_range": None
+        }
+        return l2
+
+    @classmethod
+    def generate_external_network(cls, cluster):
+        ext_net = super(GenerateL23Mixin80, cls).generate_external_network(
+            cluster
+        )
+        ext_net["L2"] = {
+            "network_type": "flat",
+            "segment_id": None,
+            "router_ext": True,
+            "physnet": "physnet1"
+        }
+        return ext_net
+
+
 class NeutronNetworkDeploymentSerializer80(
+    GenerateL23Mixin80,
     NeutronNetworkDeploymentSerializer70
 ):
 
@@ -1356,5 +1381,8 @@ class NeutronNetworkDeploymentSerializer80(
         return transformations
 
 
-class NeutronNetworkTemplateSerializer80(NeutronNetworkTemplateSerializer70):
+class NeutronNetworkTemplateSerializer80(
+    GenerateL23Mixin80,
+    NeutronNetworkTemplateSerializer70
+):
     pass

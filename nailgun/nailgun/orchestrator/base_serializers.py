@@ -151,7 +151,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node."""
-        for node in Cluster.get_nodes_not_for_deletion(cluster):
+        for node in Cluster.get_nodes_by_deletion(cluster):
             netw_data = node.network_data
             addresses = {}
             for net in node.cluster.network_groups:

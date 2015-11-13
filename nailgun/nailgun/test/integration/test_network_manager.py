@@ -1345,6 +1345,8 @@ class TestNeutronManager80(BaseNetworkManagerTest):
             self.assertEqual(real_vips[name]['node_roles'],
                              ['controller',
                               'primary-controller'])
+            self.assertEqual(real_vips[name]['vendor_specific'],
+                             vip['vendor_specific'])
         expected_vips_names = sorted([vip['name'] for vip in expected_vips])
         self.assertListEqual(expected_vips_names, sorted(real_vips.keys()))
 
@@ -1370,10 +1372,14 @@ class TestNeutronManager80(BaseNetworkManagerTest):
 
     def test_assign_vips_with_unmapped_net_groups(self):
         expected_vips = [
-            {'name': 'vrouter', 'namespace': 'vrouter'},
-            {'name': 'vrouter_pub', 'namespace': 'vrouter'},
-            {'name': 'management', 'namespace': 'haproxy'},
-            {'name': 'public', 'namespace': 'haproxy'},
+            {'name': 'vrouter', 'namespace': 'vrouter',
+             'vendor_specific': None},
+            {'name': 'vrouter_pub', 'namespace': 'vrouter',
+             'vendor_specific': None},
+            {'name': 'management', 'namespace': 'haproxy',
+             'vendor_specific': None},
+            {'name': 'public', 'namespace': 'haproxy',
+             'vendor_specific': None},
         ]
         self._add_unmapped_network_roles()
         assigned_vips = self.net_manager.assign_vips_for_net_groups(

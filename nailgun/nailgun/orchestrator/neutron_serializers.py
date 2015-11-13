@@ -1120,7 +1120,7 @@ class NeutronNetworkDeploymentSerializer70(
         nodes = dict()
         nm = objects.Cluster.get_network_manager(cluster)
 
-        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
+        for node in objects.Cluster.get_nodes_by_deletion(cluster):
             name = objects.Node.get_slave_name(node)
             node_roles = objects.Node.all_roles(node)
             network_roles = cls.get_network_role_mapping_to_ip(node)
@@ -1293,7 +1293,7 @@ class NeutronNetworkTemplateSerializer70(
         This info is deprecated in 7.0 and should be removed in later version.
         """
         nm = objects.Cluster.get_network_manager(cluster)
-        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
+        for node in objects.Cluster.get_nodes_by_deletion(cluster):
             netw_data = []
             for name, data in six.iteritems(
                     nm.get_node_networks_with_ips(node)):

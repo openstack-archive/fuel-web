@@ -1393,6 +1393,7 @@ class TestNeutronManager80(BaseNetworkManagerTest):
             self.assertEqual(real_vips[name]['node_roles'],
                              ['controller',
                               'primary-controller'])
+            self.assertIn('vendor_specific', real_vips[name].keys())
         expected_vips_names = sorted([vip['name'] for vip in expected_vips])
         self.assertListEqual(expected_vips_names, sorted(real_vips.keys()))
 

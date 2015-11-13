@@ -1833,6 +1833,13 @@ class AllocateVIPs70Mixin(object):
 class AllocateVIPs80Mixin(object):
 
     @classmethod
+    def _build_advanced_vip_info(cls, vip_info, role, address):
+        info = AllocateVIPs70Mixin._build_advanced_vip_info(
+            vip_info, role, address)
+        info['vendor_specific'] = vip_info.get('vendor_specific')
+        return info
+
+    @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
         # noderole -> nodegroup mapping
         #   is used for determine nodegroup where VIP should be allocated

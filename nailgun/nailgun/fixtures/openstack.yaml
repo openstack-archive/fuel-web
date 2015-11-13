@@ -240,6 +240,12 @@
               name: "vrouter_pub"
               namespace: "vrouter"
               alias: "public_vrouter_vip"
+              vendor_specific:
+                iptables_rules:
+                  ns_start:
+                    - "iptables -t nat -A POSTROUTING -o <% VETH %> -j MASQUERADE"
+                  ns_stop:
+                    - "iptables -t nat -D POSTROUTING -o <% VETH %> -j MASQUERADE"
             -
               name: "public"
               namespace: "haproxy"

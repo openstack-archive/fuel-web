@@ -117,7 +117,7 @@ class DeploymentMultinodeSerializer(object):
         attrs['openstack_version'] = release.version
         attrs['fuel_version'] = cluster.fuel_version
         attrs['nodes'] = self.node_list(
-            objects.Cluster.get_nodes_not_for_deletion(cluster))
+            objects.Cluster.get_nodes_by_pending_deletion(cluster))
 
         # Adding params to workloads_collector
         if 'workloads_collector' not in attrs:

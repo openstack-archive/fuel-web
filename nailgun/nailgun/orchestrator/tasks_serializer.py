@@ -317,9 +317,10 @@ class UploadNodesInfo(GenericRolesHook):
     """Hook that uploads info about all nodes in cluster."""
 
     identity = 'upload_nodes_info'
+    removed_node_marker = '__REMOVED_FROM_CLUSTER__'
 
     def serialize(self):
-        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        q_nodes = objects.Cluster.get_nodes_by_pending_deletion(self.cluster)
         # task can be executed only on deployed nodes
         nodes = set(q_nodes.filter_by(status=consts.NODE_STATUSES.ready))
         # add nodes scheduled for deployment since they could be filtered out
@@ -330,6 +331,15 @@ class UploadNodesInfo(GenericRolesHook):
 
         # every node must have data about every other good node in cluster
         serialized_nodes = self._serialize_nodes(nodes)
+
+        # get nodes marked as for deletion
+        removed_nodes = objects.Cluster.get_nodes_by_pending_deletion(
+            self.cluster, pending_deletion=True)
+
+        serialized_nodes.extend(
+            dict(snode, role=self.removed_node_marker)
+            for snode in self._serialize_nodes(removed_nodes)
+        )
         data = yaml.safe_dump({
             'nodes': serialized_nodes,
         })
@@ -354,7 +364,7 @@ class UpdateHosts(GenericRolesHook):
     identity = 'update_hosts'
 
     def serialize(self):
-        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        q_nodes = objects.Cluster.get_nodes_by_pending_deletion(self.cluster)
         # task can be executed only on deployed nodes
         nodes = set(q_nodes.filter_by(status=consts.NODE_STATUSES.ready))
         # add nodes scheduled for deployment since they could be filtered out

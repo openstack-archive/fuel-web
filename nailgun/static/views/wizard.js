@@ -498,6 +498,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                             }, this))
                             .done(_.bind(function() {
                                 this.close();
+                                app.nodeNetworkGroups.fetch();
                                 app.navigate('#cluster/' + this.cluster.id, {trigger: true});
                             }, this))
                             .fail(_.bind(function(response) {

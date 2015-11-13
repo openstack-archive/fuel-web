@@ -61,7 +61,8 @@ define([
                     .then(function() {
                         return self.welcomePage.skip();
                     })
-                    .waitForCssSelector('.navbar-nav', 1000);
+                    .waitForCssSelector('.navbar-nav', 1000)
+                    .clickByCssSelector('.global-alert.alert-warning .close');
             },
             createCluster: function(clusterName, stepsMethods) {
                 var self = this;

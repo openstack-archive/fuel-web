@@ -392,9 +392,19 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
     components.DefaultPasswordWarning = React.createClass({
         render: function() {
             return (
-                <div className='alert default-password-alert'>
+                <div className='alert global-alert alert-warning'>
                     <button className='close' onClick={this.props.close}>&times;</button>
                     {i18n('common.default_password_warning')}
+                </div>
+            );
+        }
+    });
+
+    components.BootstrapError = React.createClass({
+        render: function() {
+            return (
+                <div className='alert global-alert alert-danger'>
+                    {this.props.text}
                 </div>
             );
         }

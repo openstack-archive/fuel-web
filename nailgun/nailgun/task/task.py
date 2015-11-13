@@ -1656,7 +1656,8 @@ class CheckRepoAvailability(BaseNetworkVerification):
 
     def _get_nodes_to_check(self):
         nodes = []
-        for n in objects.Cluster.get_nodes_not_for_deletion(self.task.cluster):
+        for n in objects.Cluster.get_nodes_by_pending_deletion(
+                self.task.cluster):
             if n.online:
                 nodes.append({'uid': n.id})
         return nodes

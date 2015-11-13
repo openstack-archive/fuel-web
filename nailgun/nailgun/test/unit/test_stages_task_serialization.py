@@ -188,6 +188,12 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             roles=['compute'], cluster_id=self.cluster.id,
             status=consts.NODE_STATUSES.discover)
 
+        pending_deletion_node = self.env.create_node(
+            roles=['cinder'], cluster_id=self.cluster.id,
+            pending_deletion=True)
+
+        node_removed_marker = '__REMOVED_FROM_CLUSTER__'
+        all_uids = self.all_uids + [pending_deletion_node.uid]
         m_roles.return_value = ['role_1', ]
         m_update_nodes.side_effect = lambda cluster, nodes: nodes
 
@@ -217,8 +223,13 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         serialized_nodes = yaml.safe_load(
             serialized_task['parameters']['data'])
         serialized_uids = [n['uid'] for n in serialized_nodes['nodes']]
-        self.assertItemsEqual(serialized_uids, self.all_uids)
+        serialized_pending_deletion_node = filter(
+            lambda n: n['uid'] == pending_deletion_node.uid,
+            serialized_nodes['nodes'])[0]
+        self.assertItemsEqual(serialized_uids, all_uids)
         self.assertNotIn(discovered_node.uid, serialized_uids)
+        self.assertEqual(serialized_pending_deletion_node['role'],
+                         node_removed_marker)
 
     def test_upload_configuration(self):
         task_config = {

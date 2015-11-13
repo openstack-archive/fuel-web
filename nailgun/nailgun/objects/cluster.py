@@ -483,10 +483,11 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def get_nodes_not_for_deletion(cls, cluster):
-        """All clusters nodes except nodes for deletion."""
+    def get_nodes_by_deletion(cls, cluster, pending_deletion=False):
+        """All clusters nodes filtered by pending_deletion flag."""
         return db().query(models.Node).filter_by(
-            cluster=cluster, pending_deletion=False).order_by(models.Node.id)
+            cluster=cluster, pending_deletion=pending_deletion).\
+            order_by(models.Node.id)
 
     @classmethod
     def clear_pending_changes(cls, instance, node_id=None):
@@ -1251,7 +1252,7 @@ class Cluster(NailgunObject):
         according to filters that were passed.
         """
         query = (
-            cls.get_nodes_not_for_deletion(cluster)
+            cls.get_nodes_by_deletion(cluster)
             .filter_by(status=consts.NODE_STATUSES.ready))
 
         if node_id:

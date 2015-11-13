@@ -57,7 +57,9 @@ define([
             dispatcher.trigger('updatePageLayout');
         },
         render: function() {
-            var Page = this.state.Page;
+            var {Page, showDefaultPasswordWarning} = this.state;
+            var {settings, version} = this.props;
+
             if (!Page) return null;
             var layoutClasses = {
                 clamp: true,
@@ -69,14 +71,15 @@ define([
                         {!Page.hiddenLayout && [
                             <layoutComponents.Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
                             <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
-                            this.state.showDefaultPasswordWarning && <layoutComponents.DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />
+                            showDefaultPasswordWarning && <layoutComponents.DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />,
+                            settings.get('bootstrap.error.value') && <layoutComponents.BootstrapError key='bootstrap-error' text={settings.get('bootstrap.error.value')} />
                         ]}
                         <div id='content'>
                             <Page ref='page' {...this.state.pageOptions} />
                         </div>
                         {!Page.hiddenLayout && <div id='footer-spacer'></div>}
                     </div>
-                    {!Page.hiddenLayout && <layoutComponents.Footer version={this.props.version} />}
+                    {!Page.hiddenLayout && <layoutComponents.Footer version={version} />}
                 </div>
             );
         }

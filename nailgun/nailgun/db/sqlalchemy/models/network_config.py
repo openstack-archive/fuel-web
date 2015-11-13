@@ -62,6 +62,11 @@ class NeutronConfig(NetworkingConfig):
     internal_cidr = Column(String(25))
     internal_gateway = Column(String(25))
 
+    # Neutron L3 names for default internal / floating networks
+    # which were previously knows as net04 and net04_ext.
+    internal_name = Column(String(50), nullable=False)
+    floating_name = Column(String(50), nullable=False)
+
     segmentation_type = Column(
         Enum(*consts.NEUTRON_SEGMENT_TYPES,
              name='segmentation_type'),

@@ -44,25 +44,29 @@ define(
 function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
-    var Router = Backbone.Router.extend({
-        routes: {
-            login: 'login',
-            logout: 'logout',
-            welcome: 'welcome',
-            clusters: 'listClusters',
-            'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
-            releases: 'listReleases',
-            plugins: 'listPlugins',
-            notifications: 'showNotifications',
-            support: 'showSupportPage',
-            capacity: 'showCapacityPage',
-            '*default': 'default'
-        },
-        initialize: function() {
+    class Router extends Backbone.Router {
+        routes() {
+            return {
+                login: 'login',
+                logout: 'logout',
+                welcome: 'welcome',
+                clusters: 'listClusters',
+                'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
+                releases: 'listReleases',
+                plugins: 'listPlugins',
+                notifications: 'showNotifications',
+                support: 'showSupportPage',
+                capacity: 'showCapacityPage',
+                '*default': 'default'
+            };
+        }
+
+        initialize() {
             _.bindAll(this);
-        },
+        }
+
         // pre-route hook
-        before: function(currentRouteName) {
+        before(currentRouteName) {
             var currentUrl = Backbone.history.getHash();
             var preventRouting = false;
             // remove trailing slash
@@ -73,16 +77,16 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
             // handle special routes
             if (!preventRouting) {
                 var specialRoutes = [
-                    {name: 'login', condition: function() {
+                    {name: 'login', condition: () => {
                         var result = app.version.get('auth_required') && !app.user.get('authenticated');
-                        if (result && currentUrl != 'login' && currentUrl != 'logout') app.router.returnUrl = currentUrl;
+                        if (result && currentUrl != 'login' && currentUrl != 'logout') this.returnUrl = currentUrl;
                         return result;
                     }},
-                    {name: 'welcome', condition: function(previousUrl) {
+                    {name: 'welcome', condition: (previousUrl) => {
                         return previousUrl != 'logout' && !app.settings.get('statistics.user_choice_saved.value');
                     }}
                 ];
-                _.each(specialRoutes, function(route) {
+                _.each(specialRoutes, (route) => {
                     if (route.condition(currentRouteName)) {
                         if (currentRouteName != route.name) {
                             preventRouting = true;
@@ -94,94 +98,104 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                         this.navigate('', {trigger: true});
                         return false;
                     }
-                }, this);
+                });
             }
             return !preventRouting;
-        },
+        }
+
         // routes
-        default: function() {
-            app.navigate('clusters', {trigger: true, replace: true});
-        },
-        login: function() {
+        default() {
+            this.navigate('clusters', {trigger: true, replace: true});
+        }
+
+        login() {
             app.loadPage(LoginPage);
-        },
-        logout: function() {
+        }
+
+        logout() {
             app.logout();
-        },
-        welcome: function() {
+        }
+
+        welcome() {
             app.loadPage(WelcomePage);
-        },
-        showCluster: function(clusterId, tab) {
+        }
+
+        showCluster(clusterId, tab) {
             var tabs = _.pluck(ClusterPage.getTabs(), 'url');
             if (!tab || !_.contains(tabs, tab)) {
-                app.navigate('cluster/' + clusterId + '/' + tabs[0], {trigger: true, replace: true});
+                this.navigate('cluster/' + clusterId + '/' + tabs[0], {trigger: true, replace: true});
             } else {
                 app.loadPage(ClusterPage, arguments).fail(this.default);
             }
-        },
-        listClusters: function() {
+        }
+
+        listClusters() {
             app.loadPage(ClustersPage);
-        },
-        listReleases: function() {
+        }
+
+        listReleases() {
             app.loadPage(ReleasesPage);
-        },
-        listPlugins: function() {
+        }
+
+        listPlugins() {
             app.loadPage(PluginsPage);
-        },
-        showNotifications: function() {
+        }
+
+        showNotifications() {
             app.loadPage(NotificationsPage);
-        },
-        showSupportPage: function() {
+        }
+
+        showSupportPage() {
             app.loadPage(SupportPage);
-        },
-        showCapacityPage: function() {
+        }
+
+        showCapacityPage() {
             app.loadPage(CapacityPage);
         }
-    });
-
-    function App() {
-        // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
-        $.ajaxSetup({cache: false});
-
-        this.mountNode = $('#main-container');
-
-        this.router = new Router();
-        this.keystoneClient = new KeystoneClient('/keystone', {
-            cacheTokenFor: 10 * 60 * 1000,
-            tenant: 'admin'
-        });
-        this.version = new models.FuelVersion();
-        this.settings = new models.FuelSettings();
-        this.user = new models.User();
-        this.statistics = new models.NodesStatistics();
-        this.notifications = new models.Notifications();
-        this.nodeNetworkGroups = new models.NodeNetworkGroups();
-
-        this.fetchData();
     }
 
-    _.extend(App.prototype, {
-        fetchData: function() {
+    class App {
+        constructor() {
+            this.initialized = false;
+
+            // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
+            $.ajaxSetup({cache: false});
+
+            this.router = new Router();
+            this.keystoneClient = new KeystoneClient('/keystone', {
+                cacheTokenFor: 10 * 60 * 1000,
+                tenant: 'admin'
+            });
+            this.version = new models.FuelVersion();
+            this.settings = new models.FuelSettings();
+            this.user = new models.User();
+            this.statistics = new models.NodesStatistics();
+            this.notifications = new models.Notifications();
+            this.nodeNetworkGroups = new models.NodeNetworkGroups();
+        }
+
+        initialize() {
+            this.initialized = true;
+            this.mountNode = $('#main-container');
+
             this.version.fetch()
-                .then(_.bind(function() {
+                .then(() => {
                     this.user.set({authenticated: !this.version.get('auth_required')});
                     this.patchBackboneSync();
                     if (this.version.get('auth_required')) {
                         _.extend(this.keystoneClient, this.user.pick('token'));
                         return this.keystoneClient.authenticate()
-                            .done(_.bind(function() {
-                                this.user.set({authenticated: true});
-                            }, this));
+                            .done(() => this.user.set({authenticated: true}));
                     }
                     return $.Deferred().resolve();
-                }, this))
-                .then(_.bind(function() {
+                })
+                .then(() => {
                     return $.when(
                         this.settings.fetch(),
                         this.nodeNetworkGroups.fetch()
                     );
-                }, this))
-                .then(null, _.bind(function() {
+                })
+                .then(null, () => {
                     if (this.version.get('auth_required') && !this.user.get('authenticated')) {
                         return $.Deferred().resolve();
                     } else {
@@ -192,29 +206,36 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                         });
                         this.mountNode.remove();
                     }
-                }, this))
-                .done(function() {
-                    Backbone.history.start();
-                });
-        },
-        renderLayout: function() {
-            var wrappedRootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), this.mountNode);
+                })
+                .done(() => Backbone.history.start());
+        }
+
+        renderLayout() {
+            var wrappedRootComponent = utils.universalMount(
+                RootComponent,
+                _.pick(this, 'version', 'user', 'statistics', 'notifications'),
+                this.mountNode
+            );
             // RootComponent is wrapped with React-DnD, extracting link to it using ref
             this.rootComponent = wrappedRootComponent.refs.child;
-        },
-        loadPage: function(Page, options) {
-            return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
+        }
+
+        loadPage(Page, options = []) {
+            return (Page.fetchData ? Page.fetchData(...options) : $.Deferred().resolve()).done((pageOptions) => {
                 if (!this.rootComponent) this.renderLayout();
                 this.setPage(Page, pageOptions);
-            }, this));
-        },
-        setPage: function(Page, options) {
+            });
+        }
+
+        setPage(Page, options) {
             this.page = this.rootComponent.setPage(Page, options);
-        },
-        navigate: function() {
-            this.router.navigate.apply(this.router, arguments);
-        },
-        logout: function() {
+        }
+
+        navigate(...args) {
+            return this.router.navigate(...args);
+        }
+
+        logout() {
             if (this.user.get('authenticated') && this.version.get('auth_required')) {
                 this.user.set('authenticated', false);
                 this.user.unset('username');
@@ -223,55 +244,26 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                 this.keystoneClient.deauthenticate();
             }
 
-            _.defer(function() {
-                app.navigate('login', {trigger: true, replace: true});
-            });
-        },
-        patchBackboneSync: function() {
+            _.defer(() => this.navigate('login', {trigger: true, replace: true}));
+        }
+
+        patchBackboneSync() {
             var originalSync = Backbone.sync;
-            Backbone.sync = function(method, model, options) {
+            Backbone.sync = function(method, model, options = {}) {
                 // our server doesn't support PATCH, so use PUT instead
                 if (method == 'patch') {
                     method = 'update';
                 }
+                // add auth token to header if auth is enabled
                 if (app.version.get('auth_required') && !this.authExempt) {
-                    // FIXME(vkramskikh): manually moving success/error callbacks
-                    // to deferred-style callbacks. Everywhere in the code we use
-                    // deferreds, but backbone uses success/error callbacks. It
-                    // seems there is a bug somewhere: sometimes in long deferred
-                    // chains with .then() success/error callbacks are called when
-                    // deferred object is not resolved, so 'sync' event is
-                    // triggered but dfd.state() still returns 'pending'. This
-                    // leads to various bugs here and there.
-                    var callbacks = {};
-
                     return app.keystoneClient.authenticate()
-                        .fail(function() {
-                            app.logout();
-                        })
-                        .then(_.bind(function() {
-                            options = options || {};
+                        .fail(app.logout)
+                        .then(() => {
                             options.headers = options.headers || {};
                             options.headers['X-Auth-Token'] = app.keystoneClient.token;
-                            _.each(['success', 'error'], function(callback) {
-                                if (options[callback]) {
-                                    callbacks[callback] = options[callback];
-                                    delete options[callback];
-                                }
-                            });
                             return originalSync.call(this, method, model, options);
-                        }, this))
-                        .done(function() {
-                            if (callbacks.success) {
-                                callbacks.success.apply(callbacks.success, arguments);
-                            }
                         })
-                        .fail(function() {
-                            if (callbacks.error) {
-                                callbacks.error.apply(callbacks.error, arguments);
-                            }
-                        })
-                        .fail(function(response) {
+                        .fail((response) => {
                             if (response && response.status == 401) {
                                 app.logout();
                             }
@@ -280,7 +272,11 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                 return originalSync.call(this, method, model, options);
             };
         }
-    });
+    }
 
-    return (window.app = new App());
+    window.app = new App();
+
+    $(() => app.initialize());
+
+    return app;
 });

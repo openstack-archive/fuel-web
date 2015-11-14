@@ -60,14 +60,12 @@
         }());
 
         if (hasCookies && hasStorage) {
-          document.addEventListener('DOMContentLoaded', function() {
-            loadScript(
-              'static/build/bundle.js?__CACHE_BUST__',
-              'Failed to load compressed Fuel UI bundle. ' +
-              'If you are using development environment, ' +
-              'please run "gulp build" to compile Fuel UI.'
-            );
-          });
+          loadScript(
+            'static/build/bundle.js?__CACHE_BUST__',
+            'Failed to load compressed Fuel UI bundle. ' +
+            'If you are using development environment, ' +
+            'please run "gulp build" to compile Fuel UI.'
+          );
         } else {
           showError('Fuel UI requires Cookies and LocalStorage to work');
         }

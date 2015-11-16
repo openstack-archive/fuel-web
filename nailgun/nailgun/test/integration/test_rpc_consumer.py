@@ -1176,7 +1176,7 @@ class TestConsumer(BaseReciverTestCase):
 
         self.assertEqual(supertask.progress, calculated_progress)
 
-    def test_error_node_progress(self):
+    def _prepare_environment_with_failed_node(self):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -1191,7 +1191,7 @@ class TestConsumer(BaseReciverTestCase):
         )
         self.db.add(task)
         self.db.commit()
-        kwargs = {
+        return {
             'task_uuid': task.uuid,
             'progress': 20,
             'nodes': [
@@ -1202,7 +1202,16 @@ class TestConsumer(BaseReciverTestCase):
                 }
             ]
         }
+
+    def test_deploy_resp_node_failure(self):
+        kwargs = self._prepare_environment_with_failed_node()
         self.receiver.deploy_resp(**kwargs)
+        self.db.refresh(self.env.nodes[0])
+        self.assertEqual(self.env.nodes[0].progress, 100)
+
+    def test_provision_resp_node_failure(self):
+        kwargs = self._prepare_environment_with_failed_node()
+        self.receiver.provision_resp(**kwargs)
         self.db.refresh(self.env.nodes[0])
         self.assertEqual(self.env.nodes[0].progress, 100)
 

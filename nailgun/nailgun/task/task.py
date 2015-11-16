@@ -652,7 +652,19 @@ class ResetEnvironmentTask(object):
                     "username": settings.COBBLER_USER,
                     "password": settings.COBBLER_PASSWORD,
                     "master_ip": settings.MASTER_IP,
-                }
+                },
+                "pre_reset_tasks": [
+                    tasks_templates.make_shell_task(
+                        [consts.MASTER_ROLE],
+                        {
+                            "parameters": {
+                                "cmd": "rm -rf /var/lib/fuel/keys/{0}".format(
+                                    task.cluster.id),
+                                "timeout": 30
+                            }
+                        }
+                    )
+                ]
             }
         )
         db().commit()

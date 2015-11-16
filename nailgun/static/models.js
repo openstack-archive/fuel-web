@@ -345,9 +345,6 @@ define([
             }
             return _.isEmpty(errors) ? null : errors;
         },
-        viewModes: function() {
-            return ['standard', 'compact'];
-        },
         task: function(filter1, filter2) {
             var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
             return this.get('tasks') && this.get('tasks').findTask(filters);
@@ -382,6 +379,18 @@ define([
     models.Node = BaseModel.extend({
         constructorName: 'Node',
         urlRoot: '/api/nodes',
+        statuses: [
+            'ready',
+            'pending_addition',
+            'pending_deletion',
+            'provisioned',
+            'provisioning',
+            'deploying',
+            'discover',
+            'error',
+            'offline',
+            'removing'
+        ],
         resource: function(resourceName) {
             var resource = 0;
             try {
@@ -448,6 +457,36 @@ define([
         model: models.Node,
         url: '/api/nodes',
         comparator: 'id',
+        sorters: [
+            'cluster',
+            'roles',
+            'status',
+            'name',
+            'mac',
+            'ip',
+            'manufacturer',
+            'cores',
+            'ht_cores',
+            'hdd',
+            'disks',
+            'ram',
+            'interfaces',
+            'group_id'
+        ],
+        filters: [
+            'cluster',
+            'roles',
+            'status',
+            'manufacturer',
+            'cores',
+            'ht_cores',
+            'hdd',
+            'disks_amount',
+            'ram',
+            'interfaces',
+            'group_id'
+        ],
+        viewModes: ['standard', 'compact'],
         hasChanges: function() {
             return !!this.filter(function(node) {
                 return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;

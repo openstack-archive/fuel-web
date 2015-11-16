@@ -82,6 +82,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 notificationsDisplayCount: 5,
                 elements: [
                     {label: 'environments', url: '#clusters'},
+                    {label: 'nodes', url: '#nodes'},
                     {label: 'releases', url: '#releases'},
                     {label: 'plugins', url: '#plugins'},
                     {label: 'support', url: '#support'}
@@ -102,7 +103,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                 <div className='navbar-header col-xs-2'>
                                     <a className='navbar-logo' href='#'></a>
                                 </div>
-                                <div className='col-xs-5'>
+                                <div className='col-xs-6'>
                                     <ul className='nav navbar-nav pull-left'>
                                         {_.map(this.props.elements, function(element) {
                                             return (
@@ -115,7 +116,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                         }, this)}
                                     </ul>
                                 </div>
-                                <div className='col-xs-5'>
+                                <div className='col-xs-4'>
                                     <ul className={utils.classNames({
                                         'nav navbar-icons pull-right': true,
                                         'with-auth': authenticationEnabled,
@@ -231,7 +232,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                         </li>
                         <li className='list-group-item text-success font-semibold'>
                             <span className='badge bg-green'>{this.props.statistics.get('total')}</span>
-                            {i18n('navbar.stats.total', {count: this.props.statistics.get('total')})}
+                            <a href='#nodes'>
+                                {i18n('navbar.stats.total', {count: this.props.statistics.get('total')})}
+                            </a>
                         </li>
                     </div>
                 </controls.Popover>

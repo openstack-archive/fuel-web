@@ -565,17 +565,7 @@ def get_serializer_for_cluster(cluster):
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode."""
     objects.Cluster.set_primary_roles(cluster, nodes)
-    env_version = cluster.release.environment_version
-
-    # TODO(asaprykin): Move ip assignment to network manager
-    if any(env_version.startswith(v) for v in ['5.0', '5.1', '6.0']):
-        objects.NodeCollection.prepare_for_lt_6_1_deployment(cluster.nodes)
-    elif env_version.startswith('6.1'):
-        nst = cluster.network_config.get('segmentation_type')
-        objects.NodeCollection.prepare_for_6_1_deployment(cluster.nodes, nst)
-    else:
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
-
+    objects.Cluster.prepare_for_deployment(cluster)
     serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 
     return serializer.serialize(

@@ -524,55 +524,48 @@ class TestNetworkCheck(BaseIntegrationTest):
         mock_untagged.assert_called_with()
         mock_bond.assert_called_with()
 
-    @patch.object(helpers, 'db')
+    @patch.object(helpers, 'db', new=MagicMock())
     @patch('objects.NodeGroupCollection.get_by_cluster_id')
-    def test_neutron_check_gateways_valid(self, get_by_cluster_id_mock,
-                                          mocked_db):
+    def test_neutron_check_gateways_valid(self, get_by_cluster_id_mock):
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'gateway': '192.168.0.1',
                              'meta': {'notation': consts.NETWORK_NOTATION.cidr}
                              }]
-        nodegroup_mock = MagicMock(**{'count.return_value': 2})
-        get_by_cluster_id_mock.return_value = nodegroup_mock
+        checker.node_groups = [1, 2]
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.neutron_check_gateways)
 
-    @patch.object(helpers, 'db')
+    @patch.object(helpers, 'db', new=MagicMock())
     @patch('objects.NodeGroupCollection.get_by_cluster_id')
-    def test_neutron_check_gateways_gw_none(self, get_by_cluster_id_mock,
-                                            mocked_db):
+    def test_neutron_check_gateways_gw_none(self, get_by_cluster_id_mock):
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'gateway': None,
                              'meta': {'notation': consts.NETWORK_NOTATION.cidr}
                              }]
-        nodegroup_mock = MagicMock(**{'count.return_value': 2})
-        get_by_cluster_id_mock.return_value = nodegroup_mock
+        checker.node_groups = [1, 2]
         self.assertRaises(errors.NetworkCheckError,
                           checker.neutron_check_gateways)
 
-    @patch.object(helpers, 'db')
+    @patch.object(helpers, 'db', new=MagicMock())
     @patch('objects.NodeGroupCollection.get_by_cluster_id')
-    def test_neutron_check_gateways_gw_outside(self, get_by_cluster_id_mock,
-                                               mocked_db):
+    def test_neutron_check_gateways_gw_outside(self, get_by_cluster_id_mock):
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'gateway': '192.168.1.1',
                              'meta': {'notation': consts.NETWORK_NOTATION.cidr}
                              }]
-        nodegroup_mock = MagicMock(**{'count.return_value': 2})
-        get_by_cluster_id_mock.return_value = nodegroup_mock
+        checker.node_groups = [1, 2]
         self.assertRaises(errors.NetworkCheckError,
                           checker.neutron_check_gateways)
 
-    @patch.object(helpers, 'db')
+    @patch.object(helpers, 'db', new=MagicMock())
     @patch('objects.NodeGroupCollection.get_by_cluster_id')
-    def test_neutron_check_gateways_gw_in_range(self, get_by_cluster_id_mock,
-                                                mocked_db):
+    def test_neutron_check_gateways_gw_in_range(self, get_by_cluster_id_mock):
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
@@ -580,10 +573,13 @@ class TestNetworkCheck(BaseIntegrationTest):
                              'ip_ranges': [('192.168.0.50', '192.168.0.100')],
                              'meta': {'notation': consts.NETWORK_NOTATION.cidr}
                              }]
-        nodegroup_mock = MagicMock(**{'count.return_value': 2})
-        get_by_cluster_id_mock.return_value = nodegroup_mock
+        checker.node_groups = [1, 2]
         self.assertRaises(errors.NetworkCheckError,
                           checker.neutron_check_gateways)
+
+    def test_check_free_ips_without_nodegroups(self):
+        # TODO(implement test case)
+        pass
 
 
 class TestCheckVIPsNames(BaseIntegrationTest):

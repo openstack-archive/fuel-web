@@ -112,7 +112,9 @@ default_messages = {
     # unknown
     "UnknownError": "Unknown error",
 
-    "UnresolvableConflict": "Unresolvable conflict"
+    "UnresolvableConflict": "Unresolvable conflict",
+
+    "NodeNotBelongCluster": "Node doesn't belong to cluster_id"
 }
 
 

@@ -16,7 +16,8 @@
 
 from collections import defaultdict
 
-from itertools import imap
+from itertools import chain
+from itertools import groupby
 from itertools import islice
 
 from netaddr import IPAddress
@@ -29,34 +30,54 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
 
-from nailgun import objects
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
+from nailgun.db.sqlalchemy.models import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
+from nailgun import objects
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.settings import settings
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
-from nailgun.settings import settings
 
 
 class NetworkManager(object):
+    @classmethod
+    def prepare_for_deployment(cls, cluster, nodes):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        :param nodes: the list of Nodes
+        :type nodes: list
+        """
+
+    @classmethod
+    def prepare_for_provisioning(cls, nodes):
+        """Prepare environment for provisioning, assign admin IPs.
+
+        :param nodes: the list of Nodes
+        :type nodes: list
+        """
+        cls.assign_admin_ips(nodes)
 
     @classmethod
     def get_admin_network_group_id(cls, node_id=None):
         """Method for receiving Admin NetworkGroup ID.
 
-        :type  fail_if_not_found: bool
+        :param  node_id: the ID of Node
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
         """
@@ -66,7 +87,7 @@ class NetworkManager(object):
     def get_admin_network_group(cls, node_id=None):
         """Method for receiving Admin NetworkGroup.
 
-        :type  fail_if_not_found: bool
+        :param  node_id: The ID of node
         :returns: Admin NetworkGroup or None.
         :raises: errors.AdminNetworkNotFound
         """
@@ -102,10 +123,8 @@ class NetworkManager(object):
     def assign_admin_ips(cls, nodes):
         """Method for assigning admin IP addresses to nodes.
 
-        :param node_id: Node database ID.
-        :type  node_id: int
-        :param num: Number of IP addresses for node.
-        :type  num: int
+        :param nodes: database Node objects.
+        :type  nodes: iterable
         :returns: None
         """
         # Check which nodes need ips
@@ -138,10 +157,12 @@ class NetworkManager(object):
 
     @classmethod
     def get_node_networks_ips(cls, node):
-        return dict(db().query(NetworkGroup.name, IPAddr.ip_addr).\
-            filter(NetworkGroup.group_id == node.group_id).\
-            filter(IPAddr.network == NetworkGroup.id).\
-            filter(IPAddr.node == node.id))
+        return dict(
+            db().query(NetworkGroup.name, IPAddr.ip_addr).
+            filter(NetworkGroup.group_id == node.group_id).
+            filter(IPAddr.network == NetworkGroup.id).
+            filter(IPAddr.node == node.id)
+        )
 
     @classmethod
     def set_node_networks_ips(cls, node, ips_by_network_name):
@@ -182,7 +203,7 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def assign_ips(cls, nodes, network_name):
+    def assign_ips(cls, cluster_id, nodes, network_name):
         """Idempotent assignment IP addresses to nodes.
 
         All nodes passed as first argument get IP address
@@ -191,23 +212,15 @@ class NetworkManager(object):
         it remains unchanged. If one of the nodes is the
         node from other cluster, this func will fail.
 
-        :param node_ids: List of nodes IDs in database.
-        :type  node_ids: list
+        :param cluster_id: the ID of Cluster
+        :type  cluster_id: int
+        :param nodes: The sequence of Node objects
+        :type  nodes: iterable
         :param network_name: Network name
         :type  network_name: str
         :returns: None
         :raises: Exception, errors.AssignIPError
         """
-        cluster_id = nodes[0].cluster_id
-        for node in nodes:
-            if node.cluster_id != cluster_id:
-                raise Exception(
-                    u"Node id='{0}' doesn't belong to cluster_id='{1}'".format(
-                        node.id,
-                        cluster_id
-                    )
-                )
-
         network_groups = db().query(NetworkGroup).\
             filter_by(name=network_name)
 
@@ -222,20 +235,26 @@ class NetworkManager(object):
         for node in nodes:
             node_id = node.id
 
+            if node.cluster_id != cluster_id:
+                raise errors.NodeNotBelongCluster(
+                    u"Node id='{0}' doesn't belong to cluster_id='{1}'"
+                    .format(node_id, cluster_id)
+                )
+
             if network_name == 'public' and \
                     not objects.Node.should_have_public_with_ip(node):
                 continue
-            group_id = (node.group_id or
-                objects.Cluster.get_default_group(node.cluster).id)
+            group_id = node.group_id or \
+                objects.Cluster.get_default_group(node.cluster).id
 
             network = network_groups.filter(
                 or_(
                     NetworkGroup.group_id == group_id,
-                    NetworkGroup.group_id == None  # flake8: noqa
+                    NetworkGroup.group_id.is_(None)
                 )
             ).first()
 
-            node_ips = imap(
+            node_ips = six.moves.map(
                 lambda i: i.ip_addr,
                 cls._get_ips_except_admin(
                     node_id=node_id,
@@ -283,6 +302,7 @@ class NetworkManager(object):
     def assign_vip(cls, nodegroup, network_name,
                    vip_type=consts.NETWORK_VIP_TYPES.haproxy):
         """Idempotent assignment of VirtualIP addresses to nodegroup.
+
         Returns VIP for given nodegroup and network.
 
         It's required for HA deployment to have IP address
@@ -454,9 +474,7 @@ class NetworkManager(object):
 
     @classmethod
     def check_ips_belong_to_ranges(cls, ips, ranges):
-        """
-        Returns *True* if every of provided IPs belongs \
-        to any of provided ranges.
+        """Checks that IP addresses belong to ranges.
 
         :param ips: list of IPs (e.g. ['192.168.1.1', '127.0.0.1'], ...)
         :param ranges: list of IP ranges (e.g. [(first_ip, last_ip), ...])
@@ -472,6 +490,7 @@ class NetworkManager(object):
     @classmethod
     def _iter_free_ips(cls, ip_ranges, ips_in_use):
         """Iterator over free IP addresses in given IP ranges.
+
         IP addresses which exist in ips_in_use are excluded from output.
         """
         for ip_range in ip_ranges:
@@ -499,9 +518,10 @@ class NetworkManager(object):
 
     @classmethod
     def get_free_ips_from_ranges(cls, net_name, ip_ranges, ips_in_use, count):
-        """Returns list of free IP addresses for given IP ranges. Required
-        quantity of IPs is set in "count". IP addresses which exist in
-        ips_in_use or exist in DB are excluded.
+        """Gets the list of free IP addresses for given IP ranges.
+
+        Required quantity of IPs is set in "count". IP addresses
+        which exist in ips_in_use or exist in DB are excluded.
         """
         result = []
         ip_iterator = cls._iter_free_ips(ip_ranges, ips_in_use)
@@ -509,8 +529,12 @@ class NetworkManager(object):
             # Eager IP mining to not run DB query on every single IP when just
             # 1 or 2 IPs are required and a long series of IPs from this range
             # are occupied already.
-            free_ips = list(islice(ip_iterator,
-                                   max(count, consts.MIN_IPS_PER_DB_QUERY)))
+            free_ips = list(
+                islice(
+                    ip_iterator,
+                    0,
+                    max(count, consts.MIN_IPS_PER_DB_QUERY))
+            )
             if not free_ips:
                 ranges_str = ','.join(str(r) for r in ip_ranges)
                 raise errors.OutOfIPs(
@@ -525,16 +549,15 @@ class NetworkManager(object):
 
             for ip in ips_in_db:
                 free_ips.remove(ip[0])
-
-            result.extend(free_ips[:count])
-            count -= len(free_ips[:count])
+            free_ips = free_ips[:count]
+            result.extend(free_ips)
+            count -= len(free_ips)
 
         return result
 
     @classmethod
     def get_free_ips(cls, network_group, num=1, ips_in_use=None):
-        """Returns list of free IP addresses for given Network Group
-        """
+        """Gets the list of free IP addresses for given Network Group."""
         ips_in_use = ips_in_use or set()
         ip_ranges = [IPRange(r.first, r.last)
                      for r in network_group.ip_ranges]
@@ -549,8 +572,7 @@ class NetworkManager(object):
     @classmethod
     def _get_ips_except_admin(cls, node_id=None,
                               network_id=None, joined=False):
-        """Method for receiving IP addresses for node or network
-        excluding Admin Network IP address.
+        """Receives IP addresses for node or network except Admin Network.
 
         :param node_id: Node database ID.
         :type  node_id: int
@@ -644,7 +666,9 @@ class NetworkManager(object):
 
     @classmethod
     def get_default_interfaces_configuration(cls, node):
-        """Returns default Networks-to-NICs assignment for given node based on
+        """Gets the default configurations for interfaces of node.
+
+        Returns default Networks-to-NICs assignment for given node based on
         networks' configuration and metadata, default NICs'
         interface_properties, with no bonds configured.
         """
@@ -663,10 +687,11 @@ class NetworkManager(object):
                 key=lambda x: x[1]))[0]
         )
         ng_ids = set(ng.id for ng in ngs)
-        ng_wo_admin_ids = \
-            ng_ids ^ set([cls.get_admin_network_group_id(node.id)])
+        ng_wo_admin_ids = ng_ids.symmetric_difference(
+            [cls.get_admin_network_group_id(node.id)]
+        )
         pxe_iface = next(six.moves.filter(
-            lambda i: i.pxe == True,
+            lambda i: i.pxe,
             node.nic_interfaces
         ), None)
         for nic in node.nic_interfaces:
@@ -757,14 +782,12 @@ class NetworkManager(object):
 
     @classmethod
     def get_node_networkgroups_ids(cls, node):
-        """Get ids of all networks assigned to node's interfaces
-        """
+        """Get ids of all networks assigned to node's interfaces."""
         return [ng.id for nic in node.interfaces
                 for ng in nic.assigned_networks_list]
 
     @classmethod
     def _get_admin_node_network(cls, node):
-        node_db = db().query(Node).get(node.id)
         net = cls.get_admin_network_group(node_id=node.id)
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node.id)
@@ -910,8 +933,13 @@ class NetworkManager(object):
 
     @classmethod
     def update_interfaces_info(cls, node, update_by_agent=False):
-        """Update interfaces in case of correct interfaces
+        """Updates interfaces on node.
+
+        The interfaces has been updated in case of correct interfaces
         in meta field in node's model
+
+        :param node: The Node instance
+        :param: update_by_agent: Indicates that update initiated by agent.
         """
         try:
             cls.check_interfaces_correctness(node)
@@ -982,7 +1010,9 @@ class NetworkManager(object):
 
     @classmethod
     def check_interfaces_correctness(cls, node):
-        """Check that
+        """Check the correctness of interfaces on node.
+
+        Checks that:
         * interface list in meta field is not empty
         * at least one interface has ip which
           includes to admin subnet. It can happens in
@@ -1096,8 +1126,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_admin_ip_for_node(cls, node_id):
-        """Returns first admin IP address for node
-        """
+        """Returns first admin IP address for node."""
         admin_net_id = cls.get_admin_network_group_id(node_id=node_id)
         admin_ip = db().query(IPAddr).order_by(
             IPAddr.id
@@ -1111,8 +1140,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_admin_ips_for_interfaces(cls, node):
-        """Returns mapping admin {"inteface name" => "admin ip"}
-        """
+        """Returns mapping admin {"inteface name" => "admin ip"}."""
         admin_net_id = cls.get_admin_network_group_id(node)
         admin_ips = set([
             i.ip_addr for i in db().query(IPAddr).
@@ -1158,8 +1186,12 @@ class NetworkManager(object):
 
     @classmethod
     def _get_interface_by_network_name(cls, node, network_name):
-        """Return network device which has appointed
-        network with specified network name
+        """Gets network device by name of network.
+
+        :param node: The Node instance
+        :param network_name: The name of network
+        :return: Network device which has appointed network
+                 with specified network name
         """
         if not isinstance(node, Node):
             node = db().query(Node).get(node)
@@ -1240,13 +1272,15 @@ class NetworkManager(object):
 
     @classmethod
     def is_cidr_intersection(cls, cidr1, cidr2):
-        """Checks intersection of two CIDRs (IPNetwork objects)
-        """
+        """Checks intersection of two CIDRs (IPNetwork objects)."""
         return cidr2 in cidr1 or cidr1 in cidr2
 
     @classmethod
     def is_range_intersection(cls, range1, range2):
-        """Checks intersection of two IP ranges (IPNetwork or IPRange objects)
+        """Checks intersection of two IP ranges.
+
+        :param range1: The IPNetwork or IPRange object
+        :param range2: The IPNetwork or IPRange object
         """
         return range1.first <= range2.last and range2.first <= range1.last
 
@@ -1319,13 +1353,16 @@ class NetworkManager(object):
             if net.get('restrictions'):
                 present_nets = filter(lambda ng: ng.name == net['name'],
                                       cluster.network_groups)
-                if cls.check_network_restrictions(cluster, net['restrictions']):
+                if cls.check_network_restrictions(
+                        cluster, net['restrictions']):
                     for ng in present_nets:
                         objects.NetworkGroup.delete(ng)
                 else:
                     if not len(present_nets):
                         for node_group in cluster.node_groups:
-                            cls.create_network_group(cluster, net, node_group.id)
+                            cls.create_network_group(
+                                cluster, net, node_group.id
+                            )
 
     @classmethod
     def create_network_group(cls, cluster, net, gid=None):
@@ -1462,7 +1499,10 @@ class NetworkManager(object):
 
     @classmethod
     def get_default_gateway(cls, node_id):
-        """Returns GW from Admin network if it's set, else returns Admin IP.
+        """Gets the gateway from Admin network.
+
+        :param node_id: The ID of Node Object.
+        :return: The GW from Admin network if it's set. else Admin IP
         """
         return cls.get_admin_network_group(node_id).gateway \
             or settings.MASTER_IP
@@ -1470,10 +1510,14 @@ class NetworkManager(object):
     @classmethod
     def get_networks_not_on_node(cls, node, networks=None):
         networks = networks or cls.get_node_networks(node)
-        node_net = [(n['name'], n['cidr'])
-                for n in networks if n.get('cidr')]
-        all_nets = [(n.name, n.cidr)
-                for n in node.cluster.network_groups if n.cidr]
+        node_net = [
+            (n['name'], n['cidr'])
+            for n in networks if n.get('cidr')
+        ]
+        all_nets = [
+            (n.name, n.cidr)
+            for n in node.cluster.network_groups if n.cidr
+        ]
 
         admin_net = cls.get_admin_network_group()
         all_nets.append((admin_net.name, admin_net.cidr))
@@ -1528,6 +1572,7 @@ class NetworkManager(object):
     @classmethod
     def find_nic_assoc_with_ng(cls, node, network_group):
         """Will find iface on node that is associated with network_group.
+
         If interface is a part of bond - check network on that bond
         """
         for iface in node.nic_interfaces:
@@ -1552,24 +1597,22 @@ class NetworkManager(object):
 
     @classmethod
     def get_ip_w_cidr_prefix_len(cls, ip, network_group):
-        """Returns IP with address space prefix, e.g. "10.20.0.1/24"
+        """Returns IP with address space prefix.
+
+        e.g. '10.20.0.1/24'
         """
         return "{0}/{1}".format(ip, IPNetwork(network_group.cidr).prefixlen)
 
     @classmethod
     def get_assigned_ips_by_network_id(cls, network_id):
-        """Returns IPs related to network with provided ID.
-        """
-        return [x[0] for x in
-                db().query(
-                    IPAddr.ip_addr
-                ).filter(
-                    IPAddr.network == network_id,
-                    or_(
-                        IPAddr.node.isnot(None),
-                        IPAddr.vip_type.isnot(None)
-                    )
-                )]
+        """Returns IPs related to network with provided ID."""
+        return [
+            x[0] for x in
+            db().query(IPAddr.ip_addr).filter(
+                IPAddr.network == network_id,
+                or_(IPAddr.node.isnot(None), IPAddr.vip_type.isnot(None))
+            )
+        ]
 
     @classmethod
     def get_admin_networks(cls, cluster_nodegroup_info=False):
@@ -1611,7 +1654,6 @@ class AllocateVIPs70Mixin(object):
                 'node_roles': vip_info.get('node_roles',
                                            ['controller',
                                             'primary-controller'])}
-
 
     @classmethod
     def find_network_role_by_id(cls, cluster, role_id):
@@ -1690,6 +1732,7 @@ class AllocateVIPs70Mixin(object):
     @classmethod
     def assign_vips_for_net_groups_for_api(cls, cluster):
         """Calls cls.assign_vip for all vips in network roles.
+
         Returns dict with vip definitions in API compatible format::
 
             {
@@ -1725,6 +1768,7 @@ class AllocateVIPs70Mixin(object):
     @classmethod
     def assign_vips_for_net_groups(cls, cluster):
         """Calls cls.assign_vip for all vips in network roles.
+
         To be used for the output generation for orchestrator.
         Returns dict with vip definitions like::
 
@@ -1751,18 +1795,22 @@ class AllocateVIPs70Mixin(object):
         for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
                 cluster):
             vip_name = vip_info['name']
-            vips[vip_name] = cls._build_advanced_vip_info(vip_info,
-                                                          role,
-                                                          vip_addr)
+            vips[vip_name] = cls._build_advanced_vip_info(
+                vip_info, role, vip_addr
+            )
         return vips
 
     @classmethod
     def check_unique_vip_names_for_cluster(cls, cluster):
-        """ Detect situation when VIPs with same names
+        """Checks the names of VIPs is unique in cluster.
+
+        Detect situation when VIPs with same names
         are present in vip_info. We must stop processing
         immediately because rewritting of existing VIP data
-        by another VIP info could lead to failed deployment
+        by another VIP info could lead to failed deployment.
 
+        :param cluster: Cluster instance
+        :type  cluster: Cluster model
         """
         vip_names = []
         duplicate_vip_names = set()
@@ -1830,8 +1878,9 @@ class AllocateVIPs80Mixin(object):
                 # Since network roles may be mapped to non-existing networks,
                 # need to check whether network exists in cluster and skip VIP
                 # assignment if not.
+                net_names = set(ng.name for ng in nodegroup.networks)
                 if net_group != consts.NETWORKS.fuelweb_admin and \
-                        net_group not in [ng.name for ng in nodegroup.networks]:
+                        net_group not in net_names:
                     logger.warning(
                         "Skip VIP '{0}' whitch is mapped to non-existing"
                         " network '{1}'".format(vip_name, net_group))
@@ -1840,3 +1889,107 @@ class AllocateVIPs80Mixin(object):
                 # do allocation
                 vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
                 yield role, vip_info, vip_addr
+
+
+class AssignIPsLegacyMixin(object):
+    @classmethod
+    def prepare_for_deployment(cls, cluster, nodes):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        :param nodes: the list of Nodes
+        :type nodes: list
+        """
+        if nodes:
+            cls.assign_ips(cluster.id, nodes, consts.NETWORKS.management)
+            cls.assign_ips(cluster.id, nodes, consts.NETWORKS.public)
+            cls.assign_ips(cluster.id, nodes, consts.NETWORKS.storage)
+            cls.assign_admin_ips(nodes)
+
+
+class AssignIPs61Mixin(object):
+    @classmethod
+    def prepare_for_deployment(cls, cluster, nodes):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        :param nodes: the list of Nodes
+        :type nodes: list
+        """
+        nst = cluster.network_config.get('segmentation_type')
+        if nodes:
+            cls.assign_ips(cluster.id, nodes, consts.NETWORKS.management)
+            cls.assign_ips(cluster.id, nodes, consts.NETWORKS.public)
+            cls.assign_ips(cluster.id, nodes, consts.NETWORKS.storage)
+            if nst in (consts.NEUTRON_SEGMENT_TYPES.gre,
+                       consts.NEUTRON_SEGMENT_TYPES.tun):
+                cls.assign_ips(cluster.id, nodes, consts.NETWORKS.private)
+            cls.assign_admin_ips(nodes)
+
+
+class AssignIPs70Mixin(object):
+    @classmethod
+    def assign_ips_for_nodes_w_template(cls, cluster, nodes):
+        """Assign IPs for the case when network template is applied.
+
+        IPs for every node are allocated only for networks which are mapped
+        to the particular node according to the template.
+        """
+
+    @classmethod
+    def prepare_for_deployment(cls, cluster, nodes):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        :param nodes: the list of Nodes
+        :type nodes: list
+        """
+        if not nodes:
+            logger.debug("prepare_for_deployment was called with no instances")
+            return
+
+        if cluster.network_config.configuration_template:
+            return cls.assign_ips_for_nodes_w_template(
+                cluster, nodes
+            )
+
+        nodes_by_id = dict((n.id, n) for n in nodes)
+
+        query = (
+            db().query(
+                Node.id,
+                NetworkGroup.id,
+                NetworkGroup.name,
+                NetworkGroup.meta)
+            .join(NodeGroup.nodes)
+            .join(NodeGroup.networks)
+            .filter(NodeGroup.cluster_id == cluster.id,
+                    NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
+            .order_by(NetworkGroup.id)
+        )
+
+        # Group by NetworkGroup.id
+        for key, items in groupby(query, lambda x: x[1]):
+            head_item = next(items)
+            network_name = head_item[2]
+            network_metadata = head_item[3]
+            if not network_metadata.get('notation'):
+                continue
+
+            head = [nodes_by_id[head_item[0]]]
+            tail = (nodes_by_id[item[0]] for item in items)
+            cls.assign_ips(
+                cluster.id,
+                chain(iter(head), tail), network_name,
+            )
+
+        cls.assign_admin_ips(nodes)

@@ -38,14 +38,11 @@ from nailgun.test.integration.test_orchestrator_serializer_70 import \
 class TestSerializer80Mixin(object):
     env_version = "2015.1.0-8.0"
 
-    def prepare_for_deployment(self, nodes, *_):
-        objects.NodeCollection.prepare_for_deployment(nodes)
-
     def _check_baremetal_neutron_attrs(self, cluster):
         self.env._set_additional_component(cluster, 'ironic', True)
         self.env.create_node(cluster_id=cluster.id,
                              roles=['controller'])
-        self.prepare_for_deployment(self.env.nodes)
+        objects.Cluster.prepare_for_deployment(cluster)
         serialized_for_astute = self.serializer.serialize(
             cluster, cluster.nodes)
         for node in serialized_for_astute:
@@ -69,7 +66,6 @@ class TestNetworkTemplateSerializer80(
     BaseDeploymentSerializer
 ):
     env_version = '2015.1.0-8.0'
-    prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer80, self).setUp()
@@ -136,7 +132,7 @@ class TestDeploymentAttributesSerialization80(
             cluster_id=self.cluster_db.id,
             roles=['controller'], primary_roles=['controller']
         )
-        self.prepare_for_deployment(self.env.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
         for node in serialized_for_astute:
@@ -157,7 +153,7 @@ class TestDeploymentAttributesSerialization80(
         self.env._set_additional_component(self.cluster_db, 'ironic', True)
         self.env.create_node(cluster_id=self.cluster_db.id,
                              roles=['primary-controller'])
-        self.prepare_for_deployment(self.env.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
         for node in serialized_for_astute:

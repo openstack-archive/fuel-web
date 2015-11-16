@@ -35,10 +35,8 @@ function(_, i18n, React, models, controls, componentMixins) {
             navbarActiveElement: 'releases',
             breadcrumbsPath: [['home', '#'], 'releases'],
             fetchData: function() {
-                var releases = new models.Releases();
-                return releases.fetch().then(function() {
-                    return {releases: releases};
-                });
+                var releases = app.releases;
+                return releases.fetch({cache: true}).then(() => ({releases}));
             }
         },
         getReleaseData: function(release) {

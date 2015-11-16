@@ -16,7 +16,8 @@
 
 from collections import defaultdict
 
-from itertools import imap
+from itertools import chain
+from itertools import groupby
 from itertools import islice
 
 from netaddr import IPAddress
@@ -51,12 +52,30 @@ from nailgun.settings import settings
 
 
 class NetworkManager(object):
+    @classmethod
+    def prepare_for_deployment(cls, cluster):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        """
+        pass
+
+    @classmethod
+    def prepare_for_provisioning(cls, cluster):
+        """Prepare environment for provisioning, assign admin IPs.
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        """
 
     @classmethod
     def get_admin_network_group_id(cls, node_id=None):
         """Method for receiving Admin NetworkGroup ID.
 
-        :type  fail_if_not_found: bool
+        :type  node_id: the ID of Node
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
         """
@@ -66,7 +85,7 @@ class NetworkManager(object):
     def get_admin_network_group(cls, node_id=None):
         """Method for receiving Admin NetworkGroup.
 
-        :type  fail_if_not_found: bool
+        :type  node_id: The ID of node
         :returns: Admin NetworkGroup or None.
         :raises: errors.AdminNetworkNotFound
         """
@@ -102,10 +121,8 @@ class NetworkManager(object):
     def assign_admin_ips(cls, nodes):
         """Method for assigning admin IP addresses to nodes.
 
-        :param node_id: Node database ID.
-        :type  node_id: int
-        :param num: Number of IP addresses for node.
-        :type  num: int
+        :param nodes: Node database ID.
+        :type  nodes: int
         :returns: None
         """
         # Check which nodes need ips
@@ -182,7 +199,7 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def assign_ips(cls, nodes, network_name):
+    def assign_ips(cls, cluster, nodes, network_name):
         """Idempotent assignment IP addresses to nodes.
 
         All nodes passed as first argument get IP address
@@ -191,23 +208,16 @@ class NetworkManager(object):
         it remains unchanged. If one of the nodes is the
         node from other cluster, this func will fail.
 
-        :param node_ids: List of nodes IDs in database.
-        :type  node_ids: list
+        :param cluster: Cluster instance
+        :type  cluster: Cluster model
+        :param nodes: The sequence of nodes IDs in database
+        :type  nodes: iterable
         :param network_name: Network name
         :type  network_name: str
         :returns: None
         :raises: Exception, errors.AssignIPError
         """
-        cluster_id = nodes[0].cluster_id
-        for node in nodes:
-            if node.cluster_id != cluster_id:
-                raise Exception(
-                    u"Node id='{0}' doesn't belong to cluster_id='{1}'".format(
-                        node.id,
-                        cluster_id
-                    )
-                )
-
+        cluster_id = cluster.id
         network_groups = db().query(NetworkGroup).\
             filter_by(name=network_name)
 
@@ -222,6 +232,12 @@ class NetworkManager(object):
         for node in nodes:
             node_id = node.id
 
+            if node.cluster_id != cluster_id:
+                raise Exception(
+                    u"Node id='{0}' doesn't belong to cluster_id='{1}'"
+                    .format(node_id, cluster_id)
+                )
+
             if network_name == 'public' and \
                     not objects.Node.should_have_public_with_ip(node):
                 continue
@@ -231,11 +247,11 @@ class NetworkManager(object):
             network = network_groups.filter(
                 or_(
                     NetworkGroup.group_id == group_id,
-                    NetworkGroup.group_id == None  # flake8: noqa
+                    NetworkGroup.group_id.is_(None)  # flake8: noqa
                 )
             ).first()
 
-            node_ips = imap(
+            node_ips = six.moves.map(
                 lambda i: i.ip_addr,
                 cls._get_ips_except_admin(
                     node_id=node_id,
@@ -510,6 +526,7 @@ class NetworkManager(object):
             # 1 or 2 IPs are required and a long series of IPs from this range
             # are occupied already.
             free_ips = list(islice(ip_iterator,
+                                   0,
                                    max(count, consts.MIN_IPS_PER_DB_QUERY)))
             if not free_ips:
                 ranges_str = ','.join(str(r) for r in ip_ranges)
@@ -525,9 +542,9 @@ class NetworkManager(object):
 
             for ip in ips_in_db:
                 free_ips.remove(ip[0])
-
-            result.extend(free_ips[:count])
-            count -= len(free_ips[:count])
+            free_ips = free_ips[:count]
+            result.extend(free_ips)
+            count -= len(free_ips)
 
         return result
 
@@ -1746,9 +1763,9 @@ class AllocateVIPs70Mixin(object):
         for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
                 cluster):
             vip_name = vip_info['name']
-            vips[vip_name] = cls._build_advanced_vip_info(vip_info,
-                                                          role,
-                                                          vip_addr)
+            vips[vip_name] = cls._build_advanced_vip_info(
+                vip_info, role, vip_addr
+            )
         return vips
 
     @classmethod
@@ -1778,3 +1795,108 @@ class AllocateVIPs70Mixin(object):
                 "Conflicting names: {1}"
                 .format(cluster.id, ', '.join(duplicate_vip_names))
             )
+
+
+class AssignIPsLegacyMixin(object):
+    @classmethod
+    def prepare_for_deployment(cls, cluster):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        """
+        # TODO(enchantner): check network manager instance for each node
+        nodes = cluster.nodes
+        if nodes:
+            cls.assign_ips(cluster, nodes, 'management')
+            cls.assign_ips(cluster, nodes, 'public')
+            cls.assign_ips(cluster, nodes, 'storage')
+            cls.assign_admin_ips(nodes)
+
+
+class AssignIPs61Mixin(object):
+    @classmethod
+    def prepare_for_deployment(cls, cluster):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        """
+        # TODO(enchantner): check network manager instance for each node
+        nst = cluster.network_config.get('segmentation_type')
+        nodes = cluster.nodes
+        if nodes:
+            cls.assign_ips(cluster, nodes, 'management')
+            cls.assign_ips(cluster, nodes, 'public')
+            cls.assign_ips(cluster, nodes, 'storage')
+            if nst in (consts.NEUTRON_SEGMENT_TYPES.gre,
+                       consts.NEUTRON_SEGMENT_TYPES.tun):
+                cls.assign_ips(cluster, nodes, 'private')
+            cls.assign_admin_ips(nodes)
+
+
+class AssignIPsMixin(object):
+
+    @classmethod
+    def prepare_for_deployment(cls, cluster):
+        """Prepare environment for deployment.
+
+        Assign management, public, storage ips
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        """
+        nodes = cluster.nodes
+        if not nodes:
+            logger.debug("prepare_for_deployment was called with no instances")
+            return
+
+        if cluster.network_config.configuration_template:
+            return cls.assign_ips_for_nodes_w_template(
+                cluster, nodes
+            )
+
+        nodes_by_id = dict((n.id, n) for n in nodes)
+
+        query = (
+            db().query(
+                Node.id,
+                NetworkGroup.id,
+                NetworkGroup.name,
+                NetworkGroup.meta)
+            .join(NodeGroup.nodes)
+            .join(NodeGroup.networks)
+            .filter(NodeGroup.cluster_id == cluster.id,
+                    NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
+            .order_by(NetworkGroup.id)
+        )
+
+        # Group by NetworkGroup.id
+        for key, items in groupby(query, lambda x: x[1]):
+            head_item = next(items)
+            network_name = head_item[2]
+            network_metadata = head_item[3]
+            if not network_metadata.get('notation'):
+                continue
+
+            head = [nodes_by_id[head_item[0]]]
+            tail = (nodes_by_id[item[0]] for item in items)
+            cls.assign_ips(
+                cluster,
+                chain(iter(head), tail), network_name,
+            )
+
+        cls.assign_admin_ips(nodes)
+
+    @classmethod
+    def prepare_for_provisioning(cls, cluster):
+        """Prepare environment for provisioning, assign admin IPs.
+
+        :param cluster: Cluster instance.
+        :type  cluster: instance
+        """
+        cls.assign_admin_ips(cluster.nodes)

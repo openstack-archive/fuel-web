@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from itertools import combinations
 from itertools import groupby
 from itertools import product
@@ -725,6 +724,7 @@ class NetworkCheck(object):
         self.check_network_addresses_not_match_subnet_and_broadcast()
         self.check_dns_servers_ips()
         self.check_calculated_network_cidr()
+        # check_network_roles
 
     def check_interface_mapping(self):
         """check mapping of networks to NICs"""

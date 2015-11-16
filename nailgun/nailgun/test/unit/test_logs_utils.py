@@ -31,7 +31,7 @@ class TestNodeLogsUtils(BaseTestCase):
         cluster = self.env.create(nodes_kwargs=nodes)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.Cluster.prepare_for_deployment(cluster_db)
         self.db.flush()
         return cluster_db
 

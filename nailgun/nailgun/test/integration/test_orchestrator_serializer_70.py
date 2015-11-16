@@ -67,13 +67,12 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
     # Must be set in subclasses
     segmentation_type = None
     env_version = '2015.1.0-7.0'
-    prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
     def setUp(self):
         super(BaseTestDeploymentAttributesSerialization70, self).setUp()
         self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
 
-        self.prepare_for_deployment(self.env.nodes)
+        objects.Cluster.prepare_for_deployment(self.env.clusters[-1])
         self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
         serializer_type = get_serializer_for_cluster(self.cluster_db)
         self.serializer = serializer_type(AstuteGraph(self.cluster_db))
@@ -175,7 +174,7 @@ class TestDeploymentAttributesSerialization70(
             pending_addition=True)
         net_serializer = self.serializer.get_net_provider_serializer(
             self.cluster_db)
-        self.prepare_for_deployment(self.cluster_db.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
         mapping = net_serializer.get_node_non_default_bridge_mapping(
             self.cluster_db.nodes[0])
 
@@ -221,7 +220,7 @@ class TestDeploymentAttributesSerialization70(
             cluster_id=cluster['id'],
             pending_roles=['controller'],
             pending_addition=True)
-        self.prepare_for_deployment(self.cluster_db.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
         serializer_type = get_serializer_for_cluster(self.cluster_db)
         serializer = serializer_type(AstuteGraph(self.cluster_db))
         serialized_for_astute = serializer.serialize(
@@ -643,7 +642,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
@@ -687,7 +686,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
@@ -726,7 +725,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
         with mock.patch('nailgun.plugins.adapters.glob.glob',
                         mock.Mock(return_value='path/to/test/repos')):
             pre_deployment = stages.pre_deployment_serialize(
@@ -779,7 +778,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
         with mock.patch('nailgun.plugins.adapters.glob.glob',
                         mock.Mock(return_value='path/to/test/repos')):
             pre_deployment = stages.pre_deployment_serialize(
@@ -813,7 +812,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
         post_deployment = stages.post_deployment_serialize(
             graph, self.cluster, self.cluster.nodes)
 
@@ -839,7 +838,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
         )
 
         graph = AstuteGraph(self.cluster)
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
@@ -856,7 +855,6 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
 class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
 
     env_version = '2015.1.0-7.0'
-    prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
     ROLES = yaml.safe_load("""
         test_role:
@@ -939,7 +937,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
             pending_addition=True)
         self.db.flush()
 
-        self.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
 
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
@@ -971,7 +969,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
             pending_addition=True)
         self.db.flush()
 
-        self.prepare_for_deployment(self.cluster.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster)
 
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
@@ -992,7 +990,6 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
 class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
     env_version = '2015.1.0-7.0'
-    prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
@@ -1003,8 +1000,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             self.cluster,
             self.net_template
         )
-        self.prepare_for_deployment(self.env.nodes)
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        objects.Cluster.prepare_for_deployment(cluster_db)
 
         serializer = get_serializer_for_cluster(self.cluster)
         self.serialized_for_astute = serializer(
@@ -1083,8 +1080,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             self.cluster,
             self.net_template
         )
-        self.prepare_for_deployment(self.env.nodes)
         cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
+        objects.Cluster.prepare_for_deployment(cluster_db)
 
         serializer = get_serializer_for_cluster(self.cluster)
         serialized_for_astute = serializer(
@@ -1192,8 +1189,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             self.cluster,
             self.net_template
         )
-        self.prepare_for_deployment(self.env.nodes)
         cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
+        objects.Cluster.prepare_for_deployment(cluster_db)
 
         serializer = get_serializer_for_cluster(self.cluster)
         serialized_for_astute = serializer(
@@ -1445,9 +1442,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             expect_errors=False
         )
         # management network is not mapped to any interfaces in DB now
-        self.prepare_for_deployment(self.env.nodes)
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-
+        objects.Cluster.prepare_for_deployment(cluster_db)
         serializer = get_serializer_for_cluster(cluster_db)
         self.serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(cluster_db, cluster_db.nodes)
@@ -1601,11 +1597,11 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
 
     env_version = '2015.1.0-7.0'
-    prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
 
     def setUp(self):
         super(TestCustomNetGroupIpAllocation, self).setUp()
         self.cluster = self.create_env()
+        self.cluster_db = self.env.clusters[-1]
 
     def create_env(self):
         return self.env.create(
@@ -1624,7 +1620,7 @@ class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
             cluster=self.cluster, name='test', cidr='172.16.122.0/24',
             meta={'notation': 'ip_ranges',
                   'ip_range': ['172.16.122.2', '172.16.122.255']})
-        self.prepare_for_deployment(self.env.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
 
         ip_addrs_count = db().query(models.IPAddr).filter(
             models.IPAddr.ip_addr.like('172.16.122.%')).count()
@@ -1634,9 +1630,6 @@ class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
 class TestSerializer70Mixin(object):
 
     env_version = "2015.1.0-7.0"
-
-    def prepare_for_deployment(self, nodes, *_):
-        objects.NodeCollection.prepare_for_deployment(nodes)
 
 
 class TestNovaOrchestratorSerializer70(TestSerializer70Mixin,

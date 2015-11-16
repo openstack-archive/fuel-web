@@ -459,7 +459,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         # not enough IPs for 3 nodes and 2 VIPs
         self.find_net_by_name(nets, 'public')['ip_ranges'] = \
-            [["172.16.0.2", "172.16.0.5"]]
+            [["172.16.0.102", "172.16.0.105"]]
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 
@@ -470,7 +470,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         # enough IPs for 3 nodes and 2 VIPs
         self.find_net_by_name(nets, 'public')['ip_ranges'] = \
-            [["172.16.0.2", "172.16.0.6"]]
+            [["172.16.0.102", "172.16.0.106"]]
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 

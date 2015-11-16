@@ -339,17 +339,28 @@ class Cluster(NailgunObject):
 
         ver = instance.release.environment_version
         if instance.net_provider == 'neutron':
+            from nailgun.network import neutron
+            if StrictVersion(ver) < StrictVersion('6.1'):
+                return neutron.NeutronManagerLegacy
+
+            if StrictVersion(ver) == StrictVersion('6.1'):
+                return neutron.NeutronManager61
+
             if StrictVersion(ver) >= StrictVersion('7.0'):
-                from nailgun.network.neutron import NeutronManager70
-                return NeutronManager70
-            from nailgun.network.neutron import NeutronManager
-            return NeutronManager
+                return neutron.NeutronManager70
+
+            return neutron.NeutronManager
         else:
+            from nailgun.network import nova_network
+            if StrictVersion(ver) < StrictVersion('6.1'):
+                return nova_network.NovaNetworkManagerLegacy
+
+            if StrictVersion(ver) == StrictVersion('6.1'):
+                return nova_network.NovaNetworkManager61
+
             if StrictVersion(ver) >= StrictVersion('7.0'):
-                from nailgun.network.nova_network import NovaNetworkManager70
-                return NovaNetworkManager70
-            from nailgun.network.nova_network import NovaNetworkManager
-            return NovaNetworkManager
+                return nova_network.NovaNetworkManager70
+            return nova_network.NovaNetworkManager
 
     @classmethod
     def add_pending_changes(cls, instance, changes_type, node_id=None):
@@ -773,7 +784,7 @@ class Cluster(NailgunObject):
 
         nodegroups = db().query(models.NodeGroup).join(models.Node).filter(
             models.Node.cluster_id == instance.id,
-            False == models.Node.pending_deletion
+            models.Node.pending_deletion.is_(False)
         ).filter(sa.or_(
             models.Node.roles.overlap(psql_noderoles),
             models.Node.pending_roles.overlap(psql_noderoles)
@@ -1135,6 +1146,26 @@ class Cluster(NailgunObject):
             # column 1 then 2 from the result. cannot call them by name as
             # names for column 2 are different in this union
             '1', '2'
+        )
+
+    @classmethod
+    def prepare_for_deployment(cls, instance):
+        """Shortcut for NetworkManager.prepare_for_deployment.
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        """
+        cls.get_network_manager(instance).prepare_for_deployment(
+            instance
+        )
+
+    @classmethod
+    def prepare_for_provisioning(cls, instance):
+        """Shortcut for NetworkManager.prepare_for_provisioning.
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        """
+        cls.get_network_manager(instance).prepare_for_provisioning(
+            instance
         )
 
 

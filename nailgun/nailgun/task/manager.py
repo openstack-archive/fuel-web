@@ -715,6 +715,7 @@ class ResetEnvironmentTaskManager(TaskManager):
                 consts.TASK_NAMES.stop_deployment
             ])
         )
+
         for task in obsolete_tasks:
             db().delete(task)
 
@@ -725,17 +726,25 @@ class ResetEnvironmentTaskManager(TaskManager):
 
         db().commit()
 
-        task = Task(
+        supertask = Task(
             name=consts.TASK_NAMES.reset_environment,
             cluster=self.cluster
         )
-        db().add(task)
-        db.commit()
-        self._call_silently(
-            task,
-            tasks.ResetEnvironmentTask
+        db().add(supertask)
+        al = TaskHelper.create_action_log(supertask)
+
+        remove_keys_task = supertask.create_subtask(
+            consts.TASK_NAMES.reset_environment
         )
-        return task
+
+        db.commit()
+
+        rpc.cast('naily', [
+            tasks.ResetEnvironmentTask.message(supertask),
+            tasks.RemoveClusterKeys.message(remove_keys_task)
+        ])
+        TaskHelper.update_action_log(supertask, al)
+        return supertask
 
 
 class UpdateEnvironmentTaskManager(TaskManager):

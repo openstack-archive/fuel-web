@@ -48,7 +48,7 @@ class TestAttributes(BaseIntegrationTest):
         attrs = objects.Cluster.get_attributes(cluster_db)
         self._compare_generated(
             release.attributes_metadata['generated'],
-            attrs.generated,
+            attrs['generated'],
             cluster_db
         )
 
@@ -92,9 +92,9 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        attrs = objects.Cluster.get_attributes(cluster_db)
-        self.assertEqual("bar", attrs.editable["foo"])
-        attrs.editable.pop('foo')
+        attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        self.assertEqual("bar", attrs["foo"])
+        attrs.pop('foo')
 
         # 400 on generated update
         resp = self.app.put(
@@ -145,10 +145,10 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        attrs = objects.Cluster.get_attributes(cluster_db)
-        self.assertEqual("bar", attrs.editable["foo"])
-        attrs.editable.pop('foo')
-        self.assertNotEqual(attrs.editable, {})
+        attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        self.assertEqual("bar", attrs["foo"])
+        attrs.pop('foo')
+        self.assertNotEqual(attrs, {})
 
     def test_failing_attributes_put(self):
         cluster_id = self.env.create_cluster(api=True)['id']
@@ -249,8 +249,8 @@ class TestAttributes(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(200, resp.status_code, resp.body)
-        attrs = objects.Cluster.get_attributes(cluster_db)
-        self.assertEqual("bar", attrs.editable["foo"])
+        attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        self.assertEqual("bar", attrs["foo"])
         # Set attributes to defaults.
         resp = self.app.put(
             reverse(
@@ -271,9 +271,8 @@ class TestAttributes(BaseIntegrationTest):
     def test_attributes_merged_values(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = objects.Cluster.get_by_uid(cluster['id'])
-        attrs = objects.Cluster.get_attributes(cluster_db)
-        orig_attrs = objects.Attributes.merged_attrs(attrs)
-        attrs = objects.Attributes.merged_attrs_values(attrs)
+        orig_attrs = objects.Attributes.merged_attrs(cluster_db.attributes)
+        attrs = objects.Attributes.merged_attrs_values(cluster_db.attributes)
         for group, group_attrs in orig_attrs.iteritems():
             for attr, orig_value in group_attrs.iteritems():
                 if group == 'common':
@@ -383,7 +382,7 @@ class TestAttributes(BaseIntegrationTest):
     def test_editable_attributes_generators(self):
         self.env.create_cluster(api=True)
         cluster = self.env.clusters[0]
-        editable = objects.Cluster.get_attributes(cluster).editable
+        editable = objects.Cluster.get_editable_attributes(cluster)
         self.assertEqual(
             editable["external_dns"]["dns_list"]["value"],
             settings.DNS_UPSTREAM
@@ -396,7 +395,7 @@ class TestAttributes(BaseIntegrationTest):
     def test_workloads_collector_attributes(self):
         self.env.create_cluster(api=True)
         cluster = self.env.clusters[0]
-        editable = objects.Cluster.get_attributes(cluster).editable
+        editable = objects.Cluster.get_editable_attributes(cluster)
         self.assertEqual(
             editable["workloads_collector"]["enabled"]["value"],
             True
@@ -655,7 +654,7 @@ class TestVmwareAttributes(BaseIntegrationTest):
         )
 
     def _set_use_vcenter(self, cluster):
-        cluster_attrs = objects.Cluster.get_attributes(cluster).editable
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
         cluster_attrs['common']['use_vcenter']['value'] = True
         objects.Cluster.update_attributes(
             cluster, {'editable': cluster_attrs})
@@ -666,7 +665,7 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
     def test_get_default_vmware_attributes(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
-        cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
         cluster_attrs['common']['use_vcenter']['value'] = True
         objects.Cluster.update_attributes(
             cluster_db, {'editable': cluster_attrs})
@@ -698,3 +697,102 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
             "Cluster doesn't support vmware configuration",
             resp.json_body["message"]
         )
+
+
+class TestAttributesWithPlugins(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestAttributesWithPlugins, self).setUp()
+
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2015.1.0-7.0',
+            },
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
+            })
+
+        self.cluster = self.env.clusters[0]
+
+        self.plugin_data = {
+            'releases': [
+                {
+                    'repository_path': 'repositories/ubuntu',
+                    'version': self.cluster.release.version,
+                    'os': self.cluster.release.operating_system.lower(),
+                    'mode': [self.cluster.mode],
+                }
+            ]
+        }
+
+    def test_cluster_contains_plugins_attributes(self):
+        self.env.create_plugin(cluster=self.cluster, **self.plugin_data)
+        resp = self.app.get(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertIn('testing_plugin', resp.json_body['editable'])
+
+    def test_change_plugins_attributes(self):
+        plugin = self.env.create_plugin(cluster=self.cluster,
+                                        **self.plugin_data)
+        attr = '#{0}_attr'.format(plugin.id)
+
+        def _modify_plugin(enabled=True):
+            return self.app.put(
+                reverse(
+                    'ClusterAttributesHandler',
+                    kwargs={'cluster_id': self.cluster['id']}),
+                params=jsonutils.dumps({
+                    'editable': {
+                        'testing_plugin': {
+                            'metadata': {
+                                'label': 'Test plugin',
+                                'toggleable': True,
+                                'weight': 70,
+                                'enabled': enabled
+                            },
+                            'plugin_versions': {
+                                'type': 'radio',
+                                'values': [{
+                                    'data': str(plugin.id),
+                                    'description': '',
+                                    'label': '0.1.0'
+                                }],
+                                'weight': 10,
+                                'value': str(plugin.id),
+                                'label': 'Choose a plugin version'
+                            },
+                            attr: {
+                                'type': 'text',
+                                'description': 'description',
+                                'label': 'label',
+                                'value': '1',
+                                'weight': 25,
+                                'restrictions': [{'action': 'hide'}]
+                            }
+                        }
+                    }
+                }),
+                headers=self.default_headers
+            )
+
+        resp = _modify_plugin(enabled=True)
+        self.assertEqual(200, resp.status_code)
+        editable = objects.Cluster.get_editable_attributes(self.cluster)
+        self.assertIn('testing_plugin', editable)
+        self.assertTrue(editable['testing_plugin']['metadata']['enabled'])
+        self.assertEqual('1', editable['testing_plugin']['attr']['value'])
+
+        resp = _modify_plugin(enabled=False)
+        self.assertEqual(200, resp.status_code)
+        editable = objects.Cluster.get_editable_attributes(self.cluster)
+        self.assertIn('testing_plugin', editable)
+        self.assertFalse(editable['testing_plugin']['metadata']['enabled'])
+        self.assertNotIn(attr, editable['testing_plugin'])

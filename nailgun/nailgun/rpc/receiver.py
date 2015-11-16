@@ -313,8 +313,9 @@ class NailgunReceiver(object):
                             node_db.error_msg = u"Node is offline"
                         # Notification on particular node failure
                         notifier.notify(
-                            "error",
-                            u"Failed to deploy node '{0}': {1}".format(
+                            consts.NOTIFICATION_TOPICS.error,
+                            u"Failed to {0} node '{1}': {2}".format(
+                                consts.TASK_NAMES.deploy,
                                 node_db.name,
                                 node_db.error_msg or "Unknown error"
                             ),
@@ -330,15 +331,7 @@ class NailgunReceiver(object):
         if master.get('status') == consts.TASK_STATUSES.error:
             status = consts.TASK_STATUSES.error
 
-        # Let's check the whole task status
-        if status == consts.TASK_STATUSES.error:
-            cls._error_action(task, status, progress, message)
-        elif status == consts.TASK_STATUSES.ready:
-            cls._success_action(task, status, progress)
-        else:
-            data = {'status': status, 'progress': progress, 'message': message}
-            objects.Task.update(task, data)
-
+        cls._update_task_status(task, status, progress, message)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
@@ -391,8 +384,19 @@ class NailgunReceiver(object):
             if node.get('status') == consts.TASK_STATUSES.error:
                 node_db.status = consts.TASK_STATUSES.error
                 node_db.progress = 100
-                node_db.error_type = 'provision'
+                node_db.error_type = consts.TASK_NAMES.provision
                 node_db.error_msg = node.get('error_msg', 'Unknown error')
+                # Notification on particular node failure
+                cls._notify(
+                    task,
+                    consts.NOTIFICATION_TOPICS.error,
+                    u"Failed to {0} node '{1}': {2}".format(
+                        consts.TASK_NAMES.provision,
+                        node_db.name,
+                        node_db.error_msg
+                    ),
+                    node['uid']
+                )
             else:
                 node_db.status = node.get('status')
                 node_db.progress = node.get('progress')
@@ -401,10 +405,49 @@ class NailgunReceiver(object):
         if nodes and not progress:
             progress = TaskHelper.recalculate_provisioning_task_progress(task)
 
-        data = {'status': status, 'progress': progress, 'message': message}
-        objects.Task.update(task, data)
-
+        cls._update_task_status(task, status, progress, message)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
+
+    @classmethod
+    def _notify(cls, task, topic, message, node_id=None, task_uuid=None):
+        """Send notification.
+
+        :param task: objects.Task object
+        :param topic: consts.NOTIFICATION_TOPICS value
+        :param message: message text
+        :param node_id: node identifier
+        :param task_uuid: task uuid. specify task_uuid if necessary to pass it
+        """
+        # We shouldn't notify provision task if the task is part of deploy task
+        if task.name == consts.TASK_NAMES.provision \
+                and task.parent_id is not None:
+            return
+
+        notifier.notify(
+            topic,
+            message,
+            task.cluster_id,
+            node_id=node_id,
+            task_uuid=task_uuid
+        )
+
+    @classmethod
+    def _update_task_status(cls, task, status, progress, message):
+        """Do update task status actions.
+
+        :param task: objects.Task object
+        :param status: consts.TASK_STATUSES value
+        :param progress: progress number value
+        :param message: message text
+        """
+        # Let's check the whole task status
+        if status == consts.TASK_STATUSES.error:
+            cls._error_action(task, status, progress, message)
+        elif status == consts.TASK_STATUSES.ready:
+            cls._success_action(task, status, progress)
+        else:
+            data = {'status': status, 'progress': progress, 'message': message}
+            objects.Task.update(task, data)
 
     @classmethod
     def _update_action_log_entry(cls, task_status, task_name, task_uuid,
@@ -485,11 +528,7 @@ class NailgunReceiver(object):
             )
             notify_message = message
 
-        notifier.notify(
-            "error",
-            notify_message,
-            task.cluster_id
-        )
+        cls._notify(task, consts.NOTIFICATION_TOPICS.error, notify_message)
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
 
@@ -531,7 +570,7 @@ class NailgunReceiver(object):
         if plugins_msg:
             message = '{0}\n\n{1}'.format(message, plugins_msg)
 
-        notifier.notify("done", message, task.cluster_id)
+        cls._notify(task, consts.NOTIFICATION_TOPICS.done, message)
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
 

@@ -270,7 +270,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                         return (
                             <div className={'col-xs-10 forms-box ' + groupName} key={groupName}>
                                 {_.map(sortedSections, function(sectionName) {
-                                    var settingsToDisplay = selectedGroup[sectionName].settings || _.without(_.keys(settings.get(sectionName)), 'metadata');
+                                    var settingsToDisplay = selectedGroup[sectionName].settings ||
+                                        _.compact(_.map(settings.get(sectionName), function(setting, settingName) {
+                                            if (
+                                                settingName != 'metadata' &&
+                                                setting.type != 'hidden' &&
+                                                !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
+                                            ) return settingName;
+                                        }, this));
                                     return <SettingSection
                                         key={sectionName}
                                         cluster={this.props.cluster}

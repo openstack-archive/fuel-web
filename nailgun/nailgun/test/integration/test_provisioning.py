@@ -16,6 +16,7 @@
 
 from mock import patch
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.test.base import BaseIntegrationTest
@@ -48,46 +49,70 @@ class TestProvisioning(BaseIntegrationTest):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
-                {"api": False, "status": "ready"},
+                {"api": False, "status": consts.NODE_STATUSES.ready},
                 {"api": False, "pending_addition": True,
                  "roles": ["compute"]},
-                {"api": False, "status": "provisioning",
+                {"api": False, "status": consts.NODE_STATUSES.provisioning,
                  "roles": ["compute"],
                  "pending_addition": True},
-                {"api": False, "status": "deploying",
+                {"api": False, "status": consts.NODE_STATUSES.deploying,
                  "roles": ["compute"],
                  "pending_addition": True},
-                {"api": False, "status": "error",
+                {"api": False, "status": consts.NODE_STATUSES.error,
                  "roles": ["compute"],
                  "error_type": "deploy"},
-                {"api": False, "status": "error",
+                {"api": False, "status": consts.NODE_STATUSES.error,
                  "roles": ["compute"],
                  "error_type": "provision"}
             ]
         )
         cluster = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster)
-        self.env.network_manager.assign_ips(self.env.nodes, 'fuelweb_admin')
-        self.env.network_manager.assign_ips(self.env.nodes, 'management')
-        self.env.network_manager.assign_ips(self.env.nodes, 'storage')
-        self.env.network_manager.assign_ips(self.env.nodes, 'public')
+        self.env.network_manager.assign_ips(
+            cluster.id, self.env.nodes, consts.NETWORKS.fuelweb_admin
+        )
+        self.env.network_manager.assign_ips(
+            cluster.id, self.env.nodes, consts.NETWORKS.management
+        )
+        self.env.network_manager.assign_ips(
+            cluster.id, self.env.nodes, consts.NETWORKS.storage
+        )
+        self.env.network_manager.assign_ips(
+            cluster.id, self.env.nodes, consts.NETWORKS.public
+        )
 
         self.env.launch_deployment()
 
         self.env.refresh_nodes()
-        self.assertEqual(self.env.nodes[0].status, 'ready')
-        self.assertEqual(self.env.nodes[1].status, 'provisioning')
-        self.assertEqual(self.env.nodes[2].status, 'provisioning')
-        self.assertEqual(self.env.nodes[3].status, 'provisioning')
-        self.assertEqual(self.env.nodes[4].status, 'error')
-        self.assertEqual(self.env.nodes[5].status, 'provisioning')
+        self.assertEqual(
+            self.env.nodes[0].status, consts.NODE_STATUSES.ready
+        )
+        self.assertEqual(
+            self.env.nodes[1].status, consts.NODE_STATUSES.provisioning
+        )
+        self.assertEqual(
+            self.env.nodes[2].status, consts.NODE_STATUSES.provisioning
+        )
+        self.assertEqual(
+            self.env.nodes[3].status, consts.NODE_STATUSES.provisioning
+        )
+        self.assertEqual(
+            self.env.nodes[4].status, consts.NODE_STATUSES.error
+        )
+        self.assertEqual(
+            self.env.nodes[5].status, consts.NODE_STATUSES.provisioning
+        )
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_vms_reset_on_provisioning(self, mocked_rpc=None):
         self.env.create(
             nodes_kwargs=[
-                {'api': False, 'roles': ['virt'], 'status': 'ready'},
+                {
+                    'api': False,
+                    'roles': ['virt'],
+                    'status': consts.NODE_STATUSES.ready
+                },
                 {'api': False, 'roles': ['virt']},
             ]
         )

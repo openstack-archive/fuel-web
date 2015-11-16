@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy.orm import joinedload
 
 from nailgun.objects.serializers.node_group import NodeGroupSerializer
 
@@ -56,7 +57,14 @@ class NodeGroupCollection(NailgunCollection):
     single = NodeGroup
 
     @classmethod
-    def get_by_cluster_id(cls, cluster_id):
-        if not cluster_id:
-            return cls.filter_by(None, cluster_id=None)
-        return cls.filter_by(None, cluster_id=cluster_id)
+    def get_by_cluster_id(cls, cluster_id, loadnodes=False):
+        if cluster_id:
+            query = cls.filter_by(None, cluster_id=cluster_id)
+        else:
+            query = cls.filter_by(None, cluster_id=None)
+
+        if loadnodes:
+            query.options(
+                joinedload(cls.single.model.nodes)
+            )
+        return query

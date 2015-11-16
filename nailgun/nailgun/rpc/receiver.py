@@ -314,7 +314,8 @@ class NailgunReceiver(object):
                         # Notification on particular node failure
                         notifier.notify(
                             "error",
-                            u"Failed to deploy node '{0}': {1}".format(
+                            cls._get_node_failed_message(
+                                consts.TASK_NAMES.deployment,
                                 node_db.name,
                                 node_db.error_msg or "Unknown error"
                             ),
@@ -330,15 +331,7 @@ class NailgunReceiver(object):
         if master.get('status') == consts.TASK_STATUSES.error:
             status = consts.TASK_STATUSES.error
 
-        # Let's check the whole task status
-        if status == consts.TASK_STATUSES.error:
-            cls._error_action(task, status, progress, message)
-        elif status == consts.TASK_STATUSES.ready:
-            cls._success_action(task, status, progress)
-        else:
-            data = {'status': status, 'progress': progress, 'message': message}
-            objects.Task.update(task, data)
-
+        cls._update_task_status(task, status, progress, message)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
@@ -393,6 +386,18 @@ class NailgunReceiver(object):
                 node_db.progress = 100
                 node_db.error_type = 'provision'
                 node_db.error_msg = node.get('error_msg', 'Unknown error')
+                # Notification on particular node failure
+                notifier.notify(
+                    "error",
+                    cls._get_node_failed_message(
+                        consts.TASK_NAMES.provision,
+                        node_db.name,
+                        node_db.error_msg
+                    ),
+                    cluster_id=task.cluster_id,
+                    node_id=node['uid'],
+                    task_uuid=task_uuid
+                )
             else:
                 node_db.status = node.get('status')
                 node_db.progress = node.get('progress')
@@ -401,10 +406,27 @@ class NailgunReceiver(object):
         if nodes and not progress:
             progress = TaskHelper.recalculate_provisioning_task_progress(task)
 
-        data = {'status': status, 'progress': progress, 'message': message}
-        objects.Task.update(task, data)
-
+        cls._update_task_status(task, status, progress, message)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
+
+    @classmethod
+    def _get_node_failed_message(cls, task_name, node_name, error_message):
+        return u"Failed to {0} node '{1}': {2}".format(
+            task_name,
+            node_name,
+            error_message
+        )
+
+    @classmethod
+    def _update_task_status(cls, task, status, progress, message):
+        # Let's check the whole task status
+        if status == consts.TASK_STATUSES.error:
+            cls._error_action(task, status, progress, message)
+        elif status == consts.TASK_STATUSES.ready:
+            cls._success_action(task, status, progress)
+        else:
+            data = {'status': status, 'progress': progress, 'message': message}
+            objects.Task.update(task, data)
 
     @classmethod
     def _update_action_log_entry(cls, task_status, task_name, task_uuid,

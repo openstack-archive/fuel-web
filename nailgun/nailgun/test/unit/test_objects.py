@@ -47,8 +47,12 @@ from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.network.manager import NetworkManager
-from nailgun.network.neutron import NeutronManager
+from nailgun.network.neutron import NeutronManager61
 from nailgun.network.neutron import NeutronManager70
+from nailgun.network.neutron import NeutronManagerLegacy
+from nailgun.network.nova_network import NovaNetworkManager61
+from nailgun.network.nova_network import NovaNetworkManager70
+from nailgun.network.nova_network import NovaNetworkManagerLegacy
 
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
@@ -1390,16 +1394,48 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def test_get_default(self):
         nm = objects.Cluster.get_network_manager()
-        self.assertEqual(nm, NetworkManager)
+        self.assertIs(nm, NetworkManager)
 
-    def test_get_neutron(self):
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        self.assertEqual(nm, NeutronManager)
+    def check_neutron_network_manager(
+            self, net_provider, version, expected_manager):
+        cluster = self.env.clusters[0]
+        cluster.net_provider = net_provider
+        cluster.release.version = version
+        nm = objects.Cluster.get_network_manager(cluster)
+        self.assertIs(expected_manager, nm)
 
-    def test_get_neutron_70(self):
-        self.env.clusters[0].release.version = '2014.2.2-7.0'
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        self.assertEqual(nm, NeutronManager70)
+    def test_raise_if_unknown(self):
+        cluster = self.env.clusters[0]
+        cluster.net_provider = "invalid_data"
+        self.assertRaisesWithMessage(
+            Exception,
+            'The network provider "invalid_data" is not supported.',
+            objects.Cluster.get_network_manager, cluster
+        )
+
+    def test_neutron_network_managers_by_version(self):
+        for version, manager_class in (
+            ('2014.2.2-6.0', NeutronManagerLegacy),
+            ('2014.2.2-6.1', NeutronManager61),
+            ('2015.6.7-7.0', NeutronManager70),
+            ('2016.1.1-8.0', NeutronManager70),
+        ):
+            self.check_neutron_network_manager(
+                consts.CLUSTER_NET_PROVIDERS.neutron,
+                version, manager_class
+            )
+
+    def test_nova_network_managers_by_version(self):
+        for version, manager_class in (
+            ('2014.2.2-6.0', NovaNetworkManagerLegacy),
+            ('2014.2.2-6.1', NovaNetworkManager61),
+            ('2015.6.7-7.0', NovaNetworkManager70),
+            ('2016.1.1-8.0', NovaNetworkManager70),
+        ):
+            self.check_neutron_network_manager(
+                consts.CLUSTER_NET_PROVIDERS.nova_network,
+                version, manager_class
+            )
 
 
 class TestNetworkGroup(BaseTestCase):

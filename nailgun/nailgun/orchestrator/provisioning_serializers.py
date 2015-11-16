@@ -361,7 +361,8 @@ def get_serializer_for_cluster(cluster):
 
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""
-    objects.NodeCollection.prepare_for_provisioning(nodes)
+
+    objects.Cluster.prepare_for_provisioning(cluster)
     serializer = get_serializer_for_cluster(cluster)
 
     return serializer.serialize(

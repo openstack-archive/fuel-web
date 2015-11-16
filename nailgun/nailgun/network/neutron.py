@@ -25,6 +25,9 @@ from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 
 from nailgun.network.manager import AllocateVIPs70Mixin
+from nailgun.network.manager import AssignIPs61Mixin
+from nailgun.network.manager import AssignIPsLegacyMixin
+from nailgun.network.manager import AssignIPsMixin
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 
@@ -32,7 +35,7 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 
 
-class NeutronManager(NetworkManager):
+class NeutronManager(AssignIPsMixin, NetworkManager):
 
     @classmethod
     def create_neutron_config(
@@ -78,7 +81,17 @@ class NeutronManager(NetworkManager):
         return props
 
 
-class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
+class NeutronManagerLegacy(AssignIPsLegacyMixin, NeutronManager):
+    pass
+
+
+class NeutronManager61(AssignIPs61Mixin, NeutronManager):
+    pass
+
+
+class NeutronManager70(
+    AllocateVIPs70Mixin, NeutronManager
+):
 
     @classmethod
     def build_role_to_network_group_mapping(cls, cluster, node_group_name):
@@ -226,8 +239,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
         return output
 
     @classmethod
-    def assign_ips_in_node_group(
-            cls, net_id, net_name, node_ids, ip_ranges):
+    def assign_ips_in_node_group(cls, net_id, net_name, node_ids, ip_ranges):
         """Assigns IP addresses for nodes in given network."""
         ips_by_node_id = db().query(
             models.IPAddr.ip_addr,
@@ -315,7 +327,8 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
                              for r in ip_ranges_ng]
 
                 cls.assign_ips_in_node_group(
-                    net_id, net_name, node_ids, ip_ranges)
+                    net_id, net_name, node_ids, ip_ranges
+                )
 
         cls.assign_admin_ips(nodes)
 

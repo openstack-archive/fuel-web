@@ -335,7 +335,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.wizard = new models.WizardModel(this.config);
             this.cluster = new models.Cluster();
             this.settings = new models.Settings();
-            this.releases = this.wizard.releases || new models.Releases();
+            this.releases = app.releases;
 
             this.wizard.processConfig(this.config);
 
@@ -343,7 +343,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.configModels.default = this.wizard;
         },
         componentDidMount: function() {
-            this.releases.fetch().done(_.bind(function() {
+            this.releases.fetch({cache: true}).done(_.bind(function() {
                 var defaultRelease = this.releases.findWhere({is_deployable: true});
                 this.wizard.set('NameAndRelease.release', defaultRelease.id);
                 this.selectRelease(defaultRelease.id);

@@ -318,8 +318,9 @@ define([
         constructorName: 'ReleaseNetworkProperties'
     });
 
-    models.Releases = BaseCollection.extend({
+    models.Releases = BaseCollection.extend(cacheMixin).extend({
         constructorName: 'Releases',
+        cacheFor: 60 * 1000,
         model: models.Release,
         url: '/api/releases'
     });

@@ -177,6 +177,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
             this.user = new models.User();
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
+            this.releases = new models.Releases();
             this.nodeNetworkGroups = new models.NodeNetworkGroups();
         }
 

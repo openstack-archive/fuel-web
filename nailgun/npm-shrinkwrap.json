@@ -1989,8 +1989,8 @@
       }
     },
     "eslint-plugin-react": {
-      "version": "3.1.0",
-      "from": "eslint-plugin-react@3.1.0"
+      "version": "3.9.0",
+      "from": "eslint-plugin-react@3.9.0"
     },
     "exports-loader": {
       "version": "0.6.2",

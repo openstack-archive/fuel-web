@@ -308,7 +308,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             selectNodes={this.selectNodes}
                             changeLogSelection={this.changeLogSelection}
                             {...this.state}
-                            {...this.props.tabData} />
+                            {...this.props.tabData}
+                        />
                     </div>
                 </div>
             );

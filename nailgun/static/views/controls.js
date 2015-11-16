@@ -142,10 +142,11 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
                                 value={this.state.fileName && '[' + utils.showSize(this.state.content.length) + '] ' + this.state.fileName}
                                 onClick={this.pickFile}
                                 disabled={this.props.disabled}
-                                readOnly />
-                                <div className='input-group-addon' onClick={this.state.fileName ? this.removeFile : this.pickFile}>
-                                    <i className={this.state.fileName && !this.props.disabled ? 'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'} />
-                                </div>
+                                readOnly
+                            />
+                            <div className='input-group-addon' onClick={this.state.fileName ? this.removeFile : this.pickFile}>
+                                <i className={this.state.fileName && !this.props.disabled ? 'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'} />
+                            </div>
                         </div>
                     }
                     {this.props.toggleable &&

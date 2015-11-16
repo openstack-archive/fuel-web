@@ -10,6 +10,12 @@ module.exports = {
     },
     module: {
         loaders: [
+            {
+                test: /\.js$/,
+                loader: 'babel',
+                exclude: [/(node_modules|vendor\/custom)\//, /\/expression\/parser\.js$/],
+                query: {cacheDirectory: true}
+            },
             {test: /\/expression\/parser\.js$/, loader: 'exports?parser'},
             {test: require.resolve('jquery'), loader: 'expose?jQuery!expose?$'},
             {test: /\.css$/, loader: 'style!css!postcss'},
@@ -18,13 +24,7 @@ module.exports = {
             {test: /\.json$/, loader: 'json'},
             {test: /\.jison$/, loader: 'jison'},
             {test: /\.(gif|png)$/, loader: 'file'},
-            {test: /\.(woff|woff2|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/, loader: 'file'},
-            {
-                test: /\.js$/,
-                loader: 'babel',
-                exclude: [/(node_modules|vendor\/custom)\//, /\/expression\/parser\.js$/],
-                query: {cacheDirectory: true}
-            }
+            {test: /\.(woff|woff2|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/, loader: 'file'}
         ]
     },
     resolve: {
@@ -43,7 +43,7 @@ module.exports = {
     postcss: function() {
         return [require('autoprefixer')];
     },
-    devtool: 'cheap-source-map',
+    devtool: 'cheap-module-source-map',
     watchOptions: {
         aggregateTimeout: 300,
         poll: 1000

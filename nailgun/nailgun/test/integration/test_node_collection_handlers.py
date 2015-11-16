@@ -102,7 +102,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(2, len(resp.json_body))
 
     def test_node_get_with_cluster_and_assigned_ip_addrs(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True, "api": True},
@@ -111,6 +111,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         self.env.network_manager.assign_ips(
+            cluster['id'],
             self.env.nodes,
             "management"
         )

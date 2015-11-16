@@ -632,3 +632,12 @@ class TestDeployTask(BaseTestCase):
         self.assertEqual(consts.TASK_STATUSES.ready, deploy_task.status)
         self.assertEqual(consts.TASK_STATUSES.ready, provision_task.status)
         self.assertEqual(consts.TASK_STATUSES.ready, deployment_task.status)
+
+
+class TestResetEnvironmentTask(BaseTestCase):
+    def test_post_reset_tasks_present(self):
+        mock_task = mock.Mock()
+        mock_task.cluster.id = 1
+        message = task.ResetEnvironmentTask.message(mock_task)
+
+        self.assertIn('post_reset_tasks', message['args'])

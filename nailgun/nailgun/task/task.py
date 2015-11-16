@@ -658,9 +658,30 @@ class ResetEnvironmentTask(object):
         db().commit()
         return rpc_message
 
+
+class RemoveClusterKeys(object):
     @classmethod
-    def execute(cls, task):
-        rpc.cast('naily', cls.message(task))
+    def message(cls, task):
+        rpc_message = make_astute_message(
+            task,
+            "execute_tasks",
+            "reset_environment_resp",
+            {
+                "tasks": [
+                    tasks_templates.make_shell_task(
+                        [consts.MASTER_ROLE],
+                        {
+                            "parameters": {
+                                "cmd": "rm -rf /var/lib/fuel/keys/{0}".format(
+                                    task.cluster.id),
+                                "timeout": 30
+                            }
+                        }
+                    )
+                ]
+            }
+        )
+        return rpc_message
 
 
 class ClusterDeletionTask(object):

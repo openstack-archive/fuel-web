@@ -392,10 +392,11 @@ class TestPrePostHooks(BasePluginTest):
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True}])
-        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
-        self.enable_plugin(self.cluster,
-                           self.sample_plugin['name'],
-                           resp.json['id'])
+        objects.Cluster.prepare_for_deployment(self.cluster)
+
+        self.enable_plugin(
+            self.cluster, self.sample_plugin['name'], resp.json['id']
+        )
 
     def tearDown(self):
         self._requests_mock.stop()

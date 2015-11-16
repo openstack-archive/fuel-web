@@ -1176,7 +1176,7 @@ class TestConsumer(BaseReciverTestCase):
 
         self.assertEqual(supertask.progress, calculated_progress)
 
-    def test_error_node_progress(self):
+    def _prepare_template_task(self, name):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -1185,26 +1185,119 @@ class TestConsumer(BaseReciverTestCase):
         )
         task = Task(
             uuid=str(uuid.uuid4()),
-            name="super",
-            status="running",
+            name=name,
+            status=consts.TASK_STATUSES.running,
             cluster_id=self.env.clusters[0].id
         )
         self.db.add(task)
-        self.db.commit()
-        kwargs = {
-            'task_uuid': task.uuid,
-            'progress': 20,
+        self.db.flush()
+        return task
+
+    def _prepare_template_sub_task(self, name):
+        task = self._prepare_template_task(consts.TASK_NAMES.super)
+        sub_task = Task(
+            uuid=str(uuid.uuid4()),
+            name=name,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.env.clusters[0].id,
+            parent_id=task.id
+        )
+        self.db.add(sub_task)
+        self.db.flush()
+        return sub_task
+
+    def _create_resp_kwargs(
+            self,
+            task_uuid,
+            status,
+            progress,
+            node_status,
+            node_progress
+    ):
+        return {
+            'task_uuid': task_uuid,
+            'progress': progress,
+            'status': status,
             'nodes': [
                 {
                     'uid': self.env.nodes[0].id,
-                    'status': 'error',
-                    'progress': 50
+                    'status': node_status,
+                    'progress': node_progress
                 }
             ]
         }
+
+    def test_deploy_resp_error_node_progress(self):
+        task = self._prepare_template_task(consts.TASK_NAMES.deployment)
+        kwargs = self._create_resp_kwargs(
+            task.uuid, consts.TASK_STATUSES.running, 20,
+            consts.TASK_STATUSES.error, 50
+        )
         self.receiver.deploy_resp(**kwargs)
         self.db.refresh(self.env.nodes[0])
         self.assertEqual(self.env.nodes[0].progress, 100)
+
+    def test_provision_resp_error_node_progress(self):
+        task = self._prepare_template_task(consts.TASK_NAMES.provision)
+        kwargs = self._create_resp_kwargs(
+            task.uuid, consts.TASK_STATUSES.running, 20,
+            consts.TASK_STATUSES.error, 50
+        )
+        self.receiver.provision_resp(**kwargs)
+        self.db.refresh(self.env.nodes[0])
+        self.assertEqual(self.env.nodes[0].progress, 100)
+
+    def test_provision_resp_error_notification(self):
+        task = self._prepare_template_task(consts.TASK_NAMES.provision)
+        kwargs = self._create_resp_kwargs(
+            task.uuid, consts.TASK_STATUSES.error, 20,
+            consts.TASK_STATUSES.error, 50
+        )
+        self.receiver.provision_resp(**kwargs)
+        notifications_number = self.db.query(Notification).filter_by(
+            cluster_id=task.cluster_id
+        ).count()
+        # Should be two notifications
+        #  - about exact failed node
+        #  - about failed provision task
+        self.assertEqual(2, notifications_number)
+
+    def test_provision_resp_sub_task_no_error_notification(self):
+        sub_task = self._prepare_template_sub_task(consts.TASK_NAMES.provision)
+        kwargs = self._create_resp_kwargs(
+            sub_task.uuid, consts.TASK_STATUSES.error, 20,
+            consts.TASK_STATUSES.error, 50
+        )
+        self.receiver.provision_resp(**kwargs)
+        notifications_number = self.db.query(Notification).filter_by(
+            cluster_id=sub_task.cluster_id
+        ).count()
+        self.assertEqual(0, notifications_number)
+
+    def test_provision_resp_success_notification(self):
+        task = self._prepare_template_task(consts.TASK_NAMES.provision)
+        kwargs = self._create_resp_kwargs(
+            task.uuid, consts.TASK_STATUSES.ready, 100,
+            consts.TASK_STATUSES.ready, 100
+        )
+
+        self.receiver.provision_resp(**kwargs)
+        notifications_number = self.db.query(Notification).filter_by(
+            cluster_id=task.cluster_id
+        ).count()
+        self.assertEqual(1, notifications_number)
+
+    def test_provision_resp_sub_task_no_success_notification(self):
+        sub_task = self._prepare_template_sub_task(consts.TASK_NAMES.provision)
+        kwargs = self._create_resp_kwargs(
+            sub_task.uuid, consts.TASK_STATUSES.ready, 100,
+            consts.TASK_STATUSES.ready, 100
+        )
+        self.receiver.provision_resp(**kwargs)
+        notifications_number = self.db.query(Notification).filter_by(
+            cluster_id=sub_task.cluster_id
+        ).count()
+        self.assertEqual(0, notifications_number)
 
     def test_remove_nodes_resp(self):
         self.env.create(

@@ -18,10 +18,13 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 
 from nailgun.network.manager import AllocateVIPs70Mixin
+from nailgun.network.manager import AssignIPs61Mixin
+from nailgun.network.manager import AssignIPsLegacyMixin
+from nailgun.network.manager import AssignIPsMixin
 from nailgun.network.manager import NetworkManager
 
 
-class NovaNetworkManager(NetworkManager):
+class NovaNetworkManager(AssignIPsMixin, NetworkManager):
 
     @classmethod
     def create_nova_network_config(cls, cluster):
@@ -48,7 +51,17 @@ class NovaNetworkManager(NetworkManager):
         return [int(ng.get("vlan_start"))]
 
 
-class NovaNetworkManager70(AllocateVIPs70Mixin, NovaNetworkManager):
+class NovaNetworkManagerLegacy(AssignIPsLegacyMixin, NovaNetworkManager):
+    pass
+
+
+class NovaNetworkManager61(AssignIPs61Mixin, NovaNetworkManager):
+    pass
+
+
+class NovaNetworkManager70(
+    AllocateVIPs70Mixin, NovaNetworkManager
+):
 
     @classmethod
     def build_role_to_network_group_mapping(cls, *_):

@@ -496,69 +496,71 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     <div>
                         {_.map(sortedSettings, function(settingName) {
                             var setting = group[settingName],
-                                path = this.props.makePath(this.props.sectionName, settingName),
-                                error = (this.props.settings.validationError || {})[path],
-                                processedSettingRestrictions = this.processRestrictions(this.props.sectionName, settingName),
-                                processedSettingDependencies = this.checkDependencies(this.props.sectionName, settingName),
-                                isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
-                                showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
-                                settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
+                                path = this.props.makePath(this.props.sectionName, settingName);
+                            if (!this.props.checkRestrictions('hide', path).result) {
+                                var error = (this.props.settings.validationError || {})[path],
+                                    processedSettingRestrictions = this.processRestrictions(this.props.sectionName, settingName),
+                                    processedSettingDependencies = this.checkDependencies(this.props.sectionName, settingName),
+                                    isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
+                                    showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
+                                    settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
 
-                            // support of custom controls
-                            var CustomControl = customControls[setting.type];
-                            if (CustomControl) {
-                                return <CustomControl
-                                    {...setting}
-                                    {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
+                                // support of custom controls
+                                var CustomControl = customControls[setting.type];
+                                if (CustomControl) {
+                                    return <CustomControl
+                                        {...setting}
+                                        {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
+                                        key={settingName}
+                                        path={path}
+                                        error={error}
+                                        disabled={isSettingDisabled}
+                                        tooltipText={showSettingWarning && settingWarning}
+                                    />;
+                                }
+
+                                if (setting.values) {
+                                    var values = _.chain(_.cloneDeep(setting.values))
+                                        .map(function(value) {
+                                            var valuePath = this.props.makePath(path, value.data),
+                                                processedValueRestrictions = this.props.checkRestrictions('disable', valuePath);
+                                            if (!this.props.checkRestrictions('hide', valuePath).result) {
+                                                value.disabled = isSettingDisabled || processedValueRestrictions.result;
+                                                value.defaultChecked = value.data == setting.value;
+                                                value.tooltipText = showSettingWarning && processedValueRestrictions.message;
+                                                return value;
+                                            }
+                                        }, this)
+                                        .compact()
+                                        .value();
+                                    if (setting.type == 'radio') return <controls.RadioGroup {...this.props}
+                                        key={settingName}
+                                        name={settingName}
+                                        label={setting.label}
+                                        values={values}
+                                        error={error}
+                                        tooltipText={showSettingWarning && settingWarning}
+                                    />;
+                                }
+
+                                var settingDescription = setting.description &&
+                                        <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
+                                return <controls.Input
+                                    {... _.pick(setting, 'type', 'label')}
                                     key={settingName}
-                                    path={path}
+                                    name={settingName}
+                                    description={settingDescription}
+                                    children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
+                                    debounce={setting.type == 'text' || setting.type == 'password' || setting.type == 'textarea'}
+                                    defaultValue={setting.value}
+                                    defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
+                                    toggleable={setting.type == 'password'}
                                     error={error}
                                     disabled={isSettingDisabled}
                                     tooltipText={showSettingWarning && settingWarning}
+                                    onChange={this.props.onChange}
                                 />;
                             }
-
-                            if (setting.values) {
-                                var values = _.chain(_.cloneDeep(setting.values))
-                                    .map(function(value) {
-                                        var valuePath = this.props.makePath(path, value.data),
-                                            processedValueRestrictions = this.props.checkRestrictions('disable', valuePath);
-                                        if (!this.props.checkRestrictions('hide', valuePath).result) {
-                                            value.disabled = isSettingDisabled || processedValueRestrictions.result;
-                                            value.defaultChecked = value.data == setting.value;
-                                            value.tooltipText = showSettingWarning && processedValueRestrictions.message;
-                                            return value;
-                                        }
-                                    }, this)
-                                    .compact()
-                                    .value();
-                                if (setting.type == 'radio') return <controls.RadioGroup {...this.props}
-                                    key={settingName}
-                                    name={settingName}
-                                    label={setting.label}
-                                    values={values}
-                                    error={error}
-                                    tooltipText={showSettingWarning && settingWarning}
-                                />;
-                            }
-
-                            var settingDescription = setting.description &&
-                                    <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
-                            return <controls.Input
-                                {... _.pick(setting, 'type', 'label')}
-                                key={settingName}
-                                name={settingName}
-                                description={settingDescription}
-                                children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
-                                debounce={setting.type == 'text' || setting.type == 'password' || setting.type == 'textarea'}
-                                defaultValue={setting.value}
-                                defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
-                                toggleable={setting.type == 'password'}
-                                error={error}
-                                disabled={isSettingDisabled}
-                                tooltipText={showSettingWarning && settingWarning}
-                                onChange={this.props.onChange}
-                            />;
                         }, this)}
                     </div>
                 </div>

@@ -15,6 +15,7 @@
 #    under the License.
 
 from oslo_serialization import jsonutils
+import mock
 
 from nailgun.db.sqlalchemy.models import Notification
 
@@ -121,3 +122,35 @@ class TestResetEnvironment(BaseIntegrationTest):
         self.env.refresh_nodes()
         self.assertEqual(node_db.pending_addition, True)
         self.assertEqual(node_db.pending_deletion, False)
+
+    @fake_tasks(
+        override_state={"progress": 100, "status": "ready"},
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
+    def test_reset_environment_tasks(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"name": "First",
+                 "pending_addition": True},
+                {"name": "Second",
+                 "roles": ["compute"],
+                 "pending_addition": True}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        supertask = self.env.launch_deployment()
+        self.env.wait_ready(supertask, 60)
+
+        for n in cluster_db.nodes:
+            self.assertEqual(n.status, "ready")
+            self.assertEqual(n.pending_addition, False)
+
+        with mock.patch('nailgun.task.task.rpc.cast') as cast_mock:
+            reset_task = self.env.reset_environment()
+            casted_tasks = cast_mock.call_args[0][1]
+            self.assertEqual(len(casted_tasks), 2)
+
+            self.assertEqual(casted_tasks[0]['method'], 'reset_environment')
+            self.assertEqual(casted_tasks[1]['method'], 'execute_tasks')

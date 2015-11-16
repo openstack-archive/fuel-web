@@ -576,7 +576,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                             />,
                                         !_.isEmpty(alerts.warning) &&
                                             [
-                                                <p>{i18n(namespace + 'note_recommendations')}</p>,
+                                                <p key='recommendations'>{i18n(namespace + 'note_recommendations')}</p>,
                                                 <WarningsBlock
                                                     key='warning'
                                                     cluster={cluster}

@@ -980,11 +980,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
                                                 >
                                                     <input type='radio' name='view_mode' value={mode} />
-                                                    <i className={utils.classNames({
-                                                        glyphicon: true,
-                                                        'glyphicon-th-list': mode == 'standard',
-                                                        'glyphicon-th': mode == 'compact'
-                                                    })} />
+                                                    <i
+                                                        className={utils.classNames({
+                                                            glyphicon: true,
+                                                            'glyphicon-th-list': mode == 'standard',
+                                                            'glyphicon-th': mode == 'compact'
+                                                        })}
+                                                    />
                                                 </label>
                                             </controls.Tooltip>
                                         );
@@ -1170,7 +1172,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             label={i18n(ns + 'more')}
                                             options={inactiveSorters}
                                             onChange={this.props.addSorting}
-                                            dynamicValues={true}
+                                            dynamicValues
                                             isOpen= {this.state.isMoreSorterControlVisible}
                                             toggle={this.toggleMoreSorterControl}
                                         />
@@ -1213,7 +1215,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             label={i18n(ns + 'more')}
                                             options={inactiveFilters}
                                             onChange={this.addFilter}
-                                            dynamicValues={true}
+                                            dynamicValues
                                             isOpen={this.state.isMoreFilterControlVisible}
                                             toggle={this.toggleMoreFilterControl}
                                         />
@@ -1626,7 +1628,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     label={i18n('common.select_all')}
                     wrapperClassName='select-all pull-right'
-                    onChange={_.bind(this.props.selectNodes, this.props, _.pluck(this.props.nodes, 'id'))} />
+                    onChange={_.bind(this.props.selectNodes, this.props, _.pluck(this.props.nodes, 'id'))}
+                />
             );
         }
     };

@@ -698,16 +698,28 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return (
                 <div className='well clearfix'>
                     <div className='btn-group pull-right'>
-                        <button key='verify_networks' className='btn btn-default verify-networks-btn' onClick={this.verifyNetworks}
-                                disabled={isVerificationDisabled}>
+                        <button
+                            key='verify_networks'
+                            className='btn btn-default verify-networks-btn'
+                            onClick={this.verifyNetworks}
+                            disabled={isVerificationDisabled}
+                        >
                             {i18n('cluster_page.network_tab.verify_networks_button')}
                         </button>
-                        <button key='revert_changes' className='btn btn-default btn-revert-changes' onClick={this.revertChanges}
-                                disabled={isCancelChangesDisabled}>
+                        <button
+                            key='revert_changes'
+                            className='btn btn-default btn-revert-changes'
+                            onClick={this.revertChanges}
+                            disabled={isCancelChangesDisabled}
+                        >
                             {i18n('common.cancel_changes_button')}
                         </button>
-                        <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
-                                disabled={!this.isSavingPossible()}>
+                        <button
+                            key='apply_changes'
+                            className='btn btn-success apply-btn'
+                            onClick={this.applyChanges}
+                            disabled={!this.isSavingPossible()}
+                        >
                             {i18n('common.save_settings_button')}
                         </button>
                     </div>
@@ -1351,6 +1363,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     {networks.findWhere({name: 'baremetal'}) &&
                         [
                             <Range
+                                key='baremetal_range'
                                 {...this.composeProps('baremetal_range', true)}
                                 extendable={false}
                                 hiddenControls

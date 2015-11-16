@@ -46,7 +46,7 @@
     "chai": "~3.2.0",
     "es5-shim": "4.1.11",
     "eslint": "1.7.3",
-    "eslint-plugin-react": "3.1.0",
+    "eslint-plugin-react": "3.9.0",
     "glob": "~5.0.5",
     "gulp-eslint": "1.0.0",
     "gulp-lintspaces": "0.3.2",

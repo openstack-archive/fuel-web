@@ -15,9 +15,12 @@
 #    under the License.
 
 
+from collections import defaultdict
 from itertools import combinations
 from itertools import product
 import netaddr
+
+import six
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -43,6 +46,11 @@ class NetworkCheck(object):
         self.data = data
         self.net_man = objects.Cluster.get_network_manager(self.cluster)
         self.net_provider = self.cluster.net_provider
+        self.node_groups = list(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster.id, True
+            )
+        )
         admin_ng = self.net_man.get_admin_network_group()
         fields = NetworkGroup.__mapper__.columns.keys() + ['meta']
         net = NetworkConfigurationSerializer.serialize_network_group(admin_ng,
@@ -516,8 +524,7 @@ class NetworkCheck(object):
 
     def neutron_check_gateways(self):
         """Check that gateways are set if non-default node groups are used."""
-        if objects.NodeGroupCollection.get_by_cluster_id(
-                self.cluster.id).count() < 2:
+        if len(self.node_groups) < 2:
             return
         for net in self.networks:
             if net['meta']['notation'] in (
@@ -689,9 +696,57 @@ class NetworkCheck(object):
         self.check_network_addresses_not_match_subnet_and_broadcast()
         self.check_dns_servers_ips()
         self.check_calculated_network_cidr()
+        self.check_have_enough_free_ips()
+        # check_network_roles
 
     def check_interface_mapping(self):
         """check mapping of networks to NICs"""
         self.check_untagged_intersection()
         self.check_bond_slaves_speeds()
         return self.err_msgs
+
+    def check_have_enough_free_ips(self):
+        """Checks that there is enough free ip addresses."""
+        nodes_in_roles = defaultdict(int)
+        net_roles_cache = dict()
+        ips_in_use = set()
+
+        for node_group in self.node_groups:
+            for node in node_group.nodes:
+                for role in node.all_roles:
+                    nodes_in_roles[role] += 1
+
+                if objects.Node.should_have_public(node):
+                    nodes_in_roles['public/vip'] += 1
+
+            net_mapping = self.net_man.build_role_to_network_group_mapping(
+                self.cluster, node_group.name
+            )
+
+            for role_id, nodes_count in six.iteritems(nodes_in_roles):
+                try:
+                    net_role = net_roles_cache[role_id]
+                except KeyError:
+                    net_role = net_roles_cache[role_id] = \
+                        self.net_man.find_network_role_by_id(
+                            self.cluster, role_id
+                    )
+
+                if net_role is None:
+                    # this case should be handled out of this scope
+                    continue
+
+                net_group_name = self.net_man.get_network_group_for_role(
+                    net_role, net_mapping
+                )
+                net_group = objects.NetworkGroup.get_from_node_group_by_name(
+                    node_group.id, net_group_name
+                )
+                try:
+                    self.net_man.get_free_ips(
+                        net_group, nodes_count, ips_in_use
+                    )
+                except errors.OutOfIPs as e:
+                    self.err_msgs.append(six.text_type(e))
+
+            self.expose_error_messages()

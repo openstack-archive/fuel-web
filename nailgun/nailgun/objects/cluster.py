@@ -743,7 +743,7 @@ class Cluster(NailgunObject):
 
         nodegroups = db().query(models.NodeGroup).join(models.Node).filter(
             models.Node.cluster_id == instance.id,
-            False == models.Node.pending_deletion
+            models.Node.pending_deletion.is_(False)
         ).filter(sa.or_(
             models.Node.roles.overlap(psql_noderoles),
             models.Node.pending_roles.overlap(psql_noderoles)

@@ -53,6 +53,29 @@ from nailgun.settings import settings
 class NetworkManager(object):
 
     @classmethod
+    def build_role_to_network_group_mapping(cls, *_):
+        """Not needed due to always using default net role to network mapping
+
+        :return: Empty network role to network map
+        :rtype: dict
+        """
+        return {}
+
+    @classmethod
+    def get_network_group_for_role(cls, network_role, _):
+        """Returns network group to which network role is associated
+
+        The default network group from the network role description is
+        returned.
+
+        :param network_role: Network role dict
+        :type network_role: dict
+        :return: Network group name
+        :rtype: str
+        """
+        return network_role['default_mapping']
+
+    @classmethod
     def get_admin_network_group_id(cls, node_id=None):
         """Method for receiving Admin NetworkGroup ID.
 
@@ -96,6 +119,21 @@ class NetworkManager(object):
             return IPAddr(node=node.id,
                           ip_addr=node.ip,
                           network=network.id)
+        return None
+
+    @classmethod
+    def find_network_role_by_id(cls, cluster, role_id):
+        """Returns network role for specified role id.
+
+        :param cluster: Cluster instance
+        :param role_id: Network role id
+        :type role_id: str
+        :return: Network role dict or None if not found
+        """
+        net_roles = objects.Cluster.get_network_roles(cluster)
+        for role in net_roles:
+            if role['id'] == role_id:
+                return role
         return None
 
     @classmethod
@@ -510,6 +548,7 @@ class NetworkManager(object):
             # 1 or 2 IPs are required and a long series of IPs from this range
             # are occupied already.
             free_ips = list(islice(ip_iterator,
+                                   0,
                                    max(count, consts.MIN_IPS_PER_DB_QUERY)))
             if not free_ips:
                 ranges_str = ','.join(str(r) for r in ip_ranges)
@@ -525,9 +564,9 @@ class NetworkManager(object):
 
             for ip in ips_in_db:
                 free_ips.remove(ip[0])
-
-            result.extend(free_ips[:count])
-            count -= len(free_ips[:count])
+            free_ips = free_ips[:count]
+            result.extend(free_ips)
+            count -= len(free_ips)
 
         return result
 
@@ -1606,22 +1645,6 @@ class AllocateVIPs70Mixin(object):
                 'node_roles': vip_info.get('node_roles',
                                            ['controller',
                                             'primary-controller'])}
-
-
-    @classmethod
-    def find_network_role_by_id(cls, cluster, role_id):
-        """Returns network role for specified role id.
-
-        :param cluster: Cluster instance
-        :param role_id: Network role id
-        :type role_id: str
-        :return: Network role dict or None if not found
-        """
-        net_roles = objects.Cluster.get_network_roles(cluster)
-        for role in net_roles:
-            if role['id'] == role_id:
-                return role
-        return None
 
     @classmethod
     def get_end_point_ip(cls, cluster_id):

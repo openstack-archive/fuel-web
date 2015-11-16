@@ -236,8 +236,8 @@ class TestTaskManagers(BaseIntegrationTest):
                 {'status': consts.NODE_STATUSES.ready, 'roles': ['compute']},
                 {'status': consts.NODE_STATUSES.ready, 'roles': ['compute']},
             ])
-        objects.NodeCollection.prepare_for_deployment(
-            self.env.clusters[0].nodes)
+
+        objects.Cluster.prepare_for_deployment(self.env.clusters[0])
         self.env.launch_deployment()
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args_list[1]
@@ -263,7 +263,7 @@ class TestTaskManagers(BaseIntegrationTest):
             {"pending_addition": True, 'roles': ['compute']}])
         cluster_db = self.env.clusters[0]
         # Generate ips
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.Cluster.prepare_for_deployment(cluster_db)
         # First node with status ready
         # should not be readeployed
         self.env.nodes[0].status = consts.TASK_STATUSES.ready

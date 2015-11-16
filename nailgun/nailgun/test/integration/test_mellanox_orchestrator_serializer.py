@@ -80,7 +80,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         cluster_db.attributes.editable = editable_attrs
         self.db.commit()
         cluster_db = objects.Cluster.get_by_uid(self.cluster_id)
-        self.prepare_for_deployment(cluster_db.nodes)
+        objects.Cluster.prepare_for_deployment(cluster_db)
         return cluster_db
 
     def test_serialize_mellanox_plugin_enabled(self):

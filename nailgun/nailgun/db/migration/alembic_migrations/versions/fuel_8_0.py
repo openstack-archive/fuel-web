@@ -110,9 +110,11 @@ def upgrade():
     upgrade_neutron_parameters()
     upgrade_cluster_plugins()
     upgrade_add_baremetal_net()
+    upgrade_master_node_ui_settings()
 
 
 def downgrade():
+    downgrade_master_node_ui_settings()
     downgrade_add_baremetal_net()
     downgrade_cluster_plugins()
     downgrade_neutron_parameters()
@@ -491,3 +493,52 @@ def upgrade_add_baremetal_net():
 def downgrade_add_baremetal_net():
     op.drop_column('neutron_config', 'baremetal_gateway')
     op.drop_column('neutron_config', 'baremetal_range')
+
+
+def upgrade_master_node_ui_settings():
+    connection = op.get_bind()
+
+    q_get_master_node_data = sa.text('''
+        SELECT master_node_uid, settings FROM master_node_settings
+    ''')
+    q_update_master_node_settings = sa.text('''
+        UPDATE master_node_settings SET settings = :settings
+        WHERE master_node_uid = :master_node_uid
+    ''')
+
+    master_node_data = connection.execute(q_get_master_node_data)
+    for master_node_uid, settings in master_node_data:
+        master_node_settings = jsonutils.loads(settings)
+        master_node_settings.update({
+            'ui_settings': {
+                'view_mode': 'standard',
+                'filter': {},
+                'sort': [{'status': 'asc'}],
+                'filter_by_labels': {},
+                'sort_by_labels': [],
+                'search': '',
+            },
+        })
+        connection.execute(q_update_master_node_settings,
+                           master_node_uid=master_node_uid,
+                           settings=jsonutils.dumps(master_node_settings))
+
+
+def downgrade_master_node_ui_settings():
+    connection = op.get_bind()
+
+    q_get_master_node_data = sa.text('''
+        SELECT master_node_uid, settings FROM master_node_settings
+    ''')
+    q_update_master_node_settings = sa.text('''
+        UPDATE master_node_settings SET settings = :settings
+        WHERE master_node_uid = :master_node_uid
+    ''')
+
+    master_node_data = connection.execute(q_get_master_node_data)
+    for master_node_uid, settings in master_node_data:
+        master_node_settings = jsonutils.loads(settings)
+        del master_node_settings['ui_settings']
+        connection.execute(q_update_master_node_settings,
+                           master_node_uid=master_node_uid,
+                           settings=jsonutils.dumps(master_node_settings))

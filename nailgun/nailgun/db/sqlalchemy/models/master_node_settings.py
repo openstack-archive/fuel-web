@@ -16,6 +16,8 @@ from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
 
+from oslo_serialization import jsonutils
+
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 
@@ -25,4 +27,17 @@ class MasterNodeSettings(Base):
 
     id = Column(Integer, primary_key=True)
     master_node_uid = Column(String(36), nullable=False)
-    settings = Column(JSON, default={})
+    settings = Column(
+        JSON,
+        nullable=False,
+        server_default=jsonutils.dumps({
+            "ui_settings": {
+                "view_mode": "standard",
+                "filter": {},
+                "sort": [{"status": "asc"}],
+                "filter_by_labels": {},
+                "sort_by_labels": [],
+                "search": ""
+            }
+        }),
+    )

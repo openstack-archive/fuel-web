@@ -23,6 +23,7 @@
     "gulp-util": "3.0.4",
     "i18next": "1.7.1",
     "imports-loader": "0.6.4",
+    "javascript-natural-sort": "0.7.1",
     "jquery": "1.11.3",
     "js-cookie": "1.5.1",
     "json-loader": "0.5.3",
@@ -38,8 +39,8 @@
     "rimraf": "2.2.8",
     "run-sequence": "1.0.2",
     "style-loader": "0.12.4",
-    "webpack": "1.12.0",
-    "uglify-js": "2.4.21"
+    "uglify-js": "2.4.21",
+    "webpack": "1.12.0"
   },
   "devDependencies": {
     "chai": "~3.2.0",

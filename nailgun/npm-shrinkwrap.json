@@ -8323,6 +8323,10 @@
           }
         }
       }
+    },
+    "javascript-natural-sort": {
+      "version": "0.7.1",
+      "from": "javascript-natural-sort@"
     }
   }
 }

@@ -191,7 +191,10 @@ def action_dumpdata(params):
 
 
 def action_generate_nodes_fixture(params):
-    from oslo.serialization import jsonutils
+    try:
+        from oslo.serialization import jsonutils
+    except ImportError:
+        from oslo_serialization import jsonutils
     from nailgun.logger import logger
     from nailgun.utils import fake_generator
 

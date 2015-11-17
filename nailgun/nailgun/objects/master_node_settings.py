@@ -66,11 +66,22 @@ class MasterNodeSettings(NailgunObject):
         return instance
 
     @classmethod
-    def must_send_stats(cls):
+    def must_send_stats(cls, mn_settings_data=None):
+        """Checks if stats must be sent
+
+        Stats must be sent if user saved the choice and
+        sending anonymous statistics was selected.
+
+        :param mn_settings_data: dict with master node settings.
+        If mn_settings_data is none data from DB will be fetched
+        :return: bool
+        """
         try:
-            stat_settings = getattr(
-                cls.get_one(), "settings", {}
-            ).get("statistics", {})
+            if mn_settings_data is None:
+                settings = getattr(cls.get_one(), "settings", {})
+            else:
+                settings = mn_settings_data.get("settings")
+            stat_settings = settings.get("statistics", {})
             return stat_settings.get("user_choice_saved", {}).\
                 get("value", False) and \
                 stat_settings.get("send_anonymous_statistic", {}). \

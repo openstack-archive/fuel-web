@@ -1457,6 +1457,14 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
 
     master_node_settings_template = {
         "settings": {
+            "ui_settings": {
+                "view_mode": "standard",
+                "filter": {},
+                "sort": [{"status": "asc"}],
+                "filter_by_labels": {},
+                "sort_by_labels": [],
+                "search": ""
+            },
             "statistics": {
                 "send_anonymous_statistic": {
                     "type": "checkbox",

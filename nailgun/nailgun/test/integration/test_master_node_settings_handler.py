@@ -84,7 +84,16 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
 
     def test_validate_ok(self):
         data = {
-            "settings": {},
+            "settings": {
+                "ui_settings": {
+                    "view_mode": "standard",
+                    "filter": {},
+                    "sort": [{"status": "asc"}],
+                    "filter_by_labels": {},
+                    "sort_by_labels": [],
+                    "search": ""
+                }
+            },
         }
 
         resp = self.app.put(

@@ -61,6 +61,8 @@ class NeutronConfig(NetworkingConfig):
     base_mac = Column(LowercaseString(17), nullable=False)
     internal_cidr = Column(String(25))
     internal_gateway = Column(String(25))
+    baremetal_gateway = Column(String(25))
+    baremetal_range = Column(JSON, default=[])
 
     # Neutron L3 names for default internal / floating networks
     # which were previously knows as net04 and net04_ext.

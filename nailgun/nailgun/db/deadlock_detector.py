@@ -23,6 +23,9 @@ from nailgun.settings import settings
 ALLOWED_LOCKS_CHAINS = [
     ('attributes', 'clusters'),
     ('attributes', 'clusters', 'ip_addr_ranges'),
+    ('attributes', 'ip_addr_ranges'),
+    ('attributes', 'ip_addrs'),
+    ('attributes', 'ip_addrs', 'network_groups'),
     ('clusters', 'nodes'),
     ('tasks', 'clusters'),
     ('tasks', 'clusters', 'nodes'),

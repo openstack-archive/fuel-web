@@ -37,7 +37,7 @@ define(
     'views/support_page',
     'views/capacity_page',
 
-    'react.backbone',
+    'babel-core/polyfill',
     'backbone.routefilter',
     'bootstrap',
     './styles/main.less'

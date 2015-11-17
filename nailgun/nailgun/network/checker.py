@@ -359,6 +359,16 @@ class NetworkCheck(object):
         # check intersection of address ranges
         # between all networks
         for ngs in combinations(self.networks, 2):
+            # If the two network groups being checked have different
+            # group IDs then there is no need to check for intersection.
+            # Intersection with the default admin network will always be
+            # checked because it will always have a different group ID
+            # when compared to networks in a single node group.
+            if (ngs[0]['group_id'] != ngs[1]['group_id'] and
+                    ngs[0]['group_id'] is not None and
+                    ngs[1]['group_id'] is not None):
+                continue
+
             if ngs[0].get('cidr') and ngs[1].get('cidr'):
                 cidr1 = netaddr.IPNetwork(ngs[0]['cidr'])
                 cidr2 = netaddr.IPNetwork(ngs[1]['cidr'])

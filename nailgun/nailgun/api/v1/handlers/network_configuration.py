@@ -138,7 +138,11 @@ class ProviderHandler(BaseHandler):
         try:
             network_config = self.serializer.serialize_for_cluster(cluster)
         except errors.OutOfIPs as exc:
-            raise self.http(400, six.text_type(exc))
+            raise self.http(
+                400,
+                six.text_type(exc),
+                err_list=[{"errors": ["ip_ranges"], "ids": [exc.network_id]}]
+            )
 
         if admin_nets != nm.get_admin_networks():
             try:

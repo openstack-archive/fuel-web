@@ -14,12 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.validators.json_schema import base_types
+
 schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "MasterNodeSettings",
     "description": "Serialized MasterNodeSettings object",
     "type": "object",
     "properties": {
-        "settings": {"type": "object"}
+        "settings": {
+            "type": "object",
+            "properties": {
+                "ui_settings": base_types.UI_SETTINGS,
+            },
+        }
     }
 }

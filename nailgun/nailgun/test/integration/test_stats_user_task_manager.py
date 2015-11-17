@@ -40,15 +40,19 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
 
         deploy_task = self.env.launch_deployment()
         self.env.wait_ready(deploy_task)
+        self.assertFalse(objects.MasterNodeSettings.must_send_stats())
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
-            resp = self.app.patch(
-                reverse('MasterNodeSettingsHandler'),
-                headers=self.default_headers,
-                params=jsonutils.dumps({})
-            )
-            self.assertEqual(200, resp.status_code)
+        data = {'settings': {'statistics': {
+            'user_choice_saved': {'value': True},
+            'send_anonymous_statistic': {'value': True}
+        }}}
+
+        resp = self.app.patch(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
 
         task = objects.TaskCollection.filter_by(
             None, name=consts.TASK_NAMES.create_stats_user).first()
@@ -77,23 +81,31 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
             task_count_before = objects.TaskCollection.filter_by(
                 None, name=task_name).count()
 
-            with mock.patch('nailgun.objects.MasterNodeSettings.'
-                            'must_send_stats', return_value=must_send_stats):
-                with mock.patch('nailgun.task.fake.settings.'
-                                'FAKE_TASKS_TICK_INTERVAL', 10):
-                    resp = self.app.patch(
-                        reverse('MasterNodeSettingsHandler'),
-                        headers=self.default_headers,
-                        params='{}'
-                    )
-                    self.assertEqual(200, resp.status_code)
+            data = {'settings': {'statistics': {
+                'user_choice_saved': {'value': True},
+                'send_anonymous_statistic': {'value': must_send_stats}
+            }}}
 
-                    resp = self.app.patch(
-                        reverse('MasterNodeSettingsHandler'),
-                        headers=self.default_headers,
-                        params='{}'
-                    )
-                    self.assertEqual(200, resp.status_code)
+            if must_send_stats:
+                self.disable_sending_stats()
+            else:
+                self.enable_sending_stats()
+
+            with mock.patch('nailgun.task.fake.settings.'
+                            'FAKE_TASKS_TICK_INTERVAL', 10):
+                resp = self.app.patch(
+                    reverse('MasterNodeSettingsHandler'),
+                    headers=self.default_headers,
+                    params=jsonutils.dumps(data)
+                )
+                self.assertEqual(200, resp.status_code)
+
+                resp = self.app.patch(
+                    reverse('MasterNodeSettingsHandler'),
+                    headers=self.default_headers,
+                    params=jsonutils.dumps(data)
+                )
+                self.assertEqual(200, resp.status_code)
 
             task_count = objects.TaskCollection.filter_by(
                 None, name=task_name).count()
@@ -156,17 +168,21 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
                 self.assertFalse(executer.called)
 
     def test_create_stats_user_called(self):
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
-            with mock.patch('nailgun.task.manager.CreateStatsUserTaskManager.'
-                            'execute') as executer:
-                resp = self.app.patch(
-                    reverse('MasterNodeSettingsHandler'),
-                    headers=self.default_headers,
-                    params=jsonutils.dumps({})
-                )
-                self.assertEqual(200, resp.status_code)
-                self.assertTrue(executer.called)
+        self.assertFalse(objects.MasterNodeSettings.must_send_stats())
+        data = {'settings': {'statistics': {
+            'user_choice_saved': {'value': True},
+            'send_anonymous_statistic': {'value': True}
+        }}}
+
+        with mock.patch('nailgun.task.manager.CreateStatsUserTaskManager.'
+                        'execute') as executer:
+            resp = self.app.patch(
+                reverse('MasterNodeSettingsHandler'),
+                headers=self.default_headers,
+                params=jsonutils.dumps(data)
+            )
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(executer.called)
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
@@ -178,20 +194,22 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
                 {'roles': ['controller'], 'pending_addition': True},
             ]
         )
+        self.enable_sending_stats()
+        self.assertTrue(objects.MasterNodeSettings.must_send_stats())
+        deploy_task = self.env.launch_deployment()
+        self.env.wait_ready(deploy_task)
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
-            deploy_task = self.env.launch_deployment()
-            self.env.wait_ready(deploy_task)
+        data = {'settings': {'statistics': {
+            'user_choice_saved': {'value': True},
+            'send_anonymous_statistic': {'value': False}
+        }}}
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=False):
-            resp = self.app.patch(
-                reverse('MasterNodeSettingsHandler'),
-                headers=self.default_headers,
-                params=jsonutils.dumps({})
-            )
-            self.assertEqual(200, resp.status_code)
+        resp = self.app.patch(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
 
         task = objects.TaskCollection.filter_by(
             None, name=consts.TASK_NAMES.remove_stats_user).first()
@@ -201,24 +219,30 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
                         return_value=True):
             with mock.patch('nailgun.task.manager.RemoveStatsUserTaskManager.'
-                            'execute') as executer:
+                            'execute') as executor:
                 resp = self.app.patch(
                     reverse('MasterNodeSettingsHandler'),
                     headers=self.default_headers,
                     params=jsonutils.dumps({})
                 )
                 self.assertEqual(200, resp.status_code)
-                self.assertFalse(executer.called)
+                self.assertFalse(executor.called)
 
     def test_remove_stats_user_called(self):
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=False):
-            with mock.patch('nailgun.task.manager.RemoveStatsUserTaskManager.'
-                            'execute') as executer:
-                resp = self.app.patch(
-                    reverse('MasterNodeSettingsHandler'),
-                    headers=self.default_headers,
-                    params=jsonutils.dumps({})
-                )
-                self.assertEqual(200, resp.status_code)
-                self.assertTrue(executer.called)
+        self.enable_sending_stats()
+        self.assertTrue(objects.MasterNodeSettings.must_send_stats())
+
+        data = {'settings': {'statistics': {
+            'user_choice_saved': {'value': True},
+            'send_anonymous_statistic': {'value': False}
+        }}}
+
+        with mock.patch('nailgun.task.manager.RemoveStatsUserTaskManager.'
+                        'execute') as executor:
+            resp = self.app.patch(
+                reverse('MasterNodeSettingsHandler'),
+                headers=self.default_headers,
+                params=jsonutils.dumps(data)
+            )
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(executor.called)

@@ -635,7 +635,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className='node-details-popup'>
                     <div className='row'>
                         <div className='col-xs-5'><div className='node-image-outline' /></div>
-                        <div className='col-xs-7'>
+                        <div className='col-xs-7 node-summary'>
                             {this.props.cluster &&
                                 <div><strong>{i18n('dialog.show_node.cluster')}: </strong>{this.props.cluster.get('name')}</div>
                             }

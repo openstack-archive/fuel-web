@@ -538,6 +538,8 @@ class NetworkManager(object):
         ips_in_use = ips_in_use or set()
         ip_ranges = [IPRange(r.first, r.last)
                      for r in network_group.ip_ranges]
+        setattr(errors.OutOfIPs, 'network_id', network_group.id)
+
         return cls.get_free_ips_from_ranges(
             network_group.name, ip_ranges, ips_in_use, num)
 

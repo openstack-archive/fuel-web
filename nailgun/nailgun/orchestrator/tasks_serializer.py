@@ -15,7 +15,9 @@
 #    under the License.
 
 import abc
+import collections
 import six
+import os.path
 import yaml
 
 from nailgun import consts
@@ -25,6 +27,7 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
+from nailgun.objects import OpenstackConfig
 from nailgun.settings import settings
 
 
@@ -351,6 +354,39 @@ class UploadNodesInfo(GenericRolesHook):
             self.cluster, serialized_nodes)
         return serialized_nodes
 
+class UploadConfiguration(GenericRolesHook):
+    """Hook that uploads yaml file with configuration on nodes."""
+
+    identity = 'upload_configuration'
+
+    def serialize(self):
+
+        node_configs = collections.defaultdict(collections.defaultdict)
+        configs = OpenstackConfig.find_configs(cluster_id=self.cluster.id,
+                                               is_active=True)
+        nodes_to_update = dict((node.uid, node) for node in self.nodes)
+        for config in configs:
+            if config.config_type == 'cluster':
+                for node_id in nodes_to_update:
+                    node_configs[node_id]['cluster'] = config.config
+            elif config.config_type == 'role':
+                role_nodes = get_uids_for_roles(self.nodes, config.node_role)
+                for node_id in role_nodes:
+                    if node_id in nodes_to_update:
+                        node_configs[node_id]['role'].update(config.config)
+            elif config.config_type == 'node':
+                if config.node_id in nodes_to_update:
+                    fqdn = objects.Node.get_node_fqdn(
+                        nodes_to_update[config.node_id])
+                    node_configs[config.node_id][fqdn] = config.config
+
+        for node_id in node_configs:
+            for config_dest in node_configs[node_id]:
+                yield templates.make_upload_task(
+                    node_id,
+                    path=os.path.join(consts.OVERRIDE_CONFIG_BASE_PATH,
+                                      config_dest),
+                    data=yaml.safe_dump(node_configs[node_id][config_dest]))
 
 class UpdateHosts(GenericRolesHook):
     """Updates hosts info on nodes in cluster."""

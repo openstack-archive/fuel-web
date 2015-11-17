@@ -16,7 +16,10 @@
 
 from datetime import datetime
 
-from oslo.db.sqlalchemy import models
+try:
+    from oslo.db.sqlalchemy import models
+except ImportError:
+    from oslo_db.sqlalchemy import models
 
 from sqlalchemy import Column
 from sqlalchemy import DateTime

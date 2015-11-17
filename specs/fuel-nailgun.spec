@@ -61,6 +61,7 @@ Requires:    python-ordereddict >= 1.1
 Requires:    pytz
 
 BuildRequires: nodejs-nailgun
+BuildRequires: nodejs
 
 %description
 Nailgun package

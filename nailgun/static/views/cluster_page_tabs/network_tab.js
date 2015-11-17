@@ -25,15 +25,16 @@ define(
     'utils',
     'views/dialogs',
     'component_mixins',
-    'views/controls'
+    'views/controls',
+    'views/cluster_page_tabs/settings_mixins'
 ],
-function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, componentMixins, controls) {
+function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, componentMixins, controls, settingsMixins) {
     'use strict';
 
     var CSSTransitionGroup = React.addons.CSSTransitionGroup,
         parametersNS = 'cluster_page.network_tab.networking_parameters.',
         networkTabNS = 'cluster_page.network_tab.',
-        defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_verification', 'nova_configuration'];
+        defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
 
     var NetworkModelManipulationMixin = {
         setValue: function(attribute, value, options) {
@@ -523,6 +524,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             componentMixins.dispatcherMixin('networkConfigurationUpdated', function() {
                 this.setState({hideVerificationResult: false});
             }),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {
+                    return props.cluster.get('settings');
+                },
+                renderOn: 'change invalid'
+            }),
             componentMixins.pollingMixin(3),
             componentMixins.unsavedChangesMixin
         ],
@@ -544,7 +551,18 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return this.props.cluster.task({group: 'network', active: true}).fetch();
         },
         getInitialState: function() {
+            var settings = this.props.cluster.get('settings');
             return {
+                configModels: {
+                    cluster: this.props.cluster,
+                    settings: settings,
+                    networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters'),
+                    version: app.version,
+                    release: this.props.cluster.get('release'),
+                    default: settings
+                },
+                initialSettingsAttributes: _.cloneDeep(settings.attributes),
+                settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
                 initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
                 hideVerificationResult: false
             };
@@ -567,19 +585,30 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 this.props.cluster.get('tasks').add(task, {silent: true});
             }
         },
-        hasChanges: function() {
+        isNetworkConfigurationChanged: function() {
             return !_.isEqual(this.state.initialConfiguration, this.props.cluster.get('networkConfiguration').toJSON());
+        },
+        isNetworkSettingsChanged: function() {
+            return this.props.cluster.get('settings').hasChanges(this.state.initialSettingsAttributes, this.state.configModels);
+        },
+        hasChanges: function() {
+            return this.isNetworkConfigurationChanged() || this.isNetworkSettingsChanged();
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
+            this.loadInitialSettings();
             this.setState({
-                hideVerificationResult: true
+                hideVerificationResult: true,
+                key: _.now()
             });
         },
         loadInitialConfiguration: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
             networkConfiguration.get('networks').reset(_.cloneDeep(this.state.initialConfiguration.networks));
             networkConfiguration.get('networking_parameters').set(_.cloneDeep(this.state.initialConfiguration.networking_parameters));
+        },
+        loadInitialSettings: function() {
+            this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialSettingsAttributes)).isValid({models: this.state.configModels});
         },
         updateInitialConfiguration: function() {
             this.setState({initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON())});
@@ -661,27 +690,72 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
 
-            var result = $.Deferred();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
-                return Backbone.sync('update', this.props.cluster.get('networkConfiguration'))
-                    .then(_.bind(function(response) {
-                        this.updateInitialConfiguration();
-                        result.resolve(response);
-                    }, this), _.bind(function() {
-                        result.reject();
-                        // FIXME(vkramskikh): the same hack for check_networks task:
-                        // remove failed tasks immediately, so they won't be taken into account
-                        return this.props.cluster.fetchRelated('tasks')
-                            .done(_.bind(function() {
-                                this.props.cluster.task('check_networks').set('unsaved', true);
-                            }, this));
-                    }, this))
-                    .always(_.bind(function() {
-                        this.setState({actionInProgress: false});
-                    }, this));
-                }, this)
-            );
-            return result;
+            var requests = [];
+
+            if (this.isNetworkConfigurationChanged()) {
+                var result = $.Deferred();
+
+                dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
+                    return Backbone.sync('update', this.props.cluster.get('networkConfiguration'))
+                        .then(_.bind(function(response) {
+                            this.updateInitialConfiguration();
+                            result.resolve(response);
+                        }, this), _.bind(function() {
+                            result.reject();
+                            // FIXME(vkramskikh): the same hack for check_networks task:
+                            // remove failed tasks immediately, so they won't be taken into account
+                            return this.props.cluster.fetchRelated('tasks')
+                                .done(_.bind(function() {
+                                    this.props.cluster.task('check_networks').set('unsaved', true);
+                                }, this));
+                        }, this))
+                        .always(_.bind(function() {
+                            this.setState({actionInProgress: false});
+                        }, this));
+                    }, this)
+                );
+
+                requests.push(result);
+            }
+
+            if (this.isNetworkSettingsChanged()) {
+                // collecting data to save
+                var settings = this.props.cluster.get('settings'),
+                    dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
+                        return (group.metadata || {}).always_editable;
+                    });
+
+                var options = {url: settings.url, patch: true, wait: true, validate: false},
+                    deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
+                if (deferred) {
+                    this.setState({actionInProgress: true});
+                    deferred
+                        .done(_.bind(function() {
+                            this.setState({initialSettingsAttributes: _.cloneDeep(settings.attributes)});
+                            // some networks may have restrictions which are processed by nailgun,
+                            // so networks need to be refetched after updating cluster attributes
+                            this.props.cluster.get('networkConfiguration').cancelThrottling();
+                        }, this))
+                        .always(_.bind(function() {
+                            this.setState({
+                                actionInProgress: false,
+                                key: _.now()
+                            });
+                            this.props.cluster.fetch();
+                        }, this))
+                        .fail(function(response) {
+                            utils.showErrorDialog({
+                                title: i18n('cluster_page.settings_tab.settings_error.title'),
+                                message: i18n('cluster_page.settings_tab.settings_error.saving_warning'),
+                                response: response
+                            });
+                        });
+
+                    requests.push(deferred);
+                }
+            }
+
+            return $.when(...requests);
         },
         isSavingPossible: function() {
             return _.isNull(this.props.cluster.get('networkConfiguration').validationError) &&
@@ -888,6 +962,17 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                         />
                                     )
                                 }
+                                {activeNetworkSectionName == 'network_settings' &&
+                                    <div className='network_settings'>
+                                        <NetworkSettings
+                                            key={this.state.key}
+                                            cluster={this.props.cluster}
+                                            locked={this.state.actionInProgress}
+                                            configModels={this.state.configModels}
+                                            settingsForChecks={this.state.settingsForChecks}
+                                        />
+                                    </div>
+                                }
                                 {activeNetworkSectionName == 'network_verification' &&
                                     <div className='verification-control'>
                                         <NetworkVerificationResult
@@ -1056,7 +1141,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 } else {
                     settingsSections = settingsSections.concat(['neutron_l2', 'neutron_l3']);
                 }
-                settingsSections.push('network_verification');
+                settingsSections.push('network_settings', 'network_verification');
 
             return (
                 <div className='col-xs-2'>
@@ -1358,6 +1443,148 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         ]
                     }
                     <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
+                </div>
+            );
+        }
+    });
+
+    var NetworkSettings = React.createClass({
+        onChange: function(groupName, settingName, value) {
+            var settings = this.props.cluster.get('settings'),
+                name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
+            this.props.settingsForChecks.set(name, value);
+            // FIXME: the following hacks cause we can't pass {validate: true} option to set method
+            // this form of validation isn't supported in Backbone DeepModel
+            settings.validationError = null;
+            settings.set(name, value);
+            settings.isValid({models: this.props.configModels});
+        },
+        checkRestrictions: function(action, path) {
+            var settings = this.props.cluster.get('settings');
+            return settings.checkRestrictions(this.props.configModels, action, path);
+        },
+        render: function() {
+            var cluster = this.props.cluster,
+                settings = cluster.get('settings'),
+                sortedNetworkSections = _.chain(settings.attributes)
+                    .keys()
+                    .filter(function(sectionName) {
+                        var section = settings.get(sectionName);
+                        return (section.metadata.group == 'network' || !section.metadata.group && _.where(section, {group: 'network'}).length) &&
+                            !this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
+                    }, this)
+                    .sortBy(function(sectionName) {
+                        return settings.get(sectionName + '.metadata.weight');
+                    })
+                    .value(),
+                locked = this.props.locked || !!cluster.task({group: 'deployment', active: true}),
+                lockedCluster = !cluster.isAvailableForSettingsChanges(),
+                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+            return (
+                <div className='forms-box network'>
+                    {_.map(sortedNetworkSections, function(sectionName) {
+                        var settingsToDisplay = _.compact(_.map(settings.get(sectionName), function(setting, settingName) {
+                            if (settingName != 'metadata' && setting.type != 'hidden' && !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result) {
+                                if (settings.get(sectionName).metadata.group || !settings.get(sectionName).metadata.group && setting.group == 'network') {
+                                    return settingName;
+                                }
+                            }
+                        }, this));
+                        if (_.isEmpty(settingsToDisplay)) return null;
+                        return <SettingSection
+                            key={sectionName}
+                            cluster={this.props.cluster}
+                            sectionName={sectionName}
+                            settingsToDisplay={settingsToDisplay}
+                            onChange={_.bind(this.onChange, this, sectionName)}
+                            allocatedRoles={allocatedRoles}
+                            settings={settings}
+                            settingsForChecks={this.props.settingsForChecks}
+                            makePath={settings.makePath}
+                            getValueAttribute={settings.getValueAttribute}
+                            locked={locked}
+                            lockedCluster={lockedCluster}
+                            configModels={this.props.configModels}
+                            checkRestrictions={this.checkRestrictions}
+                        />;
+                    }, this)}
+
+                </div>
+            );
+        }
+    });
+
+    var SettingSection = React.createClass({
+        mixins: [settingsMixins.settingsSectionMixin],
+        render: function() {
+            var group = this.props.settings.get(this.props.sectionName),
+                metadata = group.metadata,
+                sortedSettings = _.sortBy(this.props.settingsToDisplay, function(settingName) {return group[settingName].weight;}),
+                processedGroupRestrictions = this.processRestrictions(this.props.sectionName, 'metadata'),
+                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
+                showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable;
+            return (
+                <div className='setting-section'>
+                    {showSettingGroupWarning && processedGroupRestrictions.message &&
+                        <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>
+                    }
+                    <h3>
+                        <span className={'subtab-group-' + this.props.sectionName}>{this.props.sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || this.props.sectionName}</span>
+                    </h3>
+                    <div>
+                        {_.map(sortedSettings, function(settingName) {
+                            var setting = group[settingName],
+                                path = this.props.makePath(this.props.sectionName, settingName),
+                                error = (this.props.settings.validationError || {})[path],
+                                processedSettingRestrictions = this.processRestrictions(this.props.sectionName, settingName),
+                                processedSettingDependencies = this.checkDependencies(this.props.sectionName, settingName),
+                                isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
+                                showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
+                                settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
+
+                            if (setting.values) {
+                                var values = _.chain(_.cloneDeep(setting.values))
+                                    .map(function(value) {
+                                        var valuePath = this.props.makePath(path, value.data),
+                                            processedValueRestrictions = this.props.checkRestrictions('disable', valuePath);
+                                        if (!this.props.checkRestrictions('hide', valuePath).result) {
+                                            value.disabled = isSettingDisabled || processedValueRestrictions.result;
+                                            value.defaultChecked = value.data == setting.value;
+                                            value.tooltipText = showSettingWarning && processedValueRestrictions.message;
+                                            return value;
+                                        }
+                                    }, this)
+                                    .compact()
+                                    .value();
+                                if (setting.type == 'radio') return <controls.RadioGroup {...this.props}
+                                    key={settingName}
+                                    name={settingName}
+                                    label={setting.label}
+                                    values={values}
+                                    error={error}
+                                    tooltipText={showSettingWarning && settingWarning}
+                                />;
+                            }
+
+                            var settingDescription = setting.description &&
+                                    <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
+                            return <controls.Input
+                                {... _.pick(setting, 'type', 'label')}
+                                key={settingName}
+                                name={settingName}
+                                description={settingDescription}
+                                children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
+                                debounce={setting.type == 'text' || setting.type == 'password' || setting.type == 'textarea'}
+                                defaultValue={setting.value}
+                                defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
+                                toggleable={setting.type == 'password'}
+                                error={error}
+                                disabled={isSettingDisabled}
+                                tooltipText={showSettingWarning && settingWarning}
+                                onChange={this.props.onChange}
+                            />;
+                        }, this)}
+                    </div>
                 </div>
             );
         }

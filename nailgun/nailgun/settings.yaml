@@ -252,7 +252,7 @@ LOGS:
   - id: astute
     name: "Astute"
     <<: *local_log_type
-    <<: *remote_syslog_log_format
+    <<: *python_log_format
     path: '/var/log/astute/astute.log'
   - id: assassin
     name: "Assassin"

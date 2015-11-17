@@ -15,7 +15,9 @@
 #    under the License.
 
 import abc
+import collections
 import six
+import os.path
 import yaml
 
 from nailgun import consts
@@ -25,6 +27,7 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
+from nailgun.objects import OpenstackConfig
 from nailgun.settings import settings
 
 
@@ -351,6 +354,49 @@ class UploadNodesInfo(GenericRolesHook):
             self.cluster, serialized_nodes)
         return serialized_nodes
 
+class UploadConfiguration(GenericRolesHook):
+    """Hook that uploads yaml file with configuration on nodes."""
+
+    identity = 'upload_configuration'
+
+    def serialize(self):
+
+        node_configs = collections.defaultdict(dict)
+        configs = OpenstackConfig.find_configs(is_active=True)
+        for config in configs:
+            ready_cluster_nodes = set(
+                objects.Cluster
+                .get_nodes_not_for_deletion(self.cluster)
+                .filter_by(status=consts.NODE_STATUSES.ready)
+            )
+            if config.config_type == 'cluster':
+                for node in ready_cluster_nodes:
+                    node_configs[node.uid]['cluster'] = config['config']
+            elif config.config_type == 'role':
+                ready_role_nodes = set(
+                    objects.Cluster.get_nodes_by_role(self.cluster,
+                                                      config['node_role']))\
+                    & ready_cluster_nodes
+                for node in ready_role_nodes:
+                    node_configs[node.uid]['role'] = config['config']
+            elif config.config_type == 'node':
+                ready_node = set(
+                    objects.Node.get_by_uid(config['node_id']))\
+                    & ready_cluster_nodes
+                if ready_node:
+                    node_configs[node.uid][
+                        objects.Node.get_node_fqdn(node)
+                    ] = config['config']
+
+        for node in node_configs:
+            if node not in self.nodes:
+                continue
+            for config_dest in node_configs[node]:
+                yield templates.make_upload_task(
+                    node.uid,
+                    path=os.path.join(consts.OVERRIDE_CONFIG_BASE_PATH,
+                                      config_dest),
+                    data=node_configs[node][config_dest])
 
 class UpdateHosts(GenericRolesHook):
     """Updates hosts info on nodes in cluster."""

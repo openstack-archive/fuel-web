@@ -21,13 +21,10 @@ Product info handlers
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.settings import settings
-from nailgun import utils
 
 
 class VersionHandler(BaseHandler):
     """Version info handler"""
-
-    release_versions = "/etc/fuel/release_versions/*.yaml"
 
     @content
     def GET(self):
@@ -38,7 +35,4 @@ class VersionHandler(BaseHandler):
         version = settings.VERSION
         method = settings.AUTH['AUTHENTICATION_METHOD']
         version['auth_required'] = method in ['fake', 'keystone']
-
-        version['release_versions'] = utils.get_fuel_release_versions(
-            self.release_versions)
         return version

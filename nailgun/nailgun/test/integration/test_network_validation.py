@@ -735,3 +735,36 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
             "VLAN ID range defined for Neutron L2. "
             "Networks VLAN tags must not intersect "
             "with Neutron L2 VLAN ID range.")
+
+class TestDifferentNodeGroups(TestNetworkChecking):
+
+    def setUp(self):
+        super(TestDifferentNodeGroups, self).setUp()
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth1", "mac": "00:00:00:00:00:77"}])
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True,
+                 'meta': meta}
+            ]
+        )
+        self.cluster = self.env.clusters[0]
+        self.env.create_node_group()
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.nets = resp.json_body
+
+    def test_same_cidrs_different_nodegroups(self):
+        networks = self.nets['networks']
+        mgmt_nets = filter(lambda n:  n['name'] == 'management', networks)
+
+        self.assertEqual(mgmt_nets[0]['cidr'], mgmt_nets[1]['cidr'])
+
+        task = self.update_neutron_networks_success(self.cluster.id, self.nets)
+        self.assertEqual(task['status'], 'ready')

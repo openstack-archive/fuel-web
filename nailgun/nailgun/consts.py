@@ -434,3 +434,5 @@ COMPONENT_TYPES = Enum(
 STAT_FUEL_PACKAGES = (
     'fuel-nailgun',
 )
+
+OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/config/'

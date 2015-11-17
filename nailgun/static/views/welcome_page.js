@@ -34,11 +34,11 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             title: i18n('welcome_page.title'),
             hiddenLayout: true,
             fetchData: function() {
-                return app.settings.fetch().then(function() {
-                    var tracking = new models.FuelSettings(_.cloneDeep(app.settings.attributes));
+                return app.fuelSettings.fetch().then(function() {
+                    var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
                     tracking.processRestrictions();
                     return {
-                        settings: app.settings,
+                        settings: app.fuelSettings,
                         tracking: tracking
                     };
                 });

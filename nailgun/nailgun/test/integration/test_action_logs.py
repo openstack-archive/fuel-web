@@ -13,12 +13,13 @@
 #    under the License.
 
 import datetime
-import mock
+from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun import objects
 from nailgun.test.base import BaseMasterNodeSettignsTest
 from nailgun.test.base import fake_tasks
+from nailgun.utils import dict_merge
 from nailgun.utils import reverse
 
 
@@ -103,9 +104,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         action_types = [al.action_type for al in action_logs]
         self.assertSetEqual(set(consts.ACTION_TYPES), set(action_types))
 
-    @fake_tasks(override_state={'progress': 100,
-                                'status': consts.TASK_STATUSES.ready})
-    def test_create_stats_user_logged(self):
+    def check_create_stats_user_logged(self, modification_api_call):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -115,46 +114,134 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         deploy_task = self.env.launch_deployment()
         self.env.wait_ready(deploy_task)
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
-            resp = self.app.patch(
-                reverse('MasterNodeSettingsHandler'),
-                headers=self.default_headers,
-                params='{}'
-            )
-            self.assertEqual(200, resp.status_code)
+        resp = self.app.get(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers)
+        data = resp.json_body
+        self.assertFalse(data['settings']['statistics']
+                         ['user_choice_saved']['value'])
+        self.assertTrue(data['settings']['statistics']
+                        ['send_anonymous_statistic']['value'])
 
-        task = objects.TaskCollection.filter_by(
-            None, name=consts.TASK_NAMES.create_stats_user).first()
+        # Enabling stats
+        stat_settings = data['settings']['statistics']
+        stat_settings['user_choice_saved']['value'] = True
+        stat_settings['send_anonymous_statistic']['value'] = True
+        resp = modification_api_call(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+
+        tasks = objects.TaskCollection.filter_by(
+            None, name=consts.TASK_NAMES.create_stats_user).all()
+        tasks_count = len(tasks)
+        task = tasks[-1]
         action_log = objects.ActionLogCollection.filter_by(
             None, task_uuid=task.uuid)
         self.assertIsNotNone(action_log)
 
+        # Checking settings modified
+        resp = self.app.get(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers)
+        new_data = resp.json_body
+        self.assertTrue(new_data['settings']['statistics']
+                        ['user_choice_saved']['value'])
+        self.assertTrue(new_data['settings']['statistics']
+                        ['send_anonymous_statistic']['value'])
+
+        # Checking the second call doesn't produce task
+        resp = modification_api_call(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+        duplicate_call_tasks_count = objects.TaskCollection.filter_by(
+            None, name=consts.TASK_NAMES.create_stats_user).count()
+        self.assertEquals(tasks_count, duplicate_call_tasks_count)
+
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_remove_stats_user_logged(self):
+    def test_create_stats_user_logged_put(self):
+        self.check_create_stats_user_logged(self.app.put)
+
+    @fake_tasks(override_state={'progress': 100,
+                                'status': consts.TASK_STATUSES.ready})
+    def test_create_stats_user_logged_patch(self):
+        self.check_create_stats_user_logged(self.app.patch)
+
+    def check_remove_stats_user_logged(self, modification_api_call):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
             ]
         )
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=True):
-            deploy_task = self.env.launch_deployment()
-            self.env.wait_ready(deploy_task)
+        deploy_task = self.env.launch_deployment()
+        self.env.wait_ready(deploy_task)
+        mn_settings = objects.MasterNodeSettings.get_one()
+        mn_settings.settings = dict_merge(
+            mn_settings.settings,
+            {'statistics': {'user_choice_saved': {'value': True}}})
+        self.db.flush()
 
-        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
-                        return_value=False):
-            resp = self.app.patch(
-                reverse('MasterNodeSettingsHandler'),
-                headers=self.default_headers,
-                params='{}'
-            )
-            self.assertEqual(200, resp.status_code)
+        resp = self.app.get(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers)
+        data = resp.json_body
+        self.assertTrue(data['settings']['statistics']
+                        ['user_choice_saved']['value'])
+        self.assertTrue(data['settings']['statistics']
+                        ['send_anonymous_statistic']['value'])
 
-        task = objects.TaskCollection.filter_by(
-            None, name=consts.TASK_NAMES.remove_stats_user).first()
+        # Disabling stats
+        stat_settings = data['settings']['statistics']
+        stat_settings['send_anonymous_statistic']['value'] = False
+        resp = modification_api_call(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+
+        tasks = objects.TaskCollection.filter_by(
+            None, name=consts.TASK_NAMES.remove_stats_user).all()
+        tasks_count = len(tasks)
+        task = tasks[-1]
         action_log = objects.ActionLogCollection.filter_by(
             None, task_uuid=task.uuid)
         self.assertIsNotNone(action_log)
+
+        # Checking settings modified
+        resp = self.app.get(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers)
+        new_data = resp.json_body
+        self.assertTrue(new_data['settings']['statistics']
+                        ['user_choice_saved']['value'])
+        self.assertFalse(new_data['settings']['statistics']
+                         ['send_anonymous_statistic']['value'])
+
+        # Checking the second call doesn't produce task
+        resp = modification_api_call(
+            reverse('MasterNodeSettingsHandler'),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+        duplicate_call_tasks_count = objects.TaskCollection.filter_by(
+            None, name=consts.TASK_NAMES.remove_stats_user).count()
+        self.assertEquals(tasks_count, duplicate_call_tasks_count)
+
+    @fake_tasks(override_state={'progress': 100,
+                                'status': consts.TASK_STATUSES.ready})
+    def test_remove_stats_user_logged_put(self):
+        self.check_remove_stats_user_logged(self.app.put)
+
+    @fake_tasks(override_state={'progress': 100,
+                                'status': consts.TASK_STATUSES.ready})
+    def test_remove_stats_user_logged_patch(self):
+        self.check_remove_stats_user_logged(self.app.patch)

@@ -454,3 +454,22 @@ class TestPluginMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['plugins'].c.components_metadata]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestMasterNodeSettingsMigration(base.BaseAlembicMigrationTest):
+
+    def test_ui_settings_field_exists_and_has_default_value(self):
+        master_node_settings_table = self.meta.tables['master_node_settings']
+
+        settings = jsonutils.loads(
+            db.execute(
+                sa.select([master_node_settings_table.c.settings])
+            ).fetchone()[0]
+        )
+        ui_settings = settings['ui_settings']
+        self.assertItemsEqual(ui_settings['view_mode'], 'standard')
+        self.assertItemsEqual(ui_settings['filter'], {})
+        self.assertItemsEqual(ui_settings['sort'], [{'status': 'asc'}])
+        self.assertItemsEqual(ui_settings['filter_by_labels'], {})
+        self.assertItemsEqual(ui_settings['sort_by_labels'], [])
+        self.assertItemsEqual(ui_settings['search'], '')

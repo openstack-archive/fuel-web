@@ -60,6 +60,7 @@ Requires:    python-ordereddict >= 1.1
 # Workaroud for babel bug
 Requires:    pytz
 
+BuildRequires: nodejs
 BuildRequires: nodejs-nailgun
 
 %description

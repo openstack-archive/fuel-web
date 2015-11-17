@@ -610,6 +610,10 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             "Not enough free IP addresses in ranges [172.16.0.19-172.16.0.19] "
             "of 'public' network",
             resp.json_body['message'])
+        self.assertEqual(
+            [{'errors': ["ip_ranges"], 'ids': [public['id']]}],
+            resp.json_body['errors']
+        )
 
     def test_assign_vip_in_correct_node_group(self):
         # prepare two nodes that are in different node groups

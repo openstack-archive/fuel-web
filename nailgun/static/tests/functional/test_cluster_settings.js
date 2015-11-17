@@ -56,6 +56,7 @@ define([
             },
             'Settings tab is rendered correctly': function() {
                 return this.remote
+                    .assertElementNotExists('.nav .subtab-link-network', 'Subtab for Network settings is not presented in navigation')
                     .assertElementEnabled('.btn-load-defaults', 'Load defaults button is enabled')
                     .assertElementDisabled('.btn-revert-changes', 'Cancel Changes button is disabled')
                     .assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled');

@@ -1588,8 +1588,8 @@ class BaseValidatorTest(BaseTestCase):
 
         return context
 
-    def assertRaisesAdditionalProperty(self, obj, key):
-        context = self.get_invalid_data_context(obj)
+    def assertRaisesAdditionalProperty(self, obj, key, *args):
+        context = self.get_invalid_data_context(obj, *args)
 
         self.assertIn(
             "Additional properties are not allowed".format(key),
@@ -1632,6 +1632,35 @@ class BaseValidatorTest(BaseTestCase):
 
         self.assertIn(
             "On instance{0}".format(instance),
+            context.exception.message)
+
+    def assertRaisesInvalidOneOf(self, passed_data,
+                                 incorrect, data_label, *args):
+        """Check raised within error context exception
+
+        Test that the exception has features pertaining to
+        failed 'oneOf' validation case of jsonschema
+
+        :param passed_data: dict to be serialized and passed for validation
+        :param incorrect: data value which doesn't pass the validation
+            and is present in error message of original exception
+        :param data_label: key name from passed_data one of which value
+            doesn't pass the validation; is present in the error message
+        :param *args: list of additional arguments passed to validation code
+
+        """
+        context = self.get_invalid_data_context(passed_data, *args)
+        self.assertIn(
+            "Failed validating 'oneOf' in schema",
+            context.exception.message)
+
+        err_msg = "{0} is not valid under any of the given schemas"
+        self.assertIn(
+            err_msg.format(incorrect),
+            context.exception.message)
+
+        self.assertIn(
+            "On instance{0}".format(data_label),
             context.exception.message)
 
     def assertRaisesInvalidEnum(self, obj, value, expected_value):

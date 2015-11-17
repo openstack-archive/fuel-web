@@ -44,14 +44,31 @@ class MasterNodeSettingsHandler(DBSingletonHandler):
         except Exception:
             logger.exception("Stats user operation failed")
 
-    @content
-    def PUT(self):
-        result = super(MasterNodeSettingsHandler, self).PUT()
-        self._handle_stats_opt_in()
+    def _get_new_opt_in_status(self):
+        """Extracts opt in status from request
+
+        Returns None if no opt in status in the request
+
+        :return: bool or None
+        """
+        data = self.checked_data(self.validator.validate_update)
+        return data.get("settings", {}).get("statistics", {}).\
+            get("send_anonymous_statistic", {}).get("value")
+
+    def _perform_update(self, method):
+        old_opt_in = self.single.must_send_stats()
+        new_opt_in = self._get_new_opt_in_status()
+        result = method()
+        if new_opt_in is not None and old_opt_in != new_opt_in:
+            self._handle_stats_opt_in()
         return result
 
     @content
+    def PUT(self):
+        return self._perform_update(
+            super(MasterNodeSettingsHandler, self).PUT)
+
+    @content
     def PATCH(self):
-        result = super(MasterNodeSettingsHandler, self).PATCH()
-        self._handle_stats_opt_in()
-        return result
+        return self._perform_update(
+            super(MasterNodeSettingsHandler, self).PATCH)

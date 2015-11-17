@@ -38,12 +38,12 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             breadcrumbsPath: [['home', '#'], 'support'],
             fetchData: function() {
                 var tasks = new models.Tasks();
-                return $.when(app.settings.fetch({cache: true}), tasks.fetch()).then(function() {
-                    var tracking = new models.FuelSettings(_.cloneDeep(app.settings.attributes)),
-                        statistics = new models.FuelSettings(_.cloneDeep(app.settings.attributes));
+                return $.when(app.fuelSettings.fetch({cache: true}), tasks.fetch()).then(function() {
+                    var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes)),
+                        statistics = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
                     return {
                         tasks: tasks,
-                        settings: app.settings,
+                        settings: app.fuelSettings,
                         tracking: tracking,
                         statistics: statistics
                     };

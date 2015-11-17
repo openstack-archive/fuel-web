@@ -37,13 +37,14 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
             fetchData() {
                 var nodes = new models.Nodes(),
                     clusters = new models.Clusters(),
-                    releases = app.releases,
-                    nodeNetworkGroups = app.nodeNetworkGroups;
+                    {releases, nodeNetworkGroups, fuelSettings} = app;
+
                 return $.when(
                     nodes.fetch(),
                     clusters.fetch(),
                     releases.fetch({cache: true}),
-                    nodeNetworkGroups.fetch({cache: true})
+                    nodeNetworkGroups.fetch({cache: true}),
+                    fuelSettings.fetch({cache: true})
                 ).then(() => {
                     clusters.each(
                         (cluster) => cluster.set({
@@ -56,7 +57,7 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                         cluster.set({roles: roles});
                         return roles.fetch();
                     }));
-                }).then(() => ({nodes, clusters, nodeNetworkGroups}));
+                }).then(() => ({nodes, clusters, nodeNetworkGroups, fuelSettings}));
             }
         },
         getInitialState() {

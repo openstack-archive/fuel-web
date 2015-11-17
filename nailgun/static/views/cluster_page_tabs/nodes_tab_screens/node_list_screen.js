@@ -110,78 +110,54 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         getInitialState: function() {
             var cluster = this.props.cluster,
-                activeFilters;
+                nodes = this.props.nodes,
+                uiSettings = (cluster || this.props.fuelSettings).get('ui_settings');
 
-            // Nodes page states
-            if (!cluster) {
-                activeFilters = Filter.fromObject(this.props.defaultFilters, false);
-                _.invoke(activeFilters, 'updateLimits', this.props.nodes, false);
-                return {
-                    search: '',
-                    activeSorters: _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false)),
-                    activeFilters: activeFilters,
-                    availableSorters: this.props.sorters.map(function(name) {return new Sorter(name, 'asc', false);}),
-                    availableFilters: this.props.filters.map(function(name) {
-                        var filter = new Filter(name, [], false);
-                        filter.updateLimits(this.props.nodes, true);
-                        return filter;
-                    }, this),
-                    viewMode: 'standard',
-                    isLabelsPanelOpen: false
-                };
-            }
-
-            // Nodes tab of Cluster page states
-            var settings = cluster.get('settings'),
-                uiSettings = cluster.get('ui_settings'),
-                roles = cluster.get('roles'),
-                selectedRoles = this.props.nodes.length ? _.compact(roles.map(function(role) {
-                    var roleName = role.get('name');
-                    if (!this.props.nodes.any(function(node) {return !node.hasRole(roleName);})) {
-                        return roleName;
-                    }
-                }, this)) : [];
-            activeFilters = this.props.mode == 'add' ?
+            var availableFilters = this.props.filters.map((name) => {
+                    var filter = new Filter(name, [], false);
+                    filter.updateLimits(nodes, true);
+                    return filter;
+                }),
+                activeFilters = cluster && this.props.mode == 'add' ?
                     Filter.fromObject(this.props.defaultFilters, false)
                 :
                     _.union(
                         Filter.fromObject(_.extend({}, this.props.defaultFilters, uiSettings.filter), false),
                         Filter.fromObject(uiSettings.filter_by_labels, true)
                     );
-            _.invoke(activeFilters, 'updateLimits', this.props.nodes, false);
+            _.invoke(activeFilters, 'updateLimits', nodes, false);
 
-            return {
-                search: this.props.mode == 'add' ? '' : uiSettings.search,
-                activeSorters: this.props.mode == 'add' ?
-                        _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false))
-                    :
-                        _.union(
-                            _.map(uiSettings.sort, _.partial(Sorter.fromObject, _, false)),
-                            _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
-                        ),
-                activeFilters: activeFilters,
-                availableSorters: this.props.sorters.map(function(name) {return new Sorter(name, 'asc', false);}),
-                availableFilters: this.props.filters.map(function(name) {
-                    var filter = new Filter(name, [], false);
-                    filter.updateLimits(this.props.nodes, true);
-                    return filter;
-                }, this),
-                viewMode: uiSettings.view_mode,
-                selectedRoles: selectedRoles,
-                indeterminateRoles: this.props.nodes.length ? _.compact(roles.map(function(role) {
-                    var roleName = role.get('name');
-                    if (!_.contains(selectedRoles, roleName) && this.props.nodes.any(function(node) {return node.hasRole(roleName);})) {
-                        return roleName;
-                    }
-                }, this)) : [],
-                isLabelsPanelOpen: false,
-                configModels: {
+            var availableSorters = this.props.sorters.map((name) => new Sorter(name, 'asc', false)),
+                activeSorters = cluster && this.props.mode == 'add' ?
+                    _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false))
+                :
+                    _.union(
+                        _.map(uiSettings.sort, _.partial(Sorter.fromObject, _, false)),
+                        _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
+                    );
+
+            var search = cluster && this.props.mode == 'add' ? '' : uiSettings.search,
+                viewMode = uiSettings.view_mode,
+                isLabelsPanelOpen = false;
+
+            var states = {search, activeSorters, activeFilters, availableSorters, availableFilters, viewMode, isLabelsPanelOpen};
+
+            // Nodes page
+            if (!cluster) return states;
+
+            // additonal Nodes tab states (Cluster page)
+            var roles = cluster.get('roles').pluck('name'),
+                selectedRoles = nodes.length ? _.filter(roles, (role) => !nodes.any((node) => !node.hasRole(role))) : [],
+                indeterminateRoles = nodes.length ? _.filter(roles, (role) => !_.contains(selectedRoles, role) && nodes.any((node) => node.hasRole(role))) : [];
+
+            var configModels = {
                     cluster: cluster,
-                    settings: settings,
+                    settings: cluster.get('settings'),
                     version: app.version,
-                    default: settings
-                }
-            };
+                    default: cluster.get('settings')
+                };
+
+            return _.extend(states, {selectedRoles, indeterminateRoles, configModels});
         },
         selectNodes: function(ids, name, checked) {
             this.props.selectNodes(ids, checked);
@@ -271,7 +247,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         updateSearch: function(value) {
             this.setState({search: value});
-            if (this.props.mode != 'add') this.changeUISettings('search', value);
+            if (!this.props.cluster || this.props.mode != 'add') {
+                this.changeUISettings('search', value);
+            }
         },
         addSorting: function(sorter) {
             this.updateSorting(this.state.activeSorters.concat(sorter));
@@ -292,17 +270,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         updateSorting: function(sorters, updateLabelsOnly) {
             this.setState({activeSorters: sorters});
-            if (this.props.mode != 'add') {
+            if (!this.props.cluster || this.props.mode != 'add') {
                 var groupedSorters = _.groupBy(sorters, 'isLabel');
-                if (!updateLabelsOnly) this.changeUISettings('sort', _.map(groupedSorters.false, Sorter.toObject));
+                if (!updateLabelsOnly) {
+                    this.changeUISettings('sort', _.map(groupedSorters.false, Sorter.toObject));
+                }
                 this.changeUISettings('sort_by_labels', _.map(groupedSorters.true, Sorter.toObject));
             }
         },
         updateFilters: function(filters, updateLabelsOnly) {
             this.setState({activeFilters: filters});
-            if (this.props.mode != 'add') {
+            if (!this.props.cluster || this.props.mode != 'add') {
                 var groupedFilters = _.groupBy(filters, 'isLabel');
-                if (!updateLabelsOnly) this.changeUISettings('filter', Filter.toObject(groupedFilters.false));
+                if (!updateLabelsOnly) {
+                    this.changeUISettings('filter', Filter.toObject(groupedFilters.false));
+                }
                 this.changeUISettings('filter_by_labels', Filter.toObject(groupedFilters.true));
             }
         },
@@ -399,14 +381,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         changeViewMode: function(name, value) {
             this.setState({viewMode: value});
-            this.changeUISettings('view_mode', value);
+            if (!this.props.cluster || this.props.mode != 'add') {
+                this.changeUISettings('view_mode', value);
+            }
         },
         changeUISettings: function(name, value) {
-            //TODO(jkirnosova): Nodes page settings should be also stored in DB
+            var uiSettings = (this.props.cluster || this.props.fuelSettings).get('ui_settings'),
+                options = {patch: true, wait: true, validate: false};
+            uiSettings[name] = value;
             if (this.props.cluster) {
-                var uiSettings = this.props.cluster.get('ui_settings');
-                uiSettings[name] = value;
-                this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
+                this.props.cluster.save({ui_settings: uiSettings}, options);
+            } else {
+                this.props.fuelSettings.save(null, options);
             }
         },
         revertChanges: function() {

@@ -1,6 +1,7 @@
 %define name fuel-nailgun
 %{!?version: %define version 8.0.0}
 %{!?release: %define release 1}
+%{!?rhel: %define rhel 7}
 
 Summary: Nailgun package
 Name: %{name}
@@ -20,7 +21,6 @@ BuildArch: noarch
 Requires:    python-alembic >= 0.6.2
 Requires:    python-amqplib >= 1.0.2
 Requires:    python-anyjson >= 0.3.3
-Requires:    python-argparse >= 1.2.1
 Requires:    python-babel >= 1.3
 Requires:    python-crypto >= 2.6.1
 Requires:    python-decorator >= 3.4.0
@@ -56,9 +56,13 @@ Requires:    python-networkx-core >= 1.8.0
 Requires:    python-networkx-core < 1.10.0
 Requires:    python-cinderclient >= 1.0.7
 Requires:    pydot-ng >= 1.0.0
-Requires:    python-ordereddict >= 1.1
 # Workaroud for babel bug
 Requires:    pytz
+
+%if 0%{rhel} < 7
+Requires:    python-argparse >= 1.2.1
+Requires:    python-ordereddict >= 1.1
+%endif
 
 BuildRequires: nodejs
 BuildRequires: nodejs-nailgun
@@ -144,7 +148,10 @@ Prefix: %{_prefix}
 BuildArch: noarch
 Requires:  python-keystoneclient >= 0.11
 Requires:  python-keystonemiddleware >= 1.2.0
-Requires:  python-ordereddict >= 1.1
+
+%if 0%{rhel} < 7
+Requires:    python-ordereddict >= 1.1
+%endif
 
 %description -n fuel-package-updates
 Command line utility to download apt/yum repositories for Fuel

@@ -417,3 +417,5 @@ COMPONENT_TYPES = Enum(
     'storage',
     'additional_service',
 )
+
+OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/config/'

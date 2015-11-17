@@ -40,6 +40,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun import objects
 
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.errors import errors
@@ -138,7 +139,13 @@ class ProviderHandler(BaseHandler):
         try:
             network_config = self.serializer.serialize_for_cluster(cluster)
         except errors.OutOfIPs as exc:
-            raise self.http(400, six.text_type(exc))
+            public_ng = db().query(NetworkGroup).filter_by(
+                name=exc.network_name).first()
+            raise self.http(
+                400,
+                six.text_type(exc),
+                err_list=[{"errors": ["ip_ranges"], "ids": [public_ng.id]}]
+            )
 
         if admin_nets != nm.get_admin_networks():
             try:

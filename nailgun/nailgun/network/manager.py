@@ -513,9 +513,14 @@ class NetworkManager(object):
                                    max(count, consts.MIN_IPS_PER_DB_QUERY)))
             if not free_ips:
                 ranges_str = ','.join(str(r) for r in ip_ranges)
-                raise errors.OutOfIPs(
+                # NOTE: It's necessary to monkey-patch network name into
+                # exception because it's used in API handlers to indicate
+                # error correctly.
+                exc = errors.OutOfIPs(
                     "Not enough free IP addresses in ranges [{0}] of '{1}' "
                     "network".format(ranges_str, net_name))
+                setattr(exc, 'network_name', net_name)
+                raise exc
 
             ips_in_db = db().query(
                 IPAddr.ip_addr.distinct()

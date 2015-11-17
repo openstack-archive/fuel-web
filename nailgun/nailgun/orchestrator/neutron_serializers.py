@@ -18,7 +18,10 @@
 
 from collections import defaultdict
 import netaddr
-from ordereddict import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 import re
 import six
 

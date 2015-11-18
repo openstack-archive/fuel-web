@@ -389,6 +389,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
                 'heat/api': ip_by_net['management'],
                 'nova/api': ip_by_net['management'],
                 'murano/api': ip_by_net['management'],
+                'murano/cfapi': ip_by_net['management'],
                 'horizon': ip_by_net['management'],
 
                 'management': ip_by_net['management'],

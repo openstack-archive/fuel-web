@@ -1,9 +1,21 @@
 {
   "name": "fuel-web",
   "version": "0.0.1",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/openstack/fuel-web.git"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "start": "gulp dev-server",
+    "lint": "gulp lint",
+    "test": "npm run unit-tests && npm run func-tests",
+    "unit-tests": "gulp unit-tests",
+    "func-tests": "../run_tests.sh --ui-func",
+    "prepublish": "gulp build"
   },
   "dependencies": {
     "autoprefixer": "5.2.0",

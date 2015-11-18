@@ -46,6 +46,14 @@
   parameters:
     strategy:
       type: parallel
+- id: cinder-block-device
+  type: group
+  role: [cinder-block-device]
+  requires: [controller]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel
 - id: compute
   type: group
   role: [compute]

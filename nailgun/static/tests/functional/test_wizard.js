@@ -65,10 +65,10 @@ define([
                     .pressKeys('\uE007')
                     .assertElementsExist('.wizard-step.available', 5, 'All steps are available at the end')
                     .clickLinkByText('Compute')
-                    .clickByCssSelector('input[value=kvm]')
+                    .clickByCssSelector('input[name=hypervisor\\:libvirt\\:kvm]')
                     .assertElementsExist('.wizard-step.available', 5,
                         'All steps are available if no changes to restrictions are made')
-                    .clickByCssSelector('input[type=checkbox]')
+                    .clickByCssSelector('input[name=hypervisor\\:vmware]')
                     .assertElementExists('.wizard-step.available', 1,
                         'Only one step is available after changing hypervisor');
             }

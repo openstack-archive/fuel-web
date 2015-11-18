@@ -95,6 +95,18 @@ class TestDeploymentAttributesSerialization80(BaseDeploymentSerializer):
                 node['quantum_settings']['L2']['phys_nets']['physnet1']
             )
 
+    def test_disks_attrs(self):
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['controller'], primary_roles=['controller']
+        )
+        self.prepare_for_deployment(self.env.nodes)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in serialized_for_astute:
+            self.assertIn("disks", node)
+            self.assertIn("volume_groups", node)
+
 
 class TestSerializeInterfaceDriversData80(
     TestSerializer80Mixin,

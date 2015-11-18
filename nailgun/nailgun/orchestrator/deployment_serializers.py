@@ -512,12 +512,37 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
 
 class DeploymentHASerializer80(DeploymentHASerializer70):
 
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer80, self).serialize_node(node, role)
+        serialized_node.update(self.generate_disks_data(node))
+
+        return serialized_node
+
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
             return NeutronNetworkTemplateSerializer80
         else:
             return NeutronNetworkDeploymentSerializer80
+
+    def generate_disks_data(self, node):
+        """Serialize information about disks.
+
+        This function returns information about disks and
+        volume groups for each node in cluster.
+        Will be passed to Astute.
+        """
+        device_disks = []
+        volume_groups = []
+        for disk in node_extension_call('get_node_volumes', node):
+            if disk.get('type') == 'disk':
+                device_disks.append(disk)
+            elif disk.get('type') == 'vg':
+                volume_groups.append(disk)
+
+        return {'disks': device_disks,
+                'volume_groups': volume_groups}
 
 
 def get_serializer_for_cluster(cluster):

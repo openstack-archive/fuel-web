@@ -279,6 +279,42 @@ class TestDeploymentAttributesSerialization80(
                              node["node_volumes"])
 
 
+class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
+    env_version = '2015.1.0-8.0'
+
+    def setUp(self):
+        super(TestBlockDeviceDevicesSerialization80, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
+        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+
+    def test_block_device_disks(self):
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['cinder-block-device']
+        )
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['controller']
+        )
+        self.prepare_for_deployment(self.env.nodes)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in serialized_for_astute:
+            self.assertIn("node_volumes", node)
+            for node_volume in node["node_volumes"]:
+                if node_volume["id"] == "cinder-block-device":
+                    self.assertEqual(node_volume["volumes"], [])
+                else:
+                    self.assertNotEqual(node_volume["volumes"], [])
+
+
 class TestSerializeInterfaceDriversData80(
     TestSerializer80Mixin,
     TestSerializeInterfaceDriversData

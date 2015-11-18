@@ -50,11 +50,11 @@ define([
                                 Compute: function() {
                                     // select VCenter to enable Nova networking
                                     return this.remote
-                                        .clickByCssSelector('input[name=vcenter]');
+                                        .clickByCssSelector('input[name=hypervisor\\:vmware]');
                                 },
                                 'Networking Setup': function() {
                                     return this.remote
-                                        .clickByCssSelector('input[name=manager][value=nova-network]');
+                                        .clickByCssSelector('input[name=network\\:nova_network]');
                                 }
                             }
                         );

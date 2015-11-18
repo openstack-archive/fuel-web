@@ -728,7 +728,8 @@
                         "network_verification": "Network Verification",
                         "node_network_groups": "Node network groups",
                         "settings": "Settings",
-                        "networks": "Default Networks"
+                        "networks": "Default Networks",
+                        "connectivity_check": "Connectivity Check"
                     }
                 },
                 "logs_tab": {

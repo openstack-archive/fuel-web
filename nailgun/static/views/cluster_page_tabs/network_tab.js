@@ -1010,31 +1010,33 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         showAll && isNetworkGroupPill,
                     isInvalid;
 
-                switch (groupName) {
-                    case 'neutron_l2':
-                        isInvalid = !!_.intersection(NetworkingL2Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
-                        break;
-                    case 'neutron_l3':
-                        isInvalid = !!_.intersection(NetworkingL3Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
-                        break;
-                    case 'nova_configuration':
-                        isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
-                        break;
-                    case 'network_verification':
-                        isInvalid = this.props.hasChanges && cluster.task({
-                                group: 'network',
-                                status: 'error'
-                            });
-                        break;
+                // is one of predefined sections selected (networking_parameters)
+                if (groupName == 'neutron_l2') {
+                    isInvalid = !!_.intersection(NetworkingL2Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
+                } else if (groupName == 'neutron_l3') {
+                    isInvalid = !!_.intersection(NetworkingL3Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
+                } else if (groupName == 'nova_configuration') {
+                    isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
                 }
+
+                // is node network group section selected
                 if (this.props.isMultiRack && !showAll) {
                     tabLabel = groupName;
                     isInvalid = networksErrors && !!networksErrors[activeNodeNetworkGroup.id]
                 } else if (isNovaEnvironment) {
                     isInvalid = networksErrors;
                 }
+
                 if (!isNetworkGroupPill) {
                     tabLabel = i18n(networkTabNS + 'tabs.' + groupName);
+                }
+
+                if (groupName == 'network_verification') {
+                    tabLabel = i18n(networkTabNS + 'tabs.connectivity_check');
+                    isInvalid = this.props.hasChanges && cluster.task({
+                            group: 'network',
+                            status: 'error'
+                        });
                 }
 
                 return (
@@ -1068,7 +1070,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 } else {
                     settingsSections = settingsSections.concat(['neutron_l2', 'neutron_l3']);
                 }
-                settingsSections.push('network_verification');
 
             return (
                 <div className='col-xs-2'>
@@ -1089,6 +1090,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             {i18n(networkTabNS + 'tabs.settings')}
                         </li>
                         {this.renderClickablePills(settingsSections)}
+                        <li className='group-title' key='group3'>
+                            {i18n(networkTabNS + 'tabs.network_verification')}
+                        </li>
+                        {this.renderClickablePills(['network_verification'])}
                     </CSSTransitionGroup>
                 </div>
             );

@@ -80,11 +80,9 @@ cd %{_builddir}/%{name}-%{version}/nailgun && %{_builddir}/%{name}-%{version}/na
 [ -n %{_builddir} ] && rm -rf %{_builddir}/%{name}-%{version}/nailgun/static
 mv %{_builddir}/%{name}-%{version}/nailgun/compressed_static %{_builddir}/%{name}-%{version}/nailgun/static
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py build
-cd %{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates && python setup.py build
 
 %install
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
-cd %{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates/INSTALLED_FILES
 mkdir -p %{buildroot}/opt/nailgun/bin
 mkdir -p %{buildroot}/etc/cron.d
 mkdir -p %{buildroot}/etc/fuel
@@ -134,25 +132,6 @@ Fuel fencing agent
 /etc/cron.d/fencing-agent
 %defattr(-,root,root)
 
-
-%package -n fuel-package-updates
-
-Summary: Fuel package update downloader
-Version: %{version}
-Release: %{release}
-License: Apache
-Group: Development/Libraries
-Prefix: %{_prefix}
-BuildArch: noarch
-Requires:  python-keystoneclient >= 0.11
-Requires:  python-keystonemiddleware >= 1.2.0
-Requires:  python-ordereddict >= 1.1
-
-%description -n fuel-package-updates
-Command line utility to download apt/yum repositories for Fuel
-
-%files -n fuel-package-updates  -f %{_builddir}/%{name}-%{version}/fuel_upgrade_system/fuel_package_updates/INSTALLED_FILES
-%defattr(0755,root,root)
 
 %package -n fuel-provisioning-scripts
 

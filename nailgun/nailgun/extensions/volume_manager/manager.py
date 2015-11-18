@@ -642,17 +642,89 @@ class VolumeManager(object):
         If existing disk isn't found by a set of 'extra' links, then disk will
         be guessed by 'by-path' link as a fallback.
         """
-        existing_disk = None
-        if disk_info.get('extra'):
-            existing_disk = filter(
-                lambda disk: set(disk_info['extra']) & set(disk.get('extra',
-                                                                    [])),
-                only_disks(volumes))
-        if not existing_disk:
-            existing_disk = filter(
-                lambda disk: disk_info['disk'] == disk['id'],
-                only_disks(volumes))
-        return existing_disk
+
+        def build_disk_id_by_keys(data, keys=(), keys_for_lists=()):
+            """Builds disk identifier by given keys and keys_for_lists
+
+            Identifier set of values. Values are extracted from data by
+            keys. List of values extracted from data by keys_for_lists.
+
+            :param data: dict with disk data
+            :param keys: collection of keys for values for disk identifier
+            :param keys_for_lists: collection of keys for lists of values
+            for disk identifier
+            :return: disk identifier as set of disk data values
+            """
+            result = set()
+            for k in keys:
+                value = data.get(k)
+                if value is not None:
+                    result.add(data.get(k))
+            for k in keys_for_lists:
+                result.update(data.get(k, []))
+            return result
+
+        # We are trying to cover cases when disk path can be changed:
+        # https://bugs.launchpad.net/fuel/+bug/1277151 and ids for disks
+        # can be the same:
+        # https://bugs.launchpad.net/fuel/+bug/1503987
+        # We are matching disk by composite key (id, path), if it is not
+        # found then by (id) and by (path) if not found by (id).
+
+        disks = only_disks(volumes)
+
+        # Matching disk by composite identifier built from  path stored in
+        # 'disk' and id(s) stored in 'extra'.
+        disk_info_composite_id = build_disk_id_by_keys(
+            disk_info, keys=('disk',), keys_for_lists=('extra',))
+
+        # Here we perform strict match for cover case with same ids for
+        # different disks.
+        existing_disk = [
+            disk for disk in disks
+            if disk_info_composite_id == build_disk_id_by_keys(
+                disk, keys=('id',), keys_for_lists=('extra',))
+        ]
+
+        if disk_info_composite_id and existing_disk:
+            return existing_disk
+        else:
+            logger.warning("VolumeManager disk not found by composite "
+                           "identifier 'disk', 'extra': %s",
+                           disk_info_composite_id)
+
+        # Matching disk by identifier built from disk id(s) 'extra'
+        disk_info_id_only = build_disk_id_by_keys(
+            disk_info, keys_for_lists=('extra',))
+
+        existing_disk = [
+            disk for disk in disks
+            if disk_info_id_only & build_disk_id_by_keys(
+                disk, keys_for_lists=('extra',))
+        ]
+
+        if disk_info_id_only and existing_disk:
+            return existing_disk
+        else:
+            logger.warning("VolumeManager disk not found by 'extra'"
+                           "identifier: %s", disk_info_id_only)
+
+        # Matching disk by identifier built from path stored in 'disk'
+        disk_info_path_only = build_disk_id_by_keys(disk_info, keys=('disk',))
+
+        existing_disk = [
+            disk for disk in disks
+            if disk_info_path_only & build_disk_id_by_keys(
+                disk, keys=('id',))
+        ]
+
+        if disk_info_path_only and existing_disk:
+            return existing_disk
+        else:
+            logger.warning("VolumeManager disk not found by 'disk' "
+                           "identifier: %s", disk_info_path_only)
+
+        return None
 
     def set_volume_size(self, disk_id, volume_name, size):
         """Set size of volume."""

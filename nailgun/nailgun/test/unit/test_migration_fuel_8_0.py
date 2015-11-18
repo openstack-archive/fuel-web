@@ -592,3 +592,17 @@ class TestBaremetalFields(base.BaseAlembicMigrationTest):
                  self.meta.tables['neutron_config'].c.baremetal_range])).\
             fetchall()
         self.assertIn((baremetal_gateway, baremetal_range), result)
+
+
+class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
+
+    def test_ui_settings_field_exists_and_has_default_value(self):
+        clusters_table = self.meta.tables['clusters']
+        self.assertIn('ui_settings', clusters_table.c)
+
+        ui_settings = jsonutils.loads(
+            db.execute(
+                sa.select([clusters_table.c.ui_settings])
+            ).fetchone()[0]
+        )
+        self.assertItemsEqual(False, ui_settings['show_all_node_groups'])

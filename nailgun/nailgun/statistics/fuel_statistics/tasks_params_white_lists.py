@@ -150,6 +150,9 @@ _task_output_white_list_template = {
                 "murano": {
                     "enabled": ""
                 },
+                "murano_cfapi": {
+                    "enabled": ""
+                },
                 "role": "",
                 "online": "",
                 "auto_assign_floating_ip": "",

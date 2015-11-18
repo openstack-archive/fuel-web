@@ -96,6 +96,32 @@ class TestDeploymentAttributesSerialization80(BaseDeploymentSerializer):
             )
 
 
+class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
+    env_version = '2015.1.0-8.0'
+
+    def setUp(self):
+        super(TestBlockDeviceDevicesSerialization80, self).setUp()
+        self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
+        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+        self.serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+    def create_env(self, mode):
+        return self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': mode,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': self.segmentation_type},
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'pending_addition': True},
+                {'roles': ['cinder-block-device'],
+                 'pending_addition': True}])
+
+
 class TestSerializeInterfaceDriversData80(
     TestSerializer80Mixin,
     TestSerializeInterfaceDriversData

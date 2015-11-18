@@ -271,6 +271,10 @@
   height: 16px;
 }
 
+.glyphicon-ok-sign {
+  .icon-default-styles(-13px, -812px);
+}
+
 // BASE SETTINGS
 
 :focus {
@@ -2985,6 +2989,9 @@ input[type=range] {
     }
     .forms-box {
       margin-bottom: 0px;
+      .compatible label {
+        color: darkgreen;
+      }
       .name-and-release {
         .alert {
           margin-left: 5px;
@@ -3070,7 +3077,18 @@ input[type=range] {
         }
         .pane-content {
           margin-top: @wizard-body-padding;
+          .section-left {
+            float: left;
+            width: 50%;
+          }
+          .section-right {
+            float: left;
+            width: 50%;
+          }
         }
+      }
+      .ml2 {
+        margin-left: 40px;
       }
     }
   }
@@ -3115,6 +3133,9 @@ input[type=range] {
     font-size: @base-font-size - 2;
     color: @gray;
     line-height: 14px;
+  }
+  .checkbox-group {
+    margin-bottom: 10px;
   }
 }
 

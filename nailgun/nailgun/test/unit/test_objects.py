@@ -866,12 +866,7 @@ class TestActionLogObject(BaseIntegrationTest):
             'is_sent': False,
             'cluster_id': 1
         }
-
-        al = self._create_log_entry(object_data)
-
-        instance_to_validate = jsonutils.loads(objects.ActionLog.to_json(al))
-        self.assertRaises(jsonschema.ValidationError, jsonschema.validate,
-                          instance_to_validate, action_log.schema)
+        self.assertRaises(ValueError, self._create_log_entry, object_data)
 
     def test_get_by_uuid_method(self):
         object_data = {
@@ -1427,47 +1422,22 @@ class TestNetworkGroup(BaseTestCase):
         ng = objects.NetworkGroup.get_default_admin_network()
         self.assertIsNotNone(ng)
 
+    def test_update_meta(self):
+        cluster = self.env.create_cluster(api=False)
+        ng = cluster.network_groups[0]
+        original_name = ng.meta['name']
 
-class TestRelease(BaseTestCase):
+        ng.meta.update({'render_type': 'new_value'})
+        self.db.flush()
+        updated_ng = objects.NetworkGroup.get_by_uid(ng['id'])
 
-    def test_get_all_components(self):
-        release = self.env.create_release(
-            version='2015.1-8.0',
-            operating_system='Ubuntu',
-            modes=[consts.CLUSTER_MODES.ha_compact],
-            components_metadata=self.env.get_default_components(
-                name='hypervisor:test_component_1'))
-
-        self.env.create_plugin(
-            name='plugin_with_components',
-            package_version='4.0.0',
-            fuel_version=['8.0'],
-            releases=[{
-                'repository_path': 'repositories/ubuntu',
-                'version': '2015.1-8.0',
-                'os': 'ubuntu',
-                'mode': ['ha'],
-                'deployment_scripts_path': 'deployment_scripts/'}],
-            components_metadata=self.env.get_default_components(
-                name='storage:test_component_2')
+        self.assertEqual(
+            updated_ng.meta['render_type'],
+            'new_value',
+            "Network group meta didn't updated."
         )
-
-        components = objects.Release.get_all_components(release)
-
-        self.assertListEqual(components, [
-            {
-                'name': 'hypervisor:test_component_1',
-                'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
-                'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]},
-            {
-                'name': 'storage:test_component_2',
-                'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
-                'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]}])
+        self.assertEqual(
+            updated_ng['name'],
+            original_name,
+            "Network group meta updated incorrectly."
+        )

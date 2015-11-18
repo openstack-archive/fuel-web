@@ -23,6 +23,7 @@ from copy import deepcopy
 from functools import partial
 
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -643,10 +644,25 @@ class VolumeManager(object):
         be guessed by 'by-path' link as a fallback.
         """
         existing_disk = None
-        if disk_info.get('extra'):
+
+        def get_extra_data(disk):
+            """Extracts all data from disk extra data dict
+
+            Extra data is dict of lists
+
+            :param disk: disk data dict
+            """
+            result = set()
+            extra_data = disk.get('extra', {})
+            for extra_data_key in six.iterkeys(extra_data):
+                result.update(set(extra_data.get(extra_data_key, [])))
+            return result
+
+        disk_info_extra = get_extra_data(disk_info)
+
+        if disk_info_extra:
             existing_disk = filter(
-                lambda disk: set(disk_info['extra']) & set(disk.get('extra',
-                                                                    [])),
+                lambda disk: disk_info_extra & get_extra_data(disk),
                 only_disks(volumes))
         if not existing_disk:
             existing_disk = filter(

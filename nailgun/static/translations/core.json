@@ -810,6 +810,8 @@
                     "next": "Next",
                     "create": "Create",
                     "configuration_failed_warning": "Your OpenStack environment has been created, but the configuration failed. You can configure it manually.",
+                    "compatible": "The component was tested with all the selected components",
+                    "incompatible_list": "This component was not testes with the following components:",
                     "name_release": {
                         "title": "Name and Release",
                         "name": "Name",
@@ -841,7 +843,8 @@
                         "vcenter_ip_warning": "Invalid hostname or IPv4 address",
                         "vcenter_user_warning": "Username cannot be empty",
                         "vcenter_password_warning": "Password cannot be empty",
-                        "vcenter_cluster_warning": "Invalid cluster list"
+                        "vcenter_cluster_warning": "Invalid cluster list",
+                        "empty_choise":  "Please select at least one hypervisor type"
                     },
                     "network": {
                         "title": "Networking Setup",
@@ -867,7 +870,7 @@
                         "ceph_disable": "No, use default providers",
                         "ceph_provider": "Use Ceph storage provider",
                         "default_provider": "Use default storage providers",
-                        "ceph_help": "Ceph provides a shared backend for Glance images, Nova and Cinder volumes, and Swift objects, as well as copy-on-write between them in some cases. Ceph requires assigning Ceph-OSD role to several nodes in your cluster (at least as many as the configured Ceph object replication factor). You can modify the storage backend options for each component and the replication factor on the Settings page.",
+                        "ceph_help": "Ceph provides a shared backend for Glance images, Nova and Cinder volumes, and Swift objects.",
                         "default": "Default",
                         "ceph": "Ceph",
                         "lvm": "LVM",
@@ -875,7 +878,11 @@
                         "cinder": "Cinder",
                         "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
                         "glance": "Glance",
-                        "glance_help": "By default, Glance image service uses Swift object storage. Ceph backend requires two or more Ceph-OSD nodes."
+                        "glance_help": "By default, Glance image service uses Swift object storage. Ceph backend requires two or more Ceph-OSD nodes.",
+                        "block": "Block Storage:",
+                        "object": "Object Storage:",
+                        "image": "Image Storage:",
+                        "ephemeral": "Ephemeral Storage:"
                     },
                     "additional": {
                         "title": "Additional Services",

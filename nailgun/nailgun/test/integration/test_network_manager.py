@@ -1235,7 +1235,7 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         expected_mapping = {
             'eth0': ['fuelweb_admin'],
             'eth1': ['public', 'storage'],
-            'eth2': ['murano'],
+            'eth2': ['murano', 'murano-cfapi'],
             'eth3': [],
             'eth4': ['mongo', 'keystone'],
             'eth5': [],

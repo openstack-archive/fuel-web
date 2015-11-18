@@ -142,8 +142,8 @@ define([
             },
             'Testing cluster networks: verification': function() {
                 return this.remote
-                    .clickByCssSelector('.verify-networks-btn:not(:disabled)')
                     .clickByCssSelector('.subtab-link-network_verification')
+                    .clickByCssSelector('.verify-networks-btn:not(:disabled)')
                     .assertElementAppears('.connect-3.error', 2000,
                         'At least two nodes are required to be in the environment for network verification')
                     // Testing cluster networks: verification task deletion
@@ -313,7 +313,6 @@ define([
                 return this.remote
                     .clickByCssSelector('.subtab-link-network_verification')
                     .assertElementExists('.alert-warning', 'Warning is shown')
-                    .clickByCssSelector('.subtab-link-default')
                     .assertElementDisabled('.verify-networks-btn', 'Verify networks button is disabled');
             },
             'Node network group renaming': function() {

@@ -54,7 +54,7 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                   'nova/api', 'murano/api', 'horizon', 'management',
                   'mgmt/database', 'mgmt/messaging', 'mgmt/corosync',
                   'mgmt/memcache', 'mgmt/vip', 'mongo/db',
-                  'ceph/public', 'nova/migration']
+                  'ceph/public', 'nova/migration', 'murano/cfapi']
     fuelweb_admin = ['admin/pxe', 'fw-admin']
     neutron = ['neutron/private', 'neutron/floating']
     storage = ['storage', 'ceph/replication', 'swift/replication',
@@ -473,6 +473,7 @@ class TestDeploymentSerializationForNovaNetwork70(
                     'heat/api': ip_by_net['management'],
                     'nova/api': ip_by_net['management'],
                     'murano/api': ip_by_net['management'],
+                    'murano/cfapi': ip_by_net['management'],
                     'horizon': ip_by_net['management'],
 
                     'management': ip_by_net['management'],

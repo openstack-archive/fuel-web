@@ -1400,9 +1400,7 @@ class NetworkManager(object):
                         meta_to_update[param] = ng['meta'][param]
 
                 # update particular keys in data
-                objects.NetworkGroup.update_meta(
-                    ng_db, meta_to_update
-                )
+                ng_db.meta.update(meta_to_update)
 
                 # preserve original input dict but remove 'meta' key
                 # for proper update of the network group instance

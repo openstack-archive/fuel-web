@@ -874,6 +874,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 showAllNetworks={this.props.showAllNetworks}
                                 isMultiRack={isMultiRack}
                                 hasChanges={hasChanges}
+                                showVerificationResult={!this.state.hideVerificationResult}
                             />
                             <div className='col-xs-10'>
                                 {isNodeNetworkGroupSectionSelected &&
@@ -1037,7 +1038,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
                 if (groupName == 'network_verification') {
                     tabLabel = i18n(networkTabNS + 'tabs.connectivity_check');
-                    isInvalid = this.props.hasChanges && cluster.task({
+                    isInvalid = this.props.showVerificationResult && cluster.task({
                             group: 'network',
                             status: 'error'
                         });

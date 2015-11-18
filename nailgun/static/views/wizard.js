@@ -30,106 +30,96 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
     'use strict';
 
     var ClusterWizardPanesMixin = {
+        componentWillMount() {
+            if (this.props.components) {
+                var components = this.props.components.getComponentsByType(this.constructor.componentType, {sorted: true});
+                this.processRestrictions(components);
+            }
+        },
         componentDidMount: function() {
             $(this.getDOMNode()).find('input:enabled').first().focus();
         },
-        processRestrictions: function(metadata, models) {
-            var actions = {},
-                warnings = [];
-
-            function processRestrictions(restrictions, key) {
-                _.each(restrictions, function(restriction) {
-                    var result = utils.evaluateExpression(restriction.condition, models);
-                    if (result.value) {
-                        actions[key] = actions[key] || {};
-                        actions[key][restriction.action] = true;
-                        warnings.push(restriction.message);
-                    }
-                }, this);
-            }
-
-            _.map(metadata, function(config, attribute) {
-                if (config.restrictions) {
-                    processRestrictions(config.restrictions, attribute);
-                }
-                if (config.type == 'radio') {
-                    _.map(config.values, function(value) {
-                        if (value.restrictions) {
-                            processRestrictions(value.restrictions, attribute + '.' + value.data);
-                        }
-                    });
-                }
-            });
-            return {actions: actions, warnings: _.uniq(warnings)};
+        processRestrictions: function(components, types) {
+            this.processIncompatible(components, types);
+            this.processRequires(components, types);
         },
-        renderWarnings: function(warnings) {
-            if (warnings.length == 0) {
-                return null;
-            }
-            return (
-                <div className='alert alert-warning'>
-                    {
-                        _.map(warnings, function(warning) {
-                            return (
-                                <div key={warning}>{i18n(warning, this.props.wizard.translationParams)}</div>
-                            );
-                        }, this)
+        processIncompatible: function(components, types) {
+            // disable components that have
+            // incompatible components already enabled
+            _.each(components, (component) => {
+                var incompatibles = component.get('incompatible') || [];
+                var isDisabled = false;
+                var warnings = [];
+                _.each(incompatibles, (incompatible) => {
+                    var type = incompatible.component.get('type');
+                    if (!_.contains(types, type)) {
+                        // ignore forward incompatibilities
+                        return;
                     }
-                </div>
-            );
-        },
-        renderControls: function(paneName, metadata, paneData, actions) {
-            var paneControls = _.pairs(metadata);
-            paneControls.sort(function(control1, control2) {
-                return control1[1].weight - control2[1].weight;
+                    if (incompatible.component.get('enabled')) {
+                        isDisabled = true;
+                        warnings.push(incompatible.message);
+                    }
+                });
+                component.set({disabled: isDisabled, warnings: warnings.join(' ')});
             });
-            return _.map(paneControls, function(value) {
-                var [key, meta] = value;
-                switch (meta.type) {
-                    case 'radio':
-                        return _.map(meta.values, function(value) {
-                            var optionKey = key + '.' + value.data;
-                            if (actions[optionKey] && actions[optionKey].hide) {
-                                return null;
-                            }
-                            return (
-                                <controls.Input
-                                    key={optionKey}
-                                    name={key}
-                                    type='radio'
-                                    value={value.data}
-                                    checked={value.data == paneData[key]}
-                                    label={i18n(value.label)}
-                                    description={value.description && i18n(value.description)}
-                                    onChange={_.partial(this.props.onChange, paneName)}
-                                    disabled={actions[optionKey] && actions[optionKey].disable}
-                                />
-                            );
-                        }, this);
-                    case 'checkbox':
-                        if (actions[key] && actions[key].hide) {
-                            return null;
-                        }
-                        return (
-                            <controls.Input
-                                key={key}
-                                name={key}
-                                type='checkbox'
-                                value={paneData[key]}
-                                checked={paneData[key]}
-                                label={i18n(meta.label)}
-                                description={meta.description && i18n(meta.description)}
-                                onChange={_.partial(this.props.onChange, paneName)}
-                                disabled={actions[key] && actions[key].disable}
-                            />
-                        );
-                    default:
-                        if (actions[key] && actions[key].hide) {
-                            return null;
-                        }
-                        return (<div key={key}>{meta.type} control type isn't supported in wizard</div>);
+        },
+        processRequires: function(components, types) {
+            // if component has requires,
+            // it is disabled until all requires are already enabled
+            _.each(components, (component) => {
+                var requires = component.get('requires') || [];
+                if (requires.length == 0) {
+                    // no requires
+                    component.set({isRequired: false});
+                    return;
                 }
-            }, this);
+                var isDisabled = true;
+                var warnings = [];
+                _.each(requires, (require) => {
+                    var type = require.component.get('type');
+                    if (!_.contains(types, type)) {
+                        // ignore forward requires
+                        return;
+                    }
+                    if (require.component.get('enabled')) {
+                        isDisabled = false;
+                        warnings.push(require.message);
+                    }
+                });
+                component.set({disabled: isDisabled, isRequired: true, warnings: warnings.join(' ')});
+            });
+        },
+        selectDefaultComponent: function(components) {
+            var active = _.find(components, (component) => component.get('enabled'));
+            if (active && !active.get('disabled')) {
+                return;
+            }
+            var newActive = _.find(components, (component) => !component.get('disabled'));
+            if (newActive) {
+                newActive.set({enabled: true});
+            }
+            if (active) {
+                active.set({enabled: false});
+            }
+        }
+    };
+
+    var ClusterRadioPanesMixin = {
+        getInitialState: function() {
+            var components = this.props.components.getComponentsByType(this.constructor.componentType, {sorted: true});
+            var active = _.find(components, (component) => component.get('enabled'));
+            return {
+                activeComponentId: active && active.id
+            };
+        },
+        onChange: function(componentId) {
+            if (this.state.activeComponentId == componentId) {
+                return;
+            }
+            this.props.onChange(this.state.activeComponentId, false);
+            this.props.onChange(componentId, true);
+            this.setState({activeComponentId: componentId});
         }
     };
 
@@ -141,11 +131,14 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         },
         render: function() {
             var releases = this.props.releases,
-                nameAndRelease = this.props.wizard.get('NameAndRelease');
+                name = this.props.wizard.get('name'),
+                nameError = this.props.wizard.get('name_error'),
+                release = this.props.wizard.get('release');
+
             if (this.props.loading) {
                 return null;
             }
-            var os = nameAndRelease.release.get('operating_system'),
+            var os = release.get('operating_system'),
                 connectivityAlert = i18n('dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert');
             return (
                 <div className='create-cluster-form name-and-release'>
@@ -154,33 +147,31 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                         name='name'
                         autoComplete='off'
                         label={i18n('dialog.create_cluster_wizard.name_release.name')}
-                        value={nameAndRelease.name}
-                        error={nameAndRelease.name_error}
-                        onChange={_.partial(this.props.onChange, 'NameAndRelease')}
+                        value={name}
+                        error={nameError}
+                        onChange={this.props.onChange}
                     />
                     <controls.Input
                         type='select'
                         name='release'
                         label={i18n('dialog.create_cluster_wizard.name_release.release_label')}
-                        value={nameAndRelease.release && nameAndRelease.release.id}
-                        onChange={_.partial(this.props.onChange, 'NameAndRelease')}
+                        value={release.id}
+                        onChange={this.props.onChange}
                     >
                         {
                             releases.map(function(release) {
                                 if (!release.get('is_deployable')) {
                                     return null;
                                 }
-                                return (
-                                    <option key={release.id} value={release.id}>{release.get('name')}</option>
-                                );
+                                return <option key={release.id} value={release.id}>{release.get('name')}</option>;
                             })
                         }
                     </controls.Input>
                     <div className='help-block'>
                         {connectivityAlert &&
-                            <div className='alert alert-warning'>{connectivityAlert}</div>
+                        <div className='alert alert-warning'>{connectivityAlert}</div>
                         }
-                        <div className='release-description'>{nameAndRelease.release.get('description')}</div>
+                        <div className='release-description'>{release.get('description')}</div>
                     </div>
                 </div>
             );
@@ -191,42 +182,77 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'Compute',
+            componentType: 'hypervisor',
             title: i18n('dialog.create_cluster_wizard.compute.title')
         },
         render: function() {
-            var result = this.processRestrictions(this.props.wizard.config.Compute, this.props.configModels);
+            if (!this.props.components) {
+                return null;
+            }
+            var hypervisors = this.props.components.getComponentsByType('hypervisor', {sorted: true});
+            this.processRestrictions(hypervisors, ['hypervisor']);
             return (
                 <div className='wizard-compute-pane'>
-                    {this.renderWarnings(result.warnings)}
-                    {this.renderControls('Compute', this.props.wizard.config.Compute,
-                        this.props.wizard.get('Compute'), result.actions)}
+                    {
+                        _.map(hypervisors, (hypervisor) => {
+                            return (
+                                <controls.Input
+                                    key={hypervisor.id}
+                                    type='checkbox'
+                                    name={hypervisor.id}
+                                    label={hypervisor.get('label')}
+                                    description={hypervisor.get('description')}
+                                    value={hypervisor.id}
+                                    checked={!!hypervisor.get('enabled')}
+                                    disabled={hypervisor.get('disabled')}
+                                    tooltipText={hypervisor.get('warnings')}
+                                    onChange={this.props.onChange}
+                                />
+                            );
+                        })
+                    }
                 </div>
             );
         }
     });
 
     var Network = React.createClass({
-        mixins: [ClusterWizardPanesMixin],
+        mixins: [ClusterWizardPanesMixin, ClusterRadioPanesMixin],
         statics: {
             paneName: 'Network',
+            componentType: 'network',
             title: i18n('dialog.create_cluster_wizard.network.title')
         },
+        componentWillMount: function() {
+            var networks = this.props.components.getComponentsByType('network', {sorted: true});
+            this.processRestrictions(networks, ['hypervisor']);
+            this.selectDefaultComponent(networks);
+        },
         render: function() {
-            var result = this.processRestrictions(this.props.wizard.config.Network, this.props.configModels);
+            if (!this.props.components) {
+                return null;
+            }
+            var networks = this.props.components.getComponentsByType('network', {sorted: true});
+            this.processRestrictions(networks, ['hypervisor']);
             return (
                 <div className='wizard-network-pane'>
-                    {this.renderWarnings(result.warnings)}
-                    {_.contains(app.version.get('feature_groups'), 'mirantis') &&
-                        <div className='network-pane-description'>
-                            {i18n('dialog.create_cluster_wizard.network.description')}
-                            <a href={utils.composeDocumentationLink('planning-guide.html#choose-network-topology')}
-                                target='_blank'>
-                                {i18n('dialog.create_cluster_wizard.network.description_link')}
-                            </a>
-                        </div>
-                    }
-                    {this.renderControls('Network', this.props.wizard.config.Network,
-                        this.props.wizard.get('Network'), result.actions)
+                    {
+                        _.map(networks, (network) => {
+                            return (
+                                <controls.Input
+                                    key={network.id}
+                                    type='radio'
+                                    name={network.id}
+                                    label={network.get('label')}
+                                    description={network.get('description')}
+                                    value={network.id}
+                                    checked={!!network.get('enabled')}
+                                    disabled={!!network.get('disabled')}
+                                    tooltipText={network.get('warnings')}
+                                    onChange={this.onChange}
+                                />
+                            );
+                        })
                     }
                 </div>
             );
@@ -234,20 +260,39 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
     });
 
     var Storage = React.createClass({
-        mixins: [ClusterWizardPanesMixin],
+        mixins: [ClusterWizardPanesMixin, ClusterRadioPanesMixin],
         statics: {
             paneName: 'Storage',
+            componentType: 'storage',
             title: i18n('dialog.create_cluster_wizard.storage.title')
         },
         render: function() {
-            var result = this.processRestrictions(this.props.wizard.config.Storage, this.props.configModels);
+            if (!this.props.components) {
+                return null;
+            }
+            var storages = this.props.components.getComponentsByType('storage', {sorted: true});
+            this.processRestrictions(storages, ['hypervisor', 'networks']);
             return (
-                <div>
-                    <h5>{i18n('dialog.create_cluster_wizard.storage.ceph_description')}</h5>
-                    {this.renderWarnings(result.warnings)}
-                    {this.renderControls('Storage', this.props.wizard.config.Storage,
-                        this.props.wizard.get('Storage'), result.actions)}
-                    <p className='modal-parameter-description ceph'>{i18n('dialog.create_cluster_wizard.storage.ceph_help')}</p>
+                <div className='wizard-compute-pane'>
+                    <p><big>Use Ceph?</big></p>
+                    {
+                        _.map(storages, (storage) => {
+                            return (
+                                <controls.Input
+                                    key={storage.id}
+                                    type='radio'
+                                    name={storage.id}
+                                    label={storage.get('label')}
+                                    description={storage.get('description')}
+                                    value={storage.get('name')}
+                                    checked={!!storage.get('enabled')}
+                                    disabled={!!storage.get('disabled')}
+                                    tooltipText={storage.get('warnings')}
+                                    onChange={this.onChange}
+                                />
+                            );
+                        })
+                    }
                 </div>
             );
         }
@@ -257,15 +302,35 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'AdditionalServices',
+            componentType: 'additional_service',
             title: i18n('dialog.create_cluster_wizard.additional.title')
         },
         render: function() {
-            var result = this.processRestrictions(this.props.wizard.config.AdditionalServices, this.props.configModels);
+            if (!this.props.components) {
+                return null;
+            }
+            var additionalServices = this.props.components.getComponentsByType('additional_service', {sorted: true});
+            this.processRestrictions(additionalServices, ['hypervisor', 'network', 'storage']);
             return (
-                <div className='wizard-additional-pane'>
-                    {this.renderWarnings(result.warnings)}
-                    {this.renderControls('AdditionalServices', this.props.wizard.config.AdditionalServices,
-                        this.props.wizard.get('AdditionalServices'), result.actions)}
+                <div className='wizard-compute-pane'>
+                    {
+                        _.map(additionalServices, (additionalService) => {
+                            return (
+                                <controls.Input
+                                    key={additionalService.id}
+                                    type='checkbox'
+                                    name={additionalService.get('name')}
+                                    label={additionalService.get('label')}
+                                    description={additionalService.get('description')}
+                                    value={additionalService.get('name')}
+                                    checked={!!additionalService.get('enabled')}
+                                    disabled={!!additionalService.get('disabled')}
+                                    tooltipText={additionalService.get('warnings')}
+                                    onChange={this.props.onChange}
+                                />
+                            );
+                        })
+                    }
                 </div>
             );
         }
@@ -298,7 +363,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         Finish
     ];
 
-
     var CreateClusterWizard = React.createClass({
         mixins: [dialogs.dialogMixin],
         getInitialState: function() {
@@ -315,88 +379,22 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             };
         },
         componentWillMount: function() {
-            this.config = {
-                NameAndRelease: {
-                    name: {
-                        type: 'custom',
-                        value: '',
-                        bind: 'cluster:name'
-                    },
-                    release: {
-                        type: 'custom',
-                        bind: {id: 'cluster:release'},
-                        aliases: {
-                            operating_system: 'NameAndRelease.release_operating_system',
-                            roles: 'NameAndRelease.release_roles',
-                            name: 'NameAndRelease.release_name'
-                        }
-                    }
-                }
-            };
             this.stopHandlingKeys = false;
-            this.wizard = new models.WizardModel(this.config);
-            this.cluster = new models.Cluster();
+
+            this.wizard = new Backbone.DeepModel();
             this.settings = new models.Settings();
-            this.releases = app.releases;
-
-            this.wizard.processConfig(this.config);
-
-            this.configModels = _.pick(this, 'settings', 'cluster', 'wizard');
-            this.configModels.default = this.wizard;
+            this.releases = new models.Releases();
+            this.cluster = new models.Cluster();
         },
         componentDidMount: function() {
-            this.releases.fetch({cache: true}).done(_.bind(function() {
+            this.releases.fetch().done(_.bind(function() {
                 var defaultRelease = this.releases.findWhere({is_deployable: true});
-                this.wizard.set('NameAndRelease.release', defaultRelease.id);
+                this.wizard.set('release', defaultRelease.id);
                 this.selectRelease(defaultRelease.id);
-                this.processRestrictions();
-                this.processTrackedAttributes();
                 this.setState({loading: false});
             }, this));
 
             this.updateState({activePaneIndex: 0});
-        },
-        processRestrictions: function() {
-            var restrictions = this.restrictions = {};
-            function processControlRestrictions(config, paneName, attribute) {
-                var expandedRestrictions = config.restrictions = _.map(config.restrictions, utils.expandRestriction);
-                restrictions[paneName][attribute] =
-                    _.uniq(_.union(restrictions[paneName][attribute], expandedRestrictions), 'message');
-            }
-            _.each(this.wizard.config, function(paneConfig, paneName) {
-                restrictions[paneName] = {};
-                _.each(paneConfig, function(attributeConfig, attribute) {
-                    if (attributeConfig.type == 'radio') {
-                        _.each(attributeConfig.values, function(attributeValueConfig) {
-                            processControlRestrictions(attributeValueConfig, paneName, attribute);
-                        }, this);
-                    } else {
-                        processControlRestrictions(attributeConfig, paneName, attribute);
-                    }
-                }, this);
-            }, this);
-            this.wizard.restrictions = this.restrictions;
-        },
-        processTrackedAttributes: function() {
-            this.trackedAttributes = {};
-            _.each(this.restrictions, function(paneConfig) {
-                _.each(paneConfig, function(paneRestrictions) {
-                    _.each(paneRestrictions, function(restriction) {
-                        var evaluatedExpression = utils.evaluateExpression(restriction.condition, this.configModels, {strict: false});
-                        _.each(evaluatedExpression.modelPaths, function(val, attr) {
-                            this.trackedAttributes[attr] = this.trackedAttributes[attr] || 0;
-                            ++this.trackedAttributes[attr];
-                        }, this);
-                    }, this);
-                }, this);
-            }, this);
-        },
-        handleTrackedAttributeChange: function() {
-            var currentIndex = this.state.activePaneIndex;
-
-            var listOfPanesToRestoreDefaults = this.getListOfPanesToRestore(currentIndex, clusterWizardPanes.length - 1);
-            this.wizard.restoreDefaultValues(listOfPanesToRestoreDefaults);
-            this.updateState({maxAvailablePaneIndex: currentIndex});
         },
         getListOfPanesToRestore: function(currentIndex, maxIndex) {
             var panesNames = [];
@@ -422,14 +420,14 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.setState(newState);
         },
         getEnabledPanes: function() {
-            return _.reject(this.state.panes, 'hidden');
+            return _.filter(this.state.panes, function(pane) {return !pane.hidden;});
         },
         getActivePane: function() {
             var panes = this.getEnabledPanes();
             return panes[this.state.activePaneIndex];
         },
         prevPane: function() {
-            this.processBinds('wizard', this.getActivePane().paneName);
+            //this.processBinds('wizard', this.getActivePane().paneName);
             this.updateState({activePaneIndex: this.state.activePaneIndex - 1});
         },
         nextPane: function() {
@@ -440,7 +438,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     return;
                 }
             }
-            this.processBinds('wizard', this.getActivePane().paneName);
+            //this.processBinds('wizard', this.getActivePane().paneName);
             var nextIndex = this.state.activePaneIndex + 1;
             this.updateState({
                 activePaneIndex: nextIndex,
@@ -452,28 +450,29 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             if (index > this.state.maxAvailablePaneIndex) {
                 return;
             }
-            this.processBinds('wizard', this.getActivePane().paneName);
+            //this.processBinds('wizard', this.getActivePane().paneName);
             this.updateState({activePaneIndex: index});
         },
         createCluster: function() {
             var success = true;
-            var name = this.wizard.get('NameAndRelease.name');
-            var release = this.wizard.get('NameAndRelease.release');
+            var name = this.wizard.get('name');
+            var release = this.wizard.get('release');
             this.cluster.off();
             this.cluster.on('invalid', function() {
                 success = false;
             }, this);
             if (this.props.clusters.findWhere({name: name})) {
                 var error = i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name});
-                this.wizard.set({'NameAndRelease.name_error': error});
+                this.wizard.set({name_error: error});
                 return false;
             }
             success = success && this.cluster.set({
                 name: name,
-                release: release
+                release: release.id,
+                components: this.components
             }, {validate: true});
             if (this.cluster.validationError && this.cluster.validationError.name) {
-                this.wizard.set({'NameAndRelease.name_error': this.cluster.validationError.name});
+                this.wizard.set({name_error: this.cluster.validationError.name});
                 return false;
             }
             return success;
@@ -485,33 +484,16 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.stopHandlingKeys = true;
             this.setState({actionInProgress: true});
             var cluster = this.cluster;
-            this.processBinds('cluster');
             var deferred = cluster.save();
             if (deferred) {
                 this.updateState({disabled: true});
-                deferred
-                    .done(_.bind(function() {
+                deferred.done(() => {
                         this.props.clusters.add(cluster);
-                        this.settings.url = _.result(cluster, 'url') + '/attributes';
-                        this.settings.fetch()
-                            .then(_.bind(function() {
-                                this.processBinds('settings');
-                                return this.settings.save(this.settings.attributes, {validate: false});
-                            }, this))
-                            .done(_.bind(function() {
-                                this.close();
-                                app.nodeNetworkGroups.fetch();
-                                app.navigate('#cluster/' + this.cluster.id, {trigger: true});
-                            }, this))
-                            .fail(_.bind(function(response) {
-                                this.close();
-                                utils.showErrorDialog({
-                                    response: response,
-                                    title: i18n('dialog.create_cluster_wizard.create_cluster_error.title')
-                                });
-                            }, this));
-                    }, this))
-                    .fail(_.bind(function(response) {
+                        this.close();
+                        app.nodeNetworkGroups.fetch();
+                        app.navigate('#cluster/' + this.cluster.id, {trigger: true});
+                    })
+                    .fail((response) => {
                         this.stopHandlingKeys = false;
                         this.setState({actionInProgress: false});
                         if (response.status == 409) {
@@ -524,105 +506,35 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                                 title: i18n('dialog.create_cluster_wizard.create_cluster_error.title')
                             });
                         }
-                    }, this));
+                    });
             }
         },
         selectRelease: function(releaseId) {
             var release = this.releases.findWhere({id: releaseId});
-            this.wizard.set('NameAndRelease.release', release);
-            this.updateConfig(release.attributes.wizard_metadata);
-        },
-        updateConfig: function(config) {
-            var name = this.wizard.get('NameAndRelease.name');
-            var release = this.wizard.get('NameAndRelease.release');
-            this.wizard.config = _.cloneDeep(this.config);
-            _.extend(this.wizard.config, _.cloneDeep(config));
-            this.wizard.off(null, null, this);
-            this.wizard.initialize(this.wizard.config);
-            this.wizard.processConfig(this.wizard.config);
-            this.wizard.translationParams = this.buildTranslationParams();
-            this.wizard.set({
-                'NameAndRelease.name': name,
-                'NameAndRelease.release': release
-            });
-            this.updateState({
-                activePaneIndex: 0,
-                maxAvailablePaneIndex: 0
+            this.wizard.set('release', release);
+
+            // components
+            this.setState({loading: true});
+            this.components = new models.ComponentsCollection(releaseId);
+            this.components.fetch().done(() => {
+                this.components.invoke('expandWildcards', this.components);
+                this.components.invoke('restoreDefaultValue', this.components);
+                this.setState({loading: false});
             });
         },
-        buildTranslationParams: function() {
-            var result = {};
-            _.each(this.wizard.attributes, function(paneConfig, paneName) {
-                _.each(paneConfig, function(value, attribute) {
-                    if (!_.isObject(value)) {
-                        var attributeConfig = this.wizard.config[paneName][attribute];
-                        if (attributeConfig && attributeConfig.type == 'radio') {
-                            result[paneName + '.' + attribute] = i18n(_.find(attributeConfig.values, {data: value}).label);
-                        } else if (attributeConfig && attributeConfig.label) {
-                            result[paneName + '.' + attribute] = i18n(attributeConfig.label);
-                        } else {
-                            result[paneName + '.' + attribute] = value;
-                        }
-                    }
-                }, this);
-            }, this);
-            return result;
-        },
-        processBinds: function(prefix, paneNameToProcess) {
-            var processBind = _.bind(function(path, value) {
-                if (path.slice(0, prefix.length) == prefix) {
-                    utils.parseModelPath(path, this.configModels).set(value);
-                }
-            }, this);
-            _.each(this.wizard.config, function(paneConfig, paneName) {
-                if (paneNameToProcess && paneNameToProcess != paneName) {
-                    return;
-                }
-                _.each(paneConfig, function(attributeConfig, attribute) {
-                    var bind = attributeConfig.bind;
-                    var value = this.wizard.get(paneName + '.' + attribute);
-                    if (_.isString(bind)) {
-                        // simple binding declaration - just copy the value.
-                        processBind(bind, value);
-                    } else if (_.isPlainObject(bind)) {
-                        // binding declaration for models
-                        processBind(_.values(bind)[0], value.get(_.keys(bind)[0]));
-                    } else if (_.isArray(bind)) {
-                        // for the case of multiple bindings
-                        if (attributeConfig.type != 'checkbox' || value) {
-                            _.each(bind, function(bindItem) {
-                                if (!_.isPlainObject(bindItem)) {
-                                    processBind(bindItem, value);
-                                } else {
-                                    processBind(_.keys(bindItem)[0], _.values(bindItem)[0]);
-                                }
-                            }, this);
-                        }
-                    }
-                    if (attributeConfig.type == 'radio') {
-                        // radiobuttons can have values with their own bindings
-                        _.each(_.find(attributeConfig.values, {data: value}).bind, function(bind) {
-                            processBind(_.keys(bind)[0], _.values(bind)[0]);
-                        });
-                    }
-                }, this);
-            }, this);
-        },
-        onChange: function(paneName, field, value) {
-            if (paneName == 'NameAndRelease') {
-                if (field == 'name') {
-                    this.wizard.set('NameAndRelease.name', value);
-                    this.wizard.unset('NameAndRelease.name_error');
-                } else if (field == 'release') {
+        onChange: function(name, value) {
+            switch (name) {
+                case 'name':
+                    this.wizard.set('name', value);
+                    this.wizard.unset('name_error');
+                    break;
+                case 'release':
                     this.selectRelease(parseInt(value));
-                }
-                this.updateState({paneHasErrors: false});
-                return;
-            }
-            var path = paneName + '.' + field;
-            this.wizard.set(path, value);
-            if (this.trackedAttributes[path]) {
-                this.handleTrackedAttributeChange();
+                    break;
+                default:
+                    var component = this.components.findWhere({id: name});
+                    component.set({enabled: value});
+                    break;
             }
             this.updateState({paneHasErrors: false});
         },
@@ -671,10 +583,9 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                                 actionInProgress={this.state.actionInProgress}
                                 loading={this.state.loading}
                                 onChange={this.onChange}
-                                wizard={this.wizard}
                                 releases={this.releases}
-                                settings={this.settings}
-                                configModels={this.configModels}
+                                wizard={this.wizard}
+                                components={this.components}
                             />
                         </div>
                         <div className='clearfix'></div>
@@ -692,29 +603,29 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     <button
                         className={utils.classNames('btn btn-default prev-pane-btn', {disabled: !this.state.previousEnabled || actionInProgress})}
                         onClick={this.prevPane}
-                    >
+                        >
                         <i className='glyphicon glyphicon-arrow-left' aria-hidden='true'></i>
                         &nbsp;
                         <span>{i18n('dialog.create_cluster_wizard.prev')}</span>
                     </button>
                     {this.state.nextVisible &&
-                        <button
-                            className={utils.classNames('btn btn-default btn-success next-pane-btn', {disabled: !this.state.nextEnabled || actionInProgress})}
-                            onClick={this.nextPane}
-                        >
-                            <span>{i18n('dialog.create_cluster_wizard.next')}</span>
-                            &nbsp;
-                            <i className='glyphicon glyphicon-arrow-right' aria-hidden='true'></i>
-                        </button>
+                    <button
+                        className={utils.classNames('btn btn-default btn-success next-pane-btn', {disabled: !this.state.nextEnabled || actionInProgress})}
+                        onClick={this.nextPane}
+                    >
+                        <span>{i18n('dialog.create_cluster_wizard.next')}</span>
+                        &nbsp;
+                        <i className='glyphicon glyphicon-arrow-right' aria-hidden='true'></i>
+                    </button>
                     }
                     {this.state.createVisible &&
-                        <button
-                            className={utils.classNames('btn btn-default btn-success finish-btn', {disabled: actionInProgress})}
-                            onClick={this.saveCluster}
-                            autoFocus
-                        >
-                            {i18n('dialog.create_cluster_wizard.create')}
-                        </button>
+                    <button
+                        className={utils.classNames('btn btn-default btn-success finish-btn', {disabled: actionInProgress})}
+                        onClick={this.saveCluster}
+                        autoFocus
+                    >
+                        {i18n('dialog.create_cluster_wizard.create')}
+                    </button>
                     }
                 </div>
             );

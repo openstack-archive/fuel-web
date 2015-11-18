@@ -80,9 +80,7 @@ NAILGUN_ROOT=$ROOT/nailgun
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
-CASPERJS="./node_modules/.bin/casperjs"
 GULP="./node_modules/.bin/gulp"
-LINTUI="${GULP} lint"
 TOXENV=${TOXENV:-py26}
 
 # test options
@@ -245,7 +243,7 @@ function run_ui_unit_tests {
 
   pushd $ROOT/nailgun >> /dev/null
 
-  ${GULP} unit-tests || result=1
+  npm run unit-tests || result=1
 
   popd >> /dev/null
 
@@ -370,7 +368,7 @@ function run_lint_ui {
   pushd $ROOT/nailgun >> /dev/null
 
   local result=0
-  ${LINTUI} || result=1
+  npm run lint || result=1
 
   popd >> /dev/null
   return $result

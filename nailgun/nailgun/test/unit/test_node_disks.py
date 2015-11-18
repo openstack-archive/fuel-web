@@ -133,20 +133,24 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 "model": "TOSHIBA MK1002TS",
                 "name": "sda",
                 "disk": "sda",
-                "extra": [
-                    "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
-                    "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001",
-                ],
+                "extra": {
+                    "ids": [
+                        "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00001",
+                        "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00001"
+                    ]
+                },
                 "size": 1000204886016
             },
             {
                 "model": "TOSHIBA MK1002TS",
                 "name": "sdb",
                 "disk": "sdb",
-                "extra": [
-                    "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
-                    "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002",
-                ],
+                "extra": {
+                    "ids": [
+                        "disk/by-id/scsi-MK1002TS_TOSHIBA_HDD_M00002",
+                        "disk/by-id/ata-MK1002TS_TOSHIBA_HDD_M00002"
+                    ]
+                },
                 "size": 1000204886016
             },
         ]
@@ -539,25 +543,26 @@ class TestVolumeManagerDisks(BaseTestCase):
     def test_find_existing_disk_extra_matches(self):
         # disk matches by extra links
         fake_volumes = [
-            {'extra': ['by-id/link3', 'by-id/link4'],
+            {'extra': {'ids': ['by-id/link3', 'by-id/link4']},
              'id': 'not_expected_disk', 'type': 'disk'},
-            {'extra': ['by-id/link1', 'by-id/link2'],
+            {'extra': {'ids': ['by-id/link1', 'by-id/link2']},
              'id': 'expected_disk', 'type': 'disk'},
         ]
         disk_info = {'disk': 'expected_disk_not_matches',
-                     'extra': ['by-id/link1', 'by-id/link2']}
+                     'extra': {'ids': ['by-id/link1', 'by-id/link2']}}
         self.check_expected_volume_found_for_disk(disk_info, fake_volumes,
                                                   fake_volumes[1])
 
     def test_find_existing_disk_extra_partial_match(self):
         # disk partially matches by extra links
         fake_volumes = [
-            {'extra': ['by-id/link3', 'by-id/link4'],
+            {'extra': {'ids': ['by-id/link3', 'by-id/link4']},
              'id': 'not_expected_disk', 'type': 'disk'},
-            {'extra': ['by-id/link1'], 'id': 'expected_disk', 'type': 'disk'},
+            {'extra': {'ids': ['by-id/link1']},
+             'id': 'expected_disk', 'type': 'disk'}
         ]
         disk_info = {'disk': 'expected_disk_not_matches',
-                     'extra': ['by-id/link1', 'by-id/link2']}
+                     'extra': {'ids': ['by-id/link1', 'by-id/link2']}}
         self.check_expected_volume_found_for_disk(disk_info, fake_volumes,
                                                   fake_volumes[1])
 
@@ -565,12 +570,13 @@ class TestVolumeManagerDisks(BaseTestCase):
         # disk doesn't match by extra links,
         # so it should match by 'id' as a fallback
         fake_volumes = [
-            {'extra': ['by-id/link3', 'by-id/link4'],
+            {'extra': {'ids': ['by-id/link3', 'by-id/link4']},
              'id': 'not_expected_disk', 'type': 'disk'},
-            {'extra': ['by-id/link1'], 'id': 'expected_disk', 'type': 'disk'},
+            {'extra': {'ids': ['by-id/link1']},
+             'id': 'expected_disk', 'type': 'disk'},
         ]
         disk_info = {'disk': 'expected_disk',
-                     'extra': ['by-id/link2']}
+                     'extra': {'ids': ['by-id/link2']}}
         self.check_expected_volume_found_for_disk(disk_info, fake_volumes,
                                                   fake_volumes[1])
 

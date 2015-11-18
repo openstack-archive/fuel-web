@@ -69,6 +69,17 @@
             message: "Ceph must be enabled in settings"
         update_once:
           - controller
+      cinder-block-device:
+        name: 'Block Device Driver'
+        description: 'Block Device driver for Cinder'
+        has_primary: false
+        public_ip_required: false
+        weight: 100
+        limits:
+          min: 1
+        conflicts:
+         - controller
+         - cinder
       mongo:
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
@@ -487,6 +498,9 @@
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "cephjournal"}
           - {allocate_size: "full-disk", id: "ceph"}
+        cinder-block-device:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "full-disk", id: "cinder-block-device"}
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}
@@ -603,6 +617,12 @@
           type: "vg"
           label: "Cinder"
           min_size: {generator: "calc_min_cinder_size"}
+          volumes: []
+        - id: "cinder-block-device"
+          type: "vg"
+          label: "Cinder Block Device"
+          min_size: { generator: "calc_min_cinder_size" }
+          mount: "none"
           volumes: []
     attributes_metadata:
       editable:

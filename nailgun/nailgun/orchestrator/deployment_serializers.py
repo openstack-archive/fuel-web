@@ -512,12 +512,33 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
 
 class DeploymentHASerializer80(DeploymentHASerializer70):
 
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer80, self).serialize_node(node, role)
+        if role == 'cinder-block-device':
+            serialized_node.update(self.generate_block_device_data(node))
+
+        return serialized_node
+
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
             return NeutronNetworkTemplateSerializer80
         else:
             return NeutronNetworkDeploymentSerializer80
+
+    # Cinder Block Device allocated disks
+    # This function returns allocated disks for role
+    # Cinder Block Device (cinder-block-device).
+    def generate_block_device_data(self, node):
+        block_device_disks = []
+        for disk in node_extension_call('get_node_volumes', node):
+            for part in disk.get('volumes', []):
+                if part.get('name') == 'cinder-block-device':
+                    devices = part.get('attachments', [])
+                    for device in devices:
+                        block_device_disks.append(device)
+        return { 'devices': block_device_disks }
 
 
 def get_serializer_for_cluster(cluster):

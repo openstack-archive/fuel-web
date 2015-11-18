@@ -178,6 +178,106 @@ class TestDeploymentAttributesSerialization80(
                              consts.DEFAULT_BRIDGES_NAMES.br_baremetal)
             self.assertIn(expected_patch, transformations)
 
+    def test_disks_attrs(self):
+        disks = [
+            {
+                "model": "TOSHIBA MK1002TS",
+                "name": "sda",
+                "disk": "sda",
+                "size": 1004886016
+            },
+        ]
+        expected_node_volumes_hash = [
+            {
+                u'name': u'sda',
+                u'extra': [],
+                u'free_space': 330,
+                u'volumes': [
+                    {
+                        u'type': u'boot',
+                        u'size': 300
+                    },
+                    {
+                        u'mount': u'/boot',
+                        u'type': u'partition',
+                        u'file_system': u'ext2',
+                        u'name': u'Boot',
+                        u'size': 200
+                    },
+                    {
+                        u'type': u'lvm_meta_pool',
+                        u'size': 64
+                    },
+                    {
+                        u'vg': u'os',
+                        u'type': u'pv',
+                        u'lvm_meta_size': 64,
+                        u'size': 394
+                    },
+                    {
+                        u'vg': u'vm',
+                        u'type': u'pv',
+                        u'lvm_meta_size': 0,
+                        u'size': 0
+                    }
+                ],
+                u'type': u'disk',
+                u'id': u'sda',
+                u'size': 958
+            },
+            {
+                u'_allocate_size': u'min',
+                u'label': u'Base System',
+                u'min_size': 19456,
+                u'volumes': [
+                    {
+                        u'mount': u'/',
+                        u'size': -3766,
+                        u'type': u'lv',
+                        u'name': u'root',
+                        u'file_system': u'ext4'
+                    },
+                    {
+                        u'mount': u'swap',
+                        u'size': 4096,
+                        u'type': u'lv',
+                        u'name': u'swap',
+                        u'file_system': u'swap'
+                    }
+                ],
+                u'type': u'vg',
+                u'id': u'os'
+            },
+            {
+                u'_allocate_size': u'all',
+                u'label': u'Virtual Storage',
+                u'min_size': 5120,
+                u'volumes': [
+                    {
+                        u'mount': u'/var/lib/nova',
+                        u'size': 0,
+                        u'type': u'lv',
+                        u'name': u'nova',
+                        u'file_system': u'xfs'
+                    }
+                ],
+                u'type': u'vg',
+                u'id': u'vm'
+            }
+        ]
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute'],
+            meta={"disks": disks},
+        )
+        self.prepare_for_deployment(self.env.nodes)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in serialized_for_astute:
+            self.assertIn("node_volumes", node)
+            self.assertEqual(expected_node_volumes_hash,
+                             node["node_volumes"])
+
 
 class TestSerializeInterfaceDriversData80(
     TestSerializer80Mixin,

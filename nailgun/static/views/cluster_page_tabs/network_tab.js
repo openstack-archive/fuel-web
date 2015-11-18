@@ -1405,8 +1405,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     }
                     <div className='page-control-box'>
                         <div className='verification-box row'>
-                            <div className='col-xs-2'></div>
-                            <div className='verification-network-placeholder col-xs-8'>
+                            <div className='verification-network-placeholder col-xs-8 col-xs-offset-2'>
                                 <div className='router-box'>
                                     <div className='verification-router'></div>
                                 </div>
@@ -1423,7 +1422,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                     })}
                                 </div>
                             </div>
-                            <div className='col-xs-2'></div>
                         </div>
                         <div className='row'>
                             <div className='verification-text-placeholder col-xs-12'>

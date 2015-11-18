@@ -179,6 +179,10 @@
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
       -
+        id: "murano/cfapi"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
         id: "horizon"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
@@ -790,23 +794,32 @@
             description: "If selected, Murano component will be installed"
             weight: 20
             type: "checkbox"
+          murano-cfapi:
+            value: false
+            label: "Install Murano service broker for Cloud Foundry"
+            description: "If selected, Murano service broker will be installed"
+            weight: 30
+            type: "checkbox"
+            restrictions:
+              - condition: "settings:additional_components.murano.value == false"
+                message: "Murano should be enabled"
           heat:
             value: true
             label: ""
             description: ""
-            weight: 30
+            weight: 40
             type: "hidden"
           ceilometer:
             value: false
             label: "Install Ceilometer"
             description: "If selected, Ceilometer component will be installed"
-            weight: 40
+            weight: 50
             type: "checkbox"
           mongo:
             value: false
             label: "Use external Mongo DB"
             description: "If selected, You can use external Mongo DB as ceilometer backend"
-            weight: 40
+            weight: 60
             type: "checkbox"
             restrictions:
               - "settings:additional_components.ceilometer.value == false"
@@ -814,7 +827,7 @@
             value: false
             label: "Install Ironic"
             description: "If selected, Ironic component will be installed"
-            weight: 50
+            weight: 70
             type: "checkbox"
             restrictions:
               - "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
@@ -1245,6 +1258,13 @@
             generator: "password"
           db_password:
             generator: "password"
+        murano-cfapi:
+          user_password:
+            generator: "password"
+          rabbit_password:
+            generator: "password"
+          db_password:
+            generator: "password"
         heat:
           user_password:
             generator: "password"
@@ -1382,18 +1402,26 @@
           description: "dialog.create_cluster_wizard.additional.install_murano_description"
           bind: "settings:additional_components.murano.value"
           weight: 20
+        murano-cfapi:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_murano_cfapi"
+          description: "dialog.create_cluster_wizard.additional.install_murano_cfapi_description"
+          bind: "settings:additional_components.murano-cfapi.value"
+          weight: 30
+          restrictions:
+              - "AdditionalServices.murano != true": "dialog.create_cluster_wizard.additional.murano_cfapi_murano_warning"
         ceilometer:
           type: "checkbox"
           label: "dialog.create_cluster_wizard.additional.install_ceilometer"
           description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
           bind: "settings:additional_components.ceilometer.value"
-          weight: 30
+          weight: 40
         ironic:
           type: "checkbox"
           label: "dialog.create_cluster_wizard.additional.install_ironic"
           description: "dialog.create_cluster_wizard.additional.install_ironic_description"
           bind: "settings:additional_components.ironic.value"
-          weight: 40
+          weight: 50
           restrictions:
             - "Network.manager != 'neutron-vlan'": "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
       Ready: {}

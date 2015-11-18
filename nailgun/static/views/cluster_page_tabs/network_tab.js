@@ -1065,6 +1065,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         transitionName='subtab-item'
                         className='nav nav-pills nav-stacked node-network-groups-list'
                         transitionEnter={false}
+                        transitionLeave={false}
                         key='node-group-list'
                         id='node-group-list'
                     >

@@ -1,6 +1,0 @@
--r requirements.txt
-hacking==0.10.1
-mock==1.0.1
-pytest==2.7.2
-httpretty==0.8.10
-unittest2==1.1.0

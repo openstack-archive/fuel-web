@@ -1034,7 +1034,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
                 if (groupName == 'network_verification') {
                     tabLabel = i18n(networkTabNS + 'tabs.connectivity_check');
-                    isInvalid = this.props.hasChanges && cluster.task({
+                    isInvalid = (this.props.hasChanges || !this.props.cluster.get('nodes').length) &&
+                        cluster.task({
                             group: 'network',
                             status: 'error'
                         });

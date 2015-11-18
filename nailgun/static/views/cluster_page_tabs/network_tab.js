@@ -1021,7 +1021,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
                         break;
                     case 'network_verification':
-                        isInvalid = this.props.hasChanges && cluster.task({
+                        isInvalid = (this.props.hasChanges || !this.props.cluster.get('nodes').length) &&
+                            cluster.task({
                                 group: 'network',
                                 status: 'error'
                             });

@@ -49,6 +49,22 @@
           # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder"
+      cinder-block-device:
+        name: 'Storage - Cinder Block Device'
+        description: 'Host node for Cinder Block Devices'
+        has_primary: false
+        public_ip_required: false
+        weight: 35
+        conflicts:
+          - controller
+          - cinder
+          - cinder-vmware
+          - ceph-osd
+        restrictions:
+          - condition: "settings:storage.volumes_block_device.value == false"
+            message: "Cinder Block Device should be enabled in settings"
+          - condition: "settings:storage.volumes_ceph.value == true"
+            message: "Ceph RBD cannot be used with Cinder Block Device"
       cinder-vmware:
         name: "Storage - Cinder Proxy to VMware Datastore"
         description: "Cinder-VMware provides scheduling of block storage resources delivered over VMware vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
@@ -487,6 +503,9 @@
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "cephjournal"}
           - {allocate_size: "full-disk", id: "ceph"}
+        cinder-block-device:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "full-disk", id: "cinder-block-device"}
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}
@@ -603,6 +622,12 @@
           type: "vg"
           label: "Cinder"
           min_size: {generator: "calc_min_cinder_size"}
+          volumes: []
+        - id: "cinder-block-device"
+          type: "vg"
+          label: "Cinder Block Device"
+          min_size: { generator: "calc_min_cinder_size" }
+          mount: "none"
           volumes: []
     attributes_metadata:
       editable:
@@ -1132,6 +1157,14 @@
               - "settings:storage.volumes_lvm.value != true or settings:common.libvirt_type.value != 'kvm'"
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
+          volumes_block_device:
+            value: false
+            label: "Cinder Block device driver"
+            description: "High performance block device storage. It is recommended to have at least one Storage - Cinder Block Device"
+            weight: 15
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.volumes_ceph.value == true"
           volumes_ceph:
             value: false
             label: "Ceph RBD for volumes (Cinder)"
@@ -1139,7 +1172,7 @@
             weight: 20
             type: "checkbox"
             restrictions:
-              - "settings:storage.volumes_lvm.value == true"
+              - "settings:storage.volumes_lvm.value == true or settings:storage.volumes_block_device.value == true"
           images_ceph:
             value: false
             label: "Ceph RBD for images (Glance)"

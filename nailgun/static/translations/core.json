@@ -727,8 +727,7 @@
                         "neutron_l3": "Neutron L3",
                         "network_verification": "Network Verification",
                         "node_network_groups": "Node network groups",
-                        "settings": "Settings",
-                        "networks": "Default Networks"
+                        "settings": "Settings"
                     }
                 },
                 "logs_tab": {

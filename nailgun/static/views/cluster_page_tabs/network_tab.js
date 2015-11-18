@@ -1004,7 +1004,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 networksErrors = errors && errors.networks;
 
             return (sections.map(function(groupName) {
-                var tabLabel = i18n(networkTabNS + 'tabs.networks'),
+                var tabLabel = groupName,
                     showAll = this.props.showAllNetworks,
                     isActive = groupName == this.props.activeGroupName ||
                         showAll && isNetworkGroupPill,
@@ -1027,14 +1027,19 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             });
                         break;
                 }
+
                 if (this.props.isMultiRack && !showAll) {
-                    tabLabel = groupName;
                     isInvalid = networksErrors && !!networksErrors[activeNodeNetworkGroup.id]
                 } else if (isNovaEnvironment) {
                     isInvalid = networksErrors;
                 }
+
                 if (!isNetworkGroupPill) {
                     tabLabel = i18n(networkTabNS + 'tabs.' + groupName);
+                //FIXME(morale): this is a hack until default node network group
+                // name is capitalized on backend
+                } else if (groupName == 'default') {
+                    tabLabel = 'Default';
                 }
 
                 return (

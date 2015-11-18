@@ -27,6 +27,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.errors import errors
 from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
@@ -512,12 +513,40 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
 
 class DeploymentHASerializer80(DeploymentHASerializer70):
 
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer80, self).serialize_node(node, role)
+        if role == 'cinder-block-device':
+            serialized_node.update(self.generate_block_device_data(node))
+
+        return serialized_node
+
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
             return NeutronNetworkTemplateSerializer80
         else:
             return NeutronNetworkDeploymentSerializer80
+
+    # Cinder Block Device allocated disks
+    # This function returns allocated disks for role
+    # Cinder Block Device (cinder-block-device).
+    def generate_block_device_data(self, node):
+        block_device_disks = []
+        for disk in node_extension_call('get_node_volumes', node):
+            for volume in disk.get('volumes', []):
+                if volume.get('name') == 'cinder-block-device':
+                    if volume.get('size') == disk.get('size'):
+                        block_device_disks.append('/dev/%s' % disk.get('name'))
+                        break
+                    else:
+                        raise errors.BlockDeviceDiskError(
+                            'Allocated disk (%s) can not be assigned to '
+                            'Cinder Block Device role, because it also '
+                            'assigned for another partition/role. '
+                            'You should use only entire disk space. ' %
+                            (disk.get('name')))
+        return {'devices': block_device_disks}
 
 
 def get_serializer_for_cluster(cluster):

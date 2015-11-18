@@ -65,6 +65,8 @@ default_messages = {
     # disk errors
     "NotEnoughFreeSpace": "Not enough free space",
     "NotEnoughOsdNodes": "Not enough OSD nodes",
+    "BlockDeviceDiskError": ("You should use only entire disk space for Cinder Block "
+                             "Device role"),
 
     # network errors
     "AdminNetworkNotFound": "Admin network info not found",

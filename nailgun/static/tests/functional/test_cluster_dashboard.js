@@ -255,12 +255,12 @@ define([
                                 Compute: function() {
                                     // Selecting VCenter
                                     return this.remote
-                                        .clickByCssSelector('.custom-tumbler input[name=vcenter]');
+                                        .clickByCssSelector('.custom-tumbler input[name=hypervisor\\:vmware]');
                                 },
                                 'Networking Setup': function() {
                                     // Selecting Nova Network
                                     return this.remote
-                                        .clickByCssSelector('.custom-tumbler input[value=nova-network]');
+                                        .clickByCssSelector('.custom-tumbler input[value=network\\:nova_network]');
                                 }
                             }
                         );

@@ -100,6 +100,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderImportantLabel: function() {
             return <span className='label label-danger'>{i18n('common.important')}</span>;
         },
+        submitAction: function() {
+            this.state.result.resolve();
+            this.close();
+        },
         render: function() {
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
@@ -1368,18 +1372,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         createNodeNetworkGroup: function() {
             var name = this.state.name,
                 nodeNetworkGroup = new models.NodeNetworkGroup({
-                    cluster_id: this.props.cluster.id,
+                    cluster_id: this.props.clusterId,
                     name: name
                 });
             nodeNetworkGroup.save()
-                .done(() => {
-                    app.nodeNetworkGroups.add(nodeNetworkGroup);
-                    this.props.setActiveNetworkSectionName(name);
-                    this.props.networkConfiguration.fetch()
-                        .done(this.props.updateInitialConfiguration);
-                    this.state.result.resolve();
-                    this.close();
-                });
+                .done(this.submitAction);
         }
     });
 
@@ -1400,24 +1397,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close}>
+                    {i18n('common.cancel_button')}
+                </button>,
                 <button
                     key='remove'
                     className='btn btn-danger remove-cluster-btn'
-                    onClick={this.removeNodeNetworkGroup}
+                    onClick={this.submitAction}
                 >
                     {i18n('common.delete_button')}
                 </button>
             ]);
-        },
-        removeNodeNetworkGroup: function() {
-            this.props.nodeNetworkGroups.remove(this.props.currentNodeNetworkGroup);
-            this.props.currentNodeNetworkGroup.destroy()
-                .done(this.props.updateInitialConfiguration())
-                .always(() => {
-                    this.state.result.resolve();
-                    this.close();
-                });
         }
     });
 

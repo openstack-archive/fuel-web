@@ -493,6 +493,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             NetworkInputsMixin,
             NetworkModelManipulationMixin,
             componentMixins.backboneMixin('cluster', 'change:status'),
+            componentMixins.backboneMixin('nodeNetworkGroups', 'change update'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {
                     return props.cluster.get('networkConfiguration').get('networking_parameters');
@@ -510,12 +511,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change:status'
-            }),
-            componentMixins.backboneMixin({
-                modelOrCollection: function() {
-                    return app.nodeNetworkGroups;
-                },
-                renderOn: 'change update'
             }),
             componentMixins.dispatcherMixin('hideNetworkVerificationResult', function() {
                 this.setState({hideVerificationResult: true});
@@ -742,11 +737,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return fieldsWithVerificationErrors;
         },
         removeNodeNetworkGroup: function() {
-            dialogs.RemoveNodeNetworkGroupDialog.show({
-                nodeNetworkGroups: this.nodeNetworkGroups,
-                currentNodeNetworkGroup: this.nodeNetworkGroups.findWhere({name: this.props.activeNetworkSectionName}),
-                updateInitialConfiguration: this.updateInitialConfiguration
-            });
+            dialogs.RemoveNodeNetworkGroupDialog.show()
+                .done(_.bind(function() {
+                    var currentNodeNetworkGroup = this.nodeNetworkGroups.findWhere({name: this.props.activeNetworkSectionName});
+                    this.props.nodeNetworkGroups.remove(currentNodeNetworkGroup);
+                    currentNodeNetworkGroup.destroy()
+                        .done(this.props.updateInitialConfiguration())
+                }, this));
         },
         addNodeGroup: function(hasChanges) {
             if (hasChanges) {
@@ -757,12 +754,18 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 return;
             }
             dialogs.CreateNodeNetworkGroupDialog.show({
-                cluster: this.props.cluster,
-                nodeNetworkGroups: this.nodeNetworkGroups,
-                setActiveNetworkSectionName: this.props.setActiveNetworkSectionName,
-                networkConfiguration: this.props.cluster.get('networkConfiguration'),
-                updateInitialConfiguration: this.updateInitialConfiguration
-            });
+                clusterId: this.props.cluster.id,
+                nodeNetworkGroups: this.nodeNetworkGroups
+            })
+                .done(_.bind(function() {
+                    this.nodeNetworkGroups.fetch().done(_.bind(function() {
+                        var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+                        this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
+                        this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
+                        this.props.cluster.get('networkConfiguration').fetch()
+                            .done(this.updateInitialConfiguration);
+                    }, this));
+                }, this));
         },
         render: function() {
             var isLocked = this.isLocked(),

@@ -17,6 +17,7 @@
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
+from nailgun.utils import reverse
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
@@ -106,6 +107,40 @@ class TestDeploymentAttributesSerialization80(BaseDeploymentSerializer):
         for node in serialized_for_astute:
             self.assertIn("disks", node)
             self.assertIn("volume_groups", node)
+
+
+class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
+    env_version = '2015.1.0-8.0'
+
+    def setUp(self):
+        super(TestBlockDeviceDevicesSerialization80, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
+        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+
+    def test_block_device_disks(self):
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['cinder-block-device']
+        )
+        self.prepare_for_deployment(self.env.nodes)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        passed = False
+        for node in serialized_for_astute:
+            self.assertIn("disks", node)
+            self.assertIn("volume_groups", node)
+            for volume in node.get("volume_groups"):
+                if volume.get("id") == "cinder-block-device":
+                    self.assertEqual(volume.get("volumes"), [])
+                    passed = True
+        self.assertEqual(passed, True)
 
 
 class TestSerializeInterfaceDriversData80(

@@ -1305,5 +1305,116 @@ define([
         comparator: 'id'
     });
 
+    class ComponentPattern {
+        constructor(pattern) {
+            this.pattern = pattern;
+            this.parts = pattern.split(':');
+            this.hasWildcard = _.contains(this.parts, '*');
+        }
+        match(componentName) {
+            if (!this.hasWildcard) {
+                return this.pattern == componentName;
+            }
+
+            var componentParts = componentName.split(':');
+            if (componentParts.length < this.parts.length) {
+                return false;
+            }
+            var matched = true;
+            _.each(this.parts, (part, index) => {
+                if (part == '*') {
+                    return;
+                }
+                if (part != componentParts[index]) {
+                    matched = false;
+                    return matched;
+                }
+            });
+            return matched;
+        }
+    }
+
+    models.ComponentModel = BaseModel.extend({
+        initialize: function(component) {
+            var parts = component.name.split(':');
+            this.set({
+                id: component.name,
+                enabled: component.enabled,
+                type: parts[0],
+                subtype: parts[1],
+                name: component.name,
+                label: i18n(component.label),
+                description: component.description && i18n(component.description),
+                compatible: component.compatible,
+                incompatible: component.incompatible,
+                weight: component.weight || 100
+            });
+        },
+        expandWildcards: function(components) {
+            var expandProperty = (propertyName, components) => {
+                var expandedComponents = [];
+                _.each(this.get(propertyName), (patternDescription) => {
+                    var patternName = _.isString(patternDescription) ? patternDescription : patternDescription.name;
+                    var pattern = new ComponentPattern(patternName);
+                    components.each((component) => {
+                        if (pattern.match(component.id)) {
+                            expandedComponents.push({
+                                component: component,
+                                message: i18n(patternDescription.message || '')
+                            });
+                        }
+                    });
+                });
+                return expandedComponents;
+            };
+
+            this.set({
+                compatible: expandProperty('compatible', components),
+                incompatible: expandProperty('incompatible', components),
+                requires: expandProperty('requires', components)
+            });
+        },
+        restoreDefaultValue: function() {
+            this.set({enabled: this.get('default')});
+        },
+        toJSON: function() {
+            return this.get('enabled') ? this.id : null;
+        },
+        isML2Driver: function() {
+            return /:ml2:\w+$/.test(this.id);
+        }
+    });
+
+    models.ComponentsCollection = BaseCollection.extend({
+        model: models.ComponentModel,
+        allTypes: ['hypervisor', 'network', 'storage', 'additional_service'],
+        initialize: function(models, options) {
+            this.releaseId = options.releaseId;
+        },
+        url: function() {
+            return '/api/v1/releases/' + this.releaseId + '/components';
+        },
+        parse: function(response) {
+            return _.isArray(response) ? response : [];
+        },
+        getComponentsByType: function(type, options = {sorted: true}) {
+            var components = this.where({type: type});
+            if (options.sorted) {
+                components.sort((component1, component2) => {
+                    return component1.get('weight') - component2.get('weight');
+                });
+            }
+            return components;
+        },
+        restoreDefaultValues: function(types) {
+            types = types || this.allTypes;
+            var components = _.filter(this.models, (model) => _.contains(types, model.get('type')));
+            _.invoke(components, 'restoreDefaultValue');
+        },
+        toJSON: function() {
+            return _.compact(_.map(this.models, (model) => model.toJSON()));
+        }
+    });
+
     return models;
 });

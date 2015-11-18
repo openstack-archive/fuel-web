@@ -574,6 +574,18 @@ class TestVolumeManagerDisks(BaseTestCase):
         self.check_expected_volume_found_for_disk(disk_info, fake_volumes,
                                                   fake_volumes[1])
 
+    def test_find_existing_disk_by_same_id_matches(self):
+        fake_volumes = [
+            {'extra': ['by-id/link1'], 'id': 'not_expected_disk',
+             'type': 'disk'},
+            {'extra': ['by-id/link1'], 'id': 'expected_disk',
+             'type': 'disk'},
+        ]
+        disk_info = {'disk': 'expected_disk',
+                     'extra': ['by-id/link1']}
+        self.check_expected_volume_found_for_disk(disk_info, fake_volumes,
+                                                  fake_volumes[1])
+
 
 class TestVolumeManager(BaseIntegrationTest):
 

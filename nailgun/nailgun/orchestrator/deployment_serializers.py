@@ -512,12 +512,52 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
 
 class DeploymentHASerializer80(DeploymentHASerializer70):
 
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer80, self).serialize_node(node, role)
+        serialized_node.update(self.generate_disks_data(node))
+
+        return serialized_node
+
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
             return NeutronNetworkTemplateSerializer80
         else:
             return NeutronNetworkDeploymentSerializer80
+
+    # Serialize information about disks.
+    # This function returns information about disks
+    # for each node in cluster.
+    # This information includes disk's names, volumes, types, etc.
+    # Will be passed to Astute.
+    def generate_disks_data(self, node):
+        device_disks = []
+        volume_groups = []
+        for disk in node_extension_call('get_node_volumes', node):
+            if 'name' in disk:
+                disk_data = {
+                    'disk': disk.get('name'),
+                    'size': disk.get('size'),
+                    'free_space': disk.get('free_space'),
+                    'volumes': [],
+                }
+                for volume in disk.get('volumes', []):
+                    disk_data['volumes'].append(volume)
+                device_disks.append(disk_data)
+            elif 'label' in disk:
+                volume_group_data = {
+                    'label': disk.get('label'),
+                    'type': disk.get('type'),
+                    'id': disk.get('id'),
+                    'volumes': [],
+                }
+                for volume in disk.get('volumes', []):
+                    volume_group_data['volumes'].append(volume)
+                volume_groups.append(volume_group_data)
+
+        return {'disks_hash': device_disks,
+                'volume_groups_hash': volume_groups}
 
 
 def get_serializer_for_cluster(cluster):

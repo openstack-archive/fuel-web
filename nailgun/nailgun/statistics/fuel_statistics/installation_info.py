@@ -77,6 +77,8 @@ class InstallationInfo(object):
         WhiteListRule(('storage', 'volumes_lvm', 'value'),
                       'volumes_lvm', None),
         WhiteListRule(('storage', 'iser', 'value'), 'iser', None),
+        WhiteListRule(('storage', 'volumes_block_device', 'value'),
+                      'volumes_block_device', None),
         WhiteListRule(('storage', 'volumes_ceph', 'value'),
                       'volumes_ceph', None),
         WhiteListRule(('storage', 'images_ceph', 'value'),

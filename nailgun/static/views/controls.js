@@ -36,6 +36,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
             disabled: React.PropTypes.bool,
             inputClassName: React.PropTypes.node,
             wrapperClassName: React.PropTypes.node,
+            tooltipIcon: React.PropTypes.node,
             tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
             onChange: React.PropTypes.func,
@@ -167,7 +168,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
                     {this.props.label}
                     {this.props.tooltipText &&
                         <controls.Tooltip text={this.props.tooltipText} placement='right'>
-                            <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
+                            <i className={utils.classNames('glyphicon tooltip-icon', this.props.tooltipIcon || 'glyphicon-warning-sign')} />
                         </controls.Tooltip>
                     }
                 </label>

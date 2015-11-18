@@ -824,32 +824,30 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                     </div>
                                 }
                             </div>
-                            {isNodeNetworkGroupSectionSelected &&
-                                <div className='col-xs-5'>
-                                    {isMultiRack &&
-                                        <controls.Input
-                                            key='show_all'
-                                            type='checkbox'
-                                            name='show_all'
-                                            label={i18n(networkTabNS + 'show_all_networks')}
-                                            wrapperClassName='show-all-networks pull-left'
-                                            onChange={this.props.setActiveNetworkSectionName}
-                                            checked={this.props.showAllNetworks}
-                                        />
-                                    }
-                                    {!isNovaEnvironment &&
-                                        <button
-                                            key='add_node_group'
-                                            className='btn btn-default add-nodegroup-btn pull-right'
-                                            onClick={_.partial(this.addNodeGroup, hasChanges)}
-                                            disabled={isLocked}
-                                        >
-                                            {hasChanges && <i className='glyphicon glyphicon-danger-sign'/>}
-                                            {i18n(networkTabNS + 'add_node_network_group')}
-                                        </button>
-                                    }
-                                </div>
-                            }
+                            <div className='col-xs-5 node-netwrok-groups-controls'>
+                                {isNodeNetworkGroupSectionSelected && isMultiRack &&
+                                    <controls.Input
+                                        key='show_all'
+                                        type='checkbox'
+                                        name='show_all'
+                                        label={i18n(networkTabNS + 'show_all_networks')}
+                                        wrapperClassName='show-all-networks pull-left'
+                                        onChange={this.props.setActiveNetworkSectionName}
+                                        checked={this.props.showAllNetworks}
+                                    />
+                                }
+                                {!isNovaEnvironment &&
+                                    <button
+                                        key='add_node_group'
+                                        className='btn btn-default add-nodegroup-btn pull-right'
+                                        onClick={_.partial(this.addNodeGroup, hasChanges)}
+                                        disabled={isLocked}
+                                    >
+                                        {hasChanges && <i className='glyphicon glyphicon-danger-sign'/>}
+                                        {i18n(networkTabNS + 'add_node_network_group')}
+                                    </button>
+                                }
+                            </div>
                         </div>
                     </div>
                     {isNovaEnvironment &&

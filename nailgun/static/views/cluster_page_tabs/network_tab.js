@@ -546,7 +546,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         getInitialState: function() {
             return {
                 initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
-                hideVerificationResult: false
+                hideVerificationResult: false,
+                showAllNodeNetworkGroups: this.props.cluster.get('ui_settings').show_all_node_groups
             };
         },
         componentDidMount: function() {
@@ -764,6 +765,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 updateInitialConfiguration: this.updateInitialConfiguration
             });
         },
+        showAllNodeNetworkGroups: function(name, value) {
+            this.setState({showAllNodeNetworkGroups: value});
+            var uiSettings = this.props.cluster.get('ui_settings');
+            uiSettings.show_all_node_groups = value;
+            this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
+        },
         render: function() {
             var isLocked = this.isLocked(),
                 hasChanges = this.hasChanges(),
@@ -833,8 +840,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                             name='show_all'
                                             label={i18n(networkTabNS + 'show_all_networks')}
                                             wrapperClassName='show-all-networks pull-left'
-                                            onChange={this.props.setActiveNetworkSectionName}
-                                            checked={this.props.showAllNetworks}
+                                            onChange={this.showAllNodeNetworkGroups}
+                                            checked={this.state.showAllNodeNetworkGroups}
                                         />
                                     }
                                     {!isNovaEnvironment &&
@@ -870,13 +877,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                                 nodeNetworkGroups={nodeNetworkGroups}
                                 activeGroupName={activeNetworkSectionName}
-                                showAllNetworks={this.props.showAllNetworks}
+                                showAllNodeNetworkGroups={this.state.showAllNodeNetworkGroups}
                                 isMultiRack={isMultiRack}
                                 hasChanges={hasChanges}
                             />
                             <div className='col-xs-10'>
                                 {isNodeNetworkGroupSectionSelected &&
-                                    (this.props.showAllNetworks ?
+                                    (this.state.showAllNodeNetworkGroups ?
                                         nodeNetworkGroups.map(function(networkGroup) {
                                             return (
                                                 <NodeNetworkGroup
@@ -1005,7 +1012,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
             return (sections.map(function(groupName) {
                 var tabLabel = i18n(networkTabNS + 'tabs.networks'),
-                    showAll = this.props.showAllNetworks,
+                    showAll = this.props.showAllNodeNetworkGroups,
                     isActive = groupName == this.props.activeGroupName ||
                         showAll && isNetworkGroupPill,
                     isInvalid;
@@ -1057,7 +1064,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 settingsSections = [],
                 nodeGroupSections = [];
 
-                if (this.props.isMultiRack && !this.props.showAllNetworks) {
+                if (this.props.isMultiRack && !this.props.showAllNodeNetworkGroups) {
                     nodeGroupSections = nodeGroupSections.concat(nodeNetworkGroups.pluck('name'));
                 } else {
                     nodeGroupSections.push(nodeNetworkGroups.pluck('name')[0]);

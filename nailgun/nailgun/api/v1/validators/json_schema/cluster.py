@@ -26,7 +26,8 @@ CLUSTER_UI_SETTINGS = {
         "sort",
         "filter_by_labels",
         "sort_by_labels",
-        "search"
+        "search",
+        "show_all_node_groups"
     ],
     "properties": {
         "view_mode": {
@@ -68,6 +69,7 @@ CLUSTER_UI_SETTINGS = {
             "type": "string",
             "description": "Search value applied to node list",
         },
+        "show_all_node_groups": {"type": "boolean"}
     }
 }
 

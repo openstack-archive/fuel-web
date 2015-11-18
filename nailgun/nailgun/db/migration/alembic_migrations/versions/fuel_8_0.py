@@ -491,3 +491,17 @@ def upgrade_add_baremetal_net():
 def downgrade_add_baremetal_net():
     op.drop_column('neutron_config', 'baremetal_gateway')
     op.drop_column('neutron_config', 'baremetal_range')
+
+def upgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'ui_settings',
+            fields.JSON(),
+            server_default=jsonutils.dumps({
+                "show_all_node_groups": False
+            }),
+            nullable=False
+        )
+    )
+    op.drop_column('clusters', 'grouping')

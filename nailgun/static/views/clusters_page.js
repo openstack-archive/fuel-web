@@ -23,7 +23,8 @@ define(
     'utils',
     'dispatcher',
     'component_mixins',
-    'views/wizard'
+    'views/wizard',
+    'views/wizard2'
 ],
 function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateClusterWizard) {
     'use strict';

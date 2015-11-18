@@ -122,6 +122,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Networks');
                     })
+                    .clickByCssSelector('.subtab-link-network_verification')
                     .clickByCssSelector('.verify-networks-btn')
                     .assertElementAppears('.network-alert.alert-danger', 200, 'Network verification warning appears if only one node added')
                     .then(function() {

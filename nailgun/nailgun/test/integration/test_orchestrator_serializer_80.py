@@ -17,6 +17,7 @@
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
+from nailgun.utils import reverse
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
@@ -94,6 +95,49 @@ class TestDeploymentAttributesSerialization80(BaseDeploymentSerializer):
                 },
                 node['quantum_settings']['L2']['phys_nets']['physnet1']
             )
+
+
+class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
+    env_version = '2015.1.0-8.0'
+
+    def create_node(self, roles=None, pending_roles=None):
+        if roles is None:
+            roles = ['controller']
+        if pending_roles is None:
+            pending_roles = []
+        self.env.create(
+            nodes_kwargs=[{
+                'roles': roles,
+                'pending_roles': pending_roles,
+                'pending_addition': True,
+                'api': True}])
+
+        return self.env.nodes[0]
+
+    def get(self, node_id):
+        resp = self.app.get(
+            reverse('NodeDisksHandler', kwargs={'node_id': node_id}),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        return resp.json_body
+
+    def test_disks_env(self):
+        node_db = self.create_node(['cinder-block-device'])
+        disks = self.get(node_db.id)
+        cinder_block_device_disks_count = 0
+        base_disks_count = 0
+        for disk in disks:
+            for volume in disk['volumes']:
+                if volume['name'] != 'cinder-block-device' \
+                   and volume['size'] != 0:
+                    base_disks_count += 1
+                if volume['name'] == 'cinder-block-device' \
+                   and volume['size'] == disk['size']:
+                    cinder_block_device_disks_count += 1
+        if cinder_block_device_disks_count > 0 \
+           and base_disks_count > 0:
+            pass
 
 
 class TestSerializeInterfaceDriversData80(

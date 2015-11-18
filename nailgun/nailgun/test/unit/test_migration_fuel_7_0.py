@@ -697,6 +697,7 @@ class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
         self.assertItemsEqual(ui_settings['filter_by_labels'], {})
         self.assertItemsEqual(ui_settings['sort_by_labels'], [])
         self.assertItemsEqual(ui_settings['search'], '')
+        self.assertItemsEqual(ui_settings['show_all_node_groups'], False)
 
 
 class TestClusterBondMetaMigration(base.BaseAlembicMigrationTest):

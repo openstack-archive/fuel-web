@@ -857,11 +857,11 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_controllers_node_group(cls, instance):
-        return cls.get_node_group(instance, ['controller'])
+        return cls.get_common_node_group(instance, ['controller'])
 
     @classmethod
-    def get_node_group(cls, instance, noderoles):
-        """Returns a node group for a given node roles.
+    def get_common_node_group(cls, instance, noderoles):
+        """Returns a common node group for a given node roles.
 
         If a given node roles have different node groups, the error
         will be raised, so it's mandatory to have them the same
@@ -871,17 +871,8 @@ class Cluster(NailgunObject):
         :param noderoles: a list of node roles
         :returns: a common NodeGroup instance
         """
-        psql_noderoles = sa.cast(
-            psql.array(noderoles),
-            psql.ARRAY(sa.String(consts.ROLE_NAME_MAX_SIZE)))
 
-        nodegroups = db().query(models.NodeGroup).join(models.Node).filter(
-            models.Node.cluster_id == instance.id,
-            models.Node.pending_deletion.is_(False)
-        ).filter(sa.or_(
-            models.Node.roles.overlap(psql_noderoles),
-            models.Node.pending_roles.overlap(psql_noderoles)
-        )).all()
+        nodegroups = cls.get_node_groups(instance, noderoles).all()
 
         # NOTE(ikalnitsky):
         #   The 'nodegroups' may be an empty list only in case when there's
@@ -898,6 +889,28 @@ class Cluster(NailgunObject):
                     ', '.join(noderoles)))
 
         return nodegroups[0]
+
+    @classmethod
+    def get_node_groups(cls, instance, noderoles):
+        """Returns node groups for given node roles.
+
+        :param instance: a Cluster instance
+        :param noderoles: a list of node roles
+        :returns: a query for list of NodeGroup instances
+        """
+        psql_noderoles = sa.cast(
+            psql.array(noderoles),
+            psql.ARRAY(sa.String(consts.ROLE_NAME_MAX_SIZE)))
+
+        nodegroups = db().query(models.NodeGroup).join(models.Node).filter(
+            models.Node.cluster_id == instance.id,
+            models.Node.pending_deletion.is_(False)
+        ).filter(sa.or_(
+            models.Node.roles.overlap(psql_noderoles),
+            models.Node.pending_roles.overlap(psql_noderoles)
+        ))
+
+        return nodegroups
 
     @classmethod
     def get_bond_interfaces_for_all_nodes(cls, instance, networks=None):

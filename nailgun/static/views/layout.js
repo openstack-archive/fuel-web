@@ -187,6 +187,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                 </div>
                             </div>
                         </nav>
+                      <div className="page-up"></div>
                 </div>
             );
         }

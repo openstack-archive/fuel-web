@@ -278,6 +278,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 this.setState({selectedNodeIds: {}});
             }
         },
+        updateUISettings: function(name, value) {
+            var uiSettings = this.props.cluster.get('ui_settings');
+            uiSettings[name] = value;
+            this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true, validate: false});
+        },
         render: function() {
             var cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
@@ -319,6 +324,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             setActiveSettingsGroupName={this.setActiveSettingsGroupName}
                             setActiveNetworkSectionName={this.setActiveNetworkSectionName}
                             selectNodes={this.selectNodes}
+                            updateUISettings={this.updateUISettings}
                             changeLogSelection={this.changeLogSelection}
                             {...this.state}
                             {...this.props.tabData}

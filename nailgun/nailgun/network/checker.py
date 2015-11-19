@@ -719,6 +719,36 @@ class NetworkCheck(object):
                         format(node_name, if_name, ", ".join(net_names))
                     raise errors.NetworkCheckError(err_msg)
 
+    def check_network_template(self):
+        """Check for network template node roles consistency
+
+        If network template is uploaded for cluster it should contain all
+        required templates for assigned network roles in each node group
+        """
+        template = self.cluster.network_config.configuration_template
+        # By default network template is None
+        if not template:
+            return
+        assigned_roles = objects.Cluster.get_assigned_roles(self.cluster)
+        default_ng_template = template['adv_net_template']['default']
+
+        for role in assigned_roles:
+            node_groups = objects.Cluster.get_node_groups(self.cluster, [role])
+            for node_group in node_groups:
+                # if node group name is not listed in network template,
+                # template for 'default' is in use.
+                if role not in template['adv_net_template']\
+                        .get(node_group.name, default_ng_template)\
+                        .get('templates_for_node_role', {}):
+
+                    self.err_msgs.append(
+                        "Node role '{0}' is assigned for some nodes in node "
+                        "group '{1}', but not found in network template for "
+                        "this node group".format(role, node_group.name))
+                    self.result.append({"ids": [],
+                                        "errors": []})
+        self.expose_error_messages()
+
     def check_configuration(self):
         """check network configuration parameters"""
         if self.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:

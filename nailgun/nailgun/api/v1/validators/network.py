@@ -670,7 +670,7 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
 class NetworkTemplateValidator(BasicValidator):
 
     @classmethod
-    def validate(cls, data, instance=None):
+    def validate(cls, data, cluster=None):
         parsed = super(NetworkTemplateValidator, cls).validate(data)
         cls.validate_schema(parsed, NETWORK_TEMPLATE)
 
@@ -694,5 +694,18 @@ class NetworkTemplateValidator(BasicValidator):
                 raise errors.InvalidData(
                     "No templates are defined for node group {0}".format(
                         ng_name))
+
+        existed_roles = objects.Cluster.get_assigned_roles(cluster)
+        for ng_name, node_group in six.iteritems(parsed['adv_net_template']):
+            template_roles = set(
+                six.iterkeys(node_group['templates_for_node_role']))
+            if existed_roles - template_roles:
+                raise errors.InvalidData(
+                    "Node roles {0} are defined in cluster but not found in "
+                    "templates for node group {1}"
+                    "".format(','.join(existed_roles - template_roles),
+                              ng_name),
+                    log_message=True
+                )
 
         return parsed

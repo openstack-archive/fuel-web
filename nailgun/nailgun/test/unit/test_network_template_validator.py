@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import functools
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.network import NetworkTemplateValidator
@@ -19,7 +20,6 @@ from nailgun.test.base import BaseValidatorTest
 
 
 class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
-    validator = NetworkTemplateValidator.validate
 
     def setUp(self):
         super(BaseValidatorTest, self).setUp()
@@ -28,7 +28,8 @@ class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
                 "node_group_1": {
                     "nic_mapping": {"default": {}},
                     "templates_for_node_role": {
-                        "controller": ["public", "common"]
+                        "controller": ["public", "common"],
+                        "compute": ["public", "common"]
                     },
                     "network_assignments": {
                         "public": {"ep": "br-mgmt"}
@@ -49,11 +50,31 @@ class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
             }
         }
 
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+            ])
+        self.cluster = self.env.clusters[0]
+        self.validator = functools.partial(
+            NetworkTemplateValidator.validate,
+            cluster=self.cluster)
+
 
 class TestNetworkTemplateValidator(BaseNetworkTemplateValidatorTest):
     def test_ok(self):
         dumped = jsonutils.dumps(self.nt)
         self.validator(dumped)
+
+    def test_templates_for_node_role(self):
+        invalid_template = self.nt.copy()
+        invalid_template['adv_net_template']['node_group_1'][
+            'templates_for_node_role'].pop('compute')
+        context = self.get_invalid_data_context(invalid_template)
+        self.assertEqual(
+            context.exception.message,
+            "Node roles compute are defined in cluster but not found in "
+            "templates for node group node_group_1")
 
     def test_no_key_adv_net_template(self):
         context = self.get_invalid_data_context({"adv_net_template": {}})

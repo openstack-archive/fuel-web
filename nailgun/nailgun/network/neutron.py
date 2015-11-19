@@ -132,9 +132,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
 
     @classmethod
     def get_node_networks_with_ips(cls, node):
-        """Returns IP and network data (meta, gateway) for each node network.
-
-        """
+        """Returns IP, CIDR, meta, gateway for each network on given node."""
         if not node.group_id:
             return {}
 
@@ -149,6 +147,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
         for ng, ip in ngs:
             networks[ng.name] = {
                 'ip': cls.get_ip_w_cidr_prefix_len(ip, ng),
+                'cidr': ng.cidr,
                 'meta': ng.meta,
                 'gateway': ng.gateway
             }
@@ -157,6 +156,7 @@ class NeutronManager70(AllocateVIPs70Mixin, NeutronManager):
             networks[admin_ng.name] = {
                 'ip': cls.get_ip_w_cidr_prefix_len(
                     cls.get_admin_ip_for_node(node.id), admin_ng),
+                'cidr': admin_ng.cidr,
                 'meta': admin_ng.meta,
                 'gateway': admin_ng.gateway
             }

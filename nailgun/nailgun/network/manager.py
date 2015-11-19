@@ -1471,9 +1471,9 @@ class NetworkManager(object):
     def get_networks_not_on_node(cls, node, networks=None):
         networks = networks or cls.get_node_networks(node)
         node_net = [(n['name'], n['cidr'])
-                for n in networks if n.get('cidr')]
+                    for n in networks if n.get('cidr')]
         all_nets = [(n.name, n.cidr)
-                for n in node.cluster.network_groups if n.cidr]
+                    for n in node.cluster.network_groups if n.cidr]
 
         admin_net = cls.get_admin_network_group()
         all_nets.append((admin_net.name, admin_net.cidr))

@@ -741,8 +741,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 .done(_.bind(function() {
                     var currentNodeNetworkGroup = this.nodeNetworkGroups.findWhere({name: this.props.activeNetworkSectionName});
                     this.props.nodeNetworkGroups.remove(currentNodeNetworkGroup);
-                    currentNodeNetworkGroup.destroy()
-                        .done(this.updateInitialConfiguration())
+                    currentNodeNetworkGroup.destroy().done(this.updateInitialConfiguration);
                 }, this));
         },
         addNodeGroup: function(hasChanges) {

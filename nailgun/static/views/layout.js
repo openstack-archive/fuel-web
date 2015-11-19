@@ -92,6 +92,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         getInitialState: function() {
             return {};
         },
+        scrollToTop: function() {
+            $('html, body').animate({scrollTop: 0}, 'fast');
+        },
         render: function() {
             var unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
             var authenticationEnabled = this.props.version.get('auth_required') && this.props.user.get('authenticated');
@@ -188,6 +191,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                 </div>
                             </div>
                         </nav>
+                    <div className='page-up' onClick={this.scrollToTop} />
                 </div>
             );
         }

@@ -252,6 +252,11 @@ class CopyCephKeys(CopyKeys):
     identity = 'copy_keys_ceph'
 
 
+class CopyFernetKeys(CopyKeys):
+
+    identity = 'copy_fernet_keys'
+
+
 class GenerateHaproxyKeys(GenericRolesHook):
 
     identity = 'generate_haproxy_keys'
@@ -376,8 +381,8 @@ class TaskSerializers(object):
     stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, RestartRadosGW,
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys,
-                         GenerateCephKeys, CopyCephKeys, IronicUploadImages,
-                         IronicCopyBootstrapKey]
+                         GenerateCephKeys, CopyCephKeys, CopyFernetKeys,
+                         IronicUploadImages, IronicCopyBootstrapKey]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

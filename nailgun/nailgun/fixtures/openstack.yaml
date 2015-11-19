@@ -933,6 +933,15 @@
             type: "checkbox"
             restrictions:
               - "networking_parameters:segmentation_type != 'vlan' and settings:neutron_advanced_configuration.neutron_l2_pop.value == false": "DVR requires L2 population to be enabled."
+          neutron_l3_ha:
+            value: false
+            label: "Neutron L3 HA"
+            description: "Enable High Availability Features for Virtual Routers in Neutron"
+            weight: 30
+            type: "checkbox"
+            restrictions:
+              - condition: "settings:neutron_advanced_configuration.neutron_dvr.value == true"
+                message: "Neutron DVR must be disabled in order to use Neutron L3 HA"
         corosync:
           metadata:
             label: "Corosync"

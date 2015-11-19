@@ -60,6 +60,8 @@ class InstallationInfo(object):
                        'value'), 'neutron_l2_pop', None),
         WhiteListRule(('neutron_advanced_configuration', 'neutron_dvr',
                        'value'), 'neutron_dvr', None),
+        WhiteListRule(('neutron_advanced_configuration', 'neutron_l3_ha',
+                       'value'), 'neutron_l3_ha', None),
         WhiteListRule(('syslog', 'syslog_transport', 'value'),
                       'syslog_transport', None),
         WhiteListRule(('provision', 'method', 'value'),

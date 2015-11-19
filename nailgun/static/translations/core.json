@@ -630,7 +630,9 @@
                     "horizon": "Horizon",
                     "horizon_description": "The OpenStack dashboard Horizon is now available.",
                     "go_to_horizon": "Go to Horizon",
-                    "no_storage_enabled": "No storage option enabled"
+                    "no_storage_enabled": "No storage option enabled",
+                    "plugin_link": "Plugin dashboard",
+                    "plugin_links_block_title": "Plugin Dashboards"
                 },
                 "network_tab": {
                     "title": "Network Settings",

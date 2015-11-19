@@ -21,9 +21,10 @@ define(
     'react',
     'models',
     'component_mixins',
-    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
+    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen',
+    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen_objects'
 ],
-function($, _, i18n, React, models, componentMixins, NodeListScreen) {
+function($, _, i18n, React, models, componentMixins, NodeListScreen, objects) {
     'use strict';
 
     var EquipmentPage, PluginLinks;
@@ -82,8 +83,32 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
             }
         },
         getInitialState() {
+            var uiSettings = this.props.fuelSettings.get('ui_settings');
+
+            var defaultFilters = {status: []},
+                activeFilters = _.union(
+                    objects.Filter.fromObject(_.extend({}, defaultFilters, uiSettings.filter), false),
+                    objects.Filter.fromObject(uiSettings.filter_by_labels, true)
+                );
+            _.invoke(activeFilters, 'updateLimits', this.props.nodes, false);
+
+            var activeSorters = _.union(
+                    _.map(uiSettings.sort, _.partial(objects.Sorter.fromObject, _, false)),
+                    _.map(uiSettings.sort_by_labels, _.partial(objects.Sorter.fromObject, _, true))
+                );
+
+            var search = uiSettings.search,
+                viewMode = uiSettings.view_mode;
+
+            var selectedNodeIds = [];
+
             return {
-                selectedNodeIds: []
+                defaultFilters,
+                activeFilters,
+                activeSorters,
+                search,
+                viewMode,
+                selectedNodeIds
             };
         },
         selectNodes(ids = [], checked = false) {
@@ -100,13 +125,46 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
             }
             this.setState({selectedNodeIds: nodeSelection});
         },
-        render() {
+        updateUISettings(name, value) {
+            var uiSettings = this.props.fuelSettings.get('ui_settings');
+            uiSettings[name] = value;
+            this.props.fuelSettings.save(null, {patch: true, wait: true, validate: false});
+        },
+        updateSearch(value) {
+            this.setState({search: value});
+            this.updateUISettings('search', _.trim(value));
+        },
+        changeViewMode(value) {
+            this.setState({viewMode: value});
+            this.updateUISettings('view_mode', value);
+        },
+        updateSorting(sorters, updateLabelsOnly) {
+            this.setState({activeSorters: sorters});
+            var groupedSorters = _.groupBy(sorters, 'isLabel');
+            if (!updateLabelsOnly) {
+                this.updateUISettings('sort', _.map(groupedSorters.false, objects.Sorter.toObject));
+            }
+            this.updateUISettings('sort_by_labels', _.map(groupedSorters.true, objects.Sorter.toObject));
+        },
+        updateFilters(filters, updateLabelsOnly) {
+            this.setState({activeFilters: filters});
+            var groupedFilters = _.groupBy(filters, 'isLabel');
+            if (!updateLabelsOnly) {
+                this.updateUISettings('filter', objects.Filter.toObject(groupedFilters.false));
+            }
+            this.updateUISettings('filter_by_labels', objects.Filter.toObject(groupedFilters.true));
+        },
+        getRoles() {
             var roles = new models.Roles();
             this.props.clusters.each((cluster) => {
                 roles.add(
-                    cluster.get('roles').filter((role) => !roles.findWhere({name: role.get('name')}))
+                    cluster.get('roles').filter((role) => !roles.any({name: role.get('name')}))
                 );
             });
+            return roles;
+        },
+        render() {
+            var {nodes} = this.props;
             return (
                 <div className='equipment-page'>
                     <div className='page-title'>
@@ -114,16 +172,28 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                     </div>
                     <div className='content-box'>
                         <PluginLinks links={this.props.links} />
-                        <NodeListScreen {...this.props}
+                        <NodeListScreen
                             ref='screen'
-                            selectedNodeIds={this.state.selectedNodeIds}
-                            selectNodes={this.selectNodes}
-                            roles={roles}
-                            sorters={models.Nodes.prototype.sorters}
+                            {...this.props}
+                            {...this.state}
+                            {... _.pick(this,
+                                'selectNodes',
+                                'updateSearch',
+                                'changeViewMode',
+                                'updateSorting',
+                                'updateFilters'
+                            )}
+                            roles={this.getRoles()}
+                            availableSorters={
+                                models.Nodes.prototype.sorters.map((name) => new objects.Sorter(name, 'asc', false))
+                            }
                             defaultSorting={[{status: 'asc'}]}
-                            filters={models.Nodes.prototype.filters}
+                            availableFilters={models.Nodes.prototype.filters.map((name) => {
+                                var filter = new objects.Filter(name, [], false);
+                                filter.updateLimits(nodes, true);
+                                return filter;
+                            })}
                             statusesToFilter={models.Node.prototype.statuses}
-                            defaultFilters={{status: []}}
                         />
                     </div>
                 </div>

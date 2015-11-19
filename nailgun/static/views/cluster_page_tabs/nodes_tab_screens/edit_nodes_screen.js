@@ -20,20 +20,19 @@ define(
     'react',
     'models',
     'utils',
-    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
+    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen',
+    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen_objects'
 ],
-function($, _, React, models, utils, NodeListScreen) {
+function($, _, React, models, utils, NodeListScreen, objects) {
     'use strict';
 
     var EditNodesScreen = React.createClass({
         statics: {
-            fetchData: function(options) {
+            fetchData(options) {
                 var cluster = options.cluster,
                     nodes = utils.getNodeListFromTabOptions(options);
 
-                if (!nodes) {
-                    return $.Deferred().reject();
-                }
+                if (!nodes) return $.Deferred().reject();
 
                 nodes.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: cluster.id}}, options));
@@ -41,18 +40,48 @@ function($, _, React, models, utils, NodeListScreen) {
                 nodes.parse = function() {
                     return this.getByIds(nodes.pluck('id'));
                 };
-                return $.when(options.cluster.get('roles').fetch(), cluster.get('settings').fetch({cache: true})).then(function() {
-                    return {nodes: nodes};
-                });
+                return $.when(
+                    options.cluster.get('roles').fetch(),
+                    cluster.get('settings').fetch({cache: true})
+                ).then(() => ({nodes: nodes}));
             }
         },
-        render: function() {
+        getInitialState() {
+            var defaultSorting = [{roles: 'asc'}];
+
+            var roles = this.props.cluster.get('roles').pluck('name'),
+                selectedRoles = _.filter(roles, (role) => !this.props.nodes.any((node) => !node.hasRole(role))),
+                indeterminateRoles = _.filter(roles, (role) => !_.contains(selectedRoles, role) && this.props.nodes.any((node) => node.hasRole(role)));
+
+            return {
+                viewMode: this.props.cluster.get('ui_settings').view_mode,
+                defaultSorting: defaultSorting,
+                activeSorters: _.map(defaultSorting, _.partial(objects.Sorter.fromObject, _, false)),
+                configModels: {
+                    cluster: this.props.cluster,
+                    settings: this.props.cluster.get('settings'),
+                    version: app.version,
+                    default: this.props.cluster.get('settings')
+                },
+                selectedRoles: selectedRoles,
+                indeterminateRoles: indeterminateRoles
+            };
+        },
+        changeViewMode(value) {
+            this.setState({viewMode: value});
+            this.props.updateUISettings('view_mode', value);
+        },
+        render() {
             return (
                 <NodeListScreen
                     {... _.omit(this.props, 'screenOptions')}
+                    {... this.state}
                     ref='screen'
                     mode='edit'
                     roles={this.props.cluster.get('roles')}
+                    showRolePanel
+                    defaultSorting={[{roles: 'asc'}]}
+                    changeViewMode={this.changeViewMode}
                 />
             );
         }

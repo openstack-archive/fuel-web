@@ -207,14 +207,16 @@ class TestNetworkCheck(BaseIntegrationTest):
              'name': 'public',
              'gateway': '192.168.0.1',
              'ip_ranges': [['192.168.0.10', '192.168.0.40']],
-             'meta': {'notation': 'cidr'}
+             'meta': {'notation': 'cidr'},
+             'group_id': 1,
              },
             {'id': 2,
              'cidr': '192.168.0.128/25',
              'name': 'public',
              'gateway': '192.168.0.129',
              'ip_ranges': [['192.168.0.130', '192.168.0.150']],
-             'meta': {'notation': 'cidr'}
+             'meta': {'notation': 'cidr'},
+             'group_id': 2,
              }
         ]
 

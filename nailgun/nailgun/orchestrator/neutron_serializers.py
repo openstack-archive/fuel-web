@@ -1380,6 +1380,25 @@ class NeutronNetworkDeploymentSerializer80(
                 consts.DEFAULT_BRIDGES_NAMES.br_baremetal))
         return transformations
 
+    @classmethod
+    def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups,
+                        networks):
+        other_nets = nm.get_networks_not_on_node(node, networks)
+        cidrs_in_use = set(ng['cidr'] for ng in netgroups if 'cidr' in ng)
+
+        for ngname, brname in netgroup_mapping:
+            netgroup = netgroups[ngname]
+            if netgroup.get('gateway') and netgroup.get('cidr'):
+                via = netgroup['gateway']
+                attrs['endpoints'][brname]['routes'] = []
+                for cidr in other_nets.get(ngname, []):
+                    if cidr not in cidrs_in_use:
+                        attrs['endpoints'][brname]['routes'].append({
+                            'net': cidr,
+                            'via': via
+                        })
+                        cidrs_in_use.add(cidr)
+
 
 class NeutronNetworkTemplateSerializer80(
     GenerateL23Mixin80,

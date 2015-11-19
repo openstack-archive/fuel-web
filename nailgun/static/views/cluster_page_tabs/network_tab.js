@@ -684,23 +684,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 this.hasChanges();
         },
         renderButtons: function() {
-            var error = this.props.cluster.get('networkConfiguration').validationError,
-                isLocked = this.isLocked(),
-                isVerificationDisabled = error || this.state.actionInProgress ||
-                    !!this.props.cluster.task({group: ['deployment', 'network'], active: true}) ||
-                    this.nodeNetworkGroups.length > 1,
-                isCancelChangesDisabled = isLocked || !this.hasChanges();
+            var isCancelChangesDisabled = this.isLocked() || !this.hasChanges();
             return (
                 <div className='well clearfix'>
                     <div className='btn-group pull-right'>
-                        <button
-                            key='verify_networks'
-                            className='btn btn-default verify-networks-btn'
-                            onClick={this.verifyNetworks}
-                            disabled={isVerificationDisabled}
-                        >
-                            {i18n('cluster_page.network_tab.verify_networks_button')}
-                        </button>
                         <button
                             key='revert_changes'
                             className='btn btn-default btn-revert-changes'
@@ -797,7 +784,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 networks = networkConfiguration.get('networks'),
                 isMultiRack = nodeNetworkGroups.length > 1,
                 networkTask = cluster.task({group: 'network'}),
-                isNodeNetworkGroupSectionSelected = !_.contains(defaultNetworkSubtabs, activeNetworkSectionName);
+                isNodeNetworkGroupSectionSelected = !_.contains(defaultNetworkSubtabs, activeNetworkSectionName),
+                isVerificationDisabled = networkConfiguration.validationError ||
+                    this.state.actionInProgress ||
+                    !!cluster.task({group: ['deployment', 'network'], active: true}) ||
+                    isMultiRack;
 
             if (!activeNetworkSectionName ||
                     (activeNetworkSectionName && !nodeNetworkGroups.findWhere({name: activeNetworkSectionName}) &&
@@ -903,15 +894,15 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                     )
                                 }
                                 {activeNetworkSectionName == 'network_verification' &&
-                                    <div className='verification-control'>
-                                        <NetworkVerificationResult
-                                            key='network_verification'
-                                            task={networkTask}
-                                            networks={networkConfiguration.get('networks')}
-                                            hideVerificationResult={this.state.hideVerificationResult}
-                                            isMultirack={isMultiRack}
-                                        />
-                                    </div>
+                                    <NetworkVerificationResult
+                                        key='network_verification'
+                                        task={networkTask}
+                                        networks={networkConfiguration.get('networks')}
+                                        hideVerificationResult={this.state.hideVerificationResult}
+                                        isMultirack={isMultiRack}
+                                        isVerificationDisabled={isVerificationDisabled}
+                                        verifyNetworks={this.verifyNetworks}
+                                    />
                                 }
                                 {activeNetworkSectionName == 'nova_configuration' &&
                                     <NovaParameters
@@ -1400,74 +1391,84 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
             if (this.props.hideVerificationResult) task = null;
             return (
-                <div className='forms-box'>
-                    <h3>{i18n(networkTabNS + 'tabs.network_verification')}</h3>
-                    {this.props.isMultirack &&
-                        <div className='alert alert-warning'>
-                            <p>{i18n(networkTabNS + 'verification_multirack_warning')}</p>
-                        </div>
-                    }
-                    <div className='page-control-box'>
-                        <div className='verification-box row'>
-                            <div className='verification-network-placeholder col-xs-8 col-xs-offset-2'>
-                                <div className='router-box'>
-                                    <div className='verification-router'></div>
-                                </div>
-                                <div className='animation-box'>
-                                    {_.times(3, function(index) {
-                                        ++index;
-                                        return <div key={index} className={this.getConnectionStatus(task, index == 1) + ' connect-' + index}></div>;
-                                    }, this)}
-                                </div>
-                                <div className='nodes-box'>
-                                    {_.times(3, function(index) {
-                                        ++index;
-                                        return <div key={index} className={'verification-node-' + index}></div>;
-                                    })}
+                <div className='verification-control'>
+                    <div className='forms-box'>
+                        <h3>{i18n(networkTabNS + 'tabs.network_verification')}</h3>
+                        {this.props.isMultirack &&
+                            <div className='alert alert-warning'>
+                                <p>{i18n(networkTabNS + 'verification_multirack_warning')}</p>
+                            </div>
+                        }
+                        <div className='page-control-box'>
+                            <div className='verification-box row'>
+                                <div className='verification-network-placeholder col-xs-8 col-xs-offset-2'>
+                                    <div className='router-box'>
+                                        <div className='verification-router'></div>
+                                    </div>
+                                    <div className='animation-box'>
+                                        {_.times(3, function(index) {
+                                            ++index;
+                                            return <div key={index} className={this.getConnectionStatus(task, index == 1) + ' connect-' + index}></div>;
+                                        }, this)}
+                                    </div>
+                                    <div className='nodes-box'>
+                                        {_.times(3, function(index) {
+                                            ++index;
+                                            return <div key={index} className={'verification-node-' + index}></div>;
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div className='row'>
                             <div className='verification-text-placeholder col-xs-12'>
-                                <ol>
+                                <ol className='verification-description'>
                                     {_.times(5, function(index) {
                                         return <li key={index}>{i18n(ns + 'step_' + index)}</li>;
                                     }, this)}
                                 </ol>
                             </div>
-                            {(task && task.match({name: 'verify_networks', status: 'ready'})) &&
-                                <div className='col-xs-12'>
-                                    <div className='alert alert-success enable-selection'>
-                                        {i18n(ns + 'success_alert')}
-                                    </div>
-                                    {task.get('message') &&
-                                        <div className='alert alert-warning enable-selection'>
-                                            {task.get('message')}
-                                        </div>
-                                    }
-                                </div>
-                            }
-                            {(task && task.match({name: 'verify_networks'}) && !!task.get('result').length) &&
-                                <div className='verification-result-table col-xs-12'>
-                                    <controls.Table
-                                        tableClassName='table table-condensed enable-selection'
-                                        noStripes
-                                        head={_.map(['node_name', 'node_mac_address', 'node_interface', 'expected_vlan'], function(attr) {
-                                            return {label: i18n(ns + attr)};
-                                        })}
-                                        body={
-                                            _.map(task.get('result'), function(node) {
-                                                var absentVlans = _.map(node.absent_vlans, function(vlan) {
-                                                    return vlan || i18n('cluster_page.network_tab.untagged');
-                                                });
-                                                return [node.name || 'N/A', node.mac || 'N/A', node.interface, absentVlans.join(', ')];
-                                            })
-                                        }
-                                    />
+                        </div>
+                        <button
+                            key='verify_networks'
+                            className='btn btn-default verify-networks-btn'
+                            onClick={this.props.verifyNetworks}
+                            disabled={this.props.isVerificationDisabled}
+                        >
+                            {i18n('cluster_page.network_tab.verify_networks_button')}
+                        </button>
+                    </div>
+                    {(task && task.match({name: 'verify_networks', status: 'ready'})) &&
+                        <div className='col-xs-12'>
+                            <div className='alert alert-success enable-selection'>
+                                {i18n(ns + 'success_alert')}
+                            </div>
+                            {task.get('message') &&
+                                <div className='alert alert-warning enable-selection'>
+                                    {task.get('message')}
                                 </div>
                             }
                         </div>
-                    </div>
+                    }
+                    {(task && task.match({name: 'verify_networks'}) && !!task.get('result').length) &&
+                        <div className='verification-result-table col-xs-12'>
+                            <controls.Table
+                                tableClassName='table table-condensed enable-selection'
+                                noStripes
+                                head={_.map(['node_name', 'node_mac_address', 'node_interface', 'expected_vlan'], function(attr) {
+                                    return {label: i18n(ns + attr)};
+                                })}
+                                body={
+                                    _.map(task.get('result'), function(node) {
+                                        var absentVlans = _.map(node.absent_vlans, function(vlan) {
+                                            return vlan || i18n('cluster_page.network_tab.untagged');
+                                        });
+                                        return [node.name || 'N/A', node.mac || 'N/A', node.interface, absentVlans.join(', ')];
+                                    })
+                                }
+                            />
+                        </div>
+                    }
                 </div>
             );
         }

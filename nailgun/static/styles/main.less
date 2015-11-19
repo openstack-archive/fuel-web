@@ -3949,7 +3949,7 @@ input[type=range] {
 
     .verification-box {
       display: block;
-      margin: @base-indent 0;
+      margin: @base-indent 0 40px 0;
       position: relative;
       .alert {
         clear: left;
@@ -3961,8 +3961,11 @@ input[type=range] {
     }
     .verification-network-placeholder {min-width: 605px;}
     .verification-text-placeholder {
+      margin-bottom: 30px;
       padding-left: 0;
-      margin-top: 40px;
+      .verification-description {
+        padding-left: 15px;
+      }
       li:first-of-type {
         .font-bold;
       }

@@ -357,21 +357,31 @@ class NetworkCheck(object):
 
         (Neutron)
         """
-        # check intersection of address ranges
-        # between all networks
-        for ngs in combinations(self.networks, 2):
-            if ngs[0].get('cidr') and ngs[1].get('cidr'):
-                cidr1 = netaddr.IPNetwork(ngs[0]['cidr'])
-                cidr2 = netaddr.IPNetwork(ngs[1]['cidr'])
+        # check intersection of address ranges between all networks
+        for ng1, ng2 in combinations(self.networks, 2):
+            if ng1.get('cidr') and ng2.get('cidr'):
+                # networks with the same name in different node groups maybe
+                # considered as one shared network if they have equal CIDRs
+                # and gateways
+                if (ng1['group_id'] != ng2['group_id'] and
+                        ng1['group_id'] is not None and
+                        ng2['group_id'] is not None and
+                        ng1['name'] == ng2['name'] and
+                        ng1['gateway'] is not None and
+                        ng1['gateway'] == ng2['gateway'] and
+                        ng1['cidr'] == ng2['cidr']):
+                    continue
+                cidr1 = netaddr.IPNetwork(ng1['cidr'])
+                cidr2 = netaddr.IPNetwork(ng2['cidr'])
                 if self.net_man.is_cidr_intersection(cidr1, cidr2):
                     self.err_msgs.append(
                         u"Address space intersection "
                         u"between networks:\n{0}".format(
-                            ", ".join([ngs[0]['name'], ngs[1]['name']])
+                            ", ".join([ng1['name'], ng2['name']])
                         )
                     )
                     self.result.append({
-                        "ids": [int(ngs[0]["id"]), int(ngs[1]["id"])],
+                        "ids": [int(ng1["id"]), int(ng2["id"])],
                         "errors": ["cidr"]
                     })
         self.expose_error_messages()

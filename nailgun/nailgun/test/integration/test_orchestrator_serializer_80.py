@@ -15,10 +15,13 @@
 #    under the License.
 
 from copy import deepcopy
+import mock
+import six
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
+from nailgun import rpc
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
@@ -177,6 +180,82 @@ class TestDeploymentAttributesSerialization80(
             self.assertEqual(baremetal_ports[0]['bridge'],
                              consts.DEFAULT_BRIDGES_NAMES.br_baremetal)
             self.assertIn(expected_patch, transformations)
+
+
+class TestMultiNodeGroupsSerialization80(BaseDeploymentSerializer):
+    env_version = '2015.1.0-8.0'
+
+    def setUp(self):
+        super(TestMultiNodeGroupsSerialization80, self).setUp()
+        cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan}
+        )
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=3,
+            if_count=2,
+            roles=['controller', 'cinder'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+        self.cluster_db = self.db.query(models.Cluster).get(cluster['id'])
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+
+    def _add_node_group_with_node(self, cidr_start, node_address):
+        node_group = self.env.create_node_group(
+            api=False, cluster_id=self.cluster_db.id,
+            name='ng_' + cidr_start + '_' + str(node_address))
+
+        with mock.patch.object(rpc, 'cast'):
+            resp = self.env.setup_networks_for_nodegroup(
+                cluster_id=self.cluster_db.id, node_group=node_group,
+                cidr_start=cidr_start)
+        self.assertEqual(resp.status_code, 200)
+
+        self.db.query(models.Task).filter_by(
+            name=consts.TASK_NAMES.update_dnsmasq
+        ).delete(synchronize_session=False)
+
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=1,
+            if_count=2,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=self.cluster_db.id,
+            group_id=node_group.id,
+            ip='{0}.9.{1}'.format(cidr_start, node_address))
+
+    def _check_routes_count(self, count):
+        self.prepare_for_deployment(self.cluster_db.nodes)
+        facts = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        for node in facts:
+            endpoints = node['network_scheme']['endpoints']
+            for name, descr in six.iteritems(endpoints):
+                if descr['IP'] == 'none':
+                    self.assertNotIn('routes', descr)
+                else:
+                    self.assertEqual(len(descr['routes']), count)
+
+    def test_routes_with_no_shared_networks_2_nodegroups(self):
+        self._add_node_group_with_node('199.99', 3)
+        # all networks have different CIDRs
+        self._check_routes_count(1)
+
+    def test_routes_with_no_shared_networks_3_nodegroups(self):
+        self._add_node_group_with_node('199.99', 3)
+        self._add_node_group_with_node('199.77', 3)
+        # all networks have different CIDRs
+        self._check_routes_count(2)
+
+    def test_routes_with_shared_networks_3_nodegroups(self):
+        self._add_node_group_with_node('199.99', 3)
+        self._add_node_group_with_node('199.99', 4)
+        # networks in two racks have equal CIDRs
+        self._check_routes_count(1)
 
 
 class TestSerializeInterfaceDriversData80(

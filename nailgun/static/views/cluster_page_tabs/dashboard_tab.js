@@ -44,6 +44,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 modelOrCollection: function(props) {return props.cluster.get('nodes');},
                 renderOn: 'update change'
             }),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {return props.cluster.get('pluginLinks');},
+                renderOn: 'update change'
+            }),
             componentMixins.backboneMixin('cluster', 'change'),
             componentMixins.pollingMixin(20, true)
         ],
@@ -140,6 +144,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         isNew={isNew}
                     />
                     <DocumentationLinks />
+                    <PluginLinks cluster={cluster} />
                 </div>
             );
         }
@@ -1016,6 +1021,40 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     {i18n(namespace + this.props.description) + ' '}
                     <a href={link} target='_blank'>{i18n(namespace + this.props.linkTitle)}</a>
                     {this.props.explanation && ' ' + i18n(namespace + this.props.explanation)}
+                </div>
+            );
+        }
+    });
+
+    var PluginLinks = React.createClass({
+        render: function() {
+            if (
+                this.props.cluster.get('status') != 'operational' ||
+                !this.props.cluster.get('pluginLinks').length
+            ) return null;
+            //TODO(jkirnosova): process plugin dashboard url properly
+            return (
+                <div className='row content-elements'>
+                    <div className='col-xs-12 title'>Title?</div>
+                    <div className='col-xs-12 plugin-links row'>
+                        {this.props.cluster.get('pluginLinks').map(function(linkData) {
+                            return (
+                                <div className='plugin-link col-xs-6'>
+                                    <span>
+                                        <div className='plugin-title'>
+                                            {linkData.get('title')}
+                                        </div>
+                                        <div className='plugin-description'>
+                                            {linkData.get('description')}
+                                        </div>
+                                        <a href={linkData.get('url')} target='_blank'>
+                                            {i18n(namespace + 'plugin_link')}
+                                        </a>
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             );
         }

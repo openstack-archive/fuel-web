@@ -107,6 +107,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     roles.url = _.result(cluster, 'url') + '/roles';
                     cluster.set({roles: roles});
 
+                    var pluginLinks = new models.PluginLinks();
+                    //TODO(jkirnosova): url should be changed to /plugin_links
+                    pluginLinks.url = _.result(cluster, 'url') + '/dashboard_entries';
+                    cluster.set({pluginLinks: pluginLinks});
+
                     cluster.get('nodes').fetch = function(options) {
                         return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
                     };
@@ -114,6 +119,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             cluster.fetch(),
                             cluster.get('settings').fetch(),
                             cluster.get('roles').fetch(),
+                            cluster.get('pluginLinks').fetch({cache: true}),
                             cluster.fetchRelated('nodes'),
                             cluster.fetchRelated('tasks'),
                             nodeNetworkGroups.fetch({cache: true})
@@ -201,7 +207,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }
         },
         refreshCluster: function() {
-            return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks'));
+            return $.when(
+                this.props.cluster.fetch(),
+                this.props.cluster.fetchRelated('nodes'),
+                this.props.cluster.fetchRelated('tasks'),
+                this.props.cluster.get('pluginLinks').fetch()
+            );
         },
         componentWillMount: function() {
             this.props.cluster.on('change:release_id', function() {

@@ -828,17 +828,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 }
                             </div>
                             <div className='col-xs-5 node-netwrok-groups-controls'>
-                                {isNodeNetworkGroupSectionSelected && isMultiRack &&
-                                    <controls.Input
-                                        key='show_all'
-                                        type='checkbox'
-                                        name='show_all'
-                                        label={i18n(networkTabNS + 'show_all_networks')}
-                                        wrapperClassName='show-all-networks pull-left'
-                                        onChange={this.props.setActiveNetworkSectionName}
-                                        checked={this.props.showAllNetworks}
-                                    />
-                                }
                                 {!isNovaEnvironment &&
                                     <button
                                         key='add_node_group'
@@ -871,35 +860,19 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                                 nodeNetworkGroups={nodeNetworkGroups}
                                 activeGroupName={activeNetworkSectionName}
-                                showAllNetworks={this.props.showAllNetworks}
                                 isMultiRack={isMultiRack}
                                 hasChanges={hasChanges}
                             />
                             <div className='col-xs-10'>
                                 {isNodeNetworkGroupSectionSelected &&
-                                    (this.props.showAllNetworks ?
-                                        nodeNetworkGroups.map(function(networkGroup) {
-                                            return (
-                                                <NodeNetworkGroup
-                                                    {...nodeNetworkGroupProps}
-                                                    nodeNetworkGroups={nodeNetworkGroups}
-                                                    nodeNetworkGroup={networkGroup}
-                                                    networks={networks.where({group_id: networkGroup.id})}
-                                                    removeNodeNetworkGroup={this.removeNodeNetworkGroup}
-                                                    setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
-                                                />
-                                            );
-                                        }, this)
-                                    :
-                                        <NodeNetworkGroup
-                                            {...nodeNetworkGroupProps}
-                                            nodeNetworkGroups={nodeNetworkGroups}
-                                            nodeNetworkGroup={currentNodeNetworkGroup}
-                                            networks={networks.where({group_id: currentNodeNetworkGroup.id})}
-                                            removeNodeNetworkGroup={this.removeNodeNetworkGroup}
-                                            setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
-                                        />
-                                    )
+                                    <NodeNetworkGroup
+                                        {...nodeNetworkGroupProps}
+                                        nodeNetworkGroups={nodeNetworkGroups}
+                                        nodeNetworkGroup={currentNodeNetworkGroup}
+                                        networks={networks.where({group_id: currentNodeNetworkGroup.id})}
+                                        removeNodeNetworkGroup={this.removeNodeNetworkGroup}
+                                        setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
+                                    />
                                 }
                                 {activeNetworkSectionName == 'network_verification' &&
                                     <div className='verification-control'>
@@ -1006,9 +979,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
             return (sections.map(function(groupName) {
                 var tabLabel = groupName,
-                    showAll = this.props.showAllNetworks,
-                    isActive = groupName == this.props.activeGroupName ||
-                        showAll && isNetworkGroupPill,
+                    isActive = groupName == this.props.activeGroupName,
                     isInvalid;
 
                 // is one of predefined sections selected (networking_parameters)
@@ -1021,7 +992,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 }
 
                 // is node network group section selected
-                if (this.props.isMultiRack && !showAll) {
+                if (this.props.isMultiRack) {
                     isInvalid = networksErrors && !!networksErrors[activeNodeNetworkGroup.id]
                 } else if (isNovaEnvironment) {
                     isInvalid = networksErrors;
@@ -1061,13 +1032,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         render: function() {
             var {nodeNetworkGroups} = this.props,
                 settingsSections = [],
-                nodeGroupSections = [];
-
-                if (this.props.isMultiRack && !this.props.showAllNetworks) {
-                    nodeGroupSections = nodeGroupSections.concat(nodeNetworkGroups.pluck('name'));
-                } else {
-                    nodeGroupSections.push(nodeNetworkGroups.pluck('name')[0]);
-                }
+                nodeGroupSections = nodeNetworkGroups.pluck('name');
 
                 if (this.props.cluster.get('net_provider') == 'nova_network') {
                     settingsSections.push('nova_configuration');

@@ -195,10 +195,12 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
                * 403 (change of configuration is forbidden)
                * 404 (cluster not found in db)
         """
-        template = self.checked_data()
-
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_if_template_modification_locked(cluster)
+
+        template = self.checked_data(
+            validate_method=self.validator.validate_network_template_data,
+            cluster=cluster)
         objects.Cluster.set_network_template(cluster, template)
         raise self.http(200, template)
 

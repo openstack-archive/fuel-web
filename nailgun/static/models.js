@@ -1266,5 +1266,16 @@ define([
         comparator: 'id'
     });
 
+    models.PluginLink = BaseModel.extend({
+        constructorName: 'PluginLink'
+    });
+
+    models.PluginLinks = BaseCollection.extend(cacheMixin).extend({
+        constructorName: 'PluginLinks',
+        cacheFor: 60 * 1000,
+        model: models.PluginLink,
+        comparator: 'id'
+    });
+
     return models;
 });

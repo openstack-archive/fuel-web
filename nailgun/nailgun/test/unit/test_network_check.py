@@ -109,7 +109,7 @@ class TestNetworkCheck(BaseIntegrationTest):
                              checker.check_untagged_intersection)
 
     @patch.object(helpers, 'db')
-    def test_check_network_address_spaces_intersection(self, mocked_db):
+    def test_check_network_address_spaces_intersection(self, _):
         cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
@@ -162,7 +162,7 @@ class TestNetworkCheck(BaseIntegrationTest):
                           checker.check_network_address_spaces_intersection)
 
     @patch.object(helpers, 'db')
-    def test_check_public_floating_ranges_intersection(self, mocked_db):
+    def test_check_public_floating_ranges_intersection(self, _):
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
@@ -207,14 +207,16 @@ class TestNetworkCheck(BaseIntegrationTest):
              'name': 'public',
              'gateway': '192.168.0.1',
              'ip_ranges': [['192.168.0.10', '192.168.0.40']],
-             'meta': {'notation': 'cidr'}
+             'meta': {'notation': 'cidr'},
+             'group_id': 1,
              },
             {'id': 2,
              'cidr': '192.168.0.128/25',
              'name': 'public',
              'gateway': '192.168.0.129',
              'ip_ranges': [['192.168.0.130', '192.168.0.150']],
-             'meta': {'notation': 'cidr'}
+             'meta': {'notation': 'cidr'},
+             'group_id': 2,
              }
         ]
 
@@ -228,6 +230,80 @@ class TestNetworkCheck(BaseIntegrationTest):
             "Floating address ranges 192.168.0.50-192.168.0.100, "
             "192.168.0.160-192.168.0.200 are not in the same public CIDR.",
             checker.neutron_check_network_address_spaces_intersection)
+
+    @patch.object(helpers, 'db')
+    def test_check_non_shared_networks_intersection(self, _):
+        checker = NetworkCheck(self.task, {})
+        networks = [
+            {'id': 1,
+             'cidr': '192.168.0.0/25',
+             'name': consts.NETWORKS.public,
+             'gateway': '192.168.0.1',
+             'ip_ranges': [['192.168.0.10', '192.168.0.40']],
+             'meta': {'notation': consts.NETWORK_NOTATION.ip_ranges},
+             'vlan_start': 111,
+             'group_id': 1,
+             },
+            {'id': 2,
+             'cidr': '192.168.0.0/25',
+             'name': consts.NETWORKS.management,
+             'gateway': '192.168.0.2',
+             'ip_ranges': [['192.168.0.50', '192.168.0.110']],
+             'meta': {'notation': consts.NETWORK_NOTATION.ip_ranges},
+             'vlan_start': 222,
+             'group_id': 1,
+             }
+        ]
+        # different networks from one node group, different gateways
+        checker.networks = networks
+        self.assertRaisesWithMessage(
+            errors.NetworkCheckError,
+            "Address space intersection between networks:\n"
+            "public, management",
+            checker.neutron_check_network_address_spaces_intersection)
+
+        checker = NetworkCheck(self.task, {})
+        # different networks from different node groups, different gateways
+        networks[1]['group_id'] = 2
+        checker.networks = networks
+        self.assertRaisesWithMessage(
+            errors.NetworkCheckError,
+            "Address space intersection between networks:\n"
+            "public, management",
+            checker.neutron_check_network_address_spaces_intersection)
+
+        checker = NetworkCheck(self.task, {})
+        # same networks from different node groups, different gateways
+        networks[1]['name'] = consts.NETWORKS.public
+        checker.networks = networks
+        self.assertRaisesWithMessage(
+            errors.NetworkCheckError,
+            "Address space intersection between networks:\n"
+            "public, public",
+            checker.neutron_check_network_address_spaces_intersection)
+
+        checker = NetworkCheck(self.task, {})
+        # same networks from different node groups, same gateway
+        networks[1]['gateway'] = '192.168.0.1'
+        checker.networks = networks
+        checker.network_config['floating_ranges'] = [
+            ['192.168.0.111', '192.168.0.126']
+        ]
+        self.assertNotRaises(
+            errors.NetworkCheckError,
+            checker.check_configuration)
+
+        checker = NetworkCheck(self.task, {})
+        # same networks from different node groups, same gateway,
+        # intersection in ip_ranges
+        networks[1]['ip_ranges'] = [['192.168.0.30', '192.168.0.60']]
+        checker.networks = networks
+        checker.network_config['floating_ranges'] = [
+            ['192.168.0.111', '192.168.0.126']
+        ]
+        self.assertNotRaises(
+            errors.NetworkCheckError,
+            checker.check_configuration)
 
     @patch.object(helpers, 'db')
     def test_check_vlan_ids_range_and_intersection_failed(self, mocked_db):

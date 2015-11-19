@@ -27,7 +27,7 @@ class ClusterUpgradeExtension(extensions.BaseExtension):
 
     urls = [
         {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/clone/?$',
-         'handler': handlers.ClusterUpgradeHandler},
+         'handler': handlers.ClusterUpgradeCloneHandler},
         {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/assign/?$',
          'handler': handlers.NodeReassignHandler},
     ]

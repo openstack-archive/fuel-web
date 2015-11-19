@@ -25,10 +25,10 @@ from nailgun.utils import reverse
 from . import base as tests_base
 
 
-class TestClusterUpgradeHandler(tests_base.BaseCloneClusterTest):
+class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):
     def test_clone(self):
         resp = self.app.post(
-            reverse("ClusterUpgradeHandler",
+            reverse("ClusterUpgradeCloneHandler",
                     kwargs={"cluster_id": self.cluster_61.id}),
             jsonutils.dumps(self.data),
             headers=self.default_headers)
@@ -40,7 +40,7 @@ class TestClusterUpgradeHandler(tests_base.BaseCloneClusterTest):
 
     def test_clone_cluster_not_found_error(self):
         resp = self.app.post(
-            reverse("ClusterUpgradeHandler",
+            reverse("ClusterUpgradeCloneHandler",
                     kwargs={"cluster_id": 42}),
             jsonutils.dumps(self.data),
             headers=self.default_headers,
@@ -50,12 +50,12 @@ class TestClusterUpgradeHandler(tests_base.BaseCloneClusterTest):
 
     def test_clone_cluster_already_in_upgrade_error(self):
         self.app.post(
-            reverse("ClusterUpgradeHandler",
+            reverse("ClusterUpgradeCloneHandler",
                     kwargs={"cluster_id": self.cluster_61.id}),
             jsonutils.dumps(self.data),
             headers=self.default_headers)
         resp = self.app.post(
-            reverse("ClusterUpgradeHandler",
+            reverse("ClusterUpgradeCloneHandler",
                     kwargs={"cluster_id": self.cluster_61.id}),
             jsonutils.dumps(self.data),
             headers=self.default_headers,
@@ -65,7 +65,7 @@ class TestClusterUpgradeHandler(tests_base.BaseCloneClusterTest):
     def test_clone_cluster_name_already_exists_error(self):
         data = dict(self.data, name=self.cluster_61.name)
         resp = self.app.post(
-            reverse("ClusterUpgradeHandler",
+            reverse("ClusterUpgradeCloneHandler",
                     kwargs={"cluster_id": self.cluster_61.id}),
             jsonutils.dumps(data),
             headers=self.default_headers,

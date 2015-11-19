@@ -1334,6 +1334,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         error={this.state.error}
                         wrapperClassName='node-group-name'
                         inputClassName='node-group-input-name'
+                        maxLength='50'
                         autoFocus
                     />
                 </div>

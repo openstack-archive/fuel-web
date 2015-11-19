@@ -1170,6 +1170,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             disabled={this.props.locked}
                             onKeyDown={this.onNodeNetworkGroupNameKeyDown}
                             wrapperClassName='node-group-renaming'
+                            maxLength='50'
                             selectOnFocus
                             autoFocus
                         />

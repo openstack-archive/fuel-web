@@ -1012,6 +1012,7 @@ input[type=range] {
   overflow: hidden;
   user-select: none;
   width: 100%;
+  .break-word;
   &:not(.active) {
     cursor: pointer;
   }
@@ -3813,8 +3814,11 @@ input[type=range] {
     .node-group-renaming {
       margin-bottom: 0;
       div {
-        width: 50%;
         margin-left: 15px;
+      }
+      input[type=text] {
+        width: 50%;
+        min-width: 200px;
       }
     }
     .name {

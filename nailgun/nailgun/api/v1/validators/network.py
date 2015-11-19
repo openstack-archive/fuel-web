@@ -670,7 +670,7 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
 class NetworkTemplateValidator(BasicValidator):
 
     @classmethod
-    def validate(cls, data, instance=None):
+    def validate(cls, data):
         parsed = super(NetworkTemplateValidator, cls).validate(data)
         cls.validate_schema(parsed, NETWORK_TEMPLATE)
 

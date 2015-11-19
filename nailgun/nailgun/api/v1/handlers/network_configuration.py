@@ -204,6 +204,7 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_if_template_modification_locked(cluster)
+
         objects.Cluster.set_network_template(cluster, template)
         raise self.http(200, template)
 

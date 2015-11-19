@@ -38,8 +38,10 @@ from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
+from nailgun.logger import logger
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
+from nailgun.network.neutron import NeutronManager80
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.network.nova_network import NovaNetworkManager70
 from nailgun.test.base import BaseIntegrationTest
@@ -1349,3 +1351,59 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         # nodes based on the current template
         self.env._create_network_group(name='keystone', vlan_start=None)
         self._check_nic_mapping(node, expected_mapping)
+
+
+class TestNeutronManager80(BaseNetworkManagerTest):
+
+    def setUp(self):
+        super(TestNeutronManager80, self).setUp()
+        self.cluster = self._create_env()
+        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
+
+    def _create_env(self):
+        return self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
+            }
+        )
+
+    def _check_vip_configuration(self, expected_vips, real_vips):
+        for vip in expected_vips:
+            name = vip['name']
+            self.assertIn(name, real_vips)
+            self.assertEqual(real_vips[name]['namespace'],
+                             vip['namespace'])
+            self.assertEqual(real_vips[name]['node_roles'],
+                             ['controller',
+                              'primary-controller'])
+        expected_vips_names = sorted([vip['name'] for vip in expected_vips])
+        self.assertListEqual(expected_vips_names, sorted(real_vips.keys()))
+
+    def test_get_network_manager(self):
+        self.assertIs(self.net_manager, NeutronManager80)
+
+    def test_assign_vips_with_unmapped_net_groups(self):
+        expected_vips = [
+            {'name': 'vrouter', 'namespace': 'vrouter'},
+            {'name': 'vrouter_pub', 'namespace': 'vrouter'},
+            {'name': 'management', 'namespace': 'haproxy'},
+            {'name': 'public', 'namespace': 'haproxy'},
+        ]
+        unmapped_roles = yaml.safe_load("""
+- id: "unmapped_role"
+  default_mapping: "non_existing_net"
+  properties:
+    subnet: true
+    gateway: false
+    vip:
+       - name: "unmapped_vip"
+         namespace: "haproxy"
+        """)
+        self.env._add_plugin_network_roles(self.cluster, unmapped_roles)
+        with patch.object(logger, 'warning') as mock_warn:
+            assigned_vips = self.net_manager.assign_vips_for_net_groups(
+                self.cluster)
+            mock_warn.assert_called_once_with(mock.ANY)
+        self._check_vip_configuration(expected_vips, assigned_vips)

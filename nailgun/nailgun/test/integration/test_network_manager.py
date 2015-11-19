@@ -40,6 +40,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
+from nailgun.network.neutron import NeutronManager80
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.network.nova_network import NovaNetworkManager70
 from nailgun.test.base import BaseIntegrationTest
@@ -1317,3 +1318,64 @@ class TestTemplateManager70(BaseNetworkManagerTest):
 
         interfaces = self.nm.get_interfaces_from_template(self.env.nodes[0])
         self.assertItemsEqual(interfaces, expected_interfaces)
+
+
+class TestNeutronManager80(BaseNetworkManagerTest):
+
+    def setUp(self):
+        super(TestNeutronManager80, self).setUp()
+        self.cluster = self._create_env()
+        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
+
+    def _create_env(self):
+        return self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
+            }
+        )
+
+    def _check_vip_configuration(self, expected_vips, real_vips):
+        for vip in expected_vips:
+            name = vip['name']
+            self.assertIn(name, real_vips)
+            self.assertEqual(real_vips[name]['namespace'],
+                             vip['namespace'])
+            self.assertEqual(real_vips[name]['node_roles'],
+                             ['controller',
+                              'primary-controller'])
+        expected_vips_names = sorted([vip['name'] for vip in expected_vips])
+        self.assertListEqual(expected_vips_names, sorted(real_vips.keys()))
+
+    def _add_unmapped_network_roles(self):
+        plugin_network_roles = yaml.safe_load("""
+- id: "unmapped_role"
+  default_mapping: "non_existing_net"
+  properties:
+    subnet: true
+    gateway: false
+    vip:
+       - name: "unmapped_vip"
+         namespace: "haproxy"
+        """)
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['network_roles_metadata'] = plugin_network_roles
+        plugin = objects.Plugin.create(plugin_data)
+        self.cluster.plugins.append(plugin)
+        self.db.commit()
+
+    def test_get_network_manager(self):
+        self.assertIs(self.net_manager, NeutronManager80)
+
+    def test_assign_vips_with_unmapped_net_groups(self):
+        expected_vips = [
+            {'name': 'vrouter', 'namespace': 'vrouter'},
+            {'name': 'vrouter_pub', 'namespace': 'vrouter'},
+            {'name': 'management', 'namespace': 'haproxy'},
+            {'name': 'public', 'namespace': 'haproxy'},
+        ]
+        self._add_unmapped_network_roles()
+        assigned_vips = self.net_manager.assign_vips_for_net_groups(
+            self.cluster)
+        self._check_vip_configuration(expected_vips, assigned_vips)

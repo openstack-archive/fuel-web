@@ -361,6 +361,17 @@ class NetworkCheck(object):
         # between all networks
         for ngs in combinations(self.networks, 2):
             if ngs[0].get('cidr') and ngs[1].get('cidr'):
+                # networks with the same name in different node groups maybe
+                # considered as one shared network if they have equal CIDRs
+                # and gateways
+                if (ngs[0]['group_id'] != ngs[1]['group_id'] and
+                        ngs[0]['group_id'] is not None and
+                        ngs[1]['group_id'] is not None and
+                        ngs[0]['name'] == ngs[1]['name'] and
+                        ngs[0].get('gateway') and ngs[1].get('gateway') and
+                        ngs[0]['gateway'] == ngs[1]['gateway'] and
+                        ngs[0]['cidr'] == ngs[1]['cidr']):
+                    continue
                 cidr1 = netaddr.IPNetwork(ngs[0]['cidr'])
                 cidr2 = netaddr.IPNetwork(ngs[1]['cidr'])
                 if self.net_man.is_cidr_intersection(cidr1, cidr2):

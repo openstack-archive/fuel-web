@@ -260,6 +260,21 @@ LOGS:
     <<: *local_log_type
     <<: *python_log_format
     path: "/var/log/ostf.log"
+  - id: puppetmaster
+    name: "puppetmaster"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    path: "/var/log/puppet"
+  - id: docker
+    name: "docker"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    path: "/var/log/docker*"
+  - id: yumiyumi
+    name: "yumiyumi"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    path: "/var/log/yumiyumi.log"
 # Fake target logs.
   - id: 'fake-target-mcollective'
     name: "mcollective"

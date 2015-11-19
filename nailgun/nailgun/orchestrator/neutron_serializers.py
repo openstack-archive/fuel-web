@@ -1366,8 +1366,9 @@ class GenerateL23Mixin80(object):
 
     @classmethod
     def generate_predefined_networks(cls, cluster):
-        nets = NeutronNetworkDeploymentSerializer70.\
-            generate_predefined_networks(cluster)
+        nets = super(GenerateL23Mixin80, cls).generate_predefined_networks(
+            cluster
+        )
         if objects.Cluster.is_component_enabled(cluster, 'ironic'):
             nets["baremetal"] = cls._generate_baremetal_network(cluster)
         return nets

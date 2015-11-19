@@ -338,6 +338,35 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             "generate_keys.sh -i {CLUSTER_ID} -s 'ceph' -p /var/"
             "lib/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
 
+    def test_copy_fernet_keys(self):
+        task_config = {
+            'id': 'copy_fernet_keys',
+            'type': 'copy_files',
+            'role': '[primary-controller, controller]',
+            'parameters': {
+                'files': [{
+                    'src': '/var/lib/fuel/keys/{CLUSTER_ID}/fernet-keys/0',
+                    'dst': '/var/lib/astute/keystone/0',
+                    'src': '/var/lib/fuel/keys/{CLUSTER_ID}/fernet-keys/1',
+                    'dst': '/var/lib/astute/keystone/1' }],
+                'permissions': '0600',
+                'dir_permissions': '0700'}}
+        task = tasks_serializer.CopyFernetKeys(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'copy_files')
+        files = []
+        files.append({
+            'src': '/var/lib/fuel/keys/{CLUSTER_ID}/fernet-keys/0'.
+            format(CLUSTER_ID=self.cluster.id),
+            'dst': '/var/lib/astute/keystone/0'})
+        files.append({
+            'src': '/var/lib/fuel/keys/{CLUSTER_ID}/fernet-keys/1'.
+            format(CLUSTER_ID=self.cluster.id),
+            'dst': '/var/lib/astute/keystone/1'})
+        self.assertItemsEqual(
+            files, serialized['parameters']['files'])
+
     def test_generate_haproxy_keys(self):
         cmd_template = "sh /etc/puppet/modules/osnailyfacter/modular/" \
                        "astute/generate_haproxy_keys.sh -i {CLUSTER_ID} " \

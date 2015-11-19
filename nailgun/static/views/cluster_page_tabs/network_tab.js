@@ -607,7 +607,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
             networkConfiguration.isValid();
-            dispatcher.trigger('hideNetworkVerificationResult');
+            this.setState({hideVerificationResult: true});
         },
         verifyNetworks: function() {
             this.setState({actionInProgress: true});
@@ -757,6 +757,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 nodeNetworkGroups: this.nodeNetworkGroups
             })
                 .done(_.bind(function() {
+                    this.setState({hideVerificationResult: true});
                     this.nodeNetworkGroups.fetch().done(_.bind(function() {
                         var newNodeNetworkGroup = this.nodeNetworkGroups.last();
                         this.props.nodeNetworkGroups.add(newNodeNetworkGroup);

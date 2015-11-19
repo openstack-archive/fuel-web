@@ -147,6 +147,11 @@ class TestDeploymentAttributesSerialization80(
                 },
                 node['quantum_settings']['L2']['phys_nets']['physnet1']
             )
+            l2 = (node["quantum_settings"]["predefined_networks"]
+                  [self.cluster_db.network_config.floating_name]["L2"])
+
+            self.assertEqual("physnet1", l2["physnet"])
+            self.assertEqual("flat", l2["network_type"])
 
     def test_baremetal_transformations(self):
         self.env._set_additional_component(self.cluster_db, 'ironic', True)

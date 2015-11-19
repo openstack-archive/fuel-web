@@ -1058,11 +1058,12 @@ class MulticastVerificationTask(BaseNetworkVerification):
 class CheckNetworksTask(object):
 
     @classmethod
-    def execute(cls, task, data, check_admin_untagged=False):
+    def execute(cls, task, data, check_all_parameters=False):
 
         checker = NetworkCheck(task, data)
         checker.check_configuration()
-        if check_admin_untagged:
+        if check_all_parameters:
+            checker.check_network_template()
             warn_msgs = checker.check_interface_mapping()
             if warn_msgs:
                 task.result = {"warning": warn_msgs}

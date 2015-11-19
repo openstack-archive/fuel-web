@@ -993,8 +993,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             var {cluster, nodeNetworkGroups} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration'),
                 errors,
-                isNovaEnvironment = cluster.get('net_provider') == 'nova_network',
-                activeNodeNetworkGroup = nodeNetworkGroups.findWhere({name: this.props.activeGroupName});
+                isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
 
             networkConfiguration.isValid();
 
@@ -1019,19 +1018,21 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
                 }
 
-                // is node network group section selected
-                if (this.props.isMultiRack && !showAll) {
-                    isInvalid = networksErrors && !!networksErrors[activeNodeNetworkGroup.id]
-                } else if (isNovaEnvironment) {
-                    isInvalid = networksErrors;
-                }
-
-                if (!isNetworkGroupPill) {
+                if (isNetworkGroupPill) {
+                    // is node network group section selected
+                    if (this.props.isMultiRack && !showAll) {
+                        isInvalid = networksErrors &&
+                            !!networksErrors[nodeNetworkGroups.findWhere({name: groupName}).id]
+                    } else if (isNovaEnvironment) {
+                        isInvalid = networksErrors;
+                    }
+                    //FIXME(morale): this is a hack until default node network group
+                    //name is capitalized on backend
+                    if (groupName == 'default' && !this.props.isMultiRack) {
+                        tabLabel = 'Default';
+                    }
+                } else {
                     tabLabel = i18n(networkTabNS + 'tabs.' + groupName);
-                //FIXME(morale): this is a hack until default node network group
-                // name is capitalized on backend
-                } else if (groupName == 'default' && !this.props.isMultiRack) {
-                    tabLabel = 'Default';
                 }
 
                 if (groupName == 'network_verification') {

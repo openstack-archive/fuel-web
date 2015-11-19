@@ -89,6 +89,14 @@ class TestPluginCollection(ExtraFunctions):
         self.assertListEqual(
             [plugin.id for plugin in plugins], ids)
 
+    def test_get_by_release(self):
+        release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact])
+        for plugin in PluginCollection.get_by_release(release):
+            self.assertNotEqual(plugin.name, 'incompatible_plugin')
+
 
 class TestClusterPlugins(ExtraFunctions):
 

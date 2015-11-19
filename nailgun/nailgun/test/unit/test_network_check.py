@@ -661,6 +661,44 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaises(errors.NetworkCheckError,
                           checker.neutron_check_gateways)
 
+    @patch.object(helpers, 'db')
+    def test_check_network_template(self, mocked_db):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+            ]
+        )
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        fake_template = self.env.read_fixtures(['network_template_80'])[0]
+        default_nt = fake_template['adv_net_template']['default']
+
+        # Left only default node group with only controller template
+        fake_template['adv_net_template'] = {
+            'default': default_nt
+        }
+        default_nt['templates_for_node_role'] = {
+            'controller': default_nt['templates_for_node_role']['controller'],
+            'compute': default_nt['templates_for_node_role']['compute']
+        }
+        fake_template.pop('pk')  # PK is not needed
+
+        cluster_db.network_config.configuration_template = fake_template
+        self.db.flush()
+        checker = NetworkCheck(FakeTask(cluster_db), {})
+        self.assertNotRaises(errors.NetworkCheckError,
+                             checker.check_network_template)
+
+        default_nt['templates_for_node_role'].pop('compute')
+
+        cluster_db.network_config.configuration_template = fake_template
+        self.db.flush()
+        checker = NetworkCheck(FakeTask(cluster_db), {})
+
+        self.assertRaises(errors.NetworkCheckError,
+                          checker.check_network_template)
+
 
 class TestCheckVIPsNames(BaseIntegrationTest):
 

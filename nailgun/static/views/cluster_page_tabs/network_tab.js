@@ -1030,7 +1030,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     tabLabel = i18n(networkTabNS + 'tabs.' + groupName);
                 //FIXME(morale): this is a hack until default node network group
                 // name is capitalized on backend
-                } else if (groupName == 'default') {
+                } else if (groupName == 'default' && !this.props.isMultiRack) {
                     tabLabel = 'Default';
                 }
 

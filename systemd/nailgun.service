@@ -1,0 +1,13 @@
+[Unit]
+Name=Nailgun daemon
+ConditionPathExists=/etc/nailgun/uwsgi_nailgun.yaml
+
+[Service]
+ExecStart=/usr/sbin/uwsgi -y /etc/nailgun/uwsgi_nailgun.yaml
+ExecReload=/usr/sbin/uwsgi --reload /var/run/nailgun.pid
+ExecStop=/usr/sbin/uwsgi --stop /var/run/nailgun.pid
+ExecStopPost=/usr/bin/rm -f /var/run/nailgun.pid
+
+[Install]
+WantedBy=multi-user.target
+

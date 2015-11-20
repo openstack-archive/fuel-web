@@ -437,3 +437,6 @@ OPENSTACK_CONFIG_TYPES = Enum(
 )
 
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'
+
+ML2_CORE_PLUGIN = 'network:neutron:core:ml2'
+ML2_DRIVER_PATTERN = 'neutron:ml2'

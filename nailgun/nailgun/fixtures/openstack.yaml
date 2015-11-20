@@ -1633,9 +1633,10 @@
         compatible:
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
-        incompatible:
-          - name: network:neutron:*
-            message: "dialog.create_cluster_wizard.network.hypervisor_alert"
+      - name: network:neutron:core:ml2
+        weight: 5
+        label: "dialog.create_cluster_wizard.network.neutron_ml2"
+        description: "dialog.create_cluster_wizard.network.neutron_ml2_description"
       - name: network:neutron:vlan
         default: true
         bind: !!pairs
@@ -1679,17 +1680,14 @@
         incompatible:
           - name: additional_service:ironic
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
-      - name: storage:default
+      - name: storage:block:lvm
+        label: "dialog.create_cluster_wizard.storage.lvm"
+        description: "dialog.create_cluster_wizard.storage.default_provider"
         default: true
-        bind: !!pairs
-          - "settings:storage.volumes_lvm.value": true
-          - "settings:storage.volumes_ceph.value": false
-          - "settings:storage.objects_ceph.value": false
-          - "settings:storage.ephemeral_ceph.value": false
-          - "settings:storage.images_ceph.value": false
-        weight: 10
-        label: "dialog.create_cluster_wizard.storage.default_provider"
-        compatible:
+        weight: 5
+        bind:
+          - "settings:storage.volumes_lvm.value"
+        compatible: &default_storage_compatibility
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
@@ -1697,28 +1695,42 @@
           - name: network:neutron:tun
           - name: network:nova_network
         incompatible:
-          - name: storage:ceph
-            message: ""
-      - name: storage:ceph
-        bind: !!pairs
-          - "settings:storage.volumes_ceph.value": true
-          - "settings:storage.objects_ceph.value": true
-          - "settings:storage.ephemeral_ceph.value": true
-          - "settings:storage.images_ceph.value": true
-          - "settings:storage.volumes_lvm.value": false
-        weight: 20
-        label: "dialog.create_cluster_wizard.storage.ceph_provider"
+          - name: storage:block:ceph
+            message: "LVM not compatible with Ceph"
+      - name: storage:block:ceph
+        label: "dialog.create_cluster_wizard.storage.ceph"
         description: "dialog.create_cluster_wizard.storage.ceph_help"
-        compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
-          - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
-          - name: network:nova_network
+        weight: 10
+        bind:
+          - "settings:storage.volumes_ceph.value"
+        compatible: *default_storage_compatibility
         incompatible:
-          - name: storage:default
-            message: ""
+          - name: storage:block:lvm
+            message: "Ceph not compatible with LVM"
+      - name: storage:object:ceph
+        label: "dialog.create_cluster_wizard.storage.ceph"
+        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        default: true
+        weight: 10
+        bind:
+          - "settings:storage.objects_ceph.value"
+        compatible: *default_storage_compatibility
+      - name: storage:ephemeral:ceph
+        label: "dialog.create_cluster_wizard.storage.ceph"
+        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        default: true
+        weight: 10
+        bind:
+          - "settings:storage.ephemeral_ceph.value"
+        compatible: *default_storage_compatibility
+      - name: storage:image:ceph
+        label: "dialog.create_cluster_wizard.storage.ceph"
+        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        default: true
+        weight: 10
+        bind:
+          - "settings:storage.images_ceph.value"
+        compatible: *default_storage_compatibility
       - name: additional_service:sahara
         bind:
           - "settings:additional_components.sahara.value"

@@ -131,7 +131,7 @@ define([
                     .clickByCssSelector('.subtab-link-nova_configuration')
                     .assertElementAppears('input[name=range-end_fixed_networks_vlan_start]', 2000, 'VLAN range is displayed');
             },
-            'Testing cluster networks: save changes': function() {
+            'Testing cluster networks: save network changes': function() {
                 return this.remote
                     .then(function() {
                         return networksPage.switchNetworkManager();
@@ -139,6 +139,14 @@ define([
                     .clickByCssSelector(networksPage.applyButtonSelector)
                     .assertElementsAppear('input:not(:disabled)', 2000, 'Inputs are not disabled')
                     .assertElementNotExists('.alert-error', 'Correct settings were saved successfully')
+            },
+            'Testing cluster networks: save settings with group: network': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-network_settings')
+                    .clickByCssSelector('input[name=auto_assign_floating_ip][type=checkbox]')
+                    .clickByCssSelector(networksPage.applyButtonSelector)
+                    .assertElementsAppear('input:not(:disabled)', 2000, 'Inputs are not disabled')
+                    .assertElementDisabled(networksPage.applyButtonSelector, 'Save changes button is disabled again after successfull settings saving');
             },
             'Testing cluster networks: verification': function() {
                 return this.remote

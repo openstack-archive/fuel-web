@@ -25,15 +25,16 @@ define(
     'utils',
     'views/dialogs',
     'component_mixins',
-    'views/controls'
+    'views/controls',
+    'views/cluster_page_tabs/setting_section'
 ],
-function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, componentMixins, controls) {
+function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, componentMixins, controls, SettingSection) {
     'use strict';
 
     var CSSTransitionGroup = React.addons.CSSTransitionGroup,
         parametersNS = 'cluster_page.network_tab.networking_parameters.',
         networkTabNS = 'cluster_page.network_tab.',
-        defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_verification', 'nova_configuration'];
+        defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
 
     var NetworkModelManipulationMixin = {
         setValue: function(attribute, value, options) {
@@ -518,6 +519,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             componentMixins.dispatcherMixin('networkConfigurationUpdated', function() {
                 this.setState({hideVerificationResult: false});
             }),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {
+                    return props.cluster.get('settings');
+                },
+                renderOn: 'change invalid'
+            }),
             componentMixins.pollingMixin(3),
             componentMixins.unsavedChangesMixin
         ],
@@ -527,9 +534,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 return $.when(
                     cluster.get('settings').fetch({cache: true}),
                     cluster.get('networkConfiguration').fetch({cache: true})
-                ).then(function() {
-                    return {};
-                });
+                ).then(() => {});
             }
         },
         shouldDataBeFetched: function() {
@@ -539,7 +544,18 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return this.props.cluster.task({group: 'network', active: true}).fetch();
         },
         getInitialState: function() {
+            var settings = this.props.cluster.get('settings');
             return {
+                configModels: {
+                    cluster: this.props.cluster,
+                    settings: settings,
+                    networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters'),
+                    version: app.version,
+                    release: this.props.cluster.get('release'),
+                    default: settings
+                },
+                initialSettingsAttributes: _.cloneDeep(settings.attributes),
+                settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
                 initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
                 hideVerificationResult: false
             };
@@ -562,19 +578,30 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 this.props.cluster.get('tasks').add(task, {silent: true});
             }
         },
-        hasChanges: function() {
+        isNetworkConfigurationChanged: function() {
             return !_.isEqual(this.state.initialConfiguration, this.props.cluster.get('networkConfiguration').toJSON());
+        },
+        isNetworkSettingsChanged: function() {
+            return this.props.cluster.get('settings').hasChanges(this.state.initialSettingsAttributes, this.state.configModels);
+        },
+        hasChanges: function() {
+            return this.isNetworkConfigurationChanged() || this.isNetworkSettingsChanged();
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
+            this.loadInitialSettings();
             this.setState({
-                hideVerificationResult: true
+                hideVerificationResult: true,
+                key: _.now()
             });
         },
         loadInitialConfiguration: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
             networkConfiguration.get('networks').reset(_.cloneDeep(this.state.initialConfiguration.networks));
             networkConfiguration.get('networking_parameters').set(_.cloneDeep(this.state.initialConfiguration.networking_parameters));
+        },
+        loadInitialSettings: function() {
+            this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialSettingsAttributes)).isValid({models: this.state.configModels});
         },
         updateInitialConfiguration: function() {
             this.setState({initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON())});
@@ -656,27 +683,63 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
 
-            var result = $.Deferred();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
+            var requests = [],
+                result = $.Deferred();
+
+            dispatcher.trigger('networkConfigurationUpdated', () => {
                 return Backbone.sync('update', this.props.cluster.get('networkConfiguration'))
-                    .then(_.bind(function(response) {
+                    .then((response) => {
                         this.updateInitialConfiguration();
                         result.resolve(response);
-                    }, this), _.bind(function() {
+                    }, () => {
                         result.reject();
                         // FIXME(vkramskikh): the same hack for check_networks task:
                         // remove failed tasks immediately, so they won't be taken into account
                         return this.props.cluster.fetchRelated('tasks')
-                            .done(_.bind(function() {
+                            .done(() => {
                                 this.props.cluster.task('check_networks').set('unsaved', true);
-                            }, this));
-                    }, this))
-                    .always(_.bind(function() {
+                            });
+                    })
+                    .always(() => {
                         this.setState({actionInProgress: false});
-                    }, this));
-                }, this)
+                    });
+                }
             );
-            return result;
+            requests.push(result);
+
+            if (this.isNetworkSettingsChanged()) {
+                // collecting data to save
+                var settings = this.props.cluster.get('settings'),
+                    dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
+                        return (group.metadata || {}).always_editable;
+                    });
+
+                var options = {url: settings.url, patch: true, wait: true, validate: false},
+                    deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
+                if (deferred) {
+                    this.setState({actionInProgress: true});
+                    deferred
+                        .done(() => this.setState({initialSettingsAttributes: _.cloneDeep(settings.attributes)}))
+                        .always(() => {
+                            this.setState({
+                                actionInProgress: false,
+                                key: _.now()
+                            });
+                            this.props.cluster.fetch();
+                        })
+                        .fail((response) => {
+                            utils.showErrorDialog({
+                                title: i18n('cluster_page.settings_tab.settings_error.title'),
+                                message: i18n('cluster_page.settings_tab.settings_error.saving_warning'),
+                                response: response
+                            });
+                        });
+
+                    requests.push(deferred);
+                }
+            }
+
+            return $.when(...requests);
         },
         isSavingPossible: function() {
             return _.isNull(this.props.cluster.get('networkConfiguration').validationError) &&
@@ -867,6 +930,15 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                         setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                                     />
                                 }
+                                {activeNetworkSectionName == 'network_settings' &&
+                                    <NetworkSettings
+                                        key={this.state.key}
+                                        cluster={this.props.cluster}
+                                        locked={this.state.actionInProgress}
+                                        configModels={this.state.configModels}
+                                        settingsForChecks={this.state.settingsForChecks}
+                                    />
+                                }
                                 {activeNetworkSectionName == 'network_verification' &&
                                     <NetworkVerificationResult
                                         key='network_verification'
@@ -1032,6 +1104,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 } else {
                     settingsSections = settingsSections.concat(['neutron_l2', 'neutron_l3']);
                 }
+                settingsSections.push('network_settings');
 
             return (
                 <div className='col-xs-2'>
@@ -1340,6 +1413,79 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         ]
                     }
                     <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
+                </div>
+            );
+        }
+    });
+
+    var NetworkSettings = React.createClass({
+        onChange: function(groupName, settingName, value) {
+            var settings = this.props.cluster.get('settings'),
+                name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
+            this.props.settingsForChecks.set(name, value);
+            // FIXME: the following hacks cause we can't pass {validate: true} option to set method
+            // this form of validation isn't supported in Backbone DeepModel
+            settings.validationError = null;
+            settings.set(name, value);
+            settings.isValid({models: this.props.configModels});
+        },
+        checkRestrictions: function(action, path) {
+            var settings = this.props.cluster.get('settings');
+            return settings.checkRestrictions(this.props.configModels, action, path);
+        },
+        render: function() {
+            var cluster = this.props.cluster,
+                settings = cluster.get('settings'),
+                locked = this.props.locked || !!cluster.task({group: ['deployment', 'network'], active: true}),
+                lockedCluster = !cluster.isAvailableForSettingsChanges(),
+                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+            return (
+                <div className='forms-box network'>
+                    {
+                        _.chain(settings.attributes)
+                            .keys()
+                            .filter(
+                                (sectionName) => {
+                                    var section = settings.get(sectionName);
+                                    return (section.metadata.group == 'network' || !section.metadata.group && _.any(section, {group: 'network'})) &&
+                                        !this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
+                                }
+                            )
+                            .sortBy(
+                                (sectionName) => settings.get(sectionName + '.metadata.weight')
+                            )
+                            .map(
+                                (sectionName) => {
+                                    var section = settings.get(sectionName),
+                                        settingsToDisplay = _.compact(_.map(section, (setting, settingName) => {
+                                            if (
+                                                (section.metadata.group || setting.group == 'network') &&
+                                                settingName != 'metadata' &&
+                                                setting.type != 'hidden' &&
+                                                !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
+                                            ) return settingName;
+                                        }));
+                                    if (_.isEmpty(settingsToDisplay)) return null;
+                                    return <SettingSection
+                                        key={sectionName}
+                                        cluster={this.props.cluster}
+                                        sectionName={sectionName}
+                                        settingsToDisplay={settingsToDisplay}
+                                        onChange={_.bind(this.onChange, this, sectionName)}
+                                        allocatedRoles={allocatedRoles}
+                                        settings={settings}
+                                        settingsForChecks={this.props.settingsForChecks}
+                                        makePath={settings.makePath}
+                                        getValueAttribute={settings.getValueAttribute}
+                                        locked={locked}
+                                        lockedCluster={lockedCluster}
+                                        configModels={this.props.configModels}
+                                        checkRestrictions={this.checkRestrictions}
+                                    />;
+                                }
+                            )
+                            .value()
+                    }
                 </div>
             );
         }

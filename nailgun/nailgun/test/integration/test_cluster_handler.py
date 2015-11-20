@@ -301,3 +301,86 @@ class TestClusterModes(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
+
+
+class TestClusterComponents(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestClusterComponents, self).setUp()
+        self.release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            modes=[consts.CLUSTER_MODES.ha_compact],
+            components_metadata=[
+                {
+                    'name': 'hypervisor:test_hypervisor'
+                },
+                {
+                    'name': 'network:core:test_network_1',
+                    'incompatible': [
+                        {'name': 'hypervisor:test_hypervisor'}
+                    ]
+                },
+                {
+                    'name': 'network:core:test_network_2'
+                },
+                {
+                    'name': 'storage:test_storage',
+                    'compatible': [
+                        {'name': 'hypervisors:test_hypervisor'}
+                    ],
+                    'requires': [
+                        {'name': 'hypervisors:test_hypervisor'}
+                    ]
+                }
+            ])
+
+        self.cluster_data = {
+            'name': 'TestCluster',
+            'release_id': self.release.id,
+            'mode': consts.CLUSTER_MODES.ha_compact
+        }
+
+    def test_components_not_in_release(self):
+        self.cluster_data.update(
+            {'components': ['storage:not_existing_component']})
+        resp = self._create_cluster_with_expected_errors(self.cluster_data)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            u"[u'storage:not_existing_component'] components are not "
+            "related to release \"release_name_2015.1-8.0\".",
+            resp.json_body['message']
+        )
+
+    def test_incompatible_components_found(self):
+        self.cluster_data.update(
+            {'components': [
+                'hypervisor:test_hypervisor',
+                'network:core:test_network_1']})
+        resp = self._create_cluster_with_expected_errors(self.cluster_data)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            u"Incompatible components were found: "
+            "'network:core:test_network_1' incompatible with "
+            "[u'hypervisor:test_hypervisor'].",
+            resp.json_body['message']
+        )
+
+    def test_requires_components_not_found(self):
+        self.cluster_data.update(
+            {'components': ['storage:test_storage']})
+        resp = self._create_cluster_with_expected_errors(self.cluster_data)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            u"Requires [u'hypervisors:test_hypervisor'] for "
+            "'storage:test_storage' components were not satisfied.",
+            resp.json_body['message']
+        )
+
+    def _create_cluster_with_expected_errors(self, cluster_data):
+        return self.app.post(
+            reverse('ClusterCollectionHandler'),
+            jsonutils.dumps(cluster_data),
+            headers=self.default_headers,
+            expect_errors=True
+        )

@@ -50,6 +50,8 @@ class ComponentSerializer(BasicSerializer):
 
     @classmethod
     def serialize(cls, instance):
+        # binds use for mapping components on cluster_attributes options,
+        # it's only back-end logic and no need send it to client
         instance.pop('bind', None)
 
         return instance

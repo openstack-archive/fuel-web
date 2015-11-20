@@ -472,3 +472,21 @@ class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):
             bootstrap_settings,
             jsonutils.loads(result.scalar())['bootstrap']
         )
+
+
+class TestClusterPluginLinks(base.BaseAlembicMigrationTest):
+    def test_cluster_plugin_links_creation(self):
+        clusters = self.meta.tables['clusters']
+        cluster_plugin_links = self.meta.tables['cluster_plugin_links']
+
+        cluster_id = db.execute(sa.select([clusters])).scalar()
+
+        db.execute(
+            cluster_plugin_links.insert(),
+            [{
+                'cluster_id': cluster_id,
+                'title': 'title',
+                'url': 'http://www.zzz.com',
+                'description': 'description',
+                'hidden': False
+            }])

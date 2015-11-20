@@ -32,9 +32,7 @@ class DashboardEntryCollection(base.NailgunCollection):
 
     @classmethod
     def get_by_cluster_id(cls, cluster_id):
-        if cluster_id == '':
-            return cls.filter_by(None, cluster_id=None)
-        return cls.filter_by(None, cluster_id=cluster_id)
+        return cls.filter_by(None, cluster_id=cluster_id or None)
 
     @classmethod
     def create_with_cluster_id(cls, data, cluster_id):

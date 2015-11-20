@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -22,10 +23,11 @@ from sqlalchemy import Text
 from nailgun.db.sqlalchemy.models.base import Base
 
 
-class DashboardEntry(Base):
-    __tablename__ = 'dashboard_entries'
+class ClusterPluginLink(Base):
+    __tablename__ = 'cluster_plugin_links'
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer, ForeignKey('clusters.id'), nullable=False)
     title = Column(Text, nullable=False)
     url = Column(Text, nullable=False)
     description = Column(Text)
+    hidden = Column(Boolean, default=False)

@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.db.sqlalchemy.models.dashboard_entry import DashboardEntry
+from nailgun.db.sqlalchemy.models.cluster_plugin_link import ClusterPluginLink
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 from oslo.serialization import jsonutils
@@ -22,103 +22,107 @@ from oslo.serialization import jsonutils
 
 class TestHandlers(BaseIntegrationTest):
 
-    def test_dashboard_entry_update(self):
+    def test_cluster_plugin_link_update(self):
         cluster = self.env.create_cluster(api=False)
-        dashboard_entry = self.env \
-            .create_dashboard_entry(cluster_id=cluster.id)
+        cluster_plugin_link = self.env \
+            .create_cluster_plugin_link(cluster_id=cluster.id)
 
-        dashboard_entry_update = {
+        cluster_plugin_link_update = {
             'title': 'new title 2',
             'description': 'new description 2'
         }
 
         resp = self.app.put(
             reverse(
-                'DashboardEntryHandler',
+                'ClusterPluginLinkHandler',
                 kwargs={'cluster_id': cluster['id'],
-                        'obj_id': dashboard_entry.id}
+                        'obj_id': cluster_plugin_link.id}
             ),
-            jsonutils.dumps(dashboard_entry_update),
+            jsonutils.dumps(cluster_plugin_link_update),
             headers=self.default_headers
         )
-        self.assertEqual(dashboard_entry.id, resp.json_body['id'])
+        self.assertEqual(cluster_plugin_link.id, resp.json_body['id'])
         self.assertEqual('new title 2', resp.json_body['title'])
         self.assertEqual('new description 2', resp.json_body['description'])
-        self.assertEqual(dashboard_entry.url, resp.json_body['url'])
+        self.assertEqual(cluster_plugin_link.url, resp.json_body['url'])
 
-    def test_dashboard_entry_get_with_cluster(self):
+    def test_cluster_plugin_link_get_with_cluster(self):
         cluster = self.env.create_cluster(api=False)
-        dashboard_entry = self.env \
-            .create_dashboard_entry(cluster_id=cluster.id)
+        cluster_plugin_link = self.env \
+            .create_cluster_plugin_link(cluster_id=cluster.id)
 
         resp = self.app.get(
             reverse(
-                'DashboardEntryHandler',
+                'ClusterPluginLinkHandler',
                 kwargs={'cluster_id': cluster['id'],
-                        'obj_id': dashboard_entry.id}
+                        'obj_id': cluster_plugin_link.id}
             ),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(dashboard_entry.id, resp.json_body['id'])
-        self.assertEqual(dashboard_entry.title, resp.json_body['title'])
-        self.assertEqual(dashboard_entry.url, resp.json_body['url'])
-        self.assertEqual(dashboard_entry.description,
+        self.assertEqual(cluster_plugin_link.id, resp.json_body['id'])
+        self.assertEqual(cluster_plugin_link.title, resp.json_body['title'])
+        self.assertEqual(cluster_plugin_link.url, resp.json_body['url'])
+        self.assertEqual(cluster_plugin_link.description,
                          resp.json_body['description'])
+        self.assertEqual(cluster_plugin_link.hidden,
+                         resp.json_body['hidden'])
 
-    def test_dashboard_entry_not_found(self):
+    def test_cluster_plugin_link_not_found(self):
         cluster = self.env.create_cluster(api=False)
-        dashboard_entry = self.env \
-            .create_dashboard_entry(cluster_id=cluster.id)
+        cluster_plugin_link = self.env \
+            .create_cluster_plugin_link(cluster_id=cluster.id)
         resp = self.app.get(
             reverse(
-                'DashboardEntryHandler',
+                'ClusterPluginLinkHandler',
                 kwargs={'cluster_id': cluster['id'],
-                        'obj_id': dashboard_entry.id + 1}
+                        'obj_id': cluster_plugin_link.id + 1}
             ),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEqual(404, resp.status_code)
 
-    def test_dashboard_entry_delete(self):
+    def test_cluster_plugin_link_delete(self):
         cluster = self.env.create_cluster(api=False)
-        dashboard_entry = self.env \
-            .create_dashboard_entry(cluster_id=cluster.id)
+        cluster_plugin_link = self.env \
+            .create_cluster_plugin_link(cluster_id=cluster.id)
         resp = self.app.delete(
             reverse(
-                'DashboardEntryHandler',
+                'ClusterPluginLinkHandler',
                 kwargs={'cluster_id': cluster['id'],
-                        'obj_id': dashboard_entry.id}
+                        'obj_id': cluster_plugin_link.id}
             ),
             headers=self.default_headers,
         )
         self.assertEqual(204, resp.status_code)
 
-        d_e_query = self.db.query(DashboardEntry) \
+        d_e_query = self.db.query(ClusterPluginLink) \
             .filter_by(cluster_id=cluster.id)
         self.assertEquals(d_e_query.count(), 0)
 
-    def test_dashboard_entry_patch(self):
+    def test_cluster_plugin_link_patch(self):
         cluster = self.env.create_cluster(api=False)
-        dashboard_entry = self.env \
-            .create_dashboard_entry(cluster_id=cluster.id)
+        cluster_plugin_link = self.env \
+            .create_cluster_plugin_link(cluster_id=cluster.id)
 
-        dashboard_entry_update = {
+        cluster_plugin_link_update = {
             'title': 'new title 3',
-            'description': 'new description 3'
+            'description': 'new description 3',
+            'hidden': True
         }
 
         resp = self.app.patch(
             reverse(
-                'DashboardEntryHandler',
+                'ClusterPluginLinkHandler',
                 kwargs={'cluster_id': cluster['id'],
-                        'obj_id': dashboard_entry.id}
+                        'obj_id': cluster_plugin_link.id}
             ),
-            jsonutils.dumps(dashboard_entry_update),
+            jsonutils.dumps(cluster_plugin_link_update),
             headers=self.default_headers
         )
-        self.assertEqual(dashboard_entry.id, resp.json_body['id'])
+        self.assertEqual(cluster_plugin_link.id, resp.json_body['id'])
         self.assertEqual('new title 3', resp.json_body['title'])
         self.assertEqual('new description 3', resp.json_body['description'])
-        self.assertEqual(dashboard_entry.url, resp.json_body['url'])
+        self.assertEqual(cluster_plugin_link.url, resp.json_body['url'])
+        self.assertEqual(True, resp.json_body['hidden'])

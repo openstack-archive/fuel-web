@@ -38,10 +38,10 @@ from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
 from nailgun.api.v1.handlers.component import ComponentCollectionHandler
 
-from nailgun.api.v1.handlers.dashboard_entry \
-    import DashboardEntryCollectionHandler
-from nailgun.api.v1.handlers.dashboard_entry \
-    import DashboardEntryHandler
+from nailgun.api.v1.handlers.cluster_plugin_link \
+    import ClusterPluginLinkCollectionHandler
+from nailgun.api.v1.handlers.cluster_plugin_link \
+    import ClusterPluginLinkHandler
 
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
@@ -217,10 +217,10 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/vmware_attributes/defaults/?$',
     VmwareAttributesDefaultsHandler,
 
-    r'/clusters/(?P<cluster_id>\d+)/dashboard_entries/?$',
-    DashboardEntryCollectionHandler,
-    r'/clusters/(?P<cluster_id>\d+)/dashboard_entries/(?P<obj_id>\d+)/?$',
-    DashboardEntryHandler,
+    r'/clusters/(?P<cluster_id>\d+)/plugin_links/?$',
+    ClusterPluginLinkCollectionHandler,
+    r'/clusters/(?P<cluster_id>\d+)/plugin_links/(?P<obj_id>\d+)/?$',
+    ClusterPluginLinkHandler,
 
     r'/nodegroups/?$',
     NodeGroupCollectionHandler,
@@ -378,5 +378,5 @@ def public_urls():
         r'/nodes/?$': ['POST'],
         r'/nodes/agent/?$': ['PUT'],
         r'/version/?$': ['GET'],
-        r'/clusters/(?P<cluster_id>\d+)/dashboard_entries/?$': ['POST']
+        r'/clusters/(?P<cluster_id>\d+)/plugin_links/?$': ['POST']
     }

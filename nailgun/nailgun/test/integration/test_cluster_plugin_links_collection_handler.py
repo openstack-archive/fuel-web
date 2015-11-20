@@ -21,70 +21,58 @@ from oslo.serialization import jsonutils
 
 
 class TestAssignmentHandlers(BaseIntegrationTest):
-    def test_dashboard_entries_list_empty(self):
-        cluster = self.env.create(
+    def setUp(self):
+        super(TestAssignmentHandlers, self).setUp()
+        self.cluster = self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[{}]
         )
+        self.cluster_data = {
+            'title': 'test title',
+            'url': 'http://test.com/url',
+            'description': 'short description'
+        }
 
+    def test_cluster_plugin_links_list_empty(self):
         resp = self.app.get(
             reverse(
-                'DashboardEntryCollectionHandler',
-                kwargs={'cluster_id': cluster['id']}
+                'ClusterPluginLinkCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
             ),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
         self.assertEqual([], resp.json_body)
 
-    def test_dashboard_entry_creation(self):
-        cluster = self.env.create(
-            cluster_kwargs={"api": True},
-            nodes_kwargs=[{}]
-        )
-
-        title = 'test title'
-        url = 'http://test.com/url'
-        description = 'short description'
+    def test_cluster_plugin_link_creation(self):
         resp = self.app.post(
             reverse(
-                'DashboardEntryCollectionHandler',
-                kwargs={'cluster_id': cluster['id']}
+                'ClusterPluginLinkCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
             ),
-            params=jsonutils.dumps({
-                "title": title,
-                "url": url,
-                "description": description
-            }),
+            params=jsonutils.dumps(self.cluster_data),
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 201)
 
-        dashboard_entry = self.env.clusters[0].dashboard_entries[0]
-        self.assertEqual(dashboard_entry.title, title)
-        self.assertEqual(dashboard_entry.url, url)
-        self.assertEqual(dashboard_entry.description, description)
+        plugin_link = self.env.clusters[0].plugin_links[0]
+        self.assertEqual(plugin_link.title, self.cluster_data['title'])
+        self.assertEqual(plugin_link.url, self.cluster_data['url'])
+        self.assertEqual(plugin_link.description,
+                         self.cluster_data['description'])
 
-    def test_dashboard_entry_fail_creation(self):
-        cluster = self.env.create(
-            cluster_kwargs={"api": True},
-            nodes_kwargs=[{}]
-        )
-
-        title = 'test title'
-        description = 'short description'
-
+    def test_cluster_plugin_link_fail_creation(self):
         resp = self.app.post(
             reverse(
-                'DashboardEntryCollectionHandler',
-                kwargs={'cluster_id': cluster['id']}
+                'ClusterPluginLinkCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
             ),
             jsonutils.dumps({
-                'title': title,
-                'description': description
+                'title': self.cluster_data['title'],
+                'description': self.cluster_data['description']
             }),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(len(self.env.clusters[0].dashboard_entries), 0)
+        self.assertEqual(len(self.env.clusters[0].plugin_links), 0)

@@ -17,11 +17,12 @@
 from nailgun.objects.serializers.base import BasicSerializer
 
 
-class DashboardEntrySerializer(BasicSerializer):
+class ClusterPluginLinkSerializer(BasicSerializer):
 
     fields = (
         "id",
         "title",
         "url",
-        "description"
+        "description",
+        "hidden"
     )

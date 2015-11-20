@@ -13,29 +13,33 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-DASHBOARD_ENTRY_SCHEMA = {
+CLUSTER_PLUGIN_LINK_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'object',
     'properties': {
         'id': {'type': 'integer'},
         'title': {'type': 'string', 'maxLength': 50, 'minLength': 1},
         'url': {'type': 'string'},
-        'description': {'type': 'string'}
+        'description': {'type': 'string'},
+        'hidden': {'type': 'boolean'}
     },
-    'required': ['title', 'url']
+    'required': ['title', 'url'],
+    'additionalProperties': False
 }
 
-DASHBOARD_ENTRIES_SCHEMA = {
+CLUSTER_PLUGIN_LINKS_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'array',
-    'items': DASHBOARD_ENTRY_SCHEMA}
+    'items': CLUSTER_PLUGIN_LINK_SCHEMA}
 
-DASHBOARD_ENTRY_UPDATE_SCHEMA = {
+CLUSTER_PLUGIN_LINK_UPDATE_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'object',
     'properties': {
         'title': {'type': 'string', 'maxLength': 50, 'minLength': 1},
         'url': {'type': 'string'},
-        'description': {'type': 'string'}
-    }
+        'description': {'type': 'string'},
+        'hidden': {'type': 'boolean'}
+    },
+    'additionalProperties': False
 }

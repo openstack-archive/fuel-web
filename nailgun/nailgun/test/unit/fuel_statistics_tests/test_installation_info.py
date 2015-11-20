@@ -371,6 +371,7 @@ class TestInstallationInfo(BaseTestCase):
             ('plugins', 'installed_plugins'),
             ('networking_configs', 'network_configuration'),
             ('release_id', 'release'),
+            ('cluster_plugin_links', 'plugin_links'),
         )
         for name_from, name_to in rename_fields:
             cluster_schema.pop(name_from)

@@ -15,6 +15,7 @@
 
 import copy
 from distutils.version import StrictVersion
+from itertools import groupby
 import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
@@ -94,6 +95,70 @@ class ClusterValidator(BasicValidator):
         return d
 
     @classmethod
+    def _validate_components(cls, release_id, components_list):
+        release = objects.Release.get_by_uid(release_id)
+        release_components = objects.Release.get_all_components(release)
+        found_release_components = list(
+            c for c in release_components if c['name'] in components_list)
+
+        if len(found_release_components) != len(components_list):
+            found_release_components_names = set(
+                c['name'] for c in found_release_components)
+            raise errors.InvalidData(
+                u'{0} components are not related to release "{1}".'.format(
+                    sorted(
+                        set(components_list) - found_release_components_names),
+                    release.name
+                ),
+                log_message=True
+            )
+
+        missed_component_types = set(['hypervisor', 'network', 'storage'])
+        for component in found_release_components:
+            component_name = component['name']
+            for incompatible in component.get('incompatible', []):
+                incompatible_component_names = [
+                    name for name in components_list
+                    if name.startswith(incompatible['name'].split('*')[0])
+                ]
+                if incompatible_component_names:
+                    raise errors.InvalidData(
+                        u"Incompatible components were found: "
+                        u"'{0}' incompatible with {1}.".format(
+                            component_name, incompatible_component_names),
+                        log_message=True
+                    )
+
+            c_name = lambda x: x['name'].split(':', 1)[0]
+            for c_type, group in groupby(
+                    sorted(component.get('requires', []), key=c_name), c_name):
+                group_components = list(group)
+                for require in group_components:
+                    exist_group_components = [
+                        name for name in components_list
+                        if name.startswith(require['name'].split('*')[0])
+                    ]
+                    if exist_group_components:
+                        break
+                else:
+                    raise errors.InvalidData(
+                        u"Requires {0} for '{1}' components were not "
+                        u"satisfied.".format(
+                            [c['name'] for c in group_components],
+                            component_name),
+                        log_message=True
+                    )
+            if component_name.split(':', 1)[0] in missed_component_types:
+                missed_component_types.remove(component_name.split(':', 1)[0])
+
+        if missed_component_types:
+            raise errors.InvalidData(
+                "Components with {0} types required but wasn't found in data"
+                .format(sorted(missed_component_types)),
+                log_message=True
+            )
+
+    @classmethod
     def validate(cls, data):
         d = cls._validate_common(data)
 
@@ -111,6 +176,9 @@ class ClusterValidator(BasicValidator):
                     "Environment with this name already exists",
                     log_message=True
                 )
+
+        if "components" in d:
+            cls._validate_components(release_id, d['components'])
 
         return d
 

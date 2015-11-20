@@ -19,6 +19,7 @@ Release object and collection
 """
 
 import copy
+import re
 
 from distutils.version import StrictVersion
 import yaml
@@ -172,7 +173,17 @@ class Release(NailgunObject):
         :returns: list -- list of all components
         """
         plugin_components = PluginManager.get_components_metadata(instance)
-        return instance.components_metadata + plugin_components
+        components = instance.components_metadata + plugin_components
+        # ML2 core plugin can't be useful without ML2 driver. It should
+        # be removed if components haven't any ML2 driver
+        for component in components:
+            if re.search('neutron:ml2', component['name']):
+                break
+        else:
+            components = [
+                c for c in components if c['name'] != consts.ML2_CORE_PLUGIN]
+
+        return components
 
 
 class ReleaseCollection(NailgunCollection):

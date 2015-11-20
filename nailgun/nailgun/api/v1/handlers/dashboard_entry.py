@@ -27,6 +27,11 @@ class DashboardEntryHandler(base.SingleHandler):
     single = objects.DashboardEntry
 
     def GET(self, cluster_id, obj_id):
+        """:returns: JSONized REST object.
+
+        :http: * 200 (OK)
+               * 404 (dashboard entry not found in db)
+        """
         self.get_object_or_404(objects.Cluster, cluster_id)
 
         obj = self.get_object_or_404(self.single, obj_id)
@@ -60,7 +65,7 @@ class DashboardEntryHandler(base.SingleHandler):
     def DELETE(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
 
-        :http: * 200 (OK)
+        :http: * 204 (OK)
                * 404 (object not found in db)
         """
         d_e = self.get_object_or_404(self.single, obj_id)

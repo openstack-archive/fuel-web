@@ -22,7 +22,8 @@ DASHBOARD_ENTRY_SCHEMA = {
         'url': {'type': 'string'},
         'description': {'type': 'string'}
     },
-    'required': ['title', 'url']
+    'required': ['title', 'url'],
+    'additionalProperties': False
 }
 
 DASHBOARD_ENTRIES_SCHEMA = {
@@ -37,5 +38,6 @@ DASHBOARD_ENTRY_UPDATE_SCHEMA = {
         'title': {'type': 'string', 'maxLength': 50, 'minLength': 1},
         'url': {'type': 'string'},
         'description': {'type': 'string'}
-    }
+    },
+    'additionalProperties': False
 }

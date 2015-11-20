@@ -1162,6 +1162,18 @@ class EnvironmentManager(object):
             expect_errors=False
         )
 
+    def _add_plugin_network_roles(self, cluster, network_roles):
+        plugin_data = self.get_default_plugin_metadata(releases=[{
+            'repository_path': 'repositories/ubuntu',
+            'version': cluster.release.version,
+            'os': cluster.release.operating_system.lower(),
+            'mode': [cluster.mode],
+        }])
+        plugin_data['network_roles_metadata'] = network_roles
+        plugin = Plugin.create(plugin_data)
+        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
+        return plugin
+
 
 class BaseTestCase(TestCase):
 

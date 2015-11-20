@@ -1783,3 +1783,60 @@ class AllocateVIPs70Mixin(object):
                 "Conflicting names: {1}"
                 .format(cluster.id, ', '.join(duplicate_vip_names))
             )
+
+
+class AllocateVIPs80Mixin(object):
+
+    @classmethod
+    def _assign_vips_for_net_groups(cls, cluster):
+        # noderole -> nodegroup mapping
+        #   is used for determine nodegroup where VIP should be allocated
+        noderole_nodegroup = {}
+        # nodegroup -> role-to-network mapping
+        #   is used for determine role-to-network mapping that is needed
+        #   for choosing proper network for VIP allocation
+        nodegroup_networks = {}
+
+        # iterate over all network roles, assign vip and yield information
+        # about assignment
+        for role in objects.Cluster.get_network_roles(cluster):
+            properties = role.get('properties', {})
+            for vip_info in properties.get('vip', ()):
+                noderoles = tuple(vip_info.get('node_roles', ['controller']))
+
+                # Since we're iterating over all VIP requests, we most
+                # likely meet the same noderoles again and again. Let's
+                # calculate node group just once, cache and use cached
+                # value in order to reduce number of SQL queries.
+                if noderoles not in noderole_nodegroup:
+                    noderole_nodegroup[noderoles] = \
+                        objects.Cluster.get_node_group(cluster, noderoles)
+                nodegroup = noderole_nodegroup[noderoles]
+
+                # Since different node roles may have the same node group,
+                # it'd be ridiculous to build "role-to-network-group" mapping
+                # each time we retrieve the group. So let's save mapping
+                # in cache and retrieve it if necessary.
+                if nodegroup.name not in nodegroup_networks:
+                    nodegroup_networks[nodegroup.name] = \
+                        cls.build_role_to_network_group_mapping(
+                            cluster, nodegroup.name)
+
+                net_group = cls.get_network_group_for_role(
+                    role,
+                    nodegroup_networks[nodegroup.name])
+                vip_name = vip_info['name']
+
+                # Since network roles may be mapped to non-existing networks,
+                # need to check whether network exists in cluster and skip VIP
+                # assignment if not.
+                if net_group != consts.NETWORKS.fuelweb_admin and \
+                        net_group not in [ng.name for ng in nodegroup.networks]:
+                    logger.warning(
+                        "Skip VIP '{0}' whitch is mapped to non-existing"
+                        " network '{1}'".format(vip_name, net_group))
+                    continue
+
+                # do allocation
+                vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
+                yield role, vip_info, vip_addr

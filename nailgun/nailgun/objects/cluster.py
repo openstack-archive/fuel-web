@@ -339,9 +339,12 @@ class Cluster(NailgunObject):
 
         ver = instance.release.environment_version
         if instance.net_provider == 'neutron':
-            if StrictVersion(ver) >= StrictVersion('7.0'):
+            if StrictVersion(ver) == StrictVersion('7.0'):
                 from nailgun.network.neutron import NeutronManager70
                 return NeutronManager70
+            elif StrictVersion(ver) >= StrictVersion('8.0'):
+                from nailgun.network.neutron import NeutronManager80
+                return NeutronManager80
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:

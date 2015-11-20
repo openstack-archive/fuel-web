@@ -131,21 +131,6 @@ class TestDeploymentAttributesSerialization70(
          namespace: "haproxy"
     """.format(**custom_network))
 
-    def _add_plugin_network_roles(self, **kwargs):
-        plugin_data = self.env.get_default_plugin_metadata(releases=[{
-            'repository_path': 'repositories/ubuntu',
-            'version': self.cluster_db.release.version,
-            'os': self.cluster_db.release.operating_system.lower(),
-            'mode': [self.cluster_db.mode],
-        }])
-        plugin_data.update(**kwargs)
-
-        plugin = objects.Plugin.create(plugin_data)
-        objects.ClusterPlugins.set_attributes(self.cluster_db.id,
-                                              plugin.id,
-                                              enabled=True)
-        return plugin
-
     def test_non_default_bridge_mapping(self):
         expected_mapping = {
             u'test': u'br-test',
@@ -214,8 +199,8 @@ class TestDeploymentAttributesSerialization70(
                                        vlan_start=self.custom_network[
                                            'vlan_start'
                                        ])
-        self._add_plugin_network_roles(
-            network_roles_metadata=self.plugin_network_roles)
+        self.env._add_plugin_network_roles(self.cluster_db,
+                                           self.plugin_network_roles)
         self.env.create_node(
             api=True,
             cluster_id=cluster['id'],

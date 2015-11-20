@@ -49,6 +49,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.network.manager import NetworkManager
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
+from nailgun.network.neutron import NeutronManager80
 
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
@@ -1400,6 +1401,11 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
         self.env.clusters[0].release.version = '2014.2.2-7.0'
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])
         self.assertEqual(nm, NeutronManager70)
+
+    def test_get_neutron_80(self):
+        self.env.clusters[0].release.version = '2014.2.2-8.0'
+        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        self.assertEqual(nm, NeutronManager80)
 
 
 class TestNetworkGroup(BaseTestCase):

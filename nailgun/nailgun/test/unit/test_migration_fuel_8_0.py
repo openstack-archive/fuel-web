@@ -454,3 +454,21 @@ class TestPluginMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['plugins'].c.components_metadata]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):
+
+    def test_bootstrap_field_exists_and_filled(self):
+        result = db.execute(
+            sa.select([self.meta.tables['master_node_settings'].c.settings]))
+        bootstrap_settings = {
+            "error": {
+                "type": "hidden",
+                "value": "Error description",
+                "weight": 10
+            }
+        }
+        self.assertEqual(
+            jsonutils.loads(result.scalar())['bootstrap'],
+            bootstrap_settings
+        )

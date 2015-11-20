@@ -281,6 +281,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     return <SettingSection
                                         key={sectionName}
                                         cluster={this.props.cluster}
+                                        groupName={groupName}
                                         sectionName={sectionName}
                                         settingsToDisplay={settingsToDisplay}
                                         onChange={_.bind(this.onChange, this, sectionName)}
@@ -497,7 +498,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 onChange={this.props.onChange}
                             />
                         :
-                            <span className={'subtab-group-' + this.props.sectionName}>{this.props.sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || this.props.sectionName}</span>
+                            <span className={'subtab-group-' + this.props.sectionName}>{!metadata.group ? i18n('cluster_page.settings_tab.groups.' + this.props.groupName) : metadata.label || this.props.sectionName}</span>
                         }
                     </h3>
                     <div>

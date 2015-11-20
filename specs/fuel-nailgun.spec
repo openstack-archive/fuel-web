@@ -1,7 +1,6 @@
 %define name fuel-nailgun
 %{!?version: %define version 8.0.0}
 %{!?release: %define release 1}
-%{!?rhel: %define rhel 7}
 
 Summary: Nailgun package
 Name: %{name}
@@ -61,13 +60,20 @@ Requires:    pydot-ng >= 1.0.0
 # Workaroud for babel bug
 Requires:    pytz
 
-%if 0%{rhel} < 7
+%if 0%{?rhel} >= 5 && 0%{?rhel} < 7
 Requires:    python-argparse >= 1.2.1
 Requires:    python-ordereddict >= 1.1
 %endif
 
 BuildRequires: nodejs
 BuildRequires: nodejs-nailgun
+
+%if 0%{?fedora} > 16 || 0%{?rhel} > 6
+Requires(post): systemd-units
+Requires(preun): systemd-units
+Requires(postun): systemd-units
+BuildRequires: systemd-units
+%endif
 
 %description
 Nailgun package
@@ -98,11 +104,21 @@ install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/download-debian-install
 install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml %{buildroot}%{_datadir}/fuel-openstack-metadata/openstack.yaml
 python -c "import yaml; print filter(lambda r: r['fields'].get('name'), yaml.safe_load(open('%{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml')))[0]['fields']['version']" > %{buildroot}%{_sysconfdir}/fuel_openstack_version
 
+%if %{defined _unitdir}
+install -d -D -m755 %{buildroot}/%{_unitdir}
+install -D -m644 %{_builddir}/%{name}-%{version}/systemd/*.service %{buildroot}/%{_unitdir}/
+%endif
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files -f %{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
 %defattr(0755,root,root)
+
+%if %{defined _unitdir}
+%attr(0644, root, root) /%{_unitdir}/*
+%endif
+
 
 %package -n fuel-openstack-metadata
 
@@ -151,7 +167,7 @@ BuildArch: noarch
 Requires:  python-keystoneclient >= 0.11
 Requires:  python-keystonemiddleware >= 1.2.0
 
-%if 0%{rhel} < 7
+%if 0%{?rhel} >= 5 && 0%{?rhel} < 7
 Requires:    python-ordereddict >= 1.1
 %endif
 

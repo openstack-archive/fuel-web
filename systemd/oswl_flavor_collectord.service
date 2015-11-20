@@ -1,0 +1,9 @@
+[Unit]
+Name=oswl flavor collector daemon
+
+[Service]
+ExecStart=/usr/bin/oswl_collectord flavor
+
+[Install]
+WantedBy=multi-user.target
+

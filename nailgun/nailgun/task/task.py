@@ -1375,6 +1375,7 @@ class DumpTask(object):
 
         # inject master host
         dump_conf['dump']['master']['hosts'] = [{
+            'hostname': settings.MASTER_HOSTNAME,
             'address': settings.MASTER_IP,
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }]

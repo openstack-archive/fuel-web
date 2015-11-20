@@ -154,6 +154,7 @@ PATH_TO_BOOTSTRAP_SSH_KEY: "/root/.ssh/bootstrap.rsa"
 AUTHORIZED_KEYS: []
 
 MASTER_IP: "127.0.0.1"
+MASTER_HOSTNAME: "fuel-master-node"
 
 COBBLER_URL: "http://localhost/cobbler_api"
 COBBLER_USER: "cobbler"

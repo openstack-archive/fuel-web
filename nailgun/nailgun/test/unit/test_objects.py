@@ -1235,6 +1235,90 @@ class TestClusterObject(BaseTestCase):
         self.env._set_additional_component(cluster, 'ironic', True)
         self.assertTrue(objects.Cluster.is_component_enabled(cluster,
                                                              'ironic'))
+    def test_get_cluster_attributes_by_components(self):
+        release = self.env.create_release(
+            components_metadata=[{
+                'name': 'hypervisor:libvirt:test',
+                'bind': [['settings:common.libvirt_type.value', 'test'],
+                         ['wrong_model:field.value', 'smth']]
+            }, {
+                'name': 'additional_service:new',
+                'bind': ['settings:additional_components.new.value']
+            }, {
+                'name': 'network:some_net',
+                'bind': [['cluster:net_provider', 'test_provider'],
+                         'settings:some_net.checkbox']
+            }]
+        )
+        selected_components = ['network:some_net', 'hypervisor:libvirt:test',
+                               'additional_service:new_plugin_service']
+        result_attrs = objects.Cluster.get_cluster_attributes_by_components(
+            selected_components, release.id)
+        self.assertDictEqual(
+            result_attrs,
+            {'editable': {u'some_net': {u'checkbox': True},
+                          u'common': {u'libvirt_type': {u'value': u'test'}}},
+             'cluster': {u'net_provider': u'test_provider'}}
+        )
+
+    def test_enable_settings_by_components(self, ):
+        components = [{
+            'name': 'network:neutron:tun',
+            'bind': [['cluster:net_provider', 'neutron'],
+                     ['cluster:net_segment_type', 'tun']]
+        }, {
+            'name': 'network:nova_network',
+            'bind': [['cluster:net_provider', 'nova_network']]
+        }, {
+            'name': 'hypervisor:libvirt:kvm',
+            'bind': [['settings:common.libvirt_type.value', 'kvm']]
+        }, {
+            'name': 'additional_service:sahara',
+            'bind': ['settings:additional_components.sahara.value']
+        }]
+        default_editable_attributes = {
+            'common': {'libvirt_type': {'value': 'qemu'}},
+            'additional_components': {'sahara': {'value': False}}
+        }
+
+        release = self.env.create_release(components_metadata=components)
+        tests_data = [{
+            'selected_components': ['network:neutron:tun',
+                                    'hypervisor:libvirt:kvm',
+                                    'additional_service:sahara'],
+            'expected_values': {
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'segmentation_type': consts.NEUTRON_SEGMENT_TYPES.tun
+            }
+        }, {
+            'selected_components': ['network:nova_network',
+                                    'hypervisor:libvirt:kvm',
+                                    'additional_service:sahara'],
+            'expected_values': {
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
+                'segmentation_type': None
+            }
+        }]
+        for i, test_data in enumerate(tests_data):
+            with mock.patch('objects.Cluster.get_default_editable_attributes',
+                            return_value=default_editable_attributes):
+                cluster = objects.Cluster.create({
+                    'name': 'test-{0}'.format(i),
+                    'release_id': release.id,
+                    'components': test_data.get('selected_components', [])
+                })
+            editable_attrs = cluster.attributes.editable
+            expected_values = test_data['expected_values']
+            self.assertEqual(cluster.net_provider,
+                             expected_values['net_provider'])
+            if expected_values['segmentation_type']:
+                self.assertEqual(cluster.network_config.segmentation_type,
+                                 expected_values['segmentation_type'])
+            self.assertEqual(
+                editable_attrs[u'common'][u'libvirt_type'][u'value'], u'kvm')
+            self.assertTrue(
+                editable_attrs[u'additional_components'][u'sahara'][u'value'])
+
 
 
 class TestClusterObjectVirtRoles(BaseTestCase):

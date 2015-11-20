@@ -14,27 +14,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.db.sqlalchemy.models import dashboard_entry \
-    as dashboard_entry_db_model
+from nailgun.db.sqlalchemy.models import cluster_plugin_link \
+    as cluster_plugin_link_db_model
 from nailgun.objects import base
-from nailgun.objects.serializers import dashboard_entry
+from nailgun.objects.serializers import cluster_plugin_link
 
 
-class DashboardEntry(base.NailgunObject):
+class ClusterPluginLink(base.NailgunObject):
 
-    model = dashboard_entry_db_model.DashboardEntry
-    serializer = dashboard_entry.DashboardEntrySerializer
+    model = cluster_plugin_link_db_model.ClusterPluginLink
+    serializer = cluster_plugin_link.ClusterPluginLinkSerializer
 
 
-class DashboardEntryCollection(base.NailgunCollection):
+class ClusterPluginLinkCollection(base.NailgunCollection):
 
-    single = DashboardEntry
+    single = ClusterPluginLink
 
     @classmethod
     def get_by_cluster_id(cls, cluster_id):
-        if cluster_id == '':
-            return cls.filter_by(None, cluster_id=None)
-        return cls.filter_by(None, cluster_id=cluster_id)
+        if cluster_id:
+            cls.filter_by(None, cluster_id=cluster_id)
+        else:
+            return cls.all()
 
     @classmethod
     def create_with_cluster_id(cls, data, cluster_id):

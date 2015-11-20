@@ -107,9 +107,11 @@ def upgrade():
     upgrade_add_baremetal_net()
     upgrade_with_components()
     dashboard_entries_upgrade()
+    upgrade_master_settings()
 
 
 def downgrade():
+    downgrade_master_settings()
     dashboard_entries_downgrade()
     downgrade_with_components()
     downgrade_add_baremetal_net()
@@ -466,6 +468,37 @@ def upgrade_add_baremetal_net():
     op.add_column('neutron_config',
                   sa.Column('baremetal_range', fields.JSON(), nullable=True,
                             server_default='[]'))
+
+
+def upgrade_master_settings():
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT settings FROM master_node_settings")
+    master_settings = jsonutils.loads(
+        connection.execute(select_query).scalar())
+    bootstrap_settings = {
+        "error": {
+            "type": "hidden",
+            "value": "",
+            "weight": 10
+        }
+    }
+    master_settings['bootstrap'] = bootstrap_settings
+    update_query = sa.sql.text(
+        "UPDATE master_node_settings SET settings = :settings")
+
+    connection.execute(update_query, settings=jsonutils.dumps(master_settings))
+
+
+def downgrade_master_settings():
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT settings FROM master_node_settings")
+    master_settings = jsonutils.loads(
+        connection.execute(select_query).scalar())
+    master_settings.pop('bootstrap', None)
+    update_query = sa.sql.text(
+        "UPDATE master_node_settings SET settings = :settings")
+
+    connection.execute(update_query, settings=jsonutils.dumps(master_settings))
 
 
 def downgrade_add_baremetal_net():

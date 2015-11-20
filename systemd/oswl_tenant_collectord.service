@@ -1,0 +1,9 @@
+[Unit]
+Name=oswl tenant collector  daemon
+
+[Service]
+ExecStart=/usr/bin/oswl_collectord tenant
+
+[Install]
+WantedBy=multi-user.target
+

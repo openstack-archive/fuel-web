@@ -533,7 +533,6 @@
                     },
                     "title": "OpenStack Settings",
                     "groups": {
-                        "common": "General Settings",
                         "general": "General",
                         "security": "Security",
                         "compute": "Compute",

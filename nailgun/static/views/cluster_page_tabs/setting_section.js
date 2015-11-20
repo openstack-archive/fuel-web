@@ -174,7 +174,9 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                 onChange={this.props.onChange}
                             />
                         :
-                            <span className={'subtab-group-' + this.props.sectionName}>{this.props.sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || this.props.sectionName}</span>
+                            <span className={'subtab-group-' + this.props.sectionName}>
+                                {!metadata.group ? i18n('cluster_page.settings_tab.groups.' + this.props.groupName) : metadata.label || this.props.sectionName}
+                            </span>
                         }
                     </h3>
                     <div>

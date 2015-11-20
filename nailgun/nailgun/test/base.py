@@ -23,6 +23,7 @@ except ImportError:
 import mock
 import os
 import re
+import six
 import time
 import uuid
 
@@ -458,7 +459,7 @@ class EnvironmentManager(object):
             dash_data.update(kwargs)
         dashboard_entry = DashboardEntry()
         dashboard_entry.cluster_id = dash_data.get("cluster_id")
-        for f, v in dash_data.iteritems():
+        for f, v in six.iteritems(dash_data):
             setattr(dashboard_entry, f, v)
         self.db.add(dashboard_entry)
         self.db.commit()

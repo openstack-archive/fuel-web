@@ -195,8 +195,8 @@ class InstallationInfo(object):
                     vmware_attributes_editable,
                     self.vmware_attributes_white_list
                 ),
-                'dashboard_entries': self.get_dashboard_entries(
-                    cluster.dashboard_entries),
+                'plugin_links': self.get_cluster_plugin_links(
+                    cluster.plugin_links),
                 'net_provider': cluster.net_provider,
                 'fuel_version': cluster.fuel_version,
                 'is_customized': cluster.is_customized,
@@ -306,9 +306,9 @@ class InstallationInfo(object):
             groups_info.append(group_info)
         return groups_info
 
-    def get_dashboard_entries(self, dashboard_entries):
+    def get_cluster_plugin_links(self, plugin_links):
         return [{'title': e.title, 'description': e.description, 'id': e.id}
-                for e in dashboard_entries]
+                for e in plugin_links]
 
     def get_installation_info(self):
         clusters_info = self.get_clusters_info()

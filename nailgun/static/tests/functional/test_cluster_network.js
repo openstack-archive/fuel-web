@@ -335,13 +335,6 @@ define([
                         .end()
                     .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'New subtab title is shown');
             },
-            'Show all Networks': function() {
-                return this.remote
-                    .clickByCssSelector('input[name=show_all]')
-                    .assertElementsExist('.network-tab h3', 6, 'All networks are present after clicking "show all"')
-                    .clickByCssSelector('input[name=show_all]')
-                    .assertElementsExist('.network-tab h3', 3, 'Only current networks are present after unchecking "show all"');
-            },
             'Node network group deletion': function() {
                 return this.remote
                     .clickByCssSelector('.subtab-link-default')

@@ -534,7 +534,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 return $.when(
                     cluster.get('settings').fetch({cache: true}),
                     cluster.get('networkConfiguration').fetch({cache: true})
-                ).then(() => {});
+                ).then(() => ({}));
             }
         },
         shouldDataBeFetched: function() {

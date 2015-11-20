@@ -1474,6 +1474,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                     return <SettingSection
                                         key={sectionName}
                                         cluster={this.props.cluster}
+                                        groupName='network'
                                         sectionName={sectionName}
                                         settingsToDisplay={settingsToDisplay}
                                         onChange={_.bind(this.onChange, this, sectionName)}

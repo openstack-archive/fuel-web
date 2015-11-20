@@ -25,7 +25,7 @@ from nailgun.db.sqlalchemy.models.base import Base
 class DashboardEntry(Base):
     __tablename__ = 'dashboard_entries'
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer, ForeignKey('clusters.id'), nullable=False)
     title = Column(Text, nullable=False)
     url = Column(Text, nullable=False)
     description = Column(Text)

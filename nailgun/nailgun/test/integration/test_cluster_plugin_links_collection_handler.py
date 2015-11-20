@@ -21,7 +21,7 @@ from oslo.serialization import jsonutils
 
 
 class TestAssignmentHandlers(BaseIntegrationTest):
-    def test_dashboard_entries_list_empty(self):
+    def test_cluster_plugin_links_list_empty(self):
         cluster = self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[{}]
@@ -29,7 +29,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
 
         resp = self.app.get(
             reverse(
-                'DashboardEntryCollectionHandler',
+                'ClusterPluginLinkCollectionHandler',
                 kwargs={'cluster_id': cluster['id']}
             ),
             headers=self.default_headers
@@ -37,7 +37,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual([], resp.json_body)
 
-    def test_dashboard_entry_creation(self):
+    def test_cluster_plugin_link_creation(self):
         cluster = self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[{}]
@@ -48,7 +48,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         description = 'short description'
         resp = self.app.post(
             reverse(
-                'DashboardEntryCollectionHandler',
+                'ClusterPluginLinkCollectionHandler',
                 kwargs={'cluster_id': cluster['id']}
             ),
             params=jsonutils.dumps({
@@ -60,12 +60,12 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 201)
 
-        dashboard_entry = self.env.clusters[0].dashboard_entries[0]
-        self.assertEqual(dashboard_entry.title, title)
-        self.assertEqual(dashboard_entry.url, url)
-        self.assertEqual(dashboard_entry.description, description)
+        plugin_link = self.env.clusters[0].plugin_links[0]
+        self.assertEqual(plugin_link.title, title)
+        self.assertEqual(plugin_link.url, url)
+        self.assertEqual(plugin_link.description, description)
 
-    def test_dashboard_entry_fail_creation(self):
+    def test_cluster_plugin_link_fail_creation(self):
         cluster = self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[{}]
@@ -76,7 +76,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
 
         resp = self.app.post(
             reverse(
-                'DashboardEntryCollectionHandler',
+                'ClusterPluginLinkCollectionHandler',
                 kwargs={'cluster_id': cluster['id']}
             ),
             jsonutils.dumps({
@@ -87,4 +87,4 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(len(self.env.clusters[0].dashboard_entries), 0)
+        self.assertEqual(len(self.env.clusters[0].plugin_links), 0)

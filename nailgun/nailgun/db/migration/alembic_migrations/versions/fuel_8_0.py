@@ -106,7 +106,7 @@ def upgrade():
     upgrade_cluster_plugins()
     upgrade_add_baremetal_net()
     upgrade_with_components()
-    dashboard_entries_upgrade()
+    cluster_plugin_links_upgrade()
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
 
@@ -114,7 +114,7 @@ def upgrade():
 def downgrade():
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
-    dashboard_entries_downgrade()
+    cluster_plugin_links_downgrade()
     downgrade_with_components()
     downgrade_add_baremetal_net()
     downgrade_cluster_plugins()
@@ -513,23 +513,25 @@ def downgrade_with_components():
     op.drop_column('releases', 'components_metadata')
 
 
-def dashboard_entries_upgrade():
+def cluster_plugin_links_upgrade():
     op.create_table(
-        'dashboard_entries',
+        'cluster_plugin_links',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('cluster_id', sa.Integer(), nullable=False),
         sa.Column('title', sa.Text(), nullable=False),
         sa.Column('url', sa.Text(), nullable=False),
         sa.Column('description', sa.Text()),
+        sa.Column(
+            'hidden',
+            sa.Boolean(),
+            nullable=False,
+            server_default='false'
+        ),
         sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
         sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('dashboard_entries_cluster_id_key',
-                    'dashboard_entries', ['cluster_id'])
-
-
-def dashboard_entries_downgrade():
-    op.drop_table('dashboard_entries')
+    op.create_index('cluster_plugin_links_cluster_id_key',
+                    'cluster_plugin_links', ['cluster_id'])
 
 
 def upgrade_all_network_data_from_string_to_appropriate_data_type():
@@ -592,3 +594,7 @@ def ip_type_to_string(table_name, column_name, string_len):
                                                                 column_name,
                                                                 string_len)
     )
+
+
+def cluster_plugin_links_downgrade():
+    op.drop_table('cluster_plugin_links')

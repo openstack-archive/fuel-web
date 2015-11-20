@@ -280,6 +280,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                                     return <SettingSection
                                         key={sectionName}
                                         cluster={this.props.cluster}
+                                        groupName={groupName}
                                         sectionName={sectionName}
                                         settingsToDisplay={settingsToDisplay}
                                         onChange={_.bind(this.onChange, this, sectionName)}

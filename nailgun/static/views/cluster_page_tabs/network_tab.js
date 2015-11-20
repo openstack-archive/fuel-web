@@ -728,7 +728,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 .done(_.bind(function() {
                     var currentNodeNetworkGroup = this.nodeNetworkGroups.findWhere({name: this.props.activeNetworkSectionName});
                     this.props.nodeNetworkGroups.remove(currentNodeNetworkGroup);
-                    currentNodeNetworkGroup.destroy().done(this.updateInitialConfiguration);
+                    this.props.cluster.get('networkConfiguration').fetch()
+                        .then(() => {
+                            currentNodeNetworkGroup.destroy()
+                                .then(() => (this.updateInitialConfiguration));
+                    });
                 }, this));
         },
         addNodeGroup: function(hasChanges) {
@@ -1368,7 +1372,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         }
                         <div className='page-control-box'>
                             <div className='verification-box row'>
-                                <div className='verification-network-placeholder col-xs-8 col-xs-offset-2'>
+                                <div className='verification-network-placeholder col-xs-10 col-xs-offset-2'>
                                     <div className='router-box'>
                                         <div className='verification-router'></div>
                                     </div>

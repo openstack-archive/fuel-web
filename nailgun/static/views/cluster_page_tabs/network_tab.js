@@ -725,13 +725,15 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         },
         removeNodeNetworkGroup: function() {
             dialogs.RemoveNodeNetworkGroupDialog.show()
-                .done(_.bind(function() {
+                .then(() => {
                     var currentNodeNetworkGroup = this.nodeNetworkGroups.findWhere({name: this.props.activeNetworkSectionName});
                     this.props.nodeNetworkGroups.remove(currentNodeNetworkGroup);
-                    currentNodeNetworkGroup.destroy().done(this.updateInitialConfiguration);
-                }, this));
+                    return currentNodeNetworkGroup.destroy();
+                })
+                .then(() => this.props.cluster.get('networkConfiguration').fetch())
+                .then(this.updateInitialConfiguration);
         },
-        addNodeGroup: function(hasChanges) {
+        addNodeNetworkGroup: function(hasChanges) {
             if (hasChanges) {
                 utils.showErrorDialog({
                     title: i18n(networkTabNS + 'node_network_group_creation_error'),
@@ -743,16 +745,17 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 clusterId: this.props.cluster.id,
                 nodeNetworkGroups: this.nodeNetworkGroups
             })
-                .done(_.bind(function() {
+                .then(() => {
                     this.setState({hideVerificationResult: true});
-                    this.nodeNetworkGroups.fetch().done(_.bind(function() {
-                        var newNodeNetworkGroup = this.nodeNetworkGroups.last();
-                        this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
-                        this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
-                        this.props.cluster.get('networkConfiguration').fetch()
-                            .done(this.updateInitialConfiguration);
-                    }, this));
-                }, this));
+                    return this.nodeNetworkGroups.fetch();
+                })
+                .then(() => {
+                    var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+                    this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
+                    this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
+                    return this.props.cluster.get('networkConfiguration').fetch();
+                })
+                .then(this.updateInitialConfiguration);
         },
         render: function() {
             var isLocked = this.isLocked(),
@@ -824,7 +827,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                     <button
                                         key='add_node_group'
                                         className='btn btn-default add-nodegroup-btn pull-right'
-                                        onClick={_.partial(this.addNodeGroup, hasChanges)}
+                                        onClick={_.partial(this.addNodeNetworkGroup, hasChanges)}
                                         disabled={isLocked}
                                     >
                                         {hasChanges && <i className='glyphicon glyphicon-danger-sign'/>}
@@ -1368,7 +1371,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         }
                         <div className='page-control-box'>
                             <div className='verification-box row'>
-                                <div className='verification-network-placeholder col-xs-8 col-xs-offset-2'>
+                                <div className='verification-network-placeholder col-xs-10 col-xs-offset-2'>
                                     <div className='router-box'>
                                         <div className='verification-router'></div>
                                     </div>

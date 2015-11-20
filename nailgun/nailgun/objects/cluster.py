@@ -152,12 +152,19 @@ class Cluster(NailgunObject):
         # remove read-only attribute
         data.pop("is_locked", None)
         assign_nodes = data.pop("nodes", [])
+        components = data.get("components")
+        enabled_editable_attributes = None
+        if components:
+            enabled_core_attributes = cls.get_cluster_attributes_by_components(
+                components, data["release_id"])
+            data = dict_merge(data, enabled_core_attributes['cluster'])
+            enabled_editable_attributes = enabled_core_attributes['editable']
 
         data["fuel_version"] = settings.VERSION["release"]
         cluster = super(Cluster, cls).create(data)
         cls.create_default_group(cluster)
 
-        cls.create_attributes(cluster)
+        cls.create_attributes(cluster, enabled_editable_attributes)
         cls.create_vmware_attributes(cluster)
         cls.create_default_extensions(cluster)
 
@@ -188,6 +195,39 @@ class Cluster(NailgunObject):
         return cluster
 
     @classmethod
+    def get_cluster_attributes_by_components(cls, components, release_id):
+
+        def _update_attributes_dict_by_binds_exp(bind_exp, value):
+            model, attr_expr = bind_exp.split(':')
+            if model not in ('settings', 'cluster'):
+                return
+
+            path_items = attr_expr.split('.')
+            path_items.insert(0, model)
+            attributes = cluster_attributes
+            for i, item in enumerate(path_items):
+                if i == len(path_items) - 1:
+                    attributes[item] = value
+                    break
+                if item not in attributes:
+                    attributes[item] = {}
+                attributes = attributes.get(item)
+
+        release = Release.get_by_uid(release_id)
+        selected_release_components = [c for c in release.components_metadata
+                                       if c['name'] in components]
+        cluster_attributes = {}
+        for component in selected_release_components:
+            for bind_item in component['bind']:
+                if isinstance(bind_item, six.string_types):
+                    _update_attributes_dict_by_binds_exp(bind_item, True)
+                elif isinstance(bind_item, list):
+                    _update_attributes_dict_by_binds_exp(bind_item[0],
+                                                         bind_item[1])
+        return {'editable': cluster_attributes.get('settings', {}),
+                'cluster': cluster_attributes.get('cluster', {})}
+
+    @classmethod
     def delete(cls, instance):
         node_ids = [
             _id for (_id,) in
@@ -204,17 +244,24 @@ class Cluster(NailgunObject):
         return kernel_params.get("kernel", {}).get("value")
 
     @classmethod
-    def create_attributes(cls, instance):
+    def create_attributes(cls, instance, editable_attributes=None):
         """Create attributes for Cluster instance, generate their values
 
         (see :func:`Attributes.generate_fields`)
 
         :param instance: Cluster instance
+        :param editable_attributes: key-value dictionary represents editable
+            attributes that will be merged with default editable attributes
         :returns: None
         """
+        merged_editable_attributes = \
+            cls.get_default_editable_attributes(instance)
+        if editable_attributes:
+            merged_editable_attributes = dict_merge(
+                merged_editable_attributes, editable_attributes)
         attributes = Attributes.create(
             {
-                "editable": cls.get_default_editable_attributes(instance),
+                "editable": merged_editable_attributes,
                 "generated": instance.release.attributes_metadata.get(
                     "generated"
                 ),

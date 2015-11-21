@@ -34,7 +34,7 @@ define([
                 return this.remote
                     .then(function() {
                         return common.getIn();
-                    })
+                    });
             },
             'Notification Page': function() {
                 return this.remote

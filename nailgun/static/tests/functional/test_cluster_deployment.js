@@ -58,7 +58,7 @@ define([
             },
             'No deployment button when there are no nodes added': function() {
                 return this.remote
-                    .assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added')
+                    .assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without nodes added');
             },
             'Discard changes': function() {
                 return this.remote

@@ -39,7 +39,7 @@ function($, _, React, i18n, utils) {
         },
         setModeState: function(mode, state) {
             mode.state = state;
-            _.each(mode.sub, function(mode) {this.setModeState(mode, state)}, this);
+            _.each(mode.sub, function(mode) {this.setModeState(mode, state);}, this);
         },
         checkModes: function(mode, sub) {
             var changedState = sub.reduce(

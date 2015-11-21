@@ -628,7 +628,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 meta = node.get('meta');
             if (!meta) return <controls.ProgressBar />;
             var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
-                groups = _.sortBy(_.keys(meta), function(group) {return _.indexOf(groupOrder, group)}),
+                groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group)),
                 sortOrder = {
                     disks: ['name', 'model', 'size'],
                     interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']

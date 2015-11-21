@@ -75,9 +75,10 @@ define([
                                     }
                                     return matchFound;
                                 }
-                            )},
-                            false
-                        );
+                            );
+                        },
+                        false
+                    );
                 })
                 .then(function(result) {
                     if (!result) {

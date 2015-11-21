@@ -101,7 +101,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             return {
                 actionInProgress: false,
                 credentialsVisible: null,
-                credentials: _.transform(this.props.cluster.get('settings').get('access'), function(result, value, key) {result[key] = value.value})
+                credentials: _.transform(this.props.cluster.get('settings').get('access'), function(result, value, key) {result[key] = value.value;})
             };
         },
         isLocked: function() {

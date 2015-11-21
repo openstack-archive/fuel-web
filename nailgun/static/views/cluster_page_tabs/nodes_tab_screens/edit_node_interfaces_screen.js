@@ -115,7 +115,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     if (ifc.isBond()) return null;
                     return firstNodeInterfaces.indexOf(
                         firstNodeInterfaces.findWhere({name: ifc.get('name')})
-                    )
+                    );
                 })
             });
         },

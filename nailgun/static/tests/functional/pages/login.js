@@ -59,8 +59,8 @@ define([
                 .clickByCssSelector('.user-popover button.btn-logout')
                 .findByCssSelector('.login-btn')
                 .then(
-                    function() {return true},
-                    function() {return true}
+                    function() {return true;},
+                    function() {return true;}
                 );
         }
     };

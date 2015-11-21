@@ -14,14 +14,10 @@
  * under the License.
 **/
 define([
-    // dependency on jQuery is still needed because:
-    // 1) we still have some Backbone code which uses $().i18n()
-    // 2) it seems to be impossible to use AMD version with jQuery extensions
-    'jquery',
     'underscore',
-    'i18next',
+    'i18next-client',
     './translations/core.json'
-], function($, _, i18next, translations) {
+], function(_, i18next, translations) {
     'use strict';
 
     var defaultLocale = 'en-US';
@@ -41,6 +37,9 @@ define([
         },
         setLocale: function(locale) {
             i18next.setLng(locale, {});
+        },
+        addTranslations: function(extraTranslations) {
+            _.merge(i18next.options.resStore, extraTranslations);
         }
     });
 

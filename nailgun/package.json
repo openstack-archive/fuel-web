@@ -33,7 +33,7 @@
     "gulp-jison": "1.2.0",
     "gulp-replace": "0.5.3",
     "gulp-util": "3.0.4",
-    "i18next": "1.7.1",
+    "i18next-client": "1.11.1",
     "imports-loader": "0.6.4",
     "javascript-natural-sort": "0.7.1",
     "jquery": "1.11.3",

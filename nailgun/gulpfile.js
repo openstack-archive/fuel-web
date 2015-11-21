@@ -133,6 +133,38 @@ gulp.task('jison', function() {
         .pipe(gulp.dest('static/expression/'));
 });
 
+gulp.task('license', function(cb) {
+    require('nlf').find({production: true, depth: 0}, function(err, data) {
+        if (err) cb(err);
+        // https://github.com/openstack/requirements#for-new-requirements
+        // Is the library license compatible?
+        // Preferably Apache2, BSD, MIT licensed. LGPL is ok.
+        var licenseRegexp = /(Apache.*?2)|\bBSD\b|\bMIT\b|\bLGPL\b/i;
+
+        var errors = [];
+        _.each(data, function(moduleInfo) {
+            var name = moduleInfo.name;
+            var version = moduleInfo.version;
+            var license = _.pluck(moduleInfo.licenseSources.package.sources, 'license').join(', ') || 'unknown';
+            var licenseOk = license.match(licenseRegexp);
+            if (!licenseOk) errors.push({libraryName: name, license: license});
+            gutil.log(
+                gutil.colors.cyan(name),
+                gutil.colors.yellow(version),
+                gutil.colors[licenseOk ? 'green' : 'red'](license)
+            );
+        });
+        if (errors.length) {
+            _.each(errors, function(error) {
+                gutil.log(gutil.colors.red(error.libraryName, 'has', error.license, 'license'));
+            })
+            cb('Issues with licenses found');
+        } else {
+            cb();
+        }
+    });
+});
+
 var jsFiles = [
     'static/**/*.js',
     '!static/build/**',

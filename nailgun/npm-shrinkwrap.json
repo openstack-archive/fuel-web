@@ -8327,6 +8327,204 @@
     "javascript-natural-sort": {
       "version": "0.7.1",
       "from": "javascript-natural-sort@"
+    },
+    "nlf": {
+      "version": "1.3.2",
+      "from": "nlf@",
+      "dependencies": {
+        "archy": {
+          "version": "1.0.0",
+          "from": "archy@1.0.0"
+        },
+        "commander": {
+          "version": "2.8.1",
+          "from": "commander@2.8.1",
+          "dependencies": {
+            "graceful-readlink": {
+              "version": "1.0.1",
+              "from": "graceful-readlink@>= 1.0.0"
+            }
+          }
+        },
+        "glob-all": {
+          "version": "3.0.1",
+          "from": "glob-all@3.0.1",
+          "dependencies": {
+            "glob": {
+              "version": "4.5.3",
+              "from": "glob@^4.0.6",
+              "dependencies": {
+                "inflight": {
+                  "version": "1.0.4",
+                  "from": "inflight@^1.0.4",
+                  "dependencies": {
+                    "wrappy": {
+                      "version": "1.0.1",
+                      "from": "wrappy@1"
+                    }
+                  }
+                },
+                "inherits": {
+                  "version": "2.0.1",
+                  "from": "inherits@2"
+                },
+                "minimatch": {
+                  "version": "2.0.10",
+                  "from": "minimatch@^2.0.1",
+                  "dependencies": {
+                    "brace-expansion": {
+                      "version": "1.1.1",
+                      "from": "brace-expansion@^1.0.0",
+                      "dependencies": {
+                        "balanced-match": {
+                          "version": "0.2.1",
+                          "from": "balanced-match@^0.2.0"
+                        },
+                        "concat-map": {
+                          "version": "0.0.1",
+                          "from": "concat-map@0.0.1"
+                        }
+                      }
+                    }
+                  }
+                },
+                "once": {
+                  "version": "1.3.3",
+                  "from": "once@^1.3.0",
+                  "dependencies": {
+                    "wrappy": {
+                      "version": "1.0.1",
+                      "from": "wrappy@1"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "read-installed": {
+          "version": "4.0.3",
+          "from": "read-installed@^4.0.1",
+          "dependencies": {
+            "debuglog": {
+              "version": "1.0.1",
+              "from": "debuglog@^1.0.1"
+            },
+            "read-package-json": {
+              "version": "2.0.2",
+              "from": "read-package-json@^2.0.0",
+              "dependencies": {
+                "json-parse-helpfulerror": {
+                  "version": "1.0.3",
+                  "from": "json-parse-helpfulerror@^1.0.2",
+                  "dependencies": {
+                    "jju": {
+                      "version": "1.2.1",
+                      "from": "jju@^1.1.0"
+                    }
+                  }
+                },
+                "normalize-package-data": {
+                  "version": "2.3.5",
+                  "from": "normalize-package-data@^2.0.0",
+                  "dependencies": {
+                    "hosted-git-info": {
+                      "version": "2.1.4",
+                      "from": "hosted-git-info@^2.1.4"
+                    },
+                    "is-builtin-module": {
+                      "version": "1.0.0",
+                      "from": "is-builtin-module@^1.0.0",
+                      "dependencies": {
+                        "builtin-modules": {
+                          "version": "1.1.0",
+                          "from": "builtin-modules@^1.0.0"
+                        }
+                      }
+                    },
+                    "validate-npm-package-license": {
+                      "version": "3.0.1",
+                      "from": "validate-npm-package-license@^3.0.1",
+                      "dependencies": {
+                        "spdx-correct": {
+                          "version": "1.0.2",
+                          "from": "spdx-correct@~1.0.0",
+                          "dependencies": {
+                            "spdx-license-ids": {
+                              "version": "1.1.0",
+                              "from": "spdx-license-ids@^1.0.2"
+                            }
+                          }
+                        },
+                        "spdx-expression-parse": {
+                          "version": "1.0.1",
+                          "from": "spdx-expression-parse@~1.0.0",
+                          "dependencies": {
+                            "spdx-exceptions": {
+                              "version": "1.0.4",
+                              "from": "spdx-exceptions@^1.0.4"
+                            },
+                            "spdx-license-ids": {
+                              "version": "1.1.0",
+                              "from": "spdx-license-ids@^1.0.0"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "readdir-scoped-modules": {
+              "version": "1.0.2",
+              "from": "readdir-scoped-modules@^1.0.0",
+              "dependencies": {
+                "dezalgo": {
+                  "version": "1.0.3",
+                  "from": "dezalgo@^1.0.0",
+                  "dependencies": {
+                    "asap": {
+                      "version": "2.0.3",
+                      "from": "asap@^2.0.0"
+                    },
+                    "wrappy": {
+                      "version": "1.0.1",
+                      "from": "wrappy@1"
+                    }
+                  }
+                },
+                "once": {
+                  "version": "1.3.3",
+                  "from": "once@^1.3.0",
+                  "dependencies": {
+                    "wrappy": {
+                      "version": "1.0.1",
+                      "from": "wrappy@1"
+                    }
+                  }
+                }
+              }
+            },
+            "semver": {
+              "version": "5.1.0",
+              "from": "semver@2 || 3 || 4 || 5"
+            },
+            "slide": {
+              "version": "1.1.6",
+              "from": "slide@~1.1.3"
+            },
+            "util-extend": {
+              "version": "1.0.1",
+              "from": "util-extend@^1.0.1"
+            },
+            "graceful-fs": {
+              "version": "4.1.2",
+              "from": "graceful-fs@^4.1.2"
+            }
+          }
+        }
+      }
     }
   }
 }

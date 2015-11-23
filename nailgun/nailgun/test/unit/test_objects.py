@@ -21,7 +21,6 @@ import mock
 
 from itertools import cycle
 from itertools import ifilter
-import re
 import uuid
 
 from sqlalchemy import inspect as sqlalchemy_inspect
@@ -1394,18 +1393,11 @@ class TestClusterObjectGetRoles(BaseTestCase):
 
         message_pattern = (
             '^Plugin \(ID={0}\) is unable to register the following node '
-            'roles: (.*)'
+            'roles: role_a, role_x'
             .format(plugin_in_conflict.id))
 
-        with self.assertRaisesRegexp(
-                errors.AlreadyExists, message_pattern) as cm:
+        with self.assertRaisesRegexp(errors.AlreadyExists, message_pattern):
             objects.Cluster.get_roles(self.cluster)
-
-        # 0 - the whole message, 1 - is first match of (.*) pattern
-        roles = re.match(message_pattern, str(cm.exception)).group(1)
-        roles = [role.lstrip().rstrip() for role in roles.split(',')]
-
-        self.assertItemsEqual(roles, ['role_x', 'role_a'])
 
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):

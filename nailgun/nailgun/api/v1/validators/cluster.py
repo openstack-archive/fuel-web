@@ -15,6 +15,7 @@
 
 import copy
 from distutils.version import StrictVersion
+import six
 import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
@@ -218,6 +219,10 @@ class AttributesValidator(BasicValidator):
                         u"Provisioning method is not set. Unable to continue",
                         log_message=True)
 
+            cls.validate_plugin_attributes(
+                cluster, attrs.get('editable', {})
+            )
+
         cls.validate_editable_attributes(attrs)
 
         return d
@@ -298,6 +303,56 @@ class AttributesValidator(BasicValidator):
             if regex_err is not None:
                 raise errors.InvalidData(
                     '[{0}] {1}'.format(attr_name, regex_err))
+
+    @classmethod
+    def validate_plugin_attributes(cls, cluster, attributes):
+        """Validates Cluster-Plugins relations attributes
+
+        :param cluster: A cluster instance
+        :type cluster: nailgun.objects.cluster.Cluster
+        :param attributes: The editable attributes of the Cluster
+        :type attributes: dict
+        :raises: errors.NotAllowed
+        """
+
+        # TODO(need to enable restrictions check for cluster attributes[1])
+        # [1] https://bugs.launchpad.net/fuel/+bug/1519904
+        # Validates only that plugin can be installed on deployed env.
+        if not cluster.is_locked:
+            return
+
+        enabled_plugins = set(
+            p.id for p in objects.ClusterPlugins.get_enabled(cluster.id)
+        )
+
+        for attrs in six.itervalues(attributes):
+            if not isinstance(attrs, dict):
+                continue
+
+            plugin_versions = attrs.get('plugin_versions', None)
+            if plugin_versions is None:
+                continue
+
+            if not attrs.get('metadata', {}).get('enabled'):
+                continue
+
+            for version in plugin_versions['values']:
+                pid = version.get('data')
+                plugin = objects.Plugin.get_by_uid(pid)
+                if not plugin:
+                    continue
+
+                if pid != plugin_versions['value']:
+                    continue
+
+                if plugin.hotplug or plugin.id in enabled_plugins:
+                    break
+
+                raise errors.NotAllowed(
+                    "This plugin version can be enabled only "
+                    "before environment is deployed.",
+                    log_message=True
+                )
 
 
 class ClusterChangesValidator(BaseDefferedTaskValidator):

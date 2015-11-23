@@ -269,6 +269,158 @@ class TestPluginManager(base.BaseIntegrationTest):
         enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
         self.assertItemsEqual([plugin], enabled_plugins)
 
+    def test_get_plugins_attributes_when_cluster_is_locked(self):
+        self.env.create(api=False)
+        cluster = self.env.clusters[-1]
+        plugin_a1 = self.env.create_plugin(
+            name='plugin_a', version='1.0.1',
+            cluster=cluster, enabled=False
+        )
+        plugin_a2 = self.env.create_plugin(
+            name='plugin_a', version='1.0.2', hotplug=True,
+            cluster=cluster, enabled=False
+        )
+        plugin_b = self.env.create_plugin(
+            name='plugin_b', title='plugin_a_title', cluster=cluster
+        )
+        cluster.status = consts.CLUSTER_STATUSES.operational
+        self.db.flush()
+        self.assertTrue(cluster.is_locked)
+        attributes = PluginManager.get_plugins_attributes(
+            cluster, True, True
+        )
+        self.assertItemsEqual(
+            ['plugin_a', 'plugin_b'], attributes
+        )
+        self.assertTrue(
+            attributes['plugin_a']['metadata']['always_editable']
+        )
+        self.assertItemsEqual(
+            [
+                {
+                    'data': str(plugin_a1.id),
+                    'description': '',
+                    'label': plugin_a1.version,
+                    'restrictions': [
+                        {
+                            'action': 'disable',
+                            'condition': 'cluster:is_locked'
+                        }
+                    ],
+                },
+                {
+                    'data': str(plugin_a2.id),
+                    'description': '',
+                    'label': plugin_a2.version
+                }
+            ],
+            attributes['plugin_a']['plugin_versions']['values']
+        )
+        self.assertEqual(
+            str(plugin_a1.id),
+            attributes['plugin_a']['plugin_versions']['value']
+        )
+        self.assertNotIn(
+            'always_editable', attributes['plugin_b']['metadata']
+        )
+        self.assertItemsEqual(
+            [
+                {
+                    'restrictions': [
+                        {
+                            'action': 'disable',
+                            'condition': 'cluster:is_locked'
+                        }
+                    ],
+                    'data': str(plugin_b.id),
+                    'description': '',
+                    'label': plugin_b.version,
+                },
+            ],
+            attributes['plugin_b']['plugin_versions']['values']
+        )
+        self.assertEqual(
+            str(plugin_b.id),
+            attributes['plugin_b']['plugin_versions']['value']
+        )
+
+    def test_get_plugins_attributes_when_cluster_is_not_locked(self):
+        self.env.create(api=False)
+        cluster = self.env.clusters[-1]
+        plugin_a1 = self.env.create_plugin(
+            name='plugin_a', version='1.0.1',
+            cluster=cluster, enabled=False
+        )
+        plugin_a2 = self.env.create_plugin(
+            name='plugin_a', version='1.0.2', hotplug=True,
+            cluster=cluster, enabled=True
+        )
+        plugin_b = self.env.create_plugin(
+            name='plugin_b', title='plugin_a_title', cluster=cluster
+        )
+        self.assertFalse(plugin_a1.hotplug)
+        self.assertTrue(plugin_a2.hotplug)
+        self.assertFalse(plugin_b.hotplug)
+        self.assertFalse(cluster.is_locked)
+        attributes = PluginManager.get_plugins_attributes(
+            cluster, True, True
+        )
+        self.assertItemsEqual(
+            ['plugin_a', 'plugin_b'], attributes
+        )
+        self.assertTrue(
+            attributes['plugin_a']['metadata']['always_editable']
+        )
+        self.assertItemsEqual(
+            [
+                {
+                    'data': str(plugin_a1.id),
+                    'description': '',
+                    'label': plugin_a1.version,
+                    'restrictions': [
+                        {
+                            'action': 'disable',
+                            'condition': 'cluster:is_locked'
+                        }
+                    ],
+                },
+                {
+                    'data': str(plugin_a2.id),
+                    'description': '',
+                    'label': plugin_a2.version
+                }
+            ],
+            attributes['plugin_a']['plugin_versions']['values']
+        )
+        self.assertEqual(
+            str(plugin_a1.id),
+            attributes['plugin_a']['plugin_versions']['value']
+        )
+        self.assertNotIn(
+            'always_editable', attributes['plugin_b']['metadata']
+        )
+        self.assertItemsEqual(
+            [
+                {
+                    'restrictions': [
+                        {
+                            'action': 'disable',
+                            'condition': 'cluster:is_locked'
+                        }
+                    ],
+                    'data': str(plugin_b.id),
+                    'description': '',
+                    'label': plugin_b.version,
+                },
+            ],
+            attributes['plugin_b']['plugin_versions']['values']
+        )
+
+        self.assertEqual(
+            str(plugin_b.id),
+            attributes['plugin_b']['plugin_versions']['value']
+        )
+
 
 class TestClusterPluginIntegration(base.BaseTestCase):
 

@@ -62,18 +62,6 @@ class NetworkGroup(NailgunObject):
         return instance
 
     @classmethod
-    def update_meta(cls, instance, data):
-        """Updates particular keys in object's meta.
-
-        Is used by NetworkManager.update_networks as
-        for old clusters only those data in meta is
-        allowed for updating
-        """
-        meta_copy = dict(instance.meta)
-        meta_copy.update(data)
-        instance.meta = meta_copy
-
-    @classmethod
     def update(cls, instance, data):
         # cleanup stalled data and generate new for the group
         cls._regenerate_ip_ranges_on_notation(instance, data)

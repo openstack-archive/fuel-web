@@ -867,12 +867,7 @@ class TestActionLogObject(BaseIntegrationTest):
             'is_sent': False,
             'cluster_id': 1
         }
-
-        al = self._create_log_entry(object_data)
-
-        instance_to_validate = jsonutils.loads(objects.ActionLog.to_json(al))
-        self.assertRaises(jsonschema.ValidationError, jsonschema.validate,
-                          instance_to_validate, action_log.schema)
+        self.assertRaises(ValueError, self._create_log_entry, object_data)
 
     def test_get_by_uuid_method(self):
         object_data = {
@@ -1432,6 +1427,26 @@ class TestNetworkGroup(BaseTestCase):
     def test_get_default_networkgroup(self):
         ng = objects.NetworkGroup.get_default_admin_network()
         self.assertIsNotNone(ng)
+
+    def test_update_meta(self):
+        cluster = self.env.create_cluster(api=False)
+        ng = cluster.network_groups[0]
+        original_name = ng.meta['name']
+
+        ng.meta.update({'render_type': 'new_value'})
+        self.db.flush()
+        updated_ng = objects.NetworkGroup.get_by_uid(ng['id'])
+
+        self.assertEqual(
+            updated_ng.meta['render_type'],
+            'new_value',
+            "Network group meta didn't updated."
+        )
+        self.assertEqual(
+            updated_ng['name'],
+            original_name,
+            "Network group meta updated incorrectly."
+        )
 
 
 class TestRelease(BaseTestCase):

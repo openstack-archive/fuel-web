@@ -453,7 +453,13 @@ class TestPluginMigration(base.BaseAlembicMigrationTest):
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.components_metadata]))
         self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), [])
+            jsonutils.loads(result.scalar()), [])
+
+    def test_hotplug_field_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['plugins'].c.hotplug])
+        )
+        self.assertTrue(all(x[0] is None for x in result))
 
 
 class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):

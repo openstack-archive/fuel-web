@@ -106,7 +106,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return {
                 sorters: [],
                 filters: []
-            }
+            };
         },
         getInitialState: function() {
             var cluster = this.props.cluster,

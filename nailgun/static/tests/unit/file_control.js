@@ -64,7 +64,7 @@ define(function() {
                 },
                 saveMethod = sinon.spy(input, 'saveFile');
 
-            window.FileReader = function() {return readerObject};
+            window.FileReader = function() {return readerObject;};
 
             sinon.stub(input, 'getInputDOMNode').returns({
                 value: '/dummy/path/to/somefile.ext',

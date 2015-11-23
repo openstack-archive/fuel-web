@@ -72,7 +72,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                         _.map(warnings, function(warning) {
                             return (
                                 <div key={warning}>{i18n(warning, this.props.wizard.translationParams)}</div>
-                            )
+                            );
                         }, this)
                     }
                 </div>
@@ -170,7 +170,9 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                                 if (!release.get('is_deployable')) {
                                     return null;
                                 }
-                                return <option key={release.id} value={release.id}>{release.get('name')}</option>
+                                return (
+                                    <option key={release.id} value={release.id}>{release.get('name')}</option>
+                                );
                             })
                         }
                     </controls.Input>
@@ -420,7 +422,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.setState(newState);
         },
         getEnabledPanes: function() {
-            return _.filter(this.state.panes, function(pane) {return !pane.hidden});
+            return _.reject(this.state.panes, 'hidden');
         },
         getActivePane: function() {
             var panes = this.getEnabledPanes();
@@ -507,7 +509,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                                     response: response,
                                     title: i18n('dialog.create_cluster_wizard.create_cluster_error.title')
                                 });
-                            }, this))
+                            }, this));
                     }, this))
                     .fail(_.bind(function(response) {
                         this.stopHandlingKeys = false;

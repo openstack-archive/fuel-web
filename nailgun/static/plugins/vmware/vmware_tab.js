@@ -131,7 +131,7 @@ define(
                             <button
                                 className='btn btn-link'
                                 disabled={this.props.disabled}
-                                onClick={_.bind(function() {this.props.onAdd(this.props.model)}, this)}
+                                onClick={_.bind(function() {this.props.onAdd(this.props.model);}, this)}
                             >
                                 <i className='glyphicon glyphicon-plus-sign' />
                             </button>
@@ -139,7 +139,7 @@ define(
                                 <button
                                     className='btn btn-link'
                                     disabled={this.props.disabled}
-                                    onClick={_.bind(function() {this.props.onRemove(this.props.model)}, this)}
+                                    onClick={_.bind(function() {this.props.onRemove(this.props.model);}, this)}
                                 >
                                     <i className='glyphicon glyphicon-minus-sign' />
                                 </button>
@@ -255,7 +255,7 @@ define(
                                         &nbsp;
                                         ({node.get('mac')})
                                     </li>
-                                )
+                                );
                             })
                         }
                     </ul>

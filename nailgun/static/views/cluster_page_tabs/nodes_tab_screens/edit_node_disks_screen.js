@@ -238,8 +238,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                 volumesInfo = this.props.volumesInfo,
                 diskMetaData = this.props.diskMetaData,
                 requiredDiskSize = _.sum(disk.get('volumes').map(function(volume) {
-                        return volume.getMinimalSize(this.props.volumes.findWhere({name: volume.get('name')}).get('min_size'))
-                    }, this)),
+                    return volume.getMinimalSize(this.props.volumes.findWhere({name: volume.get('name')}).get('min_size'));
+                }, this)),
                 diskError = disk.get('size') < requiredDiskSize,
                 sortOrder = ['name', 'model', 'size'],
                 ns = 'cluster_page.nodes_tab.configure_disks.';

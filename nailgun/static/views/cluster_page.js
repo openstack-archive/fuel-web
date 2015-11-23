@@ -49,8 +49,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }),
             componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
             componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),
-            componentMixins.dispatcherMixin('deploymentTaskStarted', function() {this.refreshCluster().always(_.bind(this.startPolling, this))}),
-            componentMixins.dispatcherMixin('deploymentTaskFinished', function() {this.refreshCluster().always(_.bind(dispatcher.trigger, dispatcher, 'updateNotifications'))})
+            componentMixins.dispatcherMixin('deploymentTaskStarted', function() {
+                this.refreshCluster().always(this.startPolling);
+            }),
+            componentMixins.dispatcherMixin('deploymentTaskFinished', function() {
+                this.refreshCluster().always(() => dispatcher.trigger('updateNotifications'));
+            })
         ],
         statics: {
             navbarActiveElement: 'clusters',

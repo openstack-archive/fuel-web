@@ -38,7 +38,7 @@ define([
                                                 .then(function(currentIfcName) {
                                                     return _.trim(currentIfcName) == ifcName ? ifcElement : result;
                                                 });
-                                    })
+                                    });
                         }, null);
                     });
         },
@@ -83,7 +83,7 @@ define([
                                 .getVisibleText()
                                     .then(function(currentNetworkName) {
                                         return currentNetworkName == networkName ? networkElement : result;
-                                    })
+                                    });
                         }, null);
                     })
                     .then(function(networkElement) {
@@ -126,7 +126,7 @@ define([
             var self = this;
             return this.remote
                 .then(function() {
-                    return self.findInterfaceElement(bondName)
+                    return self.findInterfaceElement(bondName);
                 })
                 .then(function(bondElement) {
                     ifcsNames.push(bondName);

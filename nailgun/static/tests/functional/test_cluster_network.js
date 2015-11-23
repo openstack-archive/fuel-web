@@ -138,7 +138,7 @@ define([
                     })
                     .clickByCssSelector(networksPage.applyButtonSelector)
                     .assertElementsAppear('input:not(:disabled)', 2000, 'Inputs are not disabled')
-                    .assertElementNotExists('.alert-error', 'Correct settings were saved successfully')
+                    .assertElementNotExists('.alert-error', 'Correct settings were saved successfully');
             },
             'Testing cluster networks: save settings with group: network': function() {
                 return this.remote

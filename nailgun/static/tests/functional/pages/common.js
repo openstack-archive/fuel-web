@@ -100,7 +100,8 @@ define([
                                     function(name) {
                                         return (name === clusterName) || matchFound;
                                     }
-                                )}, false);
+                                );
+                            }, false);
                         });
             },
             addNodesToCluster: function(nodesAmount, nodesRoles, nodeStatus, nodeNameFilter) {

@@ -1063,7 +1063,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         isInvalid = networksErrors;
                     } else {
                         isInvalid = networksErrors &&
-                            !!networksErrors[nodeNetworkGroups.findWhere({name: groupName}).id]
+                            !!networksErrors[nodeNetworkGroups.findWhere({name: groupName}).id];
                     }
                     //FIXME(morale): this is a hack until default node network group
                     //name is capitalized on backend

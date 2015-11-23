@@ -70,7 +70,7 @@ define([
                         'All steps are available if no changes to restrictions are made')
                     .clickByCssSelector('input[type=checkbox]')
                     .assertElementExists('.wizard-step.available', 1,
-                        'Only one step is available after changing hypervisor')
+                        'Only one step is available after changing hypervisor');
             }
         };
     });

@@ -938,8 +938,8 @@ class TestClusterObject(BaseTestCase):
         for kw in plugins_kw_list:
             plugin = objects.Plugin.create(kw)
             cluster.plugins.append(plugin)
-            objects.ClusterPlugins.set_attributes(cluster.id,
-                                                  plugin.id,
+            objects.ClusterPlugins.set_attributes(cluster,
+                                                  plugin,
                                                   enabled=True)
         return cluster
 
@@ -1294,14 +1294,14 @@ class TestClusterObjectGetRoles(BaseTestCase):
             })
         self.cluster = self.env.clusters[0]
 
-    def create_plugin(self, roles_metadata):
+    def create_plugin(self, name, roles_metadata):
         plugin = objects.Plugin.create(self.env.get_default_plugin_metadata(
-            name=uuid.uuid4().get_hex(),
+            name=name,
             roles_metadata=roles_metadata,
         ))
         self.cluster.plugins.append(plugin)
-        objects.ClusterPlugins.set_attributes(self.cluster.id,
-                                              plugin.id,
+        objects.ClusterPlugins.set_attributes(self.cluster,
+                                              plugin,
                                               enabled=True)
         return plugin
 
@@ -1310,19 +1310,26 @@ class TestClusterObjectGetRoles(BaseTestCase):
         self.assertItemsEqual(roles.keys(), ['role_a', 'role_b'])
 
     def test_plugin_adds_new_roles(self):
-        self.create_plugin({
-            'role_c': {
-                'name': 'Role C', 'description': 'Role C is ...', },
-        })
+        self.create_plugin(
+            "plugin_with_role_c",
+            {
+                'role_c': {
+                    'name': 'Role C', 'description': 'Role C is ...',
+                },
+            }
+        )
 
         roles = objects.Cluster.get_roles(self.cluster)
         self.assertItemsEqual(roles.keys(), ['role_a', 'role_b', 'role_c'])
 
     def test_plugin_role_conflict_with_core_roles(self):
-        plugin = self.create_plugin({
-            'role_a': {
-                'name': 'Role X', 'description': 'Role X is ...', },
-        })
+        plugin = self.create_plugin(
+            "plugin_with_role_a",
+            {
+                'role_a': {
+                    'name': 'Role X', 'description': 'Role X is ...', },
+            }
+        )
 
         expected_message = (
             "Plugin \(ID={0}\) is unable to register "
@@ -1334,14 +1341,20 @@ class TestClusterObjectGetRoles(BaseTestCase):
             objects.Cluster.get_roles(self.cluster)
 
     def test_plugin_role_conflict_with_other_plugins(self):
-        self.create_plugin({
-            'role_x': {
-                'name': 'Role X', 'description': 'Role X is ...', },
-        })
-        plugin_in_conflict = self.create_plugin({
-            'role_x': {
-                'name': 'Role X', 'description': 'Role X is ...', },
-        })
+        self.create_plugin(
+            "plugin_with_role_x",
+            {
+                'role_x': {
+                    'name': 'Role X', 'description': 'Role X is ...', },
+            }
+        )
+        plugin_in_conflict = self.create_plugin(
+            "plugin2_with_role_x",
+            {
+                'role_x': {
+                    'name': 'Role X', 'description': 'Role X is ...', },
+            }
+        )
         expected_message = (
             "Plugin \(ID={0}\) is unable to register "
             "the following node roles: role_x"
@@ -1352,31 +1365,32 @@ class TestClusterObjectGetRoles(BaseTestCase):
             objects.Cluster.get_roles(self.cluster)
 
     def test_plugin_role_conflict_with_plugin_and_core(self):
-        self.create_plugin({
-            'role_x': {
-                'name': 'Role X', 'description': 'Role X is ...', },
-        })
-        plugin_in_conflict = self.create_plugin({
-            'role_x': {
-                'name': 'Role Y', 'description': 'Role Y is ...', },
-            'role_a': {
-                'name': 'Role A', 'description': 'Role A is ...', },
-        })
+        self.create_plugin(
+            "plugin_with_role_x",
+            {
+                'role_x': {
+                    'name': 'Role X', 'description': 'Role X is ...', },
+            }
+        )
+        # this plugin should be the second
+        plugin_in_conflict = self.create_plugin(
+            "plugin_with_role_x_and_a",
+            {
+                'role_x': {
+                    'name': 'Role Y', 'description': 'Role Y is ...', },
+                'role_a': {
+                    'name': 'Role A', 'description': 'Role A is ...', },
+            }
+        )
 
         message_pattern = (
             '^Plugin \(ID={0}\) is unable to register the following node '
-            'roles: (.*)'
+            'roles: role_a, role_x'
             .format(plugin_in_conflict.id))
 
         with self.assertRaisesRegexp(
                 errors.AlreadyExists, message_pattern) as cm:
             objects.Cluster.get_roles(self.cluster)
-
-        # 0 - the whole message, 1 - is first match of (.*) pattern
-        roles = re.match(message_pattern, str(cm.exception)).group(1)
-        roles = [role.lstrip().rstrip() for role in roles.split(',')]
-
-        self.assertItemsEqual(roles, ['role_x', 'role_a'])
 
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):

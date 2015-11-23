@@ -149,6 +149,8 @@ class Cluster(NailgunObject):
             release_id = data.pop("release", None)
             data["release_id"] = release_id
 
+        # remove read-only attribute
+        data.pop("is_locked", None)
         assign_nodes = data.pop("nodes", [])
 
         data["fuel_version"] = settings.VERSION["release"]
@@ -437,8 +439,9 @@ class Cluster(NailgunObject):
         :param data: dictionary of key-value pairs as object fields
         :returns: Cluster instance
         """
-        # fuel_version cannot be changed
+        # remove read-only attributes
         data.pop("fuel_version", None)
+        data.pop("is_locked", None)
 
         nodes = data.pop("nodes", None)
         changes = data.pop("changes", None)

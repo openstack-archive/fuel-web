@@ -24,6 +24,8 @@ from nailgun import objects
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import BaseMasterNodeSettignsTest
+from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
 
 
@@ -699,7 +701,7 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
         )
 
 
-class TestAttributesWithPlugins(BaseIntegrationTest):
+class TestAttributesWithPlugins(BaseMasterNodeSettignsTest):
 
     def setUp(self):
         super(TestAttributesWithPlugins, self).setUp()
@@ -713,7 +715,12 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
-            })
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+            ]
+        )
 
         self.cluster = self.env.clusters[0]
 
@@ -751,7 +758,7 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster['id']}),
                 params=jsonutils.dumps({
                     'editable': {
-                        'testing_plugin': {
+                        plugin.name: {
                             'metadata': {
                                 'label': 'Test plugin',
                                 'toggleable': True,
@@ -786,13 +793,68 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
         resp = _modify_plugin(enabled=True)
         self.assertEqual(200, resp.status_code)
         editable = objects.Cluster.get_editable_attributes(self.cluster)
-        self.assertIn('testing_plugin', editable)
-        self.assertTrue(editable['testing_plugin']['metadata']['enabled'])
-        self.assertEqual('1', editable['testing_plugin']['attr']['value'])
+        self.assertIn(plugin.name, editable)
+        self.assertTrue(editable[plugin.name]['metadata']['enabled'])
+        self.assertEqual('1', editable[plugin.name]['attr']['value'])
 
         resp = _modify_plugin(enabled=False)
         self.assertEqual(200, resp.status_code)
         editable = objects.Cluster.get_editable_attributes(self.cluster)
-        self.assertIn('testing_plugin', editable)
-        self.assertFalse(editable['testing_plugin']['metadata']['enabled'])
-        self.assertNotIn(attr, editable['testing_plugin'])
+        self.assertIn(plugin.name, editable)
+        self.assertFalse(editable[plugin.name]['metadata']['enabled'])
+        self.assertNotIn(attr, editable[plugin.name])
+
+    def _modify_plugin(self, plugin, enabled, **kwargs):
+        return self.app.put(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': self.cluster.id}
+            ),
+            params=jsonutils.dumps({
+                'editable': {
+                    plugin.name: dict(
+                        metadata={'enabled': enabled},
+                        plugin_versions={
+                            'type': 'radio',
+                            'values': [{
+                                'data': str(plugin.id),
+                                'label': plugin.version
+                            }],
+                            'value': str(plugin.id),
+                        },
+                        **kwargs
+                    )
+                }
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+    @fake_tasks()
+    def test_install_plugins_after_deployment(self):
+        deployment_task = self.env.launch_deployment()
+        self.env.wait_ready(deployment_task)
+        self.assertTrue(self.cluster.is_locked)
+        runtime_plugin = self.env.create_plugin(
+            cluster=self.cluster,
+            is_runtime=True,
+            version='1.0.1',
+            enabled=False,
+            **self.plugin_data
+        )
+        plugin = self.env.create_plugin(
+            cluster=self.cluster,
+            name=runtime_plugin.name,
+            version='1.0.3',
+            is_runtime=False,
+            enabled=False,
+            **self.plugin_data
+        )
+
+        resp = self._modify_plugin(runtime_plugin, True)
+        self.assertEqual(200, resp.status_code, resp.body)
+        editable = objects.Cluster.get_editable_attributes(self.cluster)
+        self.assertIn(runtime_plugin.name, editable)
+        self.assertTrue(editable[runtime_plugin.name]['metadata']['enabled'])
+        resp = self._modify_plugin(plugin, True)
+        self.assertEqual(403, resp.status_code, resp.body)

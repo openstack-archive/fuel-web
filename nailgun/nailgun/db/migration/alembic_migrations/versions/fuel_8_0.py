@@ -109,6 +109,7 @@ def upgrade():
     dashboard_entries_upgrade()
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
+    upgrade_plugins_parameters()
 
 
 def downgrade():
@@ -124,6 +125,7 @@ def downgrade():
     task_statuses_downgrade()
     downgrade_release_state()
     downgrade_nodegroups_name_cluster_constraint()
+    downgrade_plugins_parameters()
 
 
 def upgrade_release_state():
@@ -592,3 +594,13 @@ def ip_type_to_string(table_name, column_name, string_len):
                                                                 column_name,
                                                                 string_len)
     )
+
+
+def upgrade_plugins_parameters():
+    op.add_column(
+        'plugins', sa.Column('is_runtime', sa.Boolean(), nullable=True)
+    )
+
+
+def downgrade_plugins_parameters():
+    op.drop_column('plugins', 'is_runtime')

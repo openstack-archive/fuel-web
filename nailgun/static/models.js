@@ -361,7 +361,7 @@ define([
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
         },
         isAvailableForSettingsChanges: function() {
-            return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
+            return !this.get('is_locked');
         },
         isDeploymentPossible: function() {
             var nodes = this.get('nodes');

@@ -120,10 +120,11 @@ def upgrade():
     upgrade_all_network_data_from_string_to_appropriate_data_type()
     create_openstack_configs_table()
     upgrade_master_node_ui_settings()
+    upgrade_plugins_parameters()
 
 
 def downgrade():
-    downgrade_master_node_ui_settings()
+    downgrade_plugins_parameters()
     downgrade_openstack_configs()
     downgrade_all_network_data_to_string()
     downgrade_master_node_bootstrap_settings()
@@ -713,3 +714,13 @@ def downgrade_master_node_ui_settings():
         connection.execute(q_update_master_node_settings,
                            master_node_uid=master_node_uid,
                            settings=jsonutils.dumps(master_node_settings))
+
+
+def upgrade_plugins_parameters():
+    op.add_column(
+        'plugins', sa.Column('hotplug', sa.Boolean(), nullable=True)
+    )
+
+
+def downgrade_plugins_parameters():
+    op.drop_column('plugins', 'hotplug')

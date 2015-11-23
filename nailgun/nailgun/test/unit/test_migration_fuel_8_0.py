@@ -473,6 +473,12 @@ class TestComponentsMigration(base.BaseAlembicMigrationTest):
         for idx, db_value in enumerate(db_values):
             self.assertEqual(jsonutils.loads(db_value), column_values[idx][1])
 
+    def test_hotplug_field_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['plugins'].c.hotplug])
+        )
+        self.assertTrue(all(x[0] is None for x in result))
+
 
 class TestMasterNodeSettingsMigration(base.BaseAlembicMigrationTest):
 

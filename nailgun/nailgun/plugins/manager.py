@@ -74,7 +74,7 @@ class PluginManager(object):
                     continue
 
                 enabled = plugin_enabled and\
-                    str(plugin.id) == plugin_versions['value']
+                    pid == plugin_versions['value']
 
                 ClusterPlugins.set_attributes(
                     cluster.id, plugin.id, enabled=enabled,
@@ -97,11 +97,11 @@ class PluginManager(object):
         :rtype: dict
         """
         versions = {
-            u'type': u'radio',
-            u'values': [],
-            u'weight': 10,
-            u'value': None,
-            u'label': 'Choose a plugin version'
+            'type': 'radio',
+            'values': [],
+            'weight': 10,
+            'value': None,
+            'label': 'Choose a plugin version'
         }
 
         def _convert_attr(pid, name, title, attr):
@@ -114,44 +114,71 @@ class PluginManager(object):
             return "#{0}_{1}".format(pid, title), attr
 
         plugins_attributes = {}
-        for pid, name, title, version, enabled, default_attrs, cluster_attrs\
-                in ClusterPlugins.get_connected_plugins_data(cluster.id):
-
-            if all_versions:
-                enabled = enabled and not default
-            data = plugins_attributes.get(name, {})
-            metadata = data.setdefault('metadata', {
-                u'toggleable': True,
-                u'weight': 70
+        for plugin in ClusterPlugins.get_connected_plugins_data(cluster.id):
+            plugin_strid = str(plugin.id)
+            enabled = plugin.enabled and not (all_versions and default)
+            plugin_attributes = plugins_attributes.setdefault(plugin.name, {})
+            metadata = plugin_attributes.setdefault('metadata', {
+                'toggleable': True,
+                'weight': 70
             })
             metadata['enabled'] = enabled or metadata.get('enabled', False)
-            metadata['label'] = title
+            metadata['label'] = plugin.title
+            if plugin.hotplug:
+                metadata["always_editable"] = True
 
             if all_versions:
                 metadata['default'] = default
 
-                attrs = default_attrs if default else cluster_attrs
-                data.update(_convert_attr(pid, name, key, attrs[key])
-                            for key in attrs)
+                plugin_attributes.update(
+                    cls.convert_plugin_attributes(
+                        plugin,
+                        plugin.attributes_metadata
+                        if default else plugin.attributes
+                    )
+                )
 
-                if 'plugin_versions' in data:
-                    plugin_versions = data['plugin_versions']
+                plugin_version = {
+                    'data': plugin_strid,
+                    'description': '',
+                    'label': plugin.version,
+                }
+                if not plugin.hotplug:
+                    plugin_version['restrictions'] = [{
+                        'action': 'disable',
+                        'condition': 'cluster:is_locked'
+                    }]
+
+                if 'plugin_versions' in plugin_attributes:
+                    plugin_versions = plugin_attributes['plugin_versions']
+                    if enabled:
+                        plugin_versions['value'] = plugin_strid
                 else:
                     plugin_versions = copy.deepcopy(versions)
-                plugin_versions['values'].append({
-                    u'data': str(pid),
-                    u'description': '',
-                    u'label': version
-                })
-                if not plugin_versions['value'] or enabled:
-                    plugin_versions['value'] = str(pid)
+                    plugin_versions['value'] = plugin_strid
+                    plugin_attributes['plugin_versions'] = plugin_versions
 
-                data['plugin_versions'] = plugin_versions
-            else:
-                data.update(cluster_attrs if enabled else {})
-            plugins_attributes[name] = data
+                plugin_versions['values'].append(plugin_version)
+            elif enabled:
+                plugin_attributes.update(plugin.attributes)
 
         return plugins_attributes
+
+    @classmethod
+    def convert_plugin_attributes(cls, plugin, attributes):
+        def converter(plugin_id, plugin_name, title, attr):
+            restrictions = attr.setdefault('restrictions', [])
+            restrictions.append({
+                'action': 'hide',
+                'condition': "settings:{0}.plugin_versions.value != '{1}'"
+                .format(plugin_name, plugin_id)
+            })
+            return "#{0}_{1}".format(plugin_id, title), attr
+
+        return (
+            converter(plugin.id, plugin.name, k, v)
+            for k, v in six.iteritems(attributes)
+        )
 
     @classmethod
     def get_cluster_plugins_with_tasks(cls, cluster):
@@ -238,17 +265,14 @@ class PluginManager(object):
             # and afterwards show them in error message;
             # thus role names for which following checks
             # fails are accumulated in err_info variable
-            err_roles = set()
-            if set(plugin_roles) & core_roles:
-                err_roles |= set(plugin_roles) & core_roles
-            if set(plugin_roles) & set(result):
-                err_roles |= set(plugin_roles) & set(result)
-
+            err_roles = set(
+                r for r in plugin_roles if r in core_roles or r in result
+            )
             if err_roles:
                 raise errors.AlreadyExists(
                     "Plugin (ID={0}) is unable to register the following "
                     "node roles: {1}".format(plugin_db.id,
-                                             ", ".join(err_roles))
+                                             ", ".join(sorted(err_roles)))
                 )
 
             # update info on processed roles in case of

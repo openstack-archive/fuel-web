@@ -356,3 +356,10 @@ To upgrade 6.1 jobs, follow these steps:
 * install `requirements <https://github.com/openstack/fuel-qa/blob/master/fuelweb_test/requirements.txt>`_ of system tests
 * if you are using system tests on CI, please configure your CI to use new Python venv, or export path to the new Python venv in the variable VENV_PATH:
   export VENV_PATH=<path>/fuel-devops-venv-2.9
+
+Known issues
+------------
+* Some versions of libvirt contains `bug <https://bugzilla.redhat.com/show_bug.cgi?id=1133155>`_, which breaks QEMU virtual machine XML.
+  You can see this, when tests crushes `with <https://bugs.launchpad.net/fuel/+bug/1356104>`_:
+  *libvirt: QEMU Driver error : unsupported configuration: host doesn't support invariant TSC*
+  Solution: upgrade libvirt to actual version.

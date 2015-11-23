@@ -71,6 +71,7 @@ class Plugin(Base):
     licenses = Column(JSON, server_default='[]', nullable=False)
     homepage = Column(Text, nullable=True)
     package_version = Column(String(32), nullable=False)
+    is_hotpluggable = Column(Boolean, default=False)
     attributes_metadata = Column(JSON, server_default='{}', nullable=False)
     volumes_metadata = Column(JSON, server_default='{}', nullable=False)
     roles_metadata = Column(JSON, server_default='{}', nullable=False)

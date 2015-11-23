@@ -114,7 +114,7 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin = ClusterPlugins.get_connected_plugins(cluster)[0]
+        plugin = ClusterPlugins.get_connected_plugins(cluster).first()
         ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
 
         columns = meta.tables['cluster_plugins'].c
@@ -159,8 +159,8 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin = ClusterPlugins.get_connected_plugins(cluster)[0]
+        plugin = ClusterPlugins.get_connected_plugins(cluster).first()
         ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
 
-        enabled_plugin = ClusterPlugins.get_enabled(cluster.id)[0].id
-        self.assertEqual(enabled_plugin, plugin.id)
+        enabled_plugin = ClusterPlugins.get_enabled(cluster.id).first()
+        self.assertEqual(plugin.id, enabled_plugin.id)

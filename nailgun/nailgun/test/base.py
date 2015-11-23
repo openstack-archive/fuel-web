@@ -494,7 +494,7 @@ class EnvironmentManager(object):
         resp = self.neutron_networks_put(cluster_id, netconfig)
         return resp
 
-    def create_plugin(self, api=False, cluster=None, **kwargs):
+    def create_plugin(self, api=False, cluster=None, enabled=True, **kwargs):
         plugin_data = self.get_default_plugin_metadata(**kwargs)
 
         if api:
@@ -513,7 +513,9 @@ class EnvironmentManager(object):
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
-            ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
+            ClusterPlugins.set_attributes(
+                cluster.id, plugin.id, enabled=enabled
+            )
         return plugin
 
     def create_cluster_plugin_link(self, **kwargs):
@@ -768,6 +770,7 @@ class EnvironmentManager(object):
             'licenses': ['License 1'],
             'authors': ['Author1'],
             'homepage': 'http://some-plugin-url.com/',
+            'is_hotpluggable': False,
             'releases': [
                 {'repository_path': 'repositories/ubuntu',
                  'version': '2014.2-6.0', 'os': 'ubuntu',

@@ -36,6 +36,7 @@ from nailgun.api.v1.validators.cluster import ClusterChangesValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
@@ -185,7 +186,12 @@ class ClusterAttributesHandler(BaseHandler):
                         "Environment attribute '{0}' couldn't be changed "
                         "after or during deployment.".format(group_name)))
 
-        objects.Cluster.patch_attributes(cluster, data)
+        # TODO(need to enable restrictions check for cluster attributes)
+        try:
+            objects.Cluster.patch_attributes(cluster, data)
+        except errors.NotAllowed as e:
+            raise self.http(403, e.message)
+
         return {
             'editable': objects.Cluster.get_editable_attributes(
                 cluster, all_plugins_versions=True)

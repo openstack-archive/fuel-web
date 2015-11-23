@@ -108,6 +108,7 @@ def upgrade():
     upgrade_with_components()
     dashboard_entries_upgrade()
     upgrade_master_settings()
+    upgrade_plugins_parameters()
 
 
 def downgrade():
@@ -122,6 +123,7 @@ def downgrade():
     task_statuses_downgrade()
     downgrade_release_state()
     downgrade_nodegroups_name_cluster_constraint()
+    downgrade_plugins_parameters()
 
 
 def upgrade_release_state():
@@ -528,3 +530,13 @@ def dashboard_entries_upgrade():
 
 def dashboard_entries_downgrade():
     op.drop_table('dashboard_entries')
+
+
+def upgrade_plugins_parameters():
+    op.add_column(
+        'plugins', sa.Column('is_runtime', sa.Boolean(), nullable=True)
+    )
+
+
+def downgrade_plugins_parameters():
+    op.drop_column('plugins', 'is_runtime')

@@ -23,7 +23,6 @@ oslo.db<1.8.0
 ply==3.4
 psycopg2==2.5.1
 pycrypto==2.6.1
-requests>=1.2.3
 simplejson>=3.3.0
 six>=1.5.2
 urllib3>=1.7
@@ -39,6 +38,7 @@ networkx>=1.8,<1.10
 pydot-ng>=1.0.0
 ordereddict>=1.1
 oslo.utils<1.4.1
+requests>=1.2.3
 # NOTE(prmtl): not all packages has correctly
 # requirements for stevedore - some of them install
 # newest one which case version conflicts

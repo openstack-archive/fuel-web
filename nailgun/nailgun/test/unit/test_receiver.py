@@ -45,8 +45,8 @@ class TestNailgunReceiver(base.BaseTestCase):
 
             self.plugin = Plugin.create(meta)
             self.cluster.plugins.append(self.plugin)
-            ClusterPlugins.set_attributes(self.cluster.id,
-                                          self.plugin.id,
+            ClusterPlugins.set_attributes(self.cluster,
+                                          self.plugin,
                                           enabled=True)
 
         self.task = self.env.create_task(

@@ -144,8 +144,8 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin_id = ClusterPlugins.get_connected_plugins(cluster.id)[0][0]
-        ClusterPlugins.set_attributes(cluster.id, plugin_id, enabled=True)
+        plugin = ClusterPlugins.get_connected_plugins(cluster.id)[0]
+        ClusterPlugins.set_attributes(cluster, plugin, enabled=True)
 
         enabled_plugin = ClusterPlugins.get_enabled(cluster.id)[0].id
-        self.assertEqual(enabled_plugin, plugin_id)
+        self.assertEqual(enabled_plugin, plugin)

@@ -109,9 +109,11 @@ def upgrade():
     cluster_plugin_links_upgrade()
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
+    upgrade_plugins_parameters()
 
 
 def downgrade():
+    downgrade_plugins_parameters()
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
     cluster_plugin_links_downgrade()
@@ -598,3 +600,13 @@ def ip_type_to_string(table_name, column_name, string_len):
 
 def cluster_plugin_links_downgrade():
     op.drop_table('cluster_plugin_links')
+
+
+def upgrade_plugins_parameters():
+    op.add_column(
+        'plugins', sa.Column('is_runtime', sa.Boolean(), nullable=True)
+    )
+
+
+def downgrade_plugins_parameters():
+    op.drop_column('plugins', 'is_runtime')

@@ -35,7 +35,7 @@ class TestNailgunReceiver(base.BaseTestCase):
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': consts.NODE_STATUSES.ready}])
-        self.cluster = self.env.clusters[0]
+        self.cluster = self.env.clusters[-1]
 
         for i in range(2):
             meta = self.env.get_default_plugin_metadata(
@@ -45,8 +45,8 @@ class TestNailgunReceiver(base.BaseTestCase):
 
             self.plugin = Plugin.create(meta)
             self.cluster.plugins.append(self.plugin)
-            ClusterPlugins.set_attributes(self.cluster.id,
-                                          self.plugin.id,
+            ClusterPlugins.set_attributes(self.cluster,
+                                          self.plugin,
                                           enabled=True)
 
         self.task = self.env.create_task(

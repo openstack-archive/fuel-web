@@ -327,6 +327,16 @@ class Cluster(NailgunObject):
         )}
 
     @classmethod
+    def validate_editable_attributes(cls, instance, data):
+        """Validates the editable attributes of cluster.
+
+        :param instance: Cluster object
+        :param data: dict
+        :raises errors.NotAllowed
+        """
+        PluginManager.validate_cluster_attributes(instance, data['editable'])
+
+    @classmethod
     def get_network_manager(cls, instance=None):
         """Get network manager for Cluster instance.
 

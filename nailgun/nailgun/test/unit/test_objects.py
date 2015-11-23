@@ -938,8 +938,8 @@ class TestClusterObject(BaseTestCase):
         for kw in plugins_kw_list:
             plugin = objects.Plugin.create(kw)
             cluster.plugins.append(plugin)
-            objects.ClusterPlugins.set_attributes(cluster.id,
-                                                  plugin.id,
+            objects.ClusterPlugins.set_attributes(cluster,
+                                                  plugin,
                                                   enabled=True)
         return cluster
 
@@ -1300,8 +1300,8 @@ class TestClusterObjectGetRoles(BaseTestCase):
             roles_metadata=roles_metadata,
         ))
         self.cluster.plugins.append(plugin)
-        objects.ClusterPlugins.set_attributes(self.cluster.id,
-                                              plugin.id,
+        objects.ClusterPlugins.set_attributes(self.cluster,
+                                              plugin,
                                               enabled=True)
         return plugin
 
@@ -1376,7 +1376,10 @@ class TestClusterObjectGetRoles(BaseTestCase):
         roles = re.match(message_pattern, str(cm.exception)).group(1)
         roles = [role.lstrip().rstrip() for role in roles.split(',')]
 
-        self.assertItemsEqual(roles, ['role_x', 'role_a'])
+        self.assertItemsEqual(
+            roles, ['role_x', 'role_a'],
+            message_pattern
+        )
 
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):

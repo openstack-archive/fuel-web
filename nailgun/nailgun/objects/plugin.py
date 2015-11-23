@@ -137,16 +137,22 @@ class ClusterPlugins(NailgunObject):
         :return: True if compatible, False if not
         :rtype: bool
         """
+        cluster_os = cluster.release.operating_system.lower()
         for release in plugin.releases:
-            os_compat = cluster.release.operating_system.lower()\
-                == release['os'].lower()
+            if cluster_os != release['os'].lower():
+                continue
             # plugin writer should be able to specify ha in release['mode']
             # and know nothing about ha_compact
-            mode_compat = any(mode in cluster.mode for mode in release['mode'])
-            release_version_compat = cls.is_release_version_compatible(
-                cluster.release.version, release['version'])
-            if all((os_compat, mode_compat, release_version_compat)):
-                return True
+            if not any(
+                cluster.mode.startswith(mode) for mode in release['mode']
+            ):
+                continue
+
+            if not cls.is_release_version_compatible(
+                cluster.release.version, release['version']
+            ):
+                continue
+            return True
         return False
 
     @staticmethod
@@ -222,13 +228,13 @@ class ClusterPlugins(NailgunObject):
             })
 
     @classmethod
-    def set_attributes(cls, cluster_id, plugin_id, enabled=None, attrs=None):
+    def set_attributes(cls, cluster, plugin, enabled=None, attrs=None):
         """Sets plugin's attributes in cluster_plugins table.
 
-        :param cluster_id: Cluster ID
-        :type cluster_id: int
-        :param plugin_id: Plugin ID
-        :type plugin_id: int
+        :param cluster: A cluster instance
+        :type cluster: nailgun.objects.cluster.Cluster
+        :param plugin: A plugin instance
+        :type plugin: nailgun.objects.plugin.Plugin
         :param enabled: Enabled or disabled plugin for given cluster
         :type enabled: bool
         :param attrs: Plugin metadata
@@ -241,7 +247,7 @@ class ClusterPlugins(NailgunObject):
             params['attributes'] = attrs
 
         db().query(cls.model)\
-            .filter_by(plugin_id=plugin_id, cluster_id=cluster_id)\
+            .filter_by(plugin_id=plugin.id, cluster_id=cluster.id)\
             .update(params, synchronize_session='fetch')
         db().flush()
 
@@ -259,9 +265,10 @@ class ClusterPlugins(NailgunObject):
             models.Plugin.name,
             models.Plugin.title,
             models.Plugin.version,
+            models.Plugin.is_runtime,
             cls.model.enabled,
             models.Plugin.attributes_metadata,
-            cls.model.attributes
+            cls.model.attributes.label("cluster_attributes")
         ).join(cls.model)\
             .filter(cls.model.cluster_id == cluster_id)\
             .order_by(models.Plugin.name)\

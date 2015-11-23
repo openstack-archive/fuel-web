@@ -119,9 +119,11 @@ def upgrade():
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
     create_openstack_configs_table()
+    upgrade_plugins_parameters()
 
 
 def downgrade():
+    downgrade_plugins_parameters()
     downgrade_openstack_configs()
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
@@ -636,3 +638,13 @@ def ip_type_to_string(table_name, column_name, string_len):
 
 def cluster_plugin_links_downgrade():
     op.drop_table('cluster_plugin_links')
+
+
+def upgrade_plugins_parameters():
+    op.add_column(
+        'plugins', sa.Column('hotplug', sa.Boolean(), nullable=True)
+    )
+
+
+def downgrade_plugins_parameters():
+    op.drop_column('plugins', 'hotplug')

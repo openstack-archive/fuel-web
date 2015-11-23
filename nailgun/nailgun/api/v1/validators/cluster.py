@@ -218,6 +218,8 @@ class AttributesValidator(BasicValidator):
                         u"Provisioning method is not set. Unable to continue",
                         log_message=True)
 
+            objects.Cluster.validate_editable_attributes(cluster, attrs)
+
         cls.validate_editable_attributes(attrs)
 
         return d

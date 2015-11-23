@@ -114,23 +114,24 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin_id = ClusterPlugins.get_connected_plugins(cluster.id)[0][0]
-        ClusterPlugins.set_attributes(cluster.id, plugin_id, enabled=True)
+        plugin = ClusterPlugins.get_connected_plugins(cluster.id).first()
+        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
 
         columns = meta.tables['cluster_plugins'].c
         enabled = self.db.execute(
             sa.select([columns.enabled])
             .where(columns.cluster_id == cluster.id)
-            .where(columns.plugin_id == plugin_id)
+            .where(columns.plugin_id == plugin.id)
         ).fetchone()
         self.assertTrue(enabled[0])
 
     def test_get_connected_plugins(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
-        connected_plugins =\
-            ClusterPlugins.get_connected_plugins(cluster.id).all()
-        self.assertEqual(len(connected_plugins), 5)
+        connected_plugins_num = ClusterPlugins.get_connected_plugins(
+            cluster.id
+        ).count()
+        self.assertEqual(5, connected_plugins_num)
 
     def test_get_connected_clusters(self):
         plugin_id = self._create_test_plugins()[0]
@@ -144,8 +145,8 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin_id = ClusterPlugins.get_connected_plugins(cluster.id)[0][0]
-        ClusterPlugins.set_attributes(cluster.id, plugin_id, enabled=True)
+        plugin = ClusterPlugins.get_connected_plugins(cluster.id).first()
+        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
 
-        enabled_plugin = ClusterPlugins.get_enabled(cluster.id)[0].id
-        self.assertEqual(enabled_plugin, plugin_id)
+        enabled_plugin = ClusterPlugins.get_enabled(cluster.id).first()
+        self.assertEqual(plugin.id, enabled_plugin.id)

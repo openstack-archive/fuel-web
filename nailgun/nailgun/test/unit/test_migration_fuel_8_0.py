@@ -453,7 +453,13 @@ class TestPluginMigration(base.BaseAlembicMigrationTest):
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.components_metadata]))
         self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]), [])
+            jsonutils.loads(result.scalar()), [])
+
+    def test_is_runtime_field_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['plugins'].c.is_runtime])
+        )
+        self.assertTrue(all(x[0] is None for x in result))
 
 
 class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):

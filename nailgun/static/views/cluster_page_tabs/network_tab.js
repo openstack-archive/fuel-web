@@ -1221,7 +1221,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             <button className='btn-link'>
                                 {currentNodeNetworkGroup.get('name')}
                             </button>
-                            <i className='glyphicon glyphicon-pencil'></i>
+                            {!isDefaultNodeNetworkGroup &&
+                                <i className='glyphicon glyphicon-pencil'></i>
+                            }
                         </div>
                     }
                     {isDefaultNodeNetworkGroup &&

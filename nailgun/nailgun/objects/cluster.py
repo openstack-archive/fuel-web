@@ -340,38 +340,21 @@ class Cluster(NailgunObject):
             return NetworkManager
 
         ver = instance.release.environment_version
-        net_provider = instance.net_provider
-        if net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
-            from nailgun.network import neutron
-            if StrictVersion(ver) < StrictVersion('6.1'):
-                return neutron.NeutronManagerLegacy
-
-            if StrictVersion(ver) == StrictVersion('6.1'):
-                return neutron.NeutronManager61
-
+        if instance.net_provider == 'neutron':
             if StrictVersion(ver) == StrictVersion('7.0'):
-                return neutron.NeutronManager70
-
-            if StrictVersion(ver) >= StrictVersion('8.0'):
-                return neutron.NeutronManager80
-
-            return neutron.NeutronManager
-        elif net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
-            from nailgun.network import nova_network
-            if StrictVersion(ver) < StrictVersion('6.1'):
-                return nova_network.NovaNetworkManagerLegacy
-
-            if StrictVersion(ver) == StrictVersion('6.1'):
-                return nova_network.NovaNetworkManager61
-
+                from nailgun.network.neutron import NeutronManager70
+                return NeutronManager70
+            elif StrictVersion(ver) >= StrictVersion('8.0'):
+                from nailgun.network.neutron import NeutronManager80
+                return NeutronManager80
+            from nailgun.network.neutron import NeutronManager
+            return NeutronManager
+        else:
             if StrictVersion(ver) >= StrictVersion('7.0'):
-                return nova_network.NovaNetworkManager70
-            return nova_network.NovaNetworkManager
-
-        raise ValueError(
-            'The network provider "{0}" is not supported.'
-            .format(net_provider)
-        )
+                from nailgun.network.nova_network import NovaNetworkManager70
+                return NovaNetworkManager70
+            from nailgun.network.nova_network import NovaNetworkManager
+            return NovaNetworkManager
 
     @classmethod
     def add_pending_changes(cls, instance, changes_type, node_id=None):
@@ -796,7 +779,7 @@ class Cluster(NailgunObject):
 
         nodegroups = db().query(models.NodeGroup).join(models.Node).filter(
             models.Node.cluster_id == instance.id,
-            models.Node.pending_deletion.is_(False)
+            False == models.Node.pending_deletion
         ).filter(sa.or_(
             models.Node.roles.overlap(psql_noderoles),
             models.Node.pending_roles.overlap(psql_noderoles)
@@ -1182,26 +1165,29 @@ class Cluster(NailgunObject):
         return query.all()
 
     @classmethod
-    def prepare_for_deployment(cls, instance, nodes=None):
-        """Shortcut for NetworkManager.prepare_for_deployment.
+    def get_vip_info(cls, instance, vip_name):
+        """Returns VIP info by given 'vip_name'
 
-        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
-        :param nodes: the list of Nodes, None means for all nodes
+        :param instance: Cluster instance
+        :type instance: Cluster DB instance
+        :param vip_name: VIP name
+        :type vip_name: basestring
+        :returns: VIP information collected into dict object
         """
-        cls.get_network_manager(instance).prepare_for_deployment(
-            instance, instance.nodes if nodes is None else nodes
-        )
+        vip_info = {}
+        for meta in cls.get_network_roles(instance):
+            if meta['properties']['vip']:
+                for vip in meta['properties']['vip']:
+                    if vip['name'] == vip_name:
+                        vip_info = {
+                            'name': vip_name,
+                            'network_role': meta['id'],
+                            'namespace': vip['namespace'],
+                            'node_roles': [r for r in cls.get_roles(instance)],
+                            'alias': vip['alias'],
+                            'manual': False}
 
-    @classmethod
-    def prepare_for_provisioning(cls, instance, nodes=None):
-        """Shortcut for NetworkManager.prepare_for_provisioning.
-
-        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
-        :param nodes: the list of Nodes, None means for all nodes
-        """
-        cls.get_network_manager(instance).prepare_for_provisioning(
-            instance.nodes if nodes is None else nodes
-        )
+        return vip_info
 
 
 class ClusterCollection(NailgunCollection):

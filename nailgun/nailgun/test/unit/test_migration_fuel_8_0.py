@@ -33,11 +33,27 @@ _prepare_revision = '1e50a4903910'
 _test_revision = '43b2cb64dae6'
 
 
+master_node_settings_before_migration = None
+
+
 def setup_module():
     dropdb()
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
     prepare()
+    global master_node_settings_before_migration
+    master_node_settings_before_migration = jsonutils.loads(
+        get_master_node_settings())
     alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
+
+
+def get_master_node_settings():
+    meta = base.reflect_db_metadata()
+    master_node_settings_table = meta.tables['master_node_settings']
+
+    settings = db.execute(sa.select(
+        [master_node_settings_table.c.settings])).scalar()
+    db().commit()
+    return settings
 
 
 def prepare():
@@ -456,11 +472,10 @@ class TestPluginMigration(base.BaseAlembicMigrationTest):
             jsonutils.loads(result.fetchone()[0]), [])
 
 
-class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):
+class TestMasterNodeSettingsMigration(base.BaseAlembicMigrationTest):
 
     def test_bootstrap_field_exists_and_filled(self):
-        result = db.execute(
-            sa.select([self.meta.tables['master_node_settings'].c.settings]))
+        settings = get_master_node_settings()
         bootstrap_settings = {
             "error": {
                 "type": "hidden",
@@ -470,7 +485,26 @@ class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):
         }
         self.assertEqual(
             bootstrap_settings,
-            jsonutils.loads(result.scalar())['bootstrap']
+            settings['bootstrap']
+        )
+
+    def test_ui_settings_field_exists_and_has_default_value(self):
+        settings = get_master_node_settings()
+        ui_settings = settings['ui_settings']
+        self.assertItemsEqual(ui_settings['view_mode'], 'standard')
+        self.assertItemsEqual(ui_settings['filter'], {})
+        self.assertItemsEqual(ui_settings['sort'], [{'status': 'asc'}])
+        self.assertItemsEqual(ui_settings['filter_by_labels'], {})
+        self.assertItemsEqual(ui_settings['sort_by_labels'], [])
+        self.assertItemsEqual(ui_settings['search'], '')
+
+    def test_master_node_settings_old_data_not_modified(self):
+        settings = get_master_node_settings()
+        settings.pop('bootstrap')
+        settings.pop('ui_settings')
+        self.assertDictEqual(
+            master_node_settings_before_migration,
+            settings
         )
 
 

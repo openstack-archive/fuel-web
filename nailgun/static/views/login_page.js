@@ -74,7 +74,7 @@ function($, _, i18n, React, dispatcher, utils) {
                         dispatcher.trigger('showDefaultPasswordWarning');
                     }
 
-                    return app.settings.fetch({cache: true});
+                    return app.fuelSettings.fetch({cache: true});
                 }, this))
                 .done(_.bind(function() {
                     var nextUrl = '';

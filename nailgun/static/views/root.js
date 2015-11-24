@@ -58,7 +58,7 @@ define([
         },
         render: function() {
             var {Page, showDefaultPasswordWarning} = this.state;
-            var {settings, version} = this.props;
+            var {fuelSettings, version} = this.props;
 
             if (!Page) return null;
             var layoutClasses = {
@@ -72,7 +72,7 @@ define([
                             <layoutComponents.Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
                             <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
                             showDefaultPasswordWarning && <layoutComponents.DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />,
-                            settings.get('bootstrap.error.value') && <layoutComponents.BootstrapError key='bootstrap-error' text={settings.get('bootstrap.error.value')} />
+                            fuelSettings.get('bootstrap.error.value') && <layoutComponents.BootstrapError key='bootstrap-error' text={fuelSettings.get('bootstrap.error.value')} />
                         ]}
                         <div id='content'>
                             <Page ref='page' {...this.state.pageOptions} />

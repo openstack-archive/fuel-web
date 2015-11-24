@@ -65,6 +65,9 @@ from nailgun.api.v1.handlers.network_configuration \
 from nailgun.api.v1.handlers.network_configuration \
     import TemplateNetworkConfigurationHandler
 
+from nailgun.api.v1.handlers.network_configuration import VipCollectionHandler
+from nailgun.api.v1.handlers.network_configuration import VipHandler
+
 from nailgun.api.v1.handlers.node import NodeAgentHandler
 from nailgun.api.v1.handlers.node import NodeCollectionHandler
 from nailgun.api.v1.handlers.node import NodeHandler
@@ -169,6 +172,13 @@ urls = (
     NeutronNetworkConfigurationVerifyHandler,
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/template/?$',
     TemplateNetworkConfigurationHandler,
+
+    # VIP allocation
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration/vips/?$',
+    VipCollectionHandler,
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration/vips/'
+    r'(?P<obj_id>\d+)/?$',
+    VipHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$',
     DeploymentInfo,

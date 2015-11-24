@@ -189,6 +189,13 @@ def prepare():
             'generated': jsonutils.dumps({}),
         }])
 
+    db.execute(
+        meta.tables['ip_addrs'].insert(),
+        [{
+            'ip_addr': '192.168.0.2',
+            'vip_type': 'vrouter',
+        }])
+
     db.commit()
 
 
@@ -456,19 +463,8 @@ class TestPluginMigration(base.BaseAlembicMigrationTest):
             jsonutils.loads(result.fetchone()[0]), [])
 
 
-class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):
+class TestVipMigration(base.BaseAlembicMigrationTest):
 
-    def test_bootstrap_field_exists_and_filled(self):
+    def test_ip_addrs_vip_info_exists(self):
         result = db.execute(
-            sa.select([self.meta.tables['master_node_settings'].c.settings]))
-        bootstrap_settings = {
-            "error": {
-                "type": "hidden",
-                "value": "",
-                "weight": 10
-            }
-        }
-        self.assertEqual(
-            bootstrap_settings,
-            jsonutils.loads(result.scalar())['bootstrap']
-        )
+            sa.select([self.meta.tables['ip_addrs'].c.components_metadata]))

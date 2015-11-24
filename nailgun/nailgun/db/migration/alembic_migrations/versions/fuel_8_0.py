@@ -97,6 +97,7 @@ node_errors_new = (
 
 
 def upgrade():
+    upgrade_vip_type()
     upgrade_nodegroups_name_cluster_constraint()
     upgrade_release_state()
     task_statuses_upgrade()
@@ -112,6 +113,7 @@ def upgrade():
 
 
 def downgrade():
+    downgrade_vip_type()
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
     dashboard_entries_downgrade()
@@ -592,3 +594,77 @@ def ip_type_to_string(table_name, column_name, string_len):
                                                                 column_name,
                                                                 string_len)
     )
+
+
+def upgrade_vip_type():
+    # memoize initial data
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT id, vip_type FROM ip_addrs")
+    vip_types = [
+        (ip_addr_id, vip_type)
+        for ip_addr_id, vip_type in connection.execute(select_query)
+    ]
+
+    # migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_type',
+        new_column_name='vip_info',
+        type_=sa.Column(
+            sa.ext.mutable.MutableDict.as_mutable(fields.JSON),
+            nullable=True,
+            default={}
+        ),
+        existing_type=sa.Column(sa.String(25), nullable=True),
+    )
+
+    # migrate data
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_info = :vip_info
+        WHERE id = :ip_addr_id
+    """)
+
+    for ip_addr_id, vip_info in vip_types:
+        connection.execute(
+            update_query,
+            ip_addr_id=ip_addr_id,
+            vip_type=jsonutils.dumps({'name': vip_info})
+        )
+
+
+def downgrade_vip_type():
+    # memoize initial data
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT id, vip_info FROM ip_addrs")
+    vip_infos = [
+        (ip_addr_id, vip_info['name'])
+        for ip_addr_id, vip_info in connection.execute(select_query)
+    ]
+
+    # migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_info',
+        new_column_name='vip_type',
+        type_=sa.Column(sa.String(25), nullable=True),
+        existing_type=sa.Column(
+            sa.ext.mutable.MutableDict.as_mutable(fields.JSON),
+            nullable=True,
+            default={}
+        ),
+    )
+
+    # migrate data
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_type = :vip_type
+        WHERE id = :ip_addr_id
+    """)
+
+    for ip_addr_id, vip_info in vip_infos:
+        connection.execute(
+            update_query,
+            ip_addr_id=ip_addr_id,
+            vip_type=jsonutils.dumps(vip_info)
+        )

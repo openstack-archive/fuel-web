@@ -54,12 +54,12 @@ class BaseNetworkManagerTest(BaseIntegrationTest):
         for net_group in cluster.network_groups:
             if net_group.name not in rules:
                 continue
-            vips_by_types = rules[net_group.name]
-            for vip_type, ip_addr in vips_by_types.items():
+            vips_by_names = rules[net_group.name]
+            for vip_name, ip_addr in vips_by_names.items():
                 ip = IPAddr(
                     network=net_group.id,
                     ip_addr=ip_addr,
-                    vip_type=vip_type,
+                    vip_info={'name': vip_name}
                 )
                 self.db.add(ip)
                 created_ips.append(ip)
@@ -82,8 +82,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
         )
 
         nailgun.task.task.Cobbler = Mock()
+
         self.env.network_manager.assign_ips(
-            self.env.clusters[-1],
             self.env.nodes,
             consts.NETWORKS.management
         )
@@ -163,13 +163,12 @@ class TestNetworkManager(BaseNetworkManagerTest):
         )
 
         node_db = self.env.nodes[0]
+
         self.env.network_manager.assign_ips(
-            self.env.clusters[-1],
             [node_db],
             consts.NETWORKS.management
         )
         self.env.network_manager.assign_ips(
-            self.env.clusters[-1],
             [node_db],
             consts.NETWORKS.management
         )
@@ -348,10 +347,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.db.add(mock_range)
         self.db.commit()
 
-        self.env.network_manager.assign_ips(
-            self.env.clusters[-1],
-            self.env.nodes, consts.NETWORKS.management
-        )
+        self.env.network_manager.assign_ips(self.env.nodes,
+                                            consts.NETWORKS.management)
 
         for n in self.env.nodes:
             mgmt_net = self.db.query(NetworkGroup).filter(
@@ -378,7 +375,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
         )
 
         self.env.network_manager.assign_ips(
-            self.env.clusters[-1],
             self.env.nodes,
             consts.NETWORKS.management
         )
@@ -471,21 +467,16 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_get_node_networks_ips(self):
         cluster = self.env.create_cluster(api=False)
         node = self.env.create_node(cluster_id=cluster.id)
-        self.env.network_manager.assign_ips(
-            cluster, [node], consts.NETWORKS.management
-        )
-        node_net_ips = dict(
-            (ip.network_data.name, ip.ip_addr) for ip in node.ip_addrs
-        )
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
+        node_net_ips = \
+            dict((ip.network_data.name, ip.ip_addr) for ip in node.ip_addrs)
         self.assertEquals(node_net_ips,
                           self.env.network_manager.get_node_networks_ips(node))
 
     def test_set_node_networks_ips(self):
         cluster = self.env.create_cluster(api=False)
         node = self.env.create_node(cluster_id=cluster.id)
-        self.env.network_manager.assign_ips(
-            cluster, [node], consts.NETWORKS.management
-        )
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
         node_net_ips = \
             dict((net.name, self.env.network_manager.get_free_ips(net)[0])
                  for net in node.networks)
@@ -496,9 +487,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_set_node_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)
         node = self.env.create_node(cluster_id=cluster.id)
-        self.env.network_manager.assign_ips(
-            cluster, [node], consts.NETWORKS.management
-        )
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
         admin_ng_id = \
             self.env.network_manager.get_admin_network_group_id(node.id)
         node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
@@ -509,9 +498,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_set_nic_assignment_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)
         node = self.env.create_node(cluster_id=cluster.id)
-        self.env.network_manager.assign_ips(
-            cluster, [node], consts.NETWORKS.management
-        )
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
         admin_ng_id = \
             self.env.network_manager.get_admin_network_group_id(node.id)
         nic_ng_ids = \
@@ -527,9 +514,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_set_bond_assignment_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)
         node = self.env.create_node(cluster_id=cluster.id)
-        self.env.network_manager.assign_ips(
-            cluster, [node], consts.NETWORKS.management
-        )
+        self.env.network_manager.assign_ips([node], consts.NETWORKS.management)
         assigned_networks = [net for iface in node.interfaces
                              for net in iface.assigned_networks]
         self.env.network_manager._update_attrs({
@@ -1094,7 +1079,7 @@ class TestNeutronManager70(BaseNetworkManagerTest):
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_type='public')
+                mock.ANY, vip_name="public")
             self.assertEqual(endpoint_ip, vip)
 
     def test_assign_vips_for_net_groups_for_api(self):
@@ -1213,7 +1198,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_type='public')
+                mock.ANY, vip_name="public")
             self.assertEqual(endpoint_ip, vip)
 
 

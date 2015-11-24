@@ -504,7 +504,7 @@
         compute-vmware:
           - {allocate_size: "min", id: "os"}
         ironic:
-          - {allocate_size: "all", id: "os"}
+          - {allocate_size: "min", id: "os"}
       volumes:
         - id: "os"
           type: "vg"

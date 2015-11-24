@@ -32,10 +32,7 @@ module.exports = {
         extensions: ['', '.js'],
         alias: {
             underscore: 'lodash',
-            react: 'react/addons',
-            // FIXME(vkramskikh): node.js version depends on express
-            // and causes warnings
-            i18next: 'i18next/lib/dep/i18next-1.7.1.js'
+            react: 'react/addons'
         }
     },
     node: {},

@@ -19,15 +19,13 @@ define(
     './vmware_tab',
     './vmware_models',
     './translations.json',
-    './styles.less',
-    'jquery',
-    'underscore',
-    'i18next'
+    'i18n',
+    './styles.less'
 ],
-function(VmWareTab, vmWareModels, translations, styles, $, _, i18next) {
+function(VmWareTab, vmWareModels, translations, i18n) {
     'use strict';
 
-    _.merge(i18next.options.resStore, translations);
+    i18n.addTranslations(translations);
 
     return {
         VmWareTab: VmWareTab,

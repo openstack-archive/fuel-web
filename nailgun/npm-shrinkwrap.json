@@ -4327,22 +4327,6 @@
         }
       }
     },
-    "i18next": {
-      "version": "1.7.1",
-      "from": "i18next@1.7.1",
-      "dependencies": {
-        "cookies": {
-          "version": "0.5.1",
-          "from": "cookies@>= 0.2.2",
-          "dependencies": {
-            "keygrip": {
-              "version": "1.0.1",
-              "from": "keygrip@~1.0.0"
-            }
-          }
-        }
-      }
-    },
     "imports-loader": {
       "version": "0.6.4",
       "from": "imports-loader@0.6.4",
@@ -8525,6 +8509,10 @@
           }
         }
       }
+    },
+    "i18next-client": {
+      "version": "1.11.1",
+      "from": "i18next-client@"
     }
   }
 }

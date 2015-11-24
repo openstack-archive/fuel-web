@@ -174,6 +174,31 @@ class Release(NailgunObject):
         plugin_components = PluginManager.get_components_metadata(instance)
         return instance.components_metadata + plugin_components
 
+    @classmethod
+    def get_vip_info(cls, instance, vip_name):
+        """Returns VIP info by given 'vip_name'
+
+        :param instance: Release instance
+        :type instance: Release DB instance
+        :param vip_name: VIP name
+        :type vip_name: basestring
+        :returns: VIP information collected into dict object
+        """
+        vip_info = {}
+        for meta in instance.network_roles_metadata:
+            if meta['properties']['vip']:
+                for vip in meta['properties']['vip']:
+                    if vip['name'] == vip_name:
+                        vip_info = {
+                            'name': vip_name,
+                            'network_role': meta['id'],
+                            'namespace': vip['namespace'],
+                            'node_roles': [r for r in instance.roles_metadata],
+                            'alias': vip['alias'],
+                            'manual': True}
+
+        return vip_info
+
 
 class ReleaseCollection(NailgunCollection):
     """Release collection"""

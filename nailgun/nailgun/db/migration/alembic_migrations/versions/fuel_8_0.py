@@ -109,9 +109,11 @@ def upgrade():
     dashboard_entries_upgrade()
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
+    upgrade_master_node_ui_settings()
 
 
 def downgrade():
+    downgrade_master_node_ui_settings()
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
     dashboard_entries_downgrade()
@@ -592,3 +594,78 @@ def ip_type_to_string(table_name, column_name, string_len):
                                                                 column_name,
                                                                 string_len)
     )
+
+
+def upgrade_master_node_ui_settings():
+    connection = op.get_bind()
+
+    q_get_master_node_data = sa.text('''
+        SELECT master_node_uid, settings FROM master_node_settings
+    ''')
+    q_update_master_node_settings = sa.text('''
+        UPDATE master_node_settings SET settings = :settings
+        WHERE master_node_uid = :master_node_uid
+    ''')
+
+    master_node_data = connection.execute(q_get_master_node_data)
+    for master_node_uid, settings in master_node_data:
+        master_node_settings = jsonutils.loads(settings)
+        master_node_settings.update({
+            'ui_settings': {
+                'view_mode': 'standard',
+                'filter': {},
+                'sort': [{'status': 'asc'}],
+                'filter_by_labels': {},
+                'sort_by_labels': [],
+                'search': '',
+            },
+        })
+        connection.execute(q_update_master_node_settings,
+                           master_node_uid=master_node_uid,
+                           settings=jsonutils.dumps(master_node_settings))
+
+    alter_settings = sa.sql.text("ALTER TABLE master_node_settings "
+                                 "ALTER COLUMN settings TYPE JSON "
+                                 "USING settings::JSON")
+    connection.execute(alter_settings)
+
+    op.alter_column(
+        'master_node_settings',
+        'settings',
+        nullable=True,
+        existing_nullable=False,
+        server_default=jsonutils.dumps({
+            "ui_settings": {
+                "view_mode": "standard",
+                "filter": {},
+                "sort": [{"status": "asc"}],
+                "filter_by_labels": {},
+                "sort_by_labels": [],
+                "search": ""
+            }
+        })
+    )
+
+
+def downgrade_master_node_ui_settings():
+    connection = op.get_bind()
+
+    op.alter_column('master_node_settings', 'settings',
+                    nullable=True, server_default=False,
+                    type_=sa.Text)
+
+    q_get_master_node_data = sa.text('''
+        SELECT master_node_uid, settings FROM master_node_settings
+    ''')
+    q_update_master_node_settings = sa.text('''
+        UPDATE master_node_settings SET settings = :settings
+        WHERE master_node_uid = :master_node_uid
+    ''')
+
+    master_node_data = connection.execute(q_get_master_node_data)
+    for master_node_uid, settings in master_node_data:
+        master_node_settings = jsonutils.loads(settings)
+        del master_node_settings['ui_settings']
+        connection.execute(q_update_master_node_settings,
+                           master_node_uid=master_node_uid,
+                           settings=jsonutils.dumps(master_node_settings))

@@ -29,6 +29,7 @@ import six
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
+from sqlalchemy import text
 
 from nailgun import consts
 from nailgun.db import db
@@ -300,8 +301,22 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
+    def add_vip(cls, **kwargs):
+        """Add VIP to DB
+
+        Input parameters depend on the network manager's version.
+        """
+        network = kwargs.get('network')
+        ip_addr = kwargs.get('ip_addr')
+        vip_info = kwargs.get('vip_info')
+        vip = IPAddr(network=network.id, ip_addr=ip_addr, vip_info=vip_info)
+        db().add(vip)
+        db().flush()
+        return vip
+
+    @classmethod
     def assign_vip(cls, nodegroup, network_name,
-                   vip_type=consts.NETWORK_VIP_TYPES.haproxy):
+                   vip_name=consts.NETWORK_VIP_TYPES.haproxy):
         """Idempotent assignment of VirtualIP addresses to nodegroup.
 
         Returns VIP for given nodegroup and network.
@@ -317,8 +332,8 @@ class NetworkManager(object):
         :type nodegroup: NodeGroup model
         :param network_name: Network name
         :type  network_name: str
-        :param vip_type: Type of VIP
-        :type  vip_type: str
+        :param vip_name: Type of VIP
+        :type  vip_name: str
         :returns: assigned VIP (string)
         :raises: Exception
         """
@@ -339,11 +354,13 @@ class NetworkManager(object):
                 u"Network '{0}' for nodegroup='{1}' not found.".format(
                     network_name, nodegroup.name))
 
-        cluster_vip = db().query(IPAddr).filter_by(
+        cluster_vip = db().query(IPAddr).filter(
+            text("vip_info->>'name'=:vip_name").bindparams(vip_name=vip_name)
+        ).filter_by(
             network=network.id,
-            node=None,
-            vip_type=vip_type
+            node=None
         ).first()
+
         # check if cluster_vip is in required cidr: network.cidr
         if cluster_vip and cls.check_ip_belongs_to_net(cluster_vip.ip_addr,
                                                        network):
@@ -358,17 +375,19 @@ class NetworkManager(object):
             ips_in_use = set(ip[0] for ip in node_ips)
 
         # IP address has not been assigned, let's do it
-        vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
-        ne_db = IPAddr(network=network.id, ip_addr=vip, vip_type=vip_type)
+        ip_addr = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
+        cls.add_vip(
+            nodegroup=nodegroup,
+            network=network,
+            ip_addr=ip_addr,
+            vip_info={'name': vip_name})
 
         # delete stalled VIP address after new one was found.
         if cluster_vip:
             db().delete(cluster_vip)
 
-        db().add(ne_db)
         db().flush()
-
-        return vip
+        return ip_addr
 
     @classmethod
     def assign_vips_for_net_groups(cls, cluster):
@@ -382,25 +401,27 @@ class NetworkManager(object):
 
         nodegroup = objects.Cluster.get_controllers_node_group(cluster)
         for ng in cluster.network_groups:
-            for vip_type in ng.meta.get('vips', ()):
+            for vip_name in ng.meta.get('vips', ()):
                 # used for backwards compatibility
-                if vip_type == consts.NETWORK_VIP_TYPES.haproxy:
+                if vip_name == consts.NETWORK_VIP_TYPES.haproxy:
                     key = '{0}_vip'.format(ng.name)
                 else:
-                    key = '{0}_{1}_vip'.format(ng.name, vip_type)
+                    key = '{0}_{1}_vip'.format(ng.name, vip_name)
 
-                result[key] = cls.assign_vip(nodegroup, ng.name, vip_type)
+                result[key] = cls.assign_vip(nodegroup, ng.name, vip_name)
 
         return result
 
     @classmethod
     def _get_assigned_vips_for_net_groups(cls, cluster):
         node_group_id = objects.Cluster.get_controllers_group_id(cluster)
-        cluster_vips = db.query(IPAddr).join(IPAddr.network_data).filter(
+        clause = (
             IPAddr.node.is_(None) &
-            IPAddr.vip_type.isnot(None) &
+            text("CAST(vip_info->>'name' as TEXT) IS NOT NULL"),
             (NetworkGroup.group_id == node_group_id)
         )
+        cluster_vips = db.query(IPAddr).join(IPAddr.network_data).filter(
+            *clause)
         return cluster_vips
 
     @classmethod
@@ -414,7 +435,7 @@ class NetworkManager(object):
         cluster_vips = cls._get_assigned_vips_for_net_groups(cluster)
         vips = defaultdict(dict)
         for vip in cluster_vips:
-            vips[vip.network_data.name][vip.vip_type] = vip.ip_addr
+            vips[vip.network_data.name][vip.vip_info['name']] = vip.ip_addr
         return vips
 
     @classmethod
@@ -434,12 +455,12 @@ class NetworkManager(object):
         cluster_vips = cls._get_assigned_vips_for_net_groups(cluster)
         assigned_vips = defaultdict(dict)
         for vip in cluster_vips:
-            assigned_vips[vip.network_data.name][vip.vip_type] = vip
+            assigned_vips[vip.network_data.name][vip.vip_info['name']] = vip
         for net_group in cluster.network_groups:
             if net_group.name not in vips:
                 continue
             assigned_vips_by_type = assigned_vips.get(net_group.name, {})
-            for vip_type, ip_addr in six.iteritems(vips[net_group.name]):
+            for vip_name, ip_addr in six.iteritems(vips[net_group.name]):
                 if not cls.check_ip_belongs_to_net(ip_addr, net_group):
                     ranges = [(rng.first, rng.last)
                               for rng in net_group.ip_ranges]
@@ -449,15 +470,14 @@ class NetworkManager(object):
                         "ranges {3} of the cluster \"{4}\"."
                         .format(ip_addr, net_group.id, net_group.name, ranges,
                                 cluster.id))
-                if vip_type in assigned_vips_by_type:
-                    assigned_vip = assigned_vips_by_type[vip_type]
+                if vip_name in assigned_vips_by_type:
+                    assigned_vip = assigned_vips_by_type[vip_name]
                     assigned_vip.ip_addr = ip_addr
                 else:
-                    vip = IPAddr(
-                        network=net_group.id,
+                    vip = cls.add_vip(
+                        network=net_group,
                         ip_addr=ip_addr,
-                        vip_type=vip_type,
-                    )
+                        vip_info={'name': vip_name})
                     db().add(vip)
         db().flush()
 
@@ -1640,13 +1660,11 @@ class NetworkManager(object):
     @classmethod
     def get_assigned_ips_by_network_id(cls, network_id):
         """Returns IPs related to network with provided ID."""
-        return [
-            x[0] for x in
-            db().query(IPAddr.ip_addr).filter(
-                IPAddr.network == network_id,
-                or_(IPAddr.node.isnot(None), IPAddr.vip_type.isnot(None))
-            )
-        ]
+        clause = (IPAddr.network == network_id,
+                  or_(IPAddr.node.isnot(None),
+                      text("CAST(vip_info->>'name' as TEXT) IS NOT NULL")))
+
+        return [x[0] for x in db().query(IPAddr.ip_addr).filter(*clause)]
 
     @classmethod
     def get_admin_networks(cls, cluster_nodegroup_info=False):
@@ -1717,7 +1735,7 @@ class AllocateVIPs70Mixin(object):
             cluster_db, node_group.name)
         net_group = cls.get_network_group_for_role(
             net_role, net_group_mapping)
-        return cls.assign_vip(node_group, net_group, vip_type='public')
+        return cls.assign_vip(node_group, net_group, vip_name='public')
 
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
@@ -1868,6 +1886,26 @@ class AllocateVIPs70Mixin(object):
 
 
 class AllocateVIPs80Mixin(object):
+
+    @classmethod
+    def add_vip(cls, **kwargs):
+        """Add VIP to DB
+
+        Input parameters depend on the network manager's version.
+        """
+        nodegroup = kwargs.get('nodegroup')
+        network = kwargs.get('network')
+        ip_addr = kwargs.get('ip_addr')
+        vip_info = kwargs.get('vip_info')
+
+        if nodegroup:
+            vip_info = objects.Cluster.get_vip_info_by_name(
+                nodegroup.cluster, vip_info['name'])
+
+        vip = IPAddr(network=network.id, ip_addr=ip_addr, vip_info=vip_info)
+        db().add(vip)
+        db().flush()
+        return vip
 
     @classmethod
     def _build_advanced_vip_info(cls, vip_info, role, address):

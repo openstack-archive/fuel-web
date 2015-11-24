@@ -1319,6 +1319,26 @@ class Cluster(NailgunObject):
         attrs = cls.get_editable_attributes(instance, False)
         return attrs['common'].get('task_deploy', {}).get('value')
 
+    def get_vip_info_by_name(cls, instance, vip_name):
+        """Returns VIP info by given 'vip_name'
+
+        :param instance: Cluster instance
+        :type instance: Cluster DB instance
+        :param vip_name: VIP name
+        :type vip_name: basestring
+        :returns: VIP information collected into dict object
+        """
+        for meta in cls.get_network_roles(instance):
+            if meta['properties']['vip']:
+                for vip in meta['properties']['vip']:
+                    if vip['name'] == vip_name:
+                        vip_info = copy.deepcopy(vip)
+                        vip_info.update({
+                            'network_role': meta['id'],
+                            'manual': False
+                        })
+                        return vip_info
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

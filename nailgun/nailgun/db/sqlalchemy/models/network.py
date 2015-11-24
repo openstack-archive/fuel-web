@@ -33,8 +33,8 @@ class IPAddr(Base):
                                          ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(psql.INET, nullable=False)
-    vip_type = Column(String(25), nullable=True)
-
+    vip_info = Column(
+        MutableDict.as_mutable(JSON), nullable=True, default={}, index=True)
     network_data = relationship("NetworkGroup")
     node_data = relationship("Node")
 

@@ -227,10 +227,16 @@
               name: "vrouter"
               namespace: "vrouter"
               alias: "management_vrouter_vip"
+              node_roles:
+                - controller
+                - primary-controller
             -
               name: "management"
               namespace: "haproxy"
               alias: "management_vip"
+              node_roles:
+                - controller
+                - primary-controller
       -
         id: "public/vip"
         default_mapping: "public"
@@ -242,6 +248,9 @@
               name: "vrouter_pub"
               namespace: "vrouter"
               alias: "public_vrouter_vip"
+              node_roles:
+                - controller
+                - primary-controller
               vendor_specific:
                 iptables_rules:
                   ns_start:
@@ -252,6 +261,9 @@
               name: "public"
               namespace: "haproxy"
               alias: "public_vip"
+              node_roles:
+                - controller
+                - primary-controller
       -
         id: "neutron/private"
         default_mapping: "private"
@@ -335,6 +347,9 @@
               name: "baremetal"
               namespace: "haproxy"
               alias: "baremetal_vip"
+              node_roles:
+                - controller
+                - primary-controller
               vendor_specific:
                 iptables_rules:
                   ns_start:

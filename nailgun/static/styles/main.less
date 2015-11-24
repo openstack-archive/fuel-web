@@ -3740,7 +3740,12 @@ input[type=range] {
       vertical-align: middle;
     }
   }
-  .node-netwrok-groups-controls {
+  .node-network-groups-list {
+    .default {
+      text-transform: capitalize;
+    }
+  }
+  .node-network-groups-controls {
     padding-right: 30px;
   }
   .network-tab-content {
@@ -3803,22 +3808,21 @@ input[type=range] {
       height: @node-group-title-height + 20px;
       .name {
         height: @node-group-title-height;
-      }
-      .node-group-renaming {
-        height: @node-group-title-height - 4px;
-        &.has-error {
-          margin-bottom: 10px;
+        //@TODO(morale): revert this after https://bugs.launchpad.net/fuel/+bug/1518281 fix
+        .btn-link {
+          text-decoration: none;
+          cursor: default;
+          color: #337ab7;
+          text-transform: capitalize;
         }
       }
     }
     .node-group-renaming {
+      width: 50%;
+      min-width: 200px;
       margin-bottom: 0;
       div {
         margin-left: 15px;
-      }
-      input[type=text] {
-        width: 50%;
-        min-width: 200px;
       }
     }
     .name {

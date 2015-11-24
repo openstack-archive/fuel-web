@@ -177,3 +177,19 @@ NEUTRON_NETWORK_CONFIGURATION = {
         }
     }
 }
+
+
+VIP_INFO = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "required": ["name"],
+    "additionalProperties": False,
+    "properties": {
+        "name": {"type": "string"},
+        "network_role": {"type": "string"},
+        "namespace": {"type": "string"},
+        "node_roles": {"type": "string"},
+        "alias": {"type": "string"},
+        "manual": {"type": "boolean"},
+    }
+}

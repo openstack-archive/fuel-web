@@ -1553,8 +1553,6 @@
                     current:
                       id: "controllers"
                       label: "controllers"
-              cinder:
-                enable: true
           network:
             esxi_vlan_interface: ""
           glance:

@@ -1057,7 +1057,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 this.props.mode != 'list' ?
                                     <div className='btn-group' role='group'>
                                         <button
-                                            className='btn btn-default'
+                                            className={utils.classNames({
+                                                'btn btn-default': true,
+                                                'btn-progress': this.state.actionInProgress
+                                            })}
                                             disabled={this.state.actionInProgress}
                                             onClick={_.bind(function() {
                                                 this.props.revertChanges();
@@ -1067,7 +1070,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             {i18n('common.cancel_button')}
                                         </button>
                                         <button
-                                            className='btn btn-success btn-apply'
+                                            className={utils.classNames({
+                                                'btn btn-success btn-apply': true,
+                                                'btn-progress': this.state.actionInProgress
+                                            })}
                                             disabled={!this.isSavingPossible()}
                                             onClick={this.applyAndRedirect}
                                         >
@@ -1490,7 +1496,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 );
                             }, this)}
                             <button
-                                className='btn btn-default btn-add-label'
+                                className={utils.classNames({
+                                    'btn btn-default btn-add-label': true,
+                                    'btn-progress': this.state.actionInProgress
+                                })}
                                 onClick={this.addLabel}
                                 disabled={this.state.actionInProgress}
                             >
@@ -1501,14 +1510,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             <div className='control-buttons text-right'>
                                 <div className='btn-group' role='group'>
                                     <button
-                                        className='btn btn-default'
+                                        className={utils.classNames({
+                                            'btn btn-default': true,
+                                            'btn-progress': this.state.actionInProgress
+                                        })}
                                         onClick={this.revertChanges}
                                         disabled={this.state.actionInProgress}
                                     >
                                         {i18n('common.cancel_button')}
                                     </button>
                                     <button
-                                        className='btn btn-success'
+                                        className={utils.classNames({
+                                            'btn btn-success': true,
+                                            'btn-progress': this.state.actionInProgress
+                                        })}
                                         onClick={this.applyChanges}
                                         disabled={!this.isSavingPossible()}
                                     >

@@ -220,19 +220,29 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 />
                             </div>
                             {hasRunningTests ?
-                                (<button className='btn btn-danger stop-tests-btn pull-right'
-                                    disabled={this.state.actionInProgress}
-                                    onClick={this.stopTests}
-                                >
-                                    {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
-                                </button>)
-                                :
-                                (<button className='btn btn-success run-tests-btn pull-right'
-                                    disabled={!this.getNumberOfCheckedTests() || this.state.actionInProgress}
-                                    onClick={this.runTests}
-                                >
-                                    {i18n('cluster_page.healthcheck_tab.run_tests_button')}
-                                </button>)
+                                (
+                                    <button
+                                        className={utils.classNames({
+                                            'btn btn-danger stop-tests-btn pull-right': true,
+                                            'btn-progress': this.state.actionInProgress
+                                        })}
+                                        disabled={this.state.actionInProgress}
+                                        onClick={this.stopTests}
+                                    >
+                                        {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
+                                    </button>
+                                ) : (
+                                    <button
+                                        className={utils.classNames({
+                                            'btn btn-success run-tests-btn pull-right': true,
+                                            'btn-progress': this.state.actionInProgress
+                                        })}
+                                        disabled={!this.getNumberOfCheckedTests() || this.state.actionInProgress}
+                                        onClick={this.runTests}
+                                    >
+                                        {i18n('cluster_page.healthcheck_tab.run_tests_button')}
+                                    </button>
+                                )
                             }
                             <button
                                 className='btn btn-default toggle-credentials pull-right'

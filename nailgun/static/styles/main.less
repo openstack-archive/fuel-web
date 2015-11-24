@@ -347,6 +347,19 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .button-mixin(@btn-info);
 }
 
+.btn-progress {
+  color: @gray - 30% !important;
+  border: 1px solid @gray + 40% !important;
+  cursor: auto;
+  text-shadow: white 0 1px 0;
+  box-shadow: white 0 1px 0 0 inset;
+  text-shadow: none;
+  background-color: @gray + 60% !important;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.65) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.65) 50%, rgba(255, 255, 255, 0.65) 75%, transparent 75%, transparent);
+  background-repeat: repeat;
+  background-size: 40px 40px, 100% 100%;
+  animation: button-progress 2s linear infinite;
+}
 
 @common-icons-sprite: "../img/icons/icons-sprite.svg";
 
@@ -2947,6 +2960,11 @@ input[type=range] {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes button-progress {
+  from { background-position: 0 0; }
+  to { background-position: 40px 0; }
 }
 
 

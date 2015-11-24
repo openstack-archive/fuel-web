@@ -266,7 +266,10 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             })}>
                 <label />
                 <button
-                    className='btn btn-default pull-right'
+                    className={utils.classNames({
+                        'btn btn-default pull-right': true,
+                        'btn-progress': this.state.locked
+                    })}
                     onClick={this.handleShowButtonClick}
                     disabled={!this.state.source || this.state.locked}
                 >

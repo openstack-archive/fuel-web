@@ -418,13 +418,34 @@ define(
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
-                                <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={defaultsDisabled}>
+                                <button
+                                    className={utils.classNames({
+                                        'btn btn-default': true,
+                                        'btn-progress': this.state.actionInProgress
+                                    })}
+                                    onClick={this.onLoadDefaults}
+                                    disabled={defaultsDisabled}
+                                >
                                     {i18n('vmware.reset_to_defaults')}
                                 </button>
-                                <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!hasChanges}>
+                                <button
+                                    className={utils.classNames({
+                                        'btn btn-default': true,
+                                        'btn-progress': this.state.actionInProgress
+                                    })}
+                                    onClick={this.revertChanges}
+                                    disabled={!hasChanges}
+                                >
                                     {i18n('vmware.cancel')}
                                 </button>
-                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={saveDisabled}>
+                                <button
+                                    className={utils.classNames({
+                                        'btn btn-success': true,
+                                        'btn-progress': this.state.actionInProgress
+                                    })}
+                                    onClick={this.applyChanges}
+                                    disabled={saveDisabled}
+                                >
                                     {i18n('vmware.apply')}
                                 </button>
                             </div>

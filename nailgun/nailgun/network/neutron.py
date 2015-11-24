@@ -21,9 +21,8 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-
+from nailgun.errors import errors
 from nailgun.logger import logger
-
 from nailgun.network.manager import AllocateVIPs70Mixin
 from nailgun.network.manager import AllocateVIPs80Mixin
 from nailgun.network.manager import AssignIPs61Mixin
@@ -31,7 +30,6 @@ from nailgun.network.manager import AssignIPs70Mixin
 from nailgun.network.manager import AssignIPsLegacyMixin
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
-
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 
@@ -430,4 +428,74 @@ class NeutronManager70(
 
 
 class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):
-    pass
+
+    @classmethod
+    def assign_vip(cls, nodegroup, network_name,
+                   vip_name=consts.NETWORK_VIP_TYPES.haproxy):
+        """Idempotent assignment of VirtualIP addresses to nodegroup.
+        Returns VIP for given nodegroup and network.
+
+        It's required for HA deployment to have IP address
+        not assigned to any of nodes. Currently we need one
+        VIP per network in cluster. If cluster already has
+        IP address from this network, it remains unchanged.
+        If one of the nodes is the node from other cluster,
+        this func will fail.
+
+        :param nodegroup: Nodegroup instance
+        :type nodegroup: NodeGroup model
+        :param network_name: Network name
+        :type  network_name: str
+        :param vip_name: Type of VIP
+        :type  vip_name: str
+        :returns: assigned VIP (string)
+        :raises: Exception
+        """
+        network = db().query(models.NetworkGroup).\
+            filter_by(name=network_name, group_id=nodegroup.id).first()
+        ips_in_use = None
+
+        # FIXME:
+        #   Built-in fuelweb_admin network doesn't belong to any node
+        #   group, since it's shared between all clusters. So we need
+        #   to handle this very special case if we want to be able
+        #   to allocate VIP in default admin network.
+        if not network and network_name == consts.NETWORKS.fuelweb_admin:
+            network = cls.get_admin_network_group()
+
+        if not network:
+            raise errors.CanNotFindNetworkForNodeGroup(
+                u"Network '{0}' for nodegroup='{1}' not found.".format(
+                    network_name, nodegroup.name))
+
+        cluster_vip = db().query(models.IPAddr).filter_by(
+            network=network.id,
+            node=None,
+            vip_info={'name': vip_name}
+        ).first()
+        # check if cluster_vip is in required cidr: network.cidr
+        if cluster_vip and cls.check_ip_belongs_to_net(cluster_vip.ip_addr,
+                                                       network):
+            return cluster_vip.ip_addr
+
+        if network_name == consts.NETWORKS.fuelweb_admin:
+            # Nodes not currently assigned to a cluster will still
+            # have an IP from the appropriate admin network assigned.
+            # So we much account for ALL admin IPs, not just the ones
+            # allocated in the current cluster.
+            node_ips = db().query(models.Node.ip).all()
+            ips_in_use = set(ip[0] for ip in node_ips)
+
+        # IP address has not been assigned, let's do it
+        vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
+        ne_db = models.IPAddr(network=network.id, ip_addr=vip,
+                              vip_info={'name': vip_name})
+
+        # delete stalled VIP address after new one was found.
+        if cluster_vip:
+            db().delete(cluster_vip)
+
+        db().add(ne_db)
+        db().flush()
+
+        return vip

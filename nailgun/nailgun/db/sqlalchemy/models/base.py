@@ -22,11 +22,12 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
 
+from sqlalchemy.dialects.postgresql import JSONB as JSON
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm.base import object_state
 
 from nailgun.db import deadlock_detector as dd
-from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.settings import settings
 
 
@@ -55,5 +56,5 @@ class CapacityLog(Base):
     __tablename__ = 'capacity_log'
 
     id = Column(Integer, primary_key=True)
-    report = Column(JSON)
+    report = Column(MutableDict.as_mutable(JSON))
     datetime = Column(DateTime, default=lambda: datetime.now())

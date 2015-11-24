@@ -122,9 +122,11 @@ def upgrade():
     create_openstack_configs_table()
     upgrade_master_node_ui_settings()
     upgrade_plugins_parameters()
+    upgrade_vip_type()
 
 
 def downgrade():
+    downgrade_vip_type()
     downgrade_plugins_parameters()
     downgrade_master_node_ui_settings()
     downgrade_openstack_configs()
@@ -752,3 +754,90 @@ def upgrade_plugins_parameters():
 
 def downgrade_plugins_parameters():
     op.drop_column('plugins', 'is_hotpluggable')
+
+
+def upgrade_vip_type():
+    connection = op.get_bind()
+
+    # Memoize initial data
+    select_query = sa.sql.text("SELECT id, vip_type FROM ip_addrs")
+    memo_vip_type = [
+        (ip_addr_id, vip_type)
+        for ip_addr_id, vip_type in connection.execute(select_query)
+    ]
+
+    # Clean vip_type column
+    remove_vip_type = sa.sql.text("UPDATE ip_addrs SET vip_type = '{}'")
+    connection.execute(remove_vip_type)
+
+    # Alter column type to JSON
+    # NOTE: Since "vip_type" cannot be cast automatically to type json,
+    # performing manual column's type altering
+    alter_vip_type = sa.sql.text("""
+        ALTER TABLE ip_addrs
+        ALTER COLUMN vip_type TYPE JSON
+        USING vip_type::JSON
+    """)
+    connection.execute(alter_vip_type)
+
+    # Migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_type',
+        new_column_name='vip_info',
+        server_default="{}",
+        nullable=True)
+
+    # Migrate data
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_info = :vip_info
+        WHERE id = :ip_addr_id
+    """)
+    for ip_addr_id, vip_name in memo_vip_type:
+        connection.execute(
+            update_query,
+            vip_info=jsonutils.dumps({'name': vip_name}),
+            ip_addr_id=ip_addr_id)
+
+    # Create index
+    create_index = sa.sql.text("""
+        CREATE INDEX ip_addrs_vip_info_name_key
+        ON ip_addrs ((vip_info->>'name'))
+    """)
+    connection.execute(create_index)
+
+
+def downgrade_vip_type():
+    connection = op.get_bind()
+
+    # Memoize initial data
+    select_query = sa.sql.text("SELECT id, vip_info FROM ip_addrs")
+    vip_data = [
+        (ip_addr_id, vip_info['name'])
+        for ip_addr_id, vip_info in connection.execute(select_query)]
+
+    # Drop index
+    op.drop_index('ip_addrs_vip_info_name_key', 'ip_addrs')
+
+    # Migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_info',
+        new_column_name='vip_type',
+        type_=sa.String(25),
+        server_default=None,
+        nullable=True)
+
+    # Migrate data
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_type = :vip_type
+        WHERE id = :ip_addr_id
+    """)
+
+    for ip_addr_id, vip_type in vip_data:
+        connection.execute(
+            update_query,
+            ip_addr_id=ip_addr_id,
+            vip_type=vip_type)

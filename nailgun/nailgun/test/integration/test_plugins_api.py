@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+import os.path
 from oslo_serialization import jsonutils
 import yaml
 
@@ -27,6 +28,13 @@ def get_config(config):
     def _get_config(*args):
         return mock.mock_open(read_data=yaml.dump(config))()
     return _get_config
+
+
+def get_mocked_meta(mocked_metas, default_meta):
+    def _get_mocked_meta(*args):
+        head, tail = os.path.split(args[0])
+        return mocked_metas.get(tail, default_meta)
+    return _get_mocked_meta
 
 
 class BasePluginTest(base.BaseIntegrationTest):
@@ -48,22 +56,37 @@ class BasePluginTest(base.BaseIntegrationTest):
         self.sample_plugin = self.env.get_default_plugin_metadata()
         self.plugin_env_config = self.env.get_default_plugin_env_config()
 
-    def create_plugin(self, sample=None, expect_errors=False):
-        with mock.patch('nailgun.plugins.adapters.os') as os:
-            with mock.patch('nailgun.plugins.adapters.open',
-                            create=True,
-                            side_effect=get_config(self.plugin_env_config)):
-                os.access.return_value = True
-                os.path.exists.return_value = True
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        roles_metadata = self.env.get_default_plugin_node_roles_config()
+        volumes_metadata = self.env.get_default_plugin_volumes_config()
+        network_roles_metadata = self.env.get_default_network_roles_config()
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        tasks = self.env.get_default_plugin_tasks()
 
-                sample = sample or self.sample_plugin
-                resp = self.app.post(
-                    base.reverse('PluginCollectionHandler'),
-                    jsonutils.dumps(sample),
-                    headers=self.default_headers,
-                    expect_errors=expect_errors
-                )
-                return resp
+        self.mocked_metadata = {
+            'environment_config.yaml': attributes_metadata,
+            'node_roles.yaml': roles_metadata,
+            'volumes.yaml': volumes_metadata,
+            'network_roles.yaml': network_roles_metadata,
+            'deployment_tasks.yaml': deployment_tasks,
+            'tasks.yaml': tasks,
+        }
+
+    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
+    def create_plugin(self, m_load_conf, sample=None, expect_errors=False):
+        m_load_conf.side_effect = get_mocked_meta(
+            self.mocked_metadata,
+            self.plugin_env_config
+        )
+
+        sample = sample or self.sample_plugin
+        resp = self.app.post(
+            base.reverse('PluginCollectionHandler'),
+            jsonutils.dumps(sample),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+        return resp
 
     def delete_plugin(self, plugin_id, expect_errors=False):
         resp = self.app.delete(

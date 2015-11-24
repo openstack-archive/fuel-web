@@ -1335,6 +1335,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         wrapperClassName='node-group-name'
                         inputClassName='node-group-input-name'
                         maxLength='50'
+                        disabled={this.state.actionInProgress}
                         autoFocus
                     />
                 </div>
@@ -1342,10 +1343,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn btn-default' onClick={this.close}>
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
                 </button>,
-                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup}>
+                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup} disabled={this.state.actionInProgress}>
                     {i18n(this.props.ns + 'add')}
                 </button>
             ];
@@ -1371,6 +1372,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             });
         },
         createNodeNetworkGroup: function() {
+            this.setState({actionInProgress: true});
             var name = this.state.name,
                 nodeNetworkGroup = new models.NodeNetworkGroup({
                     cluster_id: this.props.clusterId,

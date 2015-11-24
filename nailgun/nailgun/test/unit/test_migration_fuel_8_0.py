@@ -189,6 +189,13 @@ def prepare():
             'generated': jsonutils.dumps({}),
         }])
 
+    db.execute(
+        meta.tables['ip_addrs'].insert(),
+        [{
+            'ip_addr': '192.168.0.2',
+            'vip_type': 'vrouter',
+        }])
+
     db.commit()
 
 
@@ -521,3 +528,11 @@ class TestOpenstackConfigMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['openstack_configs'].c.cluster_id]))
         config = result.fetchone()
         self.assertEqual(config[0], cluster_id)
+
+
+class TestVipMigration(base.BaseAlembicMigrationTest):
+
+    def test_ip_addrs_vip_info_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['ip_addrs'].c.vip_info]))
+        self.assertEqual(result.scalar(), jsonutils.dumps({'name': "vrouter"}))

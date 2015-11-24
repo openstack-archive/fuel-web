@@ -54,12 +54,12 @@ class BaseNetworkManagerTest(BaseIntegrationTest):
         for net_group in cluster.network_groups:
             if net_group.name not in rules:
                 continue
-            vips_by_types = rules[net_group.name]
-            for vip_type, ip_addr in vips_by_types.items():
+            vips_by_names = rules[net_group.name]
+            for vip_name, ip_addr in vips_by_names.items():
                 ip = IPAddr(
                     network=net_group.id,
                     ip_addr=ip_addr,
-                    vip_type=vip_type,
+                    vip_info={'name': vip_name}
                 )
                 self.db.add(ip)
                 created_ips.append(ip)
@@ -737,9 +737,9 @@ class TestNetworkManager(BaseNetworkManagerTest):
         )
 
         self.env.launch_deployment()
+
         rpc_nodes_provision = nailgun.task.manager.rpc.cast. \
             call_args_list[0][0][1][0]['args']['provisioning_info']['nodes']
-
         admin_ng_id = self.env.network_manager.get_admin_network_group_id()
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
@@ -1079,7 +1079,7 @@ class TestNeutronManager70(BaseNetworkManagerTest):
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_type='public')
+                mock.ANY, vip_name="public")
             self.assertEqual(endpoint_ip, vip)
 
     def test_assign_vips_for_net_groups_for_api(self):
@@ -1198,7 +1198,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_type='public')
+                mock.ANY, vip_name="public")
             self.assertEqual(endpoint_ip, vip)
 
 

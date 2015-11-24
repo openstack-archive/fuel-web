@@ -22,10 +22,11 @@ define(
     'react',
     'views/dialogs',
     'component_mixins',
+    'utils',
     'models',
     'views/statistics_mixin'
 ],
-function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) {
+function($, _, i18n, Backbone, React, dialogs, componentMixins, utils, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -151,7 +152,15 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     <div className='tracking'>
                         {this.renderRegistrationForm(this.props.tracking, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
                         <p>
-                            <button className='btn btn-default' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
+                            <button
+                                className={utils.classNames({
+                                    'btn btn-default': true,
+                                    'btn-progress': this.state.actionInProgress
+                                })}
+                                onClick={this.connectToMirantis}
+                                disabled={this.state.actionInProgress}
+                                target='_blank'
+                            >
                                 {i18n('support_page.register_fuel_title')}
                             </button>
                         </p>
@@ -198,8 +207,11 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         </div>
                         <p>
                             <button
-                                className='btn btn-default'
-                                disabled={!this.isSavingPossible()}
+                                className={utils.classNames({
+                                    'btn btn-default': true,
+                                    'btn-progress': this.state.actionInProgress
+                                })}
+                                disabled={!this.isSavingPossible() || this.state.actionInProgress}
                                 onClick={this.prepareStatisticsToSave}
                             >
                                 {i18n('support_page.save_changes')}
@@ -266,7 +278,14 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     text={i18n('support_page.log_text')}
                 >
                     <p className='snapshot'>
-                        <button className='btn btn-default' disabled={generating} onClick={this.downloadLogs}>
+                        <button
+                            className={utils.classNames({
+                                'btn btn-default': true,
+                                'btn-progress': generating
+                            })}
+                            disabled={generating}
+                            onClick={this.downloadLogs}
+                        >
                             {generating ? i18n('support_page.gen_logs_snapshot_text') : i18n('support_page.gen_diagnostic_snapshot_text')}
                         </button>
                         {' '}

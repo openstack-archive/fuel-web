@@ -209,7 +209,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderFooter: function() {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
-                <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{i18n('dialog.discard_changes.discard_button')}</button>
+                <button
+                    key='discard'
+                    className={utils.classNames({
+                        'btn btn-danger': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    disabled={this.state.actionInProgress}
+                    onClick={this.discardNodeChanges}
+                >
+                    {i18n('dialog.discard_changes.discard_button')}
+                </button>
             ]);
         }
     });
@@ -275,7 +285,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
-                    className='btn start-deployment-btn btn-success'
+                    className={utils.classNames({
+                        'btn btn-success': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
                 >{i18n(this.ns + 'deploy')}</button>
@@ -307,7 +320,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderFooter: function() {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
-                <button key='provision' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.startProvisioning}>{i18n('common.start_button')}</button>
+                <button
+                    key='provision'
+                    className={utils.classNames({
+                        'btn btn-success': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    disabled={this.state.actionInProgress}
+                    onClick={this.startProvisioning}
+                >
+                    {i18n('common.start_button')}
+                </button>
             ]);
         }
     });
@@ -338,7 +361,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderFooter: function() {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
-                <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{i18n('common.stop_button')}</button>
+                <button
+                    key='deploy'
+                    className={utils.classNames({
+                        'btn btn-danger': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    disabled={this.state.actionInProgress}
+                    onClick={this.stopDeployment}
+                >
+                    {i18n('common.stop_button')}
+                </button>
             ]);
         }
     });
@@ -401,7 +434,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button
                     key='remove'
-                    className='btn btn-danger remove-cluster-btn'
+                    className={utils.classNames({
+                        'btn btn-danger': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
                     disabled={this.state.actionInProgress || this.state.confirmation && _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
                     onClick={this.props.cluster.get('status') == 'new' || this.state.confirmation ? this.removeCluster : this.showConfirmationForm}
                 >
@@ -466,7 +502,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <button key='cancel' className='btn btn-default' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button
                     key='reset'
-                    className='btn btn-danger reset-environment-btn'
+                    className={utils.classNames({
+                        'btn btn-danger': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
                     disabled={this.state.actionInProgress || this.state.confirmation && _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
                     onClick={this.state.confirmation ? this.resetEnvironment : this.showConfirmationForm}
                 >
@@ -747,7 +786,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                                         defaultValue={this.state.VMsConf}
                                                     />
                                                     <button
-                                                        className='btn btn-success'
+                                                        className={utils.classNames({
+                                                            'btn btn-success': true,
+                                                            'btn-progress': this.state.actionInProgress
+                                                        })}
                                                         onClick={this.saveVMsConf}
                                                         disabled={this.state.VMsConfValidationError || this.state.actionInProgress}
                                                     >
@@ -798,16 +840,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title')};},
         proceedWith: function(method) {
-            this.setState({actionInProgress: true});
             $.when(method ? method() : $.Deferred().resolve())
                 .done(this.state.result.resolve)
                 .done(this.close)
                 .fail(_.partial(this.showError, null, i18n('dialog.dismiss_settings.saving_failed_message')));
         },
         discard: function() {
+            this.setState({discardingInProgress: true});
             this.proceedWith(this.props.revertChanges);
         },
         save: function() {
+            this.setState({savingInProgress: true});
             this.proceedWith(this.props.applyChanges);
         },
         getMessage: function() {
@@ -834,17 +877,23 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 </button>,
                 <button
                     key='leave'
-                    className='btn btn-danger proceed-btn'
+                    className={utils.classNames({
+                        'btn btn-danger': true,
+                        'btn-progress': this.state.discardingInProgress
+                    })}
                     onClick={this.discard}
-                    disabled={this.state.actionInProgress || this.props.isDiscardingPossible === false}
+                    disabled={this.state.savingInProgress || this.state.discardingInProgress || this.props.isDiscardingPossible === false}
                 >
                     {i18n('dialog.dismiss_settings.leave_button')}
                 </button>,
                 <button
                     key='save'
-                    className='btn btn-success'
+                    className={utils.classNames({
+                        'btn btn-success': true,
+                        'btn-progress': this.state.savingInProgress
+                    })}
                     onClick={this.save}
-                    disabled={this.state.actionInProgress || this.props.isSavingPossible === false}
+                    disabled={this.state.savingInProgress || this.state.discardingInProgress || this.props.isSavingPossible === false}
                 >
                     {i18n('dialog.dismiss_settings.apply_and_proceed_button')}
                 </button>
@@ -876,7 +925,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderFooter: function() {
             return [
                 <button key='stay' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
-                <button key='delete' className='btn btn-danger btn-delete' onClick={this.proceed}>
+                <button
+                    key='delete'
+                    className={utils.classNames({
+                        'btn btn-danger btn-delete': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    disabled={this.state.actionInProgress}
+                    onClick={this.proceed}
+                >
                     {i18n('cluster_page.nodes_tab.node.remove')}
                 </button>
             ];
@@ -904,7 +961,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderFooter: function() {
             return [
                 <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
-                <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{i18n('common.delete_button')}</button>
+                <button
+                    key='delete'
+                    className={utils.classNames({
+                        'btn btn-danger btn-delete': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    onClick={this.deleteNodes}
+                    disabled={this.state.actionInProgress}
+                >
+                    {i18n('common.delete_button')}
+                </button>
             ];
         },
         deleteNodes: function() {
@@ -986,8 +1053,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
                 </button>,
-                <button key='apply' className='btn btn-success' onClick={this.changePassword}
-                    disabled={this.state.actionInProgress || !this.isPasswordChangeAvailable()}>
+                <button
+                    key='apply'
+                    className={utils.classNames({
+                        'btn btn-success': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    onClick={this.changePassword}
+                    disabled={this.state.actionInProgress || !this.isPasswordChangeAvailable()}
+                >
                     {i18n('common.apply_button')}
                 </button>
             ];
@@ -1187,7 +1261,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 </button>
             ];
             if (!this.state.loading) buttons.push(
-                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.connectionError} onClick={this.validateRegistrationForm}>
+                <button
+                    key='apply'
+                    className={utils.classNames({
+                        'btn btn-success': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    disabled={this.state.actionInProgress || this.state.connectionError}
+                    onClick={this.validateRegistrationForm}
+                >
                     {i18n('welcome_page.register.create_account')}
                 </button>
             );
@@ -1296,7 +1378,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 </button>
             ];
             if (!this.state.loading) buttons.push(
-                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.connectionError} onClick={this.retrievePassword}>
+                <button
+                    key='apply'
+                    className={utils.classNames({
+                        'btn btn-success': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    disabled={this.state.actionInProgress || this.state.connectionError}
+                    onClick={this.retrievePassword}
+                >
                     {i18n('dialog.retrieve_password.send_new_password')}
                 </button>
             );
@@ -1344,7 +1434,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
                 </button>,
-                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup} disabled={this.state.actionInProgress}>
+                <button
+                    key='create-group'
+                    className={utils.classNames({
+                        'btn btn-success': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
+                    onClick={this.createNodeNetworkGroup}
+                    disabled={this.state.actionInProgress}
+                >
                     {i18n(this.props.ns + 'add')}
                 </button>
             ];
@@ -1402,9 +1500,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     {i18n('common.cancel_button')}
                 </button>,
                 <button
-                    key='remove'
-                    className='btn btn-danger remove-cluster-btn'
+                    key='remove-group'
+                    className={utils.classNames({
+                        'btn btn-danger': true,
+                        'btn-progress': this.state.actionInProgress
+                    })}
                     onClick={this.submitAction}
+                    disabled={this.state.actionInProgress}
                 >
                     {i18n('common.delete_button')}
                 </button>

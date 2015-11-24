@@ -526,13 +526,25 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                             </div>
                             {!locked &&
                                 <div className='btn-group pull-right'>
-                                    <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={!loadDefaultsEnabled}>
+                                    <button
+                                        className='btn btn-default btn-defaults'
+                                        onClick={this.loadDefaults}
+                                        disabled={!loadDefaultsEnabled}
+                                    >
                                         {i18n('common.load_defaults_button')}
                                     </button>
-                                    <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>
+                                    <button
+                                        className='btn btn-default btn-revert-changes'
+                                        onClick={this.revertChanges}
+                                        disabled={!revertChangesEnabled}
+                                    >
                                         {i18n('common.cancel_changes_button')}
                                     </button>
-                                    <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!this.isSavingPossible()}>
+                                    <button
+                                        className='btn btn-success btn-apply'
+                                        onClick={this.applyChanges}
+                                        disabled={!this.isSavingPossible()}
+                                    >
                                         {i18n('common.apply_button')}
                                     </button>
                                 </div>

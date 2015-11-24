@@ -64,28 +64,37 @@ class Plugin(Base):
     title = Column(String(100), nullable=False)
     version = Column(String(32), nullable=False)
     description = Column(String(400))
-    releases = Column(JSON, default=[])
-    fuel_version = Column(JSON, default=[])
-    groups = Column(JSON, server_default='[]', nullable=False)
-    authors = Column(JSON, server_default='[]', nullable=False)
-    licenses = Column(JSON, server_default='[]', nullable=False)
+    releases = Column(MutableList.as_mutable(JSON), default=[])
+    fuel_version = Column(MutableList.as_mutable(JSON), default=[])
+    groups = Column(
+        MutableList.as_mutable(JSON), server_default='[]', nullable=False)
+    authors = Column(
+        MutableList.as_mutable(JSON), server_default='[]', nullable=False)
+    licenses = Column(
+        MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     homepage = Column(Text, nullable=True)
     package_version = Column(String(32), nullable=False)
     is_hotpluggable = Column(Boolean, default=False)
-    attributes_metadata = Column(JSON, server_default='{}', nullable=False)
-    volumes_metadata = Column(JSON, server_default='{}', nullable=False)
-    roles_metadata = Column(JSON, server_default='{}', nullable=False)
-    network_roles_metadata = Column(JSON, server_default='[]', nullable=False)
+    attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
+    volumes_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
+    roles_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
+    network_roles_metadata = Column(
+        MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     components_metadata = Column(
         MutableList.as_mutable(JSON), server_default='[]')
-    deployment_tasks = Column(JSON, server_default='[]', nullable=False)
+    deployment_tasks = Column(
+        MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     # TODO(apopovych): To support old plugins versions we need separate
     # tasks which runs directly during deployment(stored in `deployment_tasks`
     # attribute) and which executes before/after of deployment process
     # (also called pre/post deployment tasks and stored in `tasks`
     # attribute). In future `deployment_tasks` and `tasks` should have
     # one format and this attribute will be removed.
-    tasks = Column(JSON, server_default='[]', nullable=False)
+    tasks = Column(
+        MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")

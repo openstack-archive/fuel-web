@@ -15,6 +15,7 @@
 #    under the License.
 
 from oslo_serialization import jsonutils
+import six
 import sqlalchemy.types as types
 
 
@@ -28,7 +29,7 @@ class JSON(types.TypeDecorator):
         return value
 
     def process_result_value(self, value, dialect):
-        if value is not None:
+        if isinstance(value, six.string_types):
             value = jsonutils.loads(value)
         return value
 

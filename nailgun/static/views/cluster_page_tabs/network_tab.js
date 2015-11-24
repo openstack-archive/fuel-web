@@ -1201,7 +1201,14 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 classes = {
                     'network-group-name': true,
                     default: isDefaultNodeNetworkGroup
-                };
+                },
+                nameProps = {};
+
+            //@TODO(morale): revert this after https://bugs.launchpad.net/fuel/+bug/1518281 fix
+            if (!isDefaultNodeNetworkGroup) {
+                nameProps.onClick = this.startNodeNetworkGroupRenaming;
+            }
+
             return (
                 <div className={utils.classNames(classes)} key={currentNodeNetworkGroup.id}>
                     {this.state.isRenaming ?
@@ -1219,18 +1226,20 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             autoFocus
                         />
                     :
-                        <div className='name' onClick={this.startNodeNetworkGroupRenaming}>
+                        <div className='name' {...nameProps}>
                             <button className='btn-link'>
                                 {currentNodeNetworkGroup.get('name')}
                             </button>
-                            <i className='glyphicon glyphicon-pencil'></i>
+                            {!isDefaultNodeNetworkGroup &&
+                                <i className='glyphicon glyphicon-pencil'></i>
+                            }
                         </div>
                     }
-                    {isDefaultNodeNetworkGroup &&
+                    {isDefaultNodeNetworkGroup ?
                         <span className='explanation'>{i18n(networkTabNS + 'default_node_network_group_info')}</span>
-                    }
-                    {!isDefaultNodeNetworkGroup && !this.state.isRenaming &&
-                        <i className='glyphicon glyphicon-remove' onClick={this.props.removeNodeNetworkGroup}></i>
+                    :
+                        !this.state.isRenaming &&
+                            <i className='glyphicon glyphicon-remove' onClick={this.props.removeNodeNetworkGroup}></i>
                     }
                 </div>
             );

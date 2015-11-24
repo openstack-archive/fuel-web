@@ -3803,6 +3803,12 @@ input[type=range] {
       height: @node-group-title-height + 20px;
       .name {
         height: @node-group-title-height;
+        //@TODO(morale): revert this after https://bugs.launchpad.net/fuel/+bug/1518281 fix
+        .btn-link {
+          text-decoration: none;
+          cursor: default;
+          color: #337ab7
+        }
       }
       .node-group-renaming {
         height: @node-group-title-height - 4px;

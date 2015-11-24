@@ -1002,6 +1002,22 @@ class TestClusterObject(BaseTestCase):
             consts.NEUTRON_SEGMENT_TYPES.vlan,
             cluster.network_config.segmentation_type)
 
+    def test_get_vip_info_by_name(self):
+        cluster = self.env.clusters[0]
+        vip_info = objects.Cluster.get_vip_info_by_name(cluster, "vrouter")
+        expected_result = {
+            'alias': 'management_vrouter_vip',
+            'manual': False,
+            'name': 'vrouter',
+            'namespace': 'vrouter',
+            'network_role': 'mgmt/vip',
+            'node_roles': ['controller', 'primary-controller']}
+
+        self.assertEqual(vip_info, expected_result)
+
+        no_vip_info = objects.Cluster.get_vip_info_by_name(cluster, "no_name")
+        self.assertIsNone(no_vip_info)
+
     @mock.patch('nailgun.objects.cluster.fire_callback_on_cluster_delete')
     @mock.patch(
         'nailgun.objects.cluster.'

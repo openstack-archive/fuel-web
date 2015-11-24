@@ -932,11 +932,6 @@ define([
                                 networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
                             }
                         }
-                        var forbiddenVlans = currentNetworks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;});
-                        _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
-                        if (!_.isEmpty(networkErrors)) {
-                            nodeNetworkGroupErrors[network.id] = networkErrors;
-                        }
                         if (network.get('name') == 'baremetal') {
                             if (!_.has(nodeNetworkGroupErrors[network.id], 'cidr')) {
                                 var baremetalGateway = networkParameters.get('baremetal_gateway');

@@ -101,6 +101,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return <span className='label label-danger'>{i18n('common.important')}</span>;
         },
         submitAction: function() {
+            this.setState({actionInProgress: false});
             this.state.result.resolve();
             this.close();
         },
@@ -1335,17 +1336,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         wrapperClassName='node-group-name'
                         inputClassName='node-group-input-name'
                         maxLength='50'
+                        disabled={this.state.actionInProgress}
                         autoFocus
                     />
                 </div>
             );
         },
         renderFooter: function() {
+            var isDisabled = this.state.actionInProgress;
             return [
-                <button key='cancel' className='btn btn-default' onClick={this.close}>
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={isDisabled}>
                     {i18n('common.cancel_button')}
                 </button>,
-                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup}>
+                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup} disabled={isDisabled}>
                     {i18n(this.props.ns + 'add')}
                 </button>
             ];
@@ -1371,6 +1374,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             });
         },
         createNodeNetworkGroup: function() {
+            this.setState({actionInProgress: true});
             var name = this.state.name,
                 nodeNetworkGroup = new models.NodeNetworkGroup({
                     cluster_id: this.props.clusterId,

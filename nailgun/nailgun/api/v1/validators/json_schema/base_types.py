@@ -16,6 +16,8 @@
 
 # Common json schema types definition
 
+from nailgun import consts
+
 NULL = {
     'type': 'null'
 }
@@ -160,4 +162,57 @@ RESTRICTIONS = {
     "minItems": 1,
     "items": {"anyOf": [{"type": "string"}, _FULL_RESTRICTION,
                         _SHORT_RESTRICTION]}
+}
+
+UI_SETTINGS = {
+    "type": "object",
+    "required": [
+        "view_mode",
+        "filter",
+        "sort",
+        "filter_by_labels",
+        "sort_by_labels",
+        "search"
+    ],
+    "properties": {
+        "view_mode": {
+            "type": "string",
+            "description": "View mode of cluster nodes",
+            "enum": list(consts.NODE_VIEW_MODES),
+        },
+        "filter": {
+            "type": "object",
+            "description": ("Filters applied to node list and "
+                            "based on node attributes"),
+            "properties": dict(
+                (key, {"type": "array"}) for key in consts.NODE_LIST_FILTERS
+            ),
+        },
+        "sort": {
+            "type": "array",
+            "description": ("Sorters applied to node list and "
+                            "based on node attributes"),
+            # TODO(@jkirnosova): describe fixed list of possible node sorters
+            "items": [
+                {"type": "object"},
+            ],
+        },
+        "filter_by_labels": {
+            "type": "object",
+            "description": ("Filters applied to node list and "
+                            "based on node custom labels"),
+        },
+        "sort_by_labels": {
+            "type": "array",
+            "description": ("Sorters applied to node list and "
+                            "based on node custom labels"),
+            "items": [
+                {"type": "object"},
+            ],
+        },
+        "search": {
+            "type": "string",
+            "description": "Search value applied to node list",
+        },
+    }
 }

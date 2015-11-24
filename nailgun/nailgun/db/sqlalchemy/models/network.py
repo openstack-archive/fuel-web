@@ -16,6 +16,7 @@
 
 from sqlalchemy import Column
 from sqlalchemy.dialects import postgresql as psql
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -23,7 +24,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
-from nailgun.db.sqlalchemy.models.fields import JSON
 
 
 class IPAddr(Base):
@@ -33,8 +33,7 @@ class IPAddr(Base):
                                          ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(psql.INET, nullable=False)
-    vip_type = Column(String(25), nullable=True)
-
+    vip_info = Column(MutableDict.as_mutable(JSON), nullable=True, default={})
     network_data = relationship("NetworkGroup")
     node_data = relationship("Node")
 

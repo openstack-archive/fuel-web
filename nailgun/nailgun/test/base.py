@@ -78,6 +78,7 @@ from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
 from nailgun.network.template import NetworkTemplate
+from nailgun.utils import dict_merge
 from nailgun.utils import reverse
 
 
@@ -1569,6 +1570,14 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
 
     master_node_settings_template = {
         "settings": {
+            "ui_settings": {
+                "view_mode": "standard",
+                "filter": {},
+                "sort": [{"status": "asc"}],
+                "filter_by_labels": {},
+                "sort_by_labels": [],
+                "search": ""
+            },
             "statistics": {
                 "send_anonymous_statistic": {
                     "type": "checkbox",
@@ -1670,6 +1679,22 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
         self.master_node_settings.update(self.master_node_settings_template)
         MasterNodeSettings.create(self.master_node_settings)
         self.db.commit()
+
+    def set_sending_stats(self, value):
+        mn_settings = MasterNodeSettings.get_one()
+        mn_settings.settings = dict_merge(
+            mn_settings.settings,
+            {'statistics': {
+                'user_choice_saved': {'value': True},
+                'send_anonymous_statistic': {'value': value}
+            }})
+        self.db.flush()
+
+    def enable_sending_stats(self):
+        self.set_sending_stats(True)
+
+    def disable_sending_stats(self):
+        self.set_sending_stats(False)
 
 
 class BaseValidatorTest(BaseTestCase):

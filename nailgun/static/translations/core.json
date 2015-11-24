@@ -901,7 +901,7 @@
                     "default_message": "You have unsaved changes on this page. Press Cancel to stay on the page, Discard Changes to proceed without saving, or Save and Proceed to save changes and proceed.",
                     "no_saving_message": "You have unsaved changes on this page. Press Cancel to stay on the page or Discard Changes to proceed without saving.",
                     "saving_failed_message": "Failed to save changes. Please fix the errors and try again.",
-                    "verify_message": "Network verification is in progress"
+                    "no_discard_message": "You have unsaved changes on this page. Press Cancel to stay on the page or Save and Proceed to save data and proceed."
                 },
                 "display_changes": {
                     "title": "Deploy Changes",
@@ -1480,8 +1480,7 @@
                     "important": "重要",
                     "stay_button": "留在本页",
                     "leave_button": "离开并放弃变更",
-                    "default_message": "设置变更未保存，您想放弃变更并离开么？",
-                    "verify_message": "正在进行网络验证，您应该保存变更或留在本页"
+                    "default_message": "设置变更未保存，您想放弃变更并离开么？"
                 },
                 "display_changes": {
                     "title": "部署变更",
@@ -2187,8 +2186,7 @@
                     "important": "重要",
                     "stay_button": "このページに留まる",
                     "leave_button": "ページから離れ、変更を破棄",
-                    "default_message": "このページでの変更が保存されていません。変更を破棄してこのページから離れてもよろしいですか？",
-                    "verify_message": "ネットワークの検証が進行中です。変更を保存するか、このタブから移動しないでください。"
+                    "default_message": "このページでの変更が保存されていません。変更を破棄してこのページから離れてもよろしいですか？"
                 },
                 "display_changes": {
                     "title": "変更をデプロイ",
@@ -2710,8 +2708,7 @@
                     "important": "중요",
                     "stay_button": "페이지에 머무르기",
                     "leave_button": "변경사항을 취소하고 페이지를 떠나가기",
-                    "default_message": "설정이 수정되었지만 저장되지 않았습니다.변경 사항을 취소하고 페이지를 떠나겠습니까?",
-                    "verify_message": "네트워크 검증이 진행 중입니다. 변경사항을 저장하거나 탭에 머무르십시요."
+                    "default_message": "설정이 수정되었지만 저장되지 않았습니다.변경 사항을 취소하고 페이지를 떠나겠습니까?"
                 },
                 "display_changes": {
                     "title": "변경내용 배치",

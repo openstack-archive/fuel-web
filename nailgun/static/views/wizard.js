@@ -685,11 +685,12 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             var actionInProgress = this.state.actionInProgress;
             return (
                 <div className='wizard-footer'>
-                    <button className={utils.classNames('btn btn-default pull-left', {disabled: actionInProgress})} data-dismiss='modal'>
+                    <button className='btn btn-default pull-left' data-dismiss='modal'>
                         {i18n('common.cancel_button')}
                     </button>
                     <button
-                        className={utils.classNames('btn btn-default prev-pane-btn', {disabled: !this.state.previousEnabled || actionInProgress})}
+                        className='btn btn-default prev-pane-btn'
+                        disabled={!this.state.previousEnabled || actionInProgress}
                         onClick={this.prevPane}
                     >
                         <i className='glyphicon glyphicon-arrow-left' aria-hidden='true'></i>
@@ -698,7 +699,8 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     </button>
                     {this.state.nextVisible &&
                         <button
-                            className={utils.classNames('btn btn-default btn-success next-pane-btn', {disabled: !this.state.nextEnabled || actionInProgress})}
+                            className='btn btn-success next-pane-btn'
+                            disabled={!this.state.nextEnabled || actionInProgress}
                             onClick={this.nextPane}
                         >
                             <span>{i18n('dialog.create_cluster_wizard.next')}</span>
@@ -708,7 +710,11 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     }
                     {this.state.createVisible &&
                         <button
-                            className={utils.classNames('btn btn-default btn-success finish-btn', {disabled: actionInProgress})}
+                            className={utils.classNames({
+                                'btn btn-success finish-btn': true,
+                                'btn-progress': actionInProgress
+                            })}
+                            disabled={actionInProgress}
                             onClick={this.saveCluster}
                             autoFocus
                         >

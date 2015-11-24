@@ -429,13 +429,25 @@ define(
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
-                                <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={!editable || defaultsDisabled}>
+                                <button
+                                    className='btn btn-default'
+                                    onClick={this.onLoadDefaults}
+                                    disabled={!editable || defaultsDisabled}
+                                >
                                     {i18n('vmware.reset_to_defaults')}
                                 </button>
-                                <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!hasChanges}>
+                                <button
+                                    className='btn btn-default'
+                                    onClick={this.revertChanges}
+                                    disabled={!hasChanges}
+                                >
                                     {i18n('vmware.cancel')}
                                 </button>
-                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={saveDisabled}>
+                                <button
+                                    className='btn btn-success'
+                                    onClick={this.applyChanges}
+                                    disabled={saveDisabled}
+                                >
                                     {i18n('vmware.apply')}
                                 </button>
                             </div>

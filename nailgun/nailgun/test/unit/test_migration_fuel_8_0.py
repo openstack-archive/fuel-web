@@ -205,6 +205,13 @@ def prepare():
             'generated': jsonutils.dumps({}),
         }])
 
+    db.execute(
+        meta.tables['ip_addrs'].insert(),
+        [{
+            'ip_addr': '192.168.0.2',
+            'vip_type': 'vrouter',
+        }])
+
     db.commit()
 
 
@@ -582,3 +589,11 @@ class TestPluginLinks(base.BaseAlembicMigrationTest):
         ).inserted_primary_key[0]
         fetched_data = db.execute(sa.select([plugin_links])).fetchone()
         self.assertEqual(link_id, fetched_data[0])
+
+
+class TestVipMigration(base.BaseAlembicMigrationTest):
+
+    def test_ip_addrs_vip_info_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['ip_addrs'].c.vip_info]))
+        self.assertEqual(result.scalar(), {'name': "vrouter"})

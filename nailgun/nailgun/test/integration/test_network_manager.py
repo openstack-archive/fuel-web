@@ -54,12 +54,12 @@ class BaseNetworkManagerTest(BaseIntegrationTest):
         for net_group in cluster.network_groups:
             if net_group.name not in rules:
                 continue
-            vips_by_types = rules[net_group.name]
-            for vip_type, ip_addr in vips_by_types.items():
+            vips_by_names = rules[net_group.name]
+            for vip_name, ip_addr in vips_by_names.items():
                 ip = IPAddr(
                     network=net_group.id,
                     ip_addr=ip_addr,
-                    vip_type=vip_type,
+                    vip_type={'name': vip_name}
                 )
                 self.db.add(ip)
                 created_ips.append(ip)

@@ -15,24 +15,24 @@
 
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema import dashboard_entry
+from nailgun.api.v1.validators.json_schema import cluster_plugin_link
 
 
-class DashboardEntryValidator(BasicValidator):
+class ClusterPluginLinkValidator(BasicValidator):
 
-    collection_schema = dashboard_entry.DASHBOARD_ENTRIES_SCHEMA
+    collection_schema = cluster_plugin_link.DASHBOARD_ENTRIES_SCHEMA
 
     @classmethod
     def validate(cls, data):
-        parsed = super(DashboardEntryValidator, cls).validate(data)
-        cls.validate_schema(parsed, dashboard_entry.DASHBOARD_ENTRY_SCHEMA)
+        parsed = super(ClusterPluginLinkValidator, cls).validate(data)
+        cls.validate_schema(parsed, cluster_plugin_link.DASHBOARD_ENTRY_SCHEMA)
         return parsed
 
     @classmethod
     def validate_update(cls, data, instance):
-        parsed = super(DashboardEntryValidator, cls).validate(data)
+        parsed = super(ClusterPluginLinkValidator, cls).validate(data)
         cls.validate_schema(parsed,
-                            dashboard_entry.DASHBOARD_ENTRY_UPDATE_SCHEMA)
+                            cluster_plugin_link.DASHBOARD_ENTRY_UPDATE_SCHEMA)
         return parsed
 
     @classmethod

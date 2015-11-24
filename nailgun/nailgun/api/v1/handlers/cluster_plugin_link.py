@@ -16,15 +16,15 @@
 
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.validators import dashboard_entry
+from nailgun.api.v1.validators import cluster_plugin_link
 from nailgun.errors import errors
 from nailgun import objects
 
 
-class DashboardEntryHandler(base.SingleHandler):
+class ClusterPluginLinkHandler(base.SingleHandler):
 
-    validator = dashboard_entry.DashboardEntryValidator
-    single = objects.DashboardEntry
+    validator = cluster_plugin_link.ClusterPluginLinkValidator
+    single = objects.ClusterPluginLink
 
     def GET(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
@@ -75,14 +75,14 @@ class DashboardEntryHandler(base.SingleHandler):
         raise self.http(204)
 
 
-class DashboardEntryCollectionHandler(base.CollectionHandler):
+class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
 
-    collection = objects.DashboardEntryCollection
-    validator = dashboard_entry.DashboardEntryValidator
+    collection = objects.ClusterPluginLinkCollection
+    validator = cluster_plugin_link.ClusterPluginLinkValidator
 
     @content
     def GET(self, cluster_id):
-        """:returns: Collection of JSONized DashboardEntry objects.
+        """:returns: Collection of JSONized ClusterPluginLink objects.
 
         :http: * 200 (OK)
                * 404 (cluster not found in db)

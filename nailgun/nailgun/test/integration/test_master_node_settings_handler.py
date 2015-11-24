@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,6 +14,7 @@
 #    under the License.
 
 import copy
+import functools
 import mock
 
 from oslo_serialization import jsonutils
@@ -96,7 +98,16 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
 
     def test_validate_ok(self):
         data = {
-            "settings": {},
+            "settings": {
+                "ui_settings": {
+                    "view_mode": "standard",
+                    "filter": {},
+                    "sort": [{"status": "asc"}],
+                    "filter_by_labels": {},
+                    "sort_by_labels": [],
+                    "search": ""
+                }
+            },
         }
 
         resp = self.app.put(
@@ -290,3 +301,88 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
             {'contact_info_provided': False})
         self.assertIsNone(
             InstallationInfo().get_installation_info()['master_node_uid'])
+
+    def get_current_settings(self):
+        resp = self.app.get(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        return resp.json_body
+
+    def check_task_created_only_on_new_opt_in(self, handler_method):
+
+        def get_settings_value(data, setting_name):
+            return data['settings']['statistics'][setting_name]['value']
+
+        def set_settings_value(data, setting_name, value):
+            data['settings']['statistics'][setting_name]['value'] = value
+
+        with mock.patch('nailgun.api.v1.handlers.master_node_settings.'
+                        'MasterNodeSettingsHandler._handle_stats_opt_in'
+                        ) as task_creator:
+
+            # Checking called on enabling sending
+            data = self.get_current_settings()
+            self.assertFalse(get_settings_value(data, 'user_choice_saved'))
+            set_settings_value(data, 'user_choice_saved', True)
+            resp = handler_method(params=jsonutils.dumps(data))
+            self.assertEqual(200, resp.status_code)
+            self.assertEqual(1, task_creator.call_count)
+
+            # Checking not called on same value
+            data = self.get_current_settings()
+            self.assertTrue(get_settings_value(data, 'user_choice_saved'))
+            resp = handler_method(params=jsonutils.dumps(data))
+            self.assertEqual(200, resp.status_code)
+            self.assertEqual(1, task_creator.call_count)
+
+            # Checking called on another opt in value
+            data = self.get_current_settings()
+            self.assertTrue(get_settings_value(data, 'user_choice_saved'))
+            opt_in = get_settings_value(data, 'send_anonymous_statistic')
+            set_settings_value(data, 'send_anonymous_statistic', not opt_in)
+            resp = handler_method(params=jsonutils.dumps(data))
+            self.assertEqual(200, resp.status_code)
+            self.assertEqual(2, task_creator.call_count)
+
+    def test_task_created_only_on_put_new_opt_in(self):
+        handler_method = functools.partial(
+            self.app.put, reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers)
+        self.check_task_created_only_on_new_opt_in(handler_method)
+
+    def test_task_created_only_on_patch_new_opt_in(self):
+        handler_method = functools.partial(
+            self.app.patch, reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers)
+        self.check_task_created_only_on_new_opt_in(handler_method)
+
+    def test_unicode_master_node_settings(self):
+        data = self.get_current_settings()
+
+        # emulate user enabled contact info sending to support team
+        data["settings"]["statistics"]["user_choice_saved"]["value"] = True
+        data["settings"]["statistics"]["send_user_info"]["value"] = \
+            True
+
+        name = u"Фёдор Я"
+        email = "u@e.mail"
+        company = u"Компания"
+        data["settings"]["statistics"]["name"]["value"] = name
+        data["settings"]["statistics"]["email"]["value"] = email
+        data["settings"]["statistics"]["company"]["value"] = company
+        resp = self.app.put(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertDictEqual(
+            InstallationInfo().get_installation_info()['user_information'],
+            {
+                'contact_info_provided': True,
+                'name': name,
+                'email': email,
+                'company': company
+            }
+        )

@@ -80,7 +80,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                         return result;
                     }},
                     {name: 'welcome', condition: (previousUrl) => {
-                        return previousUrl != 'logout' && !app.settings.get('statistics.user_choice_saved.value');
+                        return previousUrl != 'logout' && !app.fuelSettings.get('statistics.user_choice_saved.value');
                     }}
                 ];
                 _.each(specialRoutes, (route) => {
@@ -168,7 +168,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                 tenant: 'admin'
             });
             this.version = new models.FuelVersion();
-            this.settings = new models.FuelSettings();
+            this.fuelSettings = new models.FuelSettings();
             this.user = new models.User();
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
@@ -193,7 +193,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                 })
                 .then(() => {
                     return $.when(
-                        this.settings.fetch(),
+                        this.fuelSettings.fetch(),
                         this.nodeNetworkGroups.fetch()
                     );
                 })
@@ -215,7 +215,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
         renderLayout() {
             var wrappedRootComponent = utils.universalMount(
                 RootComponent,
-                _.pick(this, 'version', 'user', 'settings', 'statistics', 'notifications'),
+                _.pick(this, 'version', 'user', 'fuelSettings', 'statistics', 'notifications'),
                 this.mountNode
             );
             // RootComponent is wrapped with React-DnD, extracting link to it using ref

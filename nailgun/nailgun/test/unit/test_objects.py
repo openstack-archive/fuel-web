@@ -196,6 +196,30 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual([], node.roles)
         self.assertItemsEqual(roles, node.pending_roles)
 
+    def test_update_cluster_assignment_with_templates_80(self):
+        cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}] * 3)
+        new_cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            release_kwargs={'version': '2015.1.0-8.0'},
+        )
+
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        objects.Cluster.set_network_template(new_cluster, net_template)
+
+        new_group = objects.Cluster.get_default_group(new_cluster)
+        node = cluster.nodes[0]
+        roles = node.roles
+        objects.Node.update_cluster_assignment(node, new_cluster)
+        self.assertEqual(new_cluster.id, node.cluster_id)
+        self.assertEqual(new_group.id, node.group_id)
+        self.assertEqual([], node.roles)
+        self.assertItemsEqual(roles, node.pending_roles)
+        self.assertIsNotNone(node.network_template)
+        endpoints = node.network_template['templates']['common']['endpoints']
+        self.assertEqual([u'br-mgmt', u'br-fw-admin'], endpoints)
+
     def test_adding_to_cluster_kernel_params_centos(self):
         self.env.create(
             release_kwargs={

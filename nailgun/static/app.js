@@ -63,10 +63,6 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
             };
         }
 
-        initialize() {
-            _.bindAll(this);
-        }
-
         // pre-route hook
         before(currentRouteName) {
             var currentUrl = Backbone.history.getHash();
@@ -127,7 +123,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
             if (!tab || !_.contains(tabs, tab)) {
                 this.navigate('cluster/' + clusterId + '/' + tabs[0], {trigger: true, replace: true});
             } else {
-                app.loadPage(ClusterPage, arguments).fail(this.default);
+                app.loadPage(ClusterPage, arguments).fail(() => this.default());
             }
         }
 

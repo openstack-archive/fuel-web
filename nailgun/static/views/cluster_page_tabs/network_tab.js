@@ -697,7 +697,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         // remove failed tasks immediately, so they won't be taken into account
                         return this.props.cluster.fetchRelated('tasks')
                             .done(() => {
-                                this.props.cluster.task('check_networks').set('unsaved', true);
+                                if (this.props.cluster.task('check_networks')) {
+                                    this.props.cluster.task('check_networks').set('unsaved', true);
+                                }
                             });
                     })
                     .always(() => {
@@ -979,9 +981,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     {!this.state.hideVerificationResult && networkTask && networkTask.match({status: 'error'}) &&
                         <div className='col-xs-12'>
                             <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
-                                <span>
-                                    {i18n('cluster_page.network_tab.verify_networks.fail_alert')}
-                                </span>
+                                {i18n('cluster_page.network_tab.verify_networks.fail_alert')}
                                 <br/>
                                 {networkTask.get('message')}
                             </div>

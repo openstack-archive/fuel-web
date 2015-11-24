@@ -532,6 +532,7 @@ def dashboard_entries_downgrade():
     op.drop_table('dashboard_entries')
 
 
+<<<<<<< HEAD
 def upgrade_all_network_data_from_string_to_appropriate_data_type():
     convert_column_type('ip_addrs', 'ip_addr', 'inet')
     convert_column_type('ip_addr_ranges', 'first', 'inet')
@@ -591,4 +592,32 @@ def ip_type_to_string(table_name, column_name, string_len):
         'split_part(cast({1} as varchar(43)), \'/\', 1)'.format(table_name,
                                                                 column_name,
                                                                 string_len)
+    )
+    
+
+def vip_type_upgrade():
+    op.alter_column(
+        'ip_addrs',
+        'vip_type',
+        new_column_name='vip_info',
+        type_=sa.Column(
+            sa.ext.mutable.MutableDict.as_mutable(fields.JSON),
+            nullable=True,
+            default={}
+        ),
+        existing_type=sa.Column(sa.String(25), nullable=True),
+    )
+
+
+def vip_type_downgrade():
+    op.alter_column(
+        'ip_addrs',
+        'vip_info',
+        new_column_name='vip_type',
+        type_=sa.Column(sa.String(25), nullable=True),
+        existing_type=sa.Column(
+            sa.ext.mutable.MutableDict.as_mutable(fields.JSON),
+            nullable=True,
+            default={}
+        ),
     )

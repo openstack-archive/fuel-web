@@ -276,3 +276,23 @@ class NeutronNetworkConfigurationVerifyHandler(
 
     validator = NeutronNetworkConfigurationValidator
     provider = consts.CLUSTER_NET_PROVIDERS.neutron
+
+
+class VipHandler(BaseHandler):
+    """Cluster default attributes handler"""
+
+    fields = (
+        "vip_info",
+    )
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized VIP information related to Cluster.
+
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+               * 500 (cluster has no attributes)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        vip_info = [ng.vip_info for ng in cluster.network_groups]
+        return {"vip_info": vip_info}

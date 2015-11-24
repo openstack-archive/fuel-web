@@ -614,6 +614,7 @@ class Node(NailgunObject):
         cls.update_pending_roles(instance, roles)
         cls.remove_replaced_params(instance)
         cls.assign_group(instance)
+        cls.set_network_template(instance)
         db().flush()
 
     @classmethod

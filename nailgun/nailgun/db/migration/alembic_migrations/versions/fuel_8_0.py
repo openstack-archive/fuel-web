@@ -119,9 +119,11 @@ def upgrade():
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
     create_openstack_configs_table()
+    upgrade_vip_type()
 
 
 def downgrade():
+    downgrade_vip_type()
     downgrade_openstack_configs()
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
@@ -636,3 +638,68 @@ def ip_type_to_string(table_name, column_name, string_len):
 
 def cluster_plugin_links_downgrade():
     op.drop_table('cluster_plugin_links')
+
+
+def upgrade_vip_type():
+    connection = op.get_bind()
+
+    # migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_type',
+        new_column_name='vip_info',
+        type_=sa.ext.mutable.MutableDict.as_mutable(fields.JSON),
+        nullable=True
+    )
+
+    # migrate data
+    select_query = sa.sql.text("SELECT id, vip_info FROM ip_addrs")
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_info = :vip_info
+        WHERE id = :ip_addr_id
+    """)
+
+    for ip_addr_id, vip_info in connection.execute(select_query):
+        connection.execute(
+            update_query,
+            vip_info=jsonutils.dumps({'name': vip_info}),
+            ip_addr_id=ip_addr_id
+        )
+
+    # TODO(ivankliuk) Altering the columns type to JSON explicitly
+    # leads to SQLAlchemy issues.
+    # alter column type to JSON
+    # alter_vip_type = sa.sql.text("""
+    #     ALTER TABLE ip_addrs
+    #     ALTER COLUMN vip_info TYPE JSON
+    #     USING vip_info::JSON
+    # """)
+    # connection.execute(alter_vip_type)
+
+
+def downgrade_vip_type():
+    connection = op.get_bind()
+
+    # migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_info',
+        new_column_name='vip_type',
+        type_=sa.String(25)
+    )
+
+    # migrate data
+    select_query = sa.sql.text("SELECT id, vip_type FROM ip_addrs")
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_type = :vip_type
+        WHERE id = :ip_addr_id
+    """)
+
+    for ip_addr_id, vip_type in connection.execute(select_query):
+        connection.execute(
+            update_query,
+            ip_addr_id=ip_addr_id,
+            vip_type=jsonutils.loads(vip_type)['name']
+        )

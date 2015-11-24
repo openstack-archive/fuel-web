@@ -557,7 +557,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 initialSettingsAttributes: _.cloneDeep(settings.attributes),
                 settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
                 initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
-                hideVerificationResult: false
+                hideVerificationResult: false,
+                networkConfigurationError: false
             };
         },
         componentDidMount: function() {
@@ -591,6 +592,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             this.loadInitialConfiguration();
             this.loadInitialSettings();
             this.setState({
+                networkConfigurationError: false,
                 hideVerificationResult: true,
                 key: _.now()
             });
@@ -691,13 +693,16 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     .then((response) => {
                         this.updateInitialConfiguration();
                         result.resolve(response);
-                    }, () => {
+                    }, (response) => {
                         result.reject();
+                        this.setState({networkConfigurationError: utils.getResponseText(response)});
                         // FIXME(vkramskikh): the same hack for check_networks task:
                         // remove failed tasks immediately, so they won't be taken into account
                         return this.props.cluster.fetchRelated('tasks')
                             .done(() => {
-                                this.props.cluster.task('check_networks').set('unsaved', true);
+                                if (this.props.cluster.task('check_networks')) {
+                                    this.props.cluster.task('check_networks').set('unsaved', true);
+                                }
                             });
                     })
                     .always(() => {
@@ -976,16 +981,21 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             </div>
                         </div>
                     </div>
-                    {!this.state.hideVerificationResult && networkTask && networkTask.match({status: 'error'}) &&
+                    {!this.state.hideVerificationResult && networkTask && networkTask.match({status: 'error'}) ?
                         <div className='col-xs-12'>
                             <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
-                                <span>
-                                    {i18n('cluster_page.network_tab.verify_networks.fail_alert')}
-                                </span>
+                                {i18n('cluster_page.network_tab.verify_networks.fail_alert')}
                                 <br/>
                                 {networkTask.get('message')}
                             </div>
                         </div>
+                    :
+                        this.state.networkConfigurationError &&
+                            <div className='col-xs-12'>
+                                <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
+                                    {this.state.networkConfigurationError}
+                                </div>
+                            </div>
                     }
                     <div className='col-xs-12 page-buttons content-elements'>
                         {this.renderButtons()}

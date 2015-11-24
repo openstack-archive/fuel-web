@@ -121,9 +121,10 @@ def upgrade():
     create_openstack_configs_table()
     upgrade_master_node_ui_settings()
     upgrade_plugins_parameters()
-
+    upgrade_vip_type()
 
 def downgrade():
+    downgrade_vip_type()
     downgrade_plugins_parameters()
     downgrade_master_node_ui_settings()
     downgrade_openstack_configs()
@@ -725,3 +726,69 @@ def upgrade_plugins_parameters():
 
 def downgrade_plugins_parameters():
     op.drop_column('plugins', 'is_hotpluggable')
+
+
+def upgrade_vip_type():
+    connection = op.get_bind()
+
+    # migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_type',
+        new_column_name='vip_info',
+        type_=fields.JSON,
+        nullable=True)
+
+    # migrate data
+    select_query = sa.sql.text("SELECT id, vip_info FROM ip_addrs")
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_info = :vip_info
+        WHERE id = :ip_addr_id
+    """)
+
+    for ip_addr_id, vip_info in connection.execute(select_query):
+        connection.execute(
+            update_query,
+            vip_info=jsonutils.dumps({'name': vip_info}),
+            ip_addr_id=ip_addr_id)
+
+    # NOTE: It cannot be performed due to CI job hanging.
+    # alter column type to JSON
+    # alter_vip_type = sa.sql.text("""
+    #     ALTER TABLE ip_addrs
+    #     ALTER COLUMN vip_info TYPE JSON
+    #     USING vip_info::JSON
+    # """)
+    # connection.execute(alter_vip_type)
+
+
+def downgrade_vip_type():
+    connection = op.get_bind()
+
+    # memoize initial data
+    select_query = sa.sql.text("SELECT id, vip_info FROM ip_addrs")
+    vip_data = [
+        (ip_addr_id, vip_info['name'])
+        for ip_addr_id, vip_info in connection.execute(select_query)]
+
+    # migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_info',
+        new_column_name='vip_type',
+        type_=sa.String(25),
+        nullable=True)
+
+    # migrate data
+    update_query = sa.text("""
+        UPDATE ip_addrs
+        SET vip_type = :vip_type
+        WHERE id = :ip_addr_id
+    """)
+
+    for ip_addr_id, vip_type in vip_data:
+        connection.execute(
+            update_query,
+            ip_addr_id=ip_addr_id,
+            vip_type=vip_type)

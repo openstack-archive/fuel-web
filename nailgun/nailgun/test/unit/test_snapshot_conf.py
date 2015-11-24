@@ -34,13 +34,15 @@ class TestSnapshotConf(base.TestCase):
         conf = task.DumpTask.conf()
         # local role is abstract, but we have to make sure that it's
         # real localhost and there's only one host
-        self.assertEqual(len(conf['dump']['local']['hosts']), 1)
-        self.assertEqual(
-            conf['dump']['local']['hosts'][0]['address'], 'localhost')
+        self.assertFalse(len(conf['dump']['local']['hosts']))
 
-    def test_master_injection(self):
+    @mock.patch('nailgun.task.task.socket')
+    def test_master_injection(self, mock_socket):
+        hostname = 'test-hostname-test'
+        mock_socket.gethostname.return_value = hostname
         conf = task.DumpTask.conf()
         self.assertEqual(conf['dump']['master']['hosts'][0], {
+            'hostname': hostname,
             'address': settings.MASTER_IP,
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         })

@@ -1196,7 +1196,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 ref: filter.name,
                                                 name: filter.name,
                                                 values: filter.values,
-                                                className: 'filter-control filter-by-' + filter.name,
+                                                className: 'filter-control filter-by-' + filter.name.replace(/\s+/g, '_'),
                                                 label: filter.title,
                                                 extraContent: this.renderDeleteFilterButton(filter),
                                                 onChange: _.partial(this.props.changeFilter, filter),
@@ -1337,7 +1337,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeLabelKey: function(index, oldKey, newKey) {
             var labels = this.state.labels,
                 labelData = labels[index];
-            labelData.key = _.trim(newKey);
+            labelData.key = newKey;
             if (!labelData.indeterminate) labelData.checked = true;
             labelData.error = this.validateLabelKey(labelData, index);
             this.setState({labels: labels});
@@ -1353,7 +1353,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeLabelValue: function(index, key, value) {
             var labels = this.state.labels,
                 labelData = labels[index];
-            labelData.values = [_.trim(value) || null];
+            labelData.values = [value || null];
             if (!labelData.indeterminate) labelData.checked = true;
             labelData.error = this.validateLabelKey(labelData, index);
             this.setState({labels: labels});
@@ -1361,12 +1361,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         validateLabelKey: function(labelData, labelIndex) {
             if (labelData.checked || labelData.indeterminate) {
                 var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
-                if (!labelData.key) {
+                if (!_.trim(labelData.key)) {
                     return i18n(ns + 'empty_label_key');
                 }
                 if (_.any(this.state.labels, function(data, index) {
                     if (index == labelIndex) return false;
-                    return data.key == labelData.key && (data.checked || data.indeterminate);
+                    return _.trim(data.key) == _.trim(labelData.key) && (data.checked || data.indeterminate);
                 })) {
                     return i18n(ns + 'existing_label');
                 }
@@ -1472,7 +1472,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         />
                                         <controls.Input
                                             type='text'
-                                            maxLength={100}
+                                            maxLength='100'
                                             label={showControlLabels && i18n(ns + 'label_key')}
                                             value={labelData.key}
                                             onChange={_.partial(this.changeLabelKey, index)}
@@ -1482,7 +1482,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         />
                                         <controls.Input {...labelValueProps}
                                             type='text'
-                                            maxLength={100}
+                                            maxLength='100'
                                             label={showControlLabels && i18n(ns + 'label_value')}
                                             onChange={_.partial(this.changeLabelValue, index)}
                                         />

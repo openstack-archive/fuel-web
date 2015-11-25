@@ -610,7 +610,7 @@
           metadata:
             label: "Access"
             weight: 10
-            group: "security"
+            group: "general"
           user:
             value: "admin"
             label: "Username"
@@ -1020,7 +1020,7 @@
           metadata:
             label: "Host OS DNS Servers"
             weight: 90
-            group: "general"
+            group: "network"
           dns_list:
             value:
               generator: "from_settings"
@@ -1036,7 +1036,7 @@
           metadata:
             label: "Host OS NTP Servers"
             weight: 100
-            group: "general"
+            group: "network"
           ntp_list:
             value:
               generator: "from_settings"

@@ -16,10 +16,8 @@ from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Integer
 from sqlalchemy import String
-
 
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
@@ -41,10 +39,6 @@ class ActionLog(Base):
     start_timestamp = Column(DateTime, nullable=False)
     end_timestamp = Column(DateTime, nullable=True)
     is_sent = Column(Boolean, default=False)
-    additional_info = Column(
-        MutableDict.as_mutable(JSON),
-        default={},
-        nullable=False
-    )
+    additional_info = Column(JSON, nullable=False)
     cluster_id = Column(Integer, nullable=True)
     task_uuid = Column(String(36), nullable=True)

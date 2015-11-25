@@ -12,7 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 from sqlalchemy import Column
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Integer
 from sqlalchemy import String
 
@@ -25,4 +27,4 @@ class MasterNodeSettings(Base):
 
     id = Column(Integer, primary_key=True)
     master_node_uid = Column(String(36), nullable=False)
-    settings = Column(JSON, default={})
+    settings = Column(MutableDict.as_mutable(JSON), default={})

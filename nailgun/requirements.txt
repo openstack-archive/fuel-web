@@ -47,4 +47,4 @@ stevedore<1.4.0
 # NOTE(akscram): pinned until 18.6.2 because the installation in
 # the editable mode is broken
 # See: https://bugs.launchpad.net/fuel/+bug/1519727
-setuptools==18.5
+setuptools<=18.5

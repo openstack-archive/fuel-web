@@ -451,7 +451,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     return _.unique(nodes.map(function(node) {
                         // Handle the situation when this.props.interfaces has updated but
                         // interfacesMap hasn't been recalculated yet
-                        if (_.isNull(interfacesMap[index]) || interfacesMap.length <= index) return null;
+                        if (_.isNull(interfacesMap[index]) || interfacesMap.length <= index || node.interfaces.length <= index) return null;
                         return utils.showBandwidth(
                             node.interfaces.at(interfacesMap[index]).get('current_speed')
                         );

@@ -1345,7 +1345,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 labelData = labels[index];
             labelData.key = newKey;
             if (!labelData.indeterminate) labelData.checked = true;
-            labelData.error = this.validateLabelKey(labelData, index);
+            this.validateLabels(labels);
             this.setState({labels: labels});
         },
         changeLabelState: function(index, key, checked) {
@@ -1353,7 +1353,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 labelData = labels[index];
             labelData.checked = checked;
             labelData.indeterminate = false;
-            labelData.error = this.validateLabelKey(labelData, index);
+            this.validateLabels(labels);
             this.setState({labels: labels});
         },
         changeLabelValue: function(index, key, value) {
@@ -1361,23 +1361,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 labelData = labels[index];
             labelData.values = [value || null];
             if (!labelData.indeterminate) labelData.checked = true;
-            labelData.error = this.validateLabelKey(labelData, index);
+            this.validateLabels(labels);
             this.setState({labels: labels});
         },
-        validateLabelKey: function(labelData, labelIndex) {
-            if (labelData.checked || labelData.indeterminate) {
-                var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
-                if (!_.trim(labelData.key)) {
-                    return i18n(ns + 'empty_label_key');
+        validateLabels: function(labels) {
+            _.each(labels, (currentLabel, currentIndex) => {
+                currentLabel.error = null;
+                if (currentLabel.checked || currentLabel.indeterminate) {
+                    var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
+                    if (!_.trim(currentLabel.key)) {
+                        currentLabel.error = i18n(ns + 'empty_label_key');
+                    } else {
+                        var doesLabelExist = _.any(labels, (label, index) => {
+                            return index != currentIndex &&
+                                _.trim(label.key) == _.trim(currentLabel.key) &&
+                                (label.checked || label.indeterminate);
+                        });
+                        if (doesLabelExist) currentLabel.error = i18n(ns + 'existing_label');
+                    }
                 }
-                if (_.any(this.state.labels, function(data, index) {
-                    if (index == labelIndex) return false;
-                    return _.trim(data.key) == _.trim(labelData.key) && (data.checked || data.indeterminate);
-                })) {
-                    return i18n(ns + 'existing_label');
-                }
-            }
-            return null;
+            });
         },
         isSavingPossible: function() {
             return !this.state.actionInProgress && this.hasChanges() && _.all(_.pluck(this.state.labels, 'error'), _.isNull);

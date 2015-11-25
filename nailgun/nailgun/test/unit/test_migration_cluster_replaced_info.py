@@ -45,7 +45,7 @@ class TestReplacedDataMigration(BaseIntegrationTest):
 
         self.assertEqual(self.provisioning_info,
                          self.cluster.replaced_provisioning_info)
-        self.assertEqual(self.cluster.replaced_deployment_info, {})
+        self.assertEqual(self.cluster.replaced_deployment_info, [])
         for node in self.nodes:
             self.assertEqual(
                 node.replaced_deployment_info,

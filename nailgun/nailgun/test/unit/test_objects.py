@@ -1487,6 +1487,15 @@ class TestNetworkGroup(BaseTestCase):
         ng = objects.NetworkGroup.get_default_admin_network()
         self.assertIsNotNone(ng)
 
+    def test_is_untagged(self):
+        cluster = self.env.create_cluster(api=False)
+        admin_net = objects.NetworkGroup.get_default_admin_network()
+        mgmt_net = objects.NetworkGroup.get_from_node_group_by_name(
+            objects.Cluster.get_default_group(cluster).id,
+            consts.NETWORKS.management)
+        self.assertTrue(objects.NetworkGroup.is_untagged(admin_net))
+        self.assertFalse(objects.NetworkGroup.is_untagged(mgmt_net))
+
 
 class TestRelease(BaseTestCase):
 

@@ -1,6 +1,9 @@
 /*eslint-disable strict*/
 module.exports = {
-    entry: ['./static/app.js'],
+    entry: [
+        'babel-polyfill',
+        './static/app.js'
+    ],
     output: {
         path: __dirname + '/static/build/',
         publicPath: '/static/build/',
@@ -14,7 +17,11 @@ module.exports = {
                 test: /\.js$/,
                 loader: 'babel',
                 exclude: [/(node_modules|vendor\/custom)\//, /\/expression\/parser\.js$/],
-                query: {cacheDirectory: true}
+                query: {
+                    cacheDirectory: true,
+                    plugins: ['transform-runtime'],
+                    presets: ['es2015', 'react']
+                }
             },
             {test: /\/expression\/parser\.js$/, loader: 'exports?parser'},
             {test: require.resolve('jquery'), loader: 'expose?jQuery!expose?$'},

@@ -17,6 +17,7 @@
 from sqlalchemy import Column
 from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy import Enum
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -24,6 +25,7 @@ from sqlalchemy import String
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableList
 
 
 class NetworkingConfig(Base):
@@ -35,14 +37,13 @@ class NetworkingConfig(Base):
         Integer,
         ForeignKey('clusters.id', ondelete="CASCADE")
     )
-    dns_nameservers = Column(JSON, default=[
+    dns_nameservers = Column(MutableList.as_mutable(JSON), default=[
         "8.8.4.4",
         "8.8.8.8"
     ])
-    floating_ranges = Column(JSON, default=[])
-    configuration_template = Column(JSON, default=None, server_default=None,
-                                    nullable=True)
-
+    floating_ranges = Column(MutableList.as_mutable(JSON), default=[])
+    configuration_template = Column(
+        MutableDict.as_mutable(JSON), nullable=True)
     __mapper_args__ = {
         'polymorphic_on': discriminator
     }
@@ -56,13 +57,13 @@ class NeutronConfig(NetworkingConfig):
 
     id = Column(Integer, ForeignKey('networking_configs.id'), primary_key=True)
 
-    vlan_range = Column(JSON, default=[])
-    gre_id_range = Column(JSON, default=[])
+    vlan_range = Column(MutableList.as_mutable(JSON), default=[])
+    gre_id_range = Column(MutableList.as_mutable(JSON), default=[])
     base_mac = Column(psql.MACADDR, nullable=False)
     internal_cidr = Column(psql.CIDR)
     internal_gateway = Column(psql.INET)
     baremetal_gateway = Column(psql.INET)
-    baremetal_range = Column(JSON, default=[])
+    baremetal_range = Column(MutableList.as_mutable(JSON), default=[])
 
     # Neutron L3 names for default internal / floating networks
     # which were previously knows as net04 and net04_ext.

@@ -124,16 +124,16 @@ define([
             },
             'The page reacts on invalid input': function() {
                 return this.remote
-                    .clickLinkByText('Security')
+                    .clickLinkByText('General')
                     // "nova" is forbidden username
                     .setInputValue('[type=text][name=user]', 'nova')
-                    .assertElementAppears('.security .form-group.has-error', 200, 'Invalid field marked as error')
-                    .assertElementExists('.subtab-link-security i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid')
+                    .assertElementAppears('.setting-section .form-group.has-error', 200, 'Invalid field marked as error')
+                    .assertElementExists('.settings-tab .nav-pills > li.active i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid')
                     .assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled in case of validation error')
                     // revert the change
                     .clickByCssSelector('.btn-revert-changes')
-                    .assertElementNotExists('.security .form-group.has-error', 'Validation error is cleared after resetting changes')
-                    .assertElementNotExists('.subtab-link-security i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
+                    .assertElementNotExists('.setting-section .form-group.has-error', 'Validation error is cleared after resetting changes')
+                    .assertElementNotExists('.settings-tab .nav-pills > li.active i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
             },
             'Test repositories custom control': function() {
                 var repoAmount,

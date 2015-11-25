@@ -610,7 +610,7 @@
           metadata:
             label: "Access"
             weight: 10
-            group: "security"
+            group: "general"
           user:
             value: "admin"
             label: "Username"
@@ -842,7 +842,7 @@
             label: "Nova quotas"
             group: "compute"
             description: "Quotas are used to limit CPU and memory usage for tenants. Enabling quotas will increase load on the Nova database."
-            weight: 25
+            weight: 30
             type: "checkbox"
           auto_assign_floating_ip:
             value: false
@@ -878,14 +878,14 @@
             label: "Resume guests state on host boot"
             group: "compute"
             description: "Whether to resume previous guests state when the host reboots. If enabled, this option causes guests assigned to the host to resume their previous state. If the guest was running a restart will be attempted when nova-compute starts. If the guest was not running previously, a restart will not be attempted."
-            weight: 60
+            weight: 50
             type: "checkbox"
           use_cow_images:
             value: true
             label: "Use qcow format for images"
             group: "storage"
             description: "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting."
-            weight: 50
+            weight: 60
             type: "checkbox"
           auth_key:
             value: ""
@@ -896,7 +896,7 @@
             type: "textarea"
         public_network_assignment:
           metadata:
-            weight: 50
+            weight: 10
             label: "Public network assignment"
             group: "network"
             restrictions:
@@ -910,7 +910,7 @@
             type: "checkbox"
         neutron_advanced_configuration:
           metadata:
-            weight: 45
+            weight: 20
             label: "Neutron Advanced Configuration"
             group: "network"
             restrictions:
@@ -1019,8 +1019,8 @@
         external_dns:
           metadata:
             label: "Host OS DNS Servers"
-            weight: 90
-            group: "general"
+            weight: 30
+            group: "network"
           dns_list:
             value:
               generator: "from_settings"
@@ -1035,8 +1035,8 @@
         external_ntp:
           metadata:
             label: "Host OS NTP Servers"
-            weight: 100
-            group: "general"
+            weight: 40
+            group: "network"
           ntp_list:
             value:
               generator: "from_settings"
@@ -1102,13 +1102,12 @@
         kernel_params:
           metadata:
             label: "Kernel parameters"
-            weight: 40
+            weight: 60
             group: "general"
           kernel:
             value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset"
             label: "Initial parameters"
             description: "Default kernel parameters"
-            weight: 45
             type: "text"
         storage:
           metadata:

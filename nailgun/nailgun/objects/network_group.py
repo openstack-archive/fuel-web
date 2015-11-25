@@ -97,6 +97,13 @@ class NetworkGroup(NailgunObject):
         db().flush()
 
     @classmethod
+    def is_untagged(cls, instance):
+        """Return True if network is untagged"""
+        return (instance.vlan_start is None) \
+            and not instance.meta.get('neutron_vlan_range') \
+            and not instance.meta.get('ext_net_data')
+
+    @classmethod
     def _create_ip_ranges_on_notation(cls, instance):
         """Create IP-address ranges basing on 'notation' field of 'meta' field
 

@@ -63,23 +63,6 @@ class TestNailgunReceiver(base.BaseTestCase):
             "Plugin name\d is deployed. description\d\n"
             "Plugin name\d is deployed. description\d")
 
-    def test_master_uid_in_deploy_resp(self):
-        node_resp = {
-            "task_uuid": self.task.uuid,
-            "nodes": [
-                {"status": "error", "hook": None, "error_type": "deploy",
-                 "role": "hook", "uid": "master"}]}
-        NailgunReceiver.deploy_resp(**node_resp)
-        self.assertEqual(self.task.status, 'error')
-
-        task_resp = {
-            "status": "error",
-            "task_uuid": self.task.uuid,
-            "error": "Method granular_deploy."}
-        NailgunReceiver.deploy_resp(**task_resp)
-        self.assertEqual(self.task.status, 'error')
-        self.assertIn(task_resp['error'], self.task.message)
-
     @patch('nailgun.rpc.receiver.notifier.notify')
     def test_multiline_error_message(self, mnotify):
         task_resp = {

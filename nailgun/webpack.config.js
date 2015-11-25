@@ -1,6 +1,9 @@
 /*eslint-disable strict*/
 module.exports = {
-    entry: ['./static/app.js'],
+    entry: [
+        'babel-core/polyfill',
+        './static/app.js'
+    ],
     output: {
         path: __dirname + '/static/build/',
         publicPath: '/static/build/',

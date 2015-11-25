@@ -810,11 +810,20 @@ class TestNetworkManager(BaseNetworkManagerTest):
             release_id=rel.id,
             api=False
         )
+        self.env.create_node(cluster_id=cluster.id)
         self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
                                     cluster.network_groups)), 0)
-        objects.Cluster.patch_attributes(
-            cluster, yaml.load(attributes_metadata % True))
+        with patch.object(logger, 'warning') as mock_warn:
+            objects.Cluster.patch_attributes(
+                cluster, yaml.load(attributes_metadata % True))
+            mock_warn.assert_called_once()
         self.db.refresh(cluster)
+        assigned_nets_count = 0
+        for iface in cluster.nodes[0].interfaces:
+            assigned_nets_count += len(filter(lambda n: n['name'] ==
+                                              'restricted_net',
+                                              iface.assigned_networks))
+        self.assertEqual(assigned_nets_count, 1)
         self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
                                     cluster.network_groups)), 1)
         objects.Cluster.patch_attributes(

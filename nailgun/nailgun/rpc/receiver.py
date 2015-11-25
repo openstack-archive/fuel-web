@@ -327,10 +327,6 @@ class NailgunReceiver(object):
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)
 
-        # full error will be provided in next astute message
-        if master.get('status') == consts.TASK_STATUSES.error:
-            status = consts.TASK_STATUSES.error
-
         # Let's check the whole task status
         if status == consts.TASK_STATUSES.error:
             cls._error_action(task, status, progress, message)

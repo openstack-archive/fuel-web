@@ -276,9 +276,14 @@ gulp.task('build', function(cb) {
             new webpack.optimize.DedupePlugin()
         );
     }
-    if (argv.uglify) {
+    if (argv.optimize) {
+        config.devtool = 'source-map';
         config.plugins.push(
-            new webpack.optimize.UglifyJsPlugin({compress: {warnings: false}})
+            new webpack.optimize.UglifyJsPlugin({
+                sourceMap: true,
+                mangle: false,
+                compress: {warnings: false}
+            })
         );
     }
     if (argv.watch) {

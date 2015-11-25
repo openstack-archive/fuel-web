@@ -643,6 +643,39 @@ class NetworkManager(object):
         }
 
     @classmethod
+    def is_net_untagged(cls, ng):
+        return (ng.vlan_start is None) \
+            and not ng.meta.get('neutron_vlan_range') \
+            and not ng.meta.get('ext_net_data')
+
+    @classmethod
+    def assign_network_to_interface(cls, ng):
+        untagged = cls.is_net_untagged(ng)
+        dedicated = ng.meta.get('dedicated_nic')
+        node_group = db().query(NodeGroup).get(ng.group_id)
+        for node in node_group.nodes:
+            ifaces = set(node.interfaces)
+            for bond in node.bond_interfaces:
+                 ifaces = ifaces ^ set(bond.slaves)
+            iface_to_assign = None
+            for iface in ifaces:
+                if dedicated and len(iface.assigned_networks_list):
+                    continue
+                if untagged and len(filter(cls.is_net_untagged,
+                                           iface.assigned_networks_list)):
+                    continue
+                iface_to_assign = iface
+                break
+            if iface_to_assign:
+                iface_to_assign.assigned_networks_list.append(ng)
+            else:
+                logger.warn("Cannot assign network %r appropriately for "
+                            "node %r. Set unassigned network to the "
+                            "interface %r", ng.name, node.name, nics[0].name)
+                ifaces[0].assigned_networks_list.append(ng)
+        db().flush()
+
+    @classmethod
     def get_default_interfaces_configuration(cls, node):
         """Returns default Networks-to-NICs assignment for given node based on
         networks' configuration and metadata, default NICs'
@@ -687,9 +720,7 @@ class NetworkManager(object):
                 for ng_id in can_assign:
                     ng = ngs_by_id[ng_id]
                     dedicated = ng.meta.get('dedicated_nic')
-                    untagged = (ng.vlan_start is None) \
-                        and not ng.meta.get('neutron_vlan_range') \
-                        and not ng.meta.get('ext_net_data')
+                    untagged = cls.is_net_untagged(ng)
                     if dedicated:
                         if not assigned_ids:
                             assigned_ids.add(ng_id)
@@ -1325,7 +1356,8 @@ class NetworkManager(object):
                 else:
                     if not len(present_nets):
                         for node_group in cluster.node_groups:
-                            cls.create_network_group(cluster, net, node_group.id)
+                            ng = cls.create_network_group(cluster, net, node_group.id)
+                            cls.assign_network_to_interface(ng)
 
     @classmethod
     def create_network_group(cls, cluster, net, gid=None):
@@ -1358,7 +1390,7 @@ class NetworkManager(object):
             'vlan_start': net.get('vlan_start'),
             'meta': net
         }
-        objects.NetworkGroup.create(data)
+        return objects.NetworkGroup.create(data)
 
     @classmethod
     def create_network_groups(cls, cluster, neutron_segment_type, gid=None):

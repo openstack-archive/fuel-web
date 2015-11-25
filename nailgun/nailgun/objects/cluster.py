@@ -338,7 +338,7 @@ class Cluster(NailgunObject):
                 u"No attributes were found for cluster '{0}'"
                 .format(instance.name)
             )
-        attrs = dict(attrs)
+        attrs = copy.deepcopy(attrs)
 
         # Merge plugins attributes into editable ones
         plugin_attrs = PluginManager.get_plugins_attributes(

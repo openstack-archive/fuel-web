@@ -24,6 +24,7 @@ from sqlalchemy import Text
 from sqlalchemy import UnicodeText
 
 from sqlalchemy.dialects import postgresql as psql
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
@@ -72,7 +73,7 @@ class Cluster(Base):
                                   cascade="all,delete",
                                   uselist=False)
     ui_settings = Column(
-        JSON,
+        MutableDict.as_mutable(JSON),
         nullable=False,
         server_default=jsonutils.dumps({
             "view_mode": "standard",
@@ -109,11 +110,14 @@ class Cluster(Base):
         backref="cluster",
         cascade="delete"
     )
-    replaced_deployment_info = Column(JSON, default={})
-    replaced_provisioning_info = Column(JSON, default={})
+    replaced_deployment_info = Column(
+        MutableList.as_mutable(JSON), default=[])
+    replaced_provisioning_info = Column(
+        MutableDict.as_mutable(JSON), default={})
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
-    deployment_tasks = Column(JSON, default=[])
+    deployment_tasks = Column(
+        MutableList.as_mutable(JSON), default=[])
     components = Column(
         MutableList.as_mutable(JSON),
         default=[],
@@ -165,12 +169,12 @@ class Attributes(Base):
     __tablename__ = 'attributes'
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
-    editable = Column(JSON)
-    generated = Column(JSON)
+    editable = Column(MutableDict.as_mutable(JSON))
+    generated = Column(MutableDict.as_mutable(JSON))
 
 
 class VmwareAttributes(Base):
     __tablename__ = 'vmware_attributes'
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
-    editable = Column(JSON)
+    editable = Column(MutableDict.as_mutable(JSON))

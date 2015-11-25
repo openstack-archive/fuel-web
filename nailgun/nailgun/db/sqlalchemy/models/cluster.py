@@ -24,6 +24,7 @@ from sqlalchemy import Text
 from sqlalchemy import UnicodeText
 
 from sqlalchemy.dialects import postgresql as psql
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
@@ -34,6 +35,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.db.sqlalchemy.models.node import Node
 
 
@@ -71,7 +73,7 @@ class Cluster(Base):
                                   cascade="all,delete",
                                   uselist=False)
     ui_settings = Column(
-        JSON,
+        MutableDict.as_mutable(JSON),
         nullable=False,
         server_default=jsonutils.dumps({
             "view_mode": "standard",
@@ -108,11 +110,13 @@ class Cluster(Base):
         backref="cluster",
         cascade="delete"
     )
-    replaced_deployment_info = Column(JSON, default={})
+    replaced_deployment_info = Column(
+        MutableList.as_mutable(JSON), default=[])
     replaced_provisioning_info = Column(JSON, default={})
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
-    deployment_tasks = Column(JSON, default=[])
+    deployment_tasks = Column(
+        MutableList.as_mutable(JSON), default=[])
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
 

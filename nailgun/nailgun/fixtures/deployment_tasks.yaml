@@ -168,3 +168,27 @@
   parameters:
     strategy:
       type: parallel
+
+- id: globals
+  type: puppet
+  groups: [primary-controller, controller,
+           cinder, compute, ceph-osd,
+           primary-mongo, mongo]
+  required_for: [deploy_end]
+  requires: [hiera]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/globals/globals.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: hiera
+  type: puppet
+  groups: [primary-controller, controller,
+           cinder, compute, ceph-osd,
+           primary-mongo, mongo]
+  requires: [deploy_start]
+  required_for: [deploy_end]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hiera/hiera.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600

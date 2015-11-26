@@ -1479,6 +1479,41 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(node2.status, consts.NODE_STATUSES.error)
         self.assertEqual(node2.error_type, consts.NODE_ERRORS.provision)
 
+    def test_update_config_resp(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {'api': False, 'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.deploying},
+                {'api': False, 'roles': ['compute'],
+                 'status': consts.NODE_STATUSES.deploying},
+            ])
+
+        nodes = self.env.nodes
+
+        task = Task(
+            uuid=str(uuid.uuid4()),
+            name=consts.TASK_NAMES.deployment,
+            cluster_id=self.env.clusters[0].id
+        )
+        task.cache = {'nodes': [nodes[0].uid, nodes[1].uid]}
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {
+            'task_uuid': task.uuid,
+            'status': consts.TASK_STATUSES.ready,
+            'progress': 100
+        }
+        self.receiver.update_config_resp(**kwargs)
+        self.db.refresh(nodes[0])
+        self.db.refresh(nodes[1])
+        self.db.refresh(task)
+
+        self.assertEqual(nodes[0].status, consts.NODE_STATUSES.ready)
+        self.assertEqual(nodes[1].status, consts.NODE_STATUSES.ready)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+
 
 class TestResetEnvironment(BaseReciverTestCase):
 

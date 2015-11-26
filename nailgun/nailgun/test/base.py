@@ -68,6 +68,7 @@ from nailgun.objects import ClusterPlugins
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import Node
 from nailgun.objects import NodeGroup
+from nailgun.objects import OpenstackConfig
 from nailgun.objects import Plugin
 from nailgun.objects import Release
 
@@ -116,6 +117,7 @@ class EnvironmentManager(object):
         self.clusters = []
         self.nodes = []
         self.plugins = []
+        self.openstack_configs = []
         self.network_manager = NetworkManager
 
     def create(self, **kwargs):
@@ -191,6 +193,22 @@ class EnvironmentManager(object):
             headers=self.default_headers,
             expect_errors=expect_errors
         )
+
+    def create_openstack_config(self, api=False, **kwargs):
+        if api:
+            resp = self.app.post(
+                reverse('OpenstackConfigCollectionHandler'),
+                params=jsonutils.dumps(kwargs),
+                headers=self.default_headers
+            )
+            self.tester.assertEqual(resp.status_code, 201)
+            config = resp.json_body
+            self.openstack_configs.append(
+                self.db.query(OpenstackConfig).get(config['id']))
+        else:
+            config = OpenstackConfig.create(kwargs)
+            db().commit()
+            self.openstack_configs.append(config)
 
     def update_role(self, release_id, role_name, data, expect_errors=False):
         return self.app.put(

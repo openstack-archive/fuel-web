@@ -86,13 +86,14 @@ class NodeCollectionHandler(CollectionHandler):
         :returns: Collection of JSONized Node objects.
         :http: * 200 (OK)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
-        nodes = self.collection.eager_nodes_handlers(None)
 
-        if cluster_id == '':
-            nodes = nodes.filter_by(cluster_id=None)
-        elif cluster_id:
-            nodes = nodes.filter_by(cluster_id=cluster_id)
+        data = self.read_and_validate_input_data()
+
+        nodes = self.collection.eager_nodes_handlers(None)
+        if 'roles' in data:
+            nodes = self.collection.filter_by_roles(nodes, data.pop('roles'))
+
+        nodes = self.collection.filter_by(nodes, **data)
 
         return self.collection.to_json(nodes)
 
@@ -154,6 +155,55 @@ class NodeCollectionHandler(CollectionHandler):
             raise self.http(403, e.message)
 
         self.raise_task(task)
+
+    def read_and_validate_input_data(self):
+        """Read and validate input data.
+
+        Retrieve and validate input data from a request.
+
+        :return: dict - validated data
+        """
+
+        data = {}
+        input_data = web.input(roles=[])
+
+        for param in ('cluster_id', 'group_id', ):
+            value = input_data.get(param)
+            if value == '':
+                data[param] = None
+            elif value:
+                try:
+                    data[param] = int(value)
+                except ValueError:
+                    msg = 'Invalid \'{0}\' value: {1}'.format(param, value)
+                    logger.debug(msg)
+                    raise self.http(400, msg)
+
+        roles = input_data.get('roles')
+        if roles:
+            data['roles'] = roles
+
+        status = input_data.get('status')
+        if status:
+            if status in consts.NODE_STATUSES:
+                data['status'] = status
+            else:
+                msg = 'Invalid \'status\' value: {0}'.format(status)
+                logger.debug(msg)
+                raise self.http(400, msg)
+
+        if 'online' in input_data:
+            value = input_data.get('online')
+            if value.lower() in ('1', 'true', ):
+                data['online'] = True
+            elif value.lower() in ('0', 'false', ):
+                data['online'] = False
+            else:
+                msg = 'Invalid \'online\' value: {0}'.format(value)
+                logger.debug(msg)
+                raise self.http(400, msg)
+
+        return data
 
 
 class NodeAgentHandler(BaseHandler):

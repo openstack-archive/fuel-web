@@ -240,9 +240,14 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.Cluster.prepare_for_deployment(self.env.clusters[0])
         self.env.launch_deployment()
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args_list[1]
-        self.assertEqual(args[1][0]['method'], 'execute_tasks')
-        self.assertEqual(args[1][0]['respond_to'], 'deploy_resp')
+        args, _ = nailgun.task.manager.rpc.cast.call_args_list[1]
+        for message in args[1]:
+            if message['method'] == 'execute_tasks':
+                self.assertEqual(message['respond_to'], 'deploy_resp')
+                execute_tasks = message
+                break
+        else:
+            self.fail("'execute_tasks' method not found")
 
         def is_upload_nodes(task):
             return 'nodes.yaml' in task['parameters'].get('path', '')
@@ -250,11 +255,11 @@ class TestTaskManagers(BaseIntegrationTest):
         def is_update_hosts(task):
             return 'hosts.pp' in task['parameters'].get('puppet_manifest', '')
 
-        tasks = args[1][0]['args']['tasks']
+        tasks = execute_tasks['args']['tasks']
         self.assertIsNotNone(next((
             t for t in tasks if is_upload_nodes(t)), None))
         self.assertIsNotNone(next((
-            t for t in tasks if is_upload_nodes(t)), None))
+            t for t in tasks if is_update_hosts(t)), None))
 
     @fake_tasks()
     def test_do_not_redeploy_nodes_in_ready_status(self):

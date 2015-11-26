@@ -366,6 +366,13 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.stage,
                   ORCHESTRATOR_TASK_TYPES.skipped)
 
+# deployment tasks which should be rerun on deployed nodes to make re-setup of
+# network on nodes
+DEPLOYMENT_TASKS_TO_RERUN = (
+    'globals',
+    'netconfig'
+)
+
 TASK_REFRESH_FIELD = 'refresh_on'
 
 ROLE_NAME_MAX_SIZE = 64
@@ -386,6 +393,9 @@ FUEL_IMAGE_BASED_ONLY = '7.0'
 
 # version of Fuel when multiple floating IP ranges support is added
 FUEL_MULTIPLE_FLOATING_IP_RANGES = '8.0'
+
+# version of Fuel when support of network re-setup on nodes is added
+FUEL_NETWORK_RESETUP_ON_NODES = '8.0'
 
 # this file is provided by the fuel-release package
 FUEL_RELEASE_FILE = '/etc/fuel_release'

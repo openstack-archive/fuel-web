@@ -4220,90 +4220,45 @@ input[type=range] {
     border: 1px solid @deploy-border;
     border-radius: 4px;
     margin-bottom: @dashboard-offset * 2;
-    .warning-redeployment {
-      margin-bottom: @dashboard-offset;
-    }
-    .validation-result ul {
-      margin: 0;
-      padding-left: 0;
-      &.danger {
-        li {
-          .text-danger;
-        }
-      }
-      li {
-        line-height: 1.1;
-        &:last-child {
-          margin-bottom: 0;
-        }
-      }
-    }
-    .deploy-control {
-      .deploy-btn {
-        margin-right: 10px;
-      }
-    }
-    .discard-changes {
-      padding-left: 0;
-      border-left: 0;
-    }
     .changes-list {
-      padding: @dashboard-offset @dashboard-offset 0 @dashboard-offset;
-      a {cursor: pointer;}
-      .changes-header {
-        .font-bold;
-      }
+      padding: @dashboard-offset;
       h4 {
         margin: 0 0 @dashboard-offset 0;
-        padding: 0;
       }
       ul {
         padding: 0;
         color: @gray;
+        margin-bottom: @dashboard-offset;
+        li:not(:last-child) {
+          margin-bottom: @dashboard-offset / 2;
+        }
       }
-      .changes-item {
-        margin-bottom: 5px;
-      }
-      .deploy-btn {
-        margin-right: 20px;
-        padding-top: 2px;
+      .btn {
+        margin-bottom: @dashboard-offset;
+        &.deploy-btn {
+          padding-top: 2px;
+        }
       }
     }
-    .deploy-readiness {
-      padding: @dashboard-offset 0 0 @dashboard-offset;
-      .informational-block {
-        margin-bottom: @dashboard-offset;
-      }
+    .environment-alerts {
+      padding: @dashboard-offset;
       .invalid {
         .font-semibold;
         font-size: @base-font-size - 1;
         color: @red;
         margin-bottom: @dashboard-offset;
       }
-      h4 {
-        margin: 0 0 @dashboard-offset 0;
-        padding: 0;
-      }
-      p {
-        font-size: @base-font-size - 1;
-        .font-semibold;
-        margin: 0 0 @dashboard-offset 0;
-        padding: 0;
-        color: @base-text-color;
-      }
-      .section-title {
-        .font-bold;
-        font-size: @base-font-size + 2;
-      }
-      .btn-add-nodes {
-        float: left;
-      }
-      li {
-        margin-bottom: @dashboard-offset;
-      }
-      .warnings-block {
-        font-size: @base-font-size - 1;
-        margin-bottom: @dashboard-offset;
+      .validation-result ul {
+        margin: 0;
+        padding-left: 0;
+        .warnings-block {
+          font-size: @base-font-size - 1;
+          margin-bottom: @dashboard-offset;
+          line-height: 1.1;
+          li:not(:last-child) {
+            margin-bottom: @dashboard-offset;
+          }
+        }
       }
     }
     .deploy-process {

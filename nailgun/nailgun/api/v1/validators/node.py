@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from six import string_types
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.graph import TaskDeploymentValidator
 from nailgun.api.v1.validators.json_schema import base_types
@@ -102,6 +104,9 @@ class MetaValidator(BasicValidator):
 class NodeValidator(BasicValidator):
 
     single_schema = node_schema.single_schema
+    int_fields = frozenset(['cluster_id', 'group_id'])
+    nullable_fields = frozenset(['cluster_id', 'group_id'])
+    bool_fields = frozenset(['online'])
 
     @classmethod
     def validate(cls, data):
@@ -311,6 +316,52 @@ class NodeValidator(BasicValidator):
         cls.validate_schema(d, base_types.IDS_ARRAY)
 
         return d
+
+    @classmethod
+    def validate_query(cls, input_data):
+        """Validate parameters to filter list of nodes."""
+
+        data = {}
+        for parameter in node_schema.QUERY_SCHEMA['properties']:
+            value = input_data.get(parameter)
+            if value is not None:
+                data[parameter] = value
+
+        cls._convert_query_fields(data)
+        cls.validate_schema(data, node_schema.QUERY_SCHEMA)
+        return data
+
+    @classmethod
+    def _convert_query_fields(cls, data):
+        """Converts parameters from URL query to appropriate types
+
+        Parameters in URL query don't care any information about data types.
+        Schema validation doesn't perform any type conversion, so
+        it is required to convert them before schema validation.
+        """
+
+        for field in cls.int_fields:
+            if field in data:
+                value = data[field]
+                try:
+                    data[field] = int(value)
+                except ValueError:
+                    pass
+
+        for field in cls.bool_fields:
+            if field in data:
+                value = data.get(field)
+                if not isinstance(value, string_types):
+                    continue
+                value = value.lower()
+                if value in ('1', 'true', ):
+                    data[field] = True
+                elif value in ('0', 'false', ):
+                    data[field] = False
+
+        for field in cls.nullable_fields:
+            if data.get(field) == '':
+                data[field] = None
 
 
 class NodesFilterValidator(BasicValidator):

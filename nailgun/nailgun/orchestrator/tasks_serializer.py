@@ -26,6 +26,7 @@ from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
+from nailgun.utils import traverse
 
 
 def get_uids_for_tasks(nodes, tasks):
@@ -105,6 +106,19 @@ class ExpressionBasedTask(DeploymentHook):
     def __init__(self, task, cluster):
         self.task = task
         self.cluster = cluster
+
+        if 'parameters' in self.task:
+            parameters_ctx = {
+                'OPENSTACK_VERSION': self.cluster.release.version,
+                'MASTER_IP': settings.MASTER_IP,
+                'CLUSTER_ID': self.cluster.id,
+            }
+
+            self.task['parameters'] = traverse(
+                self.task['parameters'],
+                None,
+                parameters_ctx
+            )
 
     @property
     def _expression_context(self):
@@ -210,12 +224,12 @@ class RsyncPuppet(GenericRolesHook):
         return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
 
     def serialize(self):
-        src_path = self.task['parameters']['src'].format(
-            MASTER_IP=settings.MASTER_IP,
-            OPENSTACK_VERSION=self.cluster.release.version)
         uids = self.get_uids()
         yield templates.make_sync_scripts_task(
-            uids, src_path, self.task['parameters']['dst'])
+            uids,
+            self.task['parameters']['src'],
+            self.task['parameters']['dst']
+        )
 
 
 class GenerateKeys(GenericRolesHook):
@@ -224,8 +238,6 @@ class GenerateKeys(GenericRolesHook):
 
     def serialize(self):
         uids = self.get_uids()
-        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
-            CLUSTER_ID=self.cluster.id)
         yield templates.make_shell_task(uids, self.task)
 
 
@@ -234,12 +246,8 @@ class CopyKeys(GenericRolesHook):
     identity = 'copy_keys'
 
     def serialize(self):
-        for file_path in self.task['parameters']['files']:
-            file_path['src'] = file_path['src'].format(
-                CLUSTER_ID=self.cluster.id)
         uids = self.get_uids()
-        yield templates.make_generic_task(
-            uids, self.task)
+        yield templates.make_generic_task(uids, self.task)
 
 
 class GenerateCephKeys(GenerateKeys):
@@ -259,7 +267,6 @@ class GenerateHaproxyKeys(GenericRolesHook):
     def serialize(self):
         uids = self.get_uids()
         self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
-            CLUSTER_ID=self.cluster.id,
             CN_HOSTNAME=objects.Cluster.get_editable_attributes(self.cluster)
             ['public_ssl']['hostname']['value'])
         yield templates.make_shell_task(uids, self.task)
@@ -276,8 +283,6 @@ class IronicUploadImages(GenericRolesHook):
 
     def serialize(self):
         uids = self.get_uids()
-        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
-            CLUSTER_ID=self.cluster.id)
         yield templates.make_shell_task(uids, self.task)
 
 

@@ -149,6 +149,7 @@ define([
                     .then(function(isLocked) {
                         assert.isTrue(isLocked, 'Networks tab should turn locked after deployment');
                     })
+                    .assertElementEnabled('.add-nodegroup-btn', 'Add Node network group button is enabled after cluster deploy')
                     .then(function() {
                         return clusterPage.isTabLocked('Settings');
                     })

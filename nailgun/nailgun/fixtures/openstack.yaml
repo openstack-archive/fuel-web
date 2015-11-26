@@ -1111,7 +1111,7 @@
             type: "text"
         storage:
           metadata:
-            label: "Storage"
+            label: "Storage Backends"
             weight: 60
             group: "storage"
           volumes_lvm:

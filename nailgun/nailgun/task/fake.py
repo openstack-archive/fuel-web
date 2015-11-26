@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from itertools import chain
 from itertools import repeat
 from random import randrange
@@ -370,7 +372,9 @@ class FakeDeletionThread(FakeThread):
             'nodes': self.data['args']['nodes'],
             'status': 'ready'
         }
-        nodes_to_restore = self.data['args'].get('nodes_to_restore', [])
+        # copy the data deeply, because we're going delete the original one
+        nodes_to_restore = copy.deepcopy(
+            self.data['args'].get('nodes_to_restore', []))
         resp_method = getattr(receiver, self.respond_to)
         try:
             resp_method(**kwargs)

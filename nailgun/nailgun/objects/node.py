@@ -17,7 +17,7 @@
 """
 Node-related objects and collections
 """
-import copy
+
 import itertools
 import operator
 from oslo_serialization import jsonutils
@@ -1004,10 +1004,10 @@ class Node(NailgunObject):
         if consts.VIRTUAL_NODE_TYPES.virt not in node.all_roles:
             return
 
-        vms_conf = copy.deepcopy(node.attributes.vms_conf)
-        for vm in vms_conf:
+        for vm in node.attributes.vms_conf:
             vm['created'] = False
-        node.attributes.vms_conf = vms_conf
+        # Was changed second level data in 'vms_conf'
+        node.attributes.vms_conf.changed()
 
 
 class NodeCollection(NailgunCollection):

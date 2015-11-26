@@ -91,12 +91,29 @@ def dict_merge(a, b):
     return result
 
 
+def safe_format(s, ctx):
+    """Safely format string leaving {missing_key} intact.
+
+    :param string s:
+    :param dict ctx:
+    :return string:
+    """
+    class SafeFormatDict(dict):
+        """Returning {key} for missing keys.
+        """
+        @staticmethod
+        def __missing__(key):
+            return '{' + key + '}'
+    return string.Formatter().vformat(s, (), SafeFormatDict(**ctx))
+
+
 def traverse(data, generator_class, formatter_context=None):
     """Traverse data.
 
     :param data: an input data to be traversed
     :param generator_class: a generator class to be used
-    :param formatter_context: a dict to be passed into .format() for strings
+    :param formatter_context: a dict to be passed into safe_format()
+    for strings
     :returns: a dict with traversed data
     """
 
@@ -124,7 +141,7 @@ def traverse(data, generator_class, formatter_context=None):
 
     # format all strings with "formatter_context"
     elif isinstance(data, six.string_types) and formatter_context:
-        return data.format(**formatter_context)
+        return safe_format(data, formatter_context)
 
     # we want to traverse all sequences also (lists, tuples, etc)
     elif isinstance(data, (list, tuple)):

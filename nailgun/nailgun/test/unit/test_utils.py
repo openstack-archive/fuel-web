@@ -26,6 +26,7 @@ from nailgun.utils import dict_merge
 from nailgun.utils import flatten
 from nailgun.utils import grouper
 from nailgun.utils import http_get
+from nailgun.utils import safe_format
 from nailgun.utils import traverse
 
 from nailgun.utils.debian import get_apt_preferences_line
@@ -85,6 +86,14 @@ class TestUtils(base.BaseIntegrationTest):
             list(grouper([0, 1, 2, 3, 4], 3, 'x')), [(0, 1, 2), (3, 4, 'x')])
 
 
+class TestSafeFormat(base.BaseUnitTest):
+    def test_safe_formatting(self):
+        self.assertEqual(safe_format('{a} {b}', {'a': 1}), '1 {b}')
+        self.assertEqual(safe_format('', {'a': 1}), '')
+        self.assertEqual(safe_format('{a}', {'a': 1}), '1')
+        self.assertEqual(safe_format('{a}', {'b': 1}), '{a}')
+
+
 class TestTraverse(base.BaseUnitTest):
 
     class TestGenerator(object):
@@ -115,6 +124,26 @@ class TestTraverse(base.BaseUnitTest):
 
     def test_wo_formatting_context(self):
         result = traverse(self.data, self.TestGenerator)
+
+        self.assertEqual(result, {
+            'foo': 'testvalue',
+            'bar': 'test {a} string',
+            'baz': 42,
+            'regex': {
+                'source': 'test {a} string',
+                'error': 'an {a} error'
+            },
+            'list': [
+                {
+                    'x': 'a {a} a',
+                },
+                {
+                    'y': 'b 42 b',
+                }
+            ]})
+
+    def test_w_safe_formatting_context(self):
+        result = traverse(self.data, self.TestGenerator, {'b': 42})
 
         self.assertEqual(result, {
             'foo': 'testvalue',

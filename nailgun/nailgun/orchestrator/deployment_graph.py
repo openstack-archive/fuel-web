@@ -201,6 +201,22 @@ class DeploymentGraph(nx.DiGraph):
             else:
                 task['skipped'] = False
 
+    def reexecutable_tasks(self, task_filter):
+        """Leave only reexecutable tasks which match the filter.
+
+        Filter is the list of values. If task has reexecute_on key and its
+        value matches the value from filter then task is not skipped.
+        :param task_filter: filter (list)
+        """
+        if not task_filter:
+            return
+
+        for task in self.node.values():
+            if task.get('reexecute_on') == task_filter:
+                task['skipped'] = False
+            else:
+                self.make_skipped_task(task)
+
     def find_subgraph(self, start=None, end=None):
         """Find subgraph by provided start and end endpoints
 
@@ -252,6 +268,9 @@ class AstuteGraph(object):
 
     def only_tasks(self, task_ids):
         self.graph.only_tasks(task_ids)
+
+    def reexecutable_tasks(self, task_filter):
+        self.graph.reexecutable_tasks(task_filter)
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles

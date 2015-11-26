@@ -312,6 +312,12 @@ class NodeValidator(BasicValidator):
 
         return d
 
+    @classmethod
+    def validate_query(cls, data, schema):
+        """Validate parameters to filter list of nodes."""
+        cls.validate_schema(data, schema)
+        return data
+
 
 class NodesFilterValidator(BasicValidator):
 

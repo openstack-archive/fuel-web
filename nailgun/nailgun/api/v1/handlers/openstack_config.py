@@ -15,11 +15,12 @@
 import traceback
 
 import six
-import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
+
+from nailgun.api.v1.validators.json_schema import openstack_config
 from nailgun.api.v1.validators.openstack_config import OpenstackConfigValidator
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -31,6 +32,12 @@ class OpenstackConfigCollectionHandler(BaseHandler):
 
     validator = OpenstackConfigValidator
 
+    convert_input_params = {
+        'cluster_id': 'int',
+        'node_id': 'int',
+        'is_active': 'bool',
+    }
+
     @content
     def GET(self):
         """Returns list of filtered config objects.
@@ -40,7 +47,10 @@ class OpenstackConfigCollectionHandler(BaseHandler):
         :return: List of config objects in JSON format.
         """
         data = self.checked_data(
-            self.validator.validate_query, data=web.input())
+            self.validator.validate_query,
+            # data=web.input(is_active='1'))
+            data=self.get_input_data(
+                openstack_config.OPENSTACK_CONFIG_QUERY, {'is_active': True}))
         return objects.OpenstackConfigCollection.to_json(
             objects.OpenstackConfigCollection.filter_by(None, **data))
 

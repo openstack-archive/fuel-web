@@ -155,3 +155,15 @@ single_schema = {
         "agent_checksum": {"type": "string"}
     },
 }
+
+QUERY_SCHEMA = {
+    'title': 'Node list query',
+    'description': 'URL query for node list filter',
+    'properties': {
+        'cluster_id': base_types.NULLABLE_ID,
+        'group_id': base_types.NULLABLE_ID,
+        'roles': {'type': 'array'},
+        'status': {'enum': list(consts.NODE_STATUSES)},
+        'online': {'type': 'boolean'},
+    },
+}

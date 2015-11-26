@@ -145,7 +145,7 @@ define([
                     })
                     .assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added')
                     .assertElementExists('div.instruction.invalid', 'Invalid configuration message is shown')
-                    .assertElementContainsText('div.validation-result ul.danger li',
+                    .assertElementContainsText('.environment-alerts ul.text-danger li',
                             'At least 1 Controller nodes are required (0 selected currently).',
                             'No controllers added warning should be shown')
                     .then(function() {
@@ -232,7 +232,7 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .assertElementDisappears('.deploy-block .progress', 10000, 'Progress bar disappears after deployment')
+                    .assertElementDisappears('.dashboard-block .progress', 10000, 'Progress bar disappears after deployment')
                     .assertElementAppears('.dashboard-tab .alert strong', 1000, 'Error message is shown when adding error node')
                     .assertElementTextEquals('.dashboard-tab .alert strong', 'Error',
                             'Deployment failed in case of adding offline nodes')

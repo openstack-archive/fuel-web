@@ -909,7 +909,8 @@ define([
                 networks = attrs.networks,
                 networkParameters = attrs.networking_parameters,
                 nodeNetworkGroupsErrors = {},
-                nodeNetworkGroups = app.nodeNetworkGroups;
+                nodeNetworkGroups = app.nodeNetworkGroups,
+                novaNetManager = networkParameters.get('net_manager');
 
             nodeNetworkGroups.map(function(nodeNetworkGroup) {
                 var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
@@ -932,7 +933,13 @@ define([
                                 networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
                             }
                         }
-                        var forbiddenVlans = currentNetworks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;});
+                        //FIXME (morale): same VLAN IDs are not permitted for nova-network for now
+                        var forbiddenVlans = [];
+                        if (novaNetManager) {
+                            forbiddenVlans = currentNetworks.map(function(net) {
+                                return net.id != network.id ? net.get('vlan_start') : null;
+                            });
+                        }
                         _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
                         if (!_.isEmpty(networkErrors)) {
                             nodeNetworkGroupErrors[network.id] = networkErrors;
@@ -964,7 +971,6 @@ define([
             }
 
             // validate networking parameters
-            var novaNetManager = networkParameters.get('net_manager');
             if (novaNetManager) {
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(networkParameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
                 var fixedAmount = networkParameters.get('fixed_networks_amount');

@@ -895,7 +895,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                         key='add_node_group'
                                         className='btn btn-default add-nodegroup-btn pull-right'
                                         onClick={_.partial(this.addNodeNetworkGroup, hasChanges)}
-                                        disabled={isLocked}
+                                        disabled={!!cluster.task({group: ['deployment', 'network'], active: true}) || this.state.actionInProgress}
                                     >
                                         {hasChanges && <i className='glyphicon glyphicon-danger-sign'/>}
                                         {i18n(networkTabNS + 'add_node_network_group')}

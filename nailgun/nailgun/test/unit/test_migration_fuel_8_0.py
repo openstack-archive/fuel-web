@@ -490,3 +490,32 @@ class TestClusterPluginLinks(base.BaseAlembicMigrationTest):
                 'description': 'description',
                 'hidden': False
             }])
+
+
+class TestOpenstackConfigMigration(base.BaseAlembicMigrationTest):
+
+    def test_openstack_configs_table_saving(self):
+        result = db.execute(
+            sa.select([self.meta.tables['clusters'].c.id]))
+        cluster_id = result.fetchone()[0]
+
+        db.execute(
+            self.meta.tables['openstack_configs'].insert(),
+            [{
+                'cluster_id': cluster_id,
+                'is_active': True,
+                'config_type': 'cluster',
+                'node_id': None,
+                'node_role': None,
+                'created_at': datetime.now(),
+                'configuration': jsonutils.dumps({
+                    'config_a': {},
+                    'config_b': {},
+                }),
+            }]
+        )
+
+        result = db.execute(
+            sa.select([self.meta.tables['openstack_configs'].c.cluster_id]))
+        config = result.fetchone()
+        self.assertEqual(config[0], cluster_id)

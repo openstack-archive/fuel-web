@@ -20,6 +20,7 @@ Handlers dealing with nodes
 
 from datetime import datetime
 
+import six
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -86,13 +87,28 @@ class NodeCollectionHandler(CollectionHandler):
         :returns: Collection of JSONized Node objects.
         :http: * 200 (OK)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
-        nodes = self.collection.eager_nodes_handlers(None)
 
-        if cluster_id == '':
-            nodes = nodes.filter_by(cluster_id=None)
-        elif cluster_id:
-            nodes = nodes.filter_by(cluster_id=cluster_id)
+        parameters = {
+            'cluster_id': None,
+            'group_id': None,
+            'roles': [],
+            'status': None,
+            'online': None
+        }
+
+        data = self.get_input_data(parameters)
+
+        # return empty result in case of unexisting status
+        status = data.get('status')
+        if status and status not in consts.NODE_STATUSES:
+            return {}
+
+        # filter nodes
+        nodes = self.collection.eager_nodes_handlers(None)
+        if 'roles' in data:
+            nodes = self.collection.filter_by_roles(nodes, data.pop('roles'))
+
+        nodes = self.collection.filter_by(nodes, **data)
 
         return self.collection.to_json(nodes)
 
@@ -154,6 +170,25 @@ class NodeCollectionHandler(CollectionHandler):
             raise self.http(403, e.message)
 
         self.raise_task(task)
+
+    def get_input_data(self, parameters):
+        """Retrieve input data from a request accordingly to the
+        expected `parameters`.
+        """
+
+        input_data = web.input(**parameters)
+
+        data = {}
+        for key, value in six.iteritems(input_data):
+            if key not in parameters:
+                continue
+            if value is None or value == []:
+                continue
+            if key == 'cluster_id' or key == 'group_id':
+                if value == '':
+                    value = None
+            data[key] = value
+        return data
 
 
 class NodeAgentHandler(BaseHandler):

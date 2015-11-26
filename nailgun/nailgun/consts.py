@@ -366,6 +366,10 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.stage,
                   ORCHESTRATOR_TASK_TYPES.skipped)
 
+# filter for deployment tasks which should be rerun on deployed nodes to make
+# re-setup of network on nodes
+TASKS_TO_RERUN_ON_DEPLOY_CHANGES = ['deploy_changes']
+
 TASK_REFRESH_FIELD = 'refresh_on'
 
 ROLE_NAME_MAX_SIZE = 64

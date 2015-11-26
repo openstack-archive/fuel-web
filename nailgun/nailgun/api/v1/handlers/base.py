@@ -90,6 +90,7 @@ class BaseHandler(object):
     serializer = BasicSerializer
 
     fields = []
+    convert_input_params = {}
 
     @classmethod
     def render(cls, instance, fields=None):
@@ -248,6 +249,61 @@ class BaseHandler(object):
             status = 202
 
         raise self.http(status, objects.Task.to_json(task))
+
+    def get_input_data(self, json_schema, defaults={}):
+        """Retrieve input data from the query.
+
+        Retrieve input data from the query accordingly to the
+        json_schema. Input data are retrieved only for those parameters
+        which are mentioned in `json_schema`. Default parameter values
+        might be specified in `defaults`.
+
+        :param json_schema: json schema.
+        :type json_schema: dict.
+        :param defaults: default values.
+        :type defaults: dict.
+        :returns: prepared data for further usage.
+        """
+        input_data = web.input(**defaults)
+        data = {}
+        for parameter in json_schema['properties']:
+            value = input_data.get(parameter)
+            if value is not None:
+                if parameter in self.convert_input_params:
+                    data[parameter] = self._convert_parameter_value(
+                        value, self.convert_input_params[parameter])
+                else:
+                    data[parameter] = value
+        return data
+
+    def _convert_parameter_value(self, value, param_type):
+        """Convert parameter value to a value with appropriate type.
+
+        Parameters in URL query don't care any information about data types.
+        Schema validation doesn't perform any type conversion, so
+        it is required to convert them before schema validation.
+        """
+
+        if not isinstance(value, six.string_types):
+            return value
+
+        if param_type in ('int', 'nullable_int', ):
+            try:
+                return int(value)
+            except ValueError:
+                pass
+
+        if param_type == 'nullable_int':
+            if value == '':
+                return None
+
+        if param_type == 'bool':
+            if value.lower() in ('1', 'true', ):
+                return True
+            elif value.lower() in ('0', 'false', ):
+                return False
+
+        return value
 
 
 def content_json(func, cls, *args, **kwargs):

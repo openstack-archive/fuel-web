@@ -76,8 +76,7 @@ class TestNodeInterfacesDbModels(BaseTestCase):
         'ip_addr': '10.20.0.2',
         'netmask': '255.255.255.0',
         'state': 'test_state',
-        'interface_properties': jsonutils.dumps(
-            {'test_property': 'test_value'}),
+        'interface_properties': {'test_property': 'test_value'},
         'parent_id': 1,
         'driver': 'test_driver',
         'bus_info': 'some_test_info'
@@ -215,8 +214,7 @@ class TestNodeInterfacesDbModels(BaseTestCase):
             'node_id': 1,
             'name': 'test_bond_interface',
             'mode': 'active-backup',
-            'bond_properties': jsonutils.dumps(
-                {'test_property': 'test_value'})
+            'bond_properties': {'test_property': 'test_value'}
         }
 
         bond = NodeBondInterface(**sample_bond_data)
@@ -233,6 +231,22 @@ class TestNodeInterfacesDbModels(BaseTestCase):
         for i in xrange(2):
             self.assertListEqual(self.changed_modes + different_modes[i],
                                  nics[i].offloading_modes)
+
+    def test_interface_properties_str_type_failure(self):
+        nic_data = copy.deepcopy(self.sample_nic_interface_data)
+        nic_data['interface_properties'] = jsonutils.dumps(
+            nic_data['interface_properties'])   # str type cause ValueError
+        self.assertRaises(ValueError, NodeNICInterface, **nic_data)
+
+    def test_bond_properties_str_type_failure(self):
+        sample_bond_data = {
+            'node_id': 1,
+            'name': 'test_bond_interface',
+            'mode': 'active-backup',
+            'bond_properties': jsonutils.dumps(
+                {'test_property': 'test_value'})    # str type cause ValueError
+        }
+        self.assertRaises(ValueError, NodeBondInterface, **sample_bond_data)
 
     def test_copy_mutable_list(self):
         mlist = MutableList([{"a": 1, "b": 2}])

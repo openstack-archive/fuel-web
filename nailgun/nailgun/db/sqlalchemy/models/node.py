@@ -28,6 +28,7 @@ from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.dialects import postgresql as psql
+from sqlalchemy.ext.mutable import MutableDict
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
@@ -72,7 +73,7 @@ class Node(Base):
         nullable=False,
         default=consts.NODE_STATUSES.discover
     )
-    meta = Column(JSON, default={})
+    meta = Column(MutableDict.as_mutable(JSON), default={})
     mac = Column(psql.MACADDR, nullable=False, unique=True)
     ip = Column(psql.INET)
     hostname = Column(String(255), nullable=False,
@@ -89,7 +90,8 @@ class Node(Base):
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
-    labels = Column(JSON, nullable=False, server_default='{}')
+    labels = Column(
+        MutableDict.as_mutable(JSON), nullable=False, server_default='{}')
     roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                    default=[], nullable=False, server_default='{}')
     pending_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
@@ -110,10 +112,11 @@ class Node(Base):
     agent_checksum = Column(String(40), nullable=True)
 
     ip_addrs = relationship("IPAddr", viewonly=True)
-    replaced_deployment_info = Column(JSON, default=[])
-    replaced_provisioning_info = Column(JSON, default={})
-    network_template = Column(JSON, default=None, server_default=None,
-                              nullable=True)
+    replaced_deployment_info = Column(MutableList.as_mutable(JSON), default=[])
+    replaced_provisioning_info = Column(
+        MutableDict.as_mutable(JSON), default={})
+    network_template = Column(MutableDict.as_mutable(JSON), default=None,
+                              server_default=None, nullable=True)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
 
@@ -222,8 +225,9 @@ class NodeAttributes(Base):
     __tablename__ = 'node_attributes'
     id = Column(Integer, primary_key=True)
     node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))
-    interfaces = Column(JSON, default={})
-    vms_conf = Column(JSON, default=[], server_default='[]')
+    interfaces = Column(MutableDict.as_mutable(JSON), default={})
+    vms_conf = Column(MutableList.as_mutable(JSON),
+                      default=[], server_default='[]')
 
 
 class NodeNICInterface(Base):
@@ -244,8 +248,9 @@ class NodeNICInterface(Base):
     ip_addr = Column(psql.INET)
     netmask = Column(psql.INET)
     state = Column(String(25))
-    interface_properties = Column(JSON, default={}, nullable=False,
-                                  server_default='{}')
+    interface_properties = Column(
+        MutableDict.as_mutable(JSON), default={}, nullable=False,
+        server_default='{}')
     parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
     driver = Column(Text)
     bus_info = Column(Text)
@@ -303,8 +308,9 @@ class NodeBondInterface(Base):
         secondary=NetworkBondAssignment.__table__,
         order_by="NetworkGroup.id")
     state = Column(String(25))
-    interface_properties = Column(JSON, default={}, nullable=False,
-                                  server_default='{}')
+    interface_properties = Column(
+        MutableDict.as_mutable(JSON), default={}, nullable=False,
+        server_default='{}')
     mode = Column(
         Enum(
             *consts.BOND_MODES,
@@ -313,8 +319,9 @@ class NodeBondInterface(Base):
         nullable=False,
         default=consts.BOND_MODES.active_backup
     )
-    bond_properties = Column(JSON, default={}, nullable=False,
-                             server_default='{}')
+    bond_properties = Column(
+        MutableDict.as_mutable(JSON), default={}, nullable=False,
+        server_default='{}')
     slaves = relationship("NodeNICInterface", backref="bond")
 
     @property

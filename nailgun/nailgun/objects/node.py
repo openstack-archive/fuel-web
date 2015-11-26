@@ -17,7 +17,7 @@
 """
 Node-related objects and collections
 """
-import copy
+
 import itertools
 import operator
 from oslo_serialization import jsonutils
@@ -218,7 +218,9 @@ class Node(NailgunObject):
         pending_roles = data.pop("pending_roles", None)
         primary_roles = data.pop("primary_roles", None)
 
-        new_node_meta = data.pop("meta", {})
+        # Ensure that meta is dict to avoid manipulation with
+        # MutableDict object, that references to foreign data
+        new_node_meta = dict(data.pop("meta", {}))
         new_node_cluster_id = data.pop("cluster_id", None)
         new_node = super(Node, cls).create(data)
         new_node.create_meta(new_node_meta)
@@ -1004,10 +1006,10 @@ class Node(NailgunObject):
         if consts.VIRTUAL_NODE_TYPES.virt not in node.all_roles:
             return
 
-        vms_conf = copy.deepcopy(node.attributes.vms_conf)
-        for vm in vms_conf:
+        for vm in node.attributes.vms_conf:
             vm['created'] = False
-        node.attributes.vms_conf = vms_conf
+        # Was changed second level data in 'vms_conf'
+        node.attributes.vms_conf.changed()
 
 
 class NodeCollection(NailgunCollection):

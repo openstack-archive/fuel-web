@@ -298,7 +298,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         Finish
     ];
 
-
     var CreateClusterWizard = React.createClass({
         mixins: [dialogs.dialogMixin],
         getInitialState: function() {

@@ -1029,6 +1029,12 @@ define([
                 } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'gateway_is_out_of_internal_network');
                 }
+                var networkNamesRegExp = /^[a-z][\w\-]*$/i;
+                _.each(['internal_name', 'floating_name'], (paramName) => {
+                    if (!networkParameters.get(paramName).match(networkNamesRegExp)) {
+                        networkingParametersErrors[paramName] = i18n('cluster_page.network_tab.validation.invalid_name');
+                    }
+                });
             }
             var networkWithFloatingRange = networks.filter(function(network) {return network.get('meta').floating_range_var;})[0];
             if (networkWithFloatingRange && !_.has(((errors.networks ||

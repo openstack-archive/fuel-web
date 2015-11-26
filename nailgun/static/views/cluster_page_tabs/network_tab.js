@@ -85,9 +85,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 error: error
             };
         },
-        renderInput: function(attribute, isInteger) {
+        renderInput: function(attribute, isInteger, additionalProps = {}) {
             return (
-                <controls.Input {...this.composeProps(attribute, false, isInteger)}
+                <controls.Input
+                    {...additionalProps}
+                    {...this.composeProps(attribute, false, isInteger)}
                     type='text'
                     wrapperClassName={attribute + ' simple-input'}
                 />
@@ -1388,7 +1390,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         ],
         statics: {
             renderedParameters: [
-                'floating_ranges', 'internal_cidr', 'internal_gateway', 'baremetal_range',
+                'floating_ranges', 'internal_cidr', 'internal_gateway',
+                'internal_name', 'floating_name', 'baremetal_range',
                 'baremetal_gateway', 'dns_nameservers'
             ]
         },
@@ -1402,10 +1405,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         rowsClassName='floating-ranges-rows'
                         hiddenControls
                     />
-                    <div>
-                        {this.renderInput('internal_cidr')}
-                        {this.renderInput('internal_gateway')}
-                    </div>
+                    {this.renderInput('floating_name', false, {maxLength: '65'})}
+                    {this.renderInput('internal_cidr')}
+                    {this.renderInput('internal_gateway')}
+                    {this.renderInput('internal_name', false, {maxLength: '65'})}
                     {networks.findWhere({name: 'baremetal'}) &&
                         [
                             <Range

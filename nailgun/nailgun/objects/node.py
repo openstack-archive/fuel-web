@@ -27,6 +27,7 @@ from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -1114,6 +1115,13 @@ class NodeCollection(NailgunCollection):
     @classmethod
     def get_by_ids(cls, ids):
         return db.query(models.Node).filter(models.Node.id.in_(ids)).all()
+
+    @classmethod
+    def filter_by_roles(cls, nodes, roles):
+        filters = []
+        for role in roles:
+            filters.append(models.Node.roles.any(role))
+        return nodes.filter(or_(*filters))
 
     @classmethod
     def reset_network_template(cls, instances):

@@ -16,6 +16,7 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.test.base import BaseIntegrationTest
@@ -23,6 +24,7 @@ from nailgun.utils import reverse
 
 
 class TestHandlers(BaseIntegrationTest):
+
     def test_node_list_empty(self):
         resp = self.app.get(
             reverse('NodeCollectionHandler'),
@@ -491,3 +493,203 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         node_name_test(node_mac.lower())
+
+    def test_node_get_by_cluster_id(self):
+        cluster = self.env.create_cluster(api=False)
+        cluster2 = self.env.create_cluster(api=False)
+        node1 = self.env.create_node(cluster_id=cluster2.id)
+        node2 = self.env.create_node(cluster_id=cluster2.id)
+        self.env.create_node(cluster_id=cluster.id)
+        self.env.create_node()
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'cluster_id': cluster2.id},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_group_id(self):
+        self.env.create_cluster(api=False)
+        nodegroups = []
+        for i in range(3):
+            nodegroup = self.env.create_node_group(
+                name='ng{0}'.format(i), api=False)
+            nodegroups.append(nodegroup.id)
+        node1 = self.env.create_node(group_id=nodegroups[0])
+        node2 = self.env.create_node(group_id=nodegroups[0])
+        self.env.create_node(group_id=nodegroups[1])
+        self.env.create_node(group_id=nodegroups[2])
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'group_id': nodegroups[0]},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_empty_group_id(self):
+        self.env.create_cluster(api=False)
+        nodegroups = []
+        for i in range(2):
+            nodegroup = self.env.create_node_group(
+                name='ng{0}'.format(i), api=False)
+            nodegroups.append(nodegroup.id)
+        node1 = self.env.create_node(group_id=None)
+        node2 = self.env.create_node(group_id=None)
+        self.env.create_node(group_id=nodegroups[0])
+        self.env.create_node(group_id=nodegroups[1])
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'group_id': ''},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_status(self):
+        node1 = self.env.create_node(status=consts.NODE_STATUSES.discover)
+        node2 = self.env.create_node(status=consts.NODE_STATUSES.discover)
+        self.env.create_node(status=consts.NODE_STATUSES.removing)
+        self.env.create_node(status=consts.NODE_STATUSES.provisioning)
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'status': consts.NODE_STATUSES.discover},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_offline(self):
+        node1 = self.env.create_node(online=False)
+        node2 = self.env.create_node(online=False)
+        self.env.create_node(online=True)
+        self.env.create_node(online=True)
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'online': False},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_online(self):
+        node1 = self.env.create_node(online=True)
+        node2 = self.env.create_node(online=True)
+        self.env.create_node(online=False)
+        self.env.create_node(online=False)
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'online': True},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_roles(self):
+        cluster = self.env.create_cluster(api=False)
+        node1 = self.env.create_node(
+            cluster_id=cluster.id, roles=['controller', 'cinder', ])
+        node2 = self.env.create_node(
+            cluster_id=cluster.id, roles=['compute', 'cinder', ])
+        self.env.create_node(
+            cluster_id=cluster.id, roles=['base-os', 'compute'])
+        self.env.create_node(cluster_id=cluster.id, roles=['controller'])
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'roles': 'cinder'},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_several_roles(self):
+        cluster = self.env.create_cluster(api=False)
+        node1 = self.env.create_node(
+            cluster_id=cluster.id, roles=['controller', 'cinder', ])
+        node2 = self.env.create_node(
+            cluster_id=cluster.id, roles=['compute', 'cinder', ])
+        node3 = self.env.create_node(
+            cluster_id=cluster.id, roles=['base-os', 'compute', ])
+        self.env.create_node(
+            cluster_id=cluster.id, roles=['base-os', ])
+        node_ids = [node1['id'], node2['id'], node3['id'], ]
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'roles': ['controller', 'compute', ]},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 3)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_unexisting_status(self):
+        self.env.create_node(status=consts.NODE_STATUSES.discover)
+        self.env.create_node(status=consts.NODE_STATUSES.discover)
+        self.env.create_node(status=consts.NODE_STATUSES.removing)
+        self.env.create_node(status=consts.NODE_STATUSES.provisioning)
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'status': 'test'},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 0)
+
+    def test_node_get_by_cluster_id_group_id_status_online_roles(self):
+        cluster = self.env.create_cluster(api=False)
+        nodegroup = self.env.create_node_group(api=False)
+        node = self.env.create_node(
+            cluster_id=cluster.id,
+            group_id=nodegroup.id,
+            status=consts.NODE_STATUSES.discover,
+            online=True,
+            roles=['controller', ])
+        self.env.create_node()
+        self.env.create_node()
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={
+                'cluster_id': cluster.id,
+                'group_id': nodegroup.id,
+                'status': consts.NODE_STATUSES.discover,
+                'online': True,
+                'roles': 'controller'
+            },
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 1)
+        self.assertEqual(resp.json_body[0]['id'], node.id)

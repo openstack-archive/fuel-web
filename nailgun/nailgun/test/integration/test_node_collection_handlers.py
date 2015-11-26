@@ -16,6 +16,7 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.test.base import BaseIntegrationTest
@@ -23,6 +24,7 @@ from nailgun.utils import reverse
 
 
 class TestHandlers(BaseIntegrationTest):
+
     def test_node_list_empty(self):
         resp = self.app.get(
             reverse('NodeCollectionHandler'),
@@ -492,3 +494,237 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         node_name_test(node_mac.lower())
+
+    def test_node_get_by_cluster_id(self):
+
+        cluster1 = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[{}, {}])
+        self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'cluster_id': None},
+                {'cluster_id': None}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'cluster_id': cluster1.id},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster1.nodes[0].id, cluster1.nodes[1].id, ])
+
+    def test_node_get_by_group_id(self):
+        self.env.create_cluster(api=False)
+        nodegroups = []
+        for i in range(3):
+            nodegroup = self.env.create_node_group(
+                name='ng{0}'.format(i), api=False)
+            nodegroups.append(nodegroup.id)
+
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'group_id': nodegroups[0]},
+                {'group_id': nodegroups[0]},
+                {'group_id': nodegroups[1]},
+                {'group_id': nodegroups[2]}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'group_id': nodegroups[0]},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, ])
+
+    def test_node_get_by_empty_group_id(self):
+        self.env.create_cluster(api=False)
+        nodegroups = []
+        for i in range(2):
+            nodegroup = self.env.create_node_group(
+                name='ng{0}'.format(i), api=False)
+            nodegroups.append(nodegroup.id)
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'group_id': None},
+                {'group_id': None},
+                {'group_id': nodegroups[0]},
+                {'group_id': nodegroups[1]}
+            ])
+        cluster.nodes[0].group_id = None
+        cluster.nodes[1].group_id = None
+        self.db.commit()
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'group_id': ''},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, ])
+
+    def test_node_get_by_status(self):
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'status': consts.NODE_STATUSES.discover},
+                {'status': consts.NODE_STATUSES.discover},
+                {'status': consts.NODE_STATUSES.removing},
+                {'status': consts.NODE_STATUSES.provisioning}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'status': consts.NODE_STATUSES.discover},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, ])
+
+    def test_node_get_offline(self):
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'online': False},
+                {'online': False},
+                {'online': True},
+                {'online': True}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'online': False},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, ])
+
+    def test_node_get_online(self):
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'online': True},
+                {'online': True},
+                {'online': False},
+                {'online': False}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'online': True},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, ])
+
+    def test_node_get_by_roles(self):
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'roles': ['controller', 'cinder', ]},
+                {'roles': ['compute', 'cinder', ]},
+                {'roles': ['base-os', 'compute']},
+                {'roles': ['controller']}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'roles': 'cinder'},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, ])
+
+    def test_node_get_by_several_roles(self):
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'roles': ['controller', 'cinder', ]},
+                {'roles': ['compute', 'cinder', ]},
+                {'roles': ['base-os', 'compute']},
+                {'roles': ['base-os']}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'roles': ['controller', 'compute', ]},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, cluster.nodes[2].id, ])
+
+    def test_node_get_by_unexisting_status(self):
+        self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'status': consts.NODE_STATUSES.discover},
+                {'status': consts.NODE_STATUSES.discover},
+                {'status': consts.NODE_STATUSES.removing},
+                {'status': consts.NODE_STATUSES.provisioning}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'status': 'test'},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 0)
+
+    def test_node_get_by_wrong_input_data(self):
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'status': consts.NODE_STATUSES.discover},
+                {'status': consts.NODE_STATUSES.discover},
+                {'status': consts.NODE_STATUSES.removing},
+                {'status': consts.NODE_STATUSES.provisioning}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={'status': consts.NODE_STATUSES.discover,
+                    'foo': 'bar',
+                    '_': 'wrongparameter'},
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [n['id'] for n in resp.json_body],
+            [cluster.nodes[0].id, cluster.nodes[1].id, ])
+
+    def test_node_get_by_cluster_id_group_id_status_online_roles(self):
+        cluster = self.env.create(
+            cluster_kwargs={"api": False},
+            nodes_kwargs=[
+                {'status': consts.NODE_STATUSES.error,
+                 'online': True,
+                 'roles': ['controller', ]},
+                {}, {}])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            params={
+                'cluster_id': cluster.id,
+                'group_id': cluster.nodes[0].group_id,
+                'status': consts.NODE_STATUSES.error,
+                'online': True,
+                'roles': ['controller', ]
+            },
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 1)
+        self.assertEqual(resp.json_body[0]['id'], cluster.nodes[0].id)

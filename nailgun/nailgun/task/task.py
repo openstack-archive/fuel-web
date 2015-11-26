@@ -149,7 +149,8 @@ class DeploymentTask(object):
         return 'deploy'
 
     @classmethod
-    def message(cls, task, nodes, deployment_tasks=None):
+    def message(cls, task, nodes, deployment_tasks=None,
+                reexecutable_filter=None):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
         deployment_tasks = deployment_tasks or []
 
@@ -162,7 +163,7 @@ class DeploymentTask(object):
                     n.roles = n.roles + n.pending_roles
                     n.pending_roles = []
 
-                # If reciever for some reasons didn't update
+                # If receiver for some reasons didn't update
                 # node's status to provisioned when deployment
                 # started, we should do it in nailgun
                 if n.status in (consts.NODE_STATUSES.deploying,):
@@ -173,6 +174,7 @@ class DeploymentTask(object):
 
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
         orchestrator_graph.only_tasks(deployment_tasks)
+        orchestrator_graph.reexecutable_tasks(reexecutable_filter)
 
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was

@@ -741,6 +741,19 @@ class Cluster(NailgunObject):
         return nodes
 
     @classmethod
+    def get_nodes_by_status(cls, instance, status):
+        """Get cluster nodes with particular status
+
+        :param instance: cluster instance
+        :param status: node status
+        :return: filtered query on nodes
+        """
+        return db().query(models.Node).filter_by(
+            cluster_id=instance.id,
+            status=status
+        )
+
+    @classmethod
     def get_primary_node(cls, instance, role_name):
         """Get primary node for role_name
 

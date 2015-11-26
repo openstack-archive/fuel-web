@@ -429,3 +429,9 @@ CLOUD_INIT_TEMPLATES = Enum(
 STAT_FUEL_PACKAGES = (
     'fuel-nailgun',
 )
+
+OPENSTACK_CONFIG_TYPES = Enum(
+    'cluster',
+    'role',
+    'node',
+)

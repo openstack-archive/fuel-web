@@ -855,12 +855,15 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 isNovaEnvironment = cluster.get('net_provider') == 'nova_network',
                 networks = networkConfiguration.get('networks'),
                 isMultiRack = nodeNetworkGroups.length > 1,
-                networkTask = cluster.task({group: 'network'}),
+                networkVerifyTask = cluster.task('verify_networks'),
+                networkCheckTask = cluster.task('check_networks'),
                 isNodeNetworkGroupSectionSelected = !_.contains(defaultNetworkSubtabs, activeNetworkSectionName),
+                notEnoughNodesForVerification = cluster.get('nodes').length < 2,
                 isVerificationDisabled = networkConfiguration.validationError ||
                     this.state.actionInProgress ||
                     !!cluster.task({group: ['deployment', 'network'], active: true}) ||
-                    isMultiRack;
+                    isMultiRack ||
+                    notEnoughNodesForVerification;
 
             if (!activeNetworkSectionName ||
                     (activeNetworkSectionName && !nodeNetworkGroups.findWhere({name: activeNetworkSectionName}) &&
@@ -951,11 +954,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 {activeNetworkSectionName == 'network_verification' &&
                                     <NetworkVerificationResult
                                         key='network_verification'
-                                        task={networkTask}
+                                        task={networkVerifyTask}
                                         networks={networkConfiguration.get('networks')}
                                         hideVerificationResult={this.state.hideVerificationResult}
                                         isMultirack={isMultiRack}
                                         isVerificationDisabled={isVerificationDisabled}
+                                        notEnoughNodes={notEnoughNodesForVerification}
                                         verifyNetworks={this.verifyNetworks}
                                     />
                                 }
@@ -982,12 +986,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             </div>
                         </div>
                     </div>
-                    {!this.state.hideVerificationResult && networkTask && networkTask.match({status: 'error'}) &&
+                    {!this.state.hideVerificationResult && networkCheckTask && networkCheckTask.match({status: 'error'}) &&
                         <div className='col-xs-12'>
                             <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
                                 {i18n('cluster_page.network_tab.verify_networks.fail_alert')}
                                 <br/>
-                                {networkTask.get('message')}
+                                {networkCheckTask.get('message')}
                             </div>
                         </div>
                     }
@@ -1081,7 +1085,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 if (groupName == 'network_verification') {
                     tabLabel = i18n(networkTabNS + 'tabs.connectivity_check');
                     isInvalid = this.props.showVerificationResult && cluster.task({
-                            group: 'network',
+                            name: 'verify_networks',
                             status: 'error'
                         });
                 }
@@ -1503,7 +1507,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         getConnectionStatus: function(task, isFirstConnectionLine) {
             if (!task || task.match({status: 'ready'})) return 'stop';
             if (task && task.match({status: 'error'}) && !(isFirstConnectionLine &&
-                !(task.match({name: 'verify_networks'}) && !task.get('result').length))) return 'error';
+                !(task('verify_networks') && !task.get('result').length))) return 'error';
             return 'success';
         },
         render: function() {
@@ -1518,6 +1522,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         {this.props.isMultirack &&
                             <div className='alert alert-warning'>
                                 <p>{i18n(networkTabNS + 'verification_multirack_warning')}</p>
+                            </div>
+                        }
+                        {!this.props.isMultirack && this.props.notEnoughNodes &&
+                            <div className='alert alert-warning'>
+                                <p>{i18n(networkTabNS + 'not_enough_nodes')}</p>
                             </div>
                         }
                         <div className='page-control-box'>
@@ -1559,7 +1568,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             {i18n('cluster_page.network_tab.verify_networks_button')}
                         </button>
                     </div>
-                    {(task && task.match({name: 'verify_networks', status: 'ready'})) &&
+                    {(task && task.match({status: 'ready'})) &&
                         <div className='col-xs-12'>
                             <div className='alert alert-success enable-selection'>
                                 {i18n(ns + 'success_alert')}
@@ -1571,7 +1580,16 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             }
                         </div>
                     }
-                    {(task && task.match({name: 'verify_networks'}) && !!task.get('result').length) &&
+                    {task && task.match({status: 'error'}) &&
+                        <div className='col-xs-12'>
+                            <div className='alert alert-danger enable-selection network-alert'>
+                                {i18n('cluster_page.network_tab.verify_networks.fail_alert')}
+                                <br/>
+                                {task.get('message')}
+                            </div>
+                        </div>
+                    }
+                    {(task && !!task.get('result').length) &&
                         <div className='verification-result-table col-xs-12'>
                             <controls.Table
                                 tableClassName='table table-condensed enable-selection'

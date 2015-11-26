@@ -18,6 +18,8 @@ from copy import deepcopy
 import mock
 import six
 
+import nailgun
+
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
@@ -110,6 +112,74 @@ class TestNetworkTemplateSerializer80(
         serializer_type = get_serializer_for_cluster(self.cluster)
         self.serializer = serializer_type(AstuteGraph(self.cluster))
         self._check_baremetal_neutron_attrs(self.cluster)
+
+
+class TestDeploymentTasksSerialization80(
+    TestSerializer80Mixin,
+    BaseDeploymentSerializer
+):
+    manifests_to_rerun = set([
+        "/etc/puppet/modules/osnailyfacter/modular/globals/globals.pp",
+        "/etc/puppet/modules/osnailyfacter/modular/netconfig/netconfig.pp"])
+
+    def setUp(self):
+        super(TestDeploymentTasksSerialization80, self).setUp()
+        cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
+                'status': consts.CLUSTER_STATUSES.operational},
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready}]
+        )
+
+        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
+
+    def add_node(self, role):
+        return self.env.create_node(
+            cluster_id=self.cluster.id,
+            pending_roles=[role],
+            pending_addition=True
+        )
+
+    def get_deployment_info(self):
+        self.env.launch_deployment()
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        return args[1][1]['args']['deployment_info']
+
+    @mock.patch('nailgun.rpc.cast')
+    def test_add_compute(self, _):
+        new_node = self.add_node('compute')
+
+        rpc_deploy_message = self.get_deployment_info()
+
+        for node in rpc_deploy_message:
+            tasks_for_node = set(t['parameters']['puppet_manifest']
+                                 for t in node['tasks'])
+            if node['tasks'][0]['uids'] == [str(new_node.id)]:
+                # all tasks are run on a new node
+                self.assertTrue(
+                    self.manifests_to_rerun.issubset(tasks_for_node))
+            else:
+                # only selected tasks are run on a deployed node
+                self.assertEqual(self.manifests_to_rerun, tasks_for_node)
+
+    @mock.patch('nailgun.rpc.cast')
+    def test_add_controller(self, _):
+        self.add_node('controller')
+
+        rpc_deploy_message = self.get_deployment_info()
+
+        for node in rpc_deploy_message:
+            tasks_for_node = set(t['parameters']['puppet_manifest']
+                                 for t in node['tasks'])
+            # controller is redeployed when other one is added
+            # so all tasks are run on all nodes
+            self.assertTrue(
+                self.manifests_to_rerun.issubset(tasks_for_node))
 
 
 class TestDeploymentAttributesSerialization80(

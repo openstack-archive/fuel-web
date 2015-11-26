@@ -27,6 +27,7 @@ from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+import sqlalchemy
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -1049,6 +1050,18 @@ class NodeCollection(NailgunCollection):
     @classmethod
     def get_by_ids(cls, ids):
         return db.query(models.Node).filter(models.Node.id.in_(ids)).all()
+
+    @classmethod
+    def filter_by_roles(cls, nodes, roles):
+        """Filter nodes by roles.
+
+        Retrieve from the list of `nodes` only those nodes, which have
+        assigned any role specified in `roles`.
+        """
+        filters = sqlalchemy.or_()
+        for role in roles:
+            filters.append(models.Node.roles.any(role))
+        return nodes.filter(filters)
 
     @classmethod
     def reset_network_template(cls, instances):

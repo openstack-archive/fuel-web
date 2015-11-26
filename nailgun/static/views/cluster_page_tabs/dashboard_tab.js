@@ -442,7 +442,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             // Network
             function(cluster) {
                 if (this.props.nodeNetworkGroups.where({cluster_id: cluster.id}).length > 1) return null;
-                var networkVerificationTask = cluster.task({group: 'network'}),
+                var networkVerificationTask = cluster.task('verify_networks'),
                     makeComponent = _.bind(function(text, isError) {
                         var span = (
                             <span>

@@ -152,7 +152,7 @@ define([
                 return this.remote
                     .clickByCssSelector('.subtab-link-network_verification')
                     .clickByCssSelector('.verify-networks-btn:not(:disabled)')
-                    .assertElementAppears('.connect-3.error', 2000,
+                    .assertElementAppears('.network-alert', 2000,
                         'At least two nodes are required to be in the environment for network verification')
                     // Testing cluster networks: verification task deletion
                     .then(function() {

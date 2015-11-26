@@ -427,8 +427,10 @@ define([
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
         },
-        hasChanges: function() {
-            return this.get('pending_addition') || this.get('pending_deletion');
+        hasChanges() {
+            return this.get('pending_addition') ||
+                this.get('pending_deletion') ||
+                this.get('cluster') && !!this.get('pending_roles').length;
         },
         isConfigurable: function() {
             return this.get('pending_addition') || this.get('status') == 'error';
@@ -488,10 +490,8 @@ define([
             'group_id'
         ],
         viewModes: ['standard', 'compact'],
-        hasChanges: function() {
-            return !!this.filter(function(node) {
-                return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
-            }).length;
+        hasChanges() {
+            return _.any(this.invoke('hasChanges'));
         },
         nodesAfterDeployment: function() {
             return this.filter(function(node) {return !node.get('pending_deletion');});

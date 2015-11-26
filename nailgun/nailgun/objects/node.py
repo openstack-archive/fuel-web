@@ -218,7 +218,9 @@ class Node(NailgunObject):
         pending_roles = data.pop("pending_roles", None)
         primary_roles = data.pop("primary_roles", None)
 
-        new_node_meta = data.pop("meta", {})
+        # Ensure that meta is dict to avoid manipulation with
+        # MutableDict object, that references to foreign data
+        new_node_meta = dict(data.pop("meta", {}))
         new_node_cluster_id = data.pop("cluster_id", None)
         new_node = super(Node, cls).create(data)
         new_node.create_meta(new_node_meta)

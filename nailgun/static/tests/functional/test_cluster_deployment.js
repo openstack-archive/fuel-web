@@ -80,7 +80,7 @@ define([
                     .then(function() {
                         return modal.waitToClose();
                     })
-                    .assertElementAppears('div.deploy-readiness a.btn-add-nodes', 2000, 'All changes discarded, add nodes button gets visible in deploy readiness block');
+                    .assertElementAppears('.dashboard-block a.btn-add-nodes', 2000, 'All changes discarded, add nodes button gets visible in deploy readiness block');
             },
             'Start/stop deployment': function() {
                 this.timeout = 60000;
@@ -134,10 +134,10 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .assertElementDisappears('.deploy-block .progress', 50000, 'Progress bar disappears after deployment')
-                    .assertElementAppears('div.horizon', 5000, 'Deployment competed')
+                    .assertElementDisappears('.dashboard-block .progress', 50000, 'Progress bar disappears after deployment')
+                    .assertElementAppears('.horizon', 5000, 'Deployment completed')
                     .assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy')
-                    .findByCssSelector('div.horizon a.btn-success')
+                    .findByCssSelector('.horizon a.btn-success')
                         .getAttribute('href')
                         .then(function(value) {
                             return assert.isTrue(_.startsWith(value, 'http'), 'Link to Horizon is formed');

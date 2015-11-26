@@ -477,13 +477,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 <div className='col-xs-12 deploy-readiness'>
                     <div className='deploy-block'>
                         <div className='row'>
-                            {hasNodes &&
+                            {nodes.hasChanges() &&
                                 <div className='col-xs-12 changes-list'>
-                                    <h4>
-                                        {i18n(namespace + 'changes_header') + ':'}
-                                    </h4>
+                                    <h4>{i18n(namespace + 'changes_header') + ':'}</h4>
                                     <ul>
                                         {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
+                                        {this.renderChangedNodesAmount(nodes.where({status: 'provisioned'}), 'provisioned_node')}
                                         {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
                                     </ul>
                                     {isVMsProvisioningAvailable ?
@@ -510,15 +509,13 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 </button>
                                             )
                                     }
-                                    {nodes.hasChanges() &&
-                                        <button
-                                            className='btn-link discard-changes'
-                                            key='discard-changes'
-                                            onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
-                                        >
-                                            {i18n('cluster_page.discard_changes')}
-                                        </button>
-                                    }
+                                    <button
+                                        className='btn-link discard-changes'
+                                        key='discard-changes'
+                                        onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
+                                    >
+                                        {i18n('cluster_page.discard_changes')}
+                                    </button>
                                 </div>
                             }
                             <div className='col-xs-12 deploy-readiness'>

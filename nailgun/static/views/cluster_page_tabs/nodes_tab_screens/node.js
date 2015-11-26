@@ -72,23 +72,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.endRenaming();
             }
         },
-        discardNodeChanges: function(e) {
+        discardNodeDeletion(e) {
             e.preventDefault();
             if (this.state.actionInProgress) return;
             this.setState({actionInProgress: true});
             var node = new models.Node(this.props.node.attributes),
-                nodeWillBeRemoved = node.get('pending_addition'),
-                data = nodeWillBeRemoved ? {cluster_id: null, pending_addition: false, pending_roles: []} : {pending_deletion: false};
+                data = {pending_deletion: false};
             node.save(data, {patch: true})
                 .done(_.bind(function() {
                     this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
-                        if (!nodeWillBeRemoved) this.setState({actionInProgress: false});
+                        this.setState({actionInProgress: false});
                     }, this));
-                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
                 }, this))
                 .fail(function(response) {
                     utils.showErrorDialog({
-                        title: i18n('dialog.discard_changes.cant_discard'),
+                        title: i18n('cluster_page.nodes_tab.node.cant_discard'),
                         response: response
                     });
                 });
@@ -235,14 +233,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </ul>
             );
         },
-        showDeleteNodesDialog: function(e) {
+        showDeleteNodesDialog(e) {
             e.preventDefault();
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
-            dialogs.DeleteNodesDialog.show({
-                nodes: new models.Nodes(this.props.node),
-                cluster: this.props.cluster
-            })
-            .done(this.props.onNodeSelection);
+            dialogs.DeleteNodesDialog
+                .show({
+                    nodes: new models.Nodes(this.props.node),
+                    cluster: this.props.cluster
+                })
+                .done(this.props.onNodeSelection);
         },
         renderLabels: function() {
             var labels = this.props.node.get('labels');
@@ -379,8 +378,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     {[
                                                         !!node.get('cluster') && this.renderLogsLink(),
                                                         this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
-                                                            <button className='btn btn-discard' key='btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
-                                                                {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                                            <button
+                                                                className='btn btn-discard'
+                                                                key='btn-discard'
+                                                                onClick={node.get('pending_deletion') ? this.discardNodeDeletion : this.showDeleteNodesDialog}
+                                                            >
+                                                                {i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))}
                                                             </button>
                                                     ]}
                                                 </div>
@@ -431,10 +434,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             {[
                                 !!node.get('cluster') && this.renderLogsLink(true),
                                 this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
-                                    <controls.Tooltip key={'pending_addition_' + node.id} text={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}>
+                                    <controls.Tooltip
+                                        key={'pending_addition_' + node.id}
+                                        text={i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))}
+                                    >
                                         <div
                                             className='icon btn-discard'
-                                            onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
+                                            onClick={node.get('pending_deletion') ? this.discardNodeDeletion : this.showDeleteNodesDialog}
                                         />
                                     </controls.Tooltip>
                             ]}

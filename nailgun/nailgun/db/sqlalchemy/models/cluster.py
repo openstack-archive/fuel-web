@@ -115,6 +115,7 @@ class Cluster(Base):
     deployment_tasks = Column(JSON, default=[])
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    deployed_configuration = Column(JSON, default={})
 
     @property
     def changes(self):

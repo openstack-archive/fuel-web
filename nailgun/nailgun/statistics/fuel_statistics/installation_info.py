@@ -168,44 +168,47 @@ class InstallationInfo(object):
         clusters = ClusterCollection.all()
         clusters_info = []
         for cluster in clusters:
-            release = cluster.release
-            nodes_num = NodeCollection.filter_by(
-                None, cluster_id=cluster.id).count()
-            vmware_attributes_editable = None
-            if cluster.vmware_attributes:
-                vmware_attributes_editable = cluster.vmware_attributes.editable
-            cluster_info = {
-                'id': cluster.id,
-                'nodes_num': nodes_num,
-                'release': {
-                    'os': release.operating_system,
-                    'name': release.name,
-                    'version': release.version
-                },
-                'mode': cluster.mode,
-                'nodes': self.get_nodes_info(cluster.nodes),
-                'node_groups': self.get_node_groups_info(cluster.node_groups),
-                'status': cluster.status,
-                'extensions': cluster.extensions,
-                'attributes': self.get_attributes(
-                    Cluster.get_editable_attributes(cluster),
-                    self.attributes_white_list
-                ),
-                'vmware_attributes': self.get_attributes(
-                    vmware_attributes_editable,
-                    self.vmware_attributes_white_list
-                ),
-                'dashboard_entries': self.get_dashboard_entries(
-                    cluster.dashboard_entries),
-                'net_provider': cluster.net_provider,
-                'fuel_version': cluster.fuel_version,
-                'is_customized': cluster.is_customized,
-                'network_configuration': self.get_network_configuration_info(
-                    cluster),
-                'installed_plugins': self.get_cluster_plugins_info(cluster)
-            }
-            clusters_info.append(cluster_info)
+            clusters_info.append(self.get_cluster_info(cluster))
         return clusters_info
+
+    def get_cluster_info(self, cluster):
+        release = cluster.release
+        nodes_num = NodeCollection.filter_by(
+            None, cluster_id=cluster.id).count()
+        vmware_attributes_editable = None
+        if cluster.vmware_attributes:
+            vmware_attributes_editable = cluster.vmware_attributes.editable
+        cluster_info = {
+            'id': cluster.id,
+            'nodes_num': nodes_num,
+            'release': {
+                'os': release.operating_system,
+                'name': release.name,
+                'version': release.version
+            },
+            'mode': cluster.mode,
+            'nodes': self.get_nodes_info(cluster.nodes),
+            'node_groups': self.get_node_groups_info(cluster.node_groups),
+            'status': cluster.status,
+            'extensions': cluster.extensions,
+            'attributes': self.get_attributes(
+                Cluster.get_editable_attributes(cluster),
+                self.attributes_white_list
+            ),
+            'vmware_attributes': self.get_attributes(
+                vmware_attributes_editable,
+                self.vmware_attributes_white_list
+            ),
+            'dashboard_entries': self.get_dashboard_entries(
+                cluster.dashboard_entries),
+            'net_provider': cluster.net_provider,
+            'fuel_version': cluster.fuel_version,
+            'is_customized': cluster.is_customized,
+            'network_configuration': self.get_network_configuration_info(
+                cluster),
+            'installed_plugins': self.get_cluster_plugins_info(cluster)
+        }
+        return cluster_info
 
     def get_cluster_plugins_info(self, cluster):
         plugins_info = []

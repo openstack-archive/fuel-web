@@ -472,3 +472,12 @@ class TestMasterSettingsMigration(base.BaseAlembicMigrationTest):
             bootstrap_settings,
             jsonutils.loads(result.scalar())['bootstrap']
         )
+
+
+class TestClusterMigration(base.BaseAlembicMigrationTest):
+
+    def test_deployed_configuration_field_exists_and_empty(self):
+        result = db.execute(
+            sa.select([self.meta.tables['clusters'].c.deployed_configuration]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), {})

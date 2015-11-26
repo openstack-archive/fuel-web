@@ -168,6 +168,11 @@ class Task(NailgunObject):
             "Updating cluster (%s) status: from %s to %s",
             cluster.full_name, cluster.status, status)
         Cluster.update(cluster, data={'status': status})
+        if status == consts.CLUSTER_STATUSES.operational:
+            from nailgun.statistics.fuel_statistics.installation_info \
+                import InstallationInfo
+            cluster.deployed_configuration = \
+                InstallationInfo().get_cluster_info(cluster)
 
     @classmethod
     def _update_cluster_data(cls, instance):

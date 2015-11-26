@@ -109,9 +109,11 @@ def upgrade():
     dashboard_entries_upgrade()
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
+    upgrade_cluster_add_deployed_config()
 
 
 def downgrade():
+    downgrade_cluster_add_deployed_config()
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
     dashboard_entries_downgrade()
@@ -124,6 +126,21 @@ def downgrade():
     task_statuses_downgrade()
     downgrade_release_state()
     downgrade_nodegroups_name_cluster_constraint()
+
+
+def upgrade_cluster_add_deployed_config():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'deployed_configuration',
+            fields.JSON(),
+            server_default='{}'
+        )
+    )
+
+
+def downgrade_cluster_add_deployed_config():
+    op.drop_column('clusters', 'deployed_configuration')
 
 
 def upgrade_release_state():

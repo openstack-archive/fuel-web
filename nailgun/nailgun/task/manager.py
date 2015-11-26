@@ -18,7 +18,6 @@ import copy
 from distutils.version import StrictVersion
 import traceback
 
-
 from oslo_serialization import jsonutils
 
 from nailgun.objects.serializers.network_configuration \
@@ -35,6 +34,8 @@ from nailgun.logger import logger
 from nailgun import notifier
 from nailgun import objects
 import nailgun.rpc as rpc
+from nailgun.statistics.fuel_statistics.installation_info \
+    import InstallationInfo
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
 from nailgun.utils import mule
@@ -274,6 +275,18 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             except errors.CheckBeforeDeploymentError:
                 db().commit()
                 return
+
+        if (self.cluster.status == consts.CLUSTER_STATUSES.operational and
+                self.cluster.deployed_configuration):
+            current_config = InstallationInfo().get_cluster_info(self.cluster)
+            current_node_groups = set(
+                ng['id'] for ng in current_config['node_groups'])
+            deployed_node_groups = set(
+                ng['id']
+                for ng in self.cluster.deployed_configuration['node_groups'])
+            if current_node_groups != deployed_node_groups:
+                # need to do something
+                pass
 
         task_deletion, task_provision, task_deployment = None, None, None
 

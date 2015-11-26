@@ -387,6 +387,9 @@ FUEL_IMAGE_BASED_ONLY = '7.0'
 # version of Fuel when multiple floating IP ranges support is added
 FUEL_MULTIPLE_FLOATING_IP_RANGES = '8.0'
 
+# version of Fuel when support of network resetup on nodes is added
+FUEL_NETWORK_RESETUP_ON_NODES = '8.0'
+
 # this file is provided by the fuel-release package
 FUEL_RELEASE_FILE = '/etc/fuel_release'
 

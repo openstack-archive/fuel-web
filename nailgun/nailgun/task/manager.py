@@ -18,7 +18,6 @@ import copy
 from distutils.version import StrictVersion
 import traceback
 
-
 from oslo_serialization import jsonutils
 
 from nailgun.objects.serializers.network_configuration \
@@ -246,6 +245,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         """
 
         nodes_to_delete = []
+        nodes_to_resetup = []
 
         if nodes_to_provision_deploy:
             nodes_to_deploy = objects.NodeCollection.get_by_ids(
@@ -266,14 +266,26 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         # Run validation if user didn't redefine
         # provisioning and deployment information
 
-        if not(nodes_to_provision_deploy) and \
-            (not objects.Cluster.get_provisioning_info(self.cluster) and
+        if (not nodes_to_provision_deploy and
+                not objects.Cluster.get_provisioning_info(self.cluster) and
                 not objects.Cluster.get_deployment_info(self.cluster)):
             try:
                 self.check_before_deployment(supertask)
             except errors.CheckBeforeDeploymentError:
                 db().commit()
                 return
+
+        if (self.cluster.status == consts.CLUSTER_STATUSES.operational and
+                StrictVersion(self.cluster.release.environment_version) >=
+                StrictVersion(consts.FUEL_NETWORK_RESETUP_ON_NODES)):
+            # rerun network setup on all deployed nodes
+            affected_nodes = \
+                set(nodes_to_deploy + nodes_to_provision + nodes_to_delete)
+            ready_nodes = set(objects.Cluster.get_nodes_by_status(
+                self.cluster,
+                consts.NODE_STATUSES.ready
+            ).all())
+            nodes_to_resetup = ready_nodes.difference(affected_nodes)
 
         task_deletion, task_provision, task_deployment = None, None, None
 
@@ -316,6 +328,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             db().commit()
             task_messages.append(provision_message)
 
+        deployment_message = None
         if nodes_to_deploy:
             logger.debug("There are nodes to deploy: %s",
                          " ".join([objects.Node.get_node_fqdn(n)
@@ -348,6 +361,55 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
             task_deployment.cache = deployment_message
             db().commit()
+
+        if nodes_to_resetup:
+            logger.debug("There are nodes to resetup networks: %s",
+                         ", ".join([objects.Node.get_node_fqdn(n)
+                                   for n in nodes_to_resetup]))
+
+            if not deployment_message:
+                task_deployment = supertask.create_subtask(
+                    name=consts.TASK_NAMES.deployment,
+                    status=consts.TASK_STATUSES.pending
+                )
+                # we should have task committed for processing in other threads
+                db().commit()
+
+            resetup_message = self._call_silently(
+                task_deployment,
+                tasks.DeploymentTask,
+                nodes_to_resetup,
+                deployment_tasks=['globals', 'netconfig'],
+                method_name='message'
+            )
+            db().commit()
+
+            task_deployment = objects.Task.get_by_uid(
+                task_deployment.id,
+                fail_if_not_found=True,
+                lock_for_update=True
+            )
+            # if failed to generate task message for orchestrator
+            # then task is already set to error
+            if task_deployment.status == consts.TASK_STATUSES.error:
+                return
+
+            if deployment_message:
+                deployment_message['args']['deployment_info'].extend(
+                    resetup_message['args']['deployment_info']
+                )
+                deployment_message['args']['pre_deployment'].extend(
+                    resetup_message['args']['pre_deployment']
+                )
+                deployment_message['args']['post_deployment'].extend(
+                    resetup_message['args']['post_deployment']
+                )
+            else:
+                deployment_message = resetup_message
+            task_deployment.cache = deployment_message
+            db().commit()
+
+        if deployment_message:
             task_messages.append(deployment_message)
 
         # Even if we don't have nodes to deploy, the deployment task

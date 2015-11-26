@@ -366,3 +366,195 @@ class TestHandlers(BaseIntegrationTest):
                              'ip': ipaddress}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
+
+
+class TestNodeCollectionHandler(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNodeCollectionHandler, self).setUp()
+        self.cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
+            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.gre
+        )
+
+    def _compose_url(self, url, **kwargs):
+        url += '?'
+        for key, value in kwargs.items():
+            url += '{0}={1}&'.format(key, str(value).lower())
+        return url
+
+    def test_node_get_by_cluster_id(self):
+        cluster2 = self.env.create_cluster(api=False)
+        node1 = self.env.create_node(cluster_id=cluster2.id)
+        node2 = self.env.create_node(cluster_id=cluster2.id)
+        self.env.create_node(cluster_id=self.cluster.id)
+        self.env.create_node()
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'), cluster_id=cluster2.id),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_group_id(self):
+        nodegroups = []
+        for i in range(3):
+            nodegroup = self.env.create_node_group(
+                name='ng{0}'.format(i), api=False)
+            nodegroups.append(nodegroup.id)
+        node1 = self.env.create_node(group_id=nodegroups[0])
+        node2 = self.env.create_node(group_id=nodegroups[0])
+        self.env.create_node(group_id=nodegroups[1])
+        self.env.create_node(group_id=nodegroups[2])
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'), group_id=nodegroups[0]),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_status(self):
+        node1 = self.env.create_node(status=consts.NODE_STATUSES.discover)
+        node2 = self.env.create_node(status=consts.NODE_STATUSES.discover)
+        self.env.create_node(status=consts.NODE_STATUSES.removing)
+        self.env.create_node(status=consts.NODE_STATUSES.provisioning)
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'),
+                status=consts.NODE_STATUSES.discover),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_offline(self):
+        node1 = self.env.create_node(online=False)
+        node2 = self.env.create_node(online=False)
+        self.env.create_node(online=True)
+        self.env.create_node(online=True)
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'), online=False),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_online(self):
+        node1 = self.env.create_node(online=True)
+        node2 = self.env.create_node(online=True)
+        self.env.create_node(online=False)
+        self.env.create_node(online=False)
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'), online=True),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_roles(self):
+        node1 = self.env.create_node(
+            cluster_id=self.cluster.id, roles=['controller', 'cinder', ])
+        node2 = self.env.create_node(
+            cluster_id=self.cluster.id, roles=['compute', 'cinder', ])
+        self.env.create_node(
+            cluster_id=self.cluster.id, roles=['base-os', 'compute'])
+        self.env.create_node(
+            cluster_id=self.cluster.id, roles=['controller'])
+        node_ids = [node1['id'], node2['id'], ]
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'), roles='cinder'),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 2)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_several_roles(self):
+        node1 = self.env.create_node(
+            cluster_id=self.cluster.id, roles=['controller', 'cinder', ])
+        node2 = self.env.create_node(
+            cluster_id=self.cluster.id, roles=['compute', 'cinder', ])
+        node3 = self.env.create_node(
+            cluster_id=self.cluster.id, roles=['base-os', 'compute', ])
+        self.env.create_node(
+            cluster_id=self.cluster.id, roles=['base-os', ])
+        node_ids = [node1['id'], node2['id'], node3['id'], ]
+
+        url = self._compose_url(reverse('NodeCollectionHandler'))
+        url += 'roles={0}&roles={1}'.format('controller', 'compute')
+        resp = self.app.get(url, headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 3)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_unexisting_status(self):
+        node1 = self.env.create_node(status=consts.NODE_STATUSES.discover)
+        node2 = self.env.create_node(status=consts.NODE_STATUSES.discover)
+        node3 = self.env.create_node(status=consts.NODE_STATUSES.removing)
+        node4 = self.env.create_node(status=consts.NODE_STATUSES.provisioning)
+        node_ids = [node1['id'], node2['id'], node3['id'], node4['id'], ]
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'), status='test'),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 4)
+        response_node_ids = [n['id'] for n in resp.json_body]
+        self.assertTrue(all([nid in response_node_ids for nid in node_ids]))
+
+    def test_node_get_by_cluster_id_group_id_status_online_roles(self):
+        nodegroup = self.env.create_node_group(api=False)
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            group_id=nodegroup.id,
+            status=consts.NODE_STATUSES.discover,
+            online=True,
+            roles=['controller', ])
+        self.env.create_node()
+        self.env.create_node()
+
+        resp = self.app.get(
+            self._compose_url(
+                reverse('NodeCollectionHandler'),
+                cluster_id=self.cluster.id,
+                group_id=nodegroup.id,
+                status=consts.NODE_STATUSES.discover,
+                online=True,
+                roles='controller'),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(len(resp.json_body), 1)
+        self.assertEqual(resp.json_body[0]['id'], node.id)

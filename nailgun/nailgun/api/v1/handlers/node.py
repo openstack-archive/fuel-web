@@ -86,13 +86,42 @@ class NodeCollectionHandler(CollectionHandler):
         :returns: Collection of JSONized Node objects.
         :http: * 200 (OK)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
+
+        input_data = web.input(
+            cluster_id=None, group_id=None, roles=[], status=None, online=None)
+
+        cluster_id = input_data.cluster_id
+        group_id = input_data.group_id
+        roles = input_data.roles
+        status = input_data.status
+        online = input_data.online
+
         nodes = self.collection.eager_nodes_handlers(None)
 
         if cluster_id == '':
             nodes = nodes.filter_by(cluster_id=None)
         elif cluster_id:
-            nodes = nodes.filter_by(cluster_id=cluster_id)
+            try:
+                nodes = nodes.filter_by(cluster_id=int(cluster_id))
+            except ValueError:
+                pass
+
+        if group_id == '':
+            nodes = nodes.filter_by(group_id=None)
+        if group_id:
+            try:
+                nodes = nodes.filter_by(group_id=int(group_id))
+            except ValueError:
+                pass
+
+        if status and status in consts.NODE_STATUSES:
+            nodes = nodes.filter_by(status=status)
+
+        if online:
+            nodes = nodes.filter_by(online=online)
+
+        if roles:
+            nodes = self.collection.filter_by_roles(nodes, roles)
 
         return self.collection.to_json(nodes)
 

@@ -408,6 +408,47 @@ class NailgunReceiver(object):
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
+    def update_config_resp(cls, **kwargs):
+        """Updates task and nodes states at the end of upload config task"""
+        logger.info(
+            "RPC method update_config_resp received: %s" %
+            jsonutils.dumps(kwargs))
+
+        task_uuid = kwargs['task_uuid']
+        message = kwargs.get('error')
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+
+        task = objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
+        q_nodes = objects.NodeCollection.filter_by_id_list(
+            None, task.cache['nodes'])
+        # lock nodes for updating
+        nodes = objects.NodeCollection.lock_for_update(q_nodes).all()
+
+        if status in (consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error):
+            for node in nodes:
+                node.status = consts.NODE_STATUSES.ready
+                node.progress = 100
+
+        if status == consts.TASK_STATUSES.error:
+            message = (u"Failed to update configuration on nodes:"
+                       u" {0}.").format(', '.join(node.name for node in nodes))
+            logger.error(message)
+            notifier.notify("error", message)
+
+        db().flush()
+
+        data = {'status': status, 'progress': progress, 'message': message}
+        objects.Task.update(task, data)
+
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
+
+    @classmethod
     def _update_action_log_entry(cls, task_status, task_name, task_uuid,
                                  nodes_from_resp):
         try:

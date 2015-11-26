@@ -57,3 +57,5 @@ from nailgun.objects.network_group import NetworkGroupCollection
 
 from nailgun.objects.cluster_plugin_link import ClusterPluginLink
 from nailgun.objects.cluster_plugin_link import ClusterPluginLinkCollection
+from nailgun.objects.openstack_config import OpenstackConfig
+from nailgun.objects.openstack_config import OpenstackConfigCollection

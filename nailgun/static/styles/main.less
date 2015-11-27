@@ -4366,29 +4366,14 @@ input[type=range] {
       vertical-align: sub;
     }
   }
-  .plugin-entry {
-    margin-bottom: @dashboard-offset * 1.5;
-    &.horizon {
-      .description {
-        margin-right: @dashboard-offset;
-        margin-bottom: @dashboard-offset;
-      }
-    }
-    .title {
-      padding: 0;
-      margin: 0;
-    }
+  .plugins-block {
+    margin-bottom: @dashboard-offset * 2;
   }
-
-  .plugin-links {
-    margin-bottom: 15px;
-    .plugin-link {
-      .plugin-title {
-        margin: 10px 0;
-        font-size: @base-font-size + 2;
-        .break-word;
-        .font-semibold;
-      }
+  .plugin-link {
+    .title {
+      margin-bottom: @dashboard-offset;
+      padding: 0;
+      .break-word;
     }
   }
 }

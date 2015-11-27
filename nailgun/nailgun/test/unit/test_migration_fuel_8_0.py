@@ -555,3 +555,21 @@ class TestOpenstackConfigMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['openstack_configs'].c.cluster_id]))
         config = result.fetchone()
         self.assertEqual(config[0], cluster_id)
+
+
+class TestPluginLinks(base.BaseAlembicMigrationTest):
+    def test_plugin_links_creation(self):
+        plugins = self.meta.tables['plugins']
+        plugin_links = self.meta.tables['plugin_links']
+
+        plugin_id = db.execute(sa.select([plugins])).scalar()
+
+        db.execute(
+            plugin_links.insert(),
+            [{
+                'plugin_id': plugin_id,
+                'title': 'title',
+                'url': 'http://www.zzz.com',
+                'description': 'description',
+                'hidden': False
+            }])

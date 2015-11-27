@@ -435,3 +435,5 @@ OPENSTACK_CONFIG_TYPES = Enum(
     'role',
     'node',
 )
+
+OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'

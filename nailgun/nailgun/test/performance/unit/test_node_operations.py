@@ -111,7 +111,7 @@ class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
         self.check_time_exec(func)
 
     @base.evaluate_unit_performance
-    def test_add_delete_nodes(self):
+    def test_add_node_to_cluster_then_remove_from_cluster(self):
         nodes_delete_list = []
         nodes_add_list = []
         self.cluster = self.env.create_cluster(api=True)

@@ -17,16 +17,13 @@
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
-from oslo_serialization import jsonutils
+from oslo.serialization import jsonutils
 
 
 class TestAssignmentHandlers(BaseIntegrationTest):
     def setUp(self):
         super(TestAssignmentHandlers, self).setUp()
-        self.cluster = self.env.create(
-            cluster_kwargs={"api": True},
-            nodes_kwargs=[{}]
-        )
+        self.plugin = self.env.create_plugin()
         self.link_data = {
             'title': 'test title',
             'url': 'http://test.com/url',
@@ -34,29 +31,29 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             'hidden': False,
         }
 
-    def test_cluster_plugin_links_list_empty(self):
+    def test_plugin_links_list_empty(self):
         resp = self.app.get(
             reverse(
-                'ClusterPluginLinkCollectionHandler',
-                kwargs={'cluster_id': self.cluster['id']}
+                'PluginLinkCollectionHandler',
+                kwargs={'plugin_id': self.plugin['id']}
             ),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
         self.assertItemsEqual([], resp.json_body)
 
-    def test_cluster_plugin_link_creation(self):
+    def test_plugin_link_creation(self):
         resp = self.app.post(
             reverse(
-                'ClusterPluginLinkCollectionHandler',
-                kwargs={'cluster_id': self.cluster['id']}
+                'PluginLinkCollectionHandler',
+                kwargs={'plugin_id': self.plugin['id']}
             ),
             params=jsonutils.dumps(self.link_data),
             headers=self.default_headers
         )
         self.assertEqual(201, resp.status_code)
 
-        plugin_link = self.env.clusters[0].plugin_links[0]
+        plugin_link = self.env.plugins[0].links[0]
         self.assertEqual(self.link_data['title'], plugin_link.title)
         self.assertEqual(self.link_data['url'], plugin_link.url)
         self.assertEqual(self.link_data['hidden'], plugin_link.hidden)
@@ -65,11 +62,11 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             plugin_link.description
         )
 
-    def test_cluster_plugin_link_fail_creation(self):
+    def test_plugin_link_fail_creation(self):
         resp = self.app.post(
             reverse(
-                'ClusterPluginLinkCollectionHandler',
-                kwargs={'cluster_id': self.cluster['id']}
+                'PluginLinkCollectionHandler',
+                kwargs={'plugin_id': self.plugin['id']}
             ),
             jsonutils.dumps({
                 'title': self.link_data['title'],
@@ -79,4 +76,4 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertItemsEqual([], self.env.clusters[0].plugin_links)
+        self.assertItemsEqual([], self.env.plugins[0].links)

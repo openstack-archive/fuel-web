@@ -463,7 +463,7 @@ class NailgunReceiver(object):
             else:
                 message = u"\n".join(nodes_info)
         else:
-            message = u"Unknown error"
+            message = u"Unknown nodes. Please wait for master task to report."
         return message
 
     @classmethod

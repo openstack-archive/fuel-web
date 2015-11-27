@@ -135,9 +135,9 @@ define([
                         return dashboardPage.startDeployment();
                     })
                     .assertElementDisappears('.dashboard-block .progress', 50000, 'Progress bar disappears after deployment')
-                    .assertElementAppears('.horizon', 5000, 'Deployment completed')
+                    .assertElementAppears('.links-block', 5000, 'Deployment completed')
                     .assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy')
-                    .findByCssSelector('.horizon a.btn-success')
+                    .findByLinkText('Horizon')
                         .getAttribute('href')
                         .then(function(value) {
                             return assert.isTrue(_.startsWith(value, 'http'), 'Link to Horizon is formed');

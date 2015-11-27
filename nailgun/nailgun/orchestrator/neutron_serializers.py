@@ -604,6 +604,18 @@ class NeutronNetworkDeploymentSerializer61(
     @classmethod
     def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups,
                         networks):
+        """Generate static routes for environment with multiple node groups.
+
+        Generate static routes for all networks in all node groups where
+        gateway is set.
+        :param node: Node instance
+        :param attrs: deployment attributes hash (is modified in method)
+        :param nm: Network Manager for current environment
+        :param netgroup_mapping: endpoint to network name mapping
+        :param netgroups: hash of network parameters hashes for node
+        :param networks: sequence of network parameters hashes
+        :return: None (attrs is modified)
+        """
         other_nets = nm.get_networks_not_on_node(node, networks)
 
         for ngname, brname in netgroup_mapping:
@@ -1423,6 +1435,37 @@ class NeutronNetworkDeploymentSerializer80(
                          consts.DEFAULT_BRIDGES_NAMES.br_baremetal],
                 provider='ovs'))
         return transformations
+
+    @classmethod
+    def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups,
+                        networks):
+        """Generate static routes for environment with multiple node groups.
+
+        Generate static routes for all networks in all node groups where
+        gateway is set. Routes are not generated between shared L3 segments.
+        :param node: Node instance
+        :param attrs: deployment attributes hash (is modified in method)
+        :param nm: Network Manager for current environment
+        :param netgroup_mapping: endpoint to network name mapping
+        :param netgroups: hash of network parameters hashes for node
+        :param networks: sequence of network parameters hashes
+        :return: None (attrs is modified)
+        """
+        other_nets = nm.get_networks_not_on_node(node, networks)
+        cidrs_in_use = set(ng['cidr'] for ng in netgroups if 'cidr' in ng)
+
+        for ngname, brname in netgroup_mapping:
+            netgroup = netgroups[ngname]
+            if netgroup.get('gateway') and netgroup.get('cidr'):
+                via = netgroup['gateway']
+                attrs['endpoints'][brname]['routes'] = []
+                for cidr in other_nets.get(ngname, []):
+                    if cidr not in cidrs_in_use:
+                        attrs['endpoints'][brname]['routes'].append({
+                            'net': cidr,
+                            'via': via
+                        })
+                        cidrs_in_use.add(cidr)
 
 
 class NeutronNetworkTemplateSerializer80(

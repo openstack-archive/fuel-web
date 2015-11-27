@@ -59,6 +59,7 @@ from nailgun.db.sqlalchemy.models import ClusterPluginLink
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
+from nailgun.db.sqlalchemy.models import PluginLink
 from nailgun.db.sqlalchemy.models import Task
 
 
@@ -532,6 +533,24 @@ class EnvironmentManager(object):
         self.db.add(cluster_plugin_link)
         self.db.commit()
         return cluster_plugin_link
+
+    def create_plugin_link(self, **kwargs):
+        dash_data = {
+            "title": "title",
+            "url": "url",
+            "description": "description",
+            "plugin_id": None,
+            "hidden": False
+        }
+        if kwargs:
+            dash_data.update(kwargs)
+        plugin_link = PluginLink()
+        plugin_link.plugin_id = dash_data.get("plugin_id")
+        for f, v in six.iteritems(dash_data):
+            setattr(plugin_link, f, v)
+        self.db.add(plugin_link)
+        self.db.commit()
+        return plugin_link
 
     def default_metadata(self):
         item = self.find_item_by_pk_model(

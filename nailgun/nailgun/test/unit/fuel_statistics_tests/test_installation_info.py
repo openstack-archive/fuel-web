@@ -300,7 +300,7 @@ class TestInstallationInfo(BaseTestCase):
             "version",
             "releases",
             "fuel_version",
-            "package_version",
+            "package_version"
         )
 
         expected_info = dict(

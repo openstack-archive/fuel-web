@@ -55,7 +55,7 @@ from nailgun.logger import logger
 from nailgun.db.sqlalchemy.fixman import load_fake_deployment_tasks
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
-from nailgun.db.sqlalchemy.models import DashboardEntry
+from nailgun.db.sqlalchemy.models import ClusterPluginLink
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
@@ -497,22 +497,23 @@ class EnvironmentManager(object):
             ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
         return plugin
 
-    def create_dashboard_entry(self, **kwargs):
+    def create_cluster_plugin_link(self, **kwargs):
         dash_data = {
             "title": "title",
             "url": "url",
             "description": "description",
-            "cluster_id": None
+            "cluster_id": None,
+            "hidden": False
         }
         if kwargs:
             dash_data.update(kwargs)
-        dashboard_entry = DashboardEntry()
-        dashboard_entry.cluster_id = dash_data.get("cluster_id")
-        for f, v in dash_data.iteritems():
-            setattr(dashboard_entry, f, v)
-        self.db.add(dashboard_entry)
+        cluster_plugin_link = ClusterPluginLink()
+        cluster_plugin_link.cluster_id = dash_data.get("cluster_id")
+        for f, v in six.iteritems(dash_data):
+            setattr(cluster_plugin_link, f, v)
+        self.db.add(cluster_plugin_link)
         self.db.commit()
-        return dashboard_entry
+        return cluster_plugin_link
 
     def default_metadata(self):
         item = self.find_item_by_pk_model(

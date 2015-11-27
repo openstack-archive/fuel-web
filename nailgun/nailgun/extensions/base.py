@@ -28,10 +28,13 @@ def get_all_extensions():
         import ClusterUpgradeExtension
     from nailgun.extensions.volume_manager.extension \
         import VolumeManagerExtension
+    from nailgun.extensions.bareon_notifier.extension \
+        import BareonNotifierExtension
 
     extensions = [
         VolumeManagerExtension,
         ClusterUpgradeExtension,
+        BareonNotifierExtension,
     ]
     return extensions
 

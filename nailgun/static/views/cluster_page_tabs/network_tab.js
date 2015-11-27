@@ -1000,8 +1000,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
     var NodeNetworkGroup = React.createClass({
         render: function() {
-            var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups} = this.props,
-                verificationErrors = this.props.verificationErrors,
+            var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration'),
                 isMultiRack = nodeNetworkGroups.length > 1;
             return (
@@ -1013,7 +1012,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             locked={this.props.locked}
                             removeNodeNetworkGroup={this.props.removeNodeNetworkGroup}
                             setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
-                            isRenamingPossible={cluster.isAvailableForSettingsChanges()}
+                            isRenamingPossible={cluster.isAvailableForSettingsChanges() && !nodeNetworkGroup.isDefault()}
                         />
                     }
                     {networks.map(function(network) {
@@ -1039,7 +1038,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             var {cluster, nodeNetworkGroups} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration'),
                 errors,
-                isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
+                isNovaEnvironment = cluster.get('net_provider') == 'nova_network',
+                // @FIXME (morale): remove this after capitalization of default
+                // node network group name on the backend
+                isDefaultNodeNetworkGroup = false;
 
             networkConfiguration.isValid();
 
@@ -1065,14 +1067,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 if (isNetworkGroupPill) {
                     if (isNovaEnvironment) {
                         isInvalid = networksErrors;
+                        isDefaultNodeNetworkGroup = true;
                     } else {
+                        var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: groupName});
+                        isDefaultNodeNetworkGroup = currentNodeNetworkGroup.isDefault();
                         isInvalid = networksErrors &&
                             !!networksErrors[nodeNetworkGroups.findWhere({name: groupName}).id];
-                    }
-                    //FIXME(morale): this is a hack until default node network group
-                    //name is capitalized on backend
-                    if (groupName == 'default' && !this.props.isMultiRack) {
-                        tabLabel = 'Default';
                     }
                 } else {
                     tabLabel = i18n(networkTabNS + 'tabs.' + groupName);
@@ -1090,7 +1090,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     <li
                         key={groupName}
                         role='presentation'
-                        className={utils.classNames({active: isActive, warning: this.props.isMultiRack && groupName == 'network_verification'})}
+                        className={utils.classNames({
+                            active: isActive,
+                            warning: this.props.isMultiRack && groupName == 'network_verification',
+                            default: isDefaultNodeNetworkGroup
+                        })}
                         onClick={_.partial(this.props.setActiveNetworkSectionName, groupName)}
                     >
                         <a className={'subtab-link-' + groupName}>
@@ -1149,20 +1153,14 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         onNodeNetworkGroupNameKeyDown: function(e) {
             this.setState({nodeNetworkGroupNameChangingError: null});
             if (e.key == 'Enter') {
-                var element = this.refs['node-group-title-input'].getInputDOMNode();
+                var element = this.refs['node-group-title-input'].getInputDOMNode(),
+                    validationError;
                 this.setState({actionInProgress: true});
                 var nodeNetworkGroupNewName = _.trim(element.value),
-                    currentNodeNetworkGroup = this.props.currentNodeNetworkGroup,
-                    nodeNetworkGroups = this.props.nodeNetworkGroups,
-                    validationError;
+                    currentNodeNetworkGroup = this.props.currentNodeNetworkGroup;
 
                 if (nodeNetworkGroupNewName != currentNodeNetworkGroup.get('name')) {
-                    if (_.contains(nodeNetworkGroups.pluck('name'), nodeNetworkGroupNewName)) {
-                        validationError = i18n(networkTabNS + 'node_network_group_duplicate_error');
-                        if (nodeNetworkGroupNewName == nodeNetworkGroups.min('id').get('name')) {
-                            validationError = i18n(networkTabNS + 'node_network_group_default_name');
-                        }
-                    }
+                    validationError = currentNodeNetworkGroup.validate({name: nodeNetworkGroupNewName});
                     if (validationError) {
                         this.setState({
                             nodeNetworkGroupNameChangingError: validationError
@@ -1197,13 +1195,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             this.startRenaming(e);
         },
         render: function() {
-            var currentNodeNetworkGroup = this.props.currentNodeNetworkGroup,
-                nodeNetworkGroups = this.props.nodeNetworkGroups,
-                isDefaultNodeNetworkGroup = _.min(nodeNetworkGroups.pluck('id')) == currentNodeNetworkGroup.id,
+            var {currentNodeNetworkGroup, isRenamingPossible} = this.props,
+                isDefault = currentNodeNetworkGroup.isDefault(),
                 classes = {
                     'network-group-name': true,
-                    default: isDefaultNodeNetworkGroup,
-                    'no-rename': !this.props.isRenamingPossible
+                    default: isDefault,
+                    'no-rename': !isRenamingPossible
                 };
             return (
                 <div className={utils.classNames(classes)} key={currentNodeNetworkGroup.id}>
@@ -1222,20 +1219,20 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             autoFocus
                         />
                     :
-                        <div className='name' onClick={this.props.isRenamingPossible && this.startNodeNetworkGroupRenaming}>
+                        <div className='name' onClick={isRenamingPossible && this.startNodeNetworkGroupRenaming}>
                             <button className='btn-link'>
                                 {currentNodeNetworkGroup.get('name')}
                             </button>
-                            {this.props.isRenamingPossible &&
+                            {isRenamingPossible &&
                                 <i className='glyphicon glyphicon-pencil'></i>
                             }
                         </div>
                     }
-                    {isDefaultNodeNetworkGroup &&
+                    {isDefault ?
                         <span className='explanation'>{i18n(networkTabNS + 'default_node_network_group_info')}</span>
-                    }
-                    {!isDefaultNodeNetworkGroup && !this.state.isRenaming &&
-                        <i className='glyphicon glyphicon-remove' onClick={this.props.removeNodeNetworkGroup}></i>
+                    :
+                        !this.state.isRenaming &&
+                            <i className='glyphicon glyphicon-remove' onClick={this.props.removeNodeNetworkGroup}></i>
                     }
                 </div>
             );

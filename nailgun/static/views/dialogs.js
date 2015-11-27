@@ -1356,13 +1356,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             }
         },
         handleChange: function(name, value) {
-            var validationError = null,
-                nodeNetworkGroups = this.props.nodeNetworkGroups;
-            if (nodeNetworkGroups.findWhere({name: value})) {
+            var validationError = null;
+            if (this.props.nodeNetworkGroups.findWhere({name: value})) {
                 validationError = i18n(this.props.ns + 'node_network_group_duplicate_error');
-                if (value == nodeNetworkGroups.min('id').get('name')) {
-                    validationError = i18n(this.props.ns + 'node_network_group_default_name');
-                }
+            }
+            if (value.toLowerCase() == 'default') {
+                validationError = i18n(this.props.ns + 'node_network_group_default_name');
             }
             this.setState({
                 error: validationError,

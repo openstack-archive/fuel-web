@@ -105,7 +105,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         [
                             (failedDeploymentTask || stopDeploymentTask || hasOfflineNodes || resetDeploymentTask || isOperational) &&
                                 <DeploymentResult cluster={cluster} />,
-                            isOperational && <HorizonBlock cluster={cluster} />
+                            isOperational && <HorizonBlock cluster={cluster} />,
+                            isOperational && <PluginLinks cluster={cluster} />
                         ]
                     }
                     {release.get('state') == 'unavailable' &&
@@ -144,31 +145,94 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         isNew={isNew}
                     />
                     <DocumentationLinks />
-                    <PluginLinks cluster={cluster} />
                 </div>
             );
         }
     });
 
     var HorizonBlock = React.createClass({
-        render: function() {
+        render() {
             var cluster = this.props.cluster,
                 isSecureProtocolUsed = cluster.get('settings').get('public_ssl.horizon.value'),
                 ipValue = 'http://' + cluster.get('networkConfiguration').get('public_vip'),
                 fqdnValue = 'https://' + cluster.get('settings').get('public_ssl.hostname.value');
             return (
                 <div className='row plugins-block'>
-                    <div className='col-xs-12 plugin-entry horizon'>
-                        <div className='title'>{i18n(namespace + 'horizon')}</div>
-                        <div className='description'>{i18n(namespace + 'horizon_description')}</div>
-                        <a
-                            className='btn btn-success'
-                            target='_blank'
-                            href={isSecureProtocolUsed ? fqdnValue : ipValue}
-                        >
-                            {i18n(namespace + 'go_to_horizon')}
-                        </a>
+                    <PluginLink
+                        title={i18n(namespace + 'horizon')}
+                        url={isSecureProtocolUsed ? fqdnValue : ipValue}
+                        className='col-xs-12 horizon'
+                        description={i18n(namespace + 'horizon_description')}
+                        btnTitle={i18n(namespace + 'go_to_horizon')}
+                        btnClass='btn-success'
+                    />
+                </div>
+            );
+        }
+    });
+
+    var PluginLinks = React.createClass({
+        processURL(url) {
+            // no processing required for absolute url
+            if (/^(?:[a-z]+:)?\/\//i.test(url)) return url;
+            // relative url processing
+            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
+            return (
+                sslSettings.services.value ?
+                    'https://' + sslSettings.hostname.value
+                :
+                    'http://' + this.props.cluster.get('networkConfiguration').get('public_vip')
+                ) + url;
+        },
+        renderPluginLink(link) {
+            return <PluginLink
+                title={link.get('title')}
+                url={this.processURL(link.get('url'))}
+                className='col-xs-6'
+                description={link.get('description')}
+            />;
+        },
+        render() {
+            var pluginLinks = this.props.cluster.get('pluginLinks');
+            if (!pluginLinks.length) return null;
+            return (
+                <div className='row content-elements'>
+                    <div className='col-xs-12 plugin-links'>
+                        {pluginLinks.map((link, index) => {
+                            if (index % 2 == 0) return (
+                                <div className='row' key={index}>
+                                    {this.renderPluginLink(link)}
+                                    {index + 1 < pluginLinks.length && this.renderPluginLink(pluginLinks.at(index + 1))}
+                                </div>
+                            );
+                        }, this)}
                     </div>
+                </div>
+            );
+        }
+    });
+
+    var PluginLink = React.createClass({
+        render() {
+            return (
+                <div className={'plugin-link ' + this.props.className}>
+                    <div className='title'>
+                        {this.props.btnTitle ?
+                            this.props.title
+                        :
+                            <a href={this.props.url} target='_blank'>{this.props.title}</a>
+                        }
+                    </div>
+                    <div className='description'>{this.props.description}</div>
+                    {this.props.btnTitle &&
+                        <a
+                            className={'btn btn-default ' + this.props.btnClass}
+                            target='_blank'
+                            href={this.props.url}
+                        >
+                            {this.props.btnTitle}
+                        </a>
+                    }
                 </div>
             );
         }
@@ -547,7 +611,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                 description='unsuccessful_deploy'
                                                 explanation='for_more_information_roles'
                                                 link='operations.html#troubleshooting'
-                                                linkTitle='user_guide'
+                                                btnTitle='user_guide'
                                             />
                                         }
                                         {!hasNodes &&
@@ -558,7 +622,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                     description='no_nodes_instruction'
                                                     explanation='for_more_information_roles'
                                                     link='user-guide.html#add-nodes-ug'
-                                                    linkTitle='user_guide'
+                                                    btnTitle='user_guide'
                                                 />
                                             ]
                                         }
@@ -577,7 +641,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                                     description='deployment_cannot_be_started'
                                                     explanation='for_more_information_roles'
                                                     link='user-guide.html#add-nodes-ug'
-                                                    linkTitle='user_guide'
+                                                    btnTitle='user_guide'
                                                     wrapperClass='invalid'
                                                 />,
                                                 <WarningsBlock
@@ -1032,59 +1096,8 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             return (
                 <div className={utils.classNames(classes)}>
                     {i18n(namespace + this.props.description) + ' '}
-                    <a href={link} target='_blank'>{i18n(namespace + this.props.linkTitle)}</a>
+                    <a href={link} target='_blank'>{i18n(namespace + this.props.btnTitle)}</a>
                     {this.props.explanation && ' ' + i18n(namespace + this.props.explanation)}
-                </div>
-            );
-        }
-    });
-
-    var PluginLinks = React.createClass({
-        processPluginURL(url) {
-            // no processing required for absolute url
-            if (/^(?:[a-z]+:)?\/\//i.test(url)) return url;
-            // relative url processing
-            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
-            return (
-                sslSettings.services.value ?
-                    'https://' + sslSettings.hostname.value
-                :
-                    'http://' + this.props.cluster.get('networkConfiguration').get('public_vip')
-                ) + url;
-        },
-        renderPluginLink(link) {
-            return (
-                <div className='plugin-link col-xs-6'>
-                    <a
-                        className='plugin-title'
-                        href={this.processPluginURL(link.get('url'))}
-                        target='_blank'
-                    >
-                        {link.get('title')}
-                    </a>
-                    <div className='plugin-description'>{link.get('description')}</div>
-                </div>
-            );
-        },
-        render() {
-            if (
-                this.props.cluster.get('status') != 'operational' ||
-                !this.props.cluster.get('pluginLinks').length
-            ) return null;
-            var pluginLinks = this.props.cluster.get('pluginLinks');
-            return (
-                <div className='row content-elements'>
-                    <div className='col-xs-12 title'>{i18n(namespace + 'plugin_links_block_title')}</div>
-                    <div className='col-xs-12 plugin-links'>
-                        {pluginLinks.map(function(link, index) {
-                            if (index % 2 == 0) return (
-                                <div className='row' key={index}>
-                                    {this.renderPluginLink(link)}
-                                    {index + 1 < pluginLinks.length && this.renderPluginLink(pluginLinks.at(index + 1))}
-                                </div>
-                            );
-                        }, this)}
-                    </div>
                 </div>
             );
         }

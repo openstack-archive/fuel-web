@@ -151,9 +151,26 @@ define([
             'Testing cluster networks: verification': function() {
                 return this.remote
                     .clickByCssSelector('.subtab-link-network_verification')
-                    .clickByCssSelector('.verify-networks-btn:not(:disabled)')
-                    .assertElementAppears('.network-alert', 2000,
-                        'At least two nodes are required to be in the environment for network verification')
+                    .assertElementDisabled('.verify-networks-btn', 'Verification button is disabled in case of no nodes')
+                    .assertElementTextEquals('.alert-warning',
+                        'At least two online nodes are required to be in the environment for network verification',
+                        'Not enough nodes warning is shown')
+                    .clickByCssSelector('.subtab-link-default')
+                    .then(function() {
+                        // Adding 2 controllers
+                        return common.addNodesToCluster(2, ['Controller']);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    })
+                    .findByCssSelector('.public input[name=gateway]')
+                        .clearValue()
+                        .type('172.16.0.2')
+                        .end()
+                    .clickByCssSelector('.subtab-link-network_verification')
+                    .clickByCssSelector('.verify-networks-btn')
+                    .assertElementAppears('.alert-danger.network-alert', 4000, 'Verification error is shown')
+                    .assertElementAppears('.alert-danger.network-alert', 'Address intersection', 'Verification result is shown in case of address intersection')
                     // Testing cluster networks: verification task deletion
                     .then(function() {
                         return networksPage.switchNetworkManager();

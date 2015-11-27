@@ -88,3 +88,5 @@ class Plugin(Base):
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")
+    links = relationship(
+        "PluginLink", backref="plugin", cascade="delete")

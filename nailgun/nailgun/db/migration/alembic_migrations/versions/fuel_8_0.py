@@ -115,6 +115,7 @@ def upgrade():
     upgrade_cluster_plugins()
     upgrade_add_baremetal_net()
     upgrade_with_components()
+    plugin_links_upgrade()
     cluster_plugin_links_upgrade()
     upgrade_master_settings()
     upgrade_all_network_data_from_string_to_appropriate_data_type()
@@ -126,6 +127,7 @@ def downgrade():
     downgrade_all_network_data_to_string()
     downgrade_master_settings()
     cluster_plugin_links_downgrade()
+    plugin_links_downgrade()
     downgrade_with_components()
     downgrade_add_baremetal_net()
     downgrade_cluster_plugins()
@@ -572,6 +574,35 @@ def cluster_plugin_links_upgrade():
                     'cluster_plugin_links', ['cluster_id'])
 
 
+def cluster_plugin_links_downgrade():
+    op.drop_table('cluster_plugin_links')
+
+
+def plugin_links_upgrade():
+    op.create_table(
+        'plugin_links',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('plugin_id', sa.Integer(), nullable=False),
+        sa.Column('title', sa.Text(), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.Column(
+            'hidden',
+            sa.Boolean(),
+            nullable=False,
+            server_default='false'
+        ),
+        sa.ForeignKeyConstraint(['plugin_id'], ['plugins.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('plugin_links_plugin_id_key',
+                    'plugin_links', ['plugin_id'])
+
+
+def plugin_links_downgrade():
+    op.drop_table('plugin_links')
+
+
 def upgrade_all_network_data_from_string_to_appropriate_data_type():
     convert_column_type('ip_addrs', 'ip_addr', 'inet')
     convert_column_type('ip_addr_ranges', 'first', 'inet')
@@ -632,7 +663,3 @@ def ip_type_to_string(table_name, column_name, string_len):
                                                                 column_name,
                                                                 string_len)
     )
-
-
-def cluster_plugin_links_downgrade():
-    op.drop_table('cluster_plugin_links')

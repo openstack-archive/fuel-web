@@ -52,6 +52,9 @@ from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.objects.plugin import ClusterPlugins
 
+from nailgun.objects.plugin_link import PluginLink
+from nailgun.objects.plugin_link import PluginLinkCollection
+
 from nailgun.objects.network_group import NetworkGroup
 from nailgun.objects.network_group import NetworkGroupCollection
 

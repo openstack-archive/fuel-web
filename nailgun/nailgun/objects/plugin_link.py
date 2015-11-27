@@ -14,30 +14,29 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.db.sqlalchemy.models import cluster_plugin_link \
-    as cluster_plugin_link_db_model
+from nailgun.db.sqlalchemy.models import plugin_link as plugin_link_db_model
 from nailgun.objects import base
 from nailgun.objects.serializers import plugin_link
 
 
-class ClusterPluginLink(base.NailgunObject):
+class PluginLink(base.NailgunObject):
 
-    model = cluster_plugin_link_db_model.ClusterPluginLink
+    model = plugin_link_db_model.PluginLink
     serializer = plugin_link.PluginLinkSerializer
 
 
-class ClusterPluginLinkCollection(base.NailgunCollection):
+class PluginLinkCollection(base.NailgunCollection):
 
-    single = ClusterPluginLink
+    single = PluginLink
 
     @classmethod
-    def get_by_cluster_id(cls, cluster_id):
-        if cluster_id is not None:
-            return cls.filter_by(None, cluster_id=cluster_id)
+    def get_by_plugin_id(cls, plugin_id):
+        if plugin_id is not None:
+            return cls.filter_by(None, plugin_id=plugin_id)
         else:
             return cls.all()
 
     @classmethod
-    def create_with_cluster_id(cls, data, cluster_id):
-        data['cluster_id'] = cluster_id
+    def create_with_plugin_id(cls, data, plugin_id):
+        data['plugin_id'] = plugin_id
         return cls.create(data)

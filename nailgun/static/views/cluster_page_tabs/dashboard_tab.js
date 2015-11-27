@@ -367,6 +367,19 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             );
         },
         validations: [
+            // check if TLS settings are not configured
+            function(cluster) {
+                var sslSettings = cluster.get('settings').get('public_ssl');
+                if (!sslSettings.horizon.value && !sslSettings.services.value) {
+                    return {warning: [i18n(this.ns + 'tls_not_enabled')]};
+                }
+                if (!sslSettings.horizon.value) {
+                    return {warning: [i18n(this.ns + 'tls_for_horizon_not_enabled')]};
+                }
+                if (!sslSettings.services.value) {
+                    return {warning: [i18n(this.ns + 'tls_for_services_not_enabled')]};
+                }
+            },
             // VCenter
             function(cluster) {
                 if (cluster.get('settings').get('common.use_vcenter.value')) {

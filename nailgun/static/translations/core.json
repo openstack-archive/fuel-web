@@ -934,6 +934,9 @@
                     "networks_link": "Networks tab",
                     "invalid_settings": "Environment settings are invalid.",
                     "settings_link": "Settings tab",
+                    "tls_not_enabled": "TLS is not enabled. It is highly recommended to enable and configure TLS.",
+                    "tls_for_horizon_not_enabled": "TLS is not enabled for Horizon public endpoint. It is highly recommended to enable and configure TLS for Horizon.",
+                    "tls_for_services_not_enabled": "TLS is not enabled for OpenStack public endpoints. It is highly recommended to enable and configure TLS.",
                     "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes."
                 },
                 "provision_vms": {

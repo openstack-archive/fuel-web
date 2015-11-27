@@ -897,7 +897,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                         key='add_node_group'
                                         className='btn btn-default add-nodegroup-btn pull-right'
                                         onClick={_.partial(this.addNodeNetworkGroup, hasChanges)}
-                                        disabled={isLocked}
+                                        disabled={!!cluster.task({group: ['deployment', 'network'], active: true}) || this.state.actionInProgress}
                                     >
                                         {hasChanges && <i className='glyphicon glyphicon-danger-sign'/>}
                                         {i18n(networkTabNS + 'add_node_network_group')}
@@ -1014,6 +1014,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             locked={this.props.locked}
                             removeNodeNetworkGroup={this.props.removeNodeNetworkGroup}
                             setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
+                            isRenamingPossible={cluster.isAvailableForSettingsChanges()}
                         />
                     }
                     {networks.map(function(network) {
@@ -1202,7 +1203,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 isDefaultNodeNetworkGroup = _.min(nodeNetworkGroups.pluck('id')) == currentNodeNetworkGroup.id,
                 classes = {
                     'network-group-name': true,
-                    default: isDefaultNodeNetworkGroup
+                    default: isDefaultNodeNetworkGroup,
+                    'no-rename': !this.props.isRenamingPossible
                 };
             return (
                 <div className={utils.classNames(classes)} key={currentNodeNetworkGroup.id}>
@@ -1221,11 +1223,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             autoFocus
                         />
                     :
-                        <div className='name' onClick={this.startNodeNetworkGroupRenaming}>
+                        <div className='name' onClick={this.props.isRenamingPossible && this.startNodeNetworkGroupRenaming}>
                             <button className='btn-link'>
                                 {currentNodeNetworkGroup.get('name')}
                             </button>
-                            <i className='glyphicon glyphicon-pencil'></i>
+                            {this.props.isRenamingPossible &&
+                                <i className='glyphicon glyphicon-pencil'></i>
+                            }
                         </div>
                     }
                     {isDefaultNodeNetworkGroup &&

@@ -78,8 +78,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         [
                             cluster.task({group: 'deployment', active: false}) &&
                                 <DeploymentResult key='task-result' cluster={cluster} />,
-                            cluster.get('status') == 'operational' &&
+                            cluster.get('status') == 'operational' && [
                                 <HorizonBlock key='horizon' cluster={cluster} />,
+                                <PluginLinks key='plugins' cluster={cluster} />
+                            ],
                             (nodes.hasChanges() || cluster.needsRedeployment()) &&
                                 <DeployReadinessBlock
                                     key='changes-to-deploy'
@@ -105,33 +107,89 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     }
                     <ClusterInfo cluster={cluster} />
                     <DocumentationLinks />
-                    <PluginLinks cluster={cluster} />
                 </div>
             );
         }
     });
 
     var HorizonBlock = React.createClass({
-        render: function() {
+        render() {
             var cluster = this.props.cluster,
                 isSecureProtocolUsed = cluster.get('settings').get('public_ssl.horizon.value'),
                 ipValue = 'http://' + cluster.get('networkConfiguration').get('public_vip'),
                 fqdnValue = 'https://' + cluster.get('settings').get('public_ssl.hostname.value');
             return (
                 <div className='row'>
-                    <div className='dashboard-block clearfix horizon'>
+                    <div className='dashboard-block plugins-block horizon clearfix'>
+                        <PluginLink
+                            title={i18n(namespace + 'horizon')}
+                            url={isSecureProtocolUsed ? fqdnValue : ipValue}
+                            className='col-xs-12 horizon'
+                            description={i18n(namespace + 'horizon_description')}
+                        />
+                    </div>
+                </div>
+            );
+        }
+    });
+
+    var PluginLinks = React.createClass({
+        processURL(url) {
+            // no processing required for absolute url
+            if (/^(?:[a-z]+:)?\/\//i.test(url)) return url;
+            // relative url processing
+            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
+            return (
+                sslSettings.services.value ?
+                    'https://' + sslSettings.hostname.value
+                :
+                    'http://' + this.props.cluster.get('networkConfiguration').get('public_vip')
+                ) + url;
+        },
+        renderPluginLink(link) {
+            return <PluginLink
+                title={link.get('title')}
+                url={this.processURL(link.get('url'))}
+                className='col-xs-6'
+                description={link.get('description')}
+            />;
+        },
+        render() {
+            var pluginLinks = this.props.cluster.get('pluginLinks');
+            if (!pluginLinks.length) return null;
+            return (
+                <div className='row content-elements'>
+                    <div className='dashboard-block plugins-block clearfix'>
                         <div className='col-xs-12'>
-                            <h4>{i18n(namespace + 'horizon')}</h4>
-                            <div className='description'>{i18n(namespace + 'horizon_description')}</div>
-                            <a
-                                className='btn btn-success'
-                                target='_blank'
-                                href={isSecureProtocolUsed ? fqdnValue : ipValue}
-                            >
-                                {i18n(namespace + 'go_to_horizon')}
-                            </a>
+                            {pluginLinks.map((link, index) => {
+                                if (index % 2 == 0) return (
+                                    <div className='row' key={index}>
+                                        {this.renderPluginLink(link)}
+                                        {index + 1 < pluginLinks.length && this.renderPluginLink(pluginLinks.at(index + 1))}
+                                    </div>
+                                );
+                            }, this)}
                         </div>
                     </div>
+                </div>
+            );
+        }
+    });
+
+    var PluginLink = React.createClass({
+        propTypes: {
+            title: React.PropTypes.string.isRequired,
+            url: React.PropTypes.string.isRequired,
+            description: React.PropTypes.node,
+            className: React.PropTypes.node
+        },
+        render() {
+            return (
+                <div className={'plugin-link ' + this.props.className}>
+                    <div className='title'>
+                        <a href={this.props.url} target='_blank'>{this.props.title}</a>
+                    </div>
+                    <div className='description'>{this.props.description}</div>
                 </div>
             );
         }
@@ -929,57 +987,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     {i18n(namespace + this.props.description) + ' '}
                     <a href={link} target='_blank'>{i18n(namespace + this.props.linkTitle)}</a>
                     {this.props.explanation ? ' ' + i18n(namespace + this.props.explanation) : '.'}
-                </div>
-            );
-        }
-    });
-
-    var PluginLinks = React.createClass({
-        processPluginURL(url) {
-            // no processing required for absolute url
-            if (/^(?:[a-z]+:)?\/\//i.test(url)) return url;
-            // relative url processing
-            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
-            return (
-                sslSettings.services.value ?
-                    'https://' + sslSettings.hostname.value
-                :
-                    'http://' + this.props.cluster.get('networkConfiguration').get('public_vip')
-                ) + url;
-        },
-        renderPluginLink(link) {
-            return (
-                <div className='plugin-link col-xs-6'>
-                    <a
-                        className='plugin-title'
-                        href={this.processPluginURL(link.get('url'))}
-                        target='_blank'
-                    >
-                        {link.get('title')}
-                    </a>
-                    <div className='plugin-description'>{link.get('description')}</div>
-                </div>
-            );
-        },
-        render() {
-            if (
-                this.props.cluster.get('status') != 'operational' ||
-                !this.props.cluster.get('pluginLinks').length
-            ) return null;
-            var pluginLinks = this.props.cluster.get('pluginLinks');
-            return (
-                <div className='row content-elements'>
-                    <div className='col-xs-12 title'>{i18n(namespace + 'plugin_links_block_title')}</div>
-                    <div className='col-xs-12 plugin-links'>
-                        {pluginLinks.map(function(link, index) {
-                            if (index % 2 == 0) return (
-                                <div className='row' key={index}>
-                                    {this.renderPluginLink(link)}
-                                    {index + 1 < pluginLinks.length && this.renderPluginLink(pluginLinks.at(index + 1))}
-                                </div>
-                            );
-                        }, this)}
-                    </div>
                 </div>
             );
         }

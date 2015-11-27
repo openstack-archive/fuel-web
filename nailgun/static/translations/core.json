@@ -648,6 +648,7 @@
                     "default_node_network_group_info": "This node network group uses shared admin network and cannot be deleted",
                     "save_changes_warning": "It is necessary to save changes before creating a new node network group",
                     "verification_multirack_warning": "Network verification is disabled for environments containing more than one node network group",
+                    "not_enough_nodes": "At least two online nodes are required to verify environment network configuration",
                     "verify_networks": {
                         "step_0": "Network verification checks the following:",
                         "step_1": "1. L2 connectivity checks between nodes in the environment.",

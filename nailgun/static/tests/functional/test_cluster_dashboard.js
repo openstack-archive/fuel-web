@@ -123,8 +123,8 @@ define([
                         return clusterPage.goToTab('Networks');
                     })
                     .clickByCssSelector('.subtab-link-network_verification')
-                    .clickByCssSelector('.verify-networks-btn')
-                    .assertElementAppears('.network-alert.alert-danger', 200, 'Network verification warning appears if only one node added')
+                    .assertElementContainsText('.alert-warning', 'At least two online nodes are required',
+                        'Network verification warning appears if only one node added')
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })

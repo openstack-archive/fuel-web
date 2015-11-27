@@ -21,15 +21,17 @@ define([
     'tests/functional/pages/common',
     'tests/functional/pages/networks',
     'tests/functional/pages/cluster',
-    'tests/functional/pages/modal'
-], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow) {
+    'tests/functional/pages/modal',
+    'tests/functional/pages/dashboard'
+], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow, DashboardPage) {
     'use strict';
 
     registerSuite(function() {
         var common,
             networksPage,
             clusterPage,
-            clusterName;
+            clusterName,
+            dashboardPage;
 
         return {
             name: 'Networks page Nova Network tests',
@@ -38,6 +40,7 @@ define([
                 networksPage = new NetworksPage(this.remote);
                 clusterPage = new ClusterPage(this.remote);
                 clusterName = common.pickRandomName('Test Cluster');
+                dashboardPage = new DashboardPage(this.remote);
 
                 return this.remote
                     .then(function() {
@@ -151,15 +154,41 @@ define([
             'Testing cluster networks: verification': function() {
                 return this.remote
                     .clickByCssSelector('.subtab-link-network_verification')
-                    .clickByCssSelector('.verify-networks-btn:not(:disabled)')
-                    .assertElementAppears('.network-alert', 2000,
-                        'At least two nodes are required to be in the environment for network verification')
+                    .assertElementDisabled('.verify-networks-btn', 'Verification button is disabled in case of no nodes')
+                    .assertElementTextEquals('.alert-warning',
+                        'At least two online nodes are required to verify environment network configuration',
+                        'Not enough nodes warning is shown')
+                    .clickByCssSelector('.subtab-link-default')
+                    .then(function() {
+                        // Adding 2 controllers
+                        return common.addNodesToCluster(2, ['Controller']);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    })
+                    .findByCssSelector('.public input[name=gateway]')
+                        .clearValue()
+                        .type('172.16.0.2')
+                        .end()
+                    .clickByCssSelector('.subtab-link-network_verification')
+                    .clickByCssSelector('.verify-networks-btn')
+                    .assertElementAppears('.alert-danger.network-alert', 4000, 'Verification error is shown')
+                    .assertElementAppears('.alert-danger.network-alert', 'Address intersection', 'Verification result is shown in case of address intersection')
                     // Testing cluster networks: verification task deletion
                     .then(function() {
                         return networksPage.switchNetworkManager();
                     })
                     .clickByCssSelector('.subtab-link-network_verification')
-                    .assertElementNotExists('.page-control-box .alert', 'Verification task was removed after settings has been changed');
+                    .assertElementNotExists('.page-control-box .alert', 'Verification task was removed after settings has been changed')
+                    .clickByCssSelector('.btn-revert-changes')
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .then(function() {
+                        return dashboardPage.discardChanges();
+                    }) .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    });
             },
             'Check VlanID field validation': function() {
                 return this.remote

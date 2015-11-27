@@ -218,7 +218,7 @@ class InstallationInfo(object):
                     vmware_attributes_editable,
                     self.vmware_attributes_white_list
                 ),
-                'plugin_links': self.get_cluster_plugin_links(
+                'plugin_links': self.get_plugin_links(
                     cluster.plugin_links),
                 'net_provider': cluster.net_provider,
                 'fuel_version': cluster.fuel_version,
@@ -324,9 +324,9 @@ class InstallationInfo(object):
             groups_info.append(group_info)
         return groups_info
 
-    def get_cluster_plugin_links(self, plugin_links):
-        return [{'title': e.title, 'description': e.description, 'id': e.id}
-                for e in plugin_links]
+    def get_plugin_links(self, plugin_links):
+        return [{'id': e.id, 'title': e.title, 'description': e.description,
+                 'hidden': e.hidden} for e in plugin_links]
 
     def get_installation_info(self):
         clusters_info = self.get_clusters_info()

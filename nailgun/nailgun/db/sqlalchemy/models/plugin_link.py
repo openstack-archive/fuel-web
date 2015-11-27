@@ -14,15 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.serializers.base import BasicSerializer
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import Text
+
+from nailgun.db.sqlalchemy.models.base import Base
 
 
-class ClusterPluginLinkSerializer(BasicSerializer):
-
-    fields = (
-        "id",
-        "title",
-        "url",
-        "description",
-        "hidden"
-    )
+class PluginLink(Base):
+    __tablename__ = 'plugin_links'
+    id = Column(Integer, primary_key=True)
+    plugin_id = Column(Integer, ForeignKey('plugins.id'), nullable=False)
+    title = Column(Text, nullable=False)
+    url = Column(Text, nullable=False)
+    description = Column(Text)
+    hidden = Column(Boolean, default=False)

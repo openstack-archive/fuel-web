@@ -44,6 +44,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 modelOrCollection: function(props) {return props.cluster.get('nodes');},
                 renderOn: 'update change'
             }),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {return props.cluster.get('pluginLinks');},
+                renderOn: 'update change'
+            }),
             componentMixins.backboneMixin('cluster', 'change'),
             componentMixins.pollingMixin(20, true)
         ],
@@ -140,6 +144,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         isNew={isNew}
                     />
                     <DocumentationLinks />
+                    <PluginLinks cluster={cluster} />
                 </div>
             );
         }
@@ -1029,6 +1034,57 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                     {i18n(namespace + this.props.description) + ' '}
                     <a href={link} target='_blank'>{i18n(namespace + this.props.linkTitle)}</a>
                     {this.props.explanation && ' ' + i18n(namespace + this.props.explanation)}
+                </div>
+            );
+        }
+    });
+
+    var PluginLinks = React.createClass({
+        processPluginURL(url) {
+            // no processing required for absolute url
+            if (/^(?:[a-z]+:)?\/\//i.test(url)) return url;
+            // relative url processing
+            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
+            return (
+                sslSettings.services.value ?
+                    'https://' + sslSettings.hostname.value
+                :
+                    'http://' + this.props.cluster.get('networkConfiguration').get('public_vip')
+                ) + url;
+        },
+        renderPluginLink(link) {
+            return (
+                <div className='plugin-link col-xs-6'>
+                    <a
+                        className='plugin-title'
+                        href={this.processPluginURL(link.get('url'))}
+                        target='_blank'
+                    >
+                        {link.get('title')}
+                    </a>
+                    <div className='plugin-description'>{link.get('description')}</div>
+                </div>
+            );
+        },
+        render() {
+            if (
+                this.props.cluster.get('status') != 'operational' ||
+                !this.props.cluster.get('pluginLinks').length
+            ) return null;
+            var pluginLinks = this.props.cluster.get('pluginLinks');
+            return (
+                <div className='row content-elements'>
+                    <div className='col-xs-12 title'>{i18n(namespace + 'plugin_links_block_title')}</div>
+                    <div className='col-xs-12 plugin-links'>
+                        {pluginLinks.map(function(link, index) {
+                            if (index % 2 == 0) return (
+                                <div className='row' key={index}>
+                                    {this.renderPluginLink(link)}
+                                    {index + 1 < pluginLinks.length && this.renderPluginLink(pluginLinks.at(index + 1))}
+                                </div>
+                            );
+                        }, this)}
+                    </div>
                 </div>
             );
         }

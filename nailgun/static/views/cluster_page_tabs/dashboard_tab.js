@@ -367,6 +367,13 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             );
         },
         validations: [
+            // check if TLS settings are not configured
+            function(cluster) {
+                var sslSettings = cluster.get('settings').get('public_ssl');
+                return !sslSettings.horizon.value && !sslSettings.services.value && {
+                    warning: [i18n(this.ns + 'ssl_not_configured')]
+                };
+            },
             // VCenter
             function(cluster) {
                 if (cluster.get('settings').get('common.use_vcenter.value')) {

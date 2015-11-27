@@ -931,6 +931,7 @@
                     "networks_link": "Networks tab",
                     "invalid_settings": "Environment settings are invalid.",
                     "settings_link": "Settings tab",
+                    "ssl_not_configured": "TLS settings are not configured",
                     "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes."
                 },
                 "provision_vms": {

@@ -44,6 +44,7 @@ from nailgun.db.sqlalchemy.models.network_config import NovaNetworkConfig
 
 from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.cluster_plugin_link import ClusterPluginLink
+from nailgun.db.sqlalchemy.models.plugin_link import PluginLink
 
 from nailgun.db.sqlalchemy.models.task import Task
 

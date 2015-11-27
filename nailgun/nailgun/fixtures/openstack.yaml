@@ -1926,7 +1926,7 @@
           - name: network:neutron:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
     modes: ['ha_compact']
-    extensions: ['volume_manager']
+    extensions: ['volume_manager', 'bareon']
 - pk: 1
   extend: *base_release
   fields:

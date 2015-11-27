@@ -353,7 +353,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         return {
                             name: groupId,
                             label: nodeNetworkGroup ?
-                                    nodeNetworkGroup.get('name') + (this.props.cluster ? '' : ' (' + this.props.clusters.get(nodeNetworkGroup.get('cluster')).get('name') + ')')
+                                    nodeNetworkGroup.get('name') + (this.props.cluster ? '' : ' (' + this.props.clusters.get(nodeNetworkGroup.get('cluster_id')).get('name') + ')')
                                 :
                                     i18n('common.not_specified')
                         };

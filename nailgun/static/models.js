@@ -1255,7 +1255,27 @@ define([
 
     models.NodeNetworkGroup = BaseModel.extend({
         constructorName: 'NodeNetworkGroup',
-        urlRoot: '/api/nodegroups'
+        urlRoot: '/api/nodegroups',
+        isDefault: function() {
+            return _.min(_.pluck(this.collection.where({cluster_id: this.get('cluster_id')}), 'id')) == this.id;
+        },
+        validate: function(options) {
+            var nodeNetworkGroupNewName = options.name,
+                validationError,
+                networkTabNS = 'cluster_page.network_tab.',
+                nodeNetworkGroups = this.collection || options.nodeNetworkGroups;
+            if (!nodeNetworkGroups) return null;
+            if (_.contains(nodeNetworkGroups.pluck('name'), nodeNetworkGroupNewName)) {
+                validationError = i18n(networkTabNS + 'node_network_group_duplicate_error');
+            }
+            if (nodeNetworkGroupNewName.toLowerCase() == 'default') {
+                validationError = i18n(networkTabNS + 'node_network_group_default_name');
+            }
+            if (!nodeNetworkGroupNewName.match(utils.regexes.nodeNetworkGroupName)) {
+                validationError = i18n(networkTabNS + 'validation.invalid_node_network_group_name');
+            }
+            return validationError;
+        }
     });
 
     models.NodeNetworkGroups = BaseCollection.extend(cacheMixin).extend({

@@ -1332,6 +1332,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
         objects.ClusterPlugins.set_attributes(self.cluster.id,
                                               plugin.id,
                                               enabled=True)
+        self.db.refresh(plugin)
         return plugin
 
     def test_no_plugins_no_additional_roles(self):

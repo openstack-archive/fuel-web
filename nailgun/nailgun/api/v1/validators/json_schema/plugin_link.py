@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-CLUSTER_PLUGIN_LINK_SCHEMA = {
+PLUGIN_LINK_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'object',
     'properties': {
@@ -27,12 +27,12 @@ CLUSTER_PLUGIN_LINK_SCHEMA = {
     'additionalProperties': False
 }
 
-CLUSTER_PLUGIN_LINKS_SCHEMA = {
+PLUGIN_LINKS_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'array',
-    'items': CLUSTER_PLUGIN_LINK_SCHEMA}
+    'items': PLUGIN_LINK_SCHEMA}
 
-CLUSTER_PLUGIN_LINK_UPDATE_SCHEMA = {
+PLUGIN_LINK_UPDATE_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'object',
     'properties': {

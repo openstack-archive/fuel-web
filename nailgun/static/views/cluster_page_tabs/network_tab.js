@@ -858,10 +858,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 networkVerifyTask = cluster.task('verify_networks'),
                 networkCheckTask = cluster.task('check_networks'),
                 isNodeNetworkGroupSectionSelected = !_.contains(defaultNetworkSubtabs, activeNetworkSectionName),
+                notEnoughNodesForVerification = cluster.get('nodes').length < 2,
                 isVerificationDisabled = networkConfiguration.validationError ||
                     this.state.actionInProgress ||
                     !!cluster.task({group: ['deployment', 'network'], active: true}) ||
-                    isMultiRack;
+                    isMultiRack ||
+                    notEnoughNodesForVerification;
 
             if (!activeNetworkSectionName ||
                     (activeNetworkSectionName && !nodeNetworkGroups.findWhere({name: activeNetworkSectionName}) &&
@@ -957,6 +959,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                         hideVerificationResult={this.state.hideVerificationResult}
                                         isMultirack={isMultiRack}
                                         isVerificationDisabled={isVerificationDisabled}
+                                        notEnoughNodes={notEnoughNodesForVerification}
                                         verifyNetworks={this.verifyNetworks}
                                     />
                                 }
@@ -1523,6 +1526,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         {this.props.isMultirack &&
                             <div className='alert alert-warning'>
                                 <p>{i18n(networkTabNS + 'verification_multirack_warning')}</p>
+                            </div>
+                        }
+                        {!this.props.isMultirack && this.props.notEnoughNodes &&
+                            <div className='alert alert-warning'>
+                                <p>{i18n(networkTabNS + 'not_enough_nodes')}</p>
                             </div>
                         }
                         <div className='page-control-box'>

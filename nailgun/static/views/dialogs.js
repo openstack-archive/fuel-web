@@ -1357,26 +1357,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
                 </button>,
-                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup} disabled={this.state.actionInProgress}>
+                <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup} disabled={this.state.actionInProgress || this.state.error}>
                     {i18n(this.props.ns + 'add')}
                 </button>
             ];
         },
         handleKeyDown: function(e) {
             if (e.key == 'Enter') {
+                if (this.state.error) return false;
                 e.preventDefault();
                 this.createNodeNetworkGroup();
             }
         },
         handleChange: function(name, value) {
-            var validationError = null,
-                nodeNetworkGroups = this.props.nodeNetworkGroups;
-            if (nodeNetworkGroups.findWhere({name: value})) {
-                validationError = i18n(this.props.ns + 'node_network_group_duplicate_error');
-                if (value == nodeNetworkGroups.min('id').get('name')) {
-                    validationError = i18n(this.props.ns + 'node_network_group_default_name');
-                }
-            }
+            var newNodeNetworkGroup = new models.NodeNetworkGroup(),
+                validationError;
+            validationError = newNodeNetworkGroup.validate({name: value, nodeNetworkGroups: this.props.nodeNetworkGroups});
             this.setState({
                 error: validationError,
                 name: value

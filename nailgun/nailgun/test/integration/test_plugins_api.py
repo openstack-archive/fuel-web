@@ -123,8 +123,7 @@ class BasePluginTest(base.BaseIntegrationTest):
         editable_attrs = objects.Cluster.get_editable_attributes(
             cluster, all_plugins_versions=True)
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
-        editable_attrs[plugin_name]['plugin_versions']['value'] = \
-            str(plugin_id)
+        editable_attrs[plugin_name]['metadata']['chosen_id'] = plugin_id
 
         resp = self.app.put(
             base.reverse('ClusterAttributesHandler',
@@ -229,6 +228,12 @@ class TestPluginsApi(BasePluginTest):
         del_resp = self.delete_plugin(resp.json['id'])
         self.assertEqual(del_resp.status_code, 204)
 
+    def test_delete_unused_plugin(self):
+        self.create_cluster()
+        resp = self.create_plugin()
+        del_resp = self.delete_plugin(resp.json['id'])
+        self.assertEqual(del_resp.status_code, 204)
+
     def test_no_delete_of_used_plugin(self):
         resp = self.create_plugin()
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
@@ -262,8 +267,8 @@ class TestPluginsApi(BasePluginTest):
                       default_attributes.json_body['editable'])
 
     def test_attributes_after_plugin_is_created(self):
-        sample = dict({
-            "attributes_metadata": {
+        sample = dict(
+            attributes_metadata={
                 "attr_text": {
                     "value": "value",
                     "type": "text",
@@ -271,13 +276,14 @@ class TestPluginsApi(BasePluginTest):
                     "weight": 25,
                     "label": "label"
                 }
-            }
-        }, **self.sample_plugin)
-        plugin = self.create_plugin(sample=sample).json_body
+            }, **self.sample_plugin)
+        self.create_plugin(sample=sample).json_body
         cluster = self.create_cluster()
         editable = self.default_attributes(cluster).json_body['editable']
-        attr_name = "#{0}_{1}".format(plugin['id'], 'attr_text')
-        self.assertIn(attr_name, editable[self.sample_plugin['name']])
+        self.assertIn(
+            'attr_text',
+            editable[self.sample_plugin['name']]['metadata']['versions'][0]
+        )
 
     def test_plugins_multiversioning(self):
         def create_with_version(plugin_version):

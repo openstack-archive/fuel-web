@@ -17,6 +17,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import plugin
 from nailgun.errors import errors
+from nailgun.objects import ClusterPlugins
 from nailgun.objects import Plugin
 
 
@@ -24,7 +25,7 @@ class PluginValidator(BasicValidator):
 
     @classmethod
     def validate_delete(cls, data, instance):
-        if instance.clusters:
+        if ClusterPlugins.is_plugin_used(instance.id):
             raise errors.CannotDelete(
                 "Can't delete plugin which is enabled "
                 "for some environment."

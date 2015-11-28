@@ -131,9 +131,9 @@ class ClusterPlugins(NailgunObject):
         - release version
 
         :param cluster: A cluster instance
-        :type cluster: nailgun.objects.cluster.Cluster
+        :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
         :param plugin: A plugin instance
-        :type plugin: nailgun.objects.plugin.Plugin
+        :type plugin: nailgun.db.sqlalchemy.models.plugins.Plugin
         :return: True if compatible, False if not
         :rtype: bool
         """
@@ -176,7 +176,7 @@ class ClusterPlugins(NailgunObject):
         """Returns a list of plugins that are compatible with a given cluster.
 
         :param cluster: A cluster instance
-        :type cluster: nailgun.objects.cluster.Cluster
+        :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
         :return: A list of plugin instances
         :rtype: list
         """
@@ -189,14 +189,16 @@ class ClusterPlugins(NailgunObject):
         """Populates 'cluster_plugins' table with compatible plugins.
 
         :param cluster: A cluster instance
-        :type cluster: nailgun.objects.cluster.Cluster
+        :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
         """
         for plugin in cls.get_compatible_plugins(cluster):
+            plugin_attributes = dict(plugin.attributes_metadata)
+            plugin_attributes.pop('metadata', None)
             cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
-                'attributes': plugin.attributes_metadata
+                'attributes': plugin_attributes
             })
 
     @classmethod
@@ -204,7 +206,7 @@ class ClusterPlugins(NailgunObject):
         """Returns a list of clusters that are compatible with a given plugin.
 
         :param plugin: A plugin instance
-        :type plugin: nailgun.objects.plugin.Plugin
+        :type plugin: nailgun.db.sqlalchemy.models.plugins.Plugin
         :return: A list of cluster instances
         :rtype: list
         """
@@ -217,14 +219,16 @@ class ClusterPlugins(NailgunObject):
         """Populates 'cluster_plugins' table with compatible cluster.
 
         :param plugin: A plugin instance
-        :type plugin: nailgun.objects.plugin.Plugin
+        :type plugin: nailgun.db.sqlalchemy.models.plugins.Plugin
         """
+        plugin_attributes = dict(plugin.attributes_metadata)
+        plugin_attributes.pop('metadata', None)
         for cluster in cls.get_compatible_clusters(plugin):
             cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
-                'attributes': plugin.attributes_metadata
+                'attributes': plugin_attributes
             })
 
     @classmethod
@@ -324,3 +328,18 @@ class ClusterPlugins(NailgunObject):
             .filter(cls.model.cluster_id == cluster_id)\
             .filter(cls.model.enabled.is_(True))\
             .order_by(models.Plugin.id)
+
+    @classmethod
+    def is_plugin_used(cls, plugin_id):
+        """Check if plugin is used for any cluster or not.
+
+        :param plugin_id: Plugin ID
+        :type plugin_id: int
+        :return: True if some cluster uses this plugin
+        :rtype: bool
+        """
+        q = db().query(cls.model)\
+            .filter(cls.model.plugin_id == plugin_id)\
+            .filter(cls.model.enabled.is_(True))
+
+        return db().query(q.exists()).scalar()

@@ -230,8 +230,8 @@ class TestPluginsApi(BasePluginTest):
                       default_attributes.json_body['editable'])
 
     def test_attributes_after_plugin_is_created(self):
-        sample = dict({
-            "attributes_metadata": {
+        sample = dict(
+            attributes_metadata={
                 "attr_text": {
                     "value": "value",
                     "type": "text",
@@ -239,12 +239,11 @@ class TestPluginsApi(BasePluginTest):
                     "weight": 25,
                     "label": "label"
                 }
-            }
-        }, **self.sample_plugin)
+            }, **self.sample_plugin)
         plugin = self.create_plugin(sample=sample).json_body
         cluster = self.create_cluster()
         editable = self.default_attributes(cluster).json_body['editable']
-        attr_name = "#{0}_{1}".format(plugin['id'], 'attr_text')
+        attr_name = "{0}_{1}".format(plugin['id'], 'attr_text')
         self.assertIn(attr_name, editable[self.sample_plugin['name']])
 
     def test_plugins_multiversioning(self):

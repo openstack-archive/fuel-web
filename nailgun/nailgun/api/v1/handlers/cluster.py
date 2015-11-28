@@ -18,6 +18,7 @@
 Handlers dealing with clusters
 """
 
+import six
 import traceback
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -159,6 +160,7 @@ class ClusterAttributesHandler(BaseHandler):
 
         :http: * 200 (OK)
                * 400 (wrong attributes data specified)
+               * 403 (attribute changing is not allowed)
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
         """
@@ -175,12 +177,23 @@ class ClusterAttributesHandler(BaseHandler):
         if cluster.is_locked:
             editable = objects.Cluster.get_editable_attributes(
                 cluster, all_plugins_versions=True)
+            editable_data = data.get('editable', {})
 
-            for group_name in data.get('editable', {}):
+            for group_name, group_val in six.iteritems(editable_data):
                 # we need bunch of gets because the attribute may not
                 # even exist (user adds a new one)
                 metadata = editable.get(group_name, {}).get('metadata', {})
-                if not metadata.get('always_editable'):
+                if metadata.get('class') == 'plugin':
+                    chosen_id = group_val['metadata']['chosen_id']
+                    always_editable = False
+                    for plugin in metadata['versions']:
+                        if plugin['metadata']['plugin_id'] == chosen_id:
+                            always_editable = plugin['metadata']\
+                                .get('always_editable', False)
+                            break
+                else:
+                    always_editable = metadata.get('always_editable', False)
+                if not always_editable:
                     raise self.http(403, (
                         "Environment attribute '{0}' couldn't be changed "
                         "after or during deployment.".format(group_name)))

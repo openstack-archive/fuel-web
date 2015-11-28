@@ -87,14 +87,14 @@ class TestAttributes(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster_id}),
             params=jsonutils.dumps({
                 'editable': {
-                    "foo": "bar"
+                    'foo': {'bar': None}
                 },
             }),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
         attrs = objects.Cluster.get_editable_attributes(cluster_db)
-        self.assertEqual("bar", attrs["foo"])
+        self.assertEqual({'bar': None}, attrs["foo"])
         attrs.pop('foo')
 
         # 400 on generated update
@@ -140,14 +140,14 @@ class TestAttributes(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster_id}),
             params=jsonutils.dumps({
                 'editable': {
-                    "foo": "bar"
+                    'foo': {'bar': None}
                 },
             }),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
         attrs = objects.Cluster.get_editable_attributes(cluster_db)
-        self.assertEqual("bar", attrs["foo"])
+        self.assertEqual({'bar': None}, attrs["foo"])
         attrs.pop('foo')
         self.assertNotEqual(attrs, {})
 
@@ -210,7 +210,7 @@ class TestAttributes(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             params=jsonutils.dumps({
                 'editable': {
-                    "foo": "bar"
+                    'foo': {'bar': None}
                 },
             }),
             headers=self.default_headers,
@@ -218,7 +218,7 @@ class TestAttributes(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code, resp.body)
         attrs = objects.Cluster.get_editable_attributes(cluster_db)
-        self.assertEqual("bar", attrs["foo"])
+        self.assertEqual({'bar': None}, attrs['foo'])
         # Set attributes to defaults.
         resp = self.app.put(
             reverse(
@@ -758,7 +758,6 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
     def test_change_plugins_attributes(self):
         plugin = self.env.create_plugin(cluster=self.cluster,
                                         **self.plugin_data)
-        attr = '#{0}_attr'.format(plugin.id)
 
         def _modify_plugin(enabled=True):
             return self.app.put(
@@ -769,30 +768,27 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
                     'editable': {
                         plugin.name: {
                             'metadata': {
+                                'class': 'plugin',
                                 'label': 'Test plugin',
                                 'toggleable': True,
                                 'weight': 70,
-                                'enabled': enabled
+                                'enabled': enabled,
+                                'chosen_id': plugin.id,
+                                'versions': [{
+                                    'metadata': {
+                                        'plugin_id': plugin.id,
+                                        'plugin_version': plugin.version
+                                    },
+                                    'attr': {
+                                        'type': 'text',
+                                        'description': 'description',
+                                        'label': 'label',
+                                        'value': '1',
+                                        'weight': 25,
+                                        'restrictions': [{'action': 'hide'}]
+                                    }
+                                }]
                             },
-                            'plugin_versions': {
-                                'type': 'radio',
-                                'values': [{
-                                    'data': str(plugin.id),
-                                    'description': '',
-                                    'label': '0.1.0'
-                                }],
-                                'weight': 10,
-                                'value': str(plugin.id),
-                                'label': 'Choose a plugin version'
-                            },
-                            attr: {
-                                'type': 'text',
-                                'description': 'description',
-                                'label': 'label',
-                                'value': '1',
-                                'weight': 25,
-                                'restrictions': [{'action': 'hide'}]
-                            }
                         }
                     }
                 }),
@@ -809,11 +805,9 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
         resp = _modify_plugin(enabled=False)
         self.assertEqual(200, resp.status_code)
         editable = objects.Cluster.get_editable_attributes(self.cluster)
-        self.assertIn(plugin.name, editable)
-        self.assertFalse(editable[plugin.name]['metadata']['enabled'])
-        self.assertNotIn(attr, editable[plugin.name])
+        self.assertNotIn(plugin.name, editable)
 
-    def _modify_plugin(self, plugin, enabled, **kwargs):
+    def _modify_plugin(self, plugin, enabled):
         return self.app.put(
             reverse(
                 'ClusterAttributesHandler',
@@ -821,18 +815,19 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
             ),
             params=jsonutils.dumps({
                 'editable': {
-                    plugin.name: dict(
-                        metadata={'enabled': enabled},
-                        plugin_versions={
-                            'type': 'radio',
-                            'values': [{
-                                'data': str(plugin.id),
-                                'label': plugin.version
-                            }],
-                            'value': str(plugin.id),
-                        },
-                        **kwargs
-                    )
+                    plugin.name: {
+                        'metadata': {
+                            'class': 'plugin',
+                            'enabled': enabled,
+                            'chosen_id': plugin.id,
+                            'versions': [{
+                                'metadata': {
+                                    'plugin_id': plugin.id,
+                                    'plugin_version': plugin.version
+                                }
+                            }]
+                        }
+                    }
                 }
             }),
             headers=self.default_headers,

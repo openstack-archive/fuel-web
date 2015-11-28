@@ -164,3 +164,12 @@ class TestClusterPlugins(ExtraFunctions):
 
         enabled_plugin = ClusterPlugins.get_enabled(cluster.id).first()
         self.assertEqual(plugin.id, enabled_plugin.id)
+
+    def test_is_plugin_used(self):
+        self._create_test_plugins()
+        cluster = self._create_test_cluster()
+
+        plugin = ClusterPlugins.get_connected_plugins(cluster).first()
+        self.assertFalse(ClusterPlugins.is_plugin_used(plugin.id))
+        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
+        self.assertTrue(ClusterPlugins.is_plugin_used(plugin.id))

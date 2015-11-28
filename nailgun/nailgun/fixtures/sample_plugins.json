@@ -130,6 +130,14 @@
             ],
             "package_version": "2.0.0",
             "attributes_metadata": {
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "condition": "settings:common.use_vcenter.value == true",
+                            "action": "hide"
+                        }
+                    ]
+                },
                 "zabbix_text_1": {
                     "value": "value 1.1",
                     "type": "text",
@@ -179,19 +187,78 @@
             ],
             "package_version": "2.0.0",
             "attributes_metadata": {
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "condition": "cluster:net_provider != 'neutron'",
+                            "action": "hide"
+                        }
+                    ]
+                },
                 "zabbix_text_1": {
                     "value": "value 2.1",
-                    "type": "text",
-                    "description": "description 2.1",
-                    "weight": 25,
-                    "label": "label 2.1"
+                    "label": "Label of text field 2.1",
+                    "description": "Description of text field 2.1",
+                    "weight": 20,
+                    "type": "text"
                 },
                 "zabbix_text_2": {
                     "value": "value 2.2",
+                    "label": "Label of text field 2.2",
+                    "description": "Description of text field 2.2",
+                    "weight": 21,
+                    "type": "text"
+                },
+                "zabbix_text_with_regex": {
+                    "value": "",
+                    "label": "Label of text field with regex (type 'aa-aa')",
+                    "description": "Some description of text field with regex",
+                    "weight": 30,
                     "type": "text",
-                    "description": "description 2.2",
-                    "weight": 26,
-                    "label": "label 2.2"
+                    "regex": {
+                        "source": "^(?:[a-z]+-[a-z0-9]+)(?:,[a-z]+-[a-z0-9]+)*",
+                        "error": "Invalid value in text field with regex"
+                    }
+                },
+                "zabbix_checkbox": {
+                    "value": false,
+                    "label": "Hide file selector",
+                    "description": "If True then file field will be hidden",
+                    "weight": 40,
+                    "type": "checkbox"
+                },
+                "zabbix_file": {
+                    "value": "",
+                    "label": "Select file",
+                    "description": "Description of file field",
+                    "weight": 41,
+                    "type": "file",
+                    "restrictions": [
+                        {
+                            "condition": "settings:zabbix_monitoring.zabbix_checkbox.value == true",
+                            "action": "hide"
+                        }
+                    ]
+                },
+                "zabbix_checkbox_long_name": {
+                    "value": true,
+                    "label": "Show text field",
+                    "description": "If True then text field will be shown",
+                    "weight": 50,
+                    "type": "checkbox"
+                },
+                "zabbix_text_3": {
+                    "value": "",
+                    "label": "Label of text field 2.3",
+                    "description": "Description of text field 2.3",
+                    "weight": 51,
+                    "type": "text",
+                    "restrictions": [
+                        {
+                            "condition": "settings:zabbix_monitoring.zabbix_checkbox_long_name.value == false",
+                            "action": "hide"
+                        }
+                    ]
                 }
             }
         }

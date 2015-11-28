@@ -26,11 +26,11 @@ from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
 from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
 
 from nailgun import consts
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.plugins.manager import PluginManager
 from nailgun.utils import restrictions
 
 
@@ -274,30 +274,29 @@ class AttributesValidator(BasicValidator):
         attrs = d
         if cluster is not None:
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
-
-            # NOTE(agordeev): disable classic provisioning for 7.0 or higher
-            if StrictVersion(cluster.release.environment_version) >= \
-                    StrictVersion(consts.FUEL_IMAGE_BASED_ONLY):
-                provision_data = attrs['editable'].get('provision')
-                if provision_data:
-                    if provision_data['method']['value'] != \
-                            consts.PROVISION_METHODS.image:
-                        raise errors.InvalidData(
-                            u"Cannot use classic provisioning for adding "
-                            u"nodes to environment",
-                            log_message=True)
-                else:
-                    raise errors.InvalidData(
-                        u"Provisioning method is not set. Unable to continue",
-                        log_message=True)
-
-            cls.validate_plugin_attributes(
-                cluster, attrs.get('editable', {})
-            )
-
+            cls.validate_provision(cluster, attrs)
+            cls.validate_allowed_attributes(cluster, d)
         cls.validate_editable_attributes(attrs)
 
         return d
+
+    @classmethod
+    def validate_provision(cls, cluster, attrs):
+        # NOTE(agordeev): disable classic provisioning for 7.0 or higher
+        if StrictVersion(cluster.release.environment_version) >= \
+                StrictVersion(consts.FUEL_IMAGE_BASED_ONLY):
+            provision_data = attrs['editable'].get('provision')
+            if provision_data:
+                if provision_data['method']['value'] != \
+                        consts.PROVISION_METHODS.image:
+                    raise errors.InvalidData(
+                        u"Cannot use classic provisioning for adding "
+                        u"nodes to environment",
+                        log_message=True)
+            else:
+                raise errors.InvalidData(
+                    u"Provisioning method is not set. Unable to continue",
+                    log_message=True)
 
     @classmethod
     def validate_editable_attributes(cls, data):
@@ -366,52 +365,62 @@ class AttributesValidator(BasicValidator):
                     '[{0}] {1}'.format(attr_name, regex_err))
 
     @classmethod
-    def validate_plugin_attributes(cls, cluster, attributes):
-        """Validates Cluster-Plugins relations attributes
+    def validate_allowed_attributes(cls, cluster, data):
+        """Validates if attributes are hot pluggable or not.
 
         :param cluster: A cluster instance
-        :type cluster: nailgun.objects.cluster.Cluster
-        :param attributes: The editable attributes of the Cluster
-        :type attributes: dict
+        :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
+        :param data: Changed attributes of cluster
+        :type data: dict
         :raises: errors.NotAllowed
         """
-
         # TODO(need to enable restrictions check for cluster attributes[1])
         # [1] https://bugs.launchpad.net/fuel/+bug/1519904
         # Validates only that plugin can be installed on deployed env.
+
+        # If cluster is locked we have to check which attributes
+        # we want to change and block an entire operation if there
+        # one with always_editable=False.
         if not cluster.is_locked:
             return
 
-        enabled_plugins = set(
-            p.id for p in objects.ClusterPlugins.get_enabled(cluster.id)
-        )
+        editable_cluster = objects.Cluster.get_editable_attributes(
+            cluster, all_plugins_versions=True)
+        editable_request = data.get('editable', {})
 
-        for attrs in six.itervalues(attributes):
-            if not isinstance(attrs, dict):
-                continue
+        for attr_name, attr_request in six.iteritems(editable_request):
+            attr_cluster = editable_cluster.get(attr_name, {})
+            meta_cluster = attr_cluster.get('metadata', {})
+            meta_request = attr_request.get('metadata', {})
 
-            plugin_versions = attrs.get('plugin_versions', None)
-            if plugin_versions is None:
-                continue
-
-            if not attrs.get('metadata', {}).get('enabled'):
-                continue
-
-            for version in plugin_versions['values']:
-                plugin_id = version.get('data')
-                plugin = objects.Plugin.get_by_uid(plugin_id)
-                if not plugin:
+            if PluginManager.is_plugin_data(attr_cluster):
+                if meta_request['enabled']:
+                    changed_ids = [meta_request['chosen_id']]
+                    if meta_cluster['enabled']:
+                        changed_ids.append(meta_cluster['chosen_id'])
+                    changed_ids = set(changed_ids)
+                elif meta_cluster['enabled']:
+                    changed_ids = [meta_cluster['chosen_id']]
+                else:
                     continue
 
-                if plugin_id != plugin_versions['value']:
-                    continue
+                for plugin in meta_cluster['versions']:
+                    plugin_id = plugin['metadata']['plugin_id']
+                    always_editable = plugin['metadata']\
+                        .get('always_editable', False)
+                    if plugin_id in changed_ids and not always_editable:
+                        raise errors.NotAllowed(
+                            "Plugin '{0}' version '{1}' couldn't be changed "
+                            "after or during deployment."
+                            .format(attr_name,
+                                    plugin['metadata']['plugin_version']),
+                            log_message=True
+                        )
 
-                if plugin.is_hotpluggable or plugin.id in enabled_plugins:
-                    break
-
+            elif not meta_cluster.get('always_editable', False):
                 raise errors.NotAllowed(
-                    "This plugin version can be enabled only "
-                    "before environment is deployed.",
+                    "Environment attribute '{0}' couldn't be changed "
+                    "after or during deployment.".format(attr_name),
                     log_message=True
                 )
 

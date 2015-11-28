@@ -302,67 +302,65 @@ class TestPluginManager(base.BaseIntegrationTest):
             cluster=cluster, enabled=False
         )
         plugin_b = self.env.create_plugin(
-            name='plugin_b', title='plugin_a_title', cluster=cluster
+            name='plugin_b', title='plugin_a_title', cluster=cluster,
+            attributes_metadata={
+                'metadata': {
+                    'restrictions': [
+                        {
+                            "condition": "cluster:net_provider != 'neutron'",
+                            "action": "hide"
+                        }
+                    ]
+                }
+            }
         )
         cluster.status = consts.CLUSTER_STATUSES.operational
         self.db.flush()
         self.assertTrue(cluster.is_locked)
         attributes = PluginManager.get_plugins_attributes(
-            cluster, True, True
+            cluster, all_versions=True, default=True
+        )
+
+        pl_a1 = attributes['plugin_a']['metadata']['versions'][0]
+        pl_a2 = attributes['plugin_a']['metadata']['versions'][1]
+        pl_b = attributes['plugin_b']['metadata']['versions'][0]
+
+        self.assertItemsEqual(['plugin_a', 'plugin_b'], attributes)
+        self.assertItemsEqual(
+            {
+                'plugin_id': plugin_a1.id,
+                'plugin_version': plugin_a1.version,
+                'always_editable': False
+            }, pl_a1['metadata']
         )
         self.assertItemsEqual(
-            ['plugin_a', 'plugin_b'], attributes
-        )
-        self.assertTrue(
-            attributes['plugin_a']['metadata']['always_editable']
+            {
+                'plugin_id': plugin_a2.id,
+                'plugin_version': plugin_a2.version,
+                'always_editable': True
+            },
+            pl_a2['metadata']
         )
         self.assertItemsEqual(
-            [
-                {
-                    'data': str(plugin_a1.id),
-                    'description': '',
-                    'label': plugin_a1.version,
-                    'restrictions': [
-                        {
-                            'action': 'disable',
-                            'condition': 'cluster:is_locked'
-                        }
-                    ],
-                },
-                {
-                    'data': str(plugin_a2.id),
-                    'description': '',
-                    'label': plugin_a2.version
-                }
-            ],
-            attributes['plugin_a']['plugin_versions']['values']
+            {
+                'plugin_id': plugin_b.id,
+                'plugin_version': plugin_b.version,
+                'always_editable': False,
+                'restrictions': [
+                    {
+                        "condition": "cluster:net_provider != 'neutron'",
+                        "action": "hide"
+                    }
+                ]
+            }, pl_b['metadata']
         )
         self.assertEqual(
-            str(plugin_a1.id),
-            attributes['plugin_a']['plugin_versions']['value']
-        )
-        self.assertNotIn(
-            'always_editable', attributes['plugin_b']['metadata']
-        )
-        self.assertItemsEqual(
-            [
-                {
-                    'restrictions': [
-                        {
-                            'action': 'disable',
-                            'condition': 'cluster:is_locked'
-                        }
-                    ],
-                    'data': str(plugin_b.id),
-                    'description': '',
-                    'label': plugin_b.version,
-                },
-            ],
-            attributes['plugin_b']['plugin_versions']['values']
+            plugin_a1.id,
+            attributes['plugin_a']['metadata']['chosen_id']
         )
         self.assertEqual(
-            str(plugin_b.id),
-            attributes['plugin_b']['plugin_versions']['value']
+            plugin_b.id,
+            attributes['plugin_b']['metadata']['chosen_id']
         )
 
     def test_get_plugins_attributes_when_cluster_is_not_locked(self):
@@ -377,69 +375,67 @@ class TestPluginManager(base.BaseIntegrationTest):
             cluster=cluster, enabled=True
         )
         plugin_b = self.env.create_plugin(
-            name='plugin_b', title='plugin_a_title', cluster=cluster
+            name='plugin_b', title='plugin_a_title', cluster=cluster,
+            attributes_metadata={
+                'metadata': {
+                    'restrictions': [
+                        {
+                            "condition": "cluster:net_provider != 'neutron'",
+                            "action": "hide"
+                        }
+                    ]
+                }
+            }
         )
         self.assertFalse(plugin_a1.is_hotpluggable)
         self.assertTrue(plugin_a2.is_hotpluggable)
         self.assertFalse(plugin_b.is_hotpluggable)
         self.assertFalse(cluster.is_locked)
         attributes = PluginManager.get_plugins_attributes(
-            cluster, True, True
-        )
-        self.assertItemsEqual(
-            ['plugin_a', 'plugin_b'], attributes
-        )
-        self.assertTrue(
-            attributes['plugin_a']['metadata']['always_editable']
-        )
-        self.assertItemsEqual(
-            [
-                {
-                    'data': str(plugin_a1.id),
-                    'description': '',
-                    'label': plugin_a1.version,
-                    'restrictions': [
-                        {
-                            'action': 'disable',
-                            'condition': 'cluster:is_locked'
-                        }
-                    ],
-                },
-                {
-                    'data': str(plugin_a2.id),
-                    'description': '',
-                    'label': plugin_a2.version
-                }
-            ],
-            attributes['plugin_a']['plugin_versions']['values']
-        )
-        self.assertEqual(
-            str(plugin_a1.id),
-            attributes['plugin_a']['plugin_versions']['value']
-        )
-        self.assertNotIn(
-            'always_editable', attributes['plugin_b']['metadata']
-        )
-        self.assertItemsEqual(
-            [
-                {
-                    'restrictions': [
-                        {
-                            'action': 'disable',
-                            'condition': 'cluster:is_locked'
-                        }
-                    ],
-                    'data': str(plugin_b.id),
-                    'description': '',
-                    'label': plugin_b.version,
-                },
-            ],
-            attributes['plugin_b']['plugin_versions']['values']
+            cluster, all_versions=True, default=True
         )
 
+        pl_a1 = attributes['plugin_a']['metadata']['versions'][0]
+        pl_a2 = attributes['plugin_a']['metadata']['versions'][1]
+        pl_b = attributes['plugin_b']['metadata']['versions'][0]
+
+        self.assertItemsEqual(['plugin_a', 'plugin_b'], attributes)
+
+        self.assertItemsEqual(
+            {
+                'plugin_id': plugin_a1.id,
+                'plugin_version': plugin_a1.version,
+                'always_editable': False
+            }, pl_a1['metadata']
+        )
+        self.assertItemsEqual(
+            {
+                'plugin_id': plugin_a2.id,
+                'plugin_version': plugin_a2.version,
+                'always_editable': True,
+            },
+            pl_a2['metadata']
+        )
+        self.assertItemsEqual(
+            {
+                'plugin_id': plugin_b.id,
+                'plugin_version': plugin_b.version,
+                'always_editable': False,
+                'restrictions': [
+                    {
+                        "condition": "cluster:net_provider != 'neutron'",
+                        "action": "hide"
+                    }
+                ]
+            }, pl_b['metadata']
+        )
         self.assertEqual(
-            str(plugin_b.id),
-            attributes['plugin_b']['plugin_versions']['value']
+            plugin_a1.id,
+            attributes['plugin_a']['metadata']['chosen_id']
+        )
+        self.assertEqual(
+            plugin_b.id,
+            attributes['plugin_b']['metadata']['chosen_id']
         )
 
 

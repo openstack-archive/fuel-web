@@ -21,15 +21,11 @@ Handlers dealing with clusters
 import traceback
 
 from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import CollectionHandler
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DeferredTaskHandler
 from nailgun.api.v1.handlers.base import DeploymentTasksHandler
-
-from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
-
-from nailgun import objects
-
-from nailgun.api.v1.handlers.base import content
 
 from nailgun.api.v1.validators.cluster import AttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterChangesValidator
@@ -37,6 +33,8 @@ from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 
 from nailgun.logger import logger
+from nailgun import objects
+
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
@@ -159,6 +157,7 @@ class ClusterAttributesHandler(BaseHandler):
 
         :http: * 200 (OK)
                * 400 (wrong attributes data specified)
+               * 403 (attribute changing is not allowed)
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
         """
@@ -168,24 +167,8 @@ class ClusterAttributesHandler(BaseHandler):
             raise self.http(500, "No attributes found!")
 
         data = self.checked_data(cluster=cluster)
-
-        # if cluster is locked we have to check which attributes
-        # we want to change and block an entire operation if there
-        # one with always_editable=False.
-        if cluster.is_locked:
-            editable = objects.Cluster.get_editable_attributes(
-                cluster, all_plugins_versions=True)
-
-            for group_name in data.get('editable', {}):
-                # we need bunch of gets because the attribute may not
-                # even exist (user adds a new one)
-                metadata = editable.get(group_name, {}).get('metadata', {})
-                if not metadata.get('always_editable'):
-                    raise self.http(403, (
-                        "Environment attribute '{0}' couldn't be changed "
-                        "after or during deployment.".format(group_name)))
-
         objects.Cluster.patch_attributes(cluster, data)
+
         return {
             'editable': objects.Cluster.get_editable_attributes(
                 cluster, all_plugins_versions=True)

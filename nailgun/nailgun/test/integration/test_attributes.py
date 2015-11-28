@@ -747,7 +747,7 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
     def test_change_plugins_attributes(self):
         plugin = self.env.create_plugin(cluster=self.cluster,
                                         **self.plugin_data)
-        attr = '#{0}_attr'.format(plugin.id)
+        attr = '{0}_attr'.format(plugin.id)
 
         def _modify_plugin(enabled=True):
             return self.app.put(
@@ -798,9 +798,7 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
         resp = _modify_plugin(enabled=False)
         self.assertEqual(200, resp.status_code)
         editable = objects.Cluster.get_editable_attributes(self.cluster)
-        self.assertIn(plugin.name, editable)
-        self.assertFalse(editable[plugin.name]['metadata']['enabled'])
-        self.assertNotIn(attr, editable[plugin.name])
+        self.assertNotIn(plugin.name, editable)
 
     def _modify_plugin(self, plugin, enabled, **kwargs):
         return self.app.put(

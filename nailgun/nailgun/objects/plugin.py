@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import six
 
 from distutils.version import LooseVersion
@@ -192,11 +193,13 @@ class ClusterPlugins(NailgunObject):
         :type cluster: nailgun.objects.cluster.Cluster
         """
         for plugin in cls.get_compatible_plugins(cluster):
+            plugin_attributes = copy.deepcopy(plugin.attributes_metadata)
+            plugin_attributes.pop('metadata', None)
             cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
-                'attributes': plugin.attributes_metadata
+                'attributes': plugin_attributes
             })
 
     @classmethod
@@ -219,12 +222,14 @@ class ClusterPlugins(NailgunObject):
         :param plugin: A plugin instance
         :type plugin: nailgun.objects.plugin.Plugin
         """
+        plugin_attributes = copy.deepcopy(plugin.attributes_metadata)
+        plugin_attributes.pop('metadata', None)
         for cluster in cls.get_compatible_clusters(plugin):
             cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
-                'attributes': plugin.attributes_metadata
+                'attributes': plugin_attributes
             })
 
     @classmethod
@@ -324,3 +329,18 @@ class ClusterPlugins(NailgunObject):
             .filter(cls.model.cluster_id == cluster_id)\
             .filter(cls.model.enabled.is_(True))\
             .order_by(models.Plugin.id)
+
+    @classmethod
+    def is_plugin_used(cls, plugin_id):
+        """Check if plugin is used for any cluster or not.
+
+        :param plugin_id: Plugin ID
+        :type plugin_id: int
+        :return: True if some cluster uses this plugin
+        :rtype: bool
+        """
+        q = db().query(cls.model)\
+            .filter(cls.model.plugin_id == plugin_id)\
+            .filter(cls.model.enabled.is_(True))
+
+        return db().query(q.exists()).scalar()

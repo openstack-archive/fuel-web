@@ -29,8 +29,8 @@ def find_requires():
     with open('{0}/requirements.txt'.format(dir_path), 'r') as reqs:
         requirements = reqs.readlines()
     if sys.version_info == (2, 6):
-        requirements.append('argparse==1.2.1')
-        requirements.append('ordereddict>=1.1')
+        requirements.append('argparse')
+        requirements.append('ordereddict')
     return requirements
 
 

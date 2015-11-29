@@ -14,10 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_serialization import jsonutils
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
-from oslo.serialization import jsonutils
 
 
 class TestAssignmentHandlers(BaseIntegrationTest):

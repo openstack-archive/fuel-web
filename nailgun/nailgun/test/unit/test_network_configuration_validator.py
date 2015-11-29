@@ -642,10 +642,10 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         self.assertRaisesTooShort(self.nc, "[2]")
 
         self.nc['networking_parameters']['vlan_range'] = [1, 2]
-        self.assertRaisesLessThanMinimum(self.nc, "1.0")
+        self.assertRaisesLessThanMinimum(self.nc, "1")
 
         self.nc['networking_parameters']['vlan_range'] = [2, 4097]
-        self.assertRaisesGreaterThanMaximum(self.nc, "4097.0")
+        self.assertRaisesGreaterThanMaximum(self.nc, "4097")
 
         self.nc['networking_parameters']['vlan_range'] = [2, 2]
         self.assertRaisesNonUnique(self.nc, "[2, 2]")

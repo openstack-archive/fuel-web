@@ -14,6 +14,7 @@
 
 import os
 import os.path
+import sys
 
 from setuptools import find_packages
 from setuptools import setup
@@ -25,7 +26,11 @@ version = '8.0.0'
 def find_requires():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     requirements = []
-    with open('{0}/requirements.txt'.format(dir_path), 'r') as reqs:
+    if sys.version_info == (2, 7):
+        reqs_file = 'requirements-py27.txt'
+    else:
+        reqs_file = 'requirements.txt'
+    with open('{0}/{1}'.format(dir_path, reqs_file), 'r') as reqs:
         requirements = reqs.readlines()
     return requirements
 

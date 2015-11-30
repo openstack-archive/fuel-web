@@ -1506,6 +1506,7 @@
               -
                 name: "nova_computes"
                 type: "array"
+                editable_for_deployed: true
                 fields:
                   -
                     name: "vsphere_cluster"

@@ -1296,6 +1296,27 @@ class TestClusterObject(BaseTestCase):
              'cluster': {u'net_provider': u'test_provider'}}
         )
 
+    def test_cluster_has_compute_vmware_changes(self):
+        cluster = self.env.create_cluster(api=False)
+        ready_compute_vmware_node = self.env.create_node(
+            cluster_id=cluster.id,
+            roles=['compute-vmware'],
+            status=consts.NODE_STATUSES.ready
+        )
+        self.env.create_node(cluster_id=cluster.id, pending_addition=True,
+                             pending_roles=['controller'])
+        self.assertFalse(objects.Cluster.has_compute_vmware_changes(cluster))
+
+        pending_compute_vmware_node = self.env.create_node(
+            cluster_id=cluster.id,
+            pending_roles=["compute-vmware"]
+        )
+        self.assertTrue(objects.Cluster.has_compute_vmware_changes(cluster))
+        objects.Node.delete(pending_compute_vmware_node)
+        objects.Node.update(
+            ready_compute_vmware_node, {'pending_deletion': True})
+        self.assertTrue(objects.Cluster.has_compute_vmware_changes(cluster))
+
     def test_enable_settings_by_components(self):
         components = [{
             'name': 'network:neutron:tun',
@@ -1624,3 +1645,88 @@ class TestRelease(BaseTestCase):
                 'incompatible': [
                     {'name': 'networks:*'},
                     {'name': 'additional_services:*'}]}])
+
+
+class TestVmwareAttributes(BaseTestCase):
+
+    def test_cluster_has_compute_vmware_changes(self):
+        attributes = {'editable': {
+            'metadata': [
+                {
+                    'name': 'foo',
+                    'editable_for_deployed': True,
+                    'fields': [{
+                        'name': 'foo_field_name',
+                        'type': 'text',
+                    }]
+                }, {
+                    'name': 'bar',
+                    'fields': [{
+                        'name': 'bar_field_name',
+                        'type': 'text',
+                    }]
+                }, {
+                    'name': 'availability_zones',
+                    'fields': [
+                        {
+                            'name': 'az_name',
+                            'type': 'text'
+                        }, {
+                            'name': 'nova_computes',
+                            'editable_for_deployed': True,
+                            'type': 'array',
+                            'fields': [{
+                                'name': 'vsphere_cluster',
+                                'type': 'text'
+                            }]
+                        }, {
+                            'name': 'vcenter_host',
+                            'type': 'text'
+                        }
+                    ]
+                }
+            ],
+            'value': {
+                'availability_zones': [
+                    {
+                        'az_name': 'az_name',
+                        'vcenter_host': '127.0.0.1',
+                        'nova_computes': [
+                            {'vsphere_cluster': 'Cluster1'}
+                        ]
+                    }
+                ],
+                'foo': {
+                    'foo_field_name': 'foo_field_value'
+                },
+                'bar': {
+                    'bar_field_name': 'bar_field_name'
+                }
+            }
+        }}
+        instance = objects.VmwareAttributes.create(attributes)
+        instance_editable_value = instance.editable.get('value')
+        new_attributes = copy.deepcopy(instance_editable_value)
+        new_attributes['foo']['foo_field_name'] = 'new_foo_field_value'
+        new_attributes['bar']['bar_field_name'] = 'new_bar_field_value'
+        new_attributes['availability_zones'][0]['az_name'] = 'new_az_name'
+        new_attributes['availability_zones'][0]['nova_computes'] = {}
+        checked_attributes = objects.VmwareAttributes.check_new_attributes(
+            instance, {'editable': {'value': new_attributes}})
+
+        checked_attributes_value = \
+            checked_attributes.get('editable', {}).get('value')
+        self.assertDictEqual(checked_attributes_value['bar'],
+                             instance_editable_value['bar'])
+        self.assertDictEqual(checked_attributes_value['foo'],
+                             new_attributes['foo'])
+        instance_availability_zones = \
+            instance_editable_value['availability_zones'][0]
+        checked_availability_zones = \
+            checked_attributes_value['availability_zones'][0]
+        self.assertEqual(checked_availability_zones['az_name'],
+                         instance_availability_zones['az_name'])
+        self.assertDictEqual(
+            checked_availability_zones['nova_computes'],
+            new_attributes['availability_zones'][0]['nova_computes']
+        )

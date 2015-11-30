@@ -114,18 +114,16 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
 
     var HorizonBlock = React.createClass({
         render() {
-            var cluster = this.props.cluster,
-                isSecureProtocolUsed = cluster.get('settings').get('public_ssl.horizon.value'),
-                ipValue = 'http://' + cluster.get('networkConfiguration').get('public_vip'),
-                fqdnValue = 'https://' + cluster.get('settings').get('public_ssl.hostname.value');
             return (
                 <div className='row'>
                     <div className='dashboard-block plugins-block horizon clearfix'>
                         <PluginLink
                             title={i18n(namespace + 'horizon')}
-                            url={isSecureProtocolUsed ? fqdnValue : ipValue}
+                            url=''
                             className='col-xs-12 horizon'
                             description={i18n(namespace + 'horizon_description')}
+                            sslEnabled={this.props.cluster.get('settings').get('public_ssl.horizon.value')}
+                            cluster={this.props.cluster}
                         />
                     </div>
                 </div>
@@ -134,24 +132,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
     });
 
     var PluginLinks = React.createClass({
-        processURL(url) {
-            // no processing required for absolute url
-            if (/^(?:[a-z]+:)?\/\//i.test(url)) return url;
-            // relative url processing
-            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
-            return (
-                sslSettings.services.value ?
-                    'https://' + sslSettings.hostname.value
-                :
-                    'http://' + this.props.cluster.get('networkConfiguration').get('public_vip')
-                ) + url;
-        },
         renderPluginLink(link) {
             return <PluginLink
-                title={link.get('title')}
-                url={this.processURL(link.get('url'))}
+                {...link.attributes}
                 className='col-xs-6'
-                description={link.get('description')}
+                sslEnabled={this.props.cluster.get('settings').get('public_ssl.services.value')}
+                cluster={this.props.cluster}
             />;
         },
         render() {
@@ -181,13 +167,30 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             title: React.PropTypes.string.isRequired,
             url: React.PropTypes.string.isRequired,
             description: React.PropTypes.node,
-            className: React.PropTypes.node
+            className: React.PropTypes.node,
+            sslEnabled: React.PropTypes.bool
+        },
+        processRelativeURL(url) {
+            if (this.props.sslEnabled) {
+                return 'https://' + this.props.cluster.get('settings').get('public_ssl.hostname.value') + url;
+            }
+            return this.getHTTPLink(url);
+        },
+        getHTTPLink(url) {
+            return 'http://' + this.props.cluster.get('networkConfiguration').get('public_vip') + url;
         },
         render() {
+            var isURLRelative = !(/^(?:[a-z]+:)?\/\//i.test(this.props.url)),
+                url = isURLRelative ? this.processRelativeURL(this.props.url) : this.props.url;
             return (
                 <div className={'plugin-link ' + this.props.className}>
                     <div className='title'>
-                        <a href={this.props.url} target='_blank'>{this.props.title}</a>
+                        <a href={url} target='_blank'>{this.props.title}</a>
+                        {isURLRelative && this.props.sslEnabled &&
+                            <a href={this.getHTTPLink(this.props.url)} className='http-link' target='_blank'>
+                                {i18n(namespace + 'http_plugin_link')}
+                            </a>
+                        }
                     </div>
                     <div className='description'>{this.props.description}</div>
                 </div>

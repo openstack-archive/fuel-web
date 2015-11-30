@@ -169,9 +169,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         discardNodeChanges: function() {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(_.compact(this.props.cluster.get('nodes').map(function(node) {
-                if (node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length) {
-                    var data = {id: node.id, pending_roles: [], pending_addition: false, pending_deletion: false};
-                    if (node.get('pending_addition')) data.cluster_id = null;
+                if (node.hasChanges()) {
+                    var data = {
+                        id: node.id,
+                        pending_roles: [],
+                        pending_addition: false,
+                        pending_deletion: false
+                    };
+                    if (!node.get('pending_deletion')) data.cluster_id = null;
                     return data;
                 }
             })));
@@ -199,10 +204,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     </div>
                     <br/>
                     {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
+                    {this.renderChangedNodeAmount(nodes.where({status: 'provisioned'}), 'provisioned_node')}
                     {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                    {this.renderChangedNodeAmount(nodes.filter(function(node) {
-                        return !node.get('pending_addition') && !node.get('pending_deletion') && node.get('pending_roles').length;
-                    }), 'reconfigured_node')}
                 </div>
             );
         },
@@ -888,16 +891,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         getDefaultProps: function() {return {title: i18n('dialog.delete_nodes.title')};},
         renderBody: function() {
             var ns = 'dialog.delete_nodes.',
-                newNodes = this.props.nodes.where({pending_addition: true}),
-                deployedNodes = this.props.nodes.where({status: 'ready'});
+                notDeployedNodesAmount = this.props.nodes.reject({status: 'ready'}).length,
+                deployedNodesAmount = this.props.nodes.length - notDeployedNodesAmount;
             return (
                 <div className='text-danger'>
                     {this.renderImportantLabel()}
                     {i18n(ns + 'common_message', {count: this.props.nodes.length})}
                     <br/>
-                    {!!newNodes.length && i18n(ns + 'new_nodes_message', {count: newNodes.length})}
+                    {!!notDeployedNodesAmount && i18n(ns + 'not_deployed_nodes_message', {count: notDeployedNodesAmount})}
                     {' '}
-                    {!!deployedNodes.length && i18n(ns + 'deployed_nodes_message', {count: deployedNodes.length})}
+                    {!!deployedNodesAmount && i18n(ns + 'deployed_nodes_message', {count: deployedNodesAmount})}
                 </div>
             );
         },
@@ -910,8 +913,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         deleteNodes: function() {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
-                if (node.get('pending_addition')) return {id: node.id, cluster_id: null, pending_addition: false, pending_roles: []};
-                return {id: node.id, pending_deletion: true};
+                // mark deployed node as pending deletion
+                if (node.get('status') == 'ready') return {
+                    id: node.id,
+                    pending_deletion: true
+                };
+                // remove not deployed node from cluster
+                return {
+                    id: node.id,
+                    cluster_id: null,
+                    pending_addition: false,
+                    pending_roles: []
+                };
             }));
             Backbone.sync('update', nodes)
                 .then(_.bind(function() {

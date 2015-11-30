@@ -499,8 +499,9 @@
                             "deploying": "Installing OpenStack"
                         },
                         "remove": "Remove",
-                        "discard_addition": "Discard Addition",
+                        "delete_node": "Delete node",
                         "discard_deletion": "Discard Deletion",
+                        "cant_discard": "Can not discard the node deletion",
                         "view_logs": "View Logs",
                         "edit_name": "Edit Name",
                         "more_info": "More Info",
@@ -913,6 +914,8 @@
                     "added_node_plural": "Added __count__ nodes.",
                     "deleted_node": "Deleted __count__ node.",
                     "deleted_node_plural": "Deleted __count__ nodes.",
+                    "provisioned_node": "Provisioned __count__ node.",
+                    "provisioned_node_plural": "Provisioned __count__ nodes.",
                     "settings_changes": {
                         "attributes": "Changed OpenStack settings.",
                         "networks": "Changed network settings.",
@@ -966,8 +969,8 @@
                     "title": "Delete Nodes",
                     "common_message": "Are you sure you want to delete the selected node from the environment?",
                     "common_message_plural": "Are you sure you want to delete selected nodes from the environment?",
-                    "new_nodes_message": "The pending addition node will return to the pool of unallocated nodes.",
-                    "new_nodes_message_plural": "Pending addition nodes will return to the pool of unallocated nodes.",
+                    "not_deployed_nodes_message": "The not deployed node will return to the pool of unallocated nodes.",
+                    "not_deployed_nodes_message_plural": "Not deployed nodes will return to the pool of unallocated nodes.",
                     "deployed_nodes_message": "The deployed node will be marked as pending deletion and will be removed from the environment after re-deployment.",
                     "deployed_nodes_message_plural": "Deployed nodes will be marked as pending deletion and will be removed from the environment after redeployment."
                 },
@@ -1198,7 +1201,6 @@
                             "deploying": "正在安装OpenStack"
                         },
                         "view_logs": "查看日志",
-                        "discard_addition": "取消增加",
                         "discard_deletion": "取消删除",
                         "discard_role_changes": "取消角色变更",
                         "edit_name": "编辑名称"
@@ -1900,7 +1902,6 @@
                             "deploying": "OpenStackをインストールしています"
                         },
                         "remove": "リムーブ",
-                        "discard_addition": "追加処理の破棄",
                         "discard_deletion": "削除処理の破棄",
                         "view_logs": "ログを表示",
                         "edit_name": "名前の編集",
@@ -2492,7 +2493,6 @@
                             "deploying": "OpenStack 설치중"
                         },
                         "view_logs": "로그 보기",
-                        "discard_addition": "추가를 취소",
                         "discard_deletion": "삭제를 취소",
                         "discard_role_changes": "역할 변경 내용을 취소",
                         "edit_name": "이름 바꿈",

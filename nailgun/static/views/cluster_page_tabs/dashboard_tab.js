@@ -442,6 +442,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     <h4>{i18n(namespace + 'changes_header')}</h4>
                                     <ul>
                                         {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
+                                        {this.renderChangedNodesAmount(nodes.where({status: 'provisioned'}), 'provisioned_node')}
                                         {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
                                     </ul>
                                 </div>

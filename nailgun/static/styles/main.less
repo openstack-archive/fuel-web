@@ -4274,7 +4274,13 @@ input[type=range] {
       .title {
         margin-bottom: @dashboard-offset;
         padding: 0;
-        .break-word;
+        .http-link {
+          font-size: @base-font-size;
+          display: inline-block;
+          margin-left: @dashboard-offset / 2;
+          position: relative;
+          top: -2.5px;
+        }
       }
       .description {
         margin: 0;

@@ -31,6 +31,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.utils import is_objects_equal
 from nailgun.utils import restrictions
 
 
@@ -318,7 +319,7 @@ class AttributesValidator(BasicValidator):
         for attrs in data.get('editable', {}).values():
             if not isinstance(attrs, dict):
                 continue
-            for attr_name, attr in attrs.items():
+            for attr_name, attr in six.iteritems(attrs):
                 cls.validate_attribute(attr_name, attr)
 
         return data
@@ -441,8 +442,223 @@ class VmwareAttributesValidator(BasicValidator):
 
     single_schema = cluster_schema.vmware_attributes_schema
 
+    @staticmethod
+    def _get_target_node_id(nova_compute_data):
+        return nova_compute_data['target_node']['current']['id']
+
     @classmethod
-    def validate(cls, data, instance=None):
+    def _validate_updated_attributes(cls, attributes, instance):
+        """Validate that attributes contains changes only for allowed fields.
+
+        :param attributes: new vmware attribute settings for db instance
+        :param instance: nailgun.db.sqlalchemy.models.VmwareAttributes instance
+        """
+        def _check_attribute(metadata, attributes, new_attributes):
+            if type(attributes) != type(new_attributes):
+                raise errors.InvalidData(
+                    "Value type of '{0}' attribute couldn't be changed.".
+                    format(metadata.get('label') or metadata.get('name')),
+                    log_message=True
+                )
+            if metadata.get('editable_for_deployed'):
+                return True
+
+            if 'fields' not in metadata:
+                if not is_objects_equal(attributes, new_attributes):
+                    raise errors.InvalidData(
+                        "Value of '{0}' attribute couldn't be changed.".
+                        format(metadata.get('label') or metadata.get('name')),
+                        log_message=True
+                    )
+                return True
+
+            fields_sort_functions = {
+                'availability_zones': lambda x: x['az_name'],
+                'nova_computes': lambda x: x['vsphere_cluster']
+            }
+            field_name = metadata['name']
+            if isinstance(attributes, (list, tuple)):
+                if len(attributes) != len(new_attributes):
+                    raise errors.InvalidData(
+                        "Value of '{0}' attribute couldn't be changed.".
+                        format(metadata.get('label') or metadata.get('name')),
+                        log_message=True
+                    )
+                attributes = sorted(
+                    attributes, key=fields_sort_functions.get(field_name))
+                new_attributes = sorted(
+                    new_attributes, key=fields_sort_functions.get(field_name))
+                for item, new_item in zip(attributes, new_attributes):
+                    for field_metadata in metadata['fields']:
+                        _check_attribute(field_metadata,
+                                         item.get(field_metadata['name']),
+                                         new_item.get(field_metadata['name']))
+            elif isinstance(attributes, dict):
+                for field_metadata in metadata['fields']:
+                    _check_attribute(field_metadata,
+                                     attributes.get(field_name, {}),
+                                     new_attributes.get(field_name, {}))
+
+        metadata = instance.editable.get('metadata', {})
+        db_editable_attributes = instance.editable.get('value', {})
+        new_editable_attributes = attributes.get('editable', {}).get('value')
+        for attribute_metadata in metadata:
+            attribute_name = attribute_metadata['name']
+            _check_attribute(attribute_metadata,
+                             db_editable_attributes.get(attribute_name),
+                             new_editable_attributes.get(attribute_name))
+
+    @classmethod
+    def _validate_nova_computes(cls, attributes, instance):
+        """Validates a 'nova_computes' attributes from vmware_attributes
+
+        Raise InvalidData exception if new attributes is not valid.
+
+        :param instance: nailgun.db.sqlalchemy.models.VmwareAttributes instance
+        :param attributes: new attributes for db instance for validation
+        """
+        input_nova_computes = objects.VmwareAttributes.get_nova_computes_attrs(
+            attributes.get('editable'))
+
+        cls.check_nova_compute_duplicate_and_empty_values(input_nova_computes)
+
+        db_nova_computes = objects.VmwareAttributes.get_nova_computes_attrs(
+            instance.editable)
+        if instance.cluster.is_locked:
+            cls.check_operational_controllers_settings(input_nova_computes,
+                                                       db_nova_computes)
+        operational_compute_nodes = [
+            n for n in instance.cluster.nodes if
+            'compute-vmware' in n.roles and not n.pending_deletion]
+        cls.check_operational_node_settings(
+            input_nova_computes, db_nova_computes, operational_compute_nodes)
+
+    @classmethod
+    def check_nova_compute_duplicate_and_empty_values(cls, attributes):
+        """Check 'nova_computes' attributes for empty and duplicate values."""
+        nova_compute_attributes_sets = {
+            'vsphere_cluster': set(),
+            'service_name': set(),
+            'target_node': set()
+        }
+        for nova_compute_data in attributes:
+            for attr, values in six.iteritems(nova_compute_attributes_sets):
+                if attr == 'target_node':
+                    settings_value = cls._get_target_node_id(nova_compute_data)
+                    if settings_value == 'controllers':
+                        continue
+                else:
+                    settings_value = nova_compute_data.get(attr)
+                if not settings_value:
+                    raise errors.InvalidData(
+                        "Empty value for attribute '{0}' is not allowed".
+                        format(attr),
+                        log_message=True
+                    )
+                if settings_value in values:
+                    raise errors.InvalidData(
+                        "Duplicate value '{0}' for attribute '{1}' is "
+                        "not allowed".format(settings_value, attr),
+                        log_message=True
+                    )
+                values.add(settings_value)
+
+    @classmethod
+    def check_operational_node_settings(cls, input_nova_computes,
+                                        db_nova_computes, operational_nodes):
+        """Validates a 'nova_computes' attributes for operational compute nodes
+
+        Raise InvalidData exception if nova_compute settings will be changed or
+        deleted for deployed nodes with role 'compute-vmware' that wasn't mark
+        for deletion
+
+        :param input_nova_computes: new nova_compute attributes
+        :param db_nova_computes: nova_computes attributes stored in db
+        :param operational_nodes: list of operation vmware-compute nodes
+        """
+        input_computes_by_node_name = dict(
+            (cls._get_target_node_id(nc), nc) for nc in input_nova_computes)
+        db_computes_by_node_name = dict(
+            (cls._get_target_node_id(nc), nc) for nc in db_nova_computes)
+
+        for node in operational_nodes:
+            node_hostname = node.hostname
+            input_nova_compute = input_computes_by_node_name.get(node_hostname)
+            if not input_nova_compute:
+                raise errors.InvalidData(
+                    "The following compute-vmware node couldn't be "
+                    "deleted from vSphere cluster: {0}".format(node.name),
+                    log_message=True
+                )
+            db_nova_compute = db_computes_by_node_name.get(node_hostname)
+            for attr, db_value in six.iteritems(db_nova_compute):
+                if attr != 'target_node' and \
+                        db_value != input_nova_compute.get(attr):
+                    raise errors.InvalidData(
+                        "Parameter '{0}' of nova compute instance of vSphere "
+                        "cluster '{1}' couldn't be changed".format(
+                            attr, db_nova_compute['vsphere_cluster']),
+                        log_message=True
+                    )
+
+    @classmethod
+    def check_operational_controllers_settings(cls, input_nova_computes,
+                                               db_nova_computes):
+        """Check deployed nova computes settings with target = controllers.
+
+        Raise InvalidData exception if any deployed nova computes clusters with
+        target 'controllers' were added, removed or modified.
+
+        :param input_nova_computes: new nova_compute settings
+        :param db_nova_computes: nova_computes settings stored in db
+        """
+        input_computes_by_vsphere_name = dict(
+            (nc['vsphere_cluster'], nc) for nc in input_nova_computes if
+            cls._get_target_node_id(nc) == 'controllers'
+        )
+        db_clusters_names = set()
+        for db_nova_compute in db_nova_computes:
+            target_name = cls._get_target_node_id(db_nova_compute)
+            if target_name == 'controllers':
+                vsphere_name = db_nova_compute['vsphere_cluster']
+                input_nova_compute = \
+                    input_computes_by_vsphere_name.get(vsphere_name)
+                if not input_nova_compute:
+                    raise errors.InvalidData(
+                        "The following nova compute instance with target "
+                        "'controllers' couldn't be deleted from operational "
+                        "environment: nova compute with vSphere cluster name "
+                        "'{0}' ".format(vsphere_name),
+                        log_message=True
+                    )
+                for attr, db_value in six.iteritems(db_nova_compute):
+                    input_value = input_nova_compute.get(attr)
+                    if attr == 'target_node':
+                        db_value = cls._get_target_node_id(db_nova_compute)
+                        input_value = cls._get_target_node_id(
+                            input_nova_compute)
+                    if db_value != input_value:
+                        raise errors.InvalidData(
+                            "Parameter '{0}' of nova compute instance with "
+                            "vSphere cluster name '{1}' couldn't be changed".
+                            format(attr, vsphere_name),
+                            log_message=True
+                        )
+                db_clusters_names.add(vsphere_name)
+
+        input_clusters_names = set(input_computes_by_vsphere_name.keys())
+        if input_clusters_names - db_clusters_names:
+            raise errors.InvalidData(
+                "Nova compute instances with target 'controllers' couldn't be "
+                "added to operational environment. Check nova compute "
+                "instances with the following vSphere cluster names: {0}".
+                format(', '.join(
+                    sorted(input_clusters_names - db_clusters_names))),
+                log_message=True
+            )
+
+    @classmethod
+    def validate(cls, data, instance):
         d = cls.validate_json(data)
         if 'metadata' in d.get('editable'):
             db_metadata = instance.editable.get('metadata')
@@ -452,6 +668,10 @@ class VmwareAttributesValidator(BasicValidator):
                     'Metadata shouldn\'t change',
                     log_message=True
                 )
+
+        if instance.cluster.is_locked:
+            cls._validate_updated_attributes(d, instance)
+        cls._validate_nova_computes(d, instance)
 
         # TODO(apopovych): write validation processing from
         # openstack.yaml for vmware

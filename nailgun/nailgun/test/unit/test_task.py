@@ -609,6 +609,66 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
                 _check_deployment_graph_for_correctness(
                     self.task)
 
+    def test_check_missed_nodes_vmware_nova_computes(self):
+        operational_node = self.env.create_node(
+            roles=['compute-vmware'],
+            cluster_id=self.cluster.id,
+            name='node-1'
+        )
+        pending_addition_node = self.env.create_node(
+            roles=['compute-vmware'],
+            cluster_id=self.cluster.id,
+            pending_addition=True,
+            name='node-2'
+        )
+        msg = ("The following compute-vmware nodes is not assigned to "
+               "any vCenter cluster: {0}").format(', '.join(
+                   sorted([operational_node.name, pending_addition_node.name])
+               ))
+        with self.assertRaisesRegexp(errors.CheckBeforeDeploymentError, msg):
+            task.CheckBeforeDeploymentTask._check_vmware_consistency(self.task)
+
+    @mock.patch('objects.VmwareAttributes.get_nova_computes_target_nodes_ids')
+    def test_check_not_deleted_nodes_vmware_nova_computes(self, target_nodes):
+        operational_node = self.env.create_node(
+            roles=['compute-vmware'],
+            cluster_id=self.cluster.id,
+            name='node-1'
+        )
+        pending_deletion_node = self.env.create_node(
+            roles=['compute-vmware'],
+            cluster_id=self.cluster.id,
+            pending_deletion=True,
+            name='node-2'
+        )
+        target_nodes.return_value = [
+            operational_node.hostname, pending_deletion_node.hostname]
+        msg = "The following nodes prepared for deletion and " \
+              "couldn't be assigned to any vCenter cluster: {0}".format(
+            pending_deletion_node.name
+        )
+        with self.assertRaisesRegexp(errors.CheckBeforeDeploymentError, msg):
+            task.CheckBeforeDeploymentTask._check_vmware_consistency(self.task)
+
+    @mock.patch('objects.VmwareAttributes.get_nova_computes_target_nodes_ids')
+    def test_check_extra_nodes_vmware_nova_computes(self, target_nodes):
+        operational_node = self.env.create_node(
+            roles=['compute-vmware'],
+            cluster_id=self.cluster.id
+        ).hostname
+        non_cluster_node = self.env.create_node(
+            roles=['compute-vmware']).hostname
+        other_role_node = self.env.create_node(
+            cluster_id = self.cluster.id).hostname
+        target_nodes.return_value = [
+            non_cluster_node, other_role_node, operational_node]
+        msg = "The following nodes don't belong to compute-vmware nodes of " \
+              "environment and couldn't be assigned to any vSphere cluster: " \
+              "{0}".format(
+            ', '.join(sorted([non_cluster_node, other_role_node]))
+        )
+        with self.assertRaisesRegexp(errors.CheckBeforeDeploymentError, msg):
+            task.CheckBeforeDeploymentTask._check_vmware_consistency(self.task)
 
 class TestDeployTask(BaseTestCase):
 

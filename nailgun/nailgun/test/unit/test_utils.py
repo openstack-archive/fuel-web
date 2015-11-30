@@ -26,6 +26,7 @@ from nailgun.utils import dict_merge
 from nailgun.utils import flatten
 from nailgun.utils import grouper
 from nailgun.utils import http_get
+from nailgun.utils import is_objects_equal
 from nailgun.utils import traverse
 
 from nailgun.utils.debian import get_apt_preferences_line
@@ -54,6 +55,58 @@ class TestUtils(base.BaseIntegrationTest):
                                            "transparency": 100,
                                            "dict": {"stuff": "hz",
                                                     "another_stuff": "hz"}}})
+
+    def test_objects_equal(self):
+        item1 = {
+            "sub_dict": {
+                "int_key": 1,
+                "none_value_key": None,
+                "dict_key": {'a': 'text'},
+                "list_key": [
+                    {"id": 1, "label": "label1"},
+                    {"id": "id2", "label": "label2"}
+                ]
+            },
+            "bar": "bar_value",
+            "foo": "foo_value"
+        }
+        item2 = {
+            "bar": "bar_value",
+            "foo": "foo_value",
+            "sub_dict": {
+                "dict_key": {'a': 'text'},
+                "int_key": 1,
+                "list_key": [
+                    {"label": "label1", "id": 1},
+                    {"id": "id2", "label": "label2"}
+                ],
+                "none_value_key": None
+            }
+        }
+        self.assertTrue(is_objects_equal(item1, item2))
+
+    def test_objects_not_equal(self):
+
+        self.assertFalse(is_objects_equal({'foo': 'val'}, {'foo': 1}))
+        self.assertFalse(is_objects_equal({'foo': 'val'}, {'bar': 'val'}))
+        self.assertFalse(is_objects_equal({'foo': 'val'},
+                                          {'foo': 'val', 'bar': 'val2'}))
+        self.assertFalse(is_objects_equal({'k': [1, 2]}, {'k': [1, 2, 3]}))
+        self.assertFalse(is_objects_equal(['foo', [1, 2, 3]],
+                                          ['foo', [1, 2, 5]]))
+        item1 = {
+            "sub_dict": {
+                "int_key": 1,
+                "list_key": [{"id": 1, "label": "label1"}]
+            }
+        }
+        item2 = {
+            "sub_dict": {
+                "int_key": 1,
+                "list_key": [{"label": "label1", "id": 2}]
+            }
+        }
+        self.assertFalse(is_objects_equal(item1, item2))
 
     def test_camel_case_to_snake_case(self):
         self.assertTrue(

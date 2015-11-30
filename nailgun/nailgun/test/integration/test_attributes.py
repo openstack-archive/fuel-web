@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
 import six
 
 from oslo_serialization import jsonutils
@@ -652,6 +653,49 @@ class TestVmwareAttributes(BaseIntegrationTest):
             "Cluster doesn't support vmware configuration",
             resp.json_body["message"]
         )
+
+    @patch('nailgun.db.sqlalchemy.models.Cluster.is_locked', return_value=True)
+    def test_vmware_attributes_update_for_locked_cluster_403(self, locked):
+        self._set_use_vcenter(self.cluster_db)
+        resp = self.app.put(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': self.cluster_db.id}),
+            params=jsonutils.dumps({
+                "editable": {
+                    "value": {"foo": "bar"}
+                }
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(403, resp.status_code)
+        self.assertEqual("Environment attributes can't be changed after or "
+                         "during deployment.", resp.json_body["message"])
+
+    @patch('objects.Cluster.has_compute_vmware_changes', return_value=True)
+    @patch('nailgun.db.sqlalchemy.models.Cluster.is_locked', return_value=True)
+    def test_vmware_attributes_update_for_locked_cluster_200(
+            self, is_locked_mock, has_compute_mock):
+        self._set_use_vcenter(self.cluster_db)
+        params = {
+            "editable": {
+                "value": {"foo": "bar"}
+            }}
+        with patch('nailgun.api.v1.handlers.cluster.VmwareAttributesHandler.'
+                   'checked_data', return_value=params):
+            resp = self.app.put(
+                reverse(
+                    'VmwareAttributesHandler',
+                    kwargs={'cluster_id': self.cluster_db.id}),
+                params=jsonutils.dumps(params),
+                headers=self.default_headers
+            )
+        self.assertEqual(200, resp.status_code)
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
+        self.assertEqual('bar', attrs.editable.get('value', {}).get('foo'))
+        attrs.editable.get('value', {}).pop('foo')
+        self.assertEqual(attrs.editable.get('value'), {})
 
     def _set_use_vcenter(self, cluster):
         cluster_attrs = objects.Cluster.get_editable_attributes(cluster)

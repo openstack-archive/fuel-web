@@ -245,7 +245,7 @@ class AttributesValidator(BasicValidator):
         for attrs in data.get('editable', {}).values():
             if not isinstance(attrs, dict):
                 continue
-            for attr_name, attr in attrs.items():
+            for attr_name, attr in six.iteritems(attrs):
                 cls.validate_attribute(attr_name, attr)
 
         return data
@@ -369,17 +369,109 @@ class VmwareAttributesValidator(BasicValidator):
     single_schema = cluster_schema.vmware_attributes_schema
 
     @classmethod
-    def validate(cls, data, instance=None):
-        d = cls.validate_json(data)
-        if 'metadata' in d.get('editable'):
+    def _validate_nova_computes(cls, instance, input_nova_computes):
+        """Validates a 'nova_computes' attributes from vmware_attributes
+
+        Raise InvalidData exception if new attributes is not valid.
+
+        :param instance: nailgun.db.sqlalchemy.models.VmwareAttributes instance
+        :param input_nova_computes: new nova_compute attributes for db
+                                    instance, that will be validated
+        """
+        db_nova_computes = instance.editable.get('value', {})\
+            .get('availability_zones', [{}])[0].get('nova_computes', [])
+        get_target_node_id = lambda x: x['target_node']['current']['id']
+
+        nova_compute_attributes_sets = {
+            'vsphere_cluster': set(),
+            'service_name': set(),
+            'target_node': set()
+        }
+        for nova_compute_data in input_nova_computes:
+            for attr, values in six.iteritems(nova_compute_attributes_sets):
+                settings_value = nova_compute_data.get(attr)
+                if attr == 'target_node':
+                    settings_value = get_target_node_id(nova_compute_data)
+                    if settings_value == 'controllers':
+                        continue
+                if settings_value in values:
+                    raise errors.InvalidData(
+                        "Duplicate value '{0}' for attribute '{1}' is "
+                        "not allowed".format(settings_value, attr),
+                        log_message=True
+                    )
+                values.add(settings_value)
+
+        compute_vmware_nodes = [
+            n for n in instance.cluster.nodes if
+            'compute-vmware' in set(n.roles + n.pending_roles)]
+        used_hostnames = set()
+        target_nodes_hostnames = nova_compute_attributes_sets['target_node']
+        for node in compute_vmware_nodes:
+            node_hostname = node.hostname
+            if not (node.pending_deletion or node.pending_addition):
+                input_nova_compute = [c for c in input_nova_computes if
+                                      get_target_node_id(c) == node_hostname]
+                if not input_nova_compute:
+                    raise errors.InvalidData(
+                        "The following node couldn't be deleted from "
+                        "vCenter cluster: {0}".format(node.name),
+                        log_message=True
+                    )
+                input_nova_compute = input_nova_compute[0]
+                db_nova_compute = [c for c in db_nova_computes if
+                                   get_target_node_id(c) == node_hostname]
+                db_nova_compute = db_nova_compute[0] or {}
+                for attr, db_value in six.iteritems(db_nova_compute):
+                    if attr != 'target_node' and \
+                            db_value != input_nova_compute.get(attr):
+                        raise errors.InvalidData(
+                            "The nova compute instance with vSphere "
+                            "cluster name '{0}' couldn't be changed".
+                            format(db_nova_compute['vsphere_cluster']),
+                            log_message=True
+                        )
+            elif node.pending_deletion and \
+                    node_hostname in target_nodes_hostnames:
+                raise errors.InvalidData(
+                    "The following node prepared for deletion and couldn't be"
+                    " assigned to any vCenter cluster: {0}".format(node.name),
+                    log_message=True
+                )
+            elif node.pending_addition and \
+                    node_hostname not in target_nodes_hostnames:
+                raise errors.InvalidData(
+                    "The following compute-vmware nodes are not assigned to "
+                    "any vCenter cluster: {0}".format(node.name),
+                    log_message=True
+                )
+            used_hostnames.add(node_hostname)
+
+        if target_nodes_hostnames - used_hostnames:
+            raise errors.InvalidData(
+                "The following nodes couldn't be assigned to any vCenter "
+                "cluster: {0}".format(
+                    sorted(target_nodes_hostnames - used_hostnames)),
+                log_message=True
+            )
+
+    @classmethod
+    def validate(cls, data, instance):
+        if 'metadata' in data.get('editable'):
             db_metadata = instance.editable.get('metadata')
-            input_metadata = d.get('editable').get('metadata')
+            input_metadata = data.get('editable').get('metadata')
             if db_metadata != input_metadata:
                 raise errors.InvalidData(
                     'Metadata shouldn\'t change',
                     log_message=True
                 )
 
+        availability_zones = data.get('editable').get('value', {})\
+            .get('availability_zones', [{}])[0]
+        if 'nova_computes' in availability_zones:
+            cls._validate_nova_computes(instance,
+                                        availability_zones['nova_computes'])
+
         # TODO(apopovych): write validation processing from
         # openstack.yaml for vmware
-        return d
+        return data

@@ -1269,6 +1269,27 @@ class TestClusterObject(BaseTestCase):
         self.assertTrue(objects.Cluster.is_component_enabled(cluster,
                                                              'ironic'))
 
+    def test_cluster_has_compute_vmware_changes(self):
+        cluster = self.env.create_cluster(api=False)
+        ready_compute_vmware_node = self.env.create_node(
+            cluster_id=cluster.id,
+            roles=['compute-vmware'],
+            status=consts.NODE_STATUSES.ready
+        )
+        self.env.create_node(cluster_id=cluster.id, pending_addition=True,
+                             pending_roles=['controller'])
+        self.assertFalse(objects.Cluster.has_compute_vmware_changes(cluster))
+
+        pending_compute_vmware_node = self.env.create_node(
+            cluster_id=cluster.id,
+            pending_roles=["compute-vmware"]
+        )
+        self.assertTrue(objects.Cluster.has_compute_vmware_changes(cluster))
+        objects.Node.delete(pending_compute_vmware_node)
+        objects.Node.update(
+            ready_compute_vmware_node, {'pending_deletion': True})
+        self.assertTrue(objects.Cluster.has_compute_vmware_changes(cluster))
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 

@@ -1284,6 +1284,31 @@ class Cluster(NailgunObject):
             instance.nodes if nodes is None else nodes
         )
 
+    @classmethod
+    def has_compute_vmware_changes(cls, instance):
+        """Checks if any 'compute-vmware' nodes are waiting for deployment.
+
+        :param instance: cluster for checking
+        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
+        """
+        compute_vmware_nodes_query = db().query(models.Node).filter_by(
+            cluster_id=instance.id
+        ).filter(sa.or_(
+            sa.and_(models.Node.roles.any('compute-vmware'),
+                    models.Node.pending_deletion),
+            models.Node.pending_roles.any('compute-vmware')
+        ))
+        return db().query(compute_vmware_nodes_query.exists()).scalar()
+
+    @classmethod
+    def get_operational_vmware_compute_nodes(cls, instance):
+        return db().query(models.Node).filter_by(
+            cluster_id=instance.id
+        ).filter(
+            models.Node.roles.any('compute-vmware'),
+            sa.not_(models.Node.pending_deletion)
+        ).all()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""
@@ -1294,3 +1319,22 @@ class ClusterCollection(NailgunCollection):
 
 class VmwareAttributes(NailgunObject):
     model = models.VmwareAttributes
+
+    @staticmethod
+    def get_nova_computes_attrs(attributes):
+        return attributes.get('value', {}).get(
+            'availability_zones', [{}])[0].get('nova_computes', [])
+
+    @classmethod
+    def get_nova_computes_target_nodes(cls, instance):
+        """Get data of targets node for all nova computes.
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :returns: list of dicts that represents nova compute targets
+        """
+        nova_compute_target_nodes = []
+        for nova_compute in cls.get_nova_computes_attrs(instance.editable):
+            target = nova_compute['target_node']['current']
+            if target['id'] != 'controllers':
+                nova_compute_target_nodes.append(target)
+        return nova_compute_target_nodes

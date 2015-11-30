@@ -129,7 +129,7 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     })
                     .assertElementContainsText('.warnings-block',
-                            'Networks verification', 'Network verification warning is shown')
+                            'Please verify your network settings before deployment', 'Network verification warning is shown')
                     .then(function() {
                         return dashboardPage.discardChanges();
                     });

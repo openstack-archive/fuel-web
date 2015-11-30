@@ -1336,78 +1336,11 @@ input[type=range] {
       position: relative;
       top: -2px;
     }
-    .cluster-info {
-      display: block;
-      height: 20px;
-      margin-bottom: 10px;
-      overflow: hidden;
-      ul {
-        display: block;
-        list-style: outside none none;
-        margin-bottom: 0;
-        padding-left: 0;
-        li {
-          float: left;
-          margin-right: 18px;
-          font-size: @base-font-size - 3;
-          color: @base-light-color;
-          -webkit-font-smoothing: subpixel-antialiased;
-          .text-shadow;
-        }
-      }
-    }
   }
 
   h4 {
     .font-normal;
     color: @base-text-color;
-  }
-  .deploy-box {
-    display: block;
-    height: 60px;
-    overflow: hidden;
-    padding-right: 0px;
-    padding-top: 20px;
-    box-sizing: border-box;
-  }
-  .deploy-icon {
-    position: relative;
-    top: 3px;
-    display: inline-block;
-    margin-right: 6px;
-    background: url(@common-icons-sprite) no-repeat -10px -90px;
-    width: 22px;
-    height: 18px;
-    &:before {
-      content: " ";
-    }
-  }
-  .deploy-process {
-    display: block;
-    height: 40px;
-    overflow: hidden;
-    padding-top: 6px;
-    .progress {
-      display: inline-block;
-      width: 140px;
-      height: 22px;
-    }
-    .deploy-percents {
-      display: block;
-      width: 30px;
-      overflow: hidden;
-      margin: 3px 10px 0px 10px;
-      color: @white;
-      .font-light;
-      font-size: @base-font-size - 2;
-    }
-  }
-  .discard-changes-icon {
-    position: relative;
-    display: inline-block;
-    background: url(@common-icons-sprite) no-repeat 0px -40px;
-    width: 40px;
-    height: 40px;
   }
 
   .network-tab,
@@ -4112,28 +4045,19 @@ input[type=range] {
 
 // Dashboard tab
 .dashboard-tab {
-  @cluster-info-background: #e7f0f2;
-  @deploy-border: #d3d3d3;
   @dashboard-gray: rgb(153, 153, 153);
   @dashboard-offset: 10px;
-  .alert-success {
-    margin-bottom: @dashboard-offset;
+
+  ul li {
+    list-style-type: none;
   }
-  .plugins-block {
-    margin-bottom: @dashboard-offset;
-  }
-  ul {
-    li {
-      list-style-type: none;
-    }
-  }
+
   .btn-add-nodes {
-    float: left;
-    margin-bottom: @dashboard-offset;
     .glyphicon {
       margin-right: @dashboard-offset;
     }
   }
+
   .documentation {
     margin: 0 0 @dashboard-offset 0;
     .documentation-link {
@@ -4143,51 +4067,50 @@ input[type=range] {
       }
     }
   }
+
   .cluster-information {
     background-color: rgb(231, 240, 242);
     width: @page-width;
-    margin: 0px 0px 10px -20px;
-    padding: 10px 20px;
+    margin: 0 0 @dashboard-offset -@dashboard-offset * 2;
+    padding: @dashboard-offset @dashboard-offset * 2;
     .go-to-healthcheck {
       margin-bottom: @dashboard-offset;
     }
-    .cluster-info-title {
-      .font-semibold;
-    }
-    .cluster-info-value,
-    .cluster-info-title {
+    .cluster-info-value, .cluster-info-title {
       height: auto;
       min-height: 30px;
       line-height: 17px;
       margin-bottom: 4px;
       text-align: left;
       white-space: pre;
-    }
-    .cluster-info-value {
-      &.name {
-        .btn-link {
-          padding-left: 0;
-          padding-top: 0;
-          border-left: 0;
-          text-align: left;
-          display: inline-block;
-          max-width: 180px;
-          overflow: hidden;
-          cursor: pointer;
-          text-overflow: ellipsis;
-          height: 27px;
-          line-height: 19px;
-        }
-        .glyphicon {
-          margin-left: 10px;
-          cursor: pointer;
-          vertical-align: text-top;
-        }
+      &.cluster-info-title {
+        .font-semibold;
       }
-      p {
-        white-space: pre-line;
-        word-wrap: break-word;
-
+      &.cluster-info-value {
+        &.name {
+          .btn-link {
+            padding-left: 0;
+            padding-top: 0;
+            border-left: 0;
+            text-align: left;
+            display: inline-block;
+            max-width: 180px;
+            overflow: hidden;
+            cursor: pointer;
+            text-overflow: ellipsis;
+            height: 27px;
+            line-height: 19px;
+          }
+          .glyphicon {
+            margin-left: 10px;
+            cursor: pointer;
+            vertical-align: text-top;
+          }
+        }
+        p {
+          white-space: pre-line;
+          word-wrap: break-word;
+        }
       }
     }
     .rename-block {
@@ -4239,144 +4162,108 @@ input[type=range] {
       .cluster-info-title {
         margin-bottom: @dashboard-offset;
       }
+    }
+    .dashboard-actions-wrapper {
+      margin: @dashboard-offset 0 @dashboard-offset 0;
+      .reset-environment {
+        margin-right: 87px;
+      }
       button {
-        margin-bottom: @dashboard-offset;
+        margin-right: @dashboard-offset / 2;
+      }
+      .glyphicon-info-sign {
+        vertical-align: sub;
       }
     }
   }
-  .deploy-block {
-    padding: 5px 20px;
-    border: 1px solid @deploy-border;
+
+  .dashboard-block {
+    padding: @dashboard-offset;
+    border: 1px solid #d3d3d3;
     border-radius: 4px;
-    margin-bottom: @dashboard-offset * 2;
-    .warning-redeployment {
+    margin: 0 15px @dashboard-offset * 2;
+    > div {
+      padding: @dashboard-offset;
+    }
+    h4 {
+      margin: 0 0 @dashboard-offset 0;
+    }
+    .description {
       margin-bottom: @dashboard-offset;
     }
-    .validation-result ul {
-      margin: 0;
-      padding-left: 0;
-      &.danger {
-        li {
-          .text-danger;
-        }
-      }
-      li {
-        line-height: 1.1;
-        &:last-child {
-          margin-bottom: 0;
-        }
-      }
-    }
-    .deploy-control {
-      .deploy-btn {
-        margin-right: 10px;
-      }
-    }
-    .discard-changes {
-      padding-left: 0;
-      border-left: 0;
-    }
     .changes-list {
-      padding: @dashboard-offset @dashboard-offset 0 @dashboard-offset;
-      a {cursor: pointer;}
-      .changes-header {
-        .font-bold;
-      }
-      h4 {
-        margin: 0 0 @dashboard-offset 0;
-        padding: 0;
-      }
       ul {
         padding: 0;
         color: @gray;
+        margin-bottom: @dashboard-offset;
+        li:not(:last-child) {
+          margin-bottom: @dashboard-offset / 2;
+        }
       }
-      .changes-item {
-        margin-bottom: 5px;
-      }
-      .deploy-btn {
-        margin-right: 20px;
+      .btn {
         padding-top: 2px;
+        display: block;
+        width: 170px;
+        text-align: left;
+        &:not(:last-child) {
+          margin-bottom: @dashboard-offset;
+        }
+        .deploy-icon, .discard-changes-icon {
+          position: relative;
+          top: 3px;
+          display: inline-block;
+          margin-right: 6px;
+          width: 22px;
+          height: 18px;
+          &:before {
+            content: " ";
+          }
+          &.deploy-icon {
+            background: url(@common-icons-sprite) no-repeat -10px -90px;
+          }
+          &.discard-changes-icon {
+            background: url(@common-icons-sprite) no-repeat -10px -50px;
+          }
+        }
       }
     }
-    .deploy-readiness {
-      padding: @dashboard-offset 0 0 @dashboard-offset;
-      .informational-block {
-        margin-bottom: @dashboard-offset;
-      }
+    .instruction {
+      margin-bottom: @dashboard-offset;
+    }
+    .environment-alerts {
       .invalid {
         .font-semibold;
         font-size: @base-font-size - 1;
         color: @red;
         margin-bottom: @dashboard-offset;
       }
-      h4 {
-        margin: 0 0 @dashboard-offset 0;
-        padding: 0;
-      }
-      p {
-        font-size: @base-font-size - 1;
-        .font-semibold;
-        margin: 0 0 @dashboard-offset 0;
-        padding: 0;
-        color: @base-text-color;
-      }
-      .section-title {
-        .font-bold;
-        font-size: @base-font-size + 2;
-      }
-      .btn-add-nodes {
-        float: left;
-      }
-      li {
-        margin-bottom: @dashboard-offset;
-      }
       .warnings-block {
         font-size: @base-font-size - 1;
-        margin-bottom: @dashboard-offset;
+        &:not(:last-child) {
+          margin-bottom: @dashboard-offset;
+        }
+        ul {
+          margin: 0;
+          padding: 0;
+          line-height: 1.1;
+          li:not(:last-child) {
+            margin-bottom: @dashboard-offset;
+          }
+        }
       }
     }
     .deploy-process {
       height: auto;
-      .task-title {
-        margin-bottom: @dashboard-offset + @dashboard-offset * 0.2;
-      }
+      width: 100%;
       .progress {
-        margin-bottom: @dashboard-offset;
+        margin-bottom: 0;
         width: 100%;
-        &.has-stop-control {
-          width: 95%;
-        }
+        height: 22px;
+        float: left;
       }
-    }
-  }
-  .dashboard-actions-wrapper {
-    margin: @dashboard-offset 0 @dashboard-offset 0;
-    .reset-environment {
-      margin-right: 87px;
-      .reset-environment-btn {
-        margin-right: 6px;
+      &.has-stop-control .progress {
+        width: 95%;
       }
-    }
-    .delete-environment {
-      .delete-environment-btn {
-        margin-right: 5px;
-      }
-    }
-    .glyphicon-info-sign {
-      vertical-align: sub;
-    }
-  }
-  .plugin-entry {
-    margin-bottom: @dashboard-offset * 1.5;
-    &.horizon {
-      .description {
-        margin-right: @dashboard-offset;
-        margin-bottom: @dashboard-offset;
-      }
-    }
-    .title {
-      padding: 0;
-      margin: 0;
     }
   }
 

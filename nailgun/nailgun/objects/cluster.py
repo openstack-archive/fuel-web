@@ -1164,6 +1164,14 @@ class Cluster(NailgunObject):
 
         return query.all()
 
+    @classmethod
+    def has_compute_vmware_changes(cls, cluster):
+        pending_compute_vmware_nodes = [
+            n for n in cluster.nodes if 'compute-vmware' in n.pending_roles
+            or 'compute-vmware' in n.roles and n.pending_deletion
+        ]
+        return len(pending_compute_vmware_nodes) > 0
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

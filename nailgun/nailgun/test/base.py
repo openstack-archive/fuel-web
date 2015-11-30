@@ -241,8 +241,8 @@ class EnvironmentManager(object):
         cluster_data = {
             'name': 'cluster-api-' + str(randint(0, 1000000)),
         }
-        editable_attributes = kwargs.pop(
-            'editable_attributes', None)
+        editable_attributes = kwargs.pop('editable_attributes', None)
+        vmware_attributes = kwargs.pop('vmware_attributes', None)
 
         if kwargs:
             cluster_data.update(kwargs)
@@ -275,6 +275,8 @@ class EnvironmentManager(object):
         if editable_attributes:
             Cluster.patch_attributes(cluster_db,
                                      {'editable': editable_attributes})
+        if vmware_attributes:
+            Cluster.update_vmware_attributes(cluster_db, vmware_attributes)
         return cluster
 
     def create_node(

@@ -458,7 +458,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             :
                                 isDeploymentPossible &&
                                     <button
-                                        className='btn btn-primary deploy-btn'
+                                        className={utils.classNames({
+                                            'btn btn-primary deploy-btn': true,
+                                            'btn-warning': _.any(alerts, (messages) => !_.isEmpty(messages))
+                                        })}
                                         onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
                                     >
                                         <div className='deploy-icon' />

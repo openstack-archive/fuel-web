@@ -91,6 +91,27 @@ def dict_merge(a, b):
     return result
 
 
+def is_objects_equal(item1, item2):
+    """Recursively compare 2 objects with complex type values"""
+    if type(item1) != type(item2):
+        return False
+
+    if isinstance(item1, dict):
+        for k in set(item1.keys() + item2.keys()):
+            if not is_objects_equal(item1.get(k), item2.get(k)):
+                return False
+        return True
+
+    if isinstance(item1, list):
+        # list item1 & item2 should be sorted in correct order
+        for value1, value2 in zip_longest(item1, item2):
+            if not is_objects_equal(value1, value2):
+                return False
+        return True
+
+    return item1 == item2
+
+
 def traverse(data, generator_class, formatter_context=None):
     """Traverse data.
 

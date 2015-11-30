@@ -1284,6 +1284,17 @@ class Cluster(NailgunObject):
             instance.nodes if nodes is None else nodes
         )
 
+    @classmethod
+    def has_compute_vmware_changes(cls, instance):
+        """Checks if any 'compute-vmware' nodes are waiting for deployment."""
+        return db().query(models.Node).filter_by(
+            cluster_id=instance.id
+        ).filter(sa.or_(
+            sa.and_(models.Node.roles.any('compute-vmware'),
+                    models.Node.pending_deletion),
+            models.Node.pending_roles.any('compute-vmware')
+        )).count()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""
@@ -1294,3 +1305,20 @@ class ClusterCollection(NailgunCollection):
 
 class VmwareAttributes(NailgunObject):
     model = models.VmwareAttributes
+
+    @staticmethod
+    def get_nova_computes_attrs(attributes):
+        return attributes.get('value', {}).get(
+            'availability_zones', [{}])[0].get('nova_computes', [])
+
+    @staticmethod
+    def get_compute_target_id(nova_compute_data):
+        return nova_compute_data['target_node']['current']['id']
+
+    @classmethod
+    def get_nova_computes_target_nodes_ids(cls, instance):
+        nova_computes_attributes = cls.get_nova_computes_attrs(
+            instance.editable)
+        return [cls.get_compute_target_id(nc)
+                for nc in nova_computes_attributes
+                if cls.get_compute_target_id(nc) != 'controllers']

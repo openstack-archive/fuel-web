@@ -1274,6 +1274,13 @@ class CheckBeforeDeploymentTask(object):
             if not cinder_nodes:
                 logger.info('There is no any node with "cinder" role provided')
 
+            compute_vmware_nodes = filter(
+                lambda node: 'compute-vmware' in node.all_roles,
+                task.cluster.nodes)
+            if compute_vmware_nodes:
+                cls._check_vmware_nova_computes(compute_vmware_nodes,
+                                                vmware_attributes)
+
             models = {
                 'settings': attributes,
                 'default': vmware_attributes.editable,
@@ -1289,6 +1296,30 @@ class CheckBeforeDeploymentTask(object):
 
             if errors_msg:
                 raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
+
+    @classmethod
+    def _check_vmware_nova_computes(cls, compute_vmware_nodes, attributes):
+        """Check that nova computes settings is correct for cluster nodes"""
+        compute_nodes_hostnames = objects.VmwareAttributes.\
+            get_nova_computes_target_nodes_ids(attributes)
+
+        errors_msg = []
+        for node in compute_vmware_nodes:
+            node_hostname = node.hostname
+            if node.pending_deletion:
+                if node_hostname in compute_nodes_hostnames:
+                    errors_msg.append(
+                        "The following node prepared for deletion and "
+                        "couldn't be assigned to any vCenter cluster: {0}".
+                        format(node.name),
+                    )
+            elif node_hostname not in compute_nodes_hostnames:
+                errors_msg.append(
+                    "The following compute-vmware node is not assigned to "
+                    "any vCenter cluster: {0}".format(node.name)
+                )
+        if errors_msg:
+            raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
 
     @classmethod
     def _validate_network_template(cls, task):

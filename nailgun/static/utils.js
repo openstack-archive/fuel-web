@@ -243,8 +243,9 @@ define([
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
             if (!cidr) return true;
-            var networkData = IP.cidrSubnet(cidr),
-                ipInt = IP.toLong(ip);
+            var networkData, ipInt;
+            try {networkData = IP.cidrSubnet(cidr);} catch (e) {return false;}
+            try {ipInt = IP.toLong(ip);} catch (e) {return false;}
             return ipInt >= IP.toLong(networkData.firstAddress) && ipInt <= IP.toLong(networkData.lastAddress);
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {

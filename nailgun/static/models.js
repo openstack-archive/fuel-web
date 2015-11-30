@@ -910,7 +910,8 @@ define([
                 networkParameters = attrs.networking_parameters,
                 nodeNetworkGroupsErrors = {},
                 nodeNetworkGroups = app.nodeNetworkGroups,
-                novaNetManager = networkParameters.get('net_manager');
+                novaNetManager = networkParameters.get('net_manager'),
+                floatingRangesErrors;
 
             nodeNetworkGroups.map(function(nodeNetworkGroup) {
                 var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
@@ -994,6 +995,10 @@ define([
                         networkingParametersErrors.fixed_networks_vlan_start = i18n(ns + 'vlan_intersection');
                     }
                 }
+                floatingRangesErrors = utils.validateIpRanges(networkParameters.get('floating_ranges'), null, true);
+                if (floatingRangesErrors.length) {
+                    networkingParametersErrors.floating_ranges = floatingRangesErrors;
+                }
             } else {
                 var idRangeErrors = ['', ''];
                 var segmentation = networkParameters.get('segmentation_type');
@@ -1035,14 +1040,16 @@ define([
                         networkingParametersErrors[paramName] = i18n('cluster_page.network_tab.validation.invalid_name');
                     }
                 });
-            }
-            var networkWithFloatingRange = networks.filter(function(network) {return network.get('meta').floating_range_var;})[0];
-            if (networkWithFloatingRange && !_.has(((errors.networks ||
-                {})[networkWithFloatingRange.get('group_id')] ||
-                {})[networkWithFloatingRange.id], 'cidr')) {
-                var floatingRangesErrors = utils.validateIpRanges(networkParameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'), true);
-                if (floatingRangesErrors.length) {
-                    networkingParametersErrors.floating_ranges = floatingRangesErrors;
+                var networkWithFloatingRange = networks.filter(function(network) {
+                    return network.get('meta').floating_range_var;
+                })[0];
+                if (networkWithFloatingRange && !_.has(((errors.networks ||
+                    {})[networkWithFloatingRange.get('group_id')] ||
+                    {})[networkWithFloatingRange.id], 'cidr')) {
+                    floatingRangesErrors = utils.validateIpRanges(networkParameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'), true);
+                    if (floatingRangesErrors.length) {
+                        networkingParametersErrors.floating_ranges = floatingRangesErrors;
+                    }
                 }
             }
             var nameserverErrors = [];

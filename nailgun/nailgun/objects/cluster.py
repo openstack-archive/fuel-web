@@ -1206,6 +1206,15 @@ class Cluster(NailgunObject):
             instance.nodes if nodes is None else nodes
         )
 
+    @classmethod
+    def has_compute_vmware_changes(cls, instance):
+        """Checks if any 'compute-vmware' nodes are waiting for deployment."""
+        pending_compute_vmware_nodes = [
+            n for n in instance.nodes if 'compute-vmware' in n.pending_roles
+            or 'compute-vmware' in n.roles and n.pending_deletion
+        ]
+        return len(pending_compute_vmware_nodes) > 0
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""
@@ -1216,3 +1225,41 @@ class ClusterCollection(NailgunCollection):
 
 class VmwareAttributes(NailgunObject):
     model = models.VmwareAttributes
+
+    @classmethod
+    def check_new_attributes_for_deployed_cluster(cls, instance, attributes):
+        """Merge provided vmware attributes with instance attributes.
+
+        Apply new values only for attributes with editable_for_deployed = true
+
+        :param instance: nailgun.db.sqlalchemy.models.VmwareAttributes instance
+        :param attributes: new vmware attributes
+        :return: merged vmware attributes with applied changes from attributes
+        """
+
+        checked_new_attributes = {}
+        db_attributes = instance.editable.get('value', {})
+        new_attributes = attributes.get('editable').get('value', {})
+        for metadata in instance.editable.get('metadata'):
+            field_name = metadata['name']
+            editable = metadata.get('editable_for_deployed')
+            if field_name == 'availability_zones':
+                checked_availability_zones = {}
+                for zone_meta in metadata.get('fields'):
+                    zone_field_name = zone_meta['name']
+                    new_zone_attributes = new_attributes[field_name][0]
+                    if zone_meta.get('editable_for_deployed') and \
+                            zone_field_name in new_zone_attributes:
+                        checked_availability_zones[zone_field_name] = \
+                            new_zone_attributes[zone_field_name]
+                    else:
+                        checked_availability_zones[zone_field_name] = \
+                            db_attributes[field_name][0][zone_field_name]
+                checked_new_attributes[field_name] = \
+                    [checked_availability_zones]
+            elif editable and field_name in new_attributes:
+                checked_new_attributes[field_name] = new_attributes[field_name]
+            else:
+                checked_new_attributes[field_name] = db_attributes[field_name]
+        attributes['editable']['value'] = checked_new_attributes
+        return attributes

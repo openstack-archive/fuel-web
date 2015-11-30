@@ -313,7 +313,67 @@ class VmwareAttributesValidator(BasicValidator):
     single_schema = cluster_schema.vmware_attributes_schema
 
     @classmethod
-    def validate(cls, data, instance=None):
+    def _validate_nova_computes(cls, instance, input_nova_computes):
+        db_nova_computes = instance.editable.get('value', {})\
+            .get('availability_zones', [{}])[0].get('nova_computes', [])
+        target_nodes_hostname = [
+            nc['target_node']['current']['id'] for nc in input_nova_computes
+            if nc['target_node']['current']['id'] != 'controllers'
+        ]
+        compute_vmware_nodes = [
+            n for n in instance.cluster.nodes if
+            'compute-vmware' in n.pending_roles or 'compute-vmware' in n.roles
+        ]
+
+        # TODO(ekosareva): validate duplicate Cluster and Service name
+        # TODO(ekosareva): handle deletion/addition controllers nova computes
+        used_hostname = set([])
+        for node in compute_vmware_nodes:
+            node_hostname = node.hostname
+            if not (node.pending_deletion or node.pending_addition):
+                db_nova_compute = [
+                    c for c in db_nova_computes
+                    if c['target_node']['current']['id'] == node.hostname]
+                input_nova_compute = [
+                    c for c in input_nova_computes
+                    if c['target_node']['current']['id'] == node.hostname]
+                if db_nova_compute and input_nova_compute:
+                    for attr, db_value in db_nova_compute[0].items():
+                        if attr == 'target_node':
+                            continue
+                        if db_value != input_nova_compute[0].get(attr):
+                            raise errors.InvalidData(
+                                "The nova compute instance with vSphere "
+                                "cluster name '{0}' couldn't be changed".
+                                format(db_nova_compute[0]['vsphere_cluster']),
+                                log_message=True
+                            )
+            elif node.pending_deletion and \
+                    node_hostname in target_nodes_hostname:
+                raise errors.InvalidData(
+                    "The following node prepared for deletion and couldn't be"
+                    " assigned to any vCenter cluster: {0}".format(node.name),
+                    log_message=True
+                )
+            elif node.pending_addition and \
+                    node_hostname not in target_nodes_hostname:
+                raise errors.InvalidData(
+                    "The following compute-vmware nodes are not assigned to "
+                    "any vCenter cluster: {0}".format(node.name),
+                    log_message=True
+                )
+            used_hostname.add(node_hostname)
+
+        if set(target_nodes_hostname) - set(used_hostname):
+            raise errors.InvalidData(
+                "The following nodes couldn't be assigned to any vCenter "
+                "cluster: {0}".format(
+                    sorted(set(target_nodes_hostname) - set(used_hostname))),
+                log_message=True
+            )
+
+    @classmethod
+    def validate(cls, data, instance):
         d = cls.validate_json(data)
         if 'metadata' in d.get('editable'):
             db_metadata = instance.editable.get('metadata')
@@ -323,6 +383,13 @@ class VmwareAttributesValidator(BasicValidator):
                     'Metadata shouldn\'t change',
                     log_message=True
                 )
+
+        # TODO(ekosareva): validate editable value settings of deployed cluster
+        availability_zones = d.get('editable').get('value', {})\
+            .get('availability_zones', [{}])[0]
+        if 'nova_computes' in availability_zones:
+            cls._validate_nova_computes(instance,
+                                        availability_zones['nova_computes'])
 
         # TODO(apopovych): write validation processing from
         # openstack.yaml for vmware

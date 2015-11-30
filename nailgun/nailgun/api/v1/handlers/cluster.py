@@ -19,6 +19,7 @@ Handlers dealing with clusters
 """
 
 import traceback
+import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import DeferredTaskHandler
@@ -330,11 +331,16 @@ class VmwareAttributesHandler(BaseHandler):
         if not attributes:
             raise self.http(404, "No vmware attributes found")
 
+        data = self.validator.validate_json(web.data())
         if cluster.is_locked:
-            raise self.http(403, "Environment attributes can't be changed "
-                                 "after or during deployment.")
+            if objects.Cluster.has_compute_vmware_changes(cluster):
+                data = objects.VmwareAttributes.check_new_attributes(
+                    attributes, data)
+            else:
+                raise self.http(403, "Environment attributes can't be changed "
+                                     "after or during deployment.")
 
-        data = self.checked_data(instance=attributes)
+        data = self.checked_data(instance=attributes, data=data)
         attributes = objects.Cluster.update_vmware_attributes(cluster, data)
 
         return {"editable": attributes}

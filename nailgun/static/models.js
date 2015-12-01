@@ -995,7 +995,9 @@ define([
                         networkingParametersErrors.fixed_networks_vlan_start = i18n(ns + 'vlan_intersection');
                     }
                 }
-                floatingRangesErrors = utils.validateIpRanges(networkParameters.get('floating_ranges'), null, true);
+                floatingRangesErrors = _.reject(networkParameters.get('floating_ranges').map((range) => {
+                    return utils.validateIPrange(range[0], range[1]);
+                }));
                 if (floatingRangesErrors.length) {
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
                 }

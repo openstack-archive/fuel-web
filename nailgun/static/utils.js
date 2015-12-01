@@ -243,7 +243,9 @@ define([
             return ipRangesErrors;
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
+            if (!utils.validateIP(ip)) return false;
             if (!cidr) return true;
+            if (!_.isEmpty(utils.validateCidr(cidr))) return false;
             var networkData = IP.cidrSubnet(cidr),
                 ipInt = IP.toLong(ip);
             return ipInt >= IP.toLong(networkData.firstAddress) && ipInt <= IP.toLong(networkData.lastAddress);

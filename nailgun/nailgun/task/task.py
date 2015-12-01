@@ -144,6 +144,8 @@ class DeploymentTask(object):
         :param cluster: Cluster db object
         :returns: string - deploy/granular_deploy
         """
+        if settings.TASK_BASED_DEPLOYMENT:
+            return "task_deploy"
         if objects.Release.is_granular_enabled(cluster.release):
             return 'granular_deploy'
         return 'deploy'
@@ -171,6 +173,23 @@ class DeploymentTask(object):
                 db().add(n)
         db().flush()
 
+        deployment_mode = cls._get_deployment_method(task.cluster)
+        message = getattr(cls, deployment_mode)(task, nodes, deployment_tasks)
+        # After serialization set pending_addition to False
+        for node in nodes:
+            node.pending_addition = False
+
+        rpc_message = make_astute_message(
+            task,
+            deployment_mode,
+            'deploy_resp',
+            message
+        )
+        db().flush()
+        return rpc_message
+
+    @classmethod
+    def granular_deploy(cls, task, nodes, deployment_tasks):
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
         orchestrator_graph.only_tasks(deployment_tasks)
 
@@ -178,28 +197,45 @@ class DeploymentTask(object):
         # it should not cause any issues with deployment/progress and was
         # done by design
         serialized_cluster = deployment_serializers.serialize(
-            orchestrator_graph, task.cluster, nodes)
+            task.cluster, nodes, orchestrator_graph
+        )
         pre_deployment = stages.pre_deployment_serialize(
             orchestrator_graph, task.cluster, nodes)
         post_deployment = stages.post_deployment_serialize(
             orchestrator_graph, task.cluster, nodes)
 
-        # After serialization set pending_addition to False
-        for node in nodes:
-            node.pending_addition = False
+        return {
+            'deployment_info': serialized_cluster,
+            'pre_deployment': pre_deployment,
+            'post_deployment': post_deployment
+        }
 
-        rpc_message = make_astute_message(
-            task,
-            cls._get_deployment_method(task.cluster),
-            'deploy_resp',
-            {
-                'deployment_info': serialized_cluster,
-                'pre_deployment': pre_deployment,
-                'post_deployment': post_deployment
-            }
+    deploy = granular_deploy
+
+    @classmethod
+    def task_deploy(cls, task, nodes, deployment_tasks):
+        try:
+            return cls.task_based_deployment(task, nodes, deployment_tasks)
+        except errors.TaskBaseDeploymentNotAllowed:
+            pass
+
+        return cls.granular_deploy(task, nodes, deployment_tasks)
+
+    @classmethod
+    def task_based_deployment(cls, task, nodes, deployment_tasks):
+        deployment_tasks = deployment_tasks or \
+            objects.Cluster.get_deployment_tasks(task.cluster)
+
+        serialized_tasks = tasks_serializer.TasksSerializer.serialize(
+            nodes, deployment_tasks
         )
-        db().flush()
-        return rpc_message
+        serialized_cluster = deployment_serializers.serialize(
+            task.cluster, nodes
+        )
+        return {
+            "deployment_info": serialized_cluster,
+            "deployment_tasks": serialized_tasks
+        }
 
 
 class UpdateNodesInfoTask(object):
@@ -252,7 +288,8 @@ class UpdateTask(object):
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
 
         serialized_cluster = deployment_serializers.serialize(
-            orchestrator_graph, task.cluster, nodes)
+            task.cluster, nodes, orchestrator_graph
+        )
 
         # After serialization set pending_addition to False
         for node in nodes:

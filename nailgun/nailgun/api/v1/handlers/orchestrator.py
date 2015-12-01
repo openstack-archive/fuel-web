@@ -152,7 +152,8 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
     def _serialize(self, cluster, nodes):
         graph = deployment_graph.AstuteGraph(cluster)
         return deployment_serializers.serialize(
-            graph, cluster, nodes, ignore_customized=True)
+            cluster, nodes, tasks_graph=graph, ignore_customized=True
+        )
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

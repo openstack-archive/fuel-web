@@ -23,6 +23,7 @@ from mock import patch
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
+from oslo_serialization import jsonutils
 import six
 from sqlalchemy import not_
 import yaml
@@ -32,6 +33,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.objects.serializers import network_configuration
+from nailgun.utils import reverse
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
@@ -1495,3 +1497,152 @@ class TestNeutronManager80(BaseNetworkManagerTest):
         self.assertNotIn('unmapped_vip', assigned_vips)
 
         self._check_vip_configuration(expected_vips, assigned_vips)
+
+
+class BaseIPAddrTest(BaseNetworkManagerTest):
+    def setUp(self):
+        self.maxDiff = None
+        super(BaseIPAddrTest, self).setUp()
+        self.vips_to_create = {
+            consts.NETWORKS.management: {
+                consts.NETWORK_VIP_TYPES.haproxy: '192.168.0.1',
+                consts.NETWORK_VIP_TYPES.vrouter: '192.168.0.2',
+            },
+            consts.NETWORKS.public: {
+                consts.NETWORK_VIP_TYPES.haproxy: '172.16.0.2',
+                consts.NETWORK_VIP_TYPES.vrouter: '172.16.0.3',
+            },
+        }
+        self.cluster = self.env.create_cluster(api=False)
+        self._create_ip_addrs_by_rules(self.cluster, self.vips_to_create)
+
+        self.expected_vips = [
+            {'vip_info': {'name': 'haproxy'}, 'node': None,
+             'node_data': None, 'ip_addr': '172.16.0.2'},
+            {'vip_info': {'name': 'vrouter'}, 'node': None,
+             'node_data': None, 'ip_addr': '172.16.0.3'},
+            {'vip_info': {'name': 'haproxy'}, 'node': None,
+             'node_data': None, 'ip_addr': '192.168.0.1'},
+            {'vip_info': {'name': 'vrouter'}, 'node': None,
+             'node_data': None, 'ip_addr': '192.168.0.2'}
+        ]
+        self.vip_id = self.app.get(
+            reverse(
+                'ClusterVIPCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
+            ),
+            headers=self.default_headers
+        ).json_body[0].get('id')
+
+    def _remove_from_response(self, response, fields):
+        list_given = isinstance(response, list)
+        if not list_given:
+            response = [response]
+
+        clean_response = []
+        for resp_item in response:
+            resp_item_clone = dict(resp_item)
+            for f in fields:
+                resp_item_clone.pop(f, None)
+            clean_response.append(resp_item_clone)
+
+        return clean_response if list_given else clean_response[0]
+
+
+class TestIPAddrList(BaseIPAddrTest):
+    def test_vips_list_for_cluster(self):
+        resp = self.app.get(
+            reverse(
+                'ClusterVIPCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            self.expected_vips,
+            self._remove_from_response(
+                resp.json_body,
+                ['id', 'network', 'network_data']
+            ),
+        )
+
+    def test_vips_list_with_two_clusters(self):
+        self.second_cluster = self.env.create_cluster(api=False)
+        self._create_ip_addrs_by_rules(
+            self.second_cluster,
+            self.vips_to_create
+        )
+        resp = self.app.get(
+            reverse(
+                'ClusterVIPCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            self.expected_vips,
+            self._remove_from_response(
+                resp.json_body,
+                ['id', 'network', 'network_data']
+            ),
+        )
+
+    def test_wrong_cluster(self):
+        resp = self.app.get(
+            reverse(
+                'ClusterVIPCollectionHandler',
+                kwargs={'cluster_id': 99999}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(404, resp.status_code)
+
+
+class TestIPAddrHandler(BaseIPAddrTest):
+    def test_get_ip_addr(self):
+        resp = self.app.get(
+            reverse(
+                'ClusterVIPHandler',
+                kwargs={
+                    'cluster_id': self.cluster['id'],
+                    'obj_id': self.vip_id
+                }
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertIn(
+            self._remove_from_response(
+                resp.json_body,
+                ['id', 'network', 'network_data']
+            ),
+            self.expected_vips
+        )
+
+    def test_update_ip_addr(self):
+        ip_addr_update = {
+            'vip_info': {
+                'network_role': 'network_role_updated',
+                'node_roles': ['node_roles_updated'],
+                'alias': 'alias_updated',
+                'name': 'name_updated',
+                'namespace': 'namespace_updated',
+                'manual': True
+            }
+        }
+        resp = self.app.patch(
+            reverse(
+                'ClusterVIPHandler',
+                kwargs={
+                    'cluster_id': self.cluster['id'],
+                    'obj_id': self.vip_id
+                }
+            ),
+            params=jsonutils.dumps(ip_addr_update),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(ip_addr_update, ip_addr_update)

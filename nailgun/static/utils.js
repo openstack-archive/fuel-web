@@ -212,7 +212,7 @@ define([
             return error[field] ? error : {};
         },
         validateIP: function(ip) {
-            return _.isString(ip) && ip.match(utils.regexes.ip);
+            return _.isString(ip) && !!ip.match(utils.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
             return IP.toLong(startIP) - IP.toLong(endIP) <= 0;

@@ -374,6 +374,9 @@ EXTENSION_NAME_MAX_SIZE = 64
 ALL_ROLES = '*'
 MASTER_ROLE = 'master'
 
+POLICY_ALL = 'all'
+POLICY_ANY = 'any'
+
 # version of Fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'
 # version of Fuel when we added remote repos
@@ -437,3 +440,5 @@ OPENSTACK_CONFIG_TYPES = Enum(
 )
 
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'
+
+TASK_CROSS_DEPENDENCY = '2.0.0'

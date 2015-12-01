@@ -137,16 +137,22 @@ class ClusterPlugins(NailgunObject):
         :return: True if compatible, False if not
         :rtype: bool
         """
+        cluster_os = cluster.release.operating_system.lower()
         for release in plugin.releases:
-            os_compat = cluster.release.operating_system.lower()\
-                == release['os'].lower()
+            if cluster_os != release['os'].lower():
+                continue
             # plugin writer should be able to specify ha in release['mode']
             # and know nothing about ha_compact
-            mode_compat = any(mode in cluster.mode for mode in release['mode'])
-            release_version_compat = cls.is_release_version_compatible(
-                cluster.release.version, release['version'])
-            if all((os_compat, mode_compat, release_version_compat)):
-                return True
+            if not any(
+                cluster.mode.startswith(mode) for mode in release['mode']
+            ):
+                continue
+
+            if not cls.is_release_version_compatible(
+                cluster.release.version, release['version']
+            ):
+                continue
+            return True
         return False
 
     @staticmethod
@@ -259,8 +265,9 @@ class ClusterPlugins(NailgunObject):
             models.Plugin.name,
             models.Plugin.title,
             models.Plugin.version,
-            cls.model.enabled,
+            models.Plugin.is_hotpluggable,
             models.Plugin.attributes_metadata,
+            cls.model.enabled,
             cls.model.attributes
         ).join(cls.model)\
             .filter(cls.model.cluster_id == cluster_id)\
@@ -316,4 +323,4 @@ class ClusterPlugins(NailgunObject):
             .join(cls.model)\
             .filter(cls.model.cluster_id == cluster_id)\
             .filter(cls.model.enabled.is_(True))\
-            .all()
+            .order_by(models.Plugin.id)

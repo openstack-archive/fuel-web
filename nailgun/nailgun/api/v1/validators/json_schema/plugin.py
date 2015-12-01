@@ -50,7 +50,8 @@ PLUGIN_SCHEMA = {
         'homepage': {'type': 'string'},
         'releases': {
             'type': 'array',
-            'items': PLUGIN_RELEASE_SCHEMA}
+            'items': PLUGIN_RELEASE_SCHEMA},
+        'is_hotpluggable': {"type": "boolean"},
     },
     'required': [
         'name',

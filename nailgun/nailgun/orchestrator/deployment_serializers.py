@@ -34,7 +34,7 @@ from nailgun import objects
 from nailgun import utils
 from nailgun.utils.ceph import get_pool_pg_count
 
-from nailgun.orchestrator.base_serializers import GraphBasedSerializer
+from nailgun.orchestrator.base_serializers import DeploymentSerializer
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
     VmwareDeploymentSerializerMixin
@@ -62,12 +62,14 @@ from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer70
 
 
-class DeploymentMultinodeSerializer(GraphBasedSerializer):
-
+class DeploymentMultinodeSerializer(DeploymentSerializer):
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer
 
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
+
+    def __init__(self, tasks_graph=None):
+        self.task_graph = tasks_graph
 
     def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which are passed to puppet."""
@@ -316,6 +318,15 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     def filter_by_roles(self, nodes, roles):
         return filter(
             lambda node: node['role'] in roles, nodes)
+
+    def set_deployment_priorities(self, nodes):
+        if self.task_graph is not None:
+            self.task_graph.add_priorities(nodes)
+
+    def set_tasks(self, serialized_nodes):
+        if self.task_graph is not None:
+            for node in serialized_nodes:
+                node['tasks'] = self.task_graph.deploy_task_serialize(node)
 
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):

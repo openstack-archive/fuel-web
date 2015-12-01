@@ -1501,14 +1501,28 @@ input[type=range] {
 }
 
 .plugins-page {
-  h3 {margin-top: 0;}
-  .detail-title span {color: @gray;}
+  h3 {
+    margin-top: 0;
+  }
+  .detail-title span {
+    color: @gray;
+  }
   .plugin {
     padding: 20px;
-    .row {margin-bottom: 5px;}
-    &:nth-child(odd) {background: @light-blue;}
+    .plugin-link {
+      margin-bottom: 5px;
+      a {
+        display: block;
+      }
+    }
+    .row {
+      margin-bottom: 5px;
+    }
+    &:nth-child(odd) {
+      background: @light-blue;
+    }
   }
-  .plugin-links {
+  .plugin-page-links {
     margin-top: 30px;
     margin-bottom: 10px;
     font-size: @base-font-size + 2;

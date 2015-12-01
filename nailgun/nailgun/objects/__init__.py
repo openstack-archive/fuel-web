@@ -62,3 +62,6 @@ from nailgun.objects.cluster_plugin_link import ClusterPluginLink
 from nailgun.objects.cluster_plugin_link import ClusterPluginLinkCollection
 from nailgun.objects.openstack_config import OpenstackConfig
 from nailgun.objects.openstack_config import OpenstackConfigCollection
+
+from nailgun.objects.ip_address import IPAddress
+from nailgun.objects.ip_address import IPAddressCollection

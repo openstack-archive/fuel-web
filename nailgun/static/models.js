@@ -927,7 +927,7 @@ define([
                             }
                         }
                         if (network.get('meta').use_gateway) {
-                            if (utils.validateIP(network.get('gateway'))) {
+                            if (!utils.validateIP(network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'invalid_gateway');
                             } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
@@ -947,7 +947,7 @@ define([
                         if (network.get('name') == 'baremetal') {
                             if (!_.has(nodeNetworkGroupErrors[network.id], 'cidr')) {
                                 var baremetalGateway = networkParameters.get('baremetal_gateway');
-                                if (utils.validateIP(baremetalGateway)) {
+                                if (!utils.validateIP(baremetalGateway)) {
                                     networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
                                 } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), baremetalGateway)) {
                                     networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_baremetal_network');
@@ -1024,7 +1024,7 @@ define([
                 var cidr = networkParameters.get('internal_cidr');
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(cidr, 'internal_cidr'));
                 var gateway = networkParameters.get('internal_gateway');
-                if (utils.validateIP(gateway)) {
+                if (!utils.validateIP(gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'invalid_gateway');
                 } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'gateway_is_out_of_internal_network');
@@ -1047,7 +1047,7 @@ define([
             }
             var nameserverErrors = [];
             _.each(networkParameters.get('dns_nameservers'), function(nameserver) {
-                nameserverErrors.push(utils.validateIP(nameserver) ? i18n(ns + 'invalid_nameserver') : null);
+                nameserverErrors.push(!utils.validateIP(nameserver) ? i18n(ns + 'invalid_nameserver') : null);
             });
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;

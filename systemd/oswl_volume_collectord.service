@@ -1,0 +1,9 @@
+[Unit]
+Name=oswl volume collector daemon
+
+[Service]
+ExecStart=/usr/bin/oswl_collectord volume
+
+[Install]
+WantedBy=multi-user.target
+

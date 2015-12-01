@@ -28,6 +28,8 @@ class GraphTasksValidator(BasicValidator):
     def validate_update(cls, data, instance):
         parsed = cls.validate(data)
         cls.validate_schema(parsed, tasks.TASKS_SCHEMA)
+        return parsed
+
         graph_validator = deployment_graph.DeploymentGraphValidator(
             parsed)
         graph_validator.check()

@@ -242,6 +242,8 @@ define([
             return ipRangesErrors;
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
+            if (!utils.validateIP(ip)) return false;
+            if (!_.isEmpty(utils.validateCidr(cidr))) return false;
             if (!cidr) return true;
             var networkData = IP.cidrSubnet(cidr),
                 ipInt = IP.toLong(ip);

@@ -162,6 +162,9 @@ define([
             assert.notOk(validate('172.16.0.0/20', '172.16.15.255'), 'Check broadcast address');
             assert.notOk(validate('172.16.0.0/20', '172.16.0.0'), 'Check network address');
             assert.notOk(validate('192.168.0.0/10', '192.231.255.254'), 'Check IP, that does not correspond to CIDR');
+            assert.notOk(validate('blablabla', null), 'Check that junk ip with null cidr is not valid');
+            assert.notOk(validate('blablabla',  'junk'), 'Check that junk ip with junk cidr is not valid');
+            assert.notOk(validate('192.168.0.0/10', 'junk'), 'Check that ip with junk cidr is not valid');
         });
     });
 });

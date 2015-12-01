@@ -18,6 +18,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 
 from nailgun.network.manager import AllocateVIPs70Mixin
+from nailgun.network.manager import AllocateVIPs80Mixin
 from nailgun.network.manager import AssignIPs61Mixin
 from nailgun.network.manager import AssignIPs70Mixin
 from nailgun.network.manager import AssignIPsLegacyMixin
@@ -85,3 +86,7 @@ class NovaNetworkManager70(
         :rtype: str
         """
         return network_role['default_mapping']
+
+
+class NovaNetworkManager80(AllocateVIPs80Mixin, NovaNetworkManager70):
+    pass

@@ -23,6 +23,7 @@ from nailgun.test import base
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
+from nailgun.utils import filter_dict
 from nailgun.utils import flatten
 from nailgun.utils import grouper
 from nailgun.utils import http_get
@@ -545,3 +546,59 @@ class TestHttpGet(base.BaseUnitTest):
             mock.call('url1'),
             mock.call('url1'),
         ])
+
+
+class TestFilterDict(base.BaseUnitTest):
+
+    def setUp(self):
+        self.paths = (
+            'a',
+            'b',
+            'c.one',
+            'c.two',
+            'q.w.e.r',
+        )
+
+    def test_filtering(self):
+        input_output_suite = (
+            (
+                {'a': 1},
+                {'a': 1},
+            ),
+            (
+                {'a': 1, 'b': 'val'},
+                {'a': 1, 'b': 'val'},
+            ),
+            (
+                {'a': 1, 'b': 'val', 'g': 'filter me', 'w': 'and me too'},
+                {'a': 1, 'b': 'val'},
+            ),
+            (
+                {'c': {'one': 'valone', 'three': 'valthree'}, 'b': 'val'},
+                {'c': {'one': 'valone'}, 'b': 'val'},
+            ),
+            (
+                {'c': {'one': {'nested': 'fields'}}},
+                {'c': {'one': {'nested': 'fields'}}},
+            )
+
+        )
+
+        for i, o in input_output_suite:
+            self.assertEqual(o, filter_dict(i, self.paths))
+
+    def test_deep_nested(self):
+        i = {'q': {'w': {'e': {'r': {'t': 'y'}}}, 'z': 'filter me'}}
+        o = {'q': {'w': {'e': {'r': {'t': 'y'}}}}}
+        self.assertEqual(o, filter_dict(i, self.paths))
+
+    def test_list(self):
+        i = {'a': ['a', 'b', 'c']}
+        o = {'a': ['a', 'b', 'c']}
+        self.assertEqual(o, filter_dict(i, self.paths))
+
+    def filter_nothing(self):
+        self.assertEqual({'a': 1}, filter_dict({'a': 1}, None))
+
+    def filter_all(self):
+        self.assertEqual({}, filter_dict({'a': 1}, ()))

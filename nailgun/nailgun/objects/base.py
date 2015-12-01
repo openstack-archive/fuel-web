@@ -213,6 +213,7 @@ class NailgunCollection(object):
     def order_by(cls, iterable, order_by):
         """Order given iterable by specified order_by.
 
+        :param iterable: model objects collection
         :param order_by: tuple of model fields names or single field name for
             ORDER BY criterion to SQLAlchemy query. If name starts with '-'
             desc ordering applies, else asc.

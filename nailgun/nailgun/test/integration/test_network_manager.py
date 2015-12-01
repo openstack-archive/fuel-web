@@ -44,6 +44,7 @@ from nailgun.network.neutron import NeutronManager70
 from nailgun.network.neutron import NeutronManager80
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.network.nova_network import NovaNetworkManager70
+from nailgun.network.nova_network import NovaNetworkManager80
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -1110,7 +1111,7 @@ class TestNeutronManager70(BaseNetworkManagerTest):
         self.assertIs(self.net_manager, NeutronManager70)
 
     def test_get_network_group_for_role(self):
-        net_template = self.env.read_fixtures(['network_template'])[0]
+        net_template = self.env.read_fixtures(['network_template_70'])[0]
         objects.Cluster.set_network_template(self.cluster, net_template)
 
         node_group = objects.Cluster.get_controllers_node_group(self.cluster)
@@ -1273,6 +1274,20 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             self.assertEqual(endpoint_ip, vip)
 
 
+class TestNovaNetworkManager80(TestNovaNetworkManager70):
+    def _create_env(self):
+        return self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
+            }
+        )
+
+    def test_get_network_manager(self):
+        self.assertIs(self.net_manager, NovaNetworkManager80)
+
+
 class TestTemplateManager70(BaseNetworkManagerTest):
     def setUp(self):
         super(TestTemplateManager70, self).setUp()
@@ -1285,7 +1300,7 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         )
         self.cluster = objects.Cluster.get_by_uid(self.cluster['id'])
         self.nm = objects.Cluster.get_network_manager(self.cluster)
-        self.net_template = self.env.read_fixtures(['network_template'])[1]
+        self.net_template = self.env.read_fixtures(['network_template_70'])[1]
         self.env.create_nodes_w_interfaces_count(
             1, 5,
             roles=['controller'],

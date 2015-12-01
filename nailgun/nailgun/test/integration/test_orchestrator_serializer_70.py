@@ -1162,7 +1162,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
         self.cluster = self.create_env(consts.NEUTRON_SEGMENT_TYPES.vlan)
-        self.net_template = self.env.read_fixtures(['network_template'])[0]
+        self.net_template = self.env.read_fixtures(['network_template_70'])[0]
 
         objects.Cluster.set_network_template(
             self.cluster,
@@ -1558,7 +1558,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             node_group.id, net_name)
         objects.NetworkGroup.delete(storage_net)
         # download default template and fix it
-        net_template = self.env.read_fixtures(['network_template'])[0]
+        net_template = self.env.read_fixtures(['network_template_70'])[0]
         template_meta = net_template["adv_net_template"]["default"]
         # wipe out network from template
         del(template_meta["network_assignments"][net_name])
@@ -1665,7 +1665,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
 
     def test_floating_role_belongs_to_public_bridge(self):
         # download default template and assign floating role to public bridge
-        net_template = self.env.read_fixtures(['network_template'])[0]
+        net_template = self.env.read_fixtures(['network_template_70'])[0]
         schemes = net_template["adv_net_template"]["default"]["network_scheme"]
         schemes["public"]["roles"]["neutron/floating"] = "br-ex"
         # apply updated template to the cluster

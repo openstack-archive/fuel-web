@@ -17,6 +17,7 @@ from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Date
 from sqlalchemy import Enum
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import Time
@@ -46,7 +47,7 @@ class OpenStackWorkloadStats(Base):
         index=True
     )
 
-    resource_data = Column(JSON, nullable=True)
+    resource_data = Column(MutableDict.as_mutable(JSON), nullable=True)
 
     resource_checksum = Column(Text, nullable=False)
     is_sent = Column(Boolean, nullable=False, default=False, index=True)

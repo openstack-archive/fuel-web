@@ -17,7 +17,7 @@
 from nailgun.db.sqlalchemy.models.cluster_plugin_link import ClusterPluginLink
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 
 class TestHandlers(BaseIntegrationTest):

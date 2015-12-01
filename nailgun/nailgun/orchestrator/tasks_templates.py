@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 import requests
 import six
 
+from nailgun import consts
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.utils import debian
@@ -27,7 +28,7 @@ from nailgun.utils import debian
 
 def make_upload_task(uids, data, path):
     return {
-        'type': 'upload_file',
+        'type': consts.ORCHESTRATOR_TASK_TYPES.upload_file,
         'uids': uids,
         'parameters': {
             'path': path,
@@ -134,7 +135,7 @@ def make_centos_repo_task(uids, repo):
 
 def make_sync_scripts_task(uids, src, dst):
     return {
-        'type': 'sync',
+        'type': consts.ORCHESTRATOR_TASK_TYPES.sync,
         'uids': uids,
         'parameters': {
             'src': src,
@@ -143,7 +144,7 @@ def make_sync_scripts_task(uids, src, dst):
 
 def make_shell_task(uids, task):
     return {
-        'type': 'shell',
+        'type': consts.ORCHESTRATOR_TASK_TYPES.shell,
         'uids': uids,
         'parameters': {
             'cmd': task['parameters']['cmd'],
@@ -173,7 +174,7 @@ def make_apt_update_task(uids):
 
 def make_puppet_task(uids, task):
     return {
-        'type': 'puppet',
+        'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
         'uids': uids,
         'parameters': {
             'puppet_manifest': task['parameters']['puppet_manifest'],
@@ -196,7 +197,7 @@ def make_generic_task(uids, task):
 
 def make_reboot_task(uids, task):
     return {
-        'type': 'reboot',
+        'type': consts.ORCHESTRATOR_TASK_TYPES.reboot,
         'uids': uids,
         'parameters': {
             'timeout': task['parameters']['timeout']}}
@@ -283,3 +284,17 @@ def make_download_debian_installer_task(
                         remote_initrd=remote_initrd),
             'timeout': 10 * 60,
             'retries': 1}})
+
+
+def make_noop_task(uids, task):
+    """Creates NoOp task for astute.
+
+    :param
+    :param task: the task instance
+    """
+    return {
+        'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
+        'uids': uids,
+        'fail_on_error': False,
+        'skipped': True
+    }

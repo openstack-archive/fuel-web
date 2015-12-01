@@ -45,6 +45,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
+from nailgun.orchestrator import task_based_deployment
 from nailgun.orchestrator import tasks_serializer
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
@@ -144,6 +145,10 @@ class DeploymentTask(object):
         :param cluster: Cluster db object
         :returns: string - deploy/granular_deploy
         """
+        # make @vsharshov happy
+        return "task_deploy"
+        if settings.TASK_BASED_DEPLOYMENT:
+            return "task_deploy"
         if objects.Release.is_granular_enabled(cluster.release):
             return 'granular_deploy'
         return 'deploy'
@@ -171,6 +176,23 @@ class DeploymentTask(object):
                 db().add(n)
         db().flush()
 
+        deployment_mode = cls._get_deployment_method(task.cluster)
+        message = getattr(cls, deployment_mode)(task, nodes, deployment_tasks)
+        # After serialization set pending_addition to False
+        for node in nodes:
+            node.pending_addition = False
+
+        rpc_message = make_astute_message(
+            task,
+            deployment_mode,
+            'deploy_resp',
+            message
+        )
+        db().flush()
+        return rpc_message
+
+    @classmethod
+    def granular_deploy(cls, task, nodes, deployment_tasks):
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
         orchestrator_graph.only_tasks(deployment_tasks)
 
@@ -184,22 +206,38 @@ class DeploymentTask(object):
         post_deployment = stages.post_deployment_serialize(
             orchestrator_graph, task.cluster, nodes)
 
-        # After serialization set pending_addition to False
-        for node in nodes:
-            node.pending_addition = False
+        return {
+            'deployment_info': serialized_cluster,
+            'pre_deployment': pre_deployment,
+            'post_deployment': post_deployment
+        }
 
-        rpc_message = make_astute_message(
-            task,
-            cls._get_deployment_method(task.cluster),
-            'deploy_resp',
-            {
-                'deployment_info': serialized_cluster,
-                'pre_deployment': pre_deployment,
-                'post_deployment': post_deployment
-            }
+    deploy = granular_deploy
+
+    @classmethod
+    def task_deploy(cls, task, nodes, deployment_tasks):
+        try:
+            return cls.task_based_deployment(task, nodes, deployment_tasks)
+        except errors.TaskBaseDeploymentNotAllowed:
+            pass
+
+        return cls.granular_deploy(task, nodes, deployment_tasks)
+
+    @classmethod
+    def task_based_deployment(cls, task, nodes, deployment_tasks):
+        deployment_tasks = deployment_tasks or \
+            objects.Cluster.get_deployment_tasks(task.cluster)
+
+        serialized_cluster = deployment_serializers.serialize(
+            None, task.cluster, nodes
         )
-        db().flush()
-        return rpc_message
+        serialized_tasks = task_based_deployment.TasksSerializer.serialize(
+            task.cluster, nodes, deployment_tasks
+        )
+        return {
+            "deployment_info": serialized_cluster,
+            "deployment_tasks": serialized_tasks
+        }
 
 
 class UpdateNodesInfoTask(object):
@@ -1350,6 +1388,8 @@ class CheckBeforeDeploymentTask(object):
 
         example dependencies are: requires|required_for|tasks|groups
         """
+        # TODO, not check if it is task based deployment
+        return
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         graph_validator = deployment_graph.DeploymentGraphValidator(
             deployment_tasks)

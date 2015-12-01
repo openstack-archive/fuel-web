@@ -677,6 +677,7 @@ FAKE_THREADS = {
     'image_provision': FakeProvisionThread,
     'granular_deploy': FakeDeploymentThread,
     'deploy': FakeDeploymentThread,
+    'task_deploy': FakeDeploymentThread,
     'remove_nodes': FakeDeletionThread,
     'stop_deploy_task': FakeStopDeploymentThread,
     'reset_environment': FakeResetEnvironmentThread,

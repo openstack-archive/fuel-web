@@ -69,11 +69,11 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .clickByCssSelector('.discard-changes')
+                    .clickByCssSelector('.discard-changes-icon')
                     .then(function() {
                         return modal.waitToOpen();
                     })
-                    .assertElementContainsText('h4.modal-title', 'Discard Changes', 'Discard Changes confirmation modal expected')
+                    .assertElementContainsText('h4.modal-title', 'Discard Node Changes', 'Discard Changes confirmation modal expected')
                     .then(function() {
                         return modal.clickFooterButton('Discard');
                     })

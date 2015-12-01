@@ -28,6 +28,7 @@ from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
+from nailgun.utils.role_resolver import BaseRoleResolver
 
 
 def get_uids_for_tasks(nodes, tasks):
@@ -83,6 +84,17 @@ def get_uids_for_roles(nodes, roles):
             roles)
 
     return list(uids)
+
+
+class LegacyRoleResolver(BaseRoleResolver):
+    """The role resolver that implements legacy behaviour."""
+
+    # TODO(bgaifullin): remove this in 9.0
+    def __init__(self, nodes):
+        self.nodes = nodes
+
+    def resolve(self, roles, policy=None):
+        return get_uids_for_roles(self.nodes, roles)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -142,13 +154,15 @@ class PuppetHook(GenericNodeHook):
 class StandartConfigRolesHook(ExpressionBasedTask):
     """Role hooks that serializes task based on config file only."""
 
-    def __init__(self, task, cluster, nodes):
-        self.nodes = nodes
+    def __init__(self, task, cluster, nodes, role_resolver=None):
         super(StandartConfigRolesHook, self).__init__(task, cluster)
+        self.nodes = nodes
+        self.role_resolver = role_resolver or LegacyRoleResolver(nodes)
 
     def get_uids(self):
-        roles = self.task.get('role', self.task.get('groups'))
-        return get_uids_for_roles(self.nodes, roles)
+        return self.role_resolver.resolve(
+            self.task.get('role', self.task.get('groups'))
+        )
 
     def serialize(self):
         uids = self.get_uids()
@@ -166,7 +180,7 @@ class UploadMOSRepo(GenericRolesHook):
     identity = 'upload_core_repos'
 
     def get_uids(self):
-        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
+        return self.role_resolver.resolve(consts.ALL_ROLES)
 
     def serialize(self):
         uids = self.get_uids()
@@ -186,7 +200,7 @@ class UploadMOSRepo(GenericRolesHook):
             yield templates.make_shell_task(uids, {
                 'parameters': {
                     'cmd': '> /etc/apt/sources.list',
-                    'timeout': 10
+                    'timeout': 60
                 }})
             yield templates.make_ubuntu_apt_disable_ipv6(uids)
             # NOTE(kozhukalov):
@@ -210,7 +224,7 @@ class RsyncPuppet(GenericRolesHook):
     identity = 'rsync_core_puppet'
 
     def get_uids(self):
-        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
+        return self.role_resolver.resolve(consts.ALL_ROLES)
 
     def serialize(self):
         src_path = self.task['parameters']['src'].format(
@@ -306,14 +320,20 @@ class CreateVMsOnCompute(GenericRolesHook):
     identity = 'generate_vms'
     hook_type = 'puppet'
 
+    def __init__(self, task, cluster, nodes, role_resolver=None):
+        super(CreateVMsOnCompute, self).__init__(
+            task, cluster, [], role_resolver
+        )
+        self.vm_nodes = objects.Cluster.get_nodes_to_spawn_vms(self.cluster)
+
     def should_execute(self):
-        return len(self.get_nodes()) > 0
+        return self.vm_nodes > 0
 
     def get_uids(self):
-        return [node.uid for node in self.get_nodes()]
+        return [node.uid for node in self.vm_nodes]
 
     def get_nodes(self):
-        return objects.Cluster.get_nodes_to_spawn_vms(self.cluster)
+        return self.vm_nodes
 
     def serialize(self):
         uids = self.get_uids()
@@ -378,8 +398,10 @@ class UploadConfiguration(GenericRolesHook):
 
     identity = 'upload_configuration'
 
-    def __init__(self, task, cluster, nodes, configs=None):
-        super(UploadConfiguration, self).__init__(task, cluster, nodes)
+    def __init__(self, task, cluster, nodes, configs=None, role_resolver=None):
+        super(UploadConfiguration, self).__init__(
+            task, cluster, nodes, role_resolver=role_resolver
+        )
         self.configs = configs
 
     def serialize(self):

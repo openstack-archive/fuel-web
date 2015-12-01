@@ -50,7 +50,8 @@ class InstallationInfo(object):
                       'puppet_debug', None),
         WhiteListRule(('common', 'resume_guests_state_on_host_boot', 'value'),
                       'resume_guests_state_on_host_boot', None),
-
+        WhiteListRule(('common', 'task_deploy', 'value'),
+                      'task_deploy', None),
         WhiteListRule(('corosync', 'verified', 'value'),
                       'corosync_verified', None),
 

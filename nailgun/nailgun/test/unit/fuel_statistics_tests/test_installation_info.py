@@ -272,45 +272,15 @@ class TestInstallationInfo(BaseTestCase):
             )
 
     def test_plugins_info(self):
-        info = InstallationInfo()
-
         cluster = self.env.create_cluster(api=False)
+        plugin = self.env.create_plugin(api=False, cluster=cluster)
 
         plugin_kwargs = self.env.get_default_plugin_metadata()
-        plugin_obj = plugins.Plugin(**plugin_kwargs)
+        plugin_kwargs['id'] = plugin.id
 
-        self.db.add(plugin_obj)
-        self.db.flush()
-
-        plugin_kwargs["id"] = plugin_obj.id
-
-        cluster_plugin_kwargs = {
-            "cluster_id": cluster.id,
-            "plugin_id": plugin_obj.id,
-            "enabled": True
-        }
-        cluster_plugin = plugins.ClusterPlugins(**cluster_plugin_kwargs)
-
-        self.db.add(cluster_plugin)
-        self.db.flush()
-
-        expected_attributes_names = (
-            "id",
-            "name",
-            "version",
-            "releases",
-            "fuel_version",
-            "package_version",
-        )
-
-        expected_info = dict(
-            [(key, value) for key, value in six.iteritems(plugin_kwargs)
-             if key in expected_attributes_names]
-        )
-
-        expected = [expected_info]
-        actual = info.get_cluster_plugins_info(cluster)
-        self.assertEqual(expected, actual)
+        for name, expected in six.iteritems(plugin_kwargs):
+            actual = getattr(plugin, name)
+            self.assertEqual(expected, actual)
 
     def test_installation_info(self):
         info = InstallationInfo()
@@ -470,6 +440,30 @@ class TestInstallationInfo(BaseTestCase):
         for path in expected_paths:
             self.assertIn(path, actual_paths)
 
+    def test_all_plugin_data_collected(self):
+        cluster = self.env.create_cluster(api=False)
+        self.env.create_plugin(api=False, cluster=cluster)
+
+        # Fetching plugin info
+        info = InstallationInfo().get_cluster_plugins_info(cluster)
+        actual_plugin = info[0]
+
+        # Creating plugin data schema
+        plugin_schema = {}
+        for column in inspect(plugins.Plugin).columns:
+            plugin_schema[six.text_type(column.name)] = None
+
+        # Removing of not required fields
+        remove_fields = ('description', 'title', 'authors', 'homepage')
+        for field in remove_fields:
+            plugin_schema.pop(field)
+
+        # If test failed here it means, that you have added properties
+        # to plugin and they are not exported into statistics.
+        # If you don't know what to do, contact fuel-stats team please.
+        for key in six.iterkeys(plugin_schema):
+            self.assertIn(key, actual_plugin)
+
     def test_wite_list_unique_names(self):
         names = set(rule.map_to_name for rule in
                     InstallationInfo.attributes_white_list)
@@ -478,4 +472,8 @@ class TestInstallationInfo(BaseTestCase):
         names = set(rule.map_to_name for rule in
                     InstallationInfo.vmware_attributes_white_list)
         self.assertEqual(len(InstallationInfo.vmware_attributes_white_list),
+                         len(names))
+        names = set(rule.map_to_name for rule in
+                    InstallationInfo.plugin_info_white_list)
+        self.assertEqual(len(InstallationInfo.plugin_info_white_list),
                          len(names))

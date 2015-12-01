@@ -921,7 +921,8 @@ define([
                     var networkErrors = {};
                     if (network.get('meta').configurable) {
                         _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
-                        if (network.get('meta').notation == 'ip_ranges' && !_.has(networkErrors, 'cidr')) {
+                        var hasInvalidCidr = _.has(networkErrors, 'cidr');
+                        if (network.get('meta').notation == 'ip_ranges' && !hasInvalidCidr) {
                             var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), network.get('cidr'));
                             if (ipRangesErrors.length) {
                                 networkErrors.ip_ranges = ipRangesErrors;
@@ -930,7 +931,7 @@ define([
                         if (network.get('meta').use_gateway) {
                             if (!utils.validateIP(network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'invalid_gateway');
-                            } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
+                            } else if (!hasInvalidCidr && !utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
                             }
                         }
@@ -995,6 +996,7 @@ define([
                         networkingParametersErrors.fixed_networks_vlan_start = i18n(ns + 'vlan_intersection');
                     }
                 }
+                //validateIpRanges
                 floatingRangesErrors = utils.validateIpRanges(networkParameters.get('floating_ranges'), null, true);
                 if (floatingRangesErrors.length) {
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;

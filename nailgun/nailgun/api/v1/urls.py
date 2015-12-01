@@ -43,6 +43,9 @@ from nailgun.api.v1.handlers.cluster_plugin_link \
 from nailgun.api.v1.handlers.cluster_plugin_link \
     import ClusterPluginLinkHandler
 
+from nailgun.api.v1.handlers.vip import ClusterVIPCollectionHandler
+from nailgun.api.v1.handlers.vip import ClusterVIPHandler
+
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
 from nailgun.api.v1.handlers.logs import LogPackageHandler
@@ -230,6 +233,13 @@ urls = (
     ClusterPluginLinkCollectionHandler,
     r'/clusters/(?P<cluster_id>\d+)/plugin_links/(?P<obj_id>\d+)/?$',
     ClusterPluginLinkHandler,
+
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration'
+    r'/ips/vips/?$',
+    ClusterVIPCollectionHandler,
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration'
+    r'/ips/(?P<ip_address_id>\d+)/vips/?$',
+    ClusterVIPHandler,
 
     r'/nodegroups/?$',
     NodeGroupCollectionHandler,

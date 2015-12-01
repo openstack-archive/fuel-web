@@ -340,6 +340,14 @@ def content(*args, **kwargs):
     def GET(self):
         ...
     """
+    # TODO(ikutukov): this decorator is not coherent and doing more
+    # than just a response mimetype setting via type-specific content_json
+    # method that perform validation.
+    # Before you start to implement handler business logic ensure that
+    # @content decorator not already doing what you are planning to write.
+    # I think that validation routine and common http headers formation not
+    # depending on each other and should be decoupled. At least they should
+    # not be under ont decorator with abstract name.
 
     exact_mimetypes = None
     if len(args) >= 1 and isinstance(args[0], list):

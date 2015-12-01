@@ -693,13 +693,25 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     .then((response) => {
                         this.updateInitialConfiguration();
                         result.resolve(response);
-                    }, () => {
+                    }, (response) => {
                         result.reject();
-                        // FIXME(vkramskikh): the same hack for check_networks task:
-                        // remove failed tasks immediately, so they won't be taken into account
+
                         return this.props.cluster.fetchRelated('tasks')
                             .done(() => {
-                                if (this.props.cluster.task('check_networks')) {
+                                // FIXME (morale): this hack is needed until backend response
+                                // format is unified https://bugs.launchpad.net/fuel/+bug/1521661
+                                if (!this.props.cluster.tasks({group: 'network'}).length) {
+                                    var fakeTask = new models.Task({
+                                        cluster: this.props.cluster.id,
+                                        message: utils.getResponseText(response),
+                                        status: 'error',
+                                        name: 'check_networks',
+                                        result: {}
+                                    });
+                                    this.props.cluster.get('tasks').add(fakeTask);
+                                // FIXME(vkramskikh): the same hack for check_networks task:
+                                // remove failed tasks immediately, so they won't be taken into account
+                                } else if (this.props.cluster.task('check_networks')) {
                                     this.props.cluster.task('check_networks').set('unsaved', true);
                                 }
                             });
@@ -986,12 +998,19 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             </div>
                         </div>
                     </div>
-                    {!this.state.hideVerificationResult && networkCheckTask && networkCheckTask.match({status: 'error'}) &&
+                    {!this.state.hideVerificationResult && networkCheckTask && networkCheckTask.match({status: 'error'}) ?
                         <div className='col-xs-12'>
                             <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
                                 {networkCheckTask.get('message')}
                             </div>
                         </div>
+                    :
+                        this.state.networkConfigurationError &&
+                            <div className='col-xs-12'>
+                                <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
+                                    {'this.state.networkConfigurationError'}
+                                </div>
+                            </div>
                     }
                     <div className='col-xs-12 page-buttons content-elements'>
                         {this.renderButtons()}

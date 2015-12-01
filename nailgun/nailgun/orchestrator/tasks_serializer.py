@@ -16,7 +16,10 @@
 
 import abc
 from collections import defaultdict
+from distutils.version import StrictVersion
 import os
+import random
+import re
 import six
 import yaml
 
@@ -83,6 +86,124 @@ def get_uids_for_roles(nodes, roles):
             roles)
 
     return list(uids)
+
+
+class NodeRoleResolver(object):
+    """Helper class to find nodes by role."""
+
+    def __init__(self, nodes):
+        self.mapping = defaultdict(set)
+        for node in nodes:
+            for r in objects.Node.all_roles(node):
+                self.mapping[r].add(node.uid)
+
+    def resolve(self, roles):
+        """Gets the nodes by role.
+
+        :param roles: the required roles
+        :type roles: list|str
+        :return: the set of nodes
+        """
+        if roles == consts.ALL_ROLES:
+            return set(
+                uid for nodes in six.itervalues(self.mapping) for uid in nodes
+            )
+        if roles == consts.MASTER_ROLE:
+            return [consts.MASTER_ROLE]
+
+        result = set()
+        if isinstance(roles, list):
+            for role, nodes_ids in six.iteritems(self.mapping):
+                for pattern in roles:
+                    if re.match(pattern, role):
+                        result.update(self.mapping[role])
+        else:
+            logger.warn(
+                'Wrong roles format, `roles` should be a list or "*": %s',
+                roles
+            )
+        return result
+
+
+class TasksSerializer(object):
+    @classmethod
+    def serialize(cls, nodes, tasks):
+        """Resolves roles and dependencies for tasks.
+
+        :param nodes: the list of nodes
+        :param tasks: the list of tasks
+        :return: the list of serialized task per node
+        """
+
+        role_resolver = NodeRoleResolver(nodes)
+        tasks_by_nodes = cls.resolve_nodes(role_resolver, nodes, tasks)
+        cls.resolve_cross_depends(role_resolver, tasks_by_nodes)
+        return dict(
+            (k, list(six.itervalues(v)))
+            for k, v in six.iteritems(tasks_by_nodes)
+        )
+
+    @classmethod
+    def convert_requires(cls, node_id, requires):
+        return [
+            {"name": r, "node_id": node_id}
+            for r in requires
+        ]
+
+    @classmethod
+    def resolve_nodes(cls, resolver, nodes, tasks):
+        tasks_for_nodes = defaultdict(dict)
+
+        for task in tasks:
+            if not cls.does_task_based_deployment_allow(task):
+                raise errors.TaskBaseDeploymentNotAllowed
+
+            if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.skipped:
+                continue
+
+            task_roles = task.get(
+                'role', task.get('groups', consts.ALL_ROLES)
+            )
+
+            for node_id in resolver.resolve(task_roles):
+                node_tasks = tasks_for_nodes[node_id]
+                if task['id'] in node_tasks:
+                    continue
+                astute_task = task.copy()
+                astute_task['required_for'] = cls.convert_requires(
+                    node_id, task.get('required_for', [])
+                )
+                astute_task['requires'] = cls.convert_requires(
+                    node_id, task.get('requires', [])
+                )
+                node_tasks[astute_task['id']] = astute_task
+
+        return tasks_for_nodes
+
+    @classmethod
+    def resolve_cross_depends(cls, resolver, tasks_by_nodes):
+        def process_cross_depends(depends):
+            for dep in depends:
+                for candidate_id in resolver.resolve(dep['role']):
+                    if dep['name'] in tasks_by_nodes[candidate_id]:
+                        yield {
+                            'name': dep['name'], "node_id": candidate_id
+                        }
+
+        for node_id, tasks in six.iteritems(tasks_by_nodes):
+            for task in six.itervalues(tasks):
+                task['requires'].extend(
+                    process_cross_depends(task.pop('cross-depends', []))
+                )
+
+                task['required_for'].extend(
+                    process_cross_depends(task.pop('cross-depends-for', []))
+                )
+
+    @classmethod
+    def does_task_based_deployment_allow(cls, task):
+        return StrictVersion(task.get('version', '0.0.0')) >= \
+            consts.TASK_CROSS_DEPENDENCY
 
 
 @six.add_metaclass(abc.ABCMeta)

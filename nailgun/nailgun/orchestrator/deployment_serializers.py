@@ -34,10 +34,10 @@ from nailgun import objects
 from nailgun import utils
 from nailgun.utils.ceph import get_pool_pg_count
 
-from nailgun.orchestrator.base_serializers import GraphBasedSerializer
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
     VmwareDeploymentSerializerMixin
+from nailgun.orchestrator.base_serializers import DeploymentSerializer
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer
 from nailgun.orchestrator.neutron_serializers import \
@@ -62,12 +62,14 @@ from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer70
 
 
-class DeploymentMultinodeSerializer(GraphBasedSerializer):
-
+class DeploymentMultinodeSerializer(DeploymentSerializer):
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer
 
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
+
+    def __init__(self, tasks_serializer):
+        self.tasks_serializer = tasks_serializer
 
     def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which are passed to puppet."""
@@ -83,17 +85,13 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
                 serialized_nodes.extend(self.serialize_generated(
                     cluster, node_group))
 
-        # NOTE(dshulyak) tasks should not be preserved from replaced deployment
-        # info, there is different mechanism to control changes in tasks
-        # introduced during granular deployment, and that mech should be used
-        self.set_tasks(serialized_nodes)
+        self.tasks_serializer.serialize_tasks(serialized_nodes)
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
         nodes = self.serialize_nodes(nodes)
         common_attrs = self.get_common_attrs(cluster)
-
-        self.set_deployment_priorities(nodes)
+        self.tasks_serializer.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
         return [utils.dict_merge(node, common_attrs) for node in nodes]
 
@@ -536,6 +534,28 @@ class DeploymentHASerializer80(DeploymentHASerializer70):
         return {'node_volumes': node_extension_call('get_node_volumes', node)}
 
 
+class GraphBasedTasksSerializer(DeploymentSerializer):
+    def __init__(self, graph):
+        self.graph = graph
+
+    def set_deployment_priorities(self, nodes):
+        self.graph.add_priorities(nodes)
+
+    def serialize_tasks(self, serialized_nodes):
+        for node in serialized_nodes:
+            node['tasks'] = self.graph.deploy_task_serialize(node)
+
+
+class NullTasksSerializer(DeploymentSerializer):
+    @staticmethod
+    def set_deployment_priorities(nodes):
+        pass
+
+    @staticmethod
+    def serialize_tasks(serialized_nodes):
+        pass
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -578,12 +598,14 @@ def get_serializer_for_cluster(cluster):
     return serializers_map[latest_version][env_mode]
 
 
-def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
+def serialize(cluster, nodes, tasks_serializer=None, ignore_customized=False):
     """Serialization depends on deployment mode."""
     objects.Cluster.set_primary_roles(cluster, nodes)
     # TODO(apply only for specified subset of nodes)
     objects.Cluster.prepare_for_deployment(cluster, cluster.nodes)
-    serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
+    serializer = get_serializer_for_cluster(cluster)(
+        tasks_serializer or NullTasksSerializer
+    )
 
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)

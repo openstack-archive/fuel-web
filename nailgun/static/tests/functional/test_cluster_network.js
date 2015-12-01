@@ -199,7 +199,7 @@ define([
                     .assertElementExists('.management .has-error input[name=vlan_start]',
                         'Field validation has worked properly in case of empty value');
             },
-            'Testing cluster networks: data validation': function() {
+            'Testing cluster networks: data validation on manager change': function() {
                 return this.remote
                     .then(function() {
                         return networksPage.switchNetworkManager();
@@ -220,6 +220,16 @@ define([
                     .clickByCssSelector('input[name=fixed_networks_vlan_start][type=checkbox]')
                     .assertElementNotExists('.has-error input[name=range-start_fixed_networks_vlan_start][type=text]',
                             'Field validation works properly');
+            },
+            'Testing cluster networks: data validation on invalid settings': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-default')
+                    .findByCssSelector('input[name=range-end_ip_ranges]')
+                        .clearValue()
+                        .type('172.16.0.2')
+                        .end()
+                    .clickByCssSelector(networksPage.applyButtonSelector)
+                    .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears');
             }
         };
     });

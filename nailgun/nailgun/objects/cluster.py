@@ -367,8 +367,11 @@ class Cluster(NailgunObject):
             if StrictVersion(ver) == StrictVersion('6.1'):
                 return nova_network.NovaNetworkManager61
 
-            if StrictVersion(ver) >= StrictVersion('7.0'):
+            if StrictVersion(ver) == StrictVersion('7.0'):
                 return nova_network.NovaNetworkManager70
+
+            if StrictVersion(ver) >= StrictVersion('8.0'):
+                return nova_network.NovaNetworkManager80
             return nova_network.NovaNetworkManager
 
         raise ValueError(

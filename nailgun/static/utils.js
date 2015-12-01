@@ -211,7 +211,7 @@ define([
             return error[field] ? error : {};
         },
         validateIP: function(ip) {
-            return !_.isString(ip) || !ip.match(utils.regexes.ip);
+            return _.isString(ip) && ip.match(utils.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
             return IP.toLong(startIP) - IP.toLong(endIP) <= 0;
@@ -222,9 +222,9 @@ define([
                 _.each(ranges, function(range, i) {
                     if (range[0] || range[1]) {
                         var error = {index: i};
-                        if (utils.validateIP(range[0]) || !utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
+                        if (!utils.validateIP(range[0]) || !utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
                             error.start = i18n('cluster_page.network_tab.validation.invalid_ip_start');
-                        } else if (utils.validateIP(range[1]) || !utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
+                        } else if (!utils.validateIP(range[1]) || !utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
                             error.end = i18n('cluster_page.network_tab.validation.invalid_ip_end');
                         } else if (!utils.validateIPrange(range[0], range[1])) {
                             error.start = i18n('cluster_page.network_tab.validation.invalid_ip_range');

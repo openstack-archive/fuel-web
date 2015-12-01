@@ -402,7 +402,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
                 return net
 
     def test_network_template_validation(self):
-        net_template = self.env.read_fixtures(['network_template'])[0]
+        net_template = self.env.read_fixtures(['network_template_80'])[0]
         objects.Cluster.set_network_template(
             self.cluster,
             net_template
@@ -435,7 +435,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             self.task)
 
     def test_missing_network_group_with_template(self):
-        net_template = self.env.read_fixtures(['network_template'])[0]
+        net_template = self.env.read_fixtures(['network_template_80'])[0]
         objects.Cluster.set_network_template(
             self.cluster,
             net_template
@@ -451,7 +451,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             self.task)
 
     def test_missing_network_group_with_template_multi_ng(self):
-        net_template = self.env.read_fixtures(['network_template'])[0]
+        net_template = self.env.read_fixtures(['network_template_80'])[0]
         resp = self.env.create_node_group(name='group-custom-1',
                                           cluster_id=self.cluster.id)
         del self.cluster.nodes[0]

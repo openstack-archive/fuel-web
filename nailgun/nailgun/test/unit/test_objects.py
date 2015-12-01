@@ -53,6 +53,7 @@ from nailgun.network.neutron import NeutronManager80
 from nailgun.network.neutron import NeutronManagerLegacy
 from nailgun.network.nova_network import NovaNetworkManager61
 from nailgun.network.nova_network import NovaNetworkManager70
+from nailgun.network.nova_network import NovaNetworkManager80
 from nailgun.network.nova_network import NovaNetworkManagerLegacy
 
 
@@ -210,7 +211,7 @@ class TestNodeObject(BaseIntegrationTest):
             release_kwargs={'version': '2015.1.0-8.0'},
         )
 
-        net_template = self.env.read_fixtures(['network_template'])[0]
+        net_template = self.env.read_fixtures(['network_template_80'])[0]
         objects.Cluster.set_network_template(new_cluster, net_template)
 
         new_group = objects.Cluster.get_default_group(new_cluster)
@@ -619,7 +620,7 @@ class TestNodeObject(BaseIntegrationTest):
 
     def test_apply_network_template(self):
         node = self.env.create_node()
-        template = self.env.read_fixtures(['network_template'])[0]
+        template = self.env.read_fixtures(['network_template_80'])[0]
 
         group_name = 'group-custom-1'
         with mock.patch('objects.NodeGroup.get_by_uid',
@@ -1456,7 +1457,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
             ('2014.2.2-6.0', NovaNetworkManagerLegacy),
             ('2014.2.2-6.1', NovaNetworkManager61),
             ('2015.6.7-7.0', NovaNetworkManager70),
-            ('2016.1.1-8.0', NovaNetworkManager70),
+            ('2016.1.1-8.0', NovaNetworkManager80),
         ):
             self.check_neutron_network_manager(
                 consts.CLUSTER_NET_PROVIDERS.nova_network,

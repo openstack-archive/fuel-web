@@ -497,7 +497,7 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
             }]
         )
 
-        template = self.env.read_fixtures(['network_template'])[0]
+        template = self.env.read_fixtures(['network_template_80'])[0]
         template.pop('pk')
         self.upload_template(self.cluster['id'], template)
 

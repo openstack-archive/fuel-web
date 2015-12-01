@@ -16,7 +16,10 @@
 
 import abc
 from collections import defaultdict
+from distutils.version import StrictVersion
 import os
+import random
+import re
 import six
 import yaml
 
@@ -83,6 +86,157 @@ def get_uids_for_roles(nodes, roles):
             roles)
 
     return list(uids)
+
+
+class NodeRoleResolver(object):
+    """Helper class to find nodes by role."""
+
+    def __init__(self, nodes):
+        self.mapping = defaultdict(set)
+        for node in nodes:
+            for r in objects.Node.all_roles(node):
+                self.mapping[r].add(node.uid)
+
+    def resolve(self, roles):
+        """Gets the nodes by role.
+
+        :param roles: the required roles
+        :type roles: list|str
+        :return: the set of nodes
+        """
+        if roles == consts.ALL_ROLES:
+            return set(
+                uid for nodes in six.itervalues(self.mapping) for uid in nodes
+            )
+        if roles == consts.MASTER_ROLE:
+            return [consts.MASTER_ROLE]
+
+        result = set()
+        if isinstance(roles, list):
+            for role, nodes_ids in six.iteritems(self.mapping):
+                for pattern in roles:
+                    if re.match(pattern, role):
+                        result.update(self.mapping[role])
+        else:
+            logger.warn(
+                'Wrong roles format, `roles` should be a list or "*": %s',
+                roles
+            )
+        return result
+
+
+class TasksSerializer(object):
+    @classmethod
+    def serialize(cls, nodes, tasks):
+        """Resolves roles and dependencies for tasks.
+
+        :param nodes: the list of nodes
+        :param tasks: the list of tasks
+        :return: the list of serialized task per node
+        """
+
+        role_resolver = NodeRoleResolver(nodes)
+        tasks_by_nodes = cls.resolve_nodes(role_resolver, nodes, tasks)
+        cls.resolve_depends(role_resolver, tasks_by_nodes)
+        return dict(
+            (k, list(six.itervalues(v)))
+            for k, v in six.iteritems(tasks_by_nodes)
+        )
+
+    @classmethod
+    def resolve_nodes(cls, resolver, nodes, tasks):
+        tasks_for_nodes = defaultdict(dict)
+
+        for task in tasks:
+            if not cls.is_task_based_deployment_allowed(task):
+                raise errors.TaskBaseDeploymentNotAllowed
+
+            if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
+                continue
+
+            task_roles = task.get(
+                'role', task.get('groups', consts.ALL_ROLES)
+            )
+
+            for node_id in resolver.resolve(task_roles):
+                node_tasks = tasks_for_nodes[node_id]
+                if task['id'] in node_tasks:
+                    continue
+
+                astute_task = task.copy()
+                node_tasks[astute_task['id']] = astute_task
+
+        return tasks_for_nodes
+
+    @classmethod
+    def resolve_depends(cls, resolver, tasks_by_nodes):
+
+        def resolve_relation(name, lookup_node_ids):
+            pattern = re.compile(name)
+            node_ids = []
+            for node_id in lookup_node_ids:
+                for task_name in tasks_by_nodes[node_id]:
+                    if pattern.match(task_name):
+                        node_ids.append(node_id)
+
+            return node_ids
+
+        def process_cross_depends(depends):
+            for dep in depends:
+                node_ids = resolve_relation(
+                    dep['name'],
+                    resolver.resolve(dep['role'])
+                )
+                if not node_ids:
+                    logger.warning(
+                        "Dependency '%s' cannot be resolved: "
+                        "no candidates for role '%s'.",
+                        dep['name'], dep['role']
+                    )
+                    continue
+
+                if dep.get('policy') == consts.POLICY_ANY:
+                    node_ids = [random.choice(node_ids)]
+
+                for node_id in node_ids:
+                    yield {
+                        'name': dep['name'], "node_id": node_id
+                    }
+
+        def process_depends(node_ids, depends):
+            for name in depends:
+                node_ids = resolve_relation(name, node_ids)
+                if not node_ids:
+                    logger.warning(
+                        "Dependency '%s' cannot be resolved: "
+                        "no such task in node '%s'.",
+                        name, node_id
+                    )
+                    continue
+                yield {
+                    "name": name, "node_id": node_id
+                }
+
+        for node_id, tasks in six.iteritems(tasks_by_nodes):
+            for task in six.itervalues(tasks):
+                task['requires'] = list(
+                    process_depends([node_id], task.get('requires', []))
+                )
+                task['required_for'] = list(
+                    process_depends([node_id], task.get('required_for', []))
+                )
+                task['requires'].extend(
+                    process_cross_depends(task.pop('cross-depends', []))
+                )
+
+                task['required_for'].extend(
+                    process_cross_depends(task.pop('cross-depends-for', []))
+                )
+
+    @classmethod
+    def is_task_based_deployment_allowed(cls, task):
+        return StrictVersion(task.get('version', '0.0.0')) >= \
+            consts.TASK_CROSS_DEPENDENCY
 
 
 @six.add_metaclass(abc.ABCMeta)

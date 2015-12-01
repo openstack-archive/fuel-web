@@ -284,6 +284,7 @@
                 "homepage": "Homepage",
                 "authors": "Authors",
                 "licenses": "Licenses",
+                "links": "Links",
                 "ubuntu": "Ubuntu",
                 "centos": "CentOS",
                 "more_info": "For more information, visit",

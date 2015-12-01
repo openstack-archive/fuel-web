@@ -59,3 +59,6 @@ from nailgun.objects.cluster_plugin_link import ClusterPluginLink
 from nailgun.objects.cluster_plugin_link import ClusterPluginLinkCollection
 from nailgun.objects.openstack_config import OpenstackConfig
 from nailgun.objects.openstack_config import OpenstackConfigCollection
+
+from nailgun.objects.vip import VIP
+from nailgun.objects.vip import VIPCollection

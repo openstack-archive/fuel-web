@@ -46,6 +46,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
+from nailgun.orchestrator import task_based_deploy
 from nailgun.orchestrator import tasks_serializer
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
@@ -145,6 +146,8 @@ class DeploymentTask(object):
         :param cluster: Cluster db object
         :returns: string - deploy/granular_deploy
         """
+        if objects.Cluster.get_editable_attributes(cluster).get('task_deploy'):
+            return "task_deploy"
         if objects.Release.is_granular_enabled(cluster.release):
             return 'granular_deploy'
         return 'deploy'
@@ -214,6 +217,37 @@ class DeploymentTask(object):
         }
 
     deploy = granular_deploy
+
+    @classmethod
+    def task_deploy(cls, task, nodes, deployment_tasks, reexecutable_filter):
+        try:
+            return cls.task_based_deployment(
+                task, nodes, deployment_tasks, reexecutable_filter
+            )
+        except errors.TaskBaseDeploymentNotAllowed:
+            pass
+
+        return cls.granular_deploy(
+            task, nodes, deployment_tasks, reexecutable_filter
+        )
+
+    @classmethod
+    def task_based_deployment(
+            cls, task, nodes, deployment_tasks, reexecutable_filter):
+
+        deployment_tasks = deployment_tasks or \
+            objects.Cluster.get_deployment_tasks(task.cluster)
+
+        serialized_cluster = deployment_serializers.serialize(
+            None, task.cluster, nodes
+        )
+        serialized_tasks = task_based_deploy.TasksSerializer.serialize(
+            task.cluster, nodes, deployment_tasks
+        )
+        return {
+            "deployment_info": serialized_cluster,
+            "deployment_tasks": serialized_tasks
+        }
 
 
 class UpdateNodesInfoTask(object):

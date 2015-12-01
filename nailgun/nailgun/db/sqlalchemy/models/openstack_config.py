@@ -19,13 +19,14 @@ from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
-from nailgun.db.sqlalchemy.models import fields
+from nailgun.db.sqlalchemy.models.fields import JSON
 
 
 class OpenstackConfig(Base):
@@ -44,5 +45,5 @@ class OpenstackConfig(Base):
     node_role = Column(String(consts.ROLE_NAME_MAX_SIZE), nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=datetime.now)
-    configuration = Column(fields.JSON, nullable=False,
+    configuration = Column(MutableDict.as_mutable(JSON), nullable=False,
                            default={}, server_default='{}')

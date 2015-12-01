@@ -15,13 +15,14 @@
 **/
 define(
 [
+    'jquery',
     'underscore',
     'i18n',
     'react',
     'models',
     'utils'
 ],
-function(_, i18n, React, models, utils) {
+function($, _, i18n, React, models, utils) {
     'use strict';
 
     var PluginsPage = React.createClass({
@@ -29,60 +30,81 @@ function(_, i18n, React, models, utils) {
             title: i18n('plugins_page.title'),
             navbarActiveElement: 'plugins',
             breadcrumbsPath: [['home', '#'], 'plugins'],
-            fetchData: function() {
+            fetchData() {
                 var plugins = new models.Plugins();
-                return plugins.fetch().then(function() {
-                    return {
-                        plugins: plugins
-                    };
-                });
+                return plugins.fetch()
+                    .then(() => {
+                        return $.when(...plugins.map((plugin) => {
+                            var links = new models.PluginLinks();
+                            links.url = _.result(plugin, 'url') + '/links';
+                            plugin.set({links: links});
+                            return links.fetch();
+                        }));
+                    })
+                    .then(() => ({plugins}));
             }
         },
-        getDefaultProps: function() {
-            return {details: ['version', 'description', 'homepage', 'authors', 'licenses', 'releases']};
+        getDefaultProps() {
+            return {
+                details: [
+                    'version',
+                    'description',
+                    'homepage',
+                    'authors',
+                    'licenses',
+                    'releases',
+                    'links'
+                ]
+            };
         },
-        renderPlugin: function(plugin) {
+        processPluginData(plugin, attribute) {
+            var data = plugin.get(attribute);
+            if (attribute == 'releases') {
+                return _.map(_.groupBy(data, 'os'), (osReleases, osName) =>
+                    <div key={osName}>
+                        {i18n('plugins_page.' + osName) + ': '}
+                        {_.pluck(osReleases, 'version').join(', ')}
+                    </div>
+                );
+            }
+            if (attribute == 'homepage') {
+                return <span dangerouslySetInnerHTML={{__html: utils.composeLink(data)}} />;
+            }
+            if (attribute == 'links') {
+                return data.map((link) =>
+                    <div key={link.get('url')} className='plugin-link'>
+                        <a href={link.get('url')} target='_blank'>{link.get('title')}</a>
+                        {link.get('description')}
+                    </div>
+                );
+            }
+            if (_.isArray(data)) return data.join(', ');
+            return data;
+        },
+        renderPlugin(plugin, index) {
             return (
-                <div key={plugin.get('name')} className='plugin'>
+                <div key={index} className='plugin'>
                     <div className='row'>
                         <div className='col-xs-2' />
                         <h3 className='col-xs-10'>
                             {plugin.get('title')}
                         </h3>
                     </div>
-                    {_.map(this.props.details, function(attribute) {
-                        var data = plugin.get(attribute);
-                        if (!_.isEmpty(data)) {
-                            if (attribute == 'releases') {
-                                data = _.map(_.groupBy(data, 'os'), function(osReleases, osName) {
-                                    return (
-                                        <div key={osName}>
-                                            {i18n('plugins_page.' + osName) + ': '}
-                                            {_.pluck(osReleases, 'version').join(', ')}
-                                        </div>
-                                    );
-                                });
-                            } else if (_.isArray(data)) {
-                                data = _.map(data).join(', ');
-                            }
-                            return (
-                                <div className='row' key={attribute}>
-                                    <div className='col-xs-2 detail-title text-right'>{i18n('plugins_page.' + attribute)}:</div>
-                                    <div className='col-xs-10'>
-                                        {attribute == 'homepage' ?
-                                            <span dangerouslySetInnerHTML={{__html: utils.composeLink(data)}} />
-                                        :
-                                            data
-                                        }
-                                    </div>
+                    {_.map(this.props.details, (attribute) => {
+                        var data = this.processPluginData(plugin, attribute);
+                        if (data.length) return (
+                            <div className='row' key={attribute}>
+                                <div className='col-xs-2 detail-title text-right'>
+                                    {i18n('plugins_page.' + attribute)}:
                                 </div>
-                            );
-                        }
+                                <div className='col-xs-10'>{data}</div>
+                            </div>
+                        );
                     }, this)}
                 </div>
             );
         },
-        render: function() {
+        render() {
             var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
                 links = {
                     catalog: isMirantisIso ? 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' : 'http://stackalytics.com/report/driverlog?project_id=openstack%2Ffuel',
@@ -97,13 +119,20 @@ function(_, i18n, React, models, utils) {
                         <div className='row'>
                             <div className='col-xs-12'>
                                 {this.props.plugins.map(this.renderPlugin)}
-                                <div className={utils.classNames({'plugin-links': !!this.props.plugins.length, 'text-center': true})}>
+                                <div className={utils.classNames({
+                                    'plugin-page-links': !!this.props.plugins.length,
+                                    'text-center': true
+                                })}>
                                     {!this.props.plugins.length && i18n('plugins_page.no_plugins')}{' '}
                                     <span>
                                         {i18n('plugins_page.more_info')}{' '}
-                                        <a href={links.catalog} target='_blank'>{i18n('plugins_page.plugins_catalog')}</a>{' '}
+                                        <a href={links.catalog} target='_blank'>
+                                            {i18n('plugins_page.plugins_catalog')}
+                                        </a>{' '}
                                         {i18n('common.and')}{' '}
-                                        <a href={links.documentation} target='_blank'>{i18n('plugins_page.plugins_documentation')}</a>
+                                        <a href={links.documentation} target='_blank'>
+                                            {i18n('plugins_page.plugins_documentation')}
+                                        </a>
                                     </span>
                                 </div>
                             </div>

@@ -26,7 +26,7 @@ define(
 function($, _, i18n, React, models, componentMixins, NodeListScreen) {
     'use strict';
 
-    var NodesPage;
+    var NodesPage, PluginLinks;
 
     NodesPage = React.createClass({
         mixins: [componentMixins.backboneMixin('nodes')],
@@ -37,6 +37,7 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
             fetchData() {
                 var nodes = new models.Nodes(),
                     clusters = new models.Clusters(),
+                    plugins = new models.Plugins(),
                     {releases, nodeNetworkGroups, fuelSettings} = app;
 
                 return $.when(
@@ -44,20 +45,34 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                     clusters.fetch(),
                     releases.fetch({cache: true}),
                     nodeNetworkGroups.fetch({cache: true}),
-                    fuelSettings.fetch({cache: true})
+                    fuelSettings.fetch({cache: true}),
+                    plugins.fetch()
                 ).then(() => {
                     clusters.each(
                         (cluster) => cluster.set({
                             release: releases.get(cluster.get('release_id'))
                         })
                     );
-                    return $.when(...clusters.map(function(cluster) {
+                    var requests = clusters.map((cluster) => {
                         var roles = new models.Roles();
                         roles.url = _.result(cluster, 'url') + '/roles';
                         cluster.set({roles: roles});
                         return roles.fetch();
+                    });
+                    requests.concat(plugins.map((plugin) => {
+                        var pluginLinks = new models.PluginLinks();
+                        pluginLinks.url = _.result(plugin, 'url') + '/links';
+                        plugin.set({links: pluginLinks});
+                        return pluginLinks.fetch();
                     }));
-                }).then(() => ({nodes, clusters, nodeNetworkGroups, fuelSettings}));
+                    return $.when(...requests);
+                })
+                .then(() => {
+                    var links = _.flatten(plugins.map(
+                        (plugin) => _.contains(plugin.get('groups'), 'equipment::nodes') ? plugin.get('links').models : []
+                    ));
+                    return {nodes, clusters, nodeNetworkGroups, fuelSettings, links};
+                });
             }
         },
         getInitialState() {
@@ -92,6 +107,7 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                         <h1 className='title'>{i18n('nodes_page.title')}</h1>
                     </div>
                     <div className='content-box'>
+                        <PluginLinks links={this.props.links} />
                         <NodeListScreen {...this.props}
                             ref='screen'
                             selectedNodeIds={this.state.selectedNodeIds}
@@ -103,6 +119,39 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                             statusesToFilter={models.Node.prototype.statuses}
                             defaultFilters={{status: []}}
                         />
+                    </div>
+                </div>
+            );
+        }
+    });
+
+    PluginLinks = React.createClass({
+        renderLink(link) {
+            return (
+                <div className={'link-block ' + (this.props.links.length > 1 ? 'col-xs-6' : 'col-xs-12')}>
+                    <div className='title'>
+                        <a href={link.get('url')} target='_blank'>{link.get('title')}</a>
+                    </div>
+                    <div className='description'>{link.get('description')}</div>
+                </div>
+            );
+        },
+        render() {
+            var {links} = this.props;
+            if (!links.length) return null;
+            return (
+                <div className='row'>
+                    <div className='plugin-links-block row'>
+                        <div className='col-xs-12'>
+                            {links.map((link, index) => {
+                                if (index % 2 == 0) return (
+                                    <div className='row' key={link.get('url')}>
+                                        {this.renderLink(link)}
+                                        {index + 1 < links.length && this.renderLink(links[index + 1])}
+                                    </div>
+                                );
+                            }, this)}
+                        </div>
                     </div>
                 </div>
             );

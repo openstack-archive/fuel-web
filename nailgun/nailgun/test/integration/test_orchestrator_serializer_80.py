@@ -78,7 +78,7 @@ class TestNetworkTemplateSerializer80(
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
-        self.net_template = self.env.read_fixtures(['network_template'])[0]
+        self.net_template = self.env.read_fixtures(['network_template_80'])[0]
         self.cluster = self.db.query(models.Cluster).get(cluster['id'])
 
     def test_get_net_provider_serializer(self):

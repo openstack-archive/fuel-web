@@ -31,10 +31,12 @@ class BaseCloneClusterTest(nailgun_test_base.BaseIntegrationTest):
             version="2014.2.2-6.1",
             state=consts.RELEASE_STATES.manageonly
         )
-        self.release_70 = self.env.create_release(
+
+        self.release_80 = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,
-            version="2015.1.0-7.0",
+            version="2015.1.0-8.0",
         )
+
         self.cluster_61_db = self.env.create_cluster(
             api=False,
             release_id=self.release_61.id,
@@ -45,5 +47,5 @@ class BaseCloneClusterTest(nailgun_test_base.BaseIntegrationTest):
             self.cluster_61_db)
         self.data = {
             "name": "cluster-clone-{0}".format(self.cluster_61.id),
-            "release_id": self.release_70.id,
+            "release_id": self.release_80.id,
         }

@@ -134,6 +134,27 @@ class InstallationInfo(object):
                        'vsphere_cluster'), 'vmware_az_nova_computes_num', len),
     )
 
+    plugin_info_white_list = (
+        # ((path, to, property), 'map_to_name', transform_function)
+        WhiteListRule(('id',), 'id', None),
+        WhiteListRule(('name',), 'name', None),
+        WhiteListRule(('version',), 'version', None),
+        WhiteListRule(('releases',), 'releases', None),
+        WhiteListRule(('fuel_version',), 'fuel_version', None),
+        WhiteListRule(('package_version',), 'package_version', None),
+        WhiteListRule(('groups',), 'groups', None),
+        WhiteListRule(('licenses',), 'licenses', None),
+        WhiteListRule(('hotplug',), 'hotplug', None),
+        WhiteListRule(('attributes_metadata',), 'attributes_metadata', None),
+        WhiteListRule(('volumes_metadata',), 'volumes_metadata', None),
+        WhiteListRule(('roles_metadata',), 'roles_metadata', None),
+        WhiteListRule(('network_roles_metadata',),
+                      'network_roles_metadata', None),
+        WhiteListRule(('components_metadata',), 'components_metadata', None),
+        WhiteListRule(('deployment_tasks',), 'deployment_tasks', None),
+        WhiteListRule(('tasks',), 'tasks', None),
+    )
+
     def fuel_release_info(self):
         return settings.VERSION
 
@@ -213,14 +234,8 @@ class InstallationInfo(object):
     def get_cluster_plugins_info(self, cluster):
         plugins_info = []
         for plugin_inst in ClusterPlugins.get_enabled(cluster.id):
-            plugin_info = {
-                "id": plugin_inst.id,
-                "name": plugin_inst.name,
-                "version": plugin_inst.version,
-                "releases": plugin_inst.releases,
-                "fuel_version": plugin_inst.fuel_version,
-                "package_version": plugin_inst.package_version,
-            }
+            plugin_info = self.get_attributes(plugin_inst.__dict__,
+                                              self.plugin_info_white_list)
             plugins_info.append(plugin_info)
 
         return plugins_info

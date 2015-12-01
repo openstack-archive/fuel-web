@@ -17,6 +17,8 @@
 import abc
 from collections import defaultdict
 import os
+import random
+import re
 import six
 import yaml
 
@@ -83,6 +85,45 @@ def get_uids_for_roles(nodes, roles):
             roles)
 
     return list(uids)
+
+
+class NodeRoleResolver(object):
+    """Helper class to find nodes by role."""
+
+    def __init__(self, nodes):
+        self.mapping = defaultdict(set)
+        for node in nodes:
+            for r in objects.Node.all_roles(node):
+                self.mapping[r].add(node.uid)
+
+    def resolve(self, role, policy=consts.POLICY_ALL):
+        """Gets the nodes by role.
+
+        :param role: the required role
+        :type role: list|str
+        :param policy: the nodes select policy(all|any)
+        :return: the set of nodes
+        """
+        if role == consts.ALL_ROLES:
+            result = set(
+                uid for nodes in six.itervalues(self.mapping) for uid in nodes
+            )
+        elif role == consts.MASTER_ROLE:
+            result = [consts.MASTER_ROLE]
+        elif isinstance(role, list):
+            result = set()
+            for r in role:
+                result.update(self.mapping[r])
+        else:
+            result = set()
+            pattern = re.compile(role)
+            for role, nodes_ids in six.itervalues(self.mapping):
+                if pattern.match(role):
+                    result.update(nodes_ids)
+
+        if policy == consts.POLICY_ANY:
+            return result[random.randint(0, len(result)):1]
+        return result
 
 
 @six.add_metaclass(abc.ABCMeta)

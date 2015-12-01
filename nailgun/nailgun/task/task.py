@@ -16,6 +16,7 @@
 
 import collections
 from copy import deepcopy
+from distutils.version import StrictVersion
 import os
 
 import netaddr
@@ -146,6 +147,8 @@ class DeploymentTask(object):
         """
         if objects.Release.is_granular_enabled(cluster.release):
             return 'granular_deploy'
+        if settings.TASK_BASED_DEPLOYMENT:
+            return "task_based_deployment"
         return 'deploy'
 
     @classmethod
@@ -171,18 +174,18 @@ class DeploymentTask(object):
                 db().add(n)
         db().flush()
 
-        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-        orchestrator_graph.only_tasks(deployment_tasks)
+        deployment_mode = cls._get_deployment_method(task.cluster)
+        message = None
+        if deployment_mode == "task_based_deployment":
+            try:
+                message = cls.task_based_deployment(
+                    task, nodes, deployment_tasks
+                )
+            except errors.TaskBaseDeploymentNotAllowed:
+                pass
 
-        # NOTE(dshulyak) At this point parts of the orchestration can be empty,
-        # it should not cause any issues with deployment/progress and was
-        # done by design
-        serialized_cluster = deployment_serializers.serialize(
-            orchestrator_graph, task.cluster, nodes)
-        pre_deployment = stages.pre_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes)
-        post_deployment = stages.post_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes)
+        if message is None:
+            message = cls.granular_deployment(task, nodes, deployment_tasks)
 
         # After serialization set pending_addition to False
         for node in nodes:
@@ -190,16 +193,119 @@ class DeploymentTask(object):
 
         rpc_message = make_astute_message(
             task,
-            cls._get_deployment_method(task.cluster),
+            deployment_mode,
             'deploy_resp',
-            {
-                'deployment_info': serialized_cluster,
-                'pre_deployment': pre_deployment,
-                'post_deployment': post_deployment
-            }
+            message
         )
         db().flush()
         return rpc_message
+
+    @classmethod
+    def granular_deployment(cls, task, nodes, deployment_tasks):
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        orchestrator_graph.only_tasks(deployment_tasks)
+
+        # NOTE(dshulyak) At this point parts of the orchestration can be empty,
+        # it should not cause any issues with deployment/progress and was
+        # done by design
+        tasks_serial = deployment_serializers.GraphBasedTasksSerializer(
+            orchestrator_graph
+        )
+        serialized_cluster = deployment_serializers.serialize(
+            task.cluster, nodes, tasks_serial
+        )
+        pre_deployment = stages.pre_deployment_serialize(
+            orchestrator_graph, task.cluster, nodes)
+        post_deployment = stages.post_deployment_serialize(
+            orchestrator_graph, task.cluster, nodes)
+
+        return {
+            'deployment_info': serialized_cluster,
+            'pre_deployment': pre_deployment,
+            'post_deployment': post_deployment
+        }
+
+    @classmethod
+    def task_based_deployment(cls, task, nodes, deployment_tasks):
+        from collections import defaultdict
+        deployment_tasks = deployment_tasks or \
+            objects.Cluster.get_deployment_tasks(task.cluster)
+        role_resolver = tasks_serializer.NodeRoleResolver(nodes)
+        tasks_for_nodes = defaultdict(dict)
+        for deployment_task in deployment_tasks:
+            if not cls.does_task_based_deployment_allow(deployment_task):
+                raise errors.TaskBaseDeploymentNotAllowed
+
+            if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
+                continue
+
+            task_roles = deployment_task.get(
+                'role', task.get('groups', consts.ALL_ROLES)
+            )
+            requires = []
+            for dep in deployment_task.get('cross-depends', ()):
+                ids = role_resolver.resolve(
+                    dep.get('role', consts.ALL_ROLES),
+                    dep.get('policy', consts.POLICY_ALL)
+                )
+
+                for node_id in ids:
+                    req = dep.copy()
+                    req['node_id'] = node_id
+                    requires.append(req)
+            required_for = []
+            for dep in deployment_task.get('cross-depends-for', ()):
+                ids = role_resolver.resolve(
+                    dep.get('role', consts.ALL_ROLES),
+                    dep.get('policy', consts.POLICY_ALL)
+                )
+
+                for node_id in ids:
+                    req = dep.copy()
+                    req['node_id'] = node_id
+                    required_for.append(req)
+
+            ids = role_resolver.resolve(task.get('requires', []))
+            for node_id in ids:
+                for r in deployment_task.get('requires', []):
+                    requires.append({
+                        "name": r,
+                        "node_id": node_id
+                    })
+
+            ids = role_resolver.resolve(task.get('required_for', []))
+            for node_id in ids:
+                for r in deployment_task.get('required_for', []):
+                    required_for.append({
+                        "name": r,
+                        "node_id": node_id
+                    })
+
+            astute_task = deployment_task.copy()
+            astute_task.pop("cross-depends-for", None)
+            astute_task.pop("cross-depends", None)
+            astute_task['required_for'] = required_for
+            astute_task['requires'] = requires
+            node_ids = tasks_serializer.get_uids_for_roles(
+                nodes, task_roles
+            )
+            for node_id in node_ids:
+                tasks_for_nodes[node_id][astute_task['id']] = astute_task
+
+        return {
+            "deployment_info": deployment_serializers.serialize(
+                task.cluster, nodes
+            ),
+            "deployment_tasks": dict(
+                (k, list(six.itervalues(v)))
+                for k, v in six.iteritems(tasks_for_nodes)
+            )
+        }
+
+    @classmethod
+    def does_task_based_deployment_allow(cls, task):
+        return StrictVersion(task.get('version', '0.0.0')) >= \
+            consts.TASK_CROSS_DEPENDENCY
 
 
 class UpdateNodesInfoTask(object):

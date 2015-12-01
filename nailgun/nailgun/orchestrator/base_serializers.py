@@ -146,17 +146,8 @@ class VmwareDeploymentSerializerMixin(object):
         return data.replace('$', '$$')
 
 
-class GraphBasedSerializer(object):
-
-    def __init__(self, graph):
-        self.graph = graph
-
-    def set_deployment_priorities(self, nodes):
-        self.graph.add_priorities(nodes)
-
-    def set_tasks(self, nodes):
-        for node in nodes:
-            node['tasks'] = self.graph.deploy_task_serialize(node)
+class DeploymentSerializer(object):
+    pass
 
 
 class NetworkDeploymentSerializer(object):

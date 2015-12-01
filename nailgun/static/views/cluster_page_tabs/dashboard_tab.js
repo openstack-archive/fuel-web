@@ -89,7 +89,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             (nodes.hasChanges() || cluster.needsRedeployment()) &&
                                 <DeployReadinessBlock
                                     key='changes-to-deploy'
-                                    {... _.pick(this.props, 'cluster', 'selectNodes', 'nodeNetworkGroups')}
+                                    {... _.pick(this.props, 'cluster', 'nodeNetworkGroups')}
                                 />,
                             !nodes.length && (
                                 <div className='row' key='new-cluster'>
@@ -458,16 +458,18 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 }
             }
         ],
-        showDialog(Dialog) {
-            Dialog
-                .show({cluster: this.props.cluster})
-                .done(this.props.selectNodes);
+        showDialog(Dialog, options) {
+            Dialog.show(_.extend({cluster: this.props.cluster}, options));
         },
         renderChangedNodesAmount(nodes, dictKey) {
             if (!nodes.length) return null;
             return (
                 <li className='changes-item' key={dictKey}>
                     {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
+                    <button
+                        className='btn btn-link discard-changes-icon'
+                        onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog, {nodes: nodes})}
+                    />
                 </li>
             );
         },
@@ -512,15 +514,6 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                         <div className='deploy-icon' />
                                         {i18n('cluster_page.deploy_changes')}
                                     </button>
-                            }
-                            {nodes.hasChanges() &&
-                                <button
-                                    className='btn btn-default discard-changes'
-                                    onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
-                                >
-                                    <div className='discard-changes-icon' />
-                                    {i18n('cluster_page.discard_changes')}
-                                </button>
                             }
                         </div>
                         <div className='col-xs-9 environment-alerts'>

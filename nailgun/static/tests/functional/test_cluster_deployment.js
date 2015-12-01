@@ -69,7 +69,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .clickByCssSelector('.discard-changes')
+                    .clickByCssSelector('.discard-changes-icon')
                     .then(function() {
                         return modal.waitToOpen();
                     })

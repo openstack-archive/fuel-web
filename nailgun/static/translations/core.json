@@ -769,7 +769,6 @@
                     "tenant_label": "Tenant",
                     "tenant_description": "Tenant (project) name for Administrator"
                 },
-                "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
                 "provision_vms": "Provision VMs",
                 "deploy": "Deploying",
@@ -910,12 +909,12 @@
                 },
                 "display_changes": {
                     "title": "Deploy Changes",
-                    "added_node": "Added __count__ node.",
-                    "added_node_plural": "Added __count__ nodes.",
-                    "deleted_node": "Deleted __count__ node.",
-                    "deleted_node_plural": "Deleted __count__ nodes.",
-                    "provisioned_node": "Provisioned __count__ node.",
-                    "provisioned_node_plural": "Provisioned __count__ nodes.",
+                    "added_node": "Added __count__ node",
+                    "added_node_plural": "Added __count__ nodes",
+                    "deleted_node": "Deleted __count__ node",
+                    "deleted_node_plural": "Deleted __count__ nodes",
+                    "provisioned_node": "Provisioned __count__ node",
+                    "provisioned_node_plural": "Provisioned __count__ nodes",
                     "settings_changes": {
                         "attributes": "Changed OpenStack settings.",
                         "networks": "Changed network settings.",
@@ -977,8 +976,9 @@
                 "discard_changes": {
                     "title": "Discard Changes",
                     "discard_button": "Discard",
-                    "alert_text": "Are you sure you want to discard these changes?",
-                    "cant_discard": "Cannot discard the node changes."
+                    "discard_addition": "Are you sure you want to discard node addition?",
+                    "discard_deletion": "Are you sure you want to discard node deletion?",
+                    "cant_discard": "Cannot discard the changes."
                 },
                 "remove_node": {
                     "default_message": "Fuel will remove this node from its database. This operation will not erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and the node will appear in Fuel as new unallocated server.",
@@ -2073,7 +2073,6 @@
                     "tenant_label": "テナント",
                     "tenant_description": "管理者のテナント(プロジェクト)名"
                 },
-                "discard_changes": "変更を破棄",
                 "deploy_changes": "変更をデプロイ",
                 "reset_environment": "リセット中",
                 "stop_deployment": "停止中",
@@ -2633,7 +2632,6 @@
                     "actual_duration": "실제 기간",
                     "status": "상태"
                 },
-                "discard_changes": "변경내용 취소",
                 "deploy_changes": "변경내용 배치",
                 "reset_environment": "재설정",
                 "stop_deployment": "중지",

@@ -81,7 +81,7 @@ define([
         discardChanges: function() {
             var self = this;
             return this.remote
-                .clickByCssSelector('button.discard-changes')
+                .clickByCssSelector('.discard-changes-icon')
                 .then(function() {
                     return self.modal.waitToOpen();
                 })

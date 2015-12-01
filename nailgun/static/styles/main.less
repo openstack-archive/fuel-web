@@ -265,6 +265,12 @@
   .icon-default-styles(-52px, -800px);
 }
 
+.discard-changes-icon {
+  .icon-default-styles(-53px, -572px);
+  width: 16px;
+  height: 16px;
+}
+
 // BASE SETTINGS
 
 :focus {
@@ -4211,27 +4217,26 @@ input[type=range] {
       .btn {
         padding-top: 2px;
         display: block;
-        width: 170px;
         text-align: left;
         &:not(:last-child) {
           margin-bottom: @dashboard-offset;
         }
-        .deploy-icon, .discard-changes-icon {
-          position: relative;
-          top: 3px;
-          display: inline-block;
+      }
+      .deploy-icon, .discard-changes-icon {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        &.deploy-icon {
+          background: url(@common-icons-sprite) no-repeat -10px -90px;
           margin-right: 6px;
           width: 22px;
           height: 18px;
-          &:before {
-            content: " ";
-          }
-          &.deploy-icon {
-            background: url(@common-icons-sprite) no-repeat -10px -90px;
-          }
-          &.discard-changes-icon {
-            background: url(@common-icons-sprite) no-repeat -10px -50px;
-          }
+          top: 3px;
+        }
+        &.discard-changes-icon {
+          margin-left: 6px;
+          top: -1px;
+          padding: 0;
         }
       }
     }

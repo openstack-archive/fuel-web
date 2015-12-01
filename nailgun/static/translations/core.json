@@ -768,7 +768,6 @@
                     "tenant_label": "Tenant",
                     "tenant_description": "Tenant (project) name for Administrator"
                 },
-                "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
                 "provision_vms": "Provision VMs",
                 "deploy": "Deploying",
@@ -909,12 +908,12 @@
                 },
                 "display_changes": {
                     "title": "Deploy Changes",
-                    "added_node": "Added __count__ node.",
-                    "added_node_plural": "Added __count__ nodes.",
-                    "deleted_node": "Deleted __count__ node.",
-                    "deleted_node_plural": "Deleted __count__ nodes.",
-                    "provisioned_node": "Provisioned __count__ node.",
-                    "provisioned_node_plural": "Provisioned __count__ nodes.",
+                    "added_node": "Added __count__ node",
+                    "added_node_plural": "Added __count__ nodes",
+                    "deleted_node": "Deleted __count__ node",
+                    "deleted_node_plural": "Deleted __count__ nodes",
+                    "provisioned_node": "Provisioned __count__ node",
+                    "provisioned_node_plural": "Provisioned __count__ nodes",
                     "settings_changes": {
                         "attributes": "Changed OpenStack settings.",
                         "networks": "Changed network settings.",
@@ -974,10 +973,11 @@
                     "deployed_nodes_message_plural": "Deployed nodes will be marked as pending deletion and will be removed from the environment after redeployment."
                 },
                 "discard_changes": {
-                    "title": "Discard Changes",
+                    "title": "Discard Node Changes",
                     "discard_button": "Discard",
-                    "alert_text": "Are you sure you want to discard these changes?",
-                    "cant_discard": "Cannot discard the node changes."
+                    "alert_text": "Are you sure you want to discard the node changes?",
+                    "alert_text_plural": "Are you sure you want to discard the nodes changes?",
+                    "cant_discard": "Cannot discard the changes."
                 },
                 "remove_node": {
                     "default_message": "Fuel will remove this node from its database. This operation will not erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and the node will appear in Fuel as new unallocated server.",

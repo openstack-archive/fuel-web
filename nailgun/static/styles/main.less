@@ -4208,22 +4208,24 @@ input[type=range] {
         &:not(:last-child) {
           margin-bottom: @dashboard-offset;
         }
-        .deploy-icon, .discard-changes-icon {
-          position: relative;
-          top: 3px;
-          display: inline-block;
+      }
+      .deploy-icon, .discard-changes-icon {
+        position: relative;
+        top: 3px;
+        display: inline-block;
+        width: 22px;
+        height: 18px;
+        cursor: pointer;
+        &:before {
+          content: " ";
+        }
+        &.deploy-icon {
+          background: url(@common-icons-sprite) no-repeat -10px -90px;
           margin-right: 6px;
-          width: 22px;
-          height: 18px;
-          &:before {
-            content: " ";
-          }
-          &.deploy-icon {
-            background: url(@common-icons-sprite) no-repeat -10px -90px;
-          }
-          &.discard-changes-icon {
-            background: url(@common-icons-sprite) no-repeat -10px -50px;
-          }
+        }
+        &.discard-changes-icon {
+          background: url(@common-icons-sprite) no-repeat -10px -50px;
+          margin-left: 3px;
         }
       }
     }

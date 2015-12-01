@@ -1262,6 +1262,15 @@
             regex:
               source: '^[1-9]\d*$'
               error: "Invalid number"
+        task_deploy:
+           value: false
+           label: "Enable task based deploy"
+           description: "TODO"
+           weight: 11
+           type: "checkbox"
+           restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
       generated:
         mysql:
           root_password:

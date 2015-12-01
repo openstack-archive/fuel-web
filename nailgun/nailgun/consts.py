@@ -377,6 +377,7 @@ EXTENSION_NAME_MAX_SIZE = 64
 
 ALL_ROLES = '*'
 MASTER_ROLE = 'master'
+ROLE_SELF_NODE = 'self'
 
 # version of Fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'
@@ -446,3 +447,5 @@ NODE_RESOLVE_POLICY = Enum(
 )
 
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'
+
+TASK_CROSS_DEPENDENCY = '2.0.0'

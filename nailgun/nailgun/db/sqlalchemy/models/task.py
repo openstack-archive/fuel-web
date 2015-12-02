@@ -18,6 +18,7 @@ import uuid
 
 from sqlalchemy import Column
 from sqlalchemy import Enum
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -49,7 +50,9 @@ class Task(Base):
         default='running'
     )
     progress = Column(Integer, default=0)
-    cache = deferred(Column(JSON, default={}))
+    cache = deferred(Column(MutableDict.as_mutable(JSON), default={}))
+    # By design 'result' value accept dict and list types
+    # depends on task type. Don't do this field MutableDict.
     result = Column(JSON, default={})
     parent_id = Column(Integer, ForeignKey('tasks.id'))
     subtasks = relationship(

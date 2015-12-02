@@ -61,7 +61,7 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                     });
                     requests = requests.concat(
                         plugins
-                            .filter((plugin) => _.contains(plugin.get('groups'), 'equipment::nodes'))
+                            .filter((plugin) => _.contains(plugin.get('groups'), 'equipment'))
                             .map((plugin) => {
                                 var pluginLinks = new models.PluginLinks();
                                 pluginLinks.url = _.result(plugin, 'url') + '/links';

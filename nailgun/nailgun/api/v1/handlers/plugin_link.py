@@ -21,32 +21,39 @@ from nailgun.errors import errors
 from nailgun import objects
 
 
-class ClusterPluginLinkHandler(base.SingleHandler):
+class PluginLinkHandler(base.SingleHandler):
 
     validator = plugin_link.PluginLinkValidator
-    single = objects.ClusterPluginLink
+    single = objects.PluginLink
 
-    def GET(self, cluster_id, obj_id):
+    def _get_plugin_link_object(self, plugin_id, obj_id):
+        obj = self.get_object_or_404(self.single, obj_id)
+        if int(plugin_id) == obj.plugin_id:
+            return obj
+        else:
+            raise self.http(
+                404,
+                "Plugin with id {0} not found".format(plugin_id)
+            )
+
+    def GET(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
         :http: * 200 (OK)
                * 404 (dashboard entry not found in db)
         """
-        self.get_object_or_404(objects.Cluster, cluster_id)
-
-        obj = self.get_object_or_404(self.single, obj_id)
+        obj = self._get_plugin_link_object(plugin_id, obj_id)
         return self.single.to_json(obj)
 
     @content
-    def PUT(self, cluster_id, obj_id):
+    def PUT(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
         :http: * 200 (OK)
                * 400 (invalid object data specified)
                * 404 (object not found in db)
         """
-        obj = self.get_object_or_404(self.single, obj_id)
-
+        obj = self._get_plugin_link_object(plugin_id, obj_id)
         data = self.checked_data(
             self.validator.validate_update,
             instance=obj
@@ -54,46 +61,46 @@ class ClusterPluginLinkHandler(base.SingleHandler):
         self.single.update(obj, data)
         return self.single.to_json(obj)
 
-    def PATCH(self, cluster_id, obj_id):
+    def PATCH(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
         :http: * 200 (OK)
                * 400 (invalid object data specified)
                * 404 (object not found in db)
         """
-        return self.PUT(cluster_id, obj_id)
+        return self.PUT(plugin_id, obj_id)
 
     @content
-    def DELETE(self, cluster_id, obj_id):
+    def DELETE(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
         :http: * 204 (OK)
                * 404 (object not found in db)
         """
-        d_e = self.get_object_or_404(self.single, obj_id)
-        self.single.delete(d_e)
+        obj = self._get_plugin_link_object(plugin_id, obj_id)
+        self.single.delete(obj)
         raise self.http(204)
 
 
-class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
+class PluginLinkCollectionHandler(base.CollectionHandler):
 
-    collection = objects.ClusterPluginLinkCollection
+    collection = objects.PluginLinkCollection
     validator = plugin_link.PluginLinkValidator
 
     @content
-    def GET(self, cluster_id):
-        """:returns: Collection of JSONized ClusterPluginLink objects.
+    def GET(self, plugin_id):
+        """:returns: Collection of JSONized PluginLink objects.
 
         :http: * 200 (OK)
-               * 404 (cluster not found in db)
+               * 404 (plugin not found in db)
         """
-        self.get_object_or_404(objects.Cluster, cluster_id)
+        self.get_object_or_404(objects.Plugin, plugin_id)
         return self.collection.to_json(
-            self.collection.get_by_cluster_id(cluster_id)
+            self.collection.get_by_plugin_id(plugin_id)
         )
 
     @content
-    def POST(self, cluster_id):
+    def POST(self, plugin_id):
         """:returns: JSONized REST object.
 
         :http: * 201 (object successfully created)
@@ -102,7 +109,7 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
         data = self.checked_data()
 
         try:
-            new_obj = self.collection.create_with_cluster_id(data, cluster_id)
+            new_obj = self.collection.create_with_plugin_id(data, plugin_id)
         except errors.CannotCreate as exc:
             raise self.http(400, exc.message)
         raise self.http(201, self.collection.single.to_json(new_obj))

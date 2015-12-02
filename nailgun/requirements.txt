@@ -14,7 +14,10 @@ kombu>=3.0.16
 netaddr>=0.7.12,!=0.7.16
 oslo.config>=2.3.0
 oslo.serialization>=1.4.0
-SQLAlchemy>=0.9.9,<1.1.0
+# MutableDict.pop has a bug in version 1.0.10. 'pop' takes 2 args instead of 3.
+# Before upping max version please ensure, that bug was fixed.
+# https://bitbucket.org/zzzeek/sqlalchemy/issues/3605
+SQLAlchemy>=0.9.9,<1.0.10
 # oslo.db has no upper bound for sqlalchemy-migrate, and latest
 # sqlalchemy-migrate requires conflicting version of pbr.
 sqlalchemy-migrate>=0.9.6

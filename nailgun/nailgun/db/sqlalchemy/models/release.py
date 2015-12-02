@@ -16,6 +16,7 @@
 
 from sqlalchemy import Column
 from sqlalchemy import Enum
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Unicode
@@ -38,7 +39,7 @@ class Release(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(100), nullable=False)
     version = Column(String(30), nullable=False)
-    can_update_from_versions = Column(JSON, default=[],
+    can_update_from_versions = Column(MutableList.as_mutable(JSON), default=[],
                                       nullable=False, server_default='[]')
     description = Column(Unicode)
     operating_system = Column(String(50), nullable=False)
@@ -50,18 +51,20 @@ class Release(Base):
         nullable=False,
         default=consts.RELEASE_STATES.unavailable
     )
-    networks_metadata = Column(JSON, default={})
-    attributes_metadata = Column(JSON, default={})
-    volumes_metadata = Column(JSON, default={})
-    modes_metadata = Column(JSON, default={})
-    roles_metadata = Column(JSON, default={})
-    network_roles_metadata = Column(JSON, default=[], server_default='[]')
-    wizard_metadata = Column(JSON, default={})
-    deployment_tasks = Column(JSON, default=[])
-    vmware_attributes_metadata = Column(JSON, default=[])
+    networks_metadata = Column(MutableDict.as_mutable(JSON), default={})
+    attributes_metadata = Column(MutableDict.as_mutable(JSON), default={})
+    volumes_metadata = Column(MutableDict.as_mutable(JSON), default={})
+    modes_metadata = Column(MutableDict.as_mutable(JSON), default={})
+    roles_metadata = Column(MutableDict.as_mutable(JSON), default={})
+    network_roles_metadata = Column(
+        MutableList.as_mutable(JSON), default=[], server_default='[]')
+    wizard_metadata = Column(MutableDict.as_mutable(JSON), default={})
+    deployment_tasks = Column(MutableList.as_mutable(JSON), default=[])
+    vmware_attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), default={})
     components_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
-    modes = Column(JSON, default=[])
+    modes = Column(MutableList.as_mutable(JSON), default=[])
     clusters = relationship(
         "Cluster",
         primaryjoin="Release.id==Cluster.release_id",

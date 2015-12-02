@@ -142,7 +142,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             var states = {search, activeSorters, activeFilters, availableSorters, availableFilters, viewMode, isLabelsPanelOpen};
 
-            // Nodes page
+            // Equipment page
             if (!cluster) return states;
 
             // additonal Nodes tab states (Cluster page)

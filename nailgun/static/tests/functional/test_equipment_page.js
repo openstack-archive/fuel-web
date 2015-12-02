@@ -26,7 +26,7 @@ define([
             modal;
 
         return {
-            name: 'Nodes Page',
+            name: 'Equipment Page',
             setup: function() {
                 common = new Common(this.remote);
                 modal = new ModalWindow(this.remote);
@@ -53,11 +53,11 @@ define([
                     // go back to Environments page
                     .clickLinkByText('Environments')
                     .waitForCssSelector('.clusters-page', 2000)
-                    // go to Nodes page
-                    .clickLinkByText('Nodes')
-                    .waitForCssSelector('.nodes-page', 5000);
+                    // go to Equipment page
+                    .clickLinkByText('Equipment')
+                    .waitForCssSelector('.equipment-page', 5000);
             },
-            'Nodes page is rendered correctly': function() {
+            'Equipment page is rendered correctly': function() {
                 return this.remote
                     .assertElementsExist('.node', 8, 'All Fuel nodes are presented')
                     .assertElementNotExists('.control-buttons-box .btn', 'No management buttons presented')

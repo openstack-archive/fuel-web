@@ -30,7 +30,7 @@ define(
     'views/welcome_page',
     'views/cluster_page',
     'views/clusters_page',
-    'views/nodes_page',
+    'views/equipment_page',
     'views/releases_page',
     'views/plugins_page',
     'views/notifications_page',
@@ -41,7 +41,7 @@ define(
     'bootstrap',
     './styles/main.less'
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, NodesPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     class Router extends Backbone.Router {
@@ -52,7 +52,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                 welcome: 'welcome',
                 clusters: 'listClusters',
                 'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
-                nodes: 'listNodes',
+                equipment: 'showEquipmentPage',
                 releases: 'listReleases',
                 plugins: 'listPlugins',
                 notifications: 'showNotifications',
@@ -130,8 +130,8 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
             app.loadPage(ClustersPage);
         }
 
-        listNodes() {
-            app.loadPage(NodesPage);
+        showEquipmentPage() {
+            app.loadPage(EquipmentPage);
         }
 
         listReleases() {

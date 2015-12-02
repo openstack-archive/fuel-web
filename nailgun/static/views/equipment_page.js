@@ -26,14 +26,14 @@ define(
 function($, _, i18n, React, models, componentMixins, NodeListScreen) {
     'use strict';
 
-    var NodesPage;
+    var EquipmentPage;
 
-    NodesPage = React.createClass({
+    EquipmentPage = React.createClass({
         mixins: [componentMixins.backboneMixin('nodes')],
         statics: {
-            title: i18n('nodes_page.title'),
-            navbarActiveElement: 'nodes',
-            breadcrumbsPath: [['home', '#'], 'nodes'],
+            title: i18n('equipment_page.title'),
+            navbarActiveElement: 'equipment',
+            breadcrumbsPath: [['home', '#'], 'equipment'],
             fetchData() {
                 var nodes = new models.Nodes(),
                     clusters = new models.Clusters(),
@@ -87,9 +87,9 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                 );
             });
             return (
-                <div className='nodes-page'>
+                <div className='equipment-page'>
                     <div className='page-title'>
-                        <h1 className='title'>{i18n('nodes_page.title')}</h1>
+                        <h1 className='title'>{i18n('equipment_page.title')}</h1>
                     </div>
                     <div className='content-box'>
                         <NodeListScreen {...this.props}
@@ -109,5 +109,5 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
         }
     });
 
-    return NodesPage;
+    return EquipmentPage;
 });

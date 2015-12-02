@@ -1742,6 +1742,17 @@ class UpdateDnsmasqTask(object):
 class UpdateOpenstackConfigTask(object):
 
     @classmethod
+    def _get_deployment_method(cls, cluster):
+        """Get deployment method name based on cluster version
+
+        :param cluster: Cluster db object
+        :returns: string - deploy/granular_deploy
+        """
+        if objects.Release.is_granular_enabled(cluster.release):
+            return 'granular_deploy'
+        return 'deploy'
+
+    @classmethod
     def message(cls, task, cluster, nodes):
         configs = objects.OpenstackConfig.find_configs_for_nodes(
             cluster, nodes)
@@ -1753,25 +1764,31 @@ class UpdateOpenstackConfigTask(object):
         refreshable_tasks = objects.Cluster.get_refreshable_tasks(
             cluster, refresh_on)
 
-        upload_serializer = tasks_serializer.UploadConfiguration(
-            task, task.cluster, nodes, configs)
-        tasks_to_execute = list(upload_serializer.serialize())
+        task_ids = [t['id'] for t in refreshable_tasks]
+        task_ids.append(tasks_serializer.UploadConfiguration.identity)
 
-        if refreshable_tasks:
-            orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-            orchestrator_graph.only_tasks(refreshable_tasks)
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        orchestrator_graph.only_tasks(task_ids)
 
-            deployment_tasks = orchestrator_graph.stage_tasks_serialize(
-                orchestrator_graph.graph.topology, nodes)
-            tasks_to_execute.extend(deployment_tasks)
+        serialized_cluster = deployment_serializers.serialize(
+            orchestrator_graph, task.cluster, nodes)
+        pre_deployment = stages.pre_deployment_serialize(
+            orchestrator_graph, task.cluster, nodes)
+        post_deployment = stages.post_deployment_serialize(
+            orchestrator_graph, task.cluster, nodes)
 
         rpc_message = make_astute_message(
-            task, 'execute_tasks', 'update_config_resp', {
-                'tasks': tasks_to_execute,
-            })
+            task,
+            'granular_deploy',
+            'deploy_resp',
+            {
+                'deployment_info': serialized_cluster,
+                'pre_deployment': pre_deployment,
+                'post_deployment': post_deployment
+            }
+        )
 
         return rpc_message
-
 
 if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
     rpc.cast = fake_cast

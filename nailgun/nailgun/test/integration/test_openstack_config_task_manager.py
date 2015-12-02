@@ -15,6 +15,7 @@
 from mock import patch
 
 from nailgun import consts
+from nailgun.orchestrator.tasks_templates import make_generic_task
 from nailgun.task.manager import OpenstackConfigTaskManager
 from nailgun.test import base
 from nailgun.test.base import fake_tasks
@@ -39,6 +40,19 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
         self.release = self.env.releases[0]
         self.cluster = self.env.clusters[0]
         self.nodes = self.env.nodes
+
+        self.refreshable_task = {
+            'id': 'test_task',
+            'type': 'puppet',
+            'groups': ['primary-controller', 'controller'],
+            'refresh_on': ['keystone_config'],
+            'parameters': {},
+        }
+
+        self.release.deployment_tasks = self.release.deployment_tasks + [
+            self.refreshable_task
+        ]
+        self.db().flush()
 
         self.env.create_openstack_config(
             cluster_id=self.cluster.id,
@@ -74,21 +88,27 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
         # 3 tasks for all ready nodes with cluster config
         # 1 task for node[0] with node specific config
         # 2 tasks (1 per each compute node)
-        self.assertEqual(len(tasks), 6)
+        # 1 deployment task
+        self.assertEqual(len(tasks), 7)
 
         cluster_uids = []
         role_uids = []
         node_uids = []
+        deployment_tasks = []
         for task in tasks:
-            self.assertEqual('upload_file', task['type'])
-            if '/cluster' in task['parameters']['path']:
-                cluster_uids.extend(task['uids'])
-            if '/role' in task['parameters']['path']:
-                role_uids.extend(task['uids'])
-            if '/node' in task['parameters']['path']:
-                node_uids.extend(task['uids'])
+            if task['type'] == 'upload_file':
+                if '/cluster' in task['parameters']['path']:
+                    cluster_uids.extend(task['uids'])
+                if '/role' in task['parameters']['path']:
+                    role_uids.extend(task['uids'])
+                if '/node' in task['parameters']['path']:
+                    node_uids.extend(task['uids'])
+            else:
+                deployment_tasks.append(task)
 
         self.assertItemsEqual(cluster_uids, map(str, all_node_ids))
         self.assertItemsEqual(role_uids,
                               [self.nodes[1].uid, self.nodes[2].uid])
         self.assertItemsEqual([self.nodes[0].uid], node_uids)
+        self.assertItemsEqual(deployment_tasks, [
+            make_generic_task([self.nodes[0].uid], self.refreshable_task)])

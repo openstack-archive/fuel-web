@@ -114,7 +114,12 @@ define(
                 return node.hasRole('compute-vmware');
             });
 
-            targetNode.options = [{id: 'controllers', label: 'controllers'}];
+            targetNode.options = [];
+            if (targetNode.current.id == 'controllers' || !this.props.isLocked) {
+                targetNode.options.push({id: 'controllers', label: 'controllers'});
+            } else {
+                targetNode.options.push({id: 'invalid', label: 'Select node'});
+            }
             nodes.forEach(function(node) {
                 targetNode.options.push({
                     id: node.get('hostname'),
@@ -158,7 +163,11 @@ define(
             var collection = this.props.model.get('nova_computes'),
                 index = collection.indexOf(current),
                 newItem = current.clone();
-            newItem.set('target_node', _.cloneDeep(newItem.get('target_node')));
+            var targetNode = _.cloneDeep(newItem.get('target_node'));
+            if (this.props.isLocked) {
+                targetNode.current = {id: 'invalid'};
+            }
+            newItem.set('target_node', targetNode);
             collection.add(newItem, {at: index + 1});
             collection.parseRestrictions();
             this.setState({model: this.props.model});
@@ -175,7 +184,7 @@ define(
                 meta = model.get('metadata');
             meta = _.filter(meta, vmwareModels.isRegularField);
             return (
-                <FieldGroup model={model} disabled={this.props.disabled}/>
+                <FieldGroup model={model} disabled={this.props.isLocked || this.props.disabled}/>
             );
         },
         renderComputes: function(actions) {
@@ -198,6 +207,7 @@ define(
                                 onRemove={this.removeNovaCompute}
                                 isRemovable={isSingleInstance}
                                 disabled={disabled.result || this.props.disabled}
+                                isLocked={this.props.isLocked}
                                 cluster={cluster}
                             />
                         );
@@ -231,7 +241,7 @@ define(
                         }
                     </h3>
                     {this.props.collection.map(function(model) {
-                        return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled} cluster={this.props.cluster}/>;
+                        return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled} cluster={this.props.cluster} isLocked={this.props.isLocked}/>;
                     }, this)}
                 </div>
             );
@@ -384,8 +394,8 @@ define(
             model.isValid();
             var hasChanges = this.detectChanges(this.json, currentJson);
             var hasDefaultsChanges = this.detectChanges(this.defaultsJson, currentJson);
-            var saveDisabled = !editable || !hasChanges || !this.isSavingPossible(),
-                defaultsDisabled = !editable || !hasDefaultsChanges;
+            var saveDisabled = !hasChanges || !this.isSavingPossible(),
+                defaultsDisabled = !hasDefaultsChanges;
 
             return (
                 <div className='row'>
@@ -394,8 +404,9 @@ define(
                     {!hide.availability_zones.result &&
                         <AvailabilityZones
                             collection={model.get('availability_zones')}
-                            disabled={!editable || disable.availability_zones.result}
+                            disabled={disable.availability_zones.result}
                             tooltipText={disable.availability_zones.message}
+                            isLocked={!editable}
                             cluster={this.props.cluster}
                         />
                     }
@@ -418,7 +429,7 @@ define(
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
-                                <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={defaultsDisabled}>
+                                <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={!editable || defaultsDisabled}>
                                     {i18n('vmware.reset_to_defaults')}
                                 </button>
                                 <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!hasChanges}>

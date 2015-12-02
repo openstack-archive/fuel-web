@@ -202,7 +202,7 @@
             },
             "navbar": {
                 "environments": "Environments",
-                "nodes": "Nodes",
+                "equipment": "Equipment",
                 "releases": "Releases",
                 "plugins": "Plugins",
                 "support": "Support",
@@ -216,7 +216,7 @@
             "breadcrumbs": {
                 "home": "Home",
                 "environments": "Environments",
-                "nodes": "Nodes",
+                "equipment": "Equipment",
                 "releases": "Releases",
                 "plugins": "Plugins",
                 "support": "Support",
@@ -231,8 +231,8 @@
                 "view_all_button": "View all",
                 "no_notifications_text": "No notifications to display."
             },
-            "nodes_page": {
-                "title": "Nodes"
+            "equipment_page": {
+                "title": "Equipment"
             },
             "support_page": {
                 "title": "Support",

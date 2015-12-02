@@ -20,7 +20,8 @@
                 "has_errors": "VMware settings are invalid. For more information please visit the",
                 "tab_name": "VMware tab",
                 "duplicate_value": "Duplicate values are not allowed",
-                "unassigned_nodes": "The following compute-vmware nodes are not assigned to any vCenter cluster:"
+                "unassigned_nodes": "The following compute-vmware nodes are not assigned to any vCenter cluster:",
+                "invalid_target_node" : "Invalid target node"
             }
         }
     }

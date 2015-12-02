@@ -1759,6 +1759,7 @@ class UpdateOpenstackConfigTask(object):
 
         if refreshable_tasks:
             orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+            task_ids = [t['id'] for t in refreshable_tasks]
             orchestrator_graph.only_tasks(refreshable_tasks)
 
             deployment_tasks = orchestrator_graph.stage_tasks_serialize(

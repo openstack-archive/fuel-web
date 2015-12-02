@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Code-Review+1: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Workflow+1: Aleksey Kasatkin <akasatkin@mirantis.com>
+Code-Review+1: Artem Roma <aroma@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Alexander Kislitsky <akislitsky@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 02 Dec 2015 12:44:55 +0000
+Reviewed-on: https://review.openstack.org/240898
+Project: openstack/fuel-web
+Branch: refs/heads/master

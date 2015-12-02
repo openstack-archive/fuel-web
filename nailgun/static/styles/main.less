@@ -1507,17 +1507,53 @@ input[type=range] {
 }
 
 .plugins-page {
-  h3 {margin-top: 0;}
-  .detail-title span {color: @gray;}
+  h3 {
+    margin-top: 0;
+  }
+  .detail-title span {
+    color: @gray;
+  }
   .plugin {
     padding: 20px;
-    .row {margin-bottom: 5px;}
-    &:nth-child(odd) {background: @light-blue;}
+    .plugin-link {
+      &:not(:last-child) {
+        margin-bottom: 5px;
+      }
+      a {
+        display: block;
+      }
+    }
+    .row:not(:last-child) {
+      margin-bottom: 5px;
+    }
+    &:nth-child(odd) {
+      background: @light-blue;
+    }
   }
-  .plugin-links {
+  .plugin-page-links {
     margin-top: 30px;
     margin-bottom: 10px;
     font-size: @base-font-size + 2;
+  }
+}
+
+.equipment-page {
+  .plugin-links-block {
+    @offset: 10px;
+    padding: @offset;
+    border: 1px solid #d3d3d3;
+    border-radius: 5px;
+    margin: 0 15px 15px;
+    .link-block {
+      padding: 0;
+      &:not(:last-child) {
+        margin-bottom: @offset;
+      }
+      .title {
+        margin-bottom: @offset / 2;
+        padding: 0;
+      }
+    }
   }
 }
 

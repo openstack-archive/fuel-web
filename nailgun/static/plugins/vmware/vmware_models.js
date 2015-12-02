@@ -121,6 +121,13 @@ function($, _, i18n, Backbone, models) {
 
     var NovaCompute = BaseModel.extend({
         constructorName: 'NovaCompute',
+        checkEmptyTargetNode: function() {
+            var targetNode = this.get('target_node');
+            if (targetNode.current && targetNode.current.id == 'invalid') {
+                this.validationError = this.validationError || {};
+                this.validationError.target_node = i18n('vmware.invalid_target_node');
+            }
+        },
         checkDuplicateField: function(keys, fieldName) {
             /*jshint validthis:true */
             var fieldValue = this.get(fieldName);
@@ -156,6 +163,7 @@ function($, _, i18n, Backbone, models) {
 
             var keys = {vsphere_clusters: {}, service_names: {}};
             this.invoke('checkDuplicates', keys);
+            this.invoke('checkEmptyTargetNode');
 
             var errors = _.compact(_.pluck(this.models, 'validationError'));
             return _.isEmpty(errors) ? null : errors;

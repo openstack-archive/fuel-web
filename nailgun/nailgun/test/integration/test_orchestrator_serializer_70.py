@@ -1141,17 +1141,37 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
             self.cluster, self.cluster.nodes)
-        self.assertItemsEqual(serialized_data[0]['tasks'], [{
-            'parameters': {
-                'cwd': '/',
-                'puppet_manifest': '/etc/puppet/manifests/site.pp',
-                'puppet_modules': '/etc/puppet/modules',
-                'timeout': 3600,
-            },
-            'priority': 100,
-            'type': 'puppet',
-            'uids': [self.cluster.nodes[0].uid],
-        }])
+        self.assertItemsEqual(serialized_data[0]['tasks'], [
+            {
+                'parameters': {
+                    'puppet_modules': '/etc/puppet/modules',
+                    'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
+                                       'modular/netconfig/netconfig.pp',
+                    'timeout': 3600,
+                    'cwd': '/'},
+                'priority': 100,
+                'type': 'puppet',
+                'uids': [self.cluster.nodes[0].uid],
+            }, {
+                'parameters': {
+                    'cwd': '/',
+                    'puppet_manifest': '/etc/puppet/manifests/site.pp',
+                    'puppet_modules': '/etc/puppet/modules',
+                    'timeout': 3600},
+                'priority': 200,
+                'type': 'puppet',
+                'uids': [self.cluster.nodes[0].uid],
+            }, {
+                'parameters': {
+                    'puppet_modules': '/etc/puppet/modules',
+                    'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
+                                       'modular/globals/globals.pp',
+                    'timeout': 3600,
+                    'cwd': '/'},
+                'priority': 300,
+                'type': 'puppet',
+                'uids': [self.cluster.nodes[0].uid],
+            }])
 
 
 class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,

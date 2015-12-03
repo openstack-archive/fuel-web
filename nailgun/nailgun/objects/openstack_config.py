@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -31,9 +33,14 @@ class OpenstackConfig(NailgunObject):
     def create(cls, data):
         data['config_type'] = cls._get_config_type(data)
         data['is_active'] = True
-        config = OpenstackConfigCollection.filter_by(None, **data).first()
+
+        filters = copy.copy(data)
+        filters.pop('configuration')
+
+        config = OpenstackConfigCollection.filter_by(None, **filters).first()
         if config:
             cls.disable(config)
+
         return super(OpenstackConfig, cls).create(data)
 
     @classmethod

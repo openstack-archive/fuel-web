@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 import six
 
 from nailgun import consts
@@ -31,10 +33,18 @@ class OpenstackConfig(NailgunObject):
     @classmethod
     def create(cls, data):
         data['config_type'] = cls._get_config_type(data)
-        data['is_active'] = True
-        config = cls.find_config(**data)
-        if config:
-            cls.delete(config)
+
+        # When creating new active config, previous active config
+        # should be disactivated.
+        if data.get('is_active', True):
+            filters = copy.copy(data)
+            filters.pop('configuration')
+            filters['is_active'] = True
+
+            config = cls.find_config(**filters)
+            if config:
+                cls.delete(config)
+
         return super(OpenstackConfig, cls).create(data)
 
     @classmethod

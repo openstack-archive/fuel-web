@@ -368,6 +368,7 @@
                         "vlan_id": "VLAN ID",
                         "vlan_id_plural": "VLAN IDs",
                         "mac": "MAC",
+                        "name": "Name",
                         "configuration_template_warning": "Cannot configure bonding and networks: network configuration template is used.",
                         "bond_button": "Bond Network Interfaces",
                         "unbond_button": "Unbond Network Interfaces",

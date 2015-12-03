@@ -850,19 +850,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         }
     });
 
-    dialogs.RemoveNodeConfirmDialog = React.createClass({
+    dialogs.RemoveOfflineNodeDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {
+        getDefaultProps() {
             return {
                 title: i18n('dialog.remove_node.title'),
                 defaultMessage: i18n('dialog.remove_node.default_message')
             };
         },
-        proceed: function() {
-            this.close();
-            dispatcher.trigger('networkConfigurationUpdated', this.props.cb);
-        },
-        renderBody: function() {
+        renderBody() {
             return (
                 <div className='text-danger'>
                     {this.renderImportantLabel()}
@@ -870,10 +866,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter() {
             return [
-                <button key='stay' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
-                <button key='delete' className='btn btn-danger btn-delete' onClick={this.proceed}>
+                <button key='close' className='btn btn-default' onClick={this.close}>
+                    {i18n('common.cancel_button')}
+                </button>,
+                <button key='remove' className='btn btn-danger btn-delete' onClick={this.submitAction}>
                     {i18n('cluster_page.nodes_tab.node.remove')}
                 </button>
             ];

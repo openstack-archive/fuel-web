@@ -94,28 +94,35 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         removeNode: function(e) {
             e.preventDefault();
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
-            dialogs.RemoveNodeConfirmDialog.show({
-                cb: this.removeNodeConfirmed
-            });
-        },
-        removeNodeConfirmed: function() {
-            // sync('delete') is used instead of node.destroy() because we want
-            // to keep showing the 'Removing' status until the node is truly removed
-            // Otherwise this node would disappear and might reappear again upon
-            // cluster nodes refetch with status 'Removing' which would look ugly
-            // to the end user
-            Backbone.sync('delete', this.props.node).then(_.bind(function(task) {
-                    dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications labelsConfigurationUpdated');
-                    if (task.status == 'ready') {
-                        // Do not send the 'DELETE' request again, just get rid
-                        // of this node.
-                        this.props.node.trigger('destroy', this.props.node);
-                        return;
-                    }
-                    this.props.cluster.get('tasks').add(new models.Task(task), {parse: true});
-                    this.props.node.set('status', 'removing');
-                }, this)
-            );
+            dialogs.RemoveOfflineNodeDialog
+                .show()
+                .done(() => {
+                    // sync('delete') is used instead of node.destroy() because we want
+                    // to keep showing the 'Removing' status until the node is truly removed
+                    // Otherwise this node would disappear and might reappear again upon
+                    // cluster nodes refetch with status 'Removing' which would look ugly
+                    // to the end user
+                    return Backbone
+                        .sync('delete', this.props.node)
+                        .then(
+                            (task) => {
+                                dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications labelsConfigurationUpdated');
+                                if (task.status == 'ready') {
+                                    // Do not send the 'DELETE' request again, just get rid
+                                    // of this node.
+                                    this.props.node.trigger('destroy', this.props.node);
+                                    return;
+                                }
+                                if (this.props.cluster) {
+                                    this.props.cluster.get('tasks').add(new models.Task(task), {parse: true});
+                                }
+                                this.props.node.set('status', 'removing');
+                            },
+                            (response) => {
+                                utils.showErrorDialog({response: response});
+                            }
+                        );
+                });
         },
         showNodeDetails: function(e) {
             e.preventDefault();

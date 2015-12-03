@@ -41,10 +41,14 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             cluster_id=self.clusters[0].id, configuration={})
         self.create_openstack_config(
             cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
-            configuration={})
+            is_active=False, configuration={
+                'key_2': 'value_2_1'
+            })
         self.create_openstack_config(
             cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
-            configuration={}, is_active=False)
+            configuration={
+                'key_1': 'value_1_1'
+            })
 
     def create_openstack_config(self, **kwargs):
         config = objects.OpenstackConfig.create(kwargs)
@@ -72,7 +76,9 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         data = {
             'cluster_id': self.clusters[0].id,
             'node_id': self.nodes[1].id,
-            'configuration': {}
+            'configuration': {
+                'key_1': 'value_1_2'
+            }
         }
         resp = self.app.post(
             reverse('OpenstackConfigCollectionHandler'),

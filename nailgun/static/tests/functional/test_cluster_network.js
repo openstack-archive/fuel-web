@@ -275,7 +275,7 @@ define([
             'DNS nameservers manipulations': function() {
                 var dnsNameserversSelector = '.dns_nameservers ';
                 return this.remote
-                    .clickByCssSelector('.subtab-link-neutron_l3')
+                    .clickByCssSelector('.subtab-link-dns_nameservers')
                     .clickByCssSelector(dnsNameserversSelector + '.ip-ranges-add')
                     .assertElementExists(dnsNameserversSelector + '.range-row .has-error',
                             'New nameserver is added and contains validation error');

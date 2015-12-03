@@ -184,7 +184,7 @@ class ProvisioningSerializer(object):
         gw = net_manager.get_default_gateway(node.id)
         serialized_node['ks_meta'].update({'gw': gw})
         serialized_node['ks_meta'].update(
-            {'admin_net': net_manager.get_admin_network_group(node.id).cidr}
+            {'admin_net': net_manager.get_admin_network_group(node=node).cidr}
         )
 
         serialized_node.update(cls.serialize_interfaces(node))
@@ -198,7 +198,7 @@ class ProvisioningSerializer(object):
         net_manager = objects.Cluster.get_network_manager(node.cluster)
         admin_ip = net_manager.get_admin_ip_for_node(node.id)
         admin_netmask = str(netaddr.IPNetwork(
-            net_manager.get_admin_network_group(node.id).cidr
+            net_manager.get_admin_network_group(node=node).cidr
         ).netmask)
 
         for interface in node.nic_interfaces:

@@ -82,7 +82,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 notificationsDisplayCount: 5,
                 elements: [
                     {label: 'environments', url: '#clusters'},
-                    {label: 'equipment', url: '#equipment'},
+                    {label: 'nodes', url: '#nodes'},
                     {label: 'releases', url: '#releases'},
                     {label: 'plugins', url: '#plugins'},
                     {label: 'support', url: '#support'}
@@ -236,7 +236,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                         </li>
                         <li className='list-group-item text-success font-semibold'>
                             <span className='badge bg-green'>{this.props.statistics.get('total')}</span>
-                            <a href='#equipment'>
+                            <a href='#nodes'>
                                 {i18n('navbar.stats.total', {count: this.props.statistics.get('total')})}
                             </a>
                         </li>

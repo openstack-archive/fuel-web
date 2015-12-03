@@ -165,45 +165,51 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     dialogs.DiscardNodeChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps() {
-            return {
-                title: i18n('dialog.discard_changes.title')
-            };
-        },
-        discardNodeChanges() {
+        getDefaultProps: function() {return {title: i18n('dialog.discard_changes.title')};},
+        discardNodeChanges: function() {
             this.setState({actionInProgress: true});
-            var nodes = new models.Nodes(this.props.nodes.map(function(node) {
-                if (node.get('pending_deletion')) return {
-                    id: node.id,
-                    pending_deletion: false
-                };
-                return {
-                    id: node.id,
-                    cluster_id: null,
-                    pending_addition: false,
-                    pending_roles: []
-                };
-            }));
+            var nodes = new models.Nodes(_.compact(this.props.cluster.get('nodes').map(function(node) {
+                if (node.hasChanges()) {
+                    var data = {
+                        id: node.id,
+                        pending_roles: [],
+                        pending_addition: false,
+                        pending_deletion: false
+                    };
+                    if (!node.get('pending_deletion')) data.cluster_id = null;
+                    return data;
+                }
+            })));
             Backbone.sync('update', nodes)
-                .then(() => this.props.cluster.fetchRelated('nodes'))
-                .done(() => {
-                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+                .then(_.bind(function() {
+                    return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
+                }, this))
+                .done(_.bind(function() {
+                    dispatcher.trigger('updateNodeStats');
                     this.state.result.resolve();
                     this.close();
-                })
-                .fail((response) => this.showError(response, i18n('dialog.discard_changes.cant_discard')));
+                }, this))
+                .fail(this.showError);
         },
-        renderBody() {
+        renderChangedNodeAmount: function(nodes, dictKey) {
+            return nodes.length ? <div>{i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}</div> : null;
+        },
+        renderBody: function() {
+            var nodes = this.props.cluster.get('nodes');
             return (
-                <div className='text-danger'>
-                    {this.renderImportantLabel()}
-                    {i18n('dialog.discard_changes.' + (
-                        this.props.nodes[0].get('pending_deletion') ? 'discard_deletion' : 'discard_addition'
-                    ))}
+                <div>
+                    <div className='text-danger'>
+                        {this.renderImportantLabel()}
+                        {i18n('dialog.discard_changes.alert_text')}
+                    </div>
+                    <br/>
+                    {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
+                    {this.renderChangedNodeAmount(nodes.where({status: 'provisioned'}), 'provisioned_node')}
+                    {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
                 </div>
             );
         },
-        renderFooter() {
+        renderFooter: function() {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{i18n('dialog.discard_changes.discard_button')}</button>

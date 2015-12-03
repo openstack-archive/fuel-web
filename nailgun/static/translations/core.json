@@ -683,7 +683,6 @@
                         "nova_configuration": "Nova-network Configuration",
                         "dns_nameservers": "Guest OS DNS Servers",
                         "l2_configuration": "Neutron L2 Configuration",
-                        "l3_configuration": "Neutron L3 Configuration",
                         "gre_id_range": "Tunnel ID range",
                         "vlan_range": "VLAN ID range",
                         "base_mac": "Base MAC address",
@@ -727,7 +726,10 @@
                     "tabs": {
                         "nova_configuration": "Nova Configuration",
                         "neutron_l2": "Neutron L2",
-                        "neutron_l3": "Neutron L3",
+                        "floating_net": "Floating Network Parameters",
+                        "internal_net": "Internal Network Parameters",
+                        "dns_nameservers": "Guest OS DNS Servers",
+                        "baremetal_net": "Baremetal Network Parameters",
                         "network_settings": "Other",
                         "network_verification": "Network Verification",
                         "node_network_groups": "Node network groups",
@@ -1389,7 +1391,6 @@
                     },
                     "networking_parameters": {
                         "l2_configuration": "Neutron L2配置",
-                        "l3_configuration": "Neutron L3配置",
                         "base_mac": "基础MAC地址"
                     }
                 },
@@ -2008,7 +2009,6 @@
                         "nova_configuration": "Nova-network設定",
                         "dns_nameservers": "ゲストOS用のDNSサーバ",
                         "l2_configuration": "Neutron L2 設定",
-                        "l3_configuration": "Neutron L3 設定",
                         "gre_id_range": "トンネルID レンジ",
                         "vlan_range": "VLAN ID レンジ",
                         "base_mac": "ベースMACアドレス",
@@ -2576,7 +2576,6 @@
                         "nova_configuration": "Nova-network 설정",
                         "dns_nameservers": "DNS 서버",
                         "l2_configuration": "Neutron L2 설정",
-                        "l3_configuration": "Neutron L3 설정",
                         "gre_id_range": "터널 ID 범위",
                         "vlan_range": "VLAN ID 범위",
                         "base_mac": "기본 MAC 주소",

@@ -34,7 +34,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
     var CSSTransitionGroup = React.addons.CSSTransitionGroup,
         parametersNS = 'cluster_page.network_tab.networking_parameters.',
         networkTabNS = 'cluster_page.network_tab.',
-        defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
+        defaultNetworkSubtabs = ['neutron_l2', 'floating_net', 'internal_net',
+            'dns_nameservers', 'baremetal_net', 'network_settings',
+            'network_verification', 'nova_configuration'];
 
     var NetworkModelManipulationMixin = {
         setValue: function(attribute, value, options) {
@@ -863,7 +865,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     this.state.actionInProgress ||
                     !!cluster.task({group: ['deployment', 'network'], active: true}) ||
                     isMultiRack ||
-                    notEnoughOnlineNodesForVerification;
+                    notEnoughOnlineNodesForVerification,
+                hasBaremetalNetwork = !!networks.findWhere({name: 'baremetal'});
 
             if (!activeNetworkSectionName ||
                     (activeNetworkSectionName && !nodeNetworkGroups.findWhere({name: activeNetworkSectionName}) &&
@@ -879,6 +882,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     locked: isLocked,
                     actionInProgress: this.state.actionInProgress,
                     verificationErrors: this.getVerificationErrors()
+                },
+                networkParametersProps = {
+                    cluster: cluster,
+                    validationErrors: validationErrors,
+                    disabled: isLocked
                 };
 
             return (
@@ -930,6 +938,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 isMultiRack={isMultiRack}
                                 hasChanges={hasChanges}
                                 showVerificationResult={!this.state.hideVerificationResult}
+                                hasBareMetalNetwork={hasBaremetalNetwork}
                             />
                             <div className='col-xs-10'>
                                 {isNodeNetworkGroupSectionSelected &&
@@ -964,24 +973,22 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                     />
                                 }
                                 {activeNetworkSectionName == 'nova_configuration' &&
-                                    <NovaParameters
-                                        cluster={cluster}
-                                        validationErrors={validationErrors}
-                                    />
+                                    <NovaParameters {...networkParametersProps} />
                                 }
                                 {activeNetworkSectionName == 'neutron_l2' &&
-                                    <NetworkingL2Parameters
-                                        cluster={cluster}
-                                        validationErrors={validationErrors}
-                                        disabled={this.isLocked()}
-                                    />
+                                    <NetworkingL2Parameters {...networkParametersProps} />
                                 }
-                                {activeNetworkSectionName == 'neutron_l3' &&
-                                    <NetworkingL3Parameters
-                                        cluster={cluster}
-                                        validationErrors={validationErrors}
-                                        disabled={this.isLocked()}
-                                    />
+                                {activeNetworkSectionName == 'floating_net' &&
+                                    <FloatingNetwork {...networkParametersProps} />
+                                }
+                                {activeNetworkSectionName == 'internal_net' &&
+                                    <InternalNetwork {...networkParametersProps} />
+                                }
+                                {activeNetworkSectionName == 'dns_nameservers' &&
+                                    <DNSNameServers {...networkParametersProps} />
+                                }
+                                {activeNetworkSectionName == 'baremetal_net' && hasBaremetalNetwork &&
+                                    <BaremetalNetwork {...networkParametersProps} />
                                 }
                             </div>
                         </div>
@@ -1037,6 +1044,21 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
     });
 
     var NetworkSubtabs = React.createClass({
+        checkIfOneOfPredefinedNetworkSectionsContainsErrors: function(groupName, errors) {
+            //var predefinedSections = _.without(defaultNetworkSubtabs, 'network_settings', 'network_verification');
+            var keysCorrespondingToConstructors = {
+                'neutron_l2': NetworkingL2Parameters,
+                'floating_net': FloatingNetwork,
+                'internal_net': InternalNetwork,
+                'dns_nameservers': DNSNameServers,
+                'baremetal_net': BaremetalNetwork,
+                'nova_configuration': NovaParameters
+            };
+            if (_.contains(_.keys(keysCorrespondingToConstructors), groupName)) {
+                return !!_.intersection(keysCorrespondingToConstructors[groupName].renderedParameters, _.keys(errors)).length;
+            }
+            return false;
+        },
         renderClickablePills: function(sections, isNetworkGroupPill) {
             var {cluster, nodeNetworkGroups} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration'),
@@ -1054,16 +1076,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return (sections.map(function(groupName) {
                 var tabLabel = groupName,
                     isActive = groupName == this.props.activeGroupName,
-                    isInvalid;
-
-                // is one of predefined sections selected (networking_parameters)
-                if (groupName == 'neutron_l2') {
-                    isInvalid = !!_.intersection(NetworkingL2Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
-                } else if (groupName == 'neutron_l3') {
-                    isInvalid = !!_.intersection(NetworkingL3Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
-                } else if (groupName == 'nova_configuration') {
-                    isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
-                }
+                    isInvalid = this.checkIfOneOfPredefinedNetworkSectionsContainsErrors(groupName, networkParametersErrors);
 
                 if (isNetworkGroupPill) {
                     // @FIXME (morale): remove this after capitalization of default
@@ -1114,7 +1127,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 if (this.props.cluster.get('net_provider') == 'nova_network') {
                     settingsSections.push('nova_configuration');
                 } else {
-                    settingsSections = settingsSections.concat(['neutron_l2', 'neutron_l3']);
+                    settingsSections = settingsSections.concat(['neutron_l2',
+                        'floating_net', 'internal_net', 'dns_nameservers'
+                    ]);
+                    if (this.props.hasBaremetalNetwork) settingsSections.push('baremetal_net');
                 }
                 settingsSections.push('network_settings');
 
@@ -1383,44 +1399,82 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         }
     });
 
-    var NetworkingL3Parameters = React.createClass({
+    var FloatingNetwork = React.createClass({
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin
         ],
         statics: {
-            renderedParameters: [
-                'floating_ranges', 'internal_cidr', 'internal_gateway',
-                'internal_name', 'floating_name', 'baremetal_range',
-                'baremetal_gateway', 'dns_nameservers'
-            ]
+            renderedParameters: ['floating_ranges', 'floating_name']
         },
         render: function() {
-            var networks = this.props.cluster.get('networkConfiguration').get('networks');
             return (
-                <div className='forms-box' key='neutron-l3'>
-                    <h3 className='networks'>{i18n(parametersNS + 'l3_configuration')}</h3>
+                <div className='forms-box' key='floating_net'>
+                    <h3 className='networks'>{i18n(networkTabNS + 'tabs.floating_net')}</h3>
                     <Range
                         {...this.composeProps('floating_ranges', true)}
                         rowsClassName='floating-ranges-rows'
                         hiddenControls
                     />
                     {this.renderInput('floating_name', false, {maxLength: '65'})}
+                </div>
+            );
+        }
+    });
+
+    var InternalNetwork = React.createClass({
+        mixins: [
+            NetworkInputsMixin,
+            NetworkModelManipulationMixin
+        ],
+        statics: {
+            renderedParameters: ['internal_cidr', 'internal_gateway', 'internal_name']
+        },
+        render: function() {
+            return (
+                <div className='forms-box' key='internal_net'>
+                    <h3 className='networks'>{i18n(networkTabNS + 'tabs.internal_net')}</h3>
                     {this.renderInput('internal_cidr')}
                     {this.renderInput('internal_gateway')}
                     {this.renderInput('internal_name', false, {maxLength: '65'})}
-                    {networks.findWhere({name: 'baremetal'}) &&
-                        [
-                            <Range
-                                key='baremetal_range'
-                                {...this.composeProps('baremetal_range', true)}
-                                extendable={false}
-                                hiddenControls
-                            />,
-                            this.renderInput('baremetal_gateway')
-                        ]
-                    }
+                </div>
+            );
+        }
+    });
+
+    var DNSNameServers = React.createClass({
+        mixins: [
+            NetworkInputsMixin,
+            NetworkModelManipulationMixin
+        ],
+        statics: {
+            renderedParameters: ['dns_nameservers']
+        },
+        render: function() {
+            return (
+                <div className='forms-box' key='dns_nameservers'>
+                    <h3 className='networks'>{i18n(networkTabNS + 'tabs.dns_nameservers')}</h3>
                     <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
+                </div>
+            );
+        }
+    });
+
+    var BaremetalNetwork = React.createClass({
+        statics: {
+            renderedParameters: ['baremetal_range', 'baremetal_gateway']
+        },
+        render: function() {
+            return (
+                <div className='forms-box' key='baremetal_net'>
+                    <h3 className='networks'>{i18n(networkTabNS + 'tabs.baremetal_net')}</h3>
+                    <Range
+                        key='baremetal_range'
+                        {...this.composeProps('baremetal_range', true)}
+                        extendable={false}
+                        hiddenControls
+                    />
+                    {this.renderInput('baremetal_gateway')}
                 </div>
             );
         }

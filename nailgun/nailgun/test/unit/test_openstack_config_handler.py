@@ -96,9 +96,16 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         url = self._make_filter_url(
             cluster_id=self.cluster.id, node_id=self.nodes[1].id)
         resp = self.app.get(url, headers=self.default_headers)
-
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json_body), 1)
+
+        url = self._make_filter_url(
+            cluster_id=self.cluster.id, is_active=0)
+        resp = self.app.get(url, headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json_body), 1)
+        self.assertEqual(resp.json_body[0]['is_active'], False)
+
 
     def test_openstack_config_list_fail(self):
         url = self._make_filter_url(

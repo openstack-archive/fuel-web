@@ -74,30 +74,30 @@ class NetworkManager(object):
         cls.assign_admin_ips(nodes)
 
     @classmethod
-    def get_admin_network_group_id(cls, node_id=None):
-        """Method for receiving Admin NetworkGroup ID.
-
-        :param  node_id: the ID of Node
-        :returns: Admin NetworkGroup ID or None.
-        :raises: errors.AdminNetworkNotFound
-        """
-        return cls.get_admin_network_group(node_id=node_id).id
-
-    @classmethod
-    def get_admin_network_group(cls, node_id=None):
+    def get_admin_network_group(cls, node_id=None, node=None):
         """Method for receiving Admin NetworkGroup.
 
-        :param  node_id: The ID of node
+        :param node_id: The ID of node
+        :type node_id: int
+        :param node: The ID of node
+        :type node: nailgun.db.sqlalchemy.models.Node
         :returns: Admin NetworkGroup or None.
         :raises: errors.AdminNetworkNotFound
         """
         admin_ng = None
         admin_ngs = db().query(NetworkGroup).filter_by(
-            name="fuelweb_admin",
+            name=consts.NETWORKS.fuelweb_admin
         )
-        if node_id:
-            node_db = db().query(Node).get(node_id)
-            admin_ng = admin_ngs.filter_by(group_id=node_db.group_id).first()
+
+        if node is None and node_id is not None:
+            node = db().query(Node).options(
+                joinedload('nodegroup'), joinedload('nodegroup.networks')
+            ).get(node_id)
+
+        if node is not None and node.nodegroup:
+            networks = (net for net in node.nodegroup.networks
+                        if net.name == consts.NETWORKS.fuelweb_admin)
+            admin_ng = next(networks, None)
 
         admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
 
@@ -134,7 +134,7 @@ class NetworkManager(object):
         nodes_need_ips = defaultdict(list)
         for node in nodes:
             node_id = node.id
-            admin_net = cls.get_admin_network_group(node_id)
+            admin_net = cls.get_admin_network_group(node=node)
             node_admin_ips = db().query(IPAddr).filter_by(
                 node=node_id, network=admin_net.id)
             logger.debug(u"Trying to assign admin ip: node=%s", node_id)
@@ -148,7 +148,7 @@ class NetworkManager(object):
 
         for admin_net, nodes in six.iteritems(nodes_need_ips):
             free_ips = cls.get_free_ips(admin_net, len(nodes))
-            for ip, n in zip(free_ips, nodes):
+            for ip, n in six.moves.zip(free_ips, nodes):
                 ip_db = IPAddr(node=n,
                                ip_addr=ip,
                                network=admin_net.id)
@@ -233,6 +233,9 @@ class NetworkManager(object):
         # Check which nodes need ips
         nodes_need_ips = defaultdict(list)
         cluster_id = cluster.id
+
+        default_group_id = objects.Cluster.get_default_group(cluster).id
+
         for node in nodes:
             node_id = node.id
 
@@ -242,23 +245,21 @@ class NetworkManager(object):
                     .format(node_id, cluster_id)
                 )
 
-            if network_name == 'public' and \
+            if network_name == consts.NETWORKS.public and \
                     not objects.Node.should_have_public_with_ip(node):
                 continue
-            group_id = node.group_id or \
-                objects.Cluster.get_default_group(node.cluster).id
+            group_id = node.group_id or default_group_id
 
-            network = network_groups.filter(
-                or_(
-                    NetworkGroup.group_id == group_id,
-                    NetworkGroup.group_id.is_(None)
-                )
-            ).first()
+            filtered_network_groups = (
+                nw_g for nw_g in network_groups
+                if nw_g.group_id == group_id or nw_g.group_id is None
+            )
+            network = next(filtered_network_groups, None)
 
             node_ips = six.moves.map(
                 lambda i: i.ip_addr,
                 cls._get_ips_except_admin(
-                    node_id=node_id,
+                    node=node,
                     network_id=network.id
                 )
             )
@@ -286,17 +287,19 @@ class NetworkManager(object):
         # Get and assign ips for nodes
         for network, nodes in six.iteritems(nodes_need_ips):
             free_ips = cls.get_free_ips(network, len(nodes))
-            for ip, n in zip(free_ips, nodes):
+            ip_addrs = []
+            for ip, n_id in six.moves.zip(free_ips, nodes):
                 logger.info(
                     "Assigning IP for node '{0}' in network '{1}'".format(
-                        n,
+                        n_id,
                         network_name
                     )
                 )
-                ip_db = IPAddr(node=n,
-                               ip_addr=ip,
-                               network=network.id)
-                db().add(ip_db)
+                ip_addrs.append({'node': n_id, 'ip_addr': ip,
+                                 'network': network.id})
+            # TODO(akislitsky): use bulk_insert_mappings when
+            # SQLAlchemy >= 1.0.0 will be used
+            db().execute(IPAddr.__table__.insert(), ip_addrs)
             db().flush()
 
     @classmethod
@@ -571,26 +574,27 @@ class NetworkManager(object):
             raise
 
     @classmethod
-    def _get_ips_except_admin(cls, node_id=None,
-                              network_id=None, joined=False):
+    def _get_ips_except_admin(cls, node=None, network_id=None, joined=False):
         """Receives IP addresses for node or network except Admin Network.
 
-        :param node_id: Node database ID.
-        :type  node_id: int
+        :param node: SQLAlchemy node object. If it already contains
+        related data we will have performance boost.
+        :type node: nailgun.db.sqlalchemy.models.Node
         :param network_id: Network database ID.
         :type  network_id: int
         :returns: List of free IP addresses as SQLAlchemy objects.
         """
+
         ips = db().query(IPAddr).order_by(IPAddr.id)
         if joined:
             ips = ips.options(joinedload('network_data'))
-        if node_id:
-            ips = ips.filter_by(node=node_id)
+        if node is not None:
+            ips = ips.filter_by(node=node.id)
         if network_id:
             ips = ips.filter_by(network=network_id)
 
         try:
-            admin_net_id = cls.get_admin_network_group_id(node_id=node_id)
+            admin_net_id = cls.get_admin_network_group(node=node).id
         except errors.AdminNetworkNotFound:
             admin_net_id = None
         if admin_net_id:
@@ -713,18 +717,18 @@ class NetworkManager(object):
                     objects.Cluster.get_default_group(node.cluster).id)
         node_group = db().query(NodeGroup).get(group_id)
 
-        ngs = node_group.networks + [cls.get_admin_network_group(node.id)]
+        ngs = node_group.networks + [cls.get_admin_network_group(node=node)]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(
-            zip(*sorted(
+            next(six.moves.zip(*sorted(
                 [[ng.id, ng.meta['map_priority']]
                  for ng in ngs],
-                key=lambda x: x[1]))[0]
+                key=lambda x: x[1])))
         )
         ng_ids = set(ng.id for ng in ngs)
         ng_wo_admin_ids = ng_ids.symmetric_difference(
-            [cls.get_admin_network_group_id(node.id)]
+            [cls.get_admin_network_group(node=node).id]
         )
         pxe_iface = next(six.moves.filter(
             lambda i: i.pxe,
@@ -822,9 +826,9 @@ class NetworkManager(object):
 
     @classmethod
     def _get_admin_node_network(cls, node):
-        net = cls.get_admin_network_group(node_id=node.id)
+        net = cls.get_admin_network_group(node=node)
         net_cidr = IPNetwork(net.cidr)
-        ip_addr = cls.get_admin_ip_for_node(node.id)
+        ip_addr = cls.get_admin_ip_for_node(node.id, node=node)
         if ip_addr:
             ip_addr = cls.get_ip_w_cidr_prefix_len(ip_addr, net)
 
@@ -1039,7 +1043,7 @@ class NetworkManager(object):
                 [n for n in iface_mapped.assigned_networks_list
                  if n.name != consts.NETWORKS.fuelweb_admin]
         iface_pxe.assigned_networks_list.append(
-            cls.get_admin_network_group(node.id))
+            cls.get_admin_network_group(node=node))
         db().flush()
 
     @classmethod
@@ -1085,7 +1089,7 @@ class NetworkManager(object):
 
     @classmethod
     def is_ip_belongs_to_admin_subnet(cls, ip_addr, node_id=None):
-        admin_cidr = cls.get_admin_network_group(node_id).cidr
+        admin_cidr = cls.get_admin_network_group(node_id=node_id).cidr
         if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
             return True
         return False
@@ -1159,33 +1163,37 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def get_admin_ip_for_node(cls, node_id):
-        """Returns first admin IP address for node."""
-        admin_net_id = cls.get_admin_network_group_id(node_id=node_id)
-        admin_ip = db().query(IPAddr).order_by(
-            IPAddr.id
-        ).filter_by(
-            node=node_id
-        ).filter_by(
-            network=admin_net_id
-        ).first()
+    def get_admin_ip_for_node(cls, node_id, node=None):
+        """Returns first admin IP address for node.
 
+        If node is passed we will extract data from node instance.
+        It useful for performance - to have related to the node node
+        data loaded into node. If node is not passed loading by node_id
+        will be performed and lot of SQL queries be executed.
+
+        :param node_id: node id
+        :type node_id: int
+        :param node: SQLAlchemy node object. If it already contains
+        related data we will have performance boost
+        :type node: nailgun.db.sqlalchemy.models.Node
+
+        :return: nailgun.db.sqlalchemy.models.IPAddress
+        """
+        admin_net_id = cls.get_admin_network_group(node_id=node_id,
+                                                   node=node).id
+        if node is not None:
+            admin_ips = [ip for ip in node.ip_addrs
+                         if ip.network == admin_net_id]
+            admin_ip = admin_ips[0] if admin_ips else None
+        else:
+            admin_ip = db().query(IPAddr).order_by(
+                IPAddr.id
+            ).filter_by(
+                node=node_id
+            ).filter_by(
+                network=admin_net_id
+            ).first()
         return getattr(admin_ip, 'ip_addr', None)
-
-    @classmethod
-    def get_admin_ips_for_interfaces(cls, node):
-        """Returns mapping admin {"inteface name" => "admin ip"}."""
-        admin_net_id = cls.get_admin_network_group_id(node)
-        admin_ips = set([
-            i.ip_addr for i in db().query(IPAddr).
-            order_by(IPAddr.id).
-            filter_by(node=node).
-            filter_by(network=admin_net_id)])
-
-        interfaces_names = sorted(set([
-            interface.name for interface in node.interfaces]))
-
-        return dict(zip(interfaces_names, admin_ips))
 
     @classmethod
     def _get_admin_network(cls, node):
@@ -1205,7 +1213,7 @@ class NetworkManager(object):
     def get_admin_interface(cls, node):
         try:
             return cls._get_interface_by_network_name(
-                node, 'fuelweb_admin')
+                node, consts.NETWORKS.fuelweb_admin)
         except errors.CanNotFindInterface:
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
@@ -1539,7 +1547,7 @@ class NetworkManager(object):
         :param node_id: The ID of Node Object.
         :return: The GW from Admin network if it's set. else Admin IP
         """
-        return cls.get_admin_network_group(node_id).gateway \
+        return cls.get_admin_network_group(node_id=node_id).gateway \
             or settings.MASTER_IP
 
     @classmethod

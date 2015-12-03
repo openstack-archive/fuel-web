@@ -4250,29 +4250,30 @@ input[type=range] {
           margin-bottom: @dashboard-offset / 2;
         }
       }
-      .btn {
+      .deploy-btn {
         padding-top: 2px;
         display: block;
         text-align: left;
-        &:not(:last-child) {
-          margin-bottom: @dashboard-offset;
-        }
-      }
-      .deploy-icon, .discard-changes-icon {
-        position: relative;
-        display: inline-block;
-        cursor: pointer;
-        &.deploy-icon {
+        .deploy-icon {
+          position: relative;
+          display: inline-block;
           background: url(@common-icons-sprite) no-repeat -10px -90px;
           margin-right: 6px;
           width: 22px;
           height: 18px;
           top: 3px;
         }
-        &.discard-changes-icon {
-          margin-left: 6px;
-          top: -1px;
-          padding: 0;
+      }
+      .btn-discard-changes {
+        padding: 0;
+        margin-left: 6px;
+        border: none;
+        position: relative;
+        top: -1px;
+        height: 15px;
+        width: 15px;
+        .discard-changes-icon {
+          display: inline-block;
         }
       }
     }

@@ -306,8 +306,8 @@ class TestHandlers(BaseIntegrationTest):
                     'image_data': cluster_attrs['provision']['image_data'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
-                    'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    'admin_net': self.env.network_manager.
+                        get_admin_network_group(node=n).cidr
                 }
             }
 
@@ -770,8 +770,8 @@ class TestHandlers(BaseIntegrationTest):
                     'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
-                    'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    'admin_net': self.env.network_manager.
+                        get_admin_network_group(node=n).cidr
                 }
             }
 
@@ -1275,8 +1275,8 @@ class TestHandlers(BaseIntegrationTest):
                     'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
-                    'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    'admin_net': self.env.network_manager.
+                        get_admin_network_group(node=n).cidr
                 }
             }
 

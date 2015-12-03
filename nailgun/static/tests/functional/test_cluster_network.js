@@ -166,10 +166,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Networks');
                     })
-                    .findByCssSelector('.public input[name=gateway]')
-                        .clearValue()
-                        .type('172.16.0.2')
-                        .end()
+                    .setInputValue('.public input[name=gateway]', '172.16.0.2')
                     .clickByCssSelector('.subtab-link-network_verification')
                     .clickByCssSelector('.verify-networks-btn')
                     .assertElementAppears('.alert-danger.network-alert', 4000, 'Verification error is shown')

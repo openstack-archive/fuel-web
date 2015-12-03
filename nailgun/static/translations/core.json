@@ -202,7 +202,7 @@
             },
             "navbar": {
                 "environments": "Environments",
-                "equipment": "Equipment",
+                "nodes": "Nodes",
                 "releases": "Releases",
                 "plugins": "Plugins",
                 "support": "Support",
@@ -216,7 +216,7 @@
             "breadcrumbs": {
                 "home": "Home",
                 "environments": "Environments",
-                "equipment": "Equipment",
+                "nodes": "Nodes",
                 "releases": "Releases",
                 "plugins": "Plugins",
                 "support": "Support",
@@ -231,8 +231,8 @@
                 "view_all_button": "View all",
                 "no_notifications_text": "No notifications to display."
             },
-            "equipment_page": {
-                "title": "Equipment"
+            "nodes_page": {
+                "title": "Nodes"
             },
             "support_page": {
                 "title": "Support",
@@ -284,7 +284,6 @@
                 "homepage": "Homepage",
                 "authors": "Authors",
                 "licenses": "Licenses",
-                "links": "Links",
                 "ubuntu": "Ubuntu",
                 "centos": "CentOS",
                 "more_info": "For more information, visit",
@@ -770,6 +769,7 @@
                     "tenant_label": "Tenant",
                     "tenant_description": "Tenant (project) name for Administrator"
                 },
+                "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
                 "provision_vms": "Provision VMs",
                 "deploy": "Deploying",
@@ -850,9 +850,7 @@
                         "neutron_gre_description": "Your network hardware must support GRE segmentation. This option supports up to 65535 networks.",
                         "neutron_vlan": "Neutron with VLAN segmentation (default)",
                         "neutron_vlan_description": "Your network hardware must be configured for VLAN segmentation. This option supports up to 4095 networks.",
-                        "neutron_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE using the Fuel CLI). Your network hardware must support VXLAN segmentation. This option supports millions of tenant data networks.",
-                        "neutron_ml2": "ML2 plugin",
-                        "neutron_ml2_description": "Core ML2 plugin"
+                        "neutron_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE using the Fuel CLI). Your network hardware must support VXLAN segmentation. This option supports millions of tenant data networks."
                     },
                     "storage": {
                         "title": "Storage Backends",
@@ -912,12 +910,12 @@
                 },
                 "display_changes": {
                     "title": "Deploy Changes",
-                    "added_node": "Added __count__ node",
-                    "added_node_plural": "Added __count__ nodes",
-                    "deleted_node": "Deleted __count__ node",
-                    "deleted_node_plural": "Deleted __count__ nodes",
-                    "provisioned_node": "Provisioned __count__ node",
-                    "provisioned_node_plural": "Provisioned __count__ nodes",
+                    "added_node": "Added __count__ node.",
+                    "added_node_plural": "Added __count__ nodes.",
+                    "deleted_node": "Deleted __count__ node.",
+                    "deleted_node_plural": "Deleted __count__ nodes.",
+                    "provisioned_node": "Provisioned __count__ node.",
+                    "provisioned_node_plural": "Provisioned __count__ nodes.",
                     "settings_changes": {
                         "attributes": "Changed OpenStack settings.",
                         "networks": "Changed network settings.",
@@ -979,9 +977,8 @@
                 "discard_changes": {
                     "title": "Discard Changes",
                     "discard_button": "Discard",
-                    "discard_addition": "Are you sure you want to discard node addition?",
-                    "discard_deletion": "Are you sure you want to discard node deletion?",
-                    "cant_discard": "Cannot discard the changes."
+                    "alert_text": "Are you sure you want to discard these changes?",
+                    "cant_discard": "Cannot discard the node changes."
                 },
                 "remove_node": {
                     "default_message": "Fuel will remove this node from its database. This operation will not erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and the node will appear in Fuel as new unallocated server.",
@@ -2076,6 +2073,7 @@
                     "tenant_label": "テナント",
                     "tenant_description": "管理者のテナント(プロジェクト)名"
                 },
+                "discard_changes": "変更を破棄",
                 "deploy_changes": "変更をデプロイ",
                 "reset_environment": "リセット中",
                 "stop_deployment": "停止中",
@@ -2635,6 +2633,7 @@
                     "actual_duration": "실제 기간",
                     "status": "상태"
                 },
+                "discard_changes": "변경내용 취소",
                 "deploy_changes": "변경내용 배치",
                 "reset_environment": "재설정",
                 "stop_deployment": "중지",

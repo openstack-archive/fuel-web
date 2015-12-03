@@ -17,7 +17,7 @@ description:
   Exceptions are when maintainers are actually cores, or when maintainers
   are not available for some reason (e.g. on vacation).
 
-  [1] https://review.openstack.org/#/c/225376/ (to be replaced by html link once merged)
+  [1] http://specs.openstack.org/openstack/fuel-specs/policy/team-structure.html
   [2] https://review.openstack.org/#/admin/groups/664,members
   [3] http://lists.openstack.org/pipermail/openstack-dev/2015-August/072406.html
 
@@ -35,6 +35,10 @@ maintainers:
     - name:   Aleksandr Kislitskii
       email:  akislitsky@mirantis.com
       IRC:    akislitsky
+
+    - name:   Bulat Gaifullin
+      email:  bgaifullin@mirantis.com
+      IRC:    bgaifullin
 
     - name:   Ivan Kliuk
       email:  ikliuk@mirantis.com

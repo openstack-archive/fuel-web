@@ -18,8 +18,6 @@ import urllib
 from oslo_serialization import jsonutils
 
 from nailgun import consts
-from nailgun.db import db
-from nailgun import objects
 from nailgun.objects.serializers.openstack_config import \
     OpenstackConfigSerializer
 from nailgun.test.base import BaseIntegrationTest
@@ -39,21 +37,20 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             3, cluster_id=self.clusters[0].id,
             status=consts.NODE_STATUSES.ready)
 
-        self.configs = []
-        self.create_openstack_config(
+        self.env.create_openstack_config(
             cluster_id=self.clusters[0].id, configuration={})
-        self.create_openstack_config(
+        self.env.create_openstack_config(
             cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
-            configuration={})
-        self.create_openstack_config(
+            configuration={
+                'key_2': 'value_2_1'
+            })
+        self.env.create_openstack_config(
             cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
-            configuration={}, is_active=False)
+            configuration={
+                'key_1': 'value_1_1'
+            })
 
-    def create_openstack_config(self, **kwargs):
-        config = objects.OpenstackConfig.create(kwargs)
-        db().commit()
-        self.configs.append(config)
-        return config
+        self.configs = self.env.openstack_configs
 
     def test_openstack_config_upload_new(self):
         data = {
@@ -75,7 +72,9 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         data = {
             'cluster_id': self.clusters[0].id,
             'node_id': self.nodes[1].id,
-            'configuration': {}
+            'configuration': {
+                'key_1': 'value_1_2'
+            }
         }
         resp = self.app.post(
             reverse('OpenstackConfigCollectionHandler'),

@@ -467,9 +467,11 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 <li className='changes-item' key={dictKey}>
                     {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
                     <button
-                        className='btn btn-link discard-changes-icon'
+                        className='btn btn-link btn-discard-changes'
                         onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog, {nodes: nodes})}
-                    />
+                    >
+                        <i className='discard-changes-icon' />
+                    </button>
                 </li>
             );
         },

@@ -155,9 +155,9 @@ class DeploymentTask(object):
         deployment_tasks = deployment_tasks or []
 
         nodes_ids = [n.id for n in nodes]
-        for n in db().query(Node).filter_by(
-                cluster=task.cluster).order_by(Node.id):
 
+        filtered_nodes = (n for n in nodes if n.cluster_id == task.cluster_id)
+        for n in sorted(filtered_nodes, key=lambda x: x.id):
             if n.id in nodes_ids:
                 if n.pending_roles:
                     n.roles = n.roles + n.pending_roles

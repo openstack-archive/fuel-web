@@ -3450,22 +3450,14 @@ input[type=range] {
           margin-bottom: 0;
         }
         .ifc-connection {
+          @ifc-size: 40px;
           border-radius: @base-ifc-indent;
           background: @gray + 50%;
           padding: @base-ifc-indent;
           margin-right: @base-ifc-indent;
-          text-align: center;
-          .ifc-name {
-            .text-emboss;
-            .font-semibold;
-            font-size: @base-font-size - 2px;
-            color: @base-text-color - 20%;
-            line-height: 1;
-          }
           .ifc-connection-status {
-            @ifc-connection-status-size: 40px;
-            height: @ifc-connection-status-size;
-            width: @ifc-connection-status-size;
+            height: @ifc-size;
+            width: @ifc-size;
             &.ifc-online {
               background: url(@common-icons-sprite) no-repeat 0 -160px;
             }
@@ -3477,7 +3469,15 @@ input[type=range] {
         .ifc-info, .ifc-info .btn-link {
           padding: 0;
           border: 0;
-          line-height: 1.1;
+          max-width: 160px;
+          word-break: break-all;
+          line-height: 1;
+          > div:not(:last-child) {
+            margin-bottom: 4px;
+          }
+          .ifc-name {
+            .font-semibold;
+          }
         }
       }
 

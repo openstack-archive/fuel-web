@@ -303,7 +303,7 @@ class Node(NailgunObject):
         """
         ip = new_ip or instance.ip
         nm = Cluster.get_network_manager(instance.cluster)
-        admin_ng = nm.get_admin_network_group(instance.id)
+        admin_ng = nm.get_admin_network_group(node=instance)
         match = nm.is_same_network(ip, admin_ng.cidr)
         if not match:
             cls.set_error_status_and_file_notification(

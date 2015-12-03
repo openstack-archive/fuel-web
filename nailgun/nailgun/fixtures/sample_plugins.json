@@ -11,7 +11,7 @@
             "authors": ["Mirantis Inc."],
             "licenses": ["Apache License Version 2.0"],
             "homepage": "https://github.com/openstack/fuel-plugin-lma-collector",
-            "groups": ["monitoring", "equipment::nodes"],
+            "groups": ["monitoring", "equipment"],
             "releases": [
                 {
                     "os": "ubuntu",

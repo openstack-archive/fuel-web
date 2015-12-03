@@ -197,6 +197,8 @@ class EnvironmentManager(object):
         )
 
     def create_openstack_config(self, api=False, **kwargs):
+        is_active = kwargs.pop('is_active', True)
+
         if api:
             resp = self.app.post(
                 reverse('OpenstackConfigCollectionHandler'),
@@ -207,10 +209,20 @@ class EnvironmentManager(object):
             config = resp.json_body
             self.openstack_configs.append(
                 self.db.query(OpenstackConfig).get(config['id']))
+            if not is_active:
+                resp = self.app.delete(
+                    reverse('OpenstackConfigHandler',
+                            {'obj_id': config['id']}),
+                    headers=self.default_headers)
+                self.tester.assertEqual(resp.status_code, 204)
         else:
             config = OpenstackConfig.create(kwargs)
             db().flush()
             self.openstack_configs.append(config)
+
+            if not is_active:
+                OpenstackConfig.disable(config)
+
         return config
 
     def update_role(self, release_id, role_name, data, expect_errors=False):

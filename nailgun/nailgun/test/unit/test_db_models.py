@@ -233,13 +233,3 @@ class TestNodeInterfacesDbModels(BaseTestCase):
         for i in xrange(2):
             self.assertListEqual(self.changed_modes + different_modes[i],
                                  nics[i].offloading_modes)
-
-    def test_copy_mutable_list(self):
-        mlist = MutableList([{"a": 1, "b": 2}])
-        shallow_copy = copy.copy(mlist)
-        self.assertEqual(mlist, shallow_copy)
-        self.assertIs(mlist[0], shallow_copy[0])
-
-        deep_copy = copy.deepcopy(mlist)
-        self.assertEqual(mlist, deep_copy)
-        self.assertIsNot(mlist[0], deep_copy[0])

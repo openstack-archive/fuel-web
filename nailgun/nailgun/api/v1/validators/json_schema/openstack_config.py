@@ -47,6 +47,9 @@ OPENSTACK_CONFIG_QUERY = {
     'title': 'OpenstackConfig query',
     'description': 'URL query for Openstack Configuration filter',
     'properties': {
+        # is_active is a number since GET request query parameters
+        # don't carry type information and parsed as strings
+        'is_active': {'type': 'number'},
         'cluster_id': {'type': 'number'},
     },
     'required': ['cluster_id'],

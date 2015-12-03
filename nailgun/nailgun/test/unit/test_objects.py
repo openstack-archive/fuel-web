@@ -1646,3 +1646,85 @@ class TestRelease(BaseTestCase):
                 'incompatible': [
                     {'name': 'networks:*'},
                     {'name': 'additional_services:*'}]}])
+
+
+class TestOpenstackConfig(BaseTestCase):
+
+    def setUp(self):
+        super(TestOpenstackConfig, self).setUp()
+
+        self.env.create(
+            nodes_kwargs=[
+                {'role': 'controller', 'status': 'ready'},
+                {'role': 'compute', 'status': 'ready'},
+                {'role': 'cinder', 'status': 'ready'},
+            ])
+
+        self.cluster = self.env.clusters[0]
+        self.nodes = self.env.nodes
+
+    def test_create(self):
+        config = objects.OpenstackConfig.create({
+            'cluster_id': self.cluster.id,
+            'configuration': {'key': 'value'},
+        })
+        self.assertEqual(config.cluster_id, self.cluster.id)
+        self.assertEqual(config.config_type,
+                         consts.OPENSTACK_CONFIG_TYPES.cluster)
+        self.assertTrue(config.is_active)
+
+        config = objects.OpenstackConfig.create({
+            'cluster_id': self.cluster.id,
+            'node_id': self.nodes[0].id,
+            'configuration': {'key': 'value'},
+        })
+        self.assertEqual(config.cluster_id, self.cluster.id)
+        self.assertEqual(config.node_id, self.nodes[0].id)
+        self.assertEqual(config.config_type,
+                         consts.OPENSTACK_CONFIG_TYPES.node)
+        self.assertTrue(config.is_active)
+
+        config = objects.OpenstackConfig.create({
+            'cluster_id': self.cluster.id,
+            'node_role': 'cinder',
+            'configuration': {'key': 'value'},
+        })
+        self.assertEqual(config.cluster_id, self.cluster.id)
+        self.assertEqual(config.node_role, 'cinder')
+        self.assertEqual(config.config_type,
+                         consts.OPENSTACK_CONFIG_TYPES.role)
+        self.assertTrue(config.is_active)
+
+    def test_create_override(self):
+        config_1 = objects.OpenstackConfig.create({
+            'cluster_id': self.cluster.id,
+            'configuration': {'key': 'value'},
+        })
+
+        self.assertTrue(config_1.is_active)
+
+        config_2 = objects.OpenstackConfig.create({
+            'cluster_id': self.cluster.id,
+            'configuration': {'key': 'value'},
+        })
+
+        self.assertTrue(config_2.is_active)
+        self.assertFalse(config_1.is_active)
+
+        config_3 = objects.OpenstackConfig.create({
+            'cluster_id': self.cluster.id,
+            'configuration': {'key': 'value'},
+            'is_active': False,
+        })
+
+        self.assertTrue(config_2.is_active)
+        self.assertFalse(config_3.is_active)
+
+    def test_delete(self):
+        config = objects.OpenstackConfig.create({
+            'cluster_id': self.cluster.id,
+            'configuration': {'key': 'value'},
+        })
+
+        objects.OpenstackConfig.disable(config)
+        self.assertFalse(config.is_active)

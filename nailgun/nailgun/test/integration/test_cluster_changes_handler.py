@@ -307,7 +307,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    self.env.network_manager.get_admin_network_group(node=n).cidr
                 }
             }
 
@@ -771,7 +771,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    self.env.network_manager.get_admin_network_group(node=n).cidr
                 }
             }
 
@@ -1276,7 +1276,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    self.env.network_manager.get_admin_network_group(node=n).cidr
                 }
             }
 

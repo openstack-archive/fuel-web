@@ -226,7 +226,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             'non-existing-network')
 
     def test_vip_for_admin_network_is_free(self):
-        admin_net_id = self.env.network_manager.get_admin_network_group_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group().id
         self.db.query(IPAddrRange).filter_by(
             network_group_id=admin_net_id
         ).delete()
@@ -309,12 +309,13 @@ class TestNetworkManager(BaseNetworkManagerTest):
             network_group_id=admin_net.id
         )
         self.db.add(mock_range)
-        self.db.commit()
+        self.db.flush()
 
         self.env.network_manager.assign_admin_ips(self.env.nodes)
 
         for n in self.env.nodes:
-            admin_net = self.env.network_manager.get_admin_network_group(n.id)
+            admin_net = self.env.network_manager.\
+                get_admin_network_group(node=n)
             ip = self.db.query(IPAddr).\
                 filter_by(network=admin_net.id).\
                 filter_by(node=n.id).first()
@@ -322,6 +323,37 @@ class TestNetworkManager(BaseNetworkManagerTest):
             self.assertIn(
                 IPAddress(ip.ip_addr),
                 IPNetwork(admin_net.cidr)
+            )
+
+    def test_get_admin_network_group(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
+            },
+            nodes_kwargs=[{}, {}]
+        )
+        node_group = self.env.create_node_group()
+        self.env.nodes[1].group_id = node_group.json_body['id']
+        self.db().flush()
+
+        admin_net = self.env.network_manager.get_admin_network_group(
+            self.env.nodes[1].id)
+
+        mock_range = IPAddrRange(
+            first='9.9.9.1',
+            last='9.9.9.254',
+            network_group_id=admin_net.id
+        )
+        self.db.add(mock_range)
+        self.db.flush()
+        self.env.network_manager.assign_admin_ips(self.env.nodes)
+
+        for n in self.env.nodes:
+            self.assertEqual(
+                self.env.network_manager.get_admin_network_group(node_id=n.id),
+                self.env.network_manager.get_admin_network_group(node=n)
             )
 
     def test_assign_ip_multiple_groups(self):
@@ -398,7 +430,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_assign_admin_ips(self):
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips([node])
-        admin_ng_id = self.env.network_manager.get_admin_network_group_id()
+        admin_ng_id = self.env.network_manager.get_admin_network_group().id
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
 
@@ -413,7 +445,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_assign_admin_ips_idempotent(self):
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips([node])
-        admin_net_id = self.env.network_manager.get_admin_network_group_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group().id
         admin_ips = set([i.ip_addr for i in self.db.query(IPAddr).
                          filter_by(node=node.id).
                          filter_by(network=admin_net_id).all()])
@@ -425,7 +457,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_assign_admin_ips_only_one(self):
         map(self.db.delete, self.db.query(IPAddrRange).all())
-        admin_net_id = self.env.network_manager.get_admin_network_group_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group().id
         mock_range = IPAddrRange(
             first='10.0.0.1',
             last='10.0.0.1',
@@ -437,7 +469,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips([node])
 
-        admin_net_id = self.env.network_manager.get_admin_network_group_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group().id
 
         admin_ips = self.db.query(IPAddr).\
             filter_by(node=node.id).\
@@ -447,7 +479,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_assign_admin_ips_for_many_nodes(self):
         map(self.db.delete, self.db.query(IPAddrRange).all())
-        admin_net_id = self.env.network_manager.get_admin_network_group_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group().id
         mock_range = IPAddrRange(
             first='10.0.0.1',
             last='10.0.0.2',
@@ -461,7 +493,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
         nc = [n1, n2]
         self.env.network_manager.assign_admin_ips(nc)
 
-        admin_net_id = self.env.network_manager.get_admin_network_group_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group().id
 
         for node, ip in zip(nc, ['10.0.0.1', '10.0.0.2']):
             admin_ips = self.db.query(IPAddr).\
@@ -481,6 +513,34 @@ class TestNetworkManager(BaseNetworkManagerTest):
         )
         self.assertEquals(node_net_ips,
                           self.env.network_manager.get_node_networks_ips(node))
+
+    def test_get_admin_ip_for_node(self):
+        self.env.create(api=False)
+        cluster = self.env.clusters[0]
+        node_data = self.env.create_node(cluster_id=cluster.id)
+        node = self.env.nodes[-1]
+
+        # No admin ip assigned
+        self.env.network_manager.assign_ips(
+            cluster, [node_data], consts.NETWORKS.management
+        )
+        self.assertEqual(
+            self.env.network_manager.get_admin_ip_for_node(node.id),
+            self.env.network_manager.get_admin_ip_for_node(node.id, node=node)
+        )
+        self.assertIsNone(
+            self.env.network_manager.get_admin_ip_for_node(node.id))
+
+        # Admin ip assigned
+        self.env.network_manager.assign_ips(
+            cluster, [node_data], consts.NETWORKS.fuelweb_admin
+        )
+        self.assertEqual(
+            self.env.network_manager.get_admin_ip_for_node(node.id),
+            self.env.network_manager.get_admin_ip_for_node(node.id, node=node)
+        )
+        self.assertIsNotNone(
+            self.env.network_manager.get_admin_ip_for_node(node.id))
 
     def test_set_node_networks_ips(self):
         cluster = self.env.create_cluster(api=False)
@@ -502,7 +562,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             cluster, [node], consts.NETWORKS.management
         )
         admin_ng_id = \
-            self.env.network_manager.get_admin_network_group_id(node.id)
+            self.env.network_manager.get_admin_network_group(node=node).id
         node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
         self.env.network_manager.set_node_netgroups_ids(node, node_ng_ids)
         for ip in node.ip_addrs:
@@ -515,7 +575,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             cluster, [node], consts.NETWORKS.management
         )
         admin_ng_id = \
-            self.env.network_manager.get_admin_network_group_id(node.id)
+            self.env.network_manager.get_admin_network_group(node=node).id
         nic_ng_ids = \
             dict((net.id, admin_ng_id) for iface in node.nic_interfaces
                  for net in iface.assigned_networks_list)
@@ -545,7 +605,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             }]
         })
         admin_ng_id = \
-            self.env.network_manager.get_admin_network_group_id(node.id)
+            self.env.network_manager.get_admin_network_group(node=node).id
         bond_ng_ids = \
             dict((net.id, admin_ng_id) for iface in node.bond_interfaces
                  for net in iface.assigned_networks_list)
@@ -757,7 +817,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
         rpc_nodes_provision = nailgun.task.manager.rpc.cast. \
             call_args_list[0][0][1][0]['args']['provisioning_info']['nodes']
 
-        admin_ng_id = self.env.network_manager.get_admin_network_group_id()
+        admin_ng_id = self.env.network_manager.get_admin_network_group().id
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
 

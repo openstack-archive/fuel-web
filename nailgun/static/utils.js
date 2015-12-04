@@ -327,6 +327,13 @@ define([
                 linkStart = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-' :
                     'https://docs.fuel-infra.org/openstack/fuel/fuel-';
             return linkStart + release + '/' + link;
+        },
+        getNodeList: function(options) {
+            var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
+                ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
+                models = require('models'),
+                nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
+            if (nodes.length == ids.length) return nodes;
         }
 };
 

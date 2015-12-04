@@ -597,6 +597,11 @@ input[type=range] {
 }
 
 // NAVIGATION
+nav .row:only-child {
+  /* Do not break the flow for block elements, following
+   * the only navbar row. */
+  margin-right: 0;
+}
 
 .navbar-bg {
   position: absolute;

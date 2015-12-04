@@ -122,9 +122,11 @@ def upgrade():
     create_openstack_configs_table()
     upgrade_master_node_ui_settings()
     upgrade_plugins_parameters()
+    upgrade_admin_network_configurable()
 
 
 def downgrade():
+    downgrade_admin_network_configurable()
     downgrade_plugins_parameters()
     downgrade_master_node_ui_settings()
     downgrade_openstack_configs()
@@ -752,3 +754,31 @@ def upgrade_plugins_parameters():
 
 def downgrade_plugins_parameters():
     op.drop_column('plugins', 'is_hotpluggable')
+
+
+def _set_admin_network_configurable(configurable):
+    connection = op.get_bind()
+    q_select_default_admin_network = sa.text('''
+        SELECT meta FROM network_groups
+        WHERE group_id IS NULL AND name='fuelweb_admin'
+    ''')
+    q_update_default_admin_network = sa.text('''
+        UPDATE network_groups SET meta = :network_meta
+        WHERE group_id IS NULL AND name='fuelweb_admin'
+    ''')
+
+    meta_dumped = connection.execute(q_select_default_admin_network).scalar()
+    if meta_dumped:
+        admin_network_meta = jsonutils.loads(meta_dumped)
+        admin_network_meta['configurable'] = configurable
+
+        connection.execute(q_update_default_admin_network,
+                           network_meta=jsonutils.dumps(admin_network_meta))
+
+
+def upgrade_admin_network_configurable():
+    _set_admin_network_configurable(True)
+
+
+def downgrade_admin_network_configurable():
+    _set_admin_network_configurable(False)

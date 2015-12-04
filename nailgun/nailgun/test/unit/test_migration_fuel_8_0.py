@@ -35,6 +35,16 @@ _test_revision = '43b2cb64dae6'
 
 master_node_settings_before_migration = None
 
+default_admin_network_meta_before_migration = {
+    "use_gateway": True,
+    "notation": "ip_ranges",
+    "render_type": None,
+    "render_addr_mask": None,
+    "map_priority": 0,
+    "unmovable": True,
+    "configurable": False
+}
+
 
 def setup_module():
     dropdb()
@@ -72,6 +82,19 @@ def prepare():
                     'config': {}
                 }
             })
+        }
+    )
+
+    # default Admin network
+    insert_table_row(
+        meta.tables['network_groups'],
+        {
+            "name": consts.NETWORKS.fuelweb_admin,
+            "cidr": "10.20.0.0/24",
+            "vlan_start": None,
+            "gateway": "10.20.0.1",
+            "meta": jsonutils.dumps(
+                default_admin_network_meta_before_migration)
         }
     )
 
@@ -582,3 +605,17 @@ class TestPluginLinks(base.BaseAlembicMigrationTest):
         ).inserted_primary_key[0]
         fetched_data = db.execute(sa.select([plugin_links])).fetchone()
         self.assertEqual(link_id, fetched_data[0])
+
+
+class TestAdminNetworkIsConfigurable(base.BaseAlembicMigrationTest):
+    def test_admin_network_configurable_flag(self):
+        network = self.meta.tables['network_groups']
+        admin_network_meta = db.execute(
+            sa.select([network.c.meta]).where(network.c.group_id.is_(None))
+        ).fetchone()[0]
+        meta_current = jsonutils.loads(admin_network_meta)
+        self.assertTrue(meta_current['configurable'])
+        meta_before = default_admin_network_meta_before_migration
+        meta_before.pop('configurable')
+        meta_current.pop('configurable')
+        self.assertEqual(meta_current, meta_before)

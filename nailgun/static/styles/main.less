@@ -677,6 +677,12 @@ input[type=range] {
   }
 }
 
+nav .row:last-child {
+  /* Do not break the flow for block elements, following
+   * the only navbar row. */
+  margin-right: 0;
+}
+
 .navbar-logo {
   float: left;
   height: 60px;

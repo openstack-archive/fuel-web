@@ -1344,7 +1344,8 @@ class NetworkManager(object):
     @classmethod
     def create_admin_network_group(cls, cluster_id, group_id):
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
-        admin_ng = cls.get_admin_network_group()
+        admin_meta = cls.get_admin_network_group().meta
+        admin_meta['configurable'] = True
         new_admin = NetworkGroup(
             release=cluster_db.release.id,
             name='fuelweb_admin',
@@ -1352,7 +1353,7 @@ class NetworkManager(object):
             gateway='9.9.9.1',
             group_id=group_id,
             vlan_start=None,
-            meta=admin_ng.meta
+            meta=admin_meta
         )
         db().add(new_admin)
         db().flush()

@@ -52,6 +52,9 @@ class TestNodeGroups(BaseIntegrationTest):
                 self.cluster['id']).count(),
             2
         )
+        admin_network = objects.NetworkGroup.get_from_node_group_by_name(
+            resp.json_body['id'], consts.NETWORKS.fuelweb_admin)
+        self.assertTrue(admin_network.meta['configurable'])
 
     def test_nodegroup_assignment(self):
         cluster = self.env.create(

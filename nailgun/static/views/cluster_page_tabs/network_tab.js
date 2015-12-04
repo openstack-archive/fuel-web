@@ -1063,6 +1063,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     isInvalid = !!_.intersection(NetworkingL3Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
                 } else if (groupName == 'nova_configuration') {
                     isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
+                } else if (groupName == 'network_settings') {
+                    var settings = cluster.get('settings');
+                    isInvalid = !!_.filter(settings.validationError, function(error, key) {
+                        return settings.get(key.split('.')[0]).metadata.group == 'network';
+                    }).length;
                 }
 
                 if (isNetworkGroupPill) {

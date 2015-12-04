@@ -310,6 +310,13 @@ define([
                     .setInputValue('.public input[name=range-start_ip_ranges]', 'blablabla')
                     .assertElementAppears('.public .has-error input[name=range-start_ip_ranges]', 1000,
                         'Error class is applied for invalid range start');
+            },
+            'Other settings validation error': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-network_settings')
+                    .setInputValue('input[name=dns_list]', 'blablabla')
+                    .assertElementAppears('.subtab-link-network_settings .glyphicon-danger-sign', 1000,
+                        'Warning icon for "Other" section appears');
             }
         };
     });

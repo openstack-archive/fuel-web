@@ -762,11 +762,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                             <div key={'info-' + slaveInterface.get('name')} className='ifc-info-block clearfix'>
                                                 <div className='ifc-connection pull-left'>
                                                     <div className={utils.classNames(connectionStatusClasses(slaveInterface))} />
-                                                    <div className='ifc-name'>{slaveInterface.get('name')}</div>
                                                 </div>
                                                 <div className='ifc-info pull-left'>
                                                     {this.props.nodes.length == 1 &&
-                                                        <div>{i18n(ns + 'mac')}: {slaveInterface.get('mac')}</div>
+                                                        [
+                                                            <div key='ifc-name'>{i18n(ns + 'name')}: <span className='ifc-name'>{slaveInterface.get('name')}</span></div>,
+                                                            <div key='ifc-mac'>{i18n(ns + 'mac')}: {slaveInterface.get('mac')}</div>
+                                                        ]
                                                     }
                                                     <div>
                                                         {i18n(ns + 'speed')}: {this.props.interfaceSpeeds[index].join(', ')}

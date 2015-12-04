@@ -13,7 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'react', 'react.backbone'], function($, _, Backbone, utils, i18n, dispatcher, React) {
+define([
+    'jquery',
+    'underscore',
+    'backbone',
+    'utils',
+    'i18n',
+    'dispatcher',
+    'react',
+    'react.backbone'
+], function($, _, Backbone, utils, i18n, dispatcher, React) {
     'use strict';
 
     return {
@@ -144,27 +153,6 @@ define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'reac
                     });
                 }
             };
-        },
-        nodeConfigurationScreenMixin: {
-            getNodeList: function(options) {
-                var utils = require('utils'),
-                    models = require('models'),
-                    nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
-                    ids = nodeIds ? nodeIds.split(',').map(function(id) {return parseInt(id, 10);}) : [],
-                    nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
-
-                if (nodes.length && nodes.length == ids.length) {return nodes;}
-            },
-            isLocked: function() {
-                return !!this.props.cluster.task({group: 'deployment', active: true}) || !_.all(this.props.nodes.invoke('isConfigurable'));
-            },
-            renderBackToNodeListButton: function() {
-                return (
-                    <a className='btn btn-default' href={'#cluster/' + this.props.cluster.id + '/nodes'} disabled={this.state.actionInProgress}>
-                        {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
-                    </a>
-                );
-            }
         }
     };
 });

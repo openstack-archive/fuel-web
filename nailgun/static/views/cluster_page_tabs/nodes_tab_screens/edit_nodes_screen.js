@@ -20,17 +20,16 @@ define(
     'react',
     'models',
     'utils',
-    'component_mixins',
     'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function($, _, React, models, utils, ComponentMixins, NodeListScreen) {
+function($, _, React, models, utils, NodeListScreen) {
     'use strict';
 
     var EditNodesScreen = React.createClass({
         statics: {
             fetchData: function(options) {
                 var cluster = options.cluster,
-                    nodes = ComponentMixins.nodeConfigurationScreenMixin.getNodeList(options);
+                    nodes = utils.getNodeListFromTabOptions(options);
 
                 if (!nodes) {
                     return $.Deferred().reject();

@@ -293,9 +293,11 @@ class IronicUploadImages(GenericRolesHook):
 
     def serialize(self):
         uids = self.get_uids()
-        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
-            CLUSTER_ID=self.cluster.id)
-        yield templates.make_shell_task(uids, self.task)
+        if uids:
+            self.task['parameters']['cmd'] = \
+                self.task['parameters']['cmd'].format(
+                    CLUSTER_ID=self.cluster.id)
+            yield templates.make_shell_task(uids, self.task)
 
 
 class IronicCopyBootstrapKey(CopyKeys):

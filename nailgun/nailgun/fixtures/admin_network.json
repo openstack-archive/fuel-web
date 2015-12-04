@@ -14,7 +14,7 @@
                 "render_addr_mask": null,
                 "map_priority": 0,
                 "unmovable": true,
-                "configurable": false
+                "configurable": true
             }
         }
     },

@@ -448,6 +448,7 @@
           - {allocate_size: "min", id: "logs"}
           - {allocate_size: "all", id: "image"}
           - {allocate_size: "min", id: "mysql"}
+          - {allocate_size: "min", id: "horizon"}
         compute:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
@@ -569,6 +570,20 @@
               size:
                 generator: "calc_total_vg"
                 generator_args: ["image"]
+              file_system: "xfs"
+        - id: "horizon"
+          type: "vg"
+          min_size:
+            generator: "calc_gb_to_mb"
+            generator_args: [11]
+          label: "Horizon Temp Storage"
+          volumes:
+            - mount: "/var/lib/horizon"
+              type: "lv"
+              name: "horizontmp"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["horizon"]
               file_system: "xfs"
         - id: "cinder"
           type: "vg"

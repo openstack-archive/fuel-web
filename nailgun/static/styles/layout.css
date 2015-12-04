@@ -36,3 +36,9 @@ body {
   z-index: 9999;
   background: url(../img/loader-logo.svg);
 }
+
+nav .row {
+  /* Do not break the flow for block elements, following
+   * the only navbar row. */
+  margin-right: 0 !important;
+}

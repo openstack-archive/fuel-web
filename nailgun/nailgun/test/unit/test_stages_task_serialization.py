@@ -399,6 +399,25 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             CLUSTER_ID=self.cluster.id, CN_HOSTNAME=hostname)
         self.assertEqual(expected_cmd, serialized['parameters']['cmd'])
 
+    def test_serialize_ironic_upload_images(self):
+        task_config = {'id': 'ironic_upload_images',
+                       'type': 'shell',
+                       'role': ['primary-controller'],
+                       'stage': 'post-deployment',
+                       'parameters': {'cmd': '{CLUSTER_ID}', 'timeout': 60}}
+        task = tasks_serializer.IronicUploadImages(
+            task_config, self.cluster, self.nodes)
+        serialized = list(task.serialize())
+        self.assertEqual(len(serialized), 1)
+        self.assertEqual(serialized[0]['parameters']['cmd'],
+                         str(self.cluster.id))
+        new_node = self.env.create_node(
+            roles=['ironic'], cluster_id=self.cluster.id)
+        task = tasks_serializer.IronicUploadImages(
+            task_config, self.cluster, [new_node])
+        serialized = list(task.serialize())
+        self.assertEqual(len(serialized), 0)
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
 

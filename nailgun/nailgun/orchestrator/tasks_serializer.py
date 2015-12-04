@@ -277,6 +277,12 @@ class IronicUploadImages(GenericRolesHook):
 
     identity = 'ironic_upload_images'
 
+    def should_execute(self):
+        for node in self.nodes:
+            if 'primary-controller' in node.all_roles:
+                return True
+        return False
+
     def serialize(self):
         uids = self.get_uids()
         self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(

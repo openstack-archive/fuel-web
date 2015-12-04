@@ -735,7 +735,11 @@
                         "settings": "Settings",
                         "networks": "Default Networks",
                         "connectivity_check": "Connectivity Check"
-                    }
+                    },
+                    "floating_net": "Floating Network Parameters",
+                    "internal_net": "Internal Network Parameters",
+                    "dns_nameservers": "Guest OS DNS Servers",
+                    "baremetal_net": "Baremetal Network Parameters"
                 },
                 "logs_tab": {
                     "title": "Logs",

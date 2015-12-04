@@ -75,6 +75,27 @@ def prepare():
         }
     )
 
+    # default Admin network
+    insert_table_row(
+        meta.tables['network_groups'],
+        {
+            "name": consts.NETWORKS.fuelweb_admin,
+            "cidr": "10.20.0.0/24",
+            "vlan_start": None,
+            "gateway": "10.20.0.1",
+            "meta": jsonutils.dumps({
+                "use_gateway": True,
+                "notation": "ip_ranges",
+                "render_type": None,
+                "render_addr_mask": None,
+                "map_priority": 0,
+                "unmovable": True,
+                "configurable": False
+            })
+
+        }
+    )
+
     clusterid = insert_table_row(
         meta.tables['clusters'],
         {
@@ -582,3 +603,12 @@ class TestPluginLinks(base.BaseAlembicMigrationTest):
         ).inserted_primary_key[0]
         fetched_data = db.execute(sa.select([plugin_links])).fetchone()
         self.assertEqual(link_id, fetched_data[0])
+
+
+class TestAdminNetworkIsConfigurable(base.BaseAlembicMigrationTest):
+    def test_admin_network_configurable_flag(self):
+        network = self.meta.tables['network_groups']
+        admin_network_meta = db.execute(
+            sa.select([network.c.meta]).where(network.c.group_id.is_(None))
+        ).fetchone()[0]
+        self.assertTrue(jsonutils.loads(admin_network_meta)['configurable'])

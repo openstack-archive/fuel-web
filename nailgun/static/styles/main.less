@@ -266,13 +266,22 @@
 }
 
 .discard-changes-icon {
-  .icon-default-styles(-53px, -572px);
-  width: 16px;
-  height: 16px;
+  .icon-default-styles(-13px, -572px);
+  &:hover {
+    background: url(@common-icons-sprite) -53px -572px no-repeat;
+  }
 }
 
 .glyphicon-ok-sign {
   .icon-default-styles(-13px, -812px);
+}
+
+.base-btn-link-colors() {
+  @base-btn-link-color: #5988A5;
+  color: @base-btn-link-color;
+  &:hover {
+    color: @base-btn-link-color - 15%;
+  }
 }
 
 // BASE SETTINGS
@@ -1226,8 +1235,13 @@ input[type=range] {
         width: @repo-uri-width;
         max-width: @repo-uri-width;
       }
-      &.repo-priority .form-control {
-        width: @default-input-width * 0.5;
+      &.repo-priority {
+        .form-control {
+          width: @default-input-width * 0.5;
+        }
+        .btn-link {
+          .base-btn-link-colors;
+        }
       }
       .form-control-static {
         display: inline;
@@ -3910,7 +3924,10 @@ input[type=range] {
       .ip-ranges-control {
         float: left;
         padding-left: @base-indent;
-        button { padding: 7px 5px; }
+        button {
+          padding: 7px 5px;
+          .base-btn-link-colors;
+        }
       }
     }
     &.mini {
@@ -4289,7 +4306,6 @@ input[type=range] {
         position: relative;
         top: -1px;
         height: 15px;
-        width: 15px;
         .discard-changes-icon {
           display: inline-block;
         }

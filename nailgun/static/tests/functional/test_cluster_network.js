@@ -296,6 +296,20 @@ define([
                     .assertElementNotExists('.private', 'Private Network is not visible for vlan segmentation type')
                     .assertElementTextEquals('.segmentation-type', '(Neutron with VLAN segmentation)',
                             'Segmentation type is correct for VLAN segmentation');
+            },
+            'Junk input in ip fields': function() {
+                return this.remote
+                    .clickByCssSelector('.subtab-link-default')
+                    .setInputValue('.public input[name=cidr]', 'blablabla')
+                    .assertElementAppears('.public .has-error input[name=cidr]', 1000,
+                        'Error class is applied for invalid cidr')
+                    .assertElementAppears('.subtab-link-default .subtab-icon.glyphicon-danger-sign', 1000,
+                        'Warning icon for node network group appears')
+                    .assertElementAppears('.add-nodegroup-btn .glyphicon-danger-sign', 1000,
+                        'Warning icon for add node network group appears')
+                    .setInputValue('.public input[name=range-start_ip_ranges]', 'blablabla')
+                    .assertElementAppears('.public .has-error input[name=range-start_ip_ranges]', 1000,
+                        'Error class is applied for invalid range start');
             }
         };
     });

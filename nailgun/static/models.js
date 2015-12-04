@@ -921,8 +921,9 @@ define([
                     var networkErrors = {};
                     if (network.get('meta').configurable) {
                         _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
-                        if (network.get('meta').notation == 'ip_ranges' && !_.has(networkErrors, 'cidr')) {
-                            var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), network.get('cidr'));
+                        var hasInvalidCidr = _.has(networkErrors, 'cidr');
+                        if (network.get('meta').notation == 'ip_ranges') {
+                            var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), hasInvalidCidr ? null : network.get('cidr'));
                             if (ipRangesErrors.length) {
                                 networkErrors.ip_ranges = ipRangesErrors;
                             }
@@ -930,7 +931,7 @@ define([
                         if (network.get('meta').use_gateway) {
                             if (!utils.validateIP(network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'invalid_gateway');
-                            } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
+                            } else if (!hasInvalidCidr && !utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
                             }
                         }

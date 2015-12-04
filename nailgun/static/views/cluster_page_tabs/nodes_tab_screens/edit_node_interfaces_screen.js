@@ -36,7 +36,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
     var EditNodeInterfacesScreen = React.createClass({
         mixins: [
-            ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('interfaces', 'change reset update'),
             ComponentMixins.backboneMixin('cluster'),
             ComponentMixins.backboneMixin('nodes', 'change reset update'),
@@ -45,7 +44,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         statics: {
             fetchData: function(options) {
                 var cluster = options.cluster,
-                    nodes = ComponentMixins.nodeConfigurationScreenMixin.getNodeList(options);
+                    nodes = utils.getNodeListFromTabOptions(options);
 
                 if (!nodes || !nodes.areInterfacesConfigurable()) {
                     return $.Deferred().reject();
@@ -93,6 +92,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         componentDidMount: function() {
             this.validate();
+        },
+        isLocked: function() {
+            return !!this.props.cluster.task({group: 'deployment', active: true}) ||
+                !_.all(this.props.nodes.invoke('areInterfacesConfigurable'));
         },
         initInterfacesMap: function() {
             this.setState({interfacesMap: _.range(0, this.props.interfaces.length)});
@@ -522,7 +525,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group'>
-                                {this.renderBackToNodeListButton()}
+                                <a className='btn btn-default' href={'#cluster/' + this.props.cluster.id + '/nodes'} disabled={this.state.actionInProgress}>
+                                    {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
+                                </a>
                             </div>
                             {!locked &&
                                 <div className='btn-group pull-right'>

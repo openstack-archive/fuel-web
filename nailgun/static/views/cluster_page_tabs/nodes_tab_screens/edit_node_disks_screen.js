@@ -30,7 +30,6 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
 
     var EditNodeDisksScreen = React.createClass({
         mixins: [
-            ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('cluster', 'change:status change:nodes sync'),
             ComponentMixins.backboneMixin('nodes', 'change sync'),
             ComponentMixins.backboneMixin('disks', 'reset change'),
@@ -38,7 +37,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         ],
         statics: {
             fetchData: function(options) {
-                var nodes = ComponentMixins.nodeConfigurationScreenMixin.getNodeList(options);
+                var nodes = utils.getNodeListFromTabOptions(options);
 
                 if (!nodes || !nodes.areDisksConfigurable()) {
                     return $.Deferred().reject();
@@ -65,6 +64,10 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         },
         componentWillMount: function() {
             this.updateInitialData();
+        },
+        isLocked: function() {
+            return !!this.props.cluster.task({group: 'deployment', active: true}) ||
+                !_.all(this.props.nodes.invoke('areDisksConfigurable'));
         },
         updateInitialData: function() {
             this.setState({initialDisks: _.cloneDeep(this.props.nodes.at(0).disks.toJSON())});
@@ -192,7 +195,9 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                         <div className='col-xs-12 page-buttons content-elements'>
                             <div className='well clearfix'>
                                 <div className='btn-group'>
-                                    {this.renderBackToNodeListButton()}
+                                    <a className='btn btn-default' href={'#cluster/' + this.props.cluster.id + '/nodes'} disabled={this.state.actionInProgress}>
+                                        {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
+                                    </a>
                                 </div>
                                 {!locked && !!this.props.disks.length &&
                                     <div className='btn-group pull-right'>

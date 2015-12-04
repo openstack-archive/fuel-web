@@ -1399,18 +1399,26 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             var networks = this.props.cluster.get('networkConfiguration').get('networks');
             return (
                 <div className='forms-box' key='neutron-l3'>
-                    <h3 className='networks'>{i18n(parametersNS + 'l3_configuration')}</h3>
+                    <h3 key='floating-net'>
+                        <span className='subtab-group-floating-net'>{i18n(networkTabNS + 'tabs.floating_net')}</span>
+                    </h3>
                     <Range
                         {...this.composeProps('floating_ranges', true)}
                         rowsClassName='floating-ranges-rows'
                         hiddenControls
                     />
                     {this.renderInput('floating_name', false, {maxLength: '65'})}
+                    <h3 key='internal-net'>
+                        <span className='subtab-group-internal-net'>{i18n(networkTabNS + 'tabs.internal_net')}</span>
+                    </h3>
                     {this.renderInput('internal_cidr')}
                     {this.renderInput('internal_gateway')}
                     {this.renderInput('internal_name', false, {maxLength: '65'})}
                     {networks.findWhere({name: 'baremetal'}) &&
                         [
+                            <h3 key='baremetal-net'>
+                                <span className='subtab-group-baremetal-net'>{i18n(networkTabNS + 'tabs.baremetal_net')}</span>
+                            </h3>,
                             <Range
                                 key='baremetal_range'
                                 {...this.composeProps('baremetal_range', true)}
@@ -1420,6 +1428,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             this.renderInput('baremetal_gateway')
                         ]
                     }
+                    <h3 key='dns-nameservers'>
+                        <span className='subtab-group-dns-nameservers'>{i18n(networkTabNS + 'tabs.dns_nameservers')}</span>
+                    </h3>
                     <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
                 </div>
             );

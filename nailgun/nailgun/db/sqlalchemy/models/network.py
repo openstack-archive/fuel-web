@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy.ext.mutable import MutableDict
@@ -33,8 +34,8 @@ class IPAddr(Base):
                                          ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(psql.INET, nullable=False)
-    vip_type = Column(String(25), nullable=True)
-
+    vip_name = Column(String(25), nullable=True)
+    user_defined = Column(Boolean, nullable=False, default=False)
     network_data = relationship("NetworkGroup")
     node_data = relationship("Node")
 

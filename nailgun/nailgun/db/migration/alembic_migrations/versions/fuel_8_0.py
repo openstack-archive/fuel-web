@@ -752,3 +752,36 @@ def upgrade_plugins_parameters():
 
 def downgrade_plugins_parameters():
     op.drop_column('plugins', 'is_hotpluggable')
+
+
+def upgrade_vip_name():
+    # Migrate schema
+    op.add_column(
+        'ip_addrs',
+        sa.Column(
+            'user_defined',
+            sa.Boolean,
+            nullable=False,
+            default=False
+        )
+    )
+
+    op.alter_column(
+        'ip_addrs',
+        'vip_type',
+        new_column_name='vip_name'
+    )
+
+
+def downgrade_vip_name():
+    # Migrate schema
+    op.alter_column(
+        'ip_addrs',
+        'vip_name',
+        new_column_name='vip_type',
+        type_=sa.String(25),
+        server_default=None,
+        nullable=True
+    )
+
+    op.drop_column('ip_addrs', 'user_defined')

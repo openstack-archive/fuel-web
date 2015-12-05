@@ -164,10 +164,14 @@ NETWORK_INTERFACE_TYPES = Enum(
     'bond'
 )
 
-NETWORK_VIP_TYPES = Enum(
+NETWORK_VIP_NAMES_V6_1 = Enum(
     'haproxy',
     'vrouter',
 )
+
+VIP_NAME_MAX_LEN = 25
+VIP_NAMESPACE_MAX_LEN = 25
+NETWORK_GROUP_NAME_MAX_LEN = 50
 
 BOND_MODES = Enum(
     # same for both OVS and linux

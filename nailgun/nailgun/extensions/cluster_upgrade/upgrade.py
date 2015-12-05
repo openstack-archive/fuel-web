@@ -135,11 +135,11 @@ class UpgradeHelper(object):
         renamed_vips = collections.defaultdict(dict)
         for ng_name, vips in six.iteritems(vips):
             ng_vip_rules = rename_vip_rules[ng_name]
-            for vip_type, vip_addr in six.iteritems(vips):
-                if vip_type not in ng_vip_rules:
+            for vip_name, vip_addr in six.iteritems(vips):
+                if vip_name not in ng_vip_rules:
                     continue
-                new_vip_type = ng_vip_rules[vip_type]
-                renamed_vips[ng_name][new_vip_type] = vip_addr
+                new_vip_name = ng_vip_rules[vip_name]
+                renamed_vips[ng_name][new_vip_name] = vip_addr
         return renamed_vips
 
     @classmethod
@@ -159,7 +159,7 @@ class UpgradeHelper(object):
                                consts.NETWORKS.management):
                 vips.pop(ng_name)
         # NOTE(akscram): In the 7.0 release was introduced networking
-        #                templates that use the vip_type column as
+        #                templates that use the vip_name column as
         #                unique names of VIPs.
         if version.LooseVersion(orig_cluster.release.environment_version) < \
                 version.LooseVersion("7.0"):

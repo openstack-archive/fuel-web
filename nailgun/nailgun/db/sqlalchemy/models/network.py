@@ -13,7 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy.ext.mutable import MutableDict
@@ -22,6 +22,7 @@ from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 
@@ -33,8 +34,18 @@ class IPAddr(Base):
                                          ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(psql.INET, nullable=False)
-    vip_type = Column(String(25), nullable=True)
-
+    vip_name = Column(String(consts.VIP_NAME_MAX_LEN), nullable=True)
+    vip_namespace = Column(
+        String(consts.VIP_NAMESPACE_MAX_LEN),
+        nullable=True,
+        server_default=None
+    )
+    is_user_defined = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false"
+    )
     network_data = relationship("NetworkGroup")
     node_data = relationship("Node")
 
@@ -52,7 +63,7 @@ class NetworkGroup(Base):
     __tablename__ = 'network_groups'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
+    name = Column(String(consts.NETWORK_GROUP_NAME_MAX_LEN), nullable=False)
     # can be nullable only for fuelweb admin net
     release = Column(Integer, ForeignKey('releases.id', ondelete='CASCADE'))
     # can be nullable only for fuelweb admin net

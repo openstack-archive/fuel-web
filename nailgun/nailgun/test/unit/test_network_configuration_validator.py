@@ -77,7 +77,7 @@ class TestNetworkConfigurationValidatorProtocol(
                         "configurable": True,
                         "floating_range_var": "floating_ranges",
                         "ext_net_data": [],
-                        "vips": consts.NETWORK_VIP_TYPES,
+                        "vips": consts.NETWORK_VIP_NAMES_61,
                     },
                     "name": consts.NETWORKS.public,
                     "vlan_start": None

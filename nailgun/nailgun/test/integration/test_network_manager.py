@@ -55,12 +55,12 @@ class BaseNetworkManagerTest(BaseIntegrationTest):
         for net_group in cluster.network_groups:
             if net_group.name not in rules:
                 continue
-            vips_by_types = rules[net_group.name]
-            for vip_type, ip_addr in vips_by_types.items():
+            vips_by_names = rules[net_group.name]
+            for vip_name, ip_addr in vips_by_names.items():
                 ip = IPAddr(
                     network=net_group.id,
                     ip_addr=ip_addr,
-                    vip_type=vip_type,
+                    vip_name=vip_name,
                 )
                 self.db.add(ip)
                 created_ips.append(ip)
@@ -195,9 +195,15 @@ class TestNetworkManager(BaseNetworkManagerTest):
             self.env.clusters[0])
 
         vip = self.env.network_manager.assign_vip(
-            nodegroup, consts.NETWORKS.management)
+            nodegroup,
+            consts.NETWORKS.management,
+            consts.NETWORK_VIP_NAMES.haproxy
+        )
         vip2 = self.env.network_manager.assign_vip(
-            nodegroup, consts.NETWORKS.management)
+            nodegroup,
+            consts.NETWORKS.management,
+            consts.NETWORK_VIP_NAMES.haproxy
+        )
 
         self.assertEqual(vip, vip2)
 
@@ -210,7 +216,9 @@ class TestNetworkManager(BaseNetworkManagerTest):
             Exception,  # make sure there's no exceptions at all
             self.env.network_manager.assign_vip,
             nodegroup,
-            consts.NETWORKS.fuelweb_admin)
+            consts.NETWORKS.fuelweb_admin,
+            consts.NETWORK_VIP_NAMES.haproxy
+        )
 
     def test_assign_vip_throws_not_found_exception(self):
         self.env.create_cluster(api=True)
@@ -222,7 +230,9 @@ class TestNetworkManager(BaseNetworkManagerTest):
             "Network 'non-existing-network' for nodegroup='[\w-]+' not found.",
             self.env.network_manager.assign_vip,
             nodegroup,
-            'non-existing-network')
+            'non-existing-network',
+            consts.NETWORK_VIP_NAMES.haproxy
+        )
 
     def test_vip_for_admin_network_is_free(self):
         admin_net_id = self.env.network_manager.get_admin_network_group_id()
@@ -255,7 +265,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
         self.env.network_manager.assign_admin_ips(cluster.nodes)
         admin_vip = self.env.network_manager.assign_vip(
             objects.Cluster.get_controllers_node_group(cluster),
-            consts.NETWORKS.fuelweb_admin
+            consts.NETWORKS.fuelweb_admin,
+            consts.NETWORK_VIP_NAMES.haproxy
         )
 
         node_ips = [n.ip for n in self.env.nodes]
@@ -551,12 +562,12 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_get_assigned_vips(self):
         vips_to_create = {
             consts.NETWORKS.management: {
-                consts.NETWORK_VIP_TYPES.haproxy: '192.168.0.1',
-                consts.NETWORK_VIP_TYPES.vrouter: '192.168.0.2',
+                consts.NETWORK_VIP_NAMES.haproxy: '192.168.0.1',
+                consts.NETWORK_VIP_NAMES.vrouter: '192.168.0.2',
             },
             consts.NETWORKS.public: {
-                consts.NETWORK_VIP_TYPES.haproxy: '172.16.0.2',
-                consts.NETWORK_VIP_TYPES.vrouter: '172.16.0.3',
+                consts.NETWORK_VIP_NAMES.haproxy: '172.16.0.2',
+                consts.NETWORK_VIP_NAMES.vrouter: '172.16.0.3',
             },
         }
         cluster = self.env.create_cluster(api=False)
@@ -567,20 +578,20 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_assign_given_vips_for_net_groups(self):
         vips_to_create = {
             consts.NETWORKS.management: {
-                consts.NETWORK_VIP_TYPES.haproxy: '192.168.0.1',
+                consts.NETWORK_VIP_NAMES.haproxy: '192.168.0.1',
             },
             consts.NETWORKS.public: {
-                consts.NETWORK_VIP_TYPES.haproxy: '172.16.0.2',
+                consts.NETWORK_VIP_NAMES.haproxy: '172.16.0.2',
             },
         }
         vips_to_assign = {
             consts.NETWORKS.management: {
-                consts.NETWORK_VIP_TYPES.haproxy: '192.168.0.1',
-                consts.NETWORK_VIP_TYPES.vrouter: '192.168.0.2',
+                consts.NETWORK_VIP_NAMES.haproxy: '192.168.0.1',
+                consts.NETWORK_VIP_NAMES.vrouter: '192.168.0.2',
             },
             consts.NETWORKS.public: {
-                consts.NETWORK_VIP_TYPES.haproxy: '172.16.0.4',
-                consts.NETWORK_VIP_TYPES.vrouter: '172.16.0.5',
+                consts.NETWORK_VIP_NAMES.haproxy: '172.16.0.4',
+                consts.NETWORK_VIP_NAMES.vrouter: '172.16.0.5',
             },
         }
         cluster = self.env.create_cluster(api=False)
@@ -603,7 +614,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
     def test_assign_given_vips_for_net_groups_assign_error(self):
         vips_to_assign = {
             consts.NETWORKS.management: {
-                consts.NETWORK_VIP_TYPES.haproxy: '10.10.0.1',
+                consts.NETWORK_VIP_NAMES.haproxy: '10.10.0.1',
             },
         }
         expected_msg_regexp = '^Cannot assign VIP with the address "10.10.0.1"'
@@ -1158,7 +1169,7 @@ class TestNeutronManager70(BaseNetworkManagerTest):
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_type='public')
+                mock.ANY, vip_name='public')
             self.assertEqual(endpoint_ip, vip)
 
     def test_assign_vips_for_net_groups_for_api(self):
@@ -1279,7 +1290,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_type='public')
+                mock.ANY, vip_name='public')
             self.assertEqual(endpoint_ip, vip)
 
 

@@ -301,8 +301,7 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
-    def assign_vip(cls, nodegroup, network_name,
-                   vip_type=consts.NETWORK_VIP_TYPES.haproxy):
+    def assign_vip(cls, nodegroup, network_name, vip_name):
         """Idempotent assignment of VirtualIP addresses to nodegroup.
 
         Returns VIP for given nodegroup and network.
@@ -318,8 +317,8 @@ class NetworkManager(object):
         :type nodegroup: NodeGroup model
         :param network_name: Network name
         :type  network_name: str
-        :param vip_type: Type of VIP
-        :type  vip_type: str
+        :param vip_name: Type of VIP
+        :type  vip_name: str
         :returns: assigned VIP (string)
         :raises: Exception
         """
@@ -343,7 +342,7 @@ class NetworkManager(object):
         cluster_vip = db().query(IPAddr).filter_by(
             network=network.id,
             node=None,
-            vip_type=vip_type
+            vip_name=vip_name
         ).first()
         # check if cluster_vip is in required cidr: network.cidr
         if cluster_vip and cls.check_ip_belongs_to_net(cluster_vip.ip_addr,
@@ -360,7 +359,7 @@ class NetworkManager(object):
 
         # IP address has not been assigned, let's do it
         vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
-        ne_db = IPAddr(network=network.id, ip_addr=vip, vip_type=vip_type)
+        ne_db = IPAddr(network=network.id, ip_addr=vip, vip_name=vip_name)
 
         # delete stalled VIP address after new one was found.
         if cluster_vip:
@@ -383,14 +382,14 @@ class NetworkManager(object):
 
         nodegroup = objects.Cluster.get_controllers_node_group(cluster)
         for ng in cluster.network_groups:
-            for vip_type in ng.meta.get('vips', ()):
+            for vip_name in ng.meta.get('vips', ()):
                 # used for backwards compatibility
-                if vip_type == consts.NETWORK_VIP_TYPES.haproxy:
+                if vip_name == consts.NETWORK_VIP_TYPES.haproxy:
                     key = '{0}_vip'.format(ng.name)
                 else:
-                    key = '{0}_{1}_vip'.format(ng.name, vip_type)
+                    key = '{0}_{1}_vip'.format(ng.name, vip_name)
 
-                result[key] = cls.assign_vip(nodegroup, ng.name, vip_type)
+                result[key] = cls.assign_vip(nodegroup, ng.name, vip_name)
 
         return result
 
@@ -399,7 +398,7 @@ class NetworkManager(object):
         node_group_id = objects.Cluster.get_controllers_group_id(cluster)
         cluster_vips = db.query(IPAddr).join(IPAddr.network_data).filter(
             IPAddr.node.is_(None) &
-            IPAddr.vip_type.isnot(None) &
+            IPAddr.vip_name.isnot(None) &
             (NetworkGroup.group_id == node_group_id)
         )
         return cluster_vips
@@ -415,7 +414,7 @@ class NetworkManager(object):
         cluster_vips = cls._get_assigned_vips_for_net_groups(cluster)
         vips = defaultdict(dict)
         for vip in cluster_vips:
-            vips[vip.network_data.name][vip.vip_type] = vip.ip_addr
+            vips[vip.network_data.name][vip.vip_name] = vip.ip_addr
         return vips
 
     @classmethod
@@ -435,12 +434,12 @@ class NetworkManager(object):
         cluster_vips = cls._get_assigned_vips_for_net_groups(cluster)
         assigned_vips = defaultdict(dict)
         for vip in cluster_vips:
-            assigned_vips[vip.network_data.name][vip.vip_type] = vip
+            assigned_vips[vip.network_data.name][vip.vip_name] = vip
         for net_group in cluster.network_groups:
             if net_group.name not in vips:
                 continue
             assigned_vips_by_type = assigned_vips.get(net_group.name, {})
-            for vip_type, ip_addr in six.iteritems(vips[net_group.name]):
+            for vip_name, ip_addr in six.iteritems(vips[net_group.name]):
                 if not cls.check_ip_belongs_to_net(ip_addr, net_group):
                     ranges = [(rng.first, rng.last)
                               for rng in net_group.ip_ranges]
@@ -450,14 +449,14 @@ class NetworkManager(object):
                         "ranges {3} of the cluster \"{4}\"."
                         .format(ip_addr, net_group.id, net_group.name, ranges,
                                 cluster.id))
-                if vip_type in assigned_vips_by_type:
-                    assigned_vip = assigned_vips_by_type[vip_type]
+                if vip_name in assigned_vips_by_type:
+                    assigned_vip = assigned_vips_by_type[vip_name]
                     assigned_vip.ip_addr = ip_addr
                 else:
                     vip = IPAddr(
                         network=net_group.id,
                         ip_addr=ip_addr,
-                        vip_type=vip_type,
+                        vip_name=vip_name,
                     )
                     db().add(vip)
         db().flush()
@@ -1688,7 +1687,7 @@ class NetworkManager(object):
             x[0] for x in
             db().query(IPAddr.ip_addr).filter(
                 IPAddr.network == network_id,
-                or_(IPAddr.node.isnot(None), IPAddr.vip_type.isnot(None))
+                or_(IPAddr.node.isnot(None), IPAddr.vip_name.isnot(None))
             )
         ]
 
@@ -1761,7 +1760,7 @@ class AllocateVIPs70Mixin(object):
             cluster_db, node_group.name)
         net_group = cls.get_network_group_for_role(
             net_role, net_group_mapping)
-        return cls.assign_vip(node_group, net_group, vip_type='public')
+        return cls.assign_vip(node_group, net_group, vip_name='public')
 
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):

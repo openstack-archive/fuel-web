@@ -683,11 +683,19 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 
         self.assertEqual(
             resp['management_vip'],
-            self.net_manager.assign_vip(nodegroup, 'management'))
+            self.net_manager.assign_vip(
+                nodegroup,
+                'management',
+                consts.NETWORK_VIP_NAMES_61.haproxy
+            ))
 
         self.assertEqual(
             resp['public_vip'],
-            self.net_manager.assign_vip(nodegroup, 'public'))
+            self.net_manager.assign_vip(
+                nodegroup,
+                'public',
+                consts.NETWORK_VIP_NAMES_61.haproxy
+            ))
 
 
 class TestAdminNetworkConfiguration(BaseIntegrationTest):

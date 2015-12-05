@@ -145,7 +145,7 @@ class TestVipTypesMigration(base.BaseAlembicMigrationTest):
             sa.select([ip_addrs_table.c.vip_type]).where(
                 ip_addrs_table.c.ip_addr == '192.168.0.2')
         ).first()
-        self.assertEqual(ip_addr[0], consts.NETWORK_VIP_TYPES.haproxy)
+        self.assertEqual(ip_addr[0], consts.NETWORK_VIP_NAMES_V6_1.haproxy)
 
     def test_vip_type_in_releases(self):
         releases_table = self.meta.tables['releases']
@@ -158,7 +158,7 @@ class TestVipTypesMigration(base.BaseAlembicMigrationTest):
         neutron = networks_meta['neutron']['networks'][0]
         self.assertItemsEqual(
             neutron.get('vips'),
-            [consts.NETWORK_VIP_TYPES.haproxy])
+            [consts.NETWORK_VIP_NAMES_V6_1.haproxy])
 
         nova_network = networks_meta['nova_network']['networks'][0]
         self.assertIsNone(nova_network.get('vips'))
@@ -171,7 +171,7 @@ class TestVipTypesMigration(base.BaseAlembicMigrationTest):
         ).first()[0]
 
         vips = jsonutils.loads(meta).get('vips')
-        self.assertEqual(vips, [consts.NETWORK_VIP_TYPES.haproxy])
+        self.assertEqual(vips, [consts.NETWORK_VIP_NAMES_V6_1.haproxy])
 
 
 class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):

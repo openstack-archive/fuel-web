@@ -23,8 +23,6 @@ from nailgun.test import base
 class TestDbMigrations(base.BaseTestCase):
 
     def test_clean_downgrade(self):
-        # We don't have data migration for clusters with vip_type 'ovs'
-        # so checking migration only for clean DB
         dropdb()
         alembic.command.upgrade(ALEMBIC_CONFIG, 'head')
         alembic.command.downgrade(ALEMBIC_CONFIG, 'base')

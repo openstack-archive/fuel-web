@@ -20,17 +20,49 @@ Create Date: 2015-12-15 17:20:49.519542
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
 
-from alembic import op  # noqa
-import sqlalchemy as sa  # noqa
-
 
 def upgrade():
-    pass
+    upgrade_vip_name()
 
 
 def downgrade():
-    pass
+    downgrade_vip_name()
+
+
+def upgrade_vip_name():
+    op.add_column(
+        'ip_addrs',
+        sa.Column(
+            'user_defined',
+            sa.Boolean,
+            nullable=False,
+            default=False,
+            server_default="False"
+        )
+    )
+
+    op.alter_column(
+        'ip_addrs',
+        'vip_type',
+        new_column_name='vip_name'
+    )
+
+
+def downgrade_vip_name():
+    op.alter_column(
+        'ip_addrs',
+        'vip_name',
+        new_column_name='vip_type',
+        type_=sa.String(25),
+        server_default=None,
+        nullable=True
+    )
+
+    op.drop_column('ip_addrs', 'user_defined')

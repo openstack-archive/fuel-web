@@ -442,13 +442,13 @@ def upgrade_vip_types_6_0_to_6_1(connection):
         "UPDATE ip_addrs SET vip_type = :haproxy WHERE node IS NULL")
 
     connection.execute(update_query_node_null,
-                       haproxy=consts.NETWORK_VIP_TYPES.haproxy)
+                       haproxy=consts.NETWORK_VIP_NAMES_61.haproxy)
 
 
 def downgrade_vip_types_6_1_to_6_0(connection):
     delete_query = text(
         "DELETE FROM ip_addrs WHERE vip_type != :haproxy AND node IS NULL")
-    connection.execute(delete_query, haproxy=consts.NETWORK_VIP_TYPES.haproxy)
+    connection.execute(delete_query, haproxy=consts.NETWORK_VIP_NAMES_61.haproxy)
 
 
 def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):
@@ -542,7 +542,7 @@ def upgrade_network_groups_metadata_6_0_to_6_1(connection):
 def create_default_vips(network):
     if "assign_vip" in network:
         if network["assign_vip"]:
-            network["vips"] = [consts.NETWORK_VIP_TYPES.haproxy]
+            network["vips"] = [consts.NETWORK_VIP_NAMES_61.haproxy]
 
         del network["assign_vip"]
 

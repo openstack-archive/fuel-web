@@ -267,6 +267,11 @@ Running Nailgun in Fake Mode
 
       gulp build --static-dir=static_compressed
 
+    To speed up build process you may also want to disable uglification and
+    source maps generation::
+
+      gulp build --no-uglify --no-sourcemaps
+
   * If you plan to modify Fuel UI, there is more convenient option --
     a development server. It watches for file changes and automatically
     rebuilds changed modules (significantly faster than full rebuild)

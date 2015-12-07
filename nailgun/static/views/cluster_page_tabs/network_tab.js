@@ -826,6 +826,14 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 })
                 .then(this.updateInitialConfiguration);
         },
+        renderTaskMessage: function(task) {
+            //.map((str, index) => <li key={index}>{str}</li>)}
+            return (
+                <div>
+                    {(task.get('message') || '').split('\n').map((str, index) => <p key={index}>{str}</p>)}
+                </div>
+            );
+        },
         render: function() {
             var isLocked = this.isLocked(),
                 hasChanges = this.hasChanges(),
@@ -955,6 +963,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                     <NetworkVerificationResult
                                         key='network_verification'
                                         task={networkVerifyTask}
+                                        renderTaskMessage={this.renderTaskMessage}
                                         networks={networkConfiguration.get('networks')}
                                         hideVerificationResult={this.state.hideVerificationResult}
                                         isMultirack={isMultiRack}
@@ -989,7 +998,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     {!this.state.hideVerificationResult && networkCheckTask && networkCheckTask.match({status: 'error'}) &&
                         <div className='col-xs-12'>
                             <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
-                                {networkCheckTask.get('message')}
+                                {this.renderTaskMessage(networkCheckTask)}
                             </div>
                         </div>
                     }
@@ -1604,8 +1613,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         <div className='col-xs-12'>
                             <div className='alert alert-danger enable-selection network-alert'>
                                 {i18n(ns + 'fail_alert')}
-                                <br/>
-                                {task.get('message')}
+                                {this.props.renderTaskMessage(task)}
                             </div>
                         </div>
                     }

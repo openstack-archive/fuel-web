@@ -270,15 +270,12 @@ function run_ui_func_tests {
   pushd $ROOT/nailgun >> /dev/null
 
   if [ $no_ui_compression -ne 1 ]; then
-    echo -n "Compressing UI... "
-    local output
-    output=$(${GULP} build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+    echo "Compressing UI... "
+    ${GULP} build --no-sourcemaps --static-dir=$COMPRESSED_STATIC_DIR
     if [ $? -ne 0 ]; then
-      echo "$output"
       popd >> /dev/null
       return 1
     fi
-    echo "done"
   else
     echo "Using compressed UI from $COMPRESSED_STATIC_DIR"
     if [ ! -f "$COMPRESSED_STATIC_DIR/index.html" ]; then

@@ -183,12 +183,15 @@ def make_puppet_task(uids, task):
 
 
 def make_generic_task(uids, task):
-    return {
+    task = {
         'type': task['type'],
         'uids': uids,
         'fail_on_error': task.get('fail_on_error', True),
         'parameters': task['parameters']
     }
+
+    task['parameters'].setdefault('cwd', '/')
+    return task
 
 
 def make_reboot_task(uids, task):

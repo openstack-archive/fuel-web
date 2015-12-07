@@ -53,6 +53,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             return {
                 showMoreLogsLink: false,
                 loading: 'loading',
+                loadingError: null,
                 from: -1,
                 to: 0
             };
@@ -85,15 +86,19 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     });
                     this.startPolling();
                 }, this))
-                .fail(_.bind(function() {
+                .fail((response) => {
                     this.setState({
                         logsEntries: undefined,
-                        loading: 'fail'
+                        loading: 'fail',
+                        loadingError: utils.getResponseText(response, i18n('cluster_page.logs_tab.log_alert'))
                     });
-                }, this));
+                });
         },
         onShowButtonClick: function() {
-            this.setState({loading: 'loading'}, this.showLogs);
+            this.setState({
+                loading: 'loading',
+                loadingError: null
+            }, this.showLogs);
         },
         onShowMoreClick: function(value) {
             this.showLogs({max_entries: value, fetch_older: true, from: this.state.from});
@@ -110,7 +115,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                         />
                         {this.state.loading == 'fail' &&
                             <div className='logs-fetch-error alert alert-danger'>
-                                {i18n('cluster_page.logs_tab.log_alert')}
+                                {this.state.loadingError}
                             </div>
                         }
                         {this.state.loading == 'loading' && <controls.ProgressBar />}
@@ -131,6 +136,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         getInitialState: function() {
             return _.extend({}, this.props.selectedLogs, {
                 sourcesLoadingState: 'loading',
+                sourcesLoadingError: null,
                 sources: [],
                 locked: true
             });
@@ -167,14 +173,15 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     locked: false
                 });
             }, this));
-            this.sources.deferred.fail(_.bind(function() {
+            this.sources.deferred.fail((response) => {
                 this.setState({
                     type: type,
                     sources: {},
                     sourcesLoadingState: 'fail',
+                    sourcesLoadingError: utils.getResponseText(response, i18n('cluster_page.logs_tab.source_alert')),
                     locked: false
                 });
-            }, this));
+            });
             return this.sources.deferred;
         },
         componentDidMount: function() {
@@ -252,7 +259,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     </div>
                     {this.state.sourcesLoadingState == 'fail' &&
                         <div className='node-sources-error alert alert-danger'>
-                            {i18n('cluster_page.logs_tab.source_alert')}
+                            {this.state.sourcesLoadingError}
                         </div>
                     }
                 </div>

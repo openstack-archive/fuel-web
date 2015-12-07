@@ -157,7 +157,7 @@ gulp.task('license', function(cb) {
         if (errors.length) {
             _.each(errors, function(error) {
                 gutil.log(gutil.colors.red(error.libraryName, 'has', error.license, 'license'));
-            })
+            });
             cb('Issues with licenses found');
         } else {
             cb();
@@ -276,10 +276,17 @@ gulp.task('build', function(cb) {
             new webpack.optimize.DedupePlugin()
         );
     }
-    if (argv.uglify) {
+    if (argv.uglify !== false) {
+        config.devtool = 'source-map';
         config.plugins.push(
-            new webpack.optimize.UglifyJsPlugin({compress: {warnings: false}})
+            new webpack.optimize.UglifyJsPlugin({
+                mangle: false,
+                compress: {warnings: false}
+            })
         );
+    }
+    if (argv.sourcemaps === false) {
+        delete config.devtool;
     }
     if (argv.watch) {
         config.watch = true;

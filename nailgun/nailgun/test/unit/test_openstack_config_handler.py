@@ -87,6 +87,25 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json_body['is_active'], False)
 
+    def test_openstack_config_upload_fail(self):
+        data = {
+            'cluster_id': self.cluster.id,
+            'node_id': self.nodes[0].id,
+            'configuration': {
+                'not_supported_config': {}
+            }
+        }
+
+        resp = self.app.post(
+            reverse('OpenstackConfigCollectionHandler'),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+        self.assertRegexpMatches(
+            resp.json_body['message'],
+            r"Configurations '\w+' can not be updated")
+
     def test_openstack_config_list(self):
         url = self._make_filter_url(cluster_id=self.cluster.id)
         resp = self.app.get(url, headers=self.default_headers)

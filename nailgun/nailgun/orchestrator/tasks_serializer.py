@@ -146,50 +146,6 @@ class GenericRolesHook(StandartConfigRolesHook):
     identity = abc.abstractproperty
 
 
-class UploadMOSRepo(GenericRolesHook):
-
-    identity = 'upload_core_repos'
-
-    def get_uids(self):
-        return self.role_resolver.resolve(consts.TASK_ROLES.all)
-
-    def serialize(self):
-        uids = self.get_uids()
-        operating_system = self.cluster.release.operating_system
-        repos = objects.Attributes.merged_attrs_values(
-            self.cluster.attributes)['repo_setup']['repos']
-
-        if operating_system == consts.RELEASE_OS.centos:
-            for repo in repos:
-                yield templates.make_centos_repo_task(uids, repo)
-            yield templates.make_yum_clean(uids)
-        elif operating_system == consts.RELEASE_OS.ubuntu:
-            # NOTE(ikalnitsky):
-            # We have to clear /etc/apt/sources.list, because it
-            # has a lot of invalid repos right after provisioning
-            # and that lead us to deployment failures.
-            yield templates.make_shell_task(uids, {
-                'parameters': {
-                    'cmd': '> /etc/apt/sources.list',
-                    'timeout': 60
-                }})
-            yield templates.make_ubuntu_apt_disable_ipv6(uids)
-            # NOTE(kozhukalov):
-            # This task is to allow installing packages from
-            # unauthenticated repositories.
-            yield templates.make_ubuntu_unauth_repos_task(uids)
-            for repo in repos:
-                yield templates.make_ubuntu_sources_task(uids, repo)
-
-                if repo.get('priority'):
-                    # do not add preferences task to task list if we can't
-                    # complete it (e.g. can't retrieve or parse Release file)
-                    task = templates.make_ubuntu_preferences_task(uids, repo)
-                    if task is not None:
-                        yield task
-            yield templates.make_apt_update_task(uids)
-
-
 class RsyncPuppet(GenericRolesHook):
 
     identity = 'rsync_core_puppet'
@@ -420,7 +376,7 @@ class UploadConfiguration(GenericRolesHook):
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, RestartRadosGW,
+    stage_serializers = [RsyncPuppet, CopyKeys, RestartRadosGW,
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys,
                          GenerateCephKeys, CopyCephKeys, IronicUploadImages,

@@ -599,6 +599,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     }, this));
             }
         },
+        startHostnameRenaming: function(e) {
+            this.setState({hostnameChangingError: null});
+            this.startRenaming(e);
+        },
         onHostnameInputKeydown: function(e) {
             this.setState({hostnameChangingError: null});
             if (e.key == 'Enter') {
@@ -607,13 +611,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 (hostname != this.props.node.get('hostname') ?
                     this.props.node.save({hostname: hostname}, {patch: true, wait: true}) :
                     $.Deferred().resolve()
-                ).fail(_.bind(function(response) {
+                )
+                .fail((response) => {
                     this.setState({
                         hostnameChangingError: utils.getResponseText(response),
                         actionInProgress: false
                     });
                     this.refs.hostname.getInputDOMNode().focus();
-                }, this)).done(this.endRenaming);
+                })
+                .done(this.endRenaming);
             } else if (e.key == 'Escape') {
                 this.endRenaming();
                 e.stopPropagation();
@@ -671,7 +677,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                         {(node.get('pending_addition') || !node.get('cluster')) &&
                                             <button
                                                 className='btn-link glyphicon glyphicon-pencil'
-                                                onClick={this.startRenaming}
+                                                onClick={this.startHostnameRenaming}
                                             />
                                         }
                                     </span>

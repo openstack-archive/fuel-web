@@ -272,14 +272,14 @@ gulp.task('build', function(cb) {
     config.output.path = path.join(targetDir, 'build');
     if (!argv.dev) {
         config.plugins.push(
-            new webpack.DefinePlugin({'process.env': {NODE_ENV: '"production"'}}),
-            new webpack.optimize.DedupePlugin()
+            new webpack.DefinePlugin({'process.env': {NODE_ENV: '"production"'}})
         );
     }
     if (argv.uglify !== false) {
         config.devtool = 'source-map';
         config.plugins.push(
             new webpack.optimize.UglifyJsPlugin({
+                sourceMap: true,
                 mangle: false,
                 compress: {warnings: false}
             })

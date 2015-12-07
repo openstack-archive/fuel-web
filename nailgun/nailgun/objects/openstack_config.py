@@ -17,6 +17,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.errors import errors
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.openstack_config \
@@ -45,6 +46,11 @@ class OpenstackConfig(NailgunObject):
         This why delete operation doesn't remove a record from the database,
         it sets `is_active` property to False.
         """
+        if not instance.is_active:
+            raise errors.CannotDelete(
+                "Configuration '{0}' has been already deleted.".format(
+                    instance.id))
+
         instance.is_active = False
         db().flush()
 

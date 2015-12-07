@@ -988,9 +988,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     </div>
                     {!this.state.hideVerificationResult && networkCheckTask && networkCheckTask.match({status: 'error'}) &&
                         <div className='col-xs-12'>
-                            <div className='alert alert-danger enable-selection col-xs-12 network-alert'>
-                                {networkCheckTask.get('message')}
-                            </div>
+                            <div
+                                className='alert alert-danger enable-selection col-xs-12 network-alert'
+                                dangerouslySetInnerHTML={{__html: utils.linebreaks(networkCheckTask.get('message'))}}
+                            />
                         </div>
                     }
                     <div className='col-xs-12 page-buttons content-elements'>
@@ -1598,7 +1599,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             <div className='alert alert-danger enable-selection network-alert'>
                                 {i18n(ns + 'fail_alert')}
                                 <br/>
-                                {task.get('message')}
+                                <div dangerouslySetInnerHTML={{__html: utils.linebreaks(task.get('message'))}} />
                             </div>
                         </div>
                     }

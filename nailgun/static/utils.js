@@ -273,8 +273,8 @@ define([
                 return index == -1 ? properties.length : index;
             });
         },
-        getResponseText: function(response) {
-            var serverErrorMessage = i18n('dialog.error_dialog.server_error');
+        getResponseText: function(response, defaultText) {
+            var serverErrorMessage = defaultText || i18n('dialog.error_dialog.server_error');
             var serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
             if (response && (!response.status || response.status >= 400)) {
                 if (!response.status || response.status == 502) return serverUnavailableMessage;

@@ -118,7 +118,7 @@ define([
             this.expandedLimits = this.expandedLimits || {};
             this.expandedLimits[this.get('name')] = limits;
         },
-        checkLimits: function(models, checkLimitIsReached, limitTypes, nodes) {
+        checkLimits: function(models, checkLimitIsReached = true, limitTypes = ['min', 'max'], nodes) {
             /*
              *  Check the 'limits' section of configuration.
              *  models -- current model to check the limits
@@ -132,10 +132,6 @@ define([
              *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
              *  nodes -- node collection to check the limits, cluster nodes collection by default
             **/
-
-            // Default values
-            if (_.isUndefined(checkLimitIsReached)) checkLimitIsReached = true;
-            if (_.isUndefined(limitTypes)) limitTypes = ['min', 'max'];
 
             var evaluateExpressionHelper = function(expression, models, options) {
                 var ret;
@@ -164,9 +160,10 @@ define([
                     min: evaluateExpressionHelper(limits.min, models).value,
                     recommended: evaluateExpressionHelper(limits.recommended, models).value
                 },
-                count = nodes ? nodes.length : models.cluster.get('nodes').nodesAfterDeploymentWithRole(name).length,
+                count = (nodes || models.cluster.get('nodes')).nodesAfterDeploymentWithRole(name).length,
                 messages,
                 label = this.get('label');
+
             var checkOneLimit = function(obj, limitType) {
                 var limitValue,
                     comparator;
@@ -215,7 +212,6 @@ define([
                     if (checkedLimitTypes[limitType]) {
                         return;
                     }
-
                     return checkOneLimit(limitValues, limitType);
                 })
                 .flatten()

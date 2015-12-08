@@ -235,6 +235,9 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                 this.setState({key: _.now()});
             }
         },
+        toggleDisk: function(name) {
+            $(this.refs[name].getDOMNode()).collapse('toggle');
+        },
         onRangeInput: _.debounce(function(name) {
             this.updateDisk(name, this.refs['range-' + name].getInputDOMNode().value);
         }, 10, {leading: true}),
@@ -263,10 +266,18 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                         {this.props.volumes.map(function(volume, index) {
                             var volumeName = volume.get('name');
                             return (
-                                <div className={'volume-group pull-left volume-type-' + (index + 1)} data-volume={volumeName} key={'volume_' + volumeName} style={{width: volumesInfo[volumeName].width + '%'}}>
-                                    <div className='text-center toggle' data-toggle='collapse' data-target={'#' + disk.get('name')}>
+                                <div
+                                    key={'volume_' + volumeName}
+                                    ref={'volume_' + volumeName}
+                                    className={'volume-group pull-left volume-type-' + (index + 1)}
+                                    data-volume={volumeName}
+                                    style={{width: volumesInfo[volumeName].width + '%'}}
+                                >
+                                    <div className='text-center toggle' onClick={_.partial(this.toggleDisk, disk.get('name'))}>
                                         <div>{volume.get('label')}</div>
-                                        <div className='volume-group-size'>{utils.showDiskSize(volumesInfo[volumeName].size, 2)}</div>
+                                        <div className='volume-group-size'>
+                                            {utils.showDiskSize(volumesInfo[volumeName].size, 2)}
+                                        </div>
                                     </div>
                                     {!this.props.disabled && volumesInfo[volumeName].min <= 0 && this.state.collapsed &&
                                         <div className='close-btn' onClick={_.partial(this.updateDisk, volumeName, 0, true)}>&times;</div>
@@ -274,8 +285,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                 </div>
                             );
                         }, this)}
-                        <div className={'volume-group pull-left'} data-volume='unallocated' style={{width: volumesInfo.unallocated.width + '%'}}>
-                            <div className='text-center toggle' data-toggle='collapse' data-target={'#' + disk.get('name')}>
+                        <div className='volume-group pull-left' data-volume='unallocated' style={{width: volumesInfo.unallocated.width + '%'}}>
+                            <div className='text-center toggle' onClick={_.partial(this.toggleDisk, disk.get('name'))}>
                                 <div className='volume-group-name'>{i18n(ns + 'unallocated')}</div>
                                 <div className='volume-group-size'>{utils.showDiskSize(volumesInfo.unallocated.size, 2)}</div>
                             </div>

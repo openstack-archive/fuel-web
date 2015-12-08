@@ -13,4 +13,5 @@ Table of contents
    buildsystem
    ci/overview
    ci/third_party
+   infra/puppet_master_deployment
    packaging

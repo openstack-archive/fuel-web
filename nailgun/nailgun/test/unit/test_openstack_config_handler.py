@@ -34,7 +34,8 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.env.create_cluster(api=False)
 
         self.clusters = self.env.clusters
-        self.nodes = self.env.create_nodes(3)
+        self.nodes = self.env.create_nodes(
+            3, cluster_id=self.clusters[0].id, status='ready')
 
         self.configs = []
         self.create_openstack_config(
@@ -89,6 +90,22 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json_body['is_active'], False)
+
+    def test_openstack_config_upload_fail(self):
+        data = {
+            'cluster_id': self.clusters[1].id,
+            'node_id': self.nodes[1].id,
+            'configuration': {}
+        }
+        resp = self.app.post(
+            reverse('OpenstackConfigCollectionHandler'),
+            jsonutils.dumps(data),
+            headers=self.default_headers, expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json_body['message'],
+            "Node {0} is not assigned to cluster {1}".format(
+                self.nodes[1].id, self.clusters[1].id))
 
     def test_openstack_config_list(self):
         url = self._make_filter_url(cluster_id=self.clusters[0].id)

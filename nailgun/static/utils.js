@@ -54,6 +54,10 @@ define([
                 nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
             if (nodes.length == ids.length) return nodes;
         },
+        renderMultilineText: function(text) {
+            if (!text) return null;
+            return <div>{text.split('\n').map((str, index) => <p key={index}>{str}</p>)}</div>;
+        },
         linebreaks: function(text) {
             return text.replace(/\n/g, '<br/>');
         },

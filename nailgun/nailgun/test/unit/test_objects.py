@@ -393,18 +393,23 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(2, nodes_w_public_ip_count)
 
     def test_removing_from_cluster(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"role": "controller"}
             ]
         )
         node_db = self.env.nodes[0]
+        config = self.env.create_openstack_config(
+            cluster_id=cluster['id'], node_id=node_db.id, configuration={})
+
         node2_db = self.env.create_node()
         objects.Node.remove_from_cluster(node_db)
+        self.db().refresh(config)
         self.assertEqual(node_db.cluster_id, None)
         self.assertEqual(node_db.roles, [])
         self.assertEqual(node_db.pending_roles, [])
+        self.assertFalse(config.is_active)
 
         exclude_fields = [
             "group_id",
@@ -1353,6 +1358,20 @@ class TestClusterObject(BaseTestCase):
                 editable_attrs[u'common'][u'libvirt_type'][u'value'], u'kvm')
             self.assertTrue(
                 editable_attrs[u'additional_components'][u'sahara'][u'value'])
+
+    def test_cleanup_openstack_config(self):
+        cluster = self.env.create_cluster(
+            api=False, nodes=[self.env.nodes[0].id])
+
+        config = self.env.create_openstack_config(
+            cluster_id=cluster.id, node_id=self.env.nodes[0].id,
+            configuration={'key': 'value'})
+        self.assertTrue(config.is_active)
+
+        objects.Cluster.update(cluster, {'nodes': []})
+
+        self.db().refresh(config)
+        self.assertFalse(config.is_active)
 
 
 class TestClusterObjectVirtRoles(BaseTestCase):

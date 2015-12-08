@@ -859,6 +859,10 @@ class Node(NailgunObject):
         instance.kernel_params = None
         instance.primary_roles = []
         instance.hostname = cls.default_slave_name(instance)
+
+        from nailgun.objects import OpenstackConfig
+        OpenstackConfig.disable_by_nodes([instance])
+
         db().flush()
         db().refresh(instance)
 

@@ -58,11 +58,6 @@ class OpenstackConfigCollectionHandler(BaseHandler):
         :reutrn: New config object in JSON format.
         """
         data = self.checked_data()
-
-        self.get_object_or_404(objects.Cluster, data['cluster_id'])
-        if 'node_id' in data:
-            self.get_object_or_404(objects.Node, data['node_id'])
-
         obj = objects.OpenstackConfig.create(data)
         raise self.http(201, objects.OpenstackConfig.to_json(obj))
 

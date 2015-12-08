@@ -77,16 +77,21 @@ function($, _, React, i18n, utils) {
             return result;
         },
         onModeStateChange: function(name, state) {
-            var modes = _.deepClone(this.props.interface.get('offloading_modes') || []),
+            var modes = _.cloneDeep(this.props.interface.get('offloading_modes') || []),
                 mode = this.findMode(name, modes);
 
-            return (function() {
-                if (!_.isEmpty(mode)) {
+            return () => {
+                if (mode) {
                     this.setModeState(mode, state);
                     this.checkModes(null, modes);
-                    this.props.interface.set('offloading_modes', modes);
+                } else {
+                    // handle All Modes click
+                    _.each(modes, function(mode) {
+                        return this.setModeState(mode, state);
+                    }, this);
                 }
-            }).bind(this);
+                this.props.interface.set('offloading_modes', modes);
+            };
         },
         makeOffloadingModesExcerpt: function() {
             var states = {
@@ -94,27 +99,25 @@ function($, _, React, i18n, utils) {
                     false: i18n(ns + 'offloading_disabled'),
                     null: i18n(ns + 'offloading_default')
                 },
-                lastState = -1,
+                ifcModes = this.props.interface.get('offloading_modes');
+
+            if (_.uniq(_.pluck(ifcModes, 'state')).length == 1) {
+                return states[ifcModes[0].state];
+            }
+
+            var lastState,
                 added = 0,
-                modes = this.props.interface.get('offloading_modes'),
-                excerpt = modes.map(
-                    function(mode) {
-                        if (mode.state !== null && mode.state !== lastState) {
+                excerpt = ifcModes.map(
+                    (mode) => {
+                        if (!_.isNull(mode.state) && mode.state !== lastState) {
                             lastState = mode.state;
                             added++;
-                            return (added > 1 ? ', ' : '') +
-                                mode.name + ' ' + states[mode.state];
+                            return (added > 1 ? ', ' : '') + mode.name + ' ' + states[mode.state];
                         }
-                        return null;
-                    });
-            if (added) {
-                if (added < modes.length) {
-                    excerpt.push(', ...');
-                }
-                return excerpt;
-            } else {
-                return states.null;
-            }
+                    }
+                );
+            if (added < ifcModes.length) excerpt.push(', ...');
+            return excerpt;
         },
         renderChildModes: function(modes, level) {
             return modes.map((function(mode) {
@@ -146,7 +149,16 @@ function($, _, React, i18n, utils) {
             }).bind(this));
         },
         render: function() {
-            var modes = this.props.interface.get('offloading_modes') || [];
+            var modes = [],
+                ifcModes = this.props.interface.get('offloading_modes');
+            if (ifcModes) {
+                modes.push({
+                    name: i18n(ns + 'all_modes'),
+                    state: _.uniq(_.pluck(ifcModes, 'state')).length == 1 ? ifcModes[0].state : undefined,
+                    sub: ifcModes
+                });
+            }
+
             return (
                 <div className='offloading-modes'>
                     <div>

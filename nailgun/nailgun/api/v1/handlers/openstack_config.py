@@ -59,9 +59,14 @@ class OpenstackConfigCollectionHandler(BaseHandler):
         """
         data = self.checked_data()
 
-        self.get_object_or_404(objects.Cluster, data['cluster_id'])
+        cluster_id = data['cluster_id']
+        self.get_object_or_404(objects.Cluster, cluster_id)
         if 'node_id' in data:
-            self.get_object_or_404(objects.Node, data['node_id'])
+            node = self.get_object_or_404(objects.Node, data['node_id'])
+            if node.cluster_id != cluster_id:
+                raise self.http(
+                    400, "Node {0} is not assigned to cluster {1}".format(
+                        node.id, cluster_id))
 
         obj = objects.OpenstackConfig.create(data)
         raise self.http(201, objects.OpenstackConfig.to_json(obj))

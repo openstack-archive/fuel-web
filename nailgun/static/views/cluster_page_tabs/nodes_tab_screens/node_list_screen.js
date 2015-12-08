@@ -901,8 +901,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var ns = 'cluster_page.nodes_tab.node_management_panel.';
 
-            var configurationAvailable = _.all(this.props.nodes.invoke('isConfigurable')),
-                disksConflict, interfaceConflict;
+            var disksConflict, interfaceConflict;
             if (this.props.mode == 'list' && this.props.nodes.length) {
                 disksConflict = !this.props.nodes.areDisksConfigurable();
                 interfaceConflict = !this.props.nodes.areInterfacesConfigurable();
@@ -1060,7 +1059,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                                         >
                                             {disksConflict && <i className='glyphicon glyphicon-danger-sign' />}
-                                            {i18n('dialog.show_node.disk_configuration' + (configurationAvailable ? '_action' : ''))}
+                                            {i18n('dialog.show_node.disk_configuration' + (_.all(this.props.nodes.invoke('areDisksConfigurable')) ? '_action' : ''))}
                                         </button>
                                         <button
                                             className='btn btn-default btn-configure-interfaces'
@@ -1068,7 +1067,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                         >
                                             {interfaceConflict && <i className='glyphicon glyphicon-danger-sign' />}
-                                            {i18n('dialog.show_node.network_configuration' + (configurationAvailable ? '_action' : ''))}
+                                            {i18n('dialog.show_node.network_configuration' + (_.all(this.props.nodes.invoke('areInterfacesConfigurable')) ? '_action' : ''))}
                                         </button>
                                     </div>,
                                     <div className='btn-group' role='group' key='role-management-buttons'>

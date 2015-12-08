@@ -428,8 +428,13 @@ define([
                 this.get('pending_deletion') ||
                 this.get('cluster') && !!this.get('pending_roles').length;
         },
-        isConfigurable: function() {
-            return this.get('pending_addition') || this.get('status') == 'error';
+        areDisksConfigurable: function() {
+            var status = this.get('status');
+            return status == 'discover' || status == 'error';
+        },
+        areInterfacesConfigurable: function() {
+            var status = this.get('status');
+            return status == 'discover' || status == 'error' || status == 'provisioned';
         },
         getRolesSummary: function(releaseRoles) {
             return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {

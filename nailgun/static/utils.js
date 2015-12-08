@@ -47,6 +47,13 @@ define([
                 return option.split(':');
             }));
         },
+        getNodeListFromTabOptions: function(options) {
+            var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
+                ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
+                models = require('models'),
+                nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
+            if (nodes.length == ids.length) return nodes;
+        },
         linebreaks: function(text) {
             return text.replace(/\n/g, '<br/>');
         },

@@ -547,8 +547,8 @@
                         "openstack_services": "OpenStack Services",
                         "other": "Other"
                     },
-                    "dependent_role_warning": "The environment contains__roles__ node.",
-                    "dependent_role_warning_plural": "The environment contains__roles__ nodes.",
+                    "dependent_role_warning": "The environment contains __roles__ node.",
+                    "dependent_role_warning_plural": "The environment contains __roles__ nodes.",
                     "dependent_settings_warning": "__settings__ is active",
                     "dependent_settings_warning_plural": "__settings__ are active",
                     "images_ceph_warning": "The environment contains controllers.",

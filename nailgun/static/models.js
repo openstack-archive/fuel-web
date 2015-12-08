@@ -115,10 +115,11 @@ define([
             this.expandedLimits = this.expandedLimits || {};
             this.expandedLimits[this.get('name')] = limits;
         },
-        checkLimits: function(models, checkLimitIsReached, limitTypes, nodes) {
+        checkLimits: function(models, nodes, checkLimitIsReached = true, limitTypes = ['min', 'max']) {
             /*
              *  Check the 'limits' section of configuration.
-             *  models -- current model to check the limits
+             *  models -- current models to check the limits
+             *  nodes -- node collection to check the limits
              *  checkLimitIsReached -- boolean (default: true), if true then for min = 1, 1 node is allowed
              *      if false, then for min = 1, 1 node is not allowed anymore
              *      This is because validation runs in 2 modes: validate current model as is
@@ -127,12 +128,7 @@ define([
              *        - the model is valid as is (return true) -- case for checkLimitIsReached = true
              *        - there can be no more nodes added (return false) -- case for checkLimitIsReached = false
              *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
-             *  nodes -- node collection to check the limits, cluster nodes collection by default
             **/
-
-            // Default values
-            if (_.isUndefined(checkLimitIsReached)) checkLimitIsReached = true;
-            if (_.isUndefined(limitTypes)) limitTypes = ['min', 'max'];
 
             var evaluateExpressionHelper = function(expression, models, options) {
                 var ret;
@@ -161,9 +157,10 @@ define([
                     min: evaluateExpressionHelper(limits.min, models).value,
                     recommended: evaluateExpressionHelper(limits.recommended, models).value
                 },
-                count = nodes ? nodes.length : models.cluster.get('nodes').nodesAfterDeploymentWithRole(name).length,
+                count = nodes.nodesAfterDeploymentWithRole(name).length,
                 messages,
                 label = this.get('label');
+
             var checkOneLimit = function(obj, limitType) {
                 var limitValue,
                     comparator;
@@ -173,13 +170,13 @@ define([
                 }
                 switch (limitType) {
                     case 'min':
-                        comparator = checkLimitIsReached ? function(a, b) {return a < b;} : function(a, b) {return a <= b;};
+                        comparator = checkLimitIsReached ? (a, b) => a < b : (a, b) => a <= b;
                         break;
                     case 'max':
-                        comparator = checkLimitIsReached ? function(a, b) {return a > b;} : function(a, b) {return a >= b;};
+                        comparator = checkLimitIsReached ? (a, b) => a > b : (a, b) => a >= b;
                         break;
                     default:
-                        comparator = function(a, b) {return a < b;};
+                        comparator = (a, b) => a < b;
                 }
                 limitValue = parseInt(evaluateExpressionHelper(obj[limitType], models).value);
                 // Update limitValue with overrides, this way at the end we have a flattened limitValues with overrides having priority
@@ -212,7 +209,6 @@ define([
                     if (checkedLimitTypes[limitType]) {
                         return;
                     }
-
                     return checkOneLimit(limitValues, limitType);
                 })
                 .flatten()

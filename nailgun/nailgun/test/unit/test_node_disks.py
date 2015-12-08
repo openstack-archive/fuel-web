@@ -586,6 +586,13 @@ class TestVolumeManagerDisks(BaseTestCase):
         self.check_expected_volume_found_for_disk(disk_info, fake_volumes,
                                                   fake_volumes[1])
 
+    def test_find_existing_disk_empty_volumes(self):
+        disk_info = {'disk': 'disk_id', 'extra': []}
+        with patch.object(VolumeManager, '_build_disk_id_by_keys') \
+                as id_builder:
+            self.assertIsNone(VolumeManager.find_existing_disk(disk_info, []))
+            self.assertEqual(0, id_builder.call_count)
+
 
 class TestVolumeManager(BaseIntegrationTest):
 

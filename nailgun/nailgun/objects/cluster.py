@@ -592,6 +592,9 @@ class Cluster(NailgunObject):
         from nailgun.objects import NodeCollection
         NodeCollection.reset_network_template(nodes_to_remove)
 
+        from nailgun.objects import OpenstackConfig
+        OpenstackConfig.disable_by_nodes(nodes_to_remove)
+
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add

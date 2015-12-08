@@ -354,7 +354,6 @@ function run_extensions_tests {
 function run_flake8 {
   local result=0
   run_flake8_subproject nailgun && \
-  run_flake8_subproject fuel_upgrade_system/fuel_package_updates && \
   return $result
 }
 

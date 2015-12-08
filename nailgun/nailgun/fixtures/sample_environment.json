@@ -495,6 +495,12 @@
                         "name": "sda",
                         "disk": "sda",
                         "size": 320072933376
+                    },
+                    {
+                        "model": "Yet Another Disk",
+                        "name": "cciss/c0d1",
+                        "disk": "cciss/c0d1",
+                        "size": 320072933376
                     }
                 ],
                 "system": {

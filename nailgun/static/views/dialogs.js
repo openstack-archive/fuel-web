@@ -1397,6 +1397,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div>
                     <div className='text-danger'>
                         {this.renderImportantLabel()}
+                        {this.props.showUnsavedChangesWarning && (i18n('dialog.remove_node_network_group.unsaved_changes_alert') + ' ')}
                         {i18n('dialog.remove_node_network_group.confirmation')}
                     </div>
                 </div>

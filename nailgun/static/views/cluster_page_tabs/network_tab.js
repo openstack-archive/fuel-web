@@ -793,7 +793,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return fieldsWithVerificationErrors;
         },
         removeNodeNetworkGroup: function() {
-            dialogs.RemoveNodeNetworkGroupDialog.show()
+            dialogs.RemoveNodeNetworkGroupDialog
+                .show({
+                    areNetworksChanged: this.hasChanges()
+                })
                 .then(() => {
                     var currentNodeNetworkGroup = this.nodeNetworkGroups.findWhere({name: this.props.activeNetworkSectionName});
                     this.props.nodeNetworkGroups.remove(currentNodeNetworkGroup);

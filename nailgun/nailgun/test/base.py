@@ -211,6 +211,7 @@ class EnvironmentManager(object):
             config = OpenstackConfig.create(kwargs)
             db().flush()
             self.openstack_configs.append(config)
+        return config
 
     def update_role(self, release_id, role_name, data, expect_errors=False):
         return self.app.put(

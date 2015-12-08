@@ -787,6 +787,39 @@ DUMP:
         command: rpm -qa
         to_file: centos_installed_rpms.txt
       - type: command
+        command: dockerctl shell nginx rpm -qa
+        to_file: centos_nginx_installed_rpms.txt
+      - type: command
+        command: dockerctl shell rabbitmq rpm -qa
+        to_file: centos_rabbitmq_installed_rpms.txt
+      - type: command
+        command: dockerctl shell astute rpm -qa
+        to_file: centos_astute_installed_rpms.txt
+      - type: command
+        command: dockerctl shell rsync rpm -qa
+        to_file: centos_rsync_installed_rpms.txt
+      - type: command
+        command: dockerctl shell keystone rpm -qa
+        to_file: centos_keystone_installed_rpms.txt
+      - type: command
+        command: dockerctl shell postgres rpm -qa
+        to_file: centos_postgres_installed_rpms.txt
+      - type: command
+        command: dockerctl shell rsyslog rpm -qa
+        to_file: centos_rsyslog_installed_rpms.txt
+      - type: command
+        command: dockerctl shell nailgun rpm -qa
+        to_file: centos_nailgun_installed_rpms.txt
+      - type: command
+        command: dockerctl shell cobbler rpm -qa
+        to_file: centos_cobbler_installed_rpms.txt
+      - type: command
+        command: dockerctl shell ostf rpm -qa
+        to_file: centos_ostf_installed_rpms.txt
+      - type: command
+        command: dockerctl shell mcollective rpm -qa
+        to_file: centos_mcollective_installed_rpms.txt
+      - type: command
         command: yum repolist
         to_file: centos_repo_list.txt
       - type: dir

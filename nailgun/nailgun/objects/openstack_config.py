@@ -89,8 +89,7 @@ class OpenstackConfig(NailgunObject):
         Example:
             OpenstackConfig.find_configs(cluster_id=10, node_id=12)
         """
-        query = cls._find_configs_query(filters)
-        return query.all()
+        return cls._find_configs_query(filters)
 
     @classmethod
     def find_configs_for_nodes(cls, cluster, nodes):

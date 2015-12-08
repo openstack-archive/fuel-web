@@ -1470,6 +1470,16 @@ class DumpTask(object):
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }]
 
+        containers = [
+            'nginx', 'rabbitmq', 'astute', 'rsync', 'keystone', 'postgres',
+            'rsyslog', 'nailgun', 'cobbler', 'ostf', 'mcollective']
+        for c in containers:
+            dump_conf['dump']['master']['objects'].append({
+                'type': 'command',
+                'command': 'dockerctl shell {0} rpm -qa'.format(c),
+                'to_file': 'centos_{0}_installed_rpms.txt'.format(c),
+            })
+
         logger.debug("Dump conf: %s", str(dump_conf))
         return dump_conf
 

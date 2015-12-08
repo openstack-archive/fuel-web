@@ -630,6 +630,9 @@ input[type=range] {
   background-color: transparent;
   border-color: transparent;
   @navbar-height: 34px;
+  > .row {
+    margin-right: 0; // Do not break the flow for block elements, following the only navbar row
+  }
   .navbar-nav {
     margin: 0;
     margin-top: 18px;

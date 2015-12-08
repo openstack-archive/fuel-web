@@ -202,18 +202,24 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         processRoleLimits: function() {
             var cluster = this.props.cluster,
-                nodesForLimitCheck = this.getNodesForLimitsCheck(),
                 maxNumberOfNodes = [],
                 processedRoleLimits = {};
 
-            cluster.get('roles').map(function(role) {
+            var selectedNodes = undefined.props.nodes.filter(function (node) {
+                    return undefined.props.selectedNodeIds[node.id];
+                }, this),
+                clusterNodes = undefined.props.cluster.get('nodes').filter(function (node) {
+                    return !_.contains(undefined.props.selectedNodeIds, node.id);
+                }, this),
+                nodesForLimitCheck = new models.Nodes(_.union(selectedNodes, clusterNodes));
+
+            cluster.get('roles').each(function(role) {
                 if ((role.get('limits') || {}).max) {
                     var roleName = role.get('name'),
                         isRoleAlreadyAssigned = nodesForLimitCheck.any(function(node) {
                             return node.hasRole(roleName);
                         }, this);
-                    processedRoleLimits[roleName] = role.checkLimits(this.state.configModels,
-                        !isRoleAlreadyAssigned, ['max'], nodesForLimitCheck);
+                    processedRoleLimits[roleName] = role.checkLimits(this.state.configModels, nodesForLimitCheck, !isRoleAlreadyAssigned, ['max']);
                 }
             }, this);
 
@@ -360,15 +366,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.props.nodes.each(function(node) {
                 node.set({pending_roles: this.initialRoles[node.id]}, {silent: true});
             }, this);
-        },
-        getNodesForLimitsCheck: function() {
-            var selectedNodes = this.props.nodes.filter(function(node) {
-                    return this.props.selectedNodeIds[node.id];
-                }, this),
-                clusterNodes = this.props.cluster.get('nodes').filter(function(node) {
-                    return !_.contains(this.props.selectedNodeIds, node.id);
-                }, this);
-            return new models.Nodes(_.union(selectedNodes, clusterNodes));
         },
         toggleLabelsPanel: function(value) {
             this.setState({

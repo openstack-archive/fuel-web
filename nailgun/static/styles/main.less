@@ -889,10 +889,16 @@ input[type=range] {
     }
   }
 
+  .setWidth(width) when not (@width = 0) {
+    width: @width;
+  }
+  .setWidth(width) when (@width = 0) {
+    width: inherit;
+  }
   @default-popover-width: 260px;
   @default-arrow-offset: 10px;
   .popover-layout(@index, @width: @default-popover-width) {
-    width: @width;
+    .setWidth(width);
     @navbar-icon-width: @navbar-icon-size + @navbar-icon-spacing;
     @popover-right-align-offset: @navbar-icon-width * @navbar-icon-count - @width;
     @popover-center-align-offset: @popover-right-align-offset - @navbar-icon-width * @index  + @width / 2 - @navbar-icon-size / 2;
@@ -908,7 +914,14 @@ input[type=range] {
     .notifications-popover {.popover-layout(@index: 0)}
     .user-popover {.popover-layout(@index: 1)}
     .statistics-popover {.popover-layout(@index: 2, @width: 230px)}
-    .language-popover {.popover-layout(@index: 3, @width: 110px)}
+    .language-popover {
+      .popover-layout(@index: 3, @width: 0);
+      transform: translate(-50%, 0);
+      > .arrow {
+        left: 50%;
+        margin-left: -(@default-arrow-offset+1);
+      }
+    }
   }
 
   &.without-auth {
@@ -1048,7 +1061,7 @@ input[type=range] {
     }
   }
   & > a {
-    padding-left: 25px;
+    padding-left: 15px;
     line-height: 1.2;
     color: @navbar-color-active;
     font-weight: 600;

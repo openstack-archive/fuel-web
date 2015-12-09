@@ -2,7 +2,7 @@
 Name=oswl image collector daemon
 
 [Service]
-ExecStart=/usr/bin/oswl_collectord image
+ExecStart=/bin/bash -c "/usr/bin/oswl_collectord image 2>&1 >> /var/log/nailgun/oswl_image_collectord.log"
 
 [Install]
 WantedBy=multi-user.target

@@ -117,6 +117,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644, root, root) /%{_unitdir}/*
 %endif
 
+%dir(755,-,-) %{_var}/log/nailgun
 
 %package -n fuel-openstack-metadata
 

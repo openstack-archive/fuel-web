@@ -16,15 +16,17 @@
 
 
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.network.proxy import BondProxy
+from nailgun.objects import ProxiedNailgunCollection
+from nailgun.objects import ProxiedNailgunObject
 from nailgun.objects.serializers.base import BasicSerializer
 
 
-class Bond(NailgunObject):
+class Bond(ProxiedNailgunObject):
 
     model = models.NodeBondInterface
     serializer = BasicSerializer
+    proxy = BondProxy()
 
     @classmethod
     def assign_networks(cls, instance, networks):
@@ -36,7 +38,8 @@ class Bond(NailgunObject):
         :type networks: list
         :returns: None
         """
-        instance.assigned_networks_list = networks
+        data = {'assigned_networks': networks}
+        cls.proxy.update(instance, data)
 
     @classmethod
     def update(cls, instance, data):
@@ -51,6 +54,6 @@ class Bond(NailgunObject):
         return instance
 
 
-class BondCollection(NailgunCollection):
+class BondCollection(ProxiedNailgunCollection):
 
     single = Bond

@@ -260,6 +260,36 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertItemsEqual([self.nodes[2].uid], role_uids)
         self.assertItemsEqual([self.nodes[0].uid], node_uids)
 
+    def test_upload_configuration_merge_roles(self):
+        task_config = {
+            'id': 'upload_configuration',
+            'type': 'upload_file',
+            'role': '*',
+        }
+
+        self.env.create_openstack_config(
+            cluster_id=self.cluster.id,
+            config_type=consts.OPENSTACK_CONFIG_TYPES.role,
+            node_role='compute',
+            configuration={'value_a': 'compute', 'value_b': 'compute'}),
+        self.env.create_openstack_config(
+            cluster_id=self.cluster.id,
+            config_type=consts.OPENSTACK_CONFIG_TYPES.role,
+            node_role='cinder',
+            configuration={'value_a': 'cinder', 'value_c': 'cinder'})
+
+        task = tasks_serializer.UploadConfiguration(
+            task_config, self.cluster, self.nodes)
+        serialized_task = next(task.serialize())
+        config = yaml.safe_load(
+            serialized_task['parameters']['data'])
+        self.assertEqual(config, {
+            'configuration': {
+                'value_a': 'compute',
+                'value_b': 'compute',
+                'value_c': 'cinder'
+            }})
+
     def test_update_hosts(self):
         # mark one node as ready so we can test for duplicates
         self.env.nodes[0].status = consts.NODE_STATUSES.ready

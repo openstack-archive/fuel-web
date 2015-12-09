@@ -722,10 +722,7 @@ DUMP:
 
   dump:
     local:
-      hosts:
-      - address: localhost
-        ssh-key: /root/.ssh/id_rsa
-
+      hosts: []
       objects: []
 
     master:

@@ -426,3 +426,60 @@ class NailgunCollection(object):
         :returns: instance of an object (model)
         """
         return cls.single.create(data)
+
+
+class ProxiedNailgunObject(NailgunObject):
+    """Base class for objects"""
+
+    #: Serializer class for object
+    serializer = BasicSerializer
+
+    #: SQLAlchemy model for object
+    model = None
+
+    @classmethod
+    def get_by_uid(cls, uid, fail_if_not_found=False, lock_for_update=False):
+        """Get instance by it's uid (PK in case of SQLAlchemy)
+
+        :param uid: uid of object
+        :param fail_if_not_found: raise an exception if object is not found
+        :param lock_for_update: lock returned object for update (DB mutex)
+        :returns: instance of an object (model)
+        """
+        res = cls.proxy.get(uid, lock_for_update=lock_for_update)
+        if not res and fail_if_not_found:
+            raise errors.ObjectNotFound(
+                "Object '{0}' with UID={1} is not found in DB".format(
+                    cls.__name__,
+                    uid
+                )
+            )
+        return res
+
+    @classmethod
+    def create(cls, data):
+        """Create object instance with specified parameters in DB
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: instance of an object (model)
+        """
+        return cls.proxy.create(data)
+
+    @classmethod
+    def update(cls, instance, data):
+        """Update existing instance with specified parameters
+
+        :param instance: object (model) instance
+        :param data: dictionary of key-value pairs as object fields
+        :returns: instance of an object (model)
+        """
+        return cls.proxy.update(instance, data)
+
+    @classmethod
+    def delete(cls, instance):
+        """Delete object (model) instance
+
+        :param instance: object (model) instance
+        :returns: None
+        """
+        cls.proxy.delete(instance)

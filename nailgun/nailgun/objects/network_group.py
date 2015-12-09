@@ -21,18 +21,20 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.network.proxy import IPAddrProxy
+from nailgun.network.proxy import IPAddrRangeProxy
+from nailgun.network.proxy import NetworkGroupProxy
 from nailgun.objects import Cluster
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.objects import ProxiedNailgunCollection
+from nailgun.objects import ProxiedNailgunObject
 from nailgun.objects.serializers.network_group import NetworkGroupSerializer
 
-from sqlalchemy.sql import or_
 
-
-class NetworkGroup(NailgunObject):
+class NetworkGroup(ProxiedNailgunObject):
 
     model = models.NetworkGroup
     serializer = NetworkGroupSerializer
+    proxy = NetworkGroupProxy()
 
     @classmethod
     def fields(cls):
@@ -40,16 +42,31 @@ class NetworkGroup(NailgunObject):
 
     @classmethod
     def get_from_node_group_by_name(cls, node_group_id, network_name):
-        ng = db().query(models.NetworkGroup).filter_by(group_id=node_group_id,
-                                                       name=network_name)
-        return ng.first() if ng else None
+        params = {
+            'options': {
+                'single': True
+            },
+            'filters': [
+                {'name': 'group_id', 'op': 'eq', 'val': node_group_id},
+                {'name': 'name', 'op': 'eq', 'val': network_name}
+            ]
+        }
+
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_default_admin_network(cls):
-        return db().query(models.NetworkGroup)\
-            .filter_by(name=consts.NETWORKS.fuelweb_admin)\
-            .filter_by(group_id=None)\
-            .first()
+        params = {
+            'options': {
+                'single': True
+            },
+            'filters': [
+                {'name': 'name', 'op': 'eq', 'val':
+                    consts.NETWORKS.fuelweb_admin},
+                {'name': 'group_id', 'op': 'eq', 'val': None}
+            ]
+        }
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_by_node_group(cls, node_group_id):
@@ -59,11 +76,17 @@ class NetworkGroup(NailgunObject):
         :type node_group_id: int
         :returns: list of NetworkGroup instances
         """
-        return db().query(models.NetworkGroup).filter_by(
-            group_id=node_group_id,
-        ).filter(
-            models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin
-        ).order_by(models.NetworkGroup.id).all()
+        params = {
+            'options': {
+                'order_by': ['id']
+            },
+            'filters': [
+                {'name': 'group_id', 'op': 'eq', 'val': node_group_id},
+                {'name': 'name', 'op': 'ne', 'val':
+                    consts.NETWORKS.fuelweb_admin}
+            ]
+        }
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_admin_network_group(cls, node_id=None):
@@ -72,15 +95,35 @@ class NetworkGroup(NailgunObject):
         :returns: Admin NetworkGroup.
         :raises: errors.AdminNetworkNotFound
         """
+        from nailgun.objects import Node
         admin_ng = None
-        admin_ngs = db().query(models.NetworkGroup).filter_by(
-            name=consts.NETWORKS.fuelweb_admin,
-        )
+        params = {
+            'options': {
+                'single': True,
+                'order_by': ['group_id']
+            },
+            'filters': [
+                {
+                    'name': 'name',
+                    'op': 'eq',
+                    'val': consts.NETWORKS.fuelweb_admin
+                }
+            ]
+        }
         if node_id:
-            node_db = db().query(models.Node).get(node_id)
-            admin_ng = admin_ngs.filter_by(group_id=node_db.group_id).first()
+            node_db = Node.get_by_uid(node_id)
+            params['filters'].append(
+                {'or': [
+                    {'name': 'group_id', 'op': 'eq', 'val': node_db.group_id},
+                    {'name': 'group_id', 'op': 'eq', 'val': None}
+                ]}
+            )
+        else:
+            params['filters'].append(
+                {'name': 'group_id', 'op': 'eq', 'val': None}
+            )
 
-        admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
+        admin_ng = cls.proxy.filter(params)
 
         if not admin_ng:
             raise errors.AdminNetworkNotFound()
@@ -94,18 +137,25 @@ class NetworkGroup(NailgunObject):
         :type network_id: int
         :returns: list of IPAddr instances
         """
-        ips = [
-            x[0] for x in db().query(
-                models.IPAddr.ip_addr
-            ).filter(
-                models.IPAddr.network == network_id,
-                or_(
-                    models.IPAddr.node.isnot(None),
-                    models.IPAddr.vip_name.isnot(None)
-                )
-            )]
+        ip_proxy = IPAddrProxy()
+        params = {
+            'options': {
+                'fields': [
+                    'ip_addr',
+                    'network'
+                ]
+            },
+            'filters': [
+                {'name': 'network', 'op': 'eq', 'val': network_id},
+                {'or': [
+                    {'name': 'node', 'op': 'isnot', 'val': None},
+                    {'name': 'vip_name', 'op': 'isnot', 'val': None}
+                ]}
+            ]
+        }
+        ips = ip_proxy.filter(params)
 
-        return ips
+        return [ip[0] for ip in ips]
 
     @classmethod
     def create(cls, data):
@@ -120,7 +170,7 @@ class NetworkGroup(NailgunObject):
         instance = super(NetworkGroup, cls).create(data)
         cls._create_ip_ranges_on_notation(instance)
         cls._reassign_template_networks(instance)
-        db().refresh(instance)
+        instance = cls.proxy.get(instance.id)
         return instance
 
     @classmethod
@@ -131,12 +181,12 @@ class NetworkGroup(NailgunObject):
         # as ip ranges were regenerated we must update instance object
         # in order to prevent possible SQAlchemy errors with operating
         # on stale data
-        db().refresh(instance)
+        instance = cls.proxy.refresh(instance)
 
         # remove 'ip_ranges' (if) any from data as this is relation
         # attribute for the orm model object
         data.pop('ip_ranges', None)
-        return super(NetworkGroup, cls).update(instance, data)
+        return cls.proxy.update(instance, data)
 
     @classmethod
     def delete(cls, instance):
@@ -145,6 +195,7 @@ class NetworkGroup(NailgunObject):
             cls._delete_ips(instance)
         instance.nodegroup.networks.remove(instance)
         db().flush()
+        cls.proxy.delete(instance)
 
     @classmethod
     def is_untagged(cls, instance):
@@ -161,16 +212,25 @@ class NetworkGroup(NailgunObject):
         :type cluster_id: int
         :return: Network groups for all node groups in cluster
         """
-        return db().query(
-            models.NetworkGroup.id,
-            models.NetworkGroup.name,
-            models.NetworkGroup.meta,
-        ).join(
-            models.NetworkGroup.nodegroup
-        ).filter(
-            models.NodeGroup.cluster_id == cluster_id,
-            models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin
-        )
+        params = {
+            'options': {
+                'fields': ['id', 'name', 'meta']
+            },
+            'filters': [
+                {
+                    'name': 'name',
+                    'op': 'ne',
+                    'val': consts.NETWORKS.fuelweb_admin
+                },
+                {
+                    'name': 'nodegroup__cluster_id',
+                    'op': 'eq',
+                    'val': cluster_id
+                },
+            ]
+        }
+
+        return cls.proxy.filter(params)
 
     @classmethod
     def _create_ip_ranges_on_notation(cls, instance):
@@ -244,17 +304,23 @@ class NetworkGroup(NailgunObject):
         :return: None
         """
         # deleting old ip ranges
-        db().query(models.IPAddrRange).filter_by(
-            network_group_id=instance.id).delete()
+        ip_proxy = IPAddrRangeProxy()
+        params = {
+            'filters': [
+                {'name': 'network_group_id', 'op': 'eq', 'val': instance.id}
+            ]
+        }
+        ip_proxy.filter_delete(params)
 
+        ranges = []
         for r in ip_ranges:
-            new_ip_range = models.IPAddrRange(
-                first=r[0],
-                last=r[1],
-                network_group_id=instance.id)
-            db().add(new_ip_range)
-        db().refresh(instance)
-        db().flush()
+            new_ip_range = {
+                'first': r[0],
+                'last': r[1],
+                'network_group_id': instance.id
+            }
+            ranges.append(new_ip_range)
+        ip_proxy.bulk_create(ranges)
 
     @classmethod
     def _update_range_from_cidr(
@@ -286,10 +352,13 @@ class NetworkGroup(NailgunObject):
         """
         logger.debug("Deleting old IPs for network with id=%s, cidr=%s",
                      instance.id, instance.cidr)
-        db().query(models.IPAddr).filter(
-            models.IPAddr.network == instance.id
-        ).delete()
-        db().flush()
+        ip_proxy = IPAddrProxy()
+        params = {
+            'filters': [
+                {'name': 'network', 'op': 'eq', 'val': instance.id}
+            ]
+        }
+        ip_proxy.filter_delete(params)
 
     @classmethod
     def _reassign_template_networks(cls, instance):
@@ -302,6 +371,6 @@ class NetworkGroup(NailgunObject):
             nm.assign_networks_by_template(node)
 
 
-class NetworkGroupCollection(NailgunCollection):
+class NetworkGroupCollection(ProxiedNailgunCollection):
 
     single = NetworkGroup

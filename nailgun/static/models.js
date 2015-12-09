@@ -815,7 +815,7 @@ define([
             var untaggedNetworks = networks.filter(function(network) { return _.isNull(network.getVlanRange(attrs.networkingParameters)); });
             var ns = 'cluster_page.nodes_tab.configure_interfaces.validation.';
             // public and floating networks are allowed to be assigned to the same interface
-            var maxUntaggedNetworksCount = networks.where({name: 'public'}).length && networks.where({name: 'floating'}).length ? 2 : 1;
+            var maxUntaggedNetworksCount = networks.any({name: 'public'}) && networks.any({name: 'floating'}) ? 2 : 1;
             if (untaggedNetworks.length > maxUntaggedNetworksCount) {
                 errors.push(i18n(ns + 'too_many_untagged_networks'));
             }
@@ -1039,16 +1039,37 @@ define([
                 var networkNamesRegExp = /^[a-z][\w\-]*$/i;
                 _.each(['internal_name', 'floating_name'], (paramName) => {
                     if (!networkParameters.get(paramName).match(networkNamesRegExp)) {
-                        networkingParametersErrors[paramName] = i18n('cluster_page.network_tab.validation.invalid_name');
+                        networkingParametersErrors[paramName] = i18n(ns + 'invalid_name');
                     }
                 });
-                var networkWithFloatingRange = networks.filter(function(network) {
-                    return network.get('meta').floating_range_var;
-                })[0];
-                if (networkWithFloatingRange && !_.has(((errors.networks ||
-                    {})[networkWithFloatingRange.get('group_id')] ||
-                    {})[networkWithFloatingRange.id], 'cidr')) {
-                    floatingRangesErrors = utils.validateIpRanges(networkParameters.get('floating_ranges'), networkWithFloatingRange.get('cidr'), true);
+
+                var defaultNodeNetworkGroupId = _.min(_.compact(networks.pluck('group_id'))),
+                    networkWithFloatingRange = networks.find(
+                        (network) => network.get('group_id') == defaultNodeNetworkGroupId && network.get('meta').floating_range_var
+                    ),
+                    networkWithFloatingRangeName = _.capitalize(networkWithFloatingRange.get('name'));
+                var networkWithFloatingRangeCidrError = false;
+                try {
+                    networkWithFloatingRangeCidrError = errors.networks[defaultNodeNetworkGroupId][networkWithFloatingRange.id].cidr;
+                } catch (error) {}
+
+                if (networkWithFloatingRange && !networkWithFloatingRangeCidrError) {
+                    floatingRangesErrors = utils.validateIpRanges(
+                        networkParameters.get('floating_ranges'),
+                        networkWithFloatingRange.get('cidr'),
+                        true,
+                        networkWithFloatingRange.get('meta').notation == 'ip_ranges' && networkWithFloatingRange.get('ip_ranges'),
+                        {
+                            'does-not-match-cidr': i18n(ns + 'floating_ip_does_not_match_cidr', {
+                                cidr: networkWithFloatingRange.get('cidr'),
+                                network: networkWithFloatingRangeName
+                            }),
+                            'ip-ranges-intersection': i18n(ns + 'floating_and_public_ip_ranges_intersection', {
+                                network: networkWithFloatingRangeName
+                            })
+                        }
+                    );
+
                     if (floatingRangesErrors.length) {
                         networkingParametersErrors.floating_ranges = floatingRangesErrors;
                     }

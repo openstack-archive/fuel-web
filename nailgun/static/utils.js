@@ -225,33 +225,55 @@ define([
         validateIP: function(ip) {
             return _.isString(ip) && !!ip.match(utils.regexes.ip);
         },
-        validateIPrange: function(startIP, endIP) {
-            return IP.toLong(startIP) - IP.toLong(endIP) <= 0;
-        },
-        validateIpRanges: function(ranges, cidr, disallowSingleAddress) {
-            var ipRangesErrors = [];
-            if (_.filter(ranges, function(range) {return _.compact(range).length;}).length) {
-                _.each(ranges, function(range, i) {
-                    if (range[0] || range[1]) {
-                        var error = {index: i};
-                        if (!utils.validateIP(range[0]) || !utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
-                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_start');
-                        } else if (!utils.validateIP(range[1]) || !utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
-                            error.end = i18n('cluster_page.network_tab.validation.invalid_ip_end');
-                        } else if (!utils.validateIPrange(range[0], range[1])) {
-                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_range');
+        validateIpRanges: function(ranges, cidr, disallowSingleAddress = false, conflictingRanges = [], warnings = {}) {
+            var ipRangesErrors = [],
+                ns = 'cluster_page.network_tab.validation.';
+            _.defaults(warnings, {
+                'invalid-ip': i18n(ns + 'invalid_ip'),
+                'does-not-match-cidr': i18n(ns + 'ip_does_not_match_cidr'),
+                'invalid-ip-range': i18n(ns + 'invalid_ip_range'),
+                'not-enough-addresses': i18n(ns + 'not_enough_addresses'),
+                'empty-ip-range': i18n(ns + 'empty_ip_range'),
+                'ip-ranges-intersection': i18n(ns + 'ip_ranges_intersection')
+            });
+
+            if (_.any(ranges, (range) => _.compact(range).length)) {
+                _.each(ranges, (range, i) => {
+                    if (_.any(range)) {
+                        var error = {};
+                        if (!utils.validateIP(range[0])) {
+                            error.start = warnings['invalid-ip'];
+                        } else if (!utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
+                            error.start = warnings['does-not-match-cidr'];
+                        } else if (!utils.validateIP(range[1])) {
+                            error.end = warnings['invalid-ip'];
+                        } else if (!utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
+                            error.end = warnings['does-not-match-cidr'];
+                        } else if (IP.toLong(range[0]) > IP.toLong(range[1])) {
+                            error.start = warnings['invalid-ip-range'];
                         } else if (disallowSingleAddress && range[0] == range[1]) {
-                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_range_equal');
+                            error.start = warnings['not-enough-addresses'];
+                        } else {
+                            var intersection = utils.checkIPRangesIntersection(range, conflictingRanges);
+                            if (intersection) {
+                                error.start = warnings['ip-ranges-intersection'] + intersection.join(' - ');
+                            }
                         }
-                        if (error.start || error.end) {
-                            ipRangesErrors.push(error);
+                        if (!_.isEmpty(error)) {
+                            ipRangesErrors.push(_.extend(error, {index: i}));
                         }
                     }
                 });
             } else {
-                ipRangesErrors.push({index: 0, start: i18n('cluster_page.network_tab.validation.empty_ip_range')});
+                ipRangesErrors.push({index: 0, start: warnings['empty-ip-range']});
             }
             return ipRangesErrors;
+        },
+        checkIPRangesIntersection(rangeToCheck, conflictingRanges) {
+            if (!conflictingRanges.length) return;
+            var ipStart = IP.toLong(rangeToCheck[0]),
+                ipEnd = IP.toLong(rangeToCheck[1]);
+            return _.find(conflictingRanges, (range) => IP.toLong(range[1]) >= ipStart && IP.toLong(range[0]) <= ipEnd);
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
             if (!cidr) return true;

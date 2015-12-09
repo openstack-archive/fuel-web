@@ -173,6 +173,26 @@ class DeploymentTask(object):
                 db().add(n)
         db().flush()
 
+        deployment_mode = cls._get_deployment_method(task.cluster)
+        message = getattr(cls, deployment_mode)(
+            task, nodes, deployment_tasks, reexecutable_filter
+        )
+        # After serialization set pending_addition to False
+        for node in nodes:
+            node.pending_addition = False
+
+        rpc_message = make_astute_message(
+            task,
+            deployment_mode,
+            'deploy_resp',
+            message
+        )
+        db().flush()
+        return rpc_message
+
+    @classmethod
+    def granular_deploy(cls, task, nodes, deployment_tasks,
+                        reexecutable_filter):
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
         orchestrator_graph.only_tasks(deployment_tasks)
         orchestrator_graph.reexecutable_tasks(reexecutable_filter)
@@ -187,22 +207,13 @@ class DeploymentTask(object):
         post_deployment = stages.post_deployment_serialize(
             orchestrator_graph, task.cluster, nodes)
 
-        # After serialization set pending_addition to False
-        for node in nodes:
-            node.pending_addition = False
+        return {
+            'deployment_info': serialized_cluster,
+            'pre_deployment': pre_deployment,
+            'post_deployment': post_deployment
+        }
 
-        rpc_message = make_astute_message(
-            task,
-            cls._get_deployment_method(task.cluster),
-            'deploy_resp',
-            {
-                'deployment_info': serialized_cluster,
-                'pre_deployment': pre_deployment,
-                'post_deployment': post_deployment
-            }
-        )
-        db().flush()
-        return rpc_message
+    deploy = granular_deploy
 
 
 class UpdateNodesInfoTask(object):

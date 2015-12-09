@@ -42,7 +42,7 @@ class OpenstackConfigCollectionHandler(BaseHandler):
         data = self.checked_data(
             self.validator.validate_query, data=web.input())
         return objects.OpenstackConfigCollection.to_json(
-            objects.OpenstackConfig.find_configs(**data))
+            objects.OpenstackConfigCollection.filter_by(None, **data))
 
     @content
     def POST(self):

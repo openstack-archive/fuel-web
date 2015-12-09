@@ -451,8 +451,8 @@ class NailgunReceiver(object):
         """
         # Due to design of UI, that shows all notifications,
         # we should notify provision task only then the task is top-level task
-        if task.name == consts.TASK_NAMES.provision \
-                and task.parent_id is not None:
+        if (task.name == consts.TASK_NAMES.provision
+                and task.parent_id is not None) or message is None:
             return
 
         notifier.notify(
@@ -537,8 +537,7 @@ class NailgunReceiver(object):
             else:
                 message = u"\n".join(nodes_info)
         else:
-            message = (u"Unknown nodes. Please wait for master task to "
-                       u"report which nodes were affected")
+            message = None
         return message
 
     @classmethod
@@ -551,15 +550,15 @@ class NailgunReceiver(object):
             # a lot of clutter for user
             notify_message = message.split('\n\n')[0]
         else:
-            message = u"{0} has failed. Check these nodes:\n{1}".format(
-                task_name,
-                cls._generate_error_message(
-                    task,
-                    error_types=('deploy', 'provision'),
-                    names_only=True
-                )
+            error_message = cls._generate_error_message(
+                task,
+                error_types=('deploy', 'provision'),
+                names_only=True
             )
-            notify_message = message
+            message = u"{0} has failed. Check these nodes:\n{1}".format(
+                task_name, error_message
+            )
+            notify_message = message if error_message is not None else None
 
         cls._notify(task, consts.NOTIFICATION_TOPICS.error, notify_message)
         data = {'status': status, 'progress': progress, 'message': message}

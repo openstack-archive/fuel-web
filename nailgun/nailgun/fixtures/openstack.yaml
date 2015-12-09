@@ -22,6 +22,10 @@
         limits:
           min: 1
           recommended: 3
+          overrides:
+            - condition: "settings:neutron_advanced_configuration.neutron_l3_ha.value == true"
+              min: 2
+              message: "Neutron L3 HA requires at least 2 Controller nodes to function properly."
       compute:
         name: "Compute"
         description: "A Compute node creates, manages, and terminates virtual machine instances."
@@ -1003,7 +1007,9 @@
           neutron_l3_ha:
             value: false
             label: "Neutron L3 HA"
-            description: "Enable High Availability Features for Virtual Routers in Neutron"
+            description: |
+              Enable High Availability features for Virtual Routers in Neutron
+              Requires at least 2 Controller nodes to function properly
             weight: 30
             type: "checkbox"
             restrictions:

@@ -34,6 +34,7 @@ from nailgun.errors import errors
 from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.logger import logger
+from nailgun.network import proxy
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.plugin import ClusterPlugins
@@ -1402,7 +1403,7 @@ class Cluster(NailgunObject):
         :type instance: nailgun.db.sqlalchemy.models.Cluster instance
         :returns: tuple of Node ID, and NetworkGroup ID, name, meta
         """
-        query = (db().query(
+        return (db().query(
             models.Node.id,
             models.NetworkGroup.id,
             models.NetworkGroup.name,
@@ -1412,8 +1413,6 @@ class Cluster(NailgunObject):
             .filter(models.NodeGroup.cluster_id == instance_id,
                     models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
         )
-
-        return query
 
 
 class ClusterCollection(NailgunCollection):

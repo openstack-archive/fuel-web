@@ -1979,7 +1979,7 @@ class TestBondObject(BaseTestCase):
         bond = objects.Bond.create(data)
         self.node.bond_interfaces.append(bond)
         networks = objects.NetworkGroup.get_by_node_group(self.node.group_id)
-        objects.Bond.assign_networks(bond, networks)
+        objects.Bond.assign_networks(bond, list(networks))
 
         expected_networks = [{'id': n.id, 'name': n.name} for n in networks]
         self.assertItemsEqual(bond.assigned_networks, expected_networks)
@@ -2011,7 +2011,7 @@ class TestNICObject(BaseTestCase):
             nodes_kwargs=[{'role': 'controller'}])
         self.cluster = self.env.clusters[0]
 
-    def test_replace_assigned_networks(self):
+    def test_assign_networks(self):
         node = self.env.nodes[0]
         nic_1 = node.interfaces[0]
         nic_2 = node.interfaces[1]

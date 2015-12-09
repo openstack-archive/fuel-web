@@ -18,6 +18,7 @@ import uuid
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
@@ -62,7 +63,7 @@ class TestNotification(BaseIntegrationTest):
             "discover",
             "discover message")
 
-    def test_notification_deploy_error(self):
+    def test_notification_deploy_error_without_nodes(self):
         cluster = self.env.create_cluster(api=False)
         receiver = rcvr.NailgunReceiver()
 
@@ -72,7 +73,37 @@ class TestNotification(BaseIntegrationTest):
             cluster_id=cluster.id
         )
         self.db.add(task)
-        self.db.commit()
+        self.db.flush()
+
+        kwargs = {
+            'task_uuid': task.uuid,
+            'status': 'error',
+        }
+
+        receiver.deploy_resp(**kwargs)
+
+        notifications = self.db.query(Notification).filter_by(
+            cluster_id=cluster.id
+        ).all()
+        self.assertEqual(len(notifications), 0)
+
+    def test_notification_deploy_error_with_nodes(self):
+        self.env.create(api=False,
+                        nodes_kwargs=[
+                            {
+                                'status': consts.NODE_STATUSES.error,
+                                'error_type': consts.NODE_ERRORS.deploy
+                            }])
+        cluster = self.env.clusters[0]
+        receiver = rcvr.NailgunReceiver()
+
+        task = Task(
+            uuid=str(uuid.uuid4()),
+            name="super",
+            cluster_id=cluster.id
+        )
+        self.db.add(task)
+        self.db.flush()
 
         kwargs = {
             'task_uuid': task.uuid,

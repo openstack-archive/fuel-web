@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -32,7 +30,7 @@ class OpenstackConfig(NailgunObject):
     def create(cls, data):
         data['config_type'] = cls._get_config_type(data)
         data['is_active'] = True
-        config = cls.find_config(**data)
+        config = OpenstackConfigCollection.filter_by(None, **data).first()
         if config:
             cls.delete(config)
         return super(OpenstackConfig, cls).create(data)
@@ -56,49 +54,22 @@ class OpenstackConfig(NailgunObject):
             return consts.OPENSTACK_CONFIG_TYPES.role
         return consts.OPENSTACK_CONFIG_TYPES.cluster
 
-    @classmethod
-    def _find_configs_query(cls, filters):
-        """Build query to filter configurations.
 
-        Filters are applied like AND condition.
-        """
-        query = db().query(cls.model).order_by(cls.model.id.desc())
-        for key, value in six.iteritems(filters):
-            # TODO(asaprykin): There should be a better way to check
-            # presence of column in the model.
-            field = getattr(cls.model, key, None)
-            if field:
-                query = query.filter(field == value)
+class OpenstackConfigCollection(NailgunCollection):
 
-        return query
-
-    @classmethod
-    def find_config(cls, **filters):
-        """Returns a single configuration for specified filters.
-
-        Example:
-            OpenstackConfig.find_config(cluster_id=10, node_id=12)
-        """
-        query = cls._find_configs_query(filters)
-        return query.first()
-
-    @classmethod
-    def find_configs(cls, **filters):
-        """Returns list of configurations for specified filters.
-
-        Example:
-            OpenstackConfig.find_configs(cluster_id=10, node_id=12)
-        """
-        return cls._find_configs_query(filters)
+    single = OpenstackConfig
 
     @classmethod
     def find_configs_for_nodes(cls, cluster, nodes):
         """Returns list of configurations that should be applied.
 
         Returns list of configurations for specified nodes that will be
-        applied.
+        applied. List is sorted by the config_type and node_role fields.
         """
-        all_configs = cls.find_configs(cluster_id=cluster.id, is_active=True)
+        configs_query = OpenstackConfigCollection.filter_by(
+            None, cluster_id=cluster.id, is_active=True)
+        configs_query = configs_query.order_by(cls.model.node_role)
+
         node_ids = set(n.id for n in nodes)
         node_roles = set()
 
@@ -107,7 +78,7 @@ class OpenstackConfig(NailgunObject):
 
         configs = []
 
-        for config in all_configs:
+        for config in configs_query:
             if config.config_type == consts.OPENSTACK_CONFIG_TYPES.cluster:
                 configs.append(config)
             elif (config.config_type == consts.OPENSTACK_CONFIG_TYPES.node and
@@ -119,8 +90,3 @@ class OpenstackConfig(NailgunObject):
                 configs.append(config)
 
         return configs
-
-
-class OpenstackConfigCollection(NailgunCollection):
-
-    single = OpenstackConfig

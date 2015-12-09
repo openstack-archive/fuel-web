@@ -14,12 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy.orm import joinedload
-from sqlalchemy.sql import not_
-
-from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.network.proxy import IPAddrProxy
+from nailgun.network.proxy import IPAddrRangeProxy
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -32,14 +30,22 @@ class IPAddr(NailgunObject):
 
     model = models.IPAddr
     serializer = IPAddrSerializer
+    proxy = IPAddrProxy()
 
     @classmethod
     def get_intersecting_ip(cls, instance, addr):
         """Get ip that intersects by ip_addr with given."""
-        return db.query(cls.model).filter(
-            cls.model.ip_addr == addr,
-            cls.model.id != instance.id
-        ).first()
+        params = {
+            'options': {
+                'single': True
+            },
+            'filters': [
+                {'name': 'ip_addr', 'op': 'eq', 'val': addr},
+                {'name': 'id', 'op': 'ne', 'val': instance.id},
+            ]
+        }
+
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_ips_except_admin(cls, node_id=None,
@@ -54,25 +60,34 @@ class IPAddr(NailgunObject):
         :type include_network_data: bool
         :returns: List of free IP addresses as SQLAlchemy objects.
         """
-        ips = db().query(models.IPAddr).order_by(models.IPAddr.id)
-        if include_network_data:
-            ips = ips.options(joinedload('network_data'))
+        filters = []
+        params = {}
         if node_id:
-            ips = ips.filter_by(node=node_id)
+            filters.append({'name': 'node', 'op': 'eq', 'val': node_id})
         if network_id:
-            ips = ips.filter_by(network=network_id)
+            filters.append({'name': 'network', 'op': 'eq', 'val': network_id})
+        if include_network_data:
+            params['options'] = {
+                'joinedload': 'network_data'
+            }
 
         try:
             admin_net_id = NetworkGroup.get_admin_network_group(
                 node_id=node_id).id
         except errors.AdminNetworkNotFound:
             admin_net_id = None
-        if admin_net_id:
-            ips = ips.filter(
-                not_(models.IPAddr.network == admin_net_id)
-            )
 
-        return ips.all()
+        if admin_net_id:
+            filters.append({
+                'not': {
+                    'name': 'network',
+                    'op': 'eq',
+                    'val': admin_net_id
+                }
+            })
+
+        params['filters'] = filters
+        return cls.proxy.filter(params).all()
 
     @classmethod
     def get_by_node_for_network(cls, network_id):
@@ -84,12 +99,15 @@ class IPAddr(NailgunObject):
         :type network_id: int
         :returns: query
         """
-        return db().query(
-            models.IPAddr.ip_addr,
-            models.IPAddr.node
-        ).filter_by(
-            network=network_id
-        )
+        params = {
+            'options': {
+                'fields': ['ip_addr', 'node']
+            },
+            'filters': [
+                {'name': 'network', 'op': 'eq', 'val': network_id}
+            ]
+        }
+        return cls.proxy.filter(params)
 
     @classmethod
     def delete_by_node(cls, node_id):
@@ -99,7 +117,12 @@ class IPAddr(NailgunObject):
         :type node_id: int
         :returns: None
         """
-        db().query(models.IPAddr).filter_by(node=node_id).delete()
+        params = {
+            'filters': [
+                {'name': 'node', 'op': 'eq', 'val': node_id}
+            ]
+        }
+        cls.proxy.filter_delete(params)
 
     @classmethod
     def get_distinct_in_list(cls, ip_list):
@@ -109,11 +132,13 @@ class IPAddr(NailgunObject):
         :type ip_list: list
         :returns: set of IPs in ip_list that exist in database
         """
-        return db().query(
-            models.IPAddr.ip_addr.distinct()
-        ).filter(
-            models.IPAddr.ip_addr.in_(ip_list)
-        )
+        params = {
+            'options': {'distinct': ['ip_addr']},
+            'filters': [
+                {'name': 'ip_addr', 'op': 'in', 'val': ip_list}
+            ]
+        }
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_assigned_vips_for_controller_group(cls, cluster):
@@ -124,23 +149,34 @@ class IPAddr(NailgunObject):
         :returns: VIPs for given cluster
         """
         node_group_id = Cluster.get_controllers_group_id(cluster)
-        cluster_vips = db.query(models.IPAddr).join(
-            models.IPAddr.network_data).filter(
-                models.IPAddr.vip_name.isnot(None) &
-                (models.NetworkGroup.group_id == node_group_id))
-        return cluster_vips
+        params = {
+            'filters': [
+                {'name': 'vip_name', 'op': 'isnot', 'val': None},
+                {
+                    'name': 'network_data__group_id',
+                    'op': 'eq',
+                    'val': node_group_id
+                }
+            ]
+        }
+        return cls.proxy.filter(params)
 
     @classmethod
     def delete_by_network(cls, ip, network):
-        db.query(models.IPAddr).filter(
-            models.IPAddr.ip_addr == ip,
-            models.IPAddr.network == network
-        ).delete(synchronize_session='fetch')
+        params = {
+            'filters': [
+                {'name': 'ip_addr', 'op': 'eq', 'val': ip},
+                {'name': 'network', 'op': 'eq', 'val': network}
+            ]
+        }
+
+        cls.proxy.filter_delete(params)
 
 
 class IPAddrRange(NailgunObject):
     model = models.IPAddrRange
     serializer = BasicSerializer
+    proxy = IPAddrRangeProxy()
 
     @classmethod
     def get_by_cluster(cls, cluster_id):
@@ -150,15 +186,20 @@ class IPAddrRange(NailgunObject):
         :type cluster_id: int
         :returns: VIPs for given cluster
         """
-        return db().query(
-            models.IPAddrRange.first,
-            models.IPAddrRange.last,
-        ).join(
-            models.NetworkGroup.ip_ranges,
-            models.NetworkGroup.nodegroup
-        ).filter(
-            models.NodeGroup.cluster_id == cluster_id
-        )
+        params = {
+            'options': {
+                'fields': ['first', 'last']
+            },
+            'filters': [
+                {
+                    'name': 'network_group__nodegroup__cluster_id',
+                    'op': 'eq',
+                    'val': cluster_id
+                }
+            ]
+        }
+
+        return cls.proxy.filter(params)
 
 
 class IPAddrCollection(NailgunCollection):

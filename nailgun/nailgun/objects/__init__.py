@@ -17,6 +17,8 @@
 
 from nailgun.objects.base import NailgunObject
 from nailgun.objects.base import NailgunCollection
+from nailgun.objects.base import ProxiedNailgunCollection
+from nailgun.objects.base import ProxiedNailgunObject
 
 from nailgun.objects.action_log import ActionLog
 from nailgun.objects.action_log import ActionLogCollection

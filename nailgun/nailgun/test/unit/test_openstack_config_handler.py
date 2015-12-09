@@ -30,17 +30,20 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
     def setUp(self):
         super(TestOpenstackConfigHandlers, self).setUp()
 
-        self.cluster = self.env.create_cluster(api=False)
+        self.env.create_cluster(api=False)
+        self.env.create_cluster(api=False)
+
+        self.clusters = self.env.clusters
         self.nodes = self.env.create_nodes(3)
 
         self.configs = []
         self.create_openstack_config(
-            cluster_id=self.cluster.id, configuration={})
+            cluster_id=self.clusters[0].id, configuration={})
         self.create_openstack_config(
-            cluster_id=self.cluster.id, node_id=self.nodes[1].id,
+            cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
             configuration={})
         self.create_openstack_config(
-            cluster_id=self.cluster.id, node_id=self.nodes[1].id,
+            cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
             configuration={}, is_active=False)
 
     def create_openstack_config(self, **kwargs):
@@ -51,7 +54,7 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
 
     def test_openstack_config_upload_new(self):
         data = {
-            'cluster_id': self.cluster.id,
+            'cluster_id': self.clusters[0].id,
             'node_id': self.nodes[0].id,
             'configuration': {}
         }
@@ -62,12 +65,12 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 201)
         resp_data = resp.json_body
-        self.assertEqual(resp_data['cluster_id'], self.cluster.id)
+        self.assertEqual(resp_data['cluster_id'], self.clusters[0].id)
         self.assertEqual(resp_data['node_id'], self.nodes[0].id)
 
     def test_openstack_config_upload_override(self):
         data = {
-            'cluster_id': self.cluster.id,
+            'cluster_id': self.clusters[0].id,
             'node_id': self.nodes[1].id,
             'configuration': {}
         }
@@ -77,7 +80,7 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 201)
         resp_data = resp.json_body
-        self.assertEqual(resp_data['cluster_id'], self.cluster.id)
+        self.assertEqual(resp_data['cluster_id'], self.clusters[0].id)
         self.assertEqual(resp_data['node_id'], self.nodes[1].id)
 
         resp = self.app.get(
@@ -88,27 +91,31 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.assertEqual(resp.json_body['is_active'], False)
 
     def test_openstack_config_list(self):
-        url = self._make_filter_url(cluster_id=self.cluster.id)
+        url = self._make_filter_url(cluster_id=self.clusters[0].id)
         resp = self.app.get(url, headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json_body), 2)
 
         url = self._make_filter_url(
-            cluster_id=self.cluster.id, node_id=self.nodes[1].id)
+            cluster_id=self.clusters[0].id, node_id=self.nodes[1].id)
         resp = self.app.get(url, headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json_body), 1)
 
         url = self._make_filter_url(
-            cluster_id=self.cluster.id, is_active=0)
+            cluster_id=self.clusters[0].id, is_active=0)
         resp = self.app.get(url, headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json_body), 1)
         self.assertFalse(resp.json_body[0]['is_active'])
 
+        url = self._make_filter_url(cluster_id=self.clusters[1].id)
+        resp = self.app.get(url, headers=self.default_headers)
+        self.assertEqual(len(resp.json_body), 0)
+
     def test_openstack_config_list_fail(self):
         url = self._make_filter_url(
-            cluster_id=self.cluster.id, node_id=self.nodes[0].id,
+            cluster_id=self.clusters[0].id, node_id=self.nodes[0].id,
             node_role='controller')
         resp = self.app.get(url, headers=self.default_headers,
                             expect_errors=True)
@@ -142,7 +149,7 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_openstack_config_execute(self, _):
-        data = {'cluster_id': self.cluster.id}
+        data = {'cluster_id': self.clusters[0].id}
         resp = self.app.put(
             reverse('OpenstackConfigExecuteHandler'),
             jsonutils.dumps(data), headers=self.default_headers

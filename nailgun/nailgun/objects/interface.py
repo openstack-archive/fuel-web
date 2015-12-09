@@ -15,33 +15,51 @@
 #    under the License.
 
 
-from sqlalchemy.sql import not_
-
-from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.network.proxy import NetworkNICAssignmentProxy
+from nailgun.network.proxy import NICProxy
+from nailgun.objects import ProxiedNailgunCollection
+from nailgun.objects import ProxiedNailgunObject
 from nailgun.objects.serializers.base import BasicSerializer
 
 
-class NIC(NailgunObject):
+class NIC(ProxiedNailgunObject):
 
     model = models.NodeNICInterface
     serializer = BasicSerializer
+    proxy = NICProxy()
 
     @classmethod
-    def assign_networks(cls, instance, assigned_nets):
-        """Replaces assigned networks list for specified interface.
+    def assign_networks(cls, instance, networks):
+        """Assigns networks to specified interface.
 
         :param instance: Interface object
         :type instance: Interface model
+        :param networks: List of networks to assign
+        :type networks: list
         :returns: None
         """
-        instance.assigned_networks_list = assigned_nets
-        db().flush()
+        data = {'assigned_networks': networks}
+        cls.proxy.update(instance, data)
 
 
-class NICCollection(NailgunCollection):
+class NetworkNICAssignment(ProxiedNailgunObject):
+
+    model = models.NetworkNICAssignment
+    serializer = BasicSerializer
+    proxy = NetworkNICAssignmentProxy()
+
+    @classmethod
+    def delete_by_interface_id(cls, interface_id):
+        params = {
+            'filters': [
+                {'name': 'interface_id', 'op': 'eq', 'val': interface_id}
+            ]
+        }
+        cls.proxy.filter_delete(params)
+
+
+class NICCollection(ProxiedNailgunCollection):
 
     single = NIC
 
@@ -55,8 +73,10 @@ class NICCollection(NailgunCollection):
         :type mac_addresses: list
         :returns: iterable (SQLAlchemy query)
         """
-        return db().query(models.NodeNICInterface).filter(
-            models.NodeNICInterface.node_id == node_id
-        ).filter(
-            not_(models.NodeNICInterface.mac.in_(mac_addresses))
-        )
+        params = {
+            'filters': [
+                {'name': 'node_id', 'op': 'eq', 'val': node_id},
+                {'not': {'name': 'mac', 'op': 'in', 'val': mac_addresses}}
+            ]
+        }
+        return cls.single.proxy.filter(params)

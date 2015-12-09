@@ -2,7 +2,8 @@
 Name=Statsenderd daemon
 
 [Service]
-ExecStart=/usr/bin/statsenderd
+ExecStartPre=/usr/bin/mkdir -p /var/log/nailgun
+ExecStart=/bin/bash -c "/usr/bin/statsenderd 2>&1 >> /var/log/nailgun/statsenderd.log"
 
 [Install]
 WantedBy=multi-user.target

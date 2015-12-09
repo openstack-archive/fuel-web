@@ -2,7 +2,8 @@
 Name=oswl tenant collector  daemon
 
 [Service]
-ExecStart=/usr/bin/oswl_collectord tenant
+ExecStartPre=/usr/bin/mkdir -p /var/log/nailgun
+ExecStart=/bin/bash -c "/usr/bin/oswl_collectord tenant 2>&1 >> /var/log/nailgun/oswl_tenant_collectord.log"
 
 [Install]
 WantedBy=multi-user.target

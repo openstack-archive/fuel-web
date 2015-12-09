@@ -2,7 +2,8 @@
 Name=oswl keystone user collector daemon
 
 [Service]
-ExecStart=/usr/bin/oswl_collectord keystone_user
+ExecStartPre=/usr/bin/mkdir -p /var/log/nailgun
+ExecStart=/bin/bash -c "/usr/bin/oswl_collectord keystone_user 2>&1 >> /var/log/nailgun/oswl_keystone_user_collectord.log"
 
 [Install]
 WantedBy=multi-user.target

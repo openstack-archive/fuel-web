@@ -426,7 +426,7 @@ class NetworkManager(object):
             ips_in_db = objects.IPAddr.get_distinct_in_list(free_ips)
 
             for ip in ips_in_db:
-                free_ips.remove(ip[0])
+                free_ips.remove(ip.ip_addr)
             free_ips = free_ips[:count]
             result.extend(free_ips)
             count -= len(free_ips)

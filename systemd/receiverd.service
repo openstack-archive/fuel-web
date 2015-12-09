@@ -2,7 +2,8 @@
 Name=Receiverd daemon
 
 [Service]
-ExecStart=/usr/bin/receiverd
+ExecStartPre=/usr/bin/mkdir -p /var/log/nailgun
+ExecStart=/bin/bash -c "/usr/bin/receiverd 2>&1 >> /var/log/nailgun/receiverd.log"
 
 [Install]
 WantedBy=multi-user.target

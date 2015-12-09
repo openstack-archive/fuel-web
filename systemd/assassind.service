@@ -2,7 +2,8 @@
 Name=Assassind daemon
 
 [Service]
-ExecStart=/usr/bin/assassind
+ExecStartPre=/usr/bin/mkdir -p /var/log/nailgun
+ExecStart=/bin/bash -c "/usr/bin/assassind 2>&1 >> /var/log/nailgun/assassind.log"
 
 [Install]
 WantedBy=multi-user.target

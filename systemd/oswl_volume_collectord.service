@@ -2,7 +2,7 @@
 Name=oswl volume collector daemon
 
 [Service]
-ExecStart=/usr/bin/oswl_collectord volume
+ExecStart=/bin/bash -c "/usr/bin/oswl_collectord volume 2>&1 >> /var/log/nailgun/oswl_volume_collectord.log"
 
 [Install]
 WantedBy=multi-user.target

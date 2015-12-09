@@ -57,12 +57,16 @@ class OpenstackConfig(NailgunObject):
         return consts.OPENSTACK_CONFIG_TYPES.cluster
 
     @classmethod
-    def _find_configs_query(cls, filters):
+    def _find_configs_query(cls, filters, order_by_id=True):
         """Build query to filter configurations.
 
         Filters are applied like AND condition.
         """
-        query = db().query(cls.model).order_by(cls.model.id.desc())
+        query = db().query(cls.model)
+
+        if order_by_id:
+            query = query.order_by(cls.model.id.desc())
+
         for key, value in six.iteritems(filters):
             # TODO(asaprykin): There should be a better way to check
             # presence of column in the model.
@@ -96,9 +100,14 @@ class OpenstackConfig(NailgunObject):
         """Returns list of configurations that should be applied.
 
         Returns list of configurations for specified nodes that will be
-        applied.
+        applied. List is sorted by the config_type and node_role fields.
         """
-        all_configs = cls.find_configs(cluster_id=cluster.id, is_active=True)
+        configs_q = cls._find_configs_query(
+            {'cluster_id': cluster.id, 'is_active': True},
+            order_by_id=False)
+        configs_q = configs_q.order_by(
+            cls.model.config_type, cls.model.node_role)
+
         node_ids = set(n.id for n in nodes)
         node_roles = set()
 
@@ -107,7 +116,8 @@ class OpenstackConfig(NailgunObject):
 
         configs = []
 
-        for config in all_configs:
+        for config in configs_q:
+            print '>>>>', config.config_type, config.node_role
             if config.config_type == consts.OPENSTACK_CONFIG_TYPES.cluster:
                 configs.append(config)
             elif (config.config_type == consts.OPENSTACK_CONFIG_TYPES.node and

@@ -213,10 +213,12 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
         }
 
         renderLayout() {
-            var wrappedRootComponent = utils.universalMount(
-                RootComponent,
-                _.pick(this, 'version', 'user', 'fuelSettings', 'statistics', 'notifications'),
-                this.mountNode
+            var wrappedRootComponent = React.render(
+                React.createElement(
+                    RootComponent,
+                    _.pick(this, 'version', 'user', 'fuelSettings', 'statistics', 'notifications')
+                ),
+                this.mountNode[0]
             );
             // RootComponent is wrapped with React-DnD, extracting link to it using ref
             this.rootComponent = wrappedRootComponent.refs.child;

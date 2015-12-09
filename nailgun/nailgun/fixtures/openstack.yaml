@@ -1736,7 +1736,7 @@
         weight: 5
         bind:
           - "settings:storage.volumes_lvm.value"
-        compatible: &default_storage_compatibility
+        compatible:
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
@@ -1748,35 +1748,71 @@
             message: "LVM not compatible with Ceph"
       - name: storage:block:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
-        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        description: "dialog.create_cluster_wizard.storage.ceph_block"
         weight: 10
         bind:
           - "settings:storage.volumes_ceph.value"
-        compatible: *default_storage_compatibility
+        compatible:
+          - name: hypervisor:libvirt:kvm
+          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:vmware
+          - name: network:neutron:vlan
+          - name: network:neutron:tun
+          - name: network:nova_network
+          - name: storage:object:ceph
+          - name: storage:ephemeral:ceph
+          - name: storage:image:ceph
         incompatible:
           - name: storage:block:lvm
             message: "Ceph not compatible with LVM"
       - name: storage:object:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
-        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        description: "dialog.create_cluster_wizard.storage.ceph_object"
         weight: 10
         bind:
           - "settings:storage.objects_ceph.value"
-        compatible: *default_storage_compatibility
+        compatible:
+          - name: hypervisor:libvirt:kvm
+          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:vmware
+          - name: network:neutron:vlan
+          - name: network:neutron:tun
+          - name: network:nova_network
+          - name: storage:block:ceph
+          - name: storage:ephemeral:ceph
+          - name: storage:image:ceph
       - name: storage:ephemeral:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
-        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        description: "dialog.create_cluster_wizard.storage.ceph_ephemeral"
         weight: 10
         bind:
           - "settings:storage.ephemeral_ceph.value"
-        compatible: *default_storage_compatibility
+        compatible:
+          - name: hypervisor:libvirt:kvm
+          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:vmware
+          - name: network:neutron:vlan
+          - name: network:neutron:tun
+          - name: network:nova_network
+          - name: storage:block:ceph
+          - name: storage:object:ceph
+          - name: storage:image:ceph
       - name: storage:image:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
-        description: "dialog.create_cluster_wizard.storage.ceph_help"
+        description: "dialog.create_cluster_wizard.storage.ceph_image"
         weight: 10
         bind:
           - "settings:storage.images_ceph.value"
-        compatible: *default_storage_compatibility
+        compatible:
+          - name: hypervisor:libvirt:kvm
+          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:vmware
+          - name: network:neutron:vlan
+          - name: network:neutron:tun
+          - name: network:nova_network
+          - name: storage:block:ceph
+          - name: storage:object:ceph
+          - name: storage:ephemeral:ceph
       - name: additional_service:sahara
         bind:
           - "settings:additional_components.sahara.value"
@@ -1790,8 +1826,11 @@
           - name: network:neutron:vlan
           - name: network:neutron:tun
           - name: network:nova_network
-          - name: storage:default
-          - name: storage:ceph
+          - name: storage:block:lvm
+          - name: storage:block:ceph
+          - name: storage:object:ceph
+          - name: storage:ephemeral:ceph
+          - name: storage:image:ceph
           - name: additional_service:sahara
           - name: additional_service:murano
           - name: additional_service:ceilometer
@@ -1809,8 +1848,11 @@
           - name: network:neutron:vlan
           - name: network:neutron:tun
           - name: network:nova_network
-          - name: storage:default
-          - name: storage:ceph
+          - name: storage:block:lvm
+          - name: storage:block:ceph
+          - name: storage:object:ceph
+          - name: storage:ephemeral:ceph
+          - name: storage:image:ceph
           - name: additional_service:sahara
           - name: additional_service:ceilometer
           - name: additional_service:ironic
@@ -1827,8 +1869,11 @@
           - name: network:neutron:vlan
           - name: network:neutron:tun
           - name: network:nova_network
-          - name: storage:default
-          - name: storage:ceph
+          - name: storage:block:lvm
+          - name: storage:block:ceph
+          - name: storage:object:ceph
+          - name: storage:ephemeral:ceph
+          - name: storage:image:ceph
           - name: additional_service:sahara
           - name: additional_service:murano
           - name: additional_service:ironic
@@ -1842,8 +1887,11 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: network:neutron:vlan
-          - name: storage:default
-          - name: storage:ceph
+          - name: storage:block:lvm
+          - name: storage:block:ceph
+          - name: storage:object:ceph
+          - name: storage:ephemeral:ceph
+          - name: storage:image:ceph
           - name: additional_service:sahara
           - name: additional_service:murano
           - name: additional_service:ceilometer

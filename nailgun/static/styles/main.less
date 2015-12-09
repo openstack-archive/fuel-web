@@ -271,6 +271,10 @@
   height: 16px;
 }
 
+.glyphicon-ok-sign {
+  .icon-default-styles(-13px, -812px);
+}
+
 // BASE SETTINGS
 
 :focus {
@@ -3076,7 +3080,20 @@ input[type=range] {
         }
         .pane-content {
           margin-top: @wizard-body-padding;
+          padding-top: 6px;
         }
+        h4 {
+          margin-top: 0px;
+          margin-bottom: 12px;
+          font-size: @base-font-size + 3px;
+          .font-semibold;
+        }
+        .pane-progress-bar {
+          padding: 100px 50px;
+        }
+      }
+      .ml2 {
+        margin-left: 40px;
       }
     }
   }
@@ -3097,6 +3114,9 @@ input[type=range] {
   }
   .pane-content > div > .alert {
     margin-top: 0;
+  }
+  .wizard-storage-pane > .row:first-child {
+    margin-bottom: 20px;
   }
   .control-label {
     padding-left: 0;
@@ -3121,6 +3141,9 @@ input[type=range] {
     font-size: @base-font-size - 2;
     color: @gray;
     line-height: 14px;
+  }
+  .checkbox-group {
+    margin-bottom: 10px;
   }
 }
 

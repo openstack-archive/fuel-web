@@ -21,18 +21,19 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.network.proxy import IPAddrProxy
+from nailgun.network.proxy import NetworkGroupProxy
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.network_group import NetworkGroupSerializer
-
-from sqlalchemy.sql import or_
 
 
 class NetworkGroup(NailgunObject):
 
     model = models.NetworkGroup
     serializer = NetworkGroupSerializer
+    proxy = NetworkGroupProxy()
 
     @classmethod
     def fields(cls):
@@ -40,16 +41,31 @@ class NetworkGroup(NailgunObject):
 
     @classmethod
     def get_from_node_group_by_name(cls, node_group_id, network_name):
-        ng = db().query(models.NetworkGroup).filter_by(group_id=node_group_id,
-                                                       name=network_name)
-        return ng.first() if ng else None
+        params = {
+            'options': {
+                'single': True
+            },
+            'filters': [
+                {'name': 'group_id', 'op': 'eq', 'val': node_group_id},
+                {'name': 'name', 'op': 'eq', 'val': network_name}
+            ]
+        }
+
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_default_admin_network(cls):
-        return db().query(models.NetworkGroup)\
-            .filter_by(name=consts.NETWORKS.fuelweb_admin)\
-            .filter_by(group_id=None)\
-            .first()
+        params = {
+            'options': {
+                'single': True
+            },
+            'filters': [
+                {'name': 'name', 'op': 'eq', 'val':
+                    consts.NETWORKS.fuelweb_admin},
+                {'name': 'group_id', 'op': 'eq', 'val': None}
+            ]
+        }
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_by_node_group(cls, node_group_id):
@@ -59,11 +75,17 @@ class NetworkGroup(NailgunObject):
         :type node_group_id: int
         :returns: list of NetworkGroup instances
         """
-        return db().query(models.NetworkGroup).filter_by(
-            group_id=node_group_id,
-        ).filter(
-            NetworkGroup.name != consts.NETWORKS.fuelweb_admin
-        ).order_by(models.NetworkGroup.id).all()
+        params = {
+            'options': {
+                'order_by': 'id'
+            },
+            'filters': [
+                {'name': 'group_id', 'op': 'eq', 'val': node_group_id},
+                {'name': 'name', 'op': 'ne', 'val':
+                    consts.NETWORKS.fuelweb_admin}
+            ]
+        }
+        return cls.proxy.filter(params)
 
     @classmethod
     def get_admin_network_group(cls, node_id=None):
@@ -94,18 +116,25 @@ class NetworkGroup(NailgunObject):
         :type network_id: int
         :returns: list of IPAddr instances
         """
-        ips = [
-            x[0] for x in db().query(
-                models.IPAddr.ip_addr
-            ).filter(
-                models.IPAddr.network == network_id,
-                or_(
-                    models.IPAddr.node.isnot(None),
-                    models.IPAddr.vip_type.isnot(None)
-                )
-            )]
+        ip_proxy = IPAddrProxy()
+        params = {
+            'options': {
+                'fields': [
+                    'ip_addr',
+                    'network'
+                ]
+            },
+            'filters': [
+                {'name': 'network', 'op': 'eq', 'val': network_id},
+                {'or': [
+                    {'name': 'node', 'op': 'isnot', 'val': None},
+                    {'name': 'vip_type', 'op': 'isnot', 'val': None}
+                ]}
+            ]
+        }
+        ips = ip_proxy.filter(params)
 
-        return ips
+        return [ip[0] for ip in ips]
 
     @classmethod
     def create(cls, data):
@@ -143,8 +172,7 @@ class NetworkGroup(NailgunObject):
         notation = instance.meta.get('notation')
         if notation and not instance.nodegroup.cluster.is_locked:
             cls._delete_ips(instance)
-        db().delete(instance)
-        db().flush()
+        cls.proxy.delete(instance)
 
     @classmethod
     def is_untagged(cls, instance):

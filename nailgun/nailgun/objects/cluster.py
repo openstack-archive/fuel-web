@@ -1402,7 +1402,7 @@ class Cluster(NailgunObject):
         :type instance: nailgun.db.sqlalchemy.models.Cluster instance
         :returns: tuple of Node ID, and NetworkGroup ID, name, meta
         """
-        query = (db().query(
+        return (db().query(
             models.Node.id,
             models.NetworkGroup.id,
             models.NetworkGroup.name,
@@ -1412,8 +1412,6 @@ class Cluster(NailgunObject):
             .filter(models.NodeGroup.cluster_id == instance_id,
                     models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
         )
-
-        return query
 
 
 class ClusterCollection(NailgunCollection):

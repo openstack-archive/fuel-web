@@ -1250,9 +1250,8 @@ class Cluster(NailgunObject):
         This function returns list of nodes that will be updated
         according to filters that were passed.
         """
-        query = (
-            cls.get_nodes_not_for_deletion(cluster)
-            .filter_by(status=consts.NODE_STATUSES.ready))
+        query = (cls.get_nodes_not_for_deletion(cluster)
+                 .filter_by(status=consts.NODE_STATUSES.ready))
 
         if node_id:
             query = query.filter_by(id=node_id)

@@ -33,7 +33,7 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
                 {'roles': ['controller'], 'status': 'ready'},
                 {'roles': ['compute'], 'status': 'ready'},
                 {'roles': ['compute'], 'status': 'ready'},
-                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True}
             ]
         )
 

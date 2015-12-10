@@ -17,6 +17,7 @@ import urllib
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun import objects
 from nailgun.objects.serializers.openstack_config import \
@@ -34,7 +35,9 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.env.create_cluster(api=False)
 
         self.clusters = self.env.clusters
-        self.nodes = self.env.create_nodes(3)
+        self.nodes = self.env.create_nodes(
+            3, cluster_id=self.clusters[0].id,
+            status=consts.NODE_STATUSES.ready)
 
         self.configs = []
         self.create_openstack_config(
@@ -154,8 +157,43 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             reverse('OpenstackConfigExecuteHandler'),
             jsonutils.dumps(data), headers=self.default_headers
         )
-
         self.assertEqual(resp.status_code, 202)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_openstack_config_execute_fail_no_ready_nodes(self, _):
+        # Turn node 0 into provisioned state
+        self.env.nodes[0].status = consts.NODE_STATUSES.provisioned
+        self.env.nodes[1].status = consts.NODE_STATUSES.ready
+        self.env.nodes[2].status = consts.NODE_STATUSES.ready
+        self.db.flush()
+
+        # Try to update configuration for node 0
+        data = {'cluster_id': self.clusters[0].id,
+                'node_id': self.env.nodes[0].id}
+
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True
+        )
+        # Request shouldn't pass a validation
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual("No nodes in status 'ready'",
+                         resp.json_body['message'])
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_openstack_config_execute_fail_not_existed_cluster(self, _):
+        # Try to update not existed cluster
+        data = {'cluster_id': -1}
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True
+        )
+        # Request shouldn't pass a validation
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual("Object 'Cluster' with UID=-1 is not found in DB",
+                         resp.json_body['message'])
 
     def test_openstack_config_delete(self):
         resp = self.app.delete(

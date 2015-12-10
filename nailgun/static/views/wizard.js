@@ -57,6 +57,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                                     disabled={component.get('disabled')}
                                     tooltipIcon={icon}
                                     tooltipText={component.get('warnings')}
+                                    tooltipPlacement='top'
                                     onChange={this.props.onChange}
                                 />
                             );
@@ -99,6 +100,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                                     value={component.id}
                                     checked={this.state.value == component.id}
                                     disabled={component.get('disabled')}
+                                    tooltipPlacement='top'
                                     tooltipIcon={icon}
                                     tooltipText={component.get('warnings')}
                                     onChange={this.onChange}

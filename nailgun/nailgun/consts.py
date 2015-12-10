@@ -440,4 +440,9 @@ OPENSTACK_CONFIG_TYPES = Enum(
     'node',
 )
 
+NODE_RESOLVE_POLICY = Enum(
+    "all",
+    "any"
+)
+
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'

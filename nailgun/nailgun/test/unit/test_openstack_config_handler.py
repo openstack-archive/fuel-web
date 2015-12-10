@@ -31,8 +31,10 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
     def setUp(self):
         super(TestOpenstackConfigHandlers, self).setUp()
 
-        self.env.create_cluster(api=False)
-        self.env.create_cluster(api=False)
+        self.env.create_cluster(api=False,
+                                status=consts.CLUSTER_STATUSES.operational)
+        self.env.create_cluster(api=False,
+                                status=consts.CLUSTER_STATUSES.operational)
 
         self.clusters = self.env.clusters
         self.nodes = self.env.create_nodes(
@@ -49,11 +51,24 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
             configuration={}, is_active=False)
 
+    def create_running_deployment_task(self):
+        return self.env.create_task(
+            cluster_id=self.clusters[0].id,
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running
+        ).id
+
     def create_openstack_config(self, **kwargs):
         config = objects.OpenstackConfig.create(kwargs)
         db().commit()
         self.configs.append(config)
         return config
+
+    def check_fail_deploy_running(self, deploy_task_id, resp):
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual("Cannot perform the action because there are "
+                         "running deployment tasks '{0}'"
+                         "".format(deploy_task_id), resp.json_body['message'])
 
     def test_openstack_config_upload_new(self):
         data = {
@@ -129,6 +144,20 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             r"Configurations '\w+' can not be updated")
 
+    def test_openstack_config_upload_fail_deploy_running(self):
+        deploy_task_id = self.create_running_deployment_task()
+        data = {
+            'cluster_id': self.clusters[0].id,
+            'configuration': {}
+        }
+
+        resp = self.app.post(
+            reverse('OpenstackConfigCollectionHandler'),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.check_fail_deploy_running(deploy_task_id, resp)
+
     def test_openstack_config_list(self):
         url = self._make_filter_url(cluster_id=self.clusters[0].id)
         resp = self.app.get(url, headers=self.default_headers)
@@ -193,8 +222,91 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             reverse('OpenstackConfigExecuteHandler'),
             jsonutils.dumps(data), headers=self.default_headers
         )
-
         self.assertEqual(resp.status_code, 202)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_openstack_config_execute_force(self, _):
+        # Turn node 2 into provisioned state
+        self.env.nodes[2].status = consts.NODE_STATUSES.provisioned
+        self.db.flush()
+        # Try to update OpenStack configuration for cluster
+        data = {'cluster_id': self.clusters[0].id}
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True)
+        # Request shouldn't pass a validation
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual("Nodes '{0}' are not in status 'ready' and "
+                         "can not be updated directly."
+                         "".format(self.env.nodes[2].uid),
+                         resp.json_body['message'])
+
+        # Try to update OpenStack configuration for cluster with 'force' key
+        data = {'cluster_id': self.clusters[0].id,
+                'force': True}
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers
+        )
+        # Update OpenStack configuration executed successfully
+        self.assertEqual(resp.status_code, 202)
+
+    def test_openstack_config_execute_fail_cluster_not_operational(self):
+        self.clusters[0].status = consts.CLUSTER_STATUSES.error
+        self.db.flush()
+        data = {'cluster_id': self.clusters[0].id}
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json_body['message'],
+                         "Cluster is not in the state 'operational'")
+
+    def test_openstack_config_execute_fail_deploy_running(self):
+        deploy_task_id = self.create_running_deployment_task()
+        data = {'cluster_id': self.clusters[0].id}
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True
+        )
+        self.check_fail_deploy_running(deploy_task_id, resp)
+
+    def test_openstack_config_execute_fail_no_ready_nodes(self):
+        # Turn node 0 into provisioned state
+        self.env.nodes[0].status = consts.NODE_STATUSES.provisioned
+        self.env.nodes[1].status = consts.NODE_STATUSES.provisioned
+        self.env.nodes[2].status = consts.NODE_STATUSES.provisioned
+        self.db.flush()
+
+        # Try to update configuration for node 0
+        data = {'cluster_id': self.clusters[0].id}
+
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True
+        )
+        # Request shouldn't pass a validation
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual("No nodes in status 'ready'",
+                         resp.json_body['message'])
+
+    def test_openstack_config_execute_fail_not_existed_cluster(self):
+        # Try to update not existed cluster
+        data = {'cluster_id': -1}
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True
+        )
+        # Request shouldn't pass a validation
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual("Object 'Cluster' with UID=-1 is not found in DB",
+                         resp.json_body['message'])
 
     def test_openstack_config_delete(self):
         obj_id = self.configs[0].id
@@ -222,6 +334,14 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.assertEqual(
             resp.json_body['message'],
             "Configuration '{0}' has been already disabled.".format(obj_id))
+
+    def test_openstack_config_delete_fail_deploy_running(self):
+        deploy_task_id = self.create_running_deployment_task()
+        resp = self.app.delete(
+            reverse('OpenstackConfigHandler',
+                    {'obj_id': self.configs[0].id}),
+            expect_errors=True)
+        self.check_fail_deploy_running(deploy_task_id, resp)
 
     @classmethod
     def _make_filter_url(cls, **kwargs):

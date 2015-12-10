@@ -92,6 +92,49 @@ class Nailgun(BaseDataDriver):
         return filter(disk_filter, self.partition_data())
 
     @property
+    def boot_disks(self):
+        # FIXME(agordeev): NVMe drives should be skipped as
+        # accessing such drives during the boot typically
+        # requires using UEFI which is still not supported
+        # by fuel-agent (it always installs BIOS variant of
+        # grub)
+        # * grub bug (http://savannah.gnu.org/bugs/?41883)
+        # NOTE(kozhukalov): On some hardware GRUB is not able
+        # to see disks larger than 2T due to firmware bugs,
+        # so we'd better avoid placing /boot on such
+        # huge disks if it is possible.
+        suitable_disks = [
+            disk for disk in self.ks_disks
+            if ('nvme' not in disk['name'] and
+                (disk in self.small_ks_disks or not self.small_ks_disks) and
+                self._is_boot_disk(disk))
+        ]
+        # FIXME(agordeev): if we have rootfs on fake raid, then /boot should
+        # land on it too. We can't proceed with grub-install otherwise.
+        md_boot_disks = [
+            disk for disk in self.md_os_disks if disk in suitable_disks]
+        if md_boot_disks:
+            return md_boot_disks
+        else:
+            return suitable_disks
+
+    def _is_boot_disk(self, disk):
+        return any(v["type"] in ('partition', 'raid') and
+                   v.get("mount") == "/boot"
+                   for v in disk["volumes"])
+
+    def _is_os_volume(self, vol):
+        return vol['size'] > 0 and vol['type'] == 'pv' and vol['vg'] == 'os'
+
+    def _is_os_disk(self, disk):
+        return any(self._is_os_volume(vol) for vol in disk['volumes'])
+
+    @property
+    def md_os_disks(self):
+        return [d for d in self.ks_disks
+                if d['name'].startswith('md') and self._is_os_disk(d)]
+
+    @property
     def small_ks_disks(self):
         """Get those disks which are smaller than 2T
         """
@@ -172,17 +215,19 @@ class Nailgun(BaseDataDriver):
             LOG.debug('Adding gpt table on disk %s' % disk['name'])
             parted = partition_scheme.add_parted(
                 name=self._disk_dev(disk), label='gpt')
-            # we install bootloader on every disk
-            LOG.debug('Adding bootloader stage0 on disk %s' % disk['name'])
-            parted.install_bootloader = True
-            # legacy boot partition
-            LOG.debug('Adding bios_grub partition on disk %s: size=24' %
-                      disk['name'])
-            parted.add_partition(size=24, flags=['bios_grub'])
-            # uefi partition (for future use)
-            LOG.debug('Adding UEFI partition on disk %s: size=200' %
-                      disk['name'])
-            parted.add_partition(size=200)
+            if disk in self.boot_disks:
+                # we install bootloader only on every suitable disk
+                LOG.debug('Adding bootloader stage0 on disk %s' % disk['name'])
+                parted.install_bootloader = True
+
+                # legacy boot partition
+                LOG.debug('Adding bios_grub partition on disk %s: size=24' %
+                          disk['name'])
+                parted.add_partition(size=24, flags=['bios_grub'])
+                # uefi partition (for future use)
+                LOG.debug('Adding UEFI partition on disk %s: size=200' %
+                          disk['name'])
+                parted.add_partition(size=200)
 
             LOG.debug('Looping over all volumes on disk %s' % disk['name'])
             for volume in disk['volumes']:
@@ -241,12 +286,7 @@ class Nailgun(BaseDataDriver):
 
                     elif volume.get('mount') == '/boot' \
                             and not self._boot_partition_done \
-                            and (disk in self.small_ks_disks or
-                                 not self.small_ks_disks):
-                        # NOTE(kozhukalov): On some hardware GRUB is not able
-                        # to see disks larger than 2T due to firmware bugs,
-                        # so we'd better avoid placing /boot on such
-                        # huge disks if it is possible.
+                            and disk in self.boot_disks:
                         LOG.debug('Adding /boot partition on disk %s: '
                                   'size=%s', disk['name'], volume['size'])
                         prt = parted.add_partition(size=volume['size'])

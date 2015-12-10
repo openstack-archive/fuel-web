@@ -57,6 +57,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                                     disabled={component.get('disabled')}
                                     tooltipIcon={icon}
                                     tooltipText={component.get('warnings')}
+                                    tooltipPlacement='top'
                                     onChange={this.props.onChange}
                                 />
                             );

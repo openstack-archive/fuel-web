@@ -227,6 +227,8 @@ define([
                         if (_.isEmpty(error)) {
                             if (IP.toLong(range[0]) > IP.toLong(range[1])) {
                                 error.start = error.end = warnings.INVALID_IP_RANGE;
+                            } else if (_.isUndefined(cidr)) {
+                                error.start = error.end = warnings.IP_RANGE_IS_NOT_IN_PUBLIC_CIDR;
                             } else if (existingRanges.length) {
                                 var intersection = utils.checkIPRangesIntersection(range, existingRanges);
                                 if (intersection) {

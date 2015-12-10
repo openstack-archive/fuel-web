@@ -925,7 +925,7 @@ define([
                         _.extend(networkErrors, utils.validateCidr(cidr));
                         var cidrError = _.has(networkErrors, 'cidr');
                         if (network.get('meta').notation == 'ip_ranges') {
-                            var ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), !cidrError && cidr);
+                            var ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), cidrError ? null : cidr);
                             if (ipRangesErrors.length) {
                                 networkErrors.ip_ranges = ipRangesErrors;
                             }
@@ -956,7 +956,7 @@ define([
                             } else if (!baremetalCidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
                                 networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_baremetal_network');
                             }
-                            var baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], !baremetalCidrError && cidr);
+                            var baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], baremetalCidrError ? null : cidr);
                             if (baremetalRangeErrors.length) {
                                 var [{start, end}] = baremetalRangeErrors;
                                 networkingParametersErrors.baremetal_range = [start, end];
@@ -997,7 +997,7 @@ define([
                         networkingParametersErrors.fixed_networks_vlan_start = i18n(ns + 'vlan_intersection');
                     }
                 }
-                floatingRangesErrors = utils.validateIPRanges(networkParameters.get('floating_ranges'));
+                floatingRangesErrors = utils.validateIPRanges(networkParameters.get('floating_ranges'), null);
                 if (floatingRangesErrors.length) {
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
                 }
@@ -1043,36 +1043,38 @@ define([
                     }
                 });
 
-                var defaultNodeNetworkGroupId = _.min(_.compact(networks.pluck('group_id'))),
-                    networkToCheckFloatingRange = networks.find(
-                        (network) => network.get('group_id') == defaultNodeNetworkGroupId && network.get('meta').floating_range_var
-                    ),
-                    networkToCheckFloatingRangeCidrError = false;
-                try {
-                    networkToCheckFloatingRangeCidrError = !!errors.networks[defaultNodeNetworkGroupId][networkToCheckFloatingRange.id].cidr;
-                } catch (error) {}
-                var networkToCheckFloatingRangeName = _.capitalize(networkToCheckFloatingRange.get('name')),
-                    cidrToCheckFloatingRange = networkToCheckFloatingRange.get('cidr'),
-                    ipRangesToCheckFloatingRange = _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
-                        var ipRangeError = false;
+                var floatingRanges = networkParameters.get('floating_ranges'),
+                    networkToCheckFloatingRange = networks.find((network) => {
+                        if (!network.get('meta').floating_range_var) return false;
+                        var cidrError = false;
                         try {
-                            ipRangeError = !_.all(range) || !!_.find(errors.networks[defaultNodeNetworkGroupId][networkToCheckFloatingRange.id].ip_ranges, {index: index});
+                            cidrError = !!errors.networks[network.get('group_id')][network.id].cidr;
                         } catch (error) {}
-                        return !ipRangeError;
+                        if (cidrError) return false;
+                        return utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][0]) &&
+                            utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][1]);
                     });
 
+                var networkToCheckFloatingRangeData = networkToCheckFloatingRange ? {
+                        cidr: networkToCheckFloatingRange.get('cidr'),
+                        network: _.capitalize(networkToCheckFloatingRange.get('name')),
+                        nodeNetworkGroup: nodeNetworkGroups.get(networkToCheckFloatingRange.get('group_id')).get('name')
+                    } : {},
+                    networkToCheckFloatingRangeIPRanges = networkToCheckFloatingRange ? _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
+                        var ipRangeError = false;
+                        try {
+                            ipRangeError = !_.all(range) || !!_.find(errors.networks[networkToCheckFloatingRange.get('group_id')][networkToCheckFloatingRange.id].ip_ranges, {index: index});
+                        } catch (error) {}
+                        return !ipRangeError;
+                    }) : [];
+
                 floatingRangesErrors = utils.validateIPRanges(
-                    networkParameters.get('floating_ranges'),
-                    !networkToCheckFloatingRangeCidrError && cidrToCheckFloatingRange,
-                    ipRangesToCheckFloatingRange,
+                    floatingRanges,
+                    networkToCheckFloatingRangeData.cidr,
+                    networkToCheckFloatingRangeIPRanges,
                     {
-                        DOES_NOT_MATCH_CIDR: i18n(ns + 'floating_ip_does_not_match_cidr', {
-                            cidr: cidrToCheckFloatingRange,
-                            network: networkToCheckFloatingRangeName
-                        }),
-                        IP_RANGES_INTERSECTION: i18n(ns + 'floating_and_public_ip_ranges_intersection', {
-                            network: networkToCheckFloatingRangeName
-                        })
+                        IP_RANGES_INTERSECTION: i18n(ns + 'floating_and_public_ip_ranges_intersection', networkToCheckFloatingRangeData),
+                        IP_RANGE_IS_NOT_IN_PUBLIC_CIDR: i18n(ns + 'floating_range_is_not_in_public_cidr')
                     }
                 );
 

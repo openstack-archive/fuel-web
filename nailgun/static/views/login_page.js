@@ -58,12 +58,19 @@ function($, _, i18n, React, dispatcher, utils) {
             var keystoneClient = app.keystoneClient;
 
             return keystoneClient.authenticate(username, password, {force: true})
-                .fail(_.bind(function(xhr) {
+                .fail((xhr) => {
                     $(this.refs.username.getDOMNode()).focus();
-                    var error = i18n('login_page.' + (xhr && xhr.status == 401 ? 'credentials_error' : 'login_error'));
-                    this.setState({error: error});
-                }, this))
-                .then(_.bind(function() {
+
+                    var status = xhr && xhr.status;
+                    var error = 'login_error';
+                    if (status == 401) {
+                        error = 'credentials_error';
+                    } else if (!status || String(status)[0] == '5') { // no status (connection refused) or 5xx error
+                        error = 'keystone_unavailable_error';
+                    }
+                    this.setState({error: i18n('login_page.' + error)});
+                })
+                .then(() => {
                     app.user.set({
                         authenticated: true,
                         username: username,
@@ -75,15 +82,15 @@ function($, _, i18n, React, dispatcher, utils) {
                     }
 
                     return app.fuelSettings.fetch({cache: true});
-                }, this))
-                .done(_.bind(function() {
+                })
+                .then(() => {
                     var nextUrl = '';
                     if (app.router.returnUrl) {
                         nextUrl = app.router.returnUrl;
                         delete app.router.returnUrl;
                     }
                     app.navigate(nextUrl, {trigger: true});
-                }));
+                });
         },
         componentDidMount: function() {
             $(this.refs.username.getDOMNode()).focus();

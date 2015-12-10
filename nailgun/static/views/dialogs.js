@@ -37,6 +37,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             message: React.PropTypes.node,
             modalClass: React.PropTypes.node,
             error: React.PropTypes.bool,
+            closeable: React.PropTypes.bool,
             keyboard: React.PropTypes.bool,
             background: React.PropTypes.bool,
             backdrop: React.PropTypes.oneOfType([
@@ -89,7 +90,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             if (e.target.tagName == 'A' && !e.target.target && e.target.href) this.close();
         },
         closeOnEscapeKey: function(e) {
-            if (this.props.keyboard !== false && e.key == 'Escape') this.close();
+            if (this.props.keyboard !== false && this.props.closeable !== false && e.key == 'Escape') this.close();
             if (_.isFunction(this.onKeyDown)) this.onKeyDown(e);
         },
         showError: function(response, message) {
@@ -112,7 +113,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     <div className='modal-dialog'>
                         <div className='modal-content'>
                             <div className='modal-header'>
-                                <button type='button' className='close' aria-label='Close' onClick={this.close}><span aria-hidden='true'>&times;</span></button>
+                                {this.props.closeable !== false &&
+                                    <button type='button' className='close' aria-label='Close' onClick={this.close}>
+                                        <span aria-hidden='true'>&times;</span>
+                                    </button>
+                                }
                                 <h4 className='modal-title'>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h4>
                             </div>
                             <div className='modal-body'>
@@ -160,6 +165,32 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         mixins: [dialogMixin],
         getDefaultProps: function() {
             return {error: true};
+        }
+    });
+
+    dialogs.NailgunUnavailabilityDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps() {
+            return {
+                title: i18n('dialog.error_dialog.title'),
+                closeable: false,
+                keyboard: false,
+                backdrop: false
+            };
+        },
+        renderBody() {
+            return i18n('dialog.nailgun_unavailability.loading_error');
+        },
+        renderFooter() {
+            return (
+                <button
+                    className='btn btn-success'
+                    onClick={this.close}
+                    disabled={this.state.actionInProgress}
+                >
+                    {i18n('dialog.nailgun_unavailability.retry')}
+                </button>
+            );
         }
     });
 

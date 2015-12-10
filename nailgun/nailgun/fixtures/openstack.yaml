@@ -134,7 +134,6 @@
         name: "Ironic"
         description: "Ironic conductor"
         weight: 100
-        public_for_dvr_required: true
         limits:
           min: 1
           recommended: 3

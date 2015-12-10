@@ -32,50 +32,47 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     'use strict';
     var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
 
-    function Sorter(name, order, isLabel) {
-        if (!this) return new Sorter(name, order, isLabel);
-        this.name = name;
-        this.order = order;
-        this.title = isLabel ? this.name : i18n('cluster_page.nodes_tab.sorters.' + this.name, {defaultValue: this.name});
-        this.isLabel = isLabel;
-        return this;
-    }
-    _.extend(Sorter, {
-        fromObject: function(sorterObject, isLabel) {
+    class Sorter {
+        constructor(name, order, isLabel) {
+            this.name = name;
+            this.order = order;
+            this.title = isLabel ? name : i18n('cluster_page.nodes_tab.sorters.' + name, {defaultValue: name});
+            this.isLabel = isLabel;
+            return this;
+        }
+
+        static fromObject(sorterObject, isLabel) {
             var sorterName = _.keys(sorterObject)[0];
             return new Sorter(sorterName, sorterObject[sorterName], isLabel);
-        },
-        toObject: function(sorter) {
-            var data = {};
-            data[sorter.name] = sorter.order;
-            return data;
         }
-    });
 
-    function Filter(name, values, isLabel) {
-        if (!this) return new Filter(name, values, isLabel);
-        this.name = name;
-        this.values = values;
-        this.title = isLabel ? this.name : i18n('cluster_page.nodes_tab.filters.' + this.name, {defaultValue: this.name});
-        this.isLabel = isLabel;
-        this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id', 'cluster'], this.name);
-        return this;
+        static toObject(sorter) {
+            return {[sorter.name]: sorter.order};
+        }
     }
-    _.extend(Filter, {
-        fromObject: function(filters, isLabel) {
-            return _.map(filters, function(values, name) {
-                return new Filter(name, values, isLabel);
-            });
-        },
-        toObject: function(filters) {
-            return _.reduce(filters, function(result, filter) {
+
+    class Filter {
+        constructor(name, values, isLabel) {
+            this.name = name;
+            this.values = values;
+            this.title = isLabel ? name : i18n('cluster_page.nodes_tab.filters.' + name, {defaultValue: name});
+            this.isLabel = isLabel;
+            this.isNumberRange = !isLabel && !_.contains(['roles', 'status', 'manufacturer', 'group_id', 'cluster'], name);
+            return this;
+        }
+
+        static fromObject(filters, isLabel) {
+            return _.map(filters, (values, name) => new Filter(name, values, isLabel));
+        }
+
+        static toObject(filters) {
+            return _.reduce(filters, (result, filter) => {
                 result[filter.name] = filter.values;
                 return result;
             }, {});
         }
-    });
-    _.extend(Filter.prototype, {
-        updateLimits: function(nodes, updateValues) {
+
+        updateLimits(nodes, updateValues) {
             if (this.isNumberRange) {
                 var limits = [0, 0];
                 if (nodes.length) {
@@ -89,7 +86,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 if (updateValues) this.values = _.clone(limits);
             }
         }
-    });
+    }
 
     NodeListScreen = React.createClass({
         mixins: [
@@ -263,7 +260,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeSortingOrder: function(sorterToChange) {
             this.updateSorting(this.state.activeSorters.map(function(sorter) {
                 if (sorter.name == sorterToChange.name && sorter.isLabel == sorterToChange.isLabel) {
-                    return Sorter(sorter.name, sorter.order == 'asc' ? 'desc' : 'asc', sorter.isLabel);
+                    return new Sorter(sorter.name, sorter.order == 'asc' ? 'desc' : 'asc', sorter.isLabel);
                 }
                 return sorter;
             }));
@@ -366,7 +363,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeFilter: function(filterToChange, values) {
             this.updateFilters(this.state.activeFilters.map(function(filter) {
                 if (filter.name == filterToChange.name && filter.isLabel == filterToChange.isLabel) {
-                    var changedFilter = Filter(filter.name, values, filter.isLabel);
+                    var changedFilter = new Filter(filter.name, values, filter.isLabel);
                     changedFilter.limits = filter.limits;
                     return changedFilter;
                 }

@@ -2929,3 +2929,32 @@ class TestDeploymentMultinodeSerializer50(BaseDeploymentSerializer):
 
     def test_glance_properties(self):
         self.check_murano_data()
+
+
+class TestDeploymentGraphlessSerializers(OrchestratorSerializerTestBase):
+    env_version = '1111-5.0'
+
+    def setUp(self):
+        super(TestDeploymentGraphlessSerializers, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[
+                {'roles': ['controller', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': [], 'pending_roles': ['cinder'],
+                 'pending_addition': True}]
+        )
+        objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
+
+    @property
+    def serializer(self):
+        self.cluster_mock.release.environment_version = '5.0'
+        return DeploymentMultinodeSerializer(None)
+
+    def test_serialize_cluster(self):
+        serialized_data = self.serialize(self.cluster)
+        self.assertGreater(len(serialized_data), 0)
+        self.assertNotIn('tasks', serialized_data[0])
+        self.assertGreater(len(serialized_data[0]['nodes']), 0)

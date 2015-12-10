@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
 from netaddr import IPNetwork
 
 from nailgun import consts
@@ -62,30 +63,30 @@ class NetworkGroup(NailgunObject):
         return instance
 
     @classmethod
-    def update_meta(cls, instance, data):
-        """Updates particular keys in object's meta.
-
-        Is used by NetworkManager.update_networks as
-        for old clusters only those data in meta is
-        allowed for updating
-        """
-        meta_copy = dict(instance.meta)
-        meta_copy.update(data)
-        instance.meta = meta_copy
-
-    @classmethod
     def update(cls, instance, data):
-        # cleanup stalled data and generate new for the group
-        cls._regenerate_ip_ranges_on_notation(instance, data)
+        # preserve input to original data
+        data = deepcopy(data)
 
-        # as ip ranges were regenerated we must update instance object
-        # in order to prevent possible SQAlchemy errors with operating
-        # on stale data
-        db().refresh(instance)
+        # cleanup stalled data and generate new for the group
+        # the function refresh the instance from db, so
+        # should to be invoked first
+        cls._regenerate_ip_ranges_on_notation(instance, data)
 
         # remove 'ip_ranges' (if) any from data as this is relation
         # attribute for the orm model object
         data.pop('ip_ranges', None)
+
+        # remove 'meta' key because we'll update meta manually
+        meta = data.pop('meta', {})
+
+        # only 'notation' and 'use_gateway' attributes is
+        # allowed to be updated in network group metadata for
+        # old clusters so here we updated it manually with data
+        # which doesn't contain 'meta' key
+        for param in ('notation', 'use_gateway'):
+            if param in meta:
+                instance.meta[param] = meta[param]
+
         return super(NetworkGroup, cls).update(instance, data)
 
     @classmethod
@@ -163,6 +164,12 @@ class NetworkGroup(NailgunObject):
             cidr = data.get('cidr', instance.cidr)
             cls._update_range_from_cidr(
                 instance, cidr, use_gateway=use_gateway)
+        else:
+            return
+        # as ip ranges were regenerated we must update instance object
+        # in order to prevent possible SQAlchemy errors with operating
+        # on stale data
+        db().refresh(instance)
 
     @classmethod
     def _set_ip_ranges(cls, instance, ip_ranges):

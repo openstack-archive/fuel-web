@@ -16,20 +16,18 @@
 define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
     'use strict';
 
-    function KeystoneClient(url, options) {
-        _.extend(this, {
-            url: url,
-            cacheTokenFor: 10 * 60 * 1000
-        }, options);
-    }
+    class KeystoneClient {
+        constructor(url, options) {
+            this.DEFAULT_PASSWORD = 'admin';
+            _.extend(this, {
+                url: url,
+                cacheTokenFor: 10 * 60 * 1000
+            }, options);
+        }
 
-    _.extend(KeystoneClient.prototype, {
-        DEFAULT_PASSWORD: 'admin',
-        authenticate: function(username, password, options) {
-            options = options || {};
-            if (this.tokenUpdateRequest) {
-                return this.tokenUpdateRequest;
-            }
+        authenticate(username, password, options = {}) {
+            if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
+
             if (!options.force && this.tokenUpdateTime && (this.cacheTokenFor > (new Date() - this.tokenUpdateTime))) {
                 return $.Deferred().resolve();
             }
@@ -52,7 +50,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                 dataType: 'json',
                 contentType: 'application/json',
                 data: JSON.stringify(data)
-            }).then(_.bind(function(result, state, deferred) {
+            }).then((result, state, deferred) => {
                 try {
                     this.userId = result.access.user.id;
                     this.token = result.access.token.id;
@@ -64,14 +62,14 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                 } catch (e) {
                     return $.Deferred().reject();
                 }
-            }, this)).fail(_.bind(function() {
-                delete this.tokenUpdateTime;
-            }, this)).always(_.bind(function() {
-                delete this.tokenUpdateRequest;
-            }, this));
+            })
+            .fail(() => delete this.tokenUpdateTime)
+            .always(() => delete this.tokenUpdateRequest);
+
             return this.tokenUpdateRequest;
-        },
-        changePassword: function(currentPassword, newPassword) {
+        }
+
+        changePassword(currentPassword, newPassword) {
             var data = {
                 user: {
                     password: newPassword,
@@ -84,7 +82,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                 contentType: 'application/json',
                 data: JSON.stringify(data),
                 headers: {'X-Auth-Token': this.token}
-            }).then(_.bind(function(result, state, deferred) {
+            }).then((result, state, deferred) => {
                 try {
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
@@ -95,17 +93,12 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                 } catch (e) {
                     return $.Deferred().reject();
                 }
-            }, this));
-        },
-        deauthenticate: function() {
-            var token = this.token;
+            });
+        }
 
-            if (this.tokenRemoveRequest) {
-                return this.tokenRemoveRequest;
-            }
-            if (!this.token) {
-                return $.Deferred().reject();
-            }
+        deauthenticate() {
+            if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
+            if (!this.token) return $.Deferred().reject();
 
             delete this.userId;
             delete this.token;
@@ -113,18 +106,17 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
 
             Cookies.remove('token');
 
-            this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + token, {
+            this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + this.token, {
                 type: 'DELETE',
                 dataType: 'json',
                 contentType: 'application/json',
-                headers: {'X-Auth-Token': token}
-            }).always(_.bind(function() {
-                delete this.tokenRemoveRequest;
-            }, this));
+                headers: {'X-Auth-Token': this.token}
+            })
+            .always(() => delete this.tokenRemoveRequest);
 
             return this.tokenRemoveRequest;
         }
-    });
+    }
 
     return KeystoneClient;
 });

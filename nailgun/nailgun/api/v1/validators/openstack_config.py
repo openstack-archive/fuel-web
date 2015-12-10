@@ -16,7 +16,9 @@ import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import openstack_config as schema
+from nailgun import consts
 from nailgun.errors import errors
+from nailgun import objects
 
 
 class OpenstackConfigValidator(BasicValidator):
@@ -31,7 +33,27 @@ class OpenstackConfigValidator(BasicValidator):
     @classmethod
     def validate_execute(cls, data):
         """Validate parameters for execute handler"""
-        return cls._validate_data(data, schema.OPENSTACK_CONFIG_EXECUTE)
+        filters = cls._validate_data(data, schema.OPENSTACK_CONFIG_EXECUTE)
+        cls._validate_nodes_before_execute(filters)
+        return filters
+
+    @classmethod
+    def _validate_nodes_before_execute(cls, filters):
+        # We can not pass cluster object here from handler because cluster_id
+        # is passed in request data
+        cluster = objects.Cluster.get_by_uid(filters['cluster_id'])
+        nodes_to_update_config = objects.Cluster.get_nodes_to_update_config(
+            cluster, filters.get('node_id'), filters.get('node_role'))
+        ready_nodes = objects.Cluster.get_nodes_by_status(
+            cluster, consts.NODE_STATUSES.ready)
+
+        invalid_node_uids = (
+            set(node.uid for node in nodes_to_update_config)
+            - set(node.uid for node in ready_nodes))
+        if invalid_node_uids:
+            raise errors.InvalidData("Nodes '{0}' are not ready "
+                                     "and can not be updated"
+                                     "".format(', '.join(invalid_node_uids)))
 
     @classmethod
     def _validate_data(cls, data, schema):

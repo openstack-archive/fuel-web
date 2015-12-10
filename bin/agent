@@ -42,7 +42,7 @@ AGENT_CONFIG = "/etc/nailgun-agent/config.yaml"
 # KVM virtio volumes has code 252 in CentOS, but 253 in Ubuntu
 # Please also update the device codes here
 # https://github.com/stackforge/fuel-astute/blob/master/mcagents/erase_node.rb#L81
-STORAGE_CODES = [3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109, 110, 111, 202, 252, 253]
+STORAGE_CODES = [3, 8, 9, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109, 110, 111, 202, 252, 253]
 REMOVABLE_VENDORS = [
   "Adaptec", "IBM", "ServeRA",
 ]
@@ -314,12 +314,84 @@ class NodeAgent
     basepath.split("/")[2..-1].join("/") if basepath
   end
 
+  def _parse_md(data)
+    md = {}
+    begin
+      h, _, v = data.split(/Number\s+Major\s+Minor\s+RaidDevice\s+(State\s+)?/m)
+      line_patterns = ['Version', 'Raid Level', 'Raid Devices', 'Active Devices',
+                       'Spare Devices', 'Failed Devices', 'State', 'UUID']
+      for line in (h.split("\n")[1..-1] rescue [])
+        line.strip!
+        next if line == ""
+        line_patterns.each { |pattern| md[pattern] = line.split(" : ").last if line.start_with?(pattern) }
+      end
+      md['devices'] = []
+      for line in (v.split("\n") rescue [])
+        line.strip!
+        next if line == ""
+        md['devices'] << line.split().last
+      end
+    rescue Exception => e
+      @logger.error("Error '#{e.message}' in parsing MD: #{e.backtrace}")
+    end
+    md
+  end
+
+  def _find_fake_raid_mds()
+    mds = []
+    devices = []
+    begin
+      Dir["/sys/block/*"].each do |block_device_dir|
+        basename_dir = File.basename(block_device_dir)
+        devname = basename_dir.gsub(/!/, '/')
+        next unless devname.start_with?('md')
+        # Sample mdadm --detail /dev/md127 output:
+        # /dev/md127:
+        #         Version : 1.2
+        #   Creation Time : Thu Oct 29 16:12:00 2015
+        #      Raid Level : raid1
+        #      Array Size : 1048000 (1023.61 MiB 1073.15 MB)
+        #   Used Dev Size : 1048000 (1023.61 MiB 1073.15 MB)
+        #    Raid Devices : 2
+        #   Total Devices : 2
+        #     Persistence : Superblock is persistent
+        #
+        #     Update Time : Sun Nov  1 00:57:31 2015
+        #           State : clean
+        #  Active Devices : 2
+        # Working Devices : 2
+        #  Failed Devices : 0
+        #   Spare Devices : 0
+        #
+        #            Name : agordeev:123  (local to host agordeev)
+        #            UUID : 7aa70afc:742a9fa6:45f9f5a1:25a2585f
+        #          Events : 20
+        #
+        #     Number   Major   Minor   RaidDevice State
+        #        0     252        2        0      active sync   /dev/dm-2
+        #        1     252        3        1      active sync   /dev/dm-3
+        #
+        md_data = _parse_md(`mdadm --detail /dev/#{devname}`)
+        next if md_data['Raid Level'] == 'container'
+        if md_data.has_key?("Container")
+          devices.concat((md_data['devices'] or []))
+          mds << devname
+        end
+      end
+    rescue Exception => e
+      @logger.error("Error '#{e.message}' in finding fake raid MDs: #{e.backtrace}")
+    end
+    return mds, devices
+  end
+
   def physical_data_storage_devices
     @blocks ||= []
     return @blocks unless @blocks.empty?
 
     @logger.debug("Trying to get list of physical devices")
     raise "Path /sys/block does not exist" unless File.exists?("/sys/block")
+
+    mds, devices = _find_fake_raid_mds()
 
     Dir["/sys/block/*"].each do |block_device_dir|
       basename_dir = File.basename(block_device_dir)
@@ -328,6 +400,11 @@ class NodeAgent
       # the entry in /dev so we need to replace the ! to get a valid
       # device name.
       devname = basename_dir.gsub(/!/, '/')
+
+      # Skipping MD if it's a container. Also skipping underlying
+      # devices from which that container is composed.
+      next if devices.include?("/dev/#{devname}")
+      next if devname.start_with?('md') and not mds.include?(devname)
 
       @logger.debug("Getting udev properties for device: #{devname}")
       properties = `udevadm info --query=property --export --name=#{devname}`.split("\n").inject({}) do |result, raw_propety|
@@ -345,7 +422,7 @@ class NodeAgent
       if STORAGE_CODES.include?(properties['MAJOR'].to_i)
         @logger.debug("Device #{devname} seems to be appropriate")
         # Exclude LVM volumes (in CentOS - 253, in Ubuntu - 252) using additional check
-        unless properties['DEVPATH'].include?('virtual')
+        unless properties['DEVPATH'].include?('virtual/block/dm')
           @blocks << {
             :name => basename_dir,
             :disk => _disk_path_by_name(devname) || devname,

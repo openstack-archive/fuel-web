@@ -18,14 +18,13 @@ define(
 [
     'jquery',
     'underscore',
-    'i18n',
     'backbone',
     'react',
     'utils',
-    'views/layout',
     'models',
     'keystone_client',
     'views/root',
+    'views/dialogs',
     'views/login_page',
     'views/welcome_page',
     'views/cluster_page',
@@ -41,7 +40,7 @@ define(
     'bootstrap',
     './styles/main.less'
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, Backbone, React, utils, models, KeystoneClient, RootComponent, dialogs, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     class Router extends Backbone.Router {
@@ -201,11 +200,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                     if (this.version.get('auth_required') && !this.user.get('authenticated')) {
                         return $.Deferred().resolve();
                     } else {
-                        utils.showErrorDialog({
-                            message: i18n('common.loading_error'),
-                            keyboard: false,
-                            backdrop: false
-                        });
+                        dialogs.NailgunUnavailabilityDialog.show();
                         this.mountNode.remove();
                     }
                 })

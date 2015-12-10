@@ -402,6 +402,23 @@ LIST_BLOCK_DEVICES_SAMPLE = [
          'ss': '512', 'ioopt': '0', 'alignoff': '0', 'pbsz': '4096',
          'ra': '256', 'ro': '0', 'maxsect': '1024'},
      'size': 500107862016},
+    {'uspec':
+        {'DEVLINKS': ['/dev/disk/by-id/by-id/md-fake-raid-uuid'],
+         'ID_SERIAL_SHORT': 'fake_serial_raid',
+         'ID_WWN': 'fake_wwn_raid',
+         'DEVPATH': '/devices/virtual/block/md123',
+         'ID_MODEL': 'fake_raid',
+         'DEVNAME': '/dev/md123',
+         'MAJOR': '9',
+         'DEVTYPE': 'disk', 'MINOR': '123'},
+     'startsec': '0',
+     'device': '/dev/md123',
+     'espec': {'state': 'running', 'timeout': '30', 'removable': '0'},
+     'bspec': {
+         'sz': '976773168', 'iomin': '4096', 'size64': '500107862016',
+         'ss': '512', 'ioopt': '0', 'alignoff': '0', 'pbsz': '4096',
+         'ra': '256', 'ro': '0', 'maxsect': '1024'},
+     'size': 500107862016},
 ]
 
 SINGLE_DISK_KS_SPACES = [
@@ -575,6 +592,116 @@ MANY_HUGE_DISKS_KS_SPACES = [
         "id": "sdb",
         "size": 2097153
     }
+]
+
+
+FAKE_RAID_DISK_KS_SPACES = [
+    {
+        "name": "sda",
+        "extra": ["sda"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "mount": "/var",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext4",
+                "name": "Var"
+            },
+        ],
+        "type": "disk",
+        "id": "sda",
+        "size": 2097153
+    },
+    {
+        "name": "sdb",
+        "extra": ["sdb"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "mount": "/tmp",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext2",
+                "name": "TMP"
+            },
+        ],
+        "type": "disk",
+        "id": "sdb",
+        "size": 2097153
+    },
+    {
+        "name": "md123",
+        "extra": ["md123"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "lvm_meta_size": 64,
+                "size": 271370,
+                "type": "pv",
+                "vg": "os"
+            },
+
+        ],
+        "type": "disk",
+        "id": "md123",
+        "size": 2097153
+    },
+    {
+        "id": "os",
+        "label": "Base System",
+        "min_size": 55296,
+        "type": "vg",
+        "volumes": [
+            {
+                "file_system": "ext4",
+                "mount": "/",
+                "name": "root",
+                "size": 267210,
+                "type": "lv"
+            },
+            {
+                "file_system": "swap",
+                "mount": "swap",
+                "name": "swap",
+                "size": 4096,
+                "type": "lv"
+            }
+        ],
+    },
 ]
 
 
@@ -992,6 +1119,19 @@ class TestNailgun(test_base.BaseTestCase):
     @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
     @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
     @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_boot_partition_and_rootfs_on_fake_raid(self, mock_lbd,
+                                                    mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        data['ks_meta']['pm_data']['ks_spaces'] = FAKE_RAID_DISK_KS_SPACES
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(
+            drv.partition_scheme.fs_by_mount('/boot').device,
+            '/dev/md123p3')
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
     def test_boot_partition_no_boot(self, mock_lbd,
                                     mock_http_req, mock_yaml):
         data = copy.deepcopy(PROVISION_SAMPLE_DATA)
@@ -999,3 +1139,69 @@ class TestNailgun(test_base.BaseTestCase):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
         self.assertRaises(errors.WrongPartitionSchemeError,
                           nailgun.Nailgun, data)
+
+
+class TestNailgunBootDisks(test_base.BaseTestCase):
+    class PropertyMock(mock.Mock):
+        def __get__(self, instance, owner):
+            return self()
+
+    nvme_disk = {
+        'name': 'nvmen1', 'size': 5,
+        'volumes': [{'type': 'raid', 'mount': '/boot', 'size': 1}],
+    }
+    disks = [
+        {'name': 'sda', 'size': 5,
+         'volumes': [{'type': 'partition', 'mount': '/boot',
+                     'size': 1}],
+         },
+        {'name': 'sdb', 'size': 5,
+         'volumes': [{'type': 'raid', 'mount': '/boot', 'size': 1}],
+         },
+    ]
+    big_disk = {
+        'name': '2big', 'size': 555555555,
+        'volumes': [{'type': 'raid', 'mount': '/boot', 'size': 1}],
+    }
+    fake_raid = {
+        'name': 'md123', 'size': 5,
+        'volumes': [{'type': 'raid', 'mount': '/boot', 'size': 1},
+                    {'type': 'pv', 'vg': 'os', 'size': 1}],
+    }
+    non_os_fake_raid = {
+        'name': 'md456', 'size': 5,
+        'volumes': [{'type': 'raid', 'mount': '/boot', 'size': 1},
+                    {'type': 'pv', 'vg': 'image', 'size': 1}],
+    }
+
+    def _check_boot_disks(self, ks_disks_return_value,
+                          not_expected_disk, expected_disks):
+        with mock.patch.object(nailgun.Nailgun, '__init__', return_value=None):
+            ks_disks = self.PropertyMock()
+            with mock.patch.object(nailgun.Nailgun, 'ks_disks', ks_disks):
+                drv = nailgun.Nailgun('fake_data')
+                ks_disks.return_value = ks_disks_return_value
+                self.assertNotIn(not_expected_disk, drv.boot_disks)
+                self.assertEqual(expected_disks, drv.boot_disks)
+
+    def test_md_boot_disk(self):
+        ks_disks_return_value = self.disks + [self.non_os_fake_raid] +\
+            [self.fake_raid]
+        not_expected_disk = self.non_os_fake_raid
+        expected_disks = [self.fake_raid]
+        self._check_boot_disks(ks_disks_return_value, not_expected_disk,
+                               expected_disks)
+
+    def test_only_small_boot_disks(self):
+        ks_disks_return_value = self.disks + [self.big_disk]
+        not_expected_disk = self.big_disk
+        expected_disks = self.disks
+        self._check_boot_disks(ks_disks_return_value, not_expected_disk,
+                               expected_disks)
+
+    def test_boot_disks_no_nvme(self):
+        ks_disks_return_value = self.disks + [self.nvme_disk]
+        not_expected_disk = self.nvme_disk
+        expected_disks = self.disks
+        self._check_boot_disks(ks_disks_return_value, not_expected_disk,
+                               expected_disks)

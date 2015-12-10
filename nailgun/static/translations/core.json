@@ -42,7 +42,6 @@
                 "username": "Username",
                 "change_password": "Change Password",
                 "default_password_warning": "For security reasons, change the default admin password.",
-                "loading_error": "Failed to start Fuel UI. Nailgun is not available.",
                 "logout": "Logout",
                 "role_limits": {
                     "min": "At least __limitValue__ __roleName__ nodes are required (__count__ selected currently).",
@@ -801,6 +800,18 @@
                 "loading": "Loading..."
             },
             "dialog": {
+                "nailgun_unavailability": {
+                    "title": "Nailgun is Unavailable",
+                    "retry_now": "Retry Now",
+                    "unavailability_message": "Failed to start Fuel UI. Nailgun is unavailable.",
+                    "retry_delay_message": "Reconnecting in __count__ second...",
+                    "retry_delay_message_plural": "Reconnecting in __count__ seconds...",
+                    "retrying": "Reconnecting...",
+                    "unavailability_reasons": [
+                        "If you've just installed, restarted or upgraded the master node, it could take up to a few minutes to start Nailgun.",
+                        "If it's still unavailable for a long time, please check the logs."
+                    ]
+                },
                 "create_cluster_wizard": {
                     "title": "Create a new OpenStack environment",
                     "prev": "Prev",

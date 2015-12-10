@@ -37,6 +37,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             message: React.PropTypes.node,
             modalClass: React.PropTypes.node,
             error: React.PropTypes.bool,
+            closeable: React.PropTypes.bool,
             keyboard: React.PropTypes.bool,
             background: React.PropTypes.bool,
             backdrop: React.PropTypes.oneOfType([
@@ -89,7 +90,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             if (e.target.tagName == 'A' && !e.target.target && e.target.href) this.close();
         },
         closeOnEscapeKey: function(e) {
-            if (this.props.keyboard !== false && e.key == 'Escape') this.close();
+            if (this.props.keyboard !== false && this.props.closeable !== false && e.key == 'Escape') this.close();
             if (_.isFunction(this.onKeyDown)) this.onKeyDown(e);
         },
         showError: function(response, message) {
@@ -112,7 +113,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     <div className='modal-dialog'>
                         <div className='modal-content'>
                             <div className='modal-header'>
-                                <button type='button' className='close' aria-label='Close' onClick={this.close}><span aria-hidden='true'>&times;</span></button>
+                                {this.props.closeable !== false &&
+                                    <button type='button' className='close' aria-label='Close' onClick={this.close}>
+                                        <span aria-hidden='true'>&times;</span>
+                                    </button>
+                                }
                                 <h4 className='modal-title'>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h4>
                             </div>
                             <div className='modal-body'>
@@ -160,6 +165,101 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         mixins: [dialogMixin],
         getDefaultProps: function() {
             return {error: true};
+        }
+    });
+
+    dialogs.NailgunUnavailabilityDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps() {
+            return {
+                title: i18n('dialog.nailgun_unavailability.title'),
+                modalClass: 'nailgun-unavailability-dialog',
+                closeable: false,
+                keyboard: false,
+                backdrop: false,
+                retryDelayIntervals: [5, 10, 15, 20, 30, 60]
+            };
+        },
+        getInitialState() {
+            var initialDelay = this.props.retryDelayIntervals[0];
+            return {
+                currentDelay: initialDelay,
+                currentDelayInterval: initialDelay
+            };
+        },
+        componentWillMount() {
+            this.startCountdown();
+        },
+        componentDidMount() {
+            $(this.getDOMNode()).on('shown.bs.modal', () => $(this.refs['retry-button'].getDOMNode()).focus());
+        },
+        startCountdown() {
+            this.activeTimeout = _.delay(this.countdown, 1000);
+        },
+        stopCountdown() {
+            if (this.activeTimeout) clearTimeout(this.activeTimeout);
+            delete this.activeTimeout;
+        },
+        countdown: function() {
+            var {currentDelay} = this.state;
+            currentDelay--;
+            if (!currentDelay) {
+                this.setState({currentDelay, actionInProgress: true});
+                this.reinitializeUI();
+            } else {
+                this.setState({currentDelay});
+                this.startCountdown();
+            }
+        },
+        reinitializeUI() {
+            app.initialize().then(this.close, () => {
+                var {retryDelayIntervals} = this.props;
+                var nextDelay = retryDelayIntervals[retryDelayIntervals.indexOf(this.state.currentDelayInterval) + 1] || _.last(retryDelayIntervals);
+                _.defer(() => this.setState({
+                    actionInProgress: false,
+                    currentDelay: nextDelay,
+                    currentDelayInterval: nextDelay
+                }, this.startCountdown));
+            });
+        },
+        retryNow() {
+            this.stopCountdown();
+            this.setState({
+                currentDelay: 0,
+                currentDelayInterval: 0,
+                actionInProgress: true
+            });
+            this.reinitializeUI();
+        },
+        renderBody() {
+            return (
+                <div>
+                    <p>
+                        {i18n('dialog.nailgun_unavailability.unavailability_message')}
+                        {' '}
+                        {this.state.currentDelay ?
+                            i18n('dialog.nailgun_unavailability.retry_delay_message', {count: this.state.currentDelay})
+                        :
+                            i18n('dialog.nailgun_unavailability.retrying')
+                        }
+                    </p>
+                    <p>
+                        {i18n('dialog.nailgun_unavailability.unavailability_reasons')}
+                    </p>
+                </div>
+            );
+        },
+        renderFooter() {
+            return (
+                <button
+                    ref='retry-button'
+                    className='btn btn-success'
+                    onClick={this.retryNow}
+                    disabled={this.state.actionInProgress}
+                >
+                    {i18n('dialog.nailgun_unavailability.retry_now')}
+                </button>
+            );
         }
     });
 

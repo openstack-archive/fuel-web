@@ -99,7 +99,7 @@ class OpenstackConfigExecuteHandler(BaseHandler):
 
         cluster = self.get_object_or_404(
             objects.Cluster, filters['cluster_id'])
-
+        self.validator.validate_nodes_before_execute(cluster, filters)
         # Execute upload task for nodes
         task_manager = self.task_manager(cluster_id=cluster.id)
         try:

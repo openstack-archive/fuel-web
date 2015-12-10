@@ -17,6 +17,7 @@ import urllib
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun import objects
 from nailgun.objects.serializers.openstack_config import \
@@ -34,7 +35,9 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.env.create_cluster(api=False)
 
         self.clusters = self.env.clusters
-        self.nodes = self.env.create_nodes(3)
+        self.nodes = self.env.create_nodes(
+            3, cluster_id=self.clusters[0].id,
+            status=consts.NODE_STATUSES.ready)
 
         self.configs = []
         self.create_openstack_config(
@@ -150,12 +153,30 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_openstack_config_execute(self, _):
         data = {'cluster_id': self.clusters[0].id}
+        # Try to update whole cluster
         resp = self.app.put(
             reverse('OpenstackConfigExecuteHandler'),
             jsonutils.dumps(data), headers=self.default_headers
         )
-
+        # Update should pass ok
         self.assertEqual(resp.status_code, 202)
+        # Turn single node into not ready state
+        self.env.nodes[0].status = consts.NODE_STATUSES.provisioned
+        self.env.nodes[1].status = consts.NODE_STATUSES.ready
+        self.env.nodes[2].status = consts.NODE_STATUSES.ready
+        self.db.flush()
+        data = {'cluster_id': self.clusters[0].id}
+        # Try to update whole cluster again
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler'),
+            jsonutils.dumps(data), headers=self.default_headers,
+            expect_errors=True
+        )
+        # Request shouldn't pass a validation
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual("Nodes '{0}' are not ready and can not be updated"
+                         "".format(', '.join([self.env.nodes[0].uid])),
+                         resp.json_body['message'])
 
     def test_openstack_config_delete(self):
         resp = self.app.delete(

@@ -78,6 +78,7 @@ bu_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(bu_opts)
+GRUB2_DMRAID_SETTINGS = 'etc/default/grub.d/dmraid2mdadm.cfg'
 DEFAULT_APT_PATH = {
     'sources_file': 'etc/apt/sources.list',
     'sources_dir': 'etc/apt/sources.list.d',
@@ -212,6 +213,10 @@ def do_post_inst(chroot):
     # NOTE(agordeev): remove custom policy-rc.d which is needed to disable
     # execution of post/pre-install package hooks and start of services
     remove_files(chroot, ['usr/sbin/policy-rc.d'])
+    # enable mdadm (remove nomdadmddf nomdadmism options from cmdline)
+    utils.execute('chroot', chroot, 'dpkg-divert', '--local', '--add',
+                  os.path.join('/', GRUB2_DMRAID_SETTINGS))
+    remove_files(chroot, [GRUB2_DMRAID_SETTINGS])
     clean_apt_settings(chroot)
 
 

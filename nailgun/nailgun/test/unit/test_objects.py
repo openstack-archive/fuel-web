@@ -896,12 +896,7 @@ class TestActionLogObject(BaseIntegrationTest):
             'is_sent': False,
             'cluster_id': 1
         }
-
-        al = self._create_log_entry(object_data)
-
-        instance_to_validate = jsonutils.loads(objects.ActionLog.to_json(al))
-        self.assertRaises(jsonschema.ValidationError, jsonschema.validate,
-                          instance_to_validate, action_log.schema)
+        self.assertRaises(ValueError, self._create_log_entry, object_data)
 
     def test_get_by_uuid_method(self):
         object_data = {

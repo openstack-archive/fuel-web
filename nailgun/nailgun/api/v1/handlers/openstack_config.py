@@ -99,11 +99,14 @@ class OpenstackConfigExecuteHandler(BaseHandler):
 
         cluster = self.get_object_or_404(
             objects.Cluster, filters['cluster_id'])
-
+        nodes_to_update_config = objects.Cluster.get_nodes_to_update_config(
+            cluster, filters.get('node_id'), filters.get('node_role'))
+        self.validator.validate_nodes_before_execute(cluster,
+                                                     nodes_to_update_config)
         # Execute upload task for nodes
         task_manager = self.task_manager(cluster_id=cluster.id)
         try:
-            task = task_manager.execute(filters)
+            task = task_manager.execute(nodes_to_update_config)
         except Exception as exc:
             logger.warn(
                 u'Cannot execute %s task nodes: %s',

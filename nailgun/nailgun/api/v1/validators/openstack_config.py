@@ -16,7 +16,9 @@ import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import openstack_config as schema
+from nailgun import consts
 from nailgun.errors import errors
+from nailgun import objects
 
 
 class OpenstackConfigValidator(BasicValidator):
@@ -31,7 +33,17 @@ class OpenstackConfigValidator(BasicValidator):
     @classmethod
     def validate_execute(cls, data):
         """Validate parameters for execute handler"""
-        return cls._validate_data(data, schema.OPENSTACK_CONFIG_EXECUTE)
+        filters = cls._validate_data(data, schema.OPENSTACK_CONFIG_EXECUTE)
+
+    @classmethod
+    def validate_nodes_before_execute(cls, cluster, nodes_to_update_config):
+        ready_nodes = set(objects.Cluster.get_nodes_by_status(
+            cluster, consts.NODE_STATUSES.ready))
+        invalid_nodes = set(nodes_to_update_config) - ready_nodes
+        if invalid_nodes:
+            raise errors.InvalidData("Nodes '{0}' are not ready "
+                                     "and can not be updated"
+                                     "".format(', '.join(invalid_nodes)))
 
     @classmethod
     def _validate_data(cls, data, schema):

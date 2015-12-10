@@ -1357,16 +1357,13 @@ class UpdateDnsmasqTaskManager(TaskManager):
 
 class OpenstackConfigTaskManager(TaskManager):
 
-    def execute(self, filters):
+    def execute(self, nodes_to_update):
         self.check_running_task(consts.TASK_NAMES.deployment)
 
         task = Task(name=consts.TASK_NAMES.deployment,
                     cluster=self.cluster,
                     status=consts.TASK_STATUSES.pending)
         db().add(task)
-
-        nodes_to_update = objects.Cluster.get_nodes_to_update_config(
-            self.cluster, filters.get('node_id'), filters.get('node_role'))
 
         message = self._call_silently(
             task, tasks.UpdateOpenstackConfigTask,

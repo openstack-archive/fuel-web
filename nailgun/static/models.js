@@ -576,7 +576,7 @@ define([
             return this.match({name: ['stop_deployment', 'reset_environment']});
         },
         isStoppable: function() {
-            return this.match({name: 'deploy', status: 'running'});
+            return this.match('deploy');
         }
     });
 

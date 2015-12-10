@@ -45,12 +45,7 @@ class ActionLog(NailgunObject):
 
         :return: returned by parent class method value
         """
-
-        if data.get('additional_info'):
-            add_info = dict(instance.additional_info)
-            add_info.update(data['additional_info'])
-            data['additional_info'] = add_info
-
+        instance.additional_info.update(data.pop('additional_info', {}))
         return super(ActionLog, cls).update(instance, data)
 
     @classmethod

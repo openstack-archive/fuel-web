@@ -22,10 +22,10 @@ define(
     'backbone',
     'react',
     'utils',
-    'views/layout',
     'models',
     'keystone_client',
     'views/root',
+    'views/dialogs',
     'views/login_page',
     'views/welcome_page',
     'views/cluster_page',
@@ -41,7 +41,7 @@ define(
     'bootstrap',
     './styles/main.less'
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootComponent, dialogs, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     class Router extends Backbone.Router {
@@ -180,7 +180,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
             this.initialized = true;
             this.mountNode = $('#main-container');
 
-            this.version.fetch()
+            document.title = i18n('common.title');
+
+            return this.version.fetch()
                 .then(() => {
                     this.user.set({authenticated: !this.version.get('auth_required')});
                     this.patchBackboneSync();
@@ -201,15 +203,11 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, models, KeystoneC
                     if (this.version.get('auth_required') && !this.user.get('authenticated')) {
                         return $.Deferred().resolve();
                     } else {
-                        utils.showErrorDialog({
-                            message: i18n('common.loading_error'),
-                            keyboard: false,
-                            backdrop: false
-                        });
-                        this.mountNode.remove();
+                        this.mountNode.empty();
+                        dialogs.NailgunUnavailabilityDialog.show();
                     }
                 })
-                .done(() => Backbone.history.start());
+                .then(() => Backbone.history.start());
         }
 
         renderLayout() {

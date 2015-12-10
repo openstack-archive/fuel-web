@@ -143,7 +143,7 @@ define([
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
                     })
-                    .assertElementNotExists(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added')
+                    .assertElementDisabled(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added')
                     .assertElementExists('div.instruction.invalid', 'Invalid configuration message is shown')
                     .assertElementContainsText('.environment-alerts ul.text-danger li',
                             'At least 1 Controller nodes are required (0 selected currently).',

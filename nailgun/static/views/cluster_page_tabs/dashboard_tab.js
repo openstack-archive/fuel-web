@@ -191,7 +191,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 taskName = task.get('name'),
                 isInfiniteTask = task.isInfinite(),
                 taskProgress = task.get('progress'),
-                stoppableTask = task.isStoppable();
+                showStopButton = task.match({name: 'deploy'});
             return (
                 <div className='row'>
                     <div className='dashboard-block clearfix'>
@@ -199,7 +199,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                             <div className={utils.classNames({
                                 'deploy-process': true,
                                 [taskName]: true,
-                                'has-stop-control': stoppableTask
+                                'has-stop-control': showStopButton
                             })}>
                                 <h4>
                                     <strong>
@@ -208,11 +208,12 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     {i18n('cluster_page.' + taskName) + '...'}
                                 </h4>
                                 <controls.ProgressBar progress={!isInfiniteTask && taskProgress} />
-                                {stoppableTask &&
+                                {showStopButton &&
                                     <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
                                         <button
                                             className='btn btn-danger btn-xs pull-right stop-deployment-btn'
                                             onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                            disabled={!task.isStoppable()}
                                         >
                                             {i18n(namespace + 'stop')}
                                         </button>
@@ -505,17 +506,17 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                     {i18n('cluster_page.provision_vms')}
                                 </button>
                             :
-                                isDeploymentPossible &&
-                                    <button
-                                        className={utils.classNames({
-                                            'btn btn-primary deploy-btn': true,
-                                            'btn-warning': _.any(alerts, (messages) => !_.isEmpty(messages))
-                                        })}
-                                        onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
-                                    >
-                                        <div className='deploy-icon' />
-                                        {i18n('cluster_page.deploy_changes')}
-                                    </button>
+                                <button
+                                    className={utils.classNames({
+                                        'btn btn-primary deploy-btn': true,
+                                        'btn-warning': _.isEmpty(alerts.blocker) && (!_.isEmpty(alerts.error) || !_.isEmpty(alerts.warning))
+                                    })}
+                                    onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
+                                    disabled={!isDeploymentPossible}
+                                >
+                                    <div className='deploy-icon' />
+                                    {i18n('cluster_page.deploy_changes')}
+                                </button>
                             }
                         </div>
                         <div className='col-xs-9 environment-alerts'>
@@ -774,12 +775,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                                 }
                                 <div className='col-xs-12 dashboard-actions-wrapper'>
                                     <DeleteEnvironmentAction cluster={cluster} />
-                                    {cluster.get('status') != 'new' &&
-                                        <ResetEnvironmentAction
-                                            cluster={cluster}
-                                            task={cluster.task({group: 'deployment', active: true})}
-                                        />
-                                    }
+                                    <ResetEnvironmentAction
+                                        cluster={cluster}
+                                        task={cluster.task({group: 'deployment', active: true})}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -901,11 +900,11 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             componentMixins.backboneMixin('task')
         ],
         getDescriptionKey: function() {
-            var task = this.props.task;
-            if (task) {
-                if (_.contains(task.get('name'), 'reset')) {return 'repeated_reset_disabled';}
+            if (this.props.task) {
+                if (this.props.task.match({name: 'reset_environment'})) return 'repeated_reset_disabled';
                 return 'reset_disabled_for_deploying_cluster';
             }
+            if (this.props.cluster.get('status') == 'new') return 'no_changes_to_reset';
             return 'reset_environment_description';
         },
         applyAction: function(e) {
@@ -913,7 +912,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             dialogs.ResetEnvironmentDialog.show({cluster: this.props.cluster});
         },
         render: function() {
-            var isLocked = !!this.props.task;
+            var isLocked = this.props.cluster.get('status') == 'new' || !!this.props.task;
             return (
                 <div className='pull-right reset-environment'>
                     <button

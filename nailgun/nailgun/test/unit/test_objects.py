@@ -1602,6 +1602,26 @@ class TestNetworkGroup(BaseTestCase):
         self.assertTrue(objects.NetworkGroup.is_untagged(admin_net))
         self.assertFalse(objects.NetworkGroup.is_untagged(mgmt_net))
 
+    def test_update_meta(self):
+        cluster = self.env.create_cluster(api=False)
+        ng = cluster.network_groups[0]
+        original_name = ng.meta['name']
+
+        ng.meta.update({'render_type': 'new_value'})
+        self.db.flush()
+        updated_ng = objects.NetworkGroup.get_by_uid(ng['id'])
+
+        self.assertEqual(
+            updated_ng.meta['render_type'],
+            'new_value',
+            "Network group meta didn't updated."
+        )
+        self.assertEqual(
+            updated_ng['name'],
+            original_name,
+            "Network group meta updated incorrectly."
+        )
+
 
 class TestRelease(BaseTestCase):
 

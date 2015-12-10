@@ -107,35 +107,6 @@ define([
             }
             return result;
         },
-        universalMount: function(ViewConstructor, options, el, parentView) {
-            if (ViewConstructor.prototype instanceof Backbone.View) {
-                var view = new ViewConstructor(options);
-                view.render();
-                if (el) {
-                    $(el).html(view.el);
-                }
-                if (parentView) {
-                    parentView.registerSubView(view);
-                }
-                return view;
-            } else {
-                var node = $(el)[0];
-                var mountedComponent = React.render(React.createElement(ViewConstructor, options), node);
-                // FIXME(vkramskikh): we need to store node to which
-                // we mounted the component since it is not always
-                // possible to determine the node: if render() returns
-                // null, getDOMNode() also returns null
-                mountedComponent._mountNode = node;
-                return mountedComponent;
-            }
-        },
-        universalUnmount: function(view) {
-            if (view instanceof Backbone.View) {
-                view.tearDown();
-            } else {
-                React.unmountComponentAtNode(view._mountNode || view.getDOMNode().parentNode);
-            }
-        },
         showErrorDialog: function(options) {
             var dialogs = require('views/dialogs'); // avoid circular dependencies
             options.message = options.response ? utils.getResponseText(options.response) :

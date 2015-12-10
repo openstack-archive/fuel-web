@@ -46,7 +46,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         statics: {
             show: function(options) {
-                return utils.universalMount(this, options, $('#modal-container')).getResult();
+                return React.render(React.createElement(this, options), $('#modal-container')[0]).getResult();
             }
         },
         getInitialState: function() {

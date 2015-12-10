@@ -85,6 +85,12 @@ cli_opts = [
         default='nailgun',
         help='Data driver'
     ),
+    cfg.BoolOpt(
+        'skip_md_containers',
+        default=False,
+        help='Allow to skip MD containers (fake raid leftovers) while '
+             'cleaning the rest of MDs',
+    ),
 ]
 
 CONF = cfg.CONF
@@ -103,7 +109,7 @@ class Manager(object):
         # If disks are not wiped out at all, it is likely they contain lvm
         # and md metadata which will prevent re-creating a partition table
         # with 'device is busy' error.
-        mu.mdclean_all()
+        mu.mdclean_all(skip_containers=CONF.skip_md_containers)
         lu.lvremove_all()
         lu.vgremove_all()
         lu.pvremove_all()
@@ -203,7 +209,7 @@ class Manager(object):
         # there might be md and lvm metadata on those partitions. To prevent
         # failing of creating md and lvm devices we need to make sure
         # unused metadata are wiped out.
-        mu.mdclean_all()
+        mu.mdclean_all(skip_containers=CONF.skip_md_containers)
         lu.lvremove_all()
         lu.vgremove_all()
         lu.pvremove_all()

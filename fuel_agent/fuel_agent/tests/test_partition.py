@@ -196,9 +196,10 @@ class TestParted(test_base.BaseTestCase):
     def test_next_name_with_separator(self, nt_mock, nc_mock):
         nc_mock.return_value = 1
         nt_mock.return_value = 'not_extended'
-        self.prtd.name = 'cciss or loop'
-        expected_name = '%sp%s' % (self.prtd.name, 1)
-        self.assertEqual(expected_name, self.prtd.next_name())
+        for self.prtd.name in ('/dev/cciss/c0d0', '/dev/loop123',
+                               '/dev/nvme0n1', '/dev/md127'):
+            expected_name = '%sp%s' % (self.prtd.name, 1)
+            self.assertEqual(expected_name, self.prtd.next_name())
 
     def test_next_begin_empty_partitions(self):
         self.assertEqual(1, self.prtd.next_begin())

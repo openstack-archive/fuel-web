@@ -33,9 +33,10 @@ def mddetail_parse(output):
             continue
         for pattern in ('Version', 'Raid Level', 'Raid Devices',
                         'Active Devices', 'Spare Devices',
-                        'Failed Devices', 'State', 'UUID'):
+                        'Failed Devices', 'State', 'UUID',
+                        'Container'):
             if line.startswith(pattern):
-                md[pattern] = line.split()[-1]
+                md[pattern] = line.split(' : ')[-1].strip()
     md['devices'] = []
     for line in v.split('\n'):
         line = line.strip()
@@ -155,16 +156,29 @@ def mdclean(device):
                   check_exit_code=[0])
 
 
-def mdclean_all():
+def mdclean_all(skip_containers=False):
     LOG.debug('Trying to wipe out all md devices')
+    mds_to_skip = []
     for md in mddisplay():
+        # NOTE(agordeev): typically, for fake raids there's container device
+        # which has 'Raid Level': container, which shouldn't be cleaned.
+        # Also, operational MDs related to this container have 'Container' set
+        # to '/dev/<fakeraiddev>'
+        if skip_containers:
+            if 'Container' in md or \
+                    ('Raid Level' in md and md['Raid Level'] == 'container'):
+                mds_to_skip.append(md['name'])
+                continue
         mdremove(md['name'])
         for dev in md.get('devices', []):
             mdclean(dev)
     # second attempt, remove stale inactive devices
     for md in mddisplay():
-        mdremove(md['name'])
+        if md['name'] not in mds_to_skip:
+            mdremove(md['name'])
     mds = mddisplay()
-    if len(mds) > 0:
+    if len(mds) - len(mds_to_skip) > 0:
         raise errors.MDRemovingError(
             'Error while removing mds: few devices still presented %s' % mds)
+    if len(mds_to_skip):
+        LOG.debug('Cleaning was skipped for few MDs: %s', mds_to_skip)

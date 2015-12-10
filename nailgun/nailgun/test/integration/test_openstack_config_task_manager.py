@@ -32,8 +32,7 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['controller'], 'status': 'ready'},
                 {'roles': ['compute'], 'status': 'ready'},
-                {'roles': ['compute'], 'status': 'ready'},
-                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['compute'], 'status': 'ready'}
             ]
         )
 
@@ -81,7 +80,7 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
 
         self.assertEqual(task.status, consts.TASK_STATUSES.pending)
 
-        all_node_ids = [n.id for n in self.env.nodes[:3]]
+        all_node_ids = [n.id for n in self.env.nodes]
         self.assertItemsEqual(task.cache['nodes'], all_node_ids)
 
         tasks = mocked_rpc.call_args[0][1]['args']['tasks']

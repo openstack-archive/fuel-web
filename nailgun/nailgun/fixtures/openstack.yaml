@@ -21,13 +21,7 @@
         public_for_dvr_required: true
         limits:
           min: 1
-          overrides:
-            - condition: "cluster:mode == 'multinode'"
-              max: 1
-              message: "Multi-node environment can not have more than one Controller node."
-            - condition: "cluster:mode == 'ha_compact'"
-              recommended: 3
-              message: "At least 3 Controller nodes are recommended for Highly Available (HA) environments. Deployments with less than 3 Controller nodes are not recommended for production environments."
+          recommended: 3
       compute:
         name: "Compute"
         description: "A Compute node creates, manages, and terminates virtual machine instances."

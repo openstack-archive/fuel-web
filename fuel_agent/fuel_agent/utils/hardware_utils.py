@@ -22,8 +22,8 @@ from fuel_agent.utils import utils
 # KVM virtio volumes have major number 252 in CentOS, but 253 in Ubuntu.
 # NOTE(agordeev): nvme devices also have a major number of 259
 # (only in 2.6 kernels)
-VALID_MAJORS = (3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109,
-                110, 111, 202, 252, 253, 259)
+VALID_MAJORS = (3, 8, 9, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108,
+                109, 110, 111, 202, 252, 253, 259)
 
 # We are only interested in getting these
 # properties from udevadm report

@@ -91,7 +91,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     {...additionalProps}
                     {...this.composeProps(attribute, false, isInteger)}
                     type='text'
-                    wrapperClassName={attribute + ' simple-input'}
+                    wrapperClassName={attribute}
                 />
             );
         },

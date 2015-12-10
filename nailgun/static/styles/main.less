@@ -1374,46 +1374,6 @@ input[type=range] {
     color: @base-text-color;
   }
 
-  .network-tab,
-  .settings-tab {
-    .subtab-icon {
-      position: absolute;
-      left: 5px;
-      top: 10px;
-      z-index: 1;
-      width: 15px;
-      height: 15px;
-    }
-    .forms-box {
-      .setting-section {margin-bottom: 40px;}
-      .form-group {
-        label, .help-block {
-          display: flex;
-          align-items: center;
-          min-height: 30px;
-          padding-top: 0;
-        }
-      }
-    }
-    .nav-pills:after {
-      margin-bottom: 20px;
-    }
-    .help-block {
-      color: @gray;
-    }
-    h3 {
-      .checkbox-group {
-        margin-bottom: 0;
-        label {
-          line-height: 1;
-        }
-        .help-block {
-          display: none;
-        }
-      }
-    }
-  }
-
   .subtab-item-enter {
     max-height: 0px;
     &.subtab-item-enter-active {
@@ -3764,6 +3724,59 @@ input[type=range] {
   }
 }
 
+.network-tab, .settings-tab {
+  .subtab-icon {
+    position: absolute;
+    left: 5px;
+    top: 10px;
+    z-index: 1;
+    width: 15px;
+    height: 15px;
+  }
+  .forms-box {
+    .setting-section {
+      margin-bottom: 40px;
+    }
+    .form-group {
+      label {
+        display: flex;
+        align-items: center;
+        min-height: 30px;
+        padding-top: 0;
+      }
+    }
+    .help-block {
+      color: @gray;
+    }
+  }
+  .nav-pills:after {
+    margin-bottom: 20px;
+  }
+  h3 {
+    .checkbox-group {
+      margin-bottom: 0;
+      label {
+        line-height: 1;
+      }
+      .help-block {
+        display: none;
+      }
+    }
+  }
+}
+
+// Settings tab
+.settings-tab {
+  .form-group {
+    .help-block {
+      display: flex;
+      align-items: center;
+      min-height: 30px;
+      padding-top: 0;
+    }
+  }
+}
+
 // Networks tab
 .network-tab {
   @base-indent: 10px;
@@ -3793,12 +3806,15 @@ input[type=range] {
     &.public {
       margin-top: 5px;
     }
+    .help-block {
+      display: block;
+      clear: both;
+      margin-left: @default-label-width;
+      padding-top: 0;
+      max-width: none;
+    }
     .form-group {
       padding: 0;
-      .help-block {
-        max-width: none;
-        padding-top: 8px;
-      }
       &.floating_ranges {
         margin-bottom: 10px;
       }
@@ -3816,8 +3832,7 @@ input[type=range] {
         .form-group {
           margin-bottom: 0;
           .help-block {
-            position: absolute;
-            left: 645px;
+            margin-left: 0;
           }
         }
       }
@@ -3919,7 +3934,9 @@ input[type=range] {
         .help-block { display: none; }
       }
       .validation-error {
-        margin: 8px 0 0;
+        margin: 0;
+        display: block;
+        clear: both;
         font-size: @base-font-size - 2;
       }
       .ip-ranges-control {
@@ -3939,40 +3956,31 @@ input[type=range] {
     }
   }
 
-  .simple-input.has-error {
-    input {margin-right: 10px;}
-    .help-block {margin-left: 0;}
-  }
-
   //vlan tag control
   .vlan-tagging {
     height: 40px;
-    > label.vlan-tag-label {
-      // needed to preserve style of title which is overridden below
-      width: @default-label-width;
-    }
-    // label for checkbox
-    label {
-      // which is overridden here for hiding label
-      width: auto;
-    }
-    input[type=text] {
-      margin-left: -@base-indent * 3;
-      // to fit the width of other controls
-      width: 246px;
+    .form-group {
+      input[type=text] {
+        width: 244px;
+      }
+      .help-block {
+        margin-left: @default-label-width + 36;
+      }
     }
     .checkbox-group {
       padding-left: 0;
       margin-bottom: 0;
       margin-left: @default-label-width;
-      label span {
+      label {
+        width: auto;
         padding-right: 0;
+        margin-right: 8px;
       }
-      .custom-tumbler {
-        input[type='checkbox'] {
-          // to pull cursor pointer only to checkbox
-          width: auto;
-        }
+      .help-block {
+        display: none;
+      }
+      input[type='checkbox'] {
+        width: auto;
       }
     }
   }

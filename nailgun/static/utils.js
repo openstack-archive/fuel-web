@@ -225,7 +225,9 @@ define([
                         }
 
                         if (_.isEmpty(error)) {
-                            if (IP.toLong(range[0]) > IP.toLong(range[1])) {
+                            if (_.isUndefined(cidr)) {
+                                error.start = error.end = warnings['ip-range-is-not-in-any-cidr'];
+                            } else if (IP.toLong(range[0]) > IP.toLong(range[1])) {
                                 error.start = error.end = warnings['invalid-ip-range'];
                             } else if (conflictingRanges.length) {
                                 var intersection = utils.checkIPRangesIntersection(range, conflictingRanges);

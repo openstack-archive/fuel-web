@@ -92,10 +92,6 @@
                     "stopped": "Stopped",
                     "update": "Update",
                     "update_error": "Update Error"
-                },
-                "mode": {
-                    "ha_compact": "Multi-node with HA",
-                    "multinode": "Multi-node"
                 }
             },
             "network": {
@@ -1099,10 +1095,6 @@
                     "operational": "可操作",
                     "error": "错误",
                     "removing": "移除中"
-                },
-                "mode": {
-                    "ha_compact": "HA多节点",
-                    "multinode": "多节点"
                 }
             },
             "network": {
@@ -1638,10 +1630,6 @@
                     "stopped": "停止中",
                     "update": "更新",
                     "update_error": "更新エラー"
-                },
-                "mode": {
-                    "ha_compact": "マルチノード(HA構成)",
-                    "multinode": "マルチノード"
                 }
             },
             "network": {
@@ -2372,10 +2360,6 @@
                     "error": "오류",
                     "remove": "삭제중",
                     "stopped": "중지"
-                },
-                "mode": {
-                    "ha_compact": "고가용성(HA) 다중노드",
-                    "multinode": "다중노드"
                 }
             },
             "network": {

@@ -39,6 +39,7 @@ OPENSTACK_CONFIG_EXECUTE = {
     'description': 'Openstack Configuration filters for execute',
     'properties': {
         'id': {'type': 'number'},
+        'force': {'type': 'boolean'}
     },
     'required': ['cluster_id'],
 }

@@ -574,6 +574,7 @@
                     "reset_environment_warning": "You are about to reset all existing nodes to the pre-deployment state and delete this environment. Environment settings and network configuration will be preserved.",
                     "reset_disabled_for_deploying_cluster": "The OpenStack environment is still being deployed. Wait untill Fuel completes the deployment and try again.",
                     "repeated_reset_disabled": "The environment is already being reset.",
+                    "no_changes_to_reset": "Not deployed environment can not be resetted",
                     "rename_error": {
                         "title": "Unable to rename the OpenStack environment"
                     },

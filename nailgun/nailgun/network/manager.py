@@ -694,9 +694,12 @@ class NetworkManager(object):
                 iface.assigned_networks_list.append(ng)
                 break
             else:
-                logger.warn("Cannot assign network %r appropriately for "
-                            "node %r. Set unassigned network to the "
-                            "interface %r", ng.name, node.name, ifaces[0].name)
+                logger.warning(
+                    "Cannot assign network %r appropriately for "
+                    "node %r. Set unassigned network to the "
+                    "interface %r",
+                    ng.name, node.name, ifaces[0].name
+                )
                 ifaces[0].assigned_networks_list.append(ng)
         db().flush()
 

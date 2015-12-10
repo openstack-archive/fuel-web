@@ -818,7 +818,12 @@ class TestNetworkManager(BaseNetworkManagerTest):
         with patch.object(logger, 'warning') as mock_warn:
             objects.Cluster.patch_attributes(
                 cluster, yaml.load(attributes_metadata % True))
-            mock_warn.assert_called_once()
+            mock_warn.assert_called_once_with(
+                "Cannot assign network %r appropriately for "
+                "node %r. Set unassigned network to the "
+                "interface %r",
+                "restricted_net", mock.ANY, mock.ANY
+            )
         self.db.refresh(cluster)
         assigned_nets_count = 0
         for iface in cluster.nodes[0].interfaces:

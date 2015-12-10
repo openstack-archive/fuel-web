@@ -16,6 +16,7 @@ import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import openstack_config as schema
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 
@@ -25,14 +26,57 @@ class OpenstackConfigValidator(BasicValidator):
     int_fields = frozenset(['cluster_id', 'node_id', 'is_active'])
     exclusive_fields = frozenset(['node_id', 'node_role'])
 
-    @classmethod
-    def validate(cls, data):
-        return cls._validate_data(data, schema.OPENSTACK_CONFIG)
+    @staticmethod
+    def _check_no_running_deploy_tasks(cluster_id):
+        """Check that no deploy tasks are running at the moment
+
+        If there are running deploy tasks in cluster, NotAllowed exception
+        raises.
+        """
+        deploy_task_ids = [
+            six.text_type(task.id)
+            for task in objects.TaskCollection.get_by_name_and_cluster_id(
+                cluster_id, (consts.TASK_NAMES.deploy,))
+            .filter_by(status=consts.TASK_STATUSES.running)
+            .all()]
+
+        if deploy_task_ids:
+            raise errors.NotAllowed(
+                "Cannot perform the action because there are "
+                "running deployment tasks '{0}'"
+                "".format(', '.join(deploy_task_ids)))
 
     @classmethod
-    def validate_execute(cls, data):
-        """Validate parameters for execute handler"""
-        return cls._validate_data(data, schema.OPENSTACK_CONFIG_EXECUTE)
+    def _validate_nodes_before_execute(cls, filters):
+        """Validate target nodes before execute configuration update"""
+        # We can not pass cluster object here from handler because cluster_id
+        # is passed in request data
+        force = filters.get('force', False)
+        cluster = objects.Cluster.get_by_uid(filters['cluster_id'],
+                                             fail_if_not_found=True)
+        target_nodes = objects.Cluster.get_nodes_to_update_config(
+            cluster, filters.get('node_id'), filters.get('node_role'),
+            only_ready_nodes=False)
+
+        ready_target_nodes_uids = set(
+            node.uid for node in target_nodes
+            if node.status == consts.NODE_STATUSES.ready)
+
+        if not ready_target_nodes_uids:
+            raise errors.InvalidData("No nodes in status 'ready'")
+
+        if force:
+            return
+
+        invalid_target_nodes_uids = set(
+            node.uid for node in target_nodes
+            if node.status != consts.NODE_STATUSES.ready)
+
+        if invalid_target_nodes_uids:
+            raise errors.InvalidData(
+                "Nodes '{0}' are not in status 'ready' and can not be updated "
+                "directly."
+                "".format(', '.join(invalid_target_nodes_uids)))
 
     @classmethod
     def _validate_data(cls, data, schema):
@@ -53,6 +97,27 @@ class OpenstackConfigValidator(BasicValidator):
         return data
 
     @classmethod
+    def validate(cls, data):
+        """Validate data for new configuration
+
+        Validation fails if there are running deployment tasks in cluster.
+        """
+        data = cls._validate_data(data, schema.OPENSTACK_CONFIG)
+        cls._check_no_running_deploy_tasks(data['cluster_id'])
+        return data
+
+    @classmethod
+    def validate_execute(cls, data):
+        """Validate parameters for execute handler
+
+        Validation fails if there are running deployment tasks in cluster.
+        """
+        filters = cls._validate_data(data, schema.OPENSTACK_CONFIG_EXECUTE)
+        cls._check_no_running_deploy_tasks(filters['cluster_id'])
+        cls._validate_nodes_before_execute(filters)
+        return filters
+
+    @classmethod
     def validate_query(cls, data):
         """Validate parameters to filter list of configurations"""
         cls._convert_query_fields(data)
@@ -64,7 +129,12 @@ class OpenstackConfigValidator(BasicValidator):
 
     @classmethod
     def validate_delete(cls, data, instance):
-        pass
+        """Validate parameters for delete handler
+
+        Validation fails if there are running deployment tasks in cluster.
+
+        """
+        cls._check_no_running_deploy_tasks(instance.cluster_id)
 
     @classmethod
     def _convert_query_fields(cls, data):

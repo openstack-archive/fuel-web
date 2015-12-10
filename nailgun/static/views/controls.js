@@ -36,6 +36,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
             disabled: React.PropTypes.bool,
             inputClassName: React.PropTypes.node,
             wrapperClassName: React.PropTypes.node,
+            tooltipPlacement: React.PropTypes.oneOf(['left', 'right', 'top', 'bottom']),
             tooltipIcon: React.PropTypes.node,
             tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
@@ -51,7 +52,8 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
         },
         getDefaultProps: function() {
             return {
-                tooltipIcon: 'glyphicon-warning-sign'
+                tooltipIcon: 'glyphicon-warning-sign',
+                tooltipPlacement: 'right'
             };
         },
         togglePassword: function() {
@@ -172,7 +174,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
                     {children}
                     {this.props.label}
                     {this.props.tooltipText &&
-                        <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                        <controls.Tooltip text={this.props.tooltipText} placement={this.props.tooltipPlacement}>
                             <i className={utils.classNames('glyphicon tooltip-icon', this.props.tooltipIcon)} />
                         </controls.Tooltip>
                     }
@@ -348,7 +350,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
         },
         componentDidUpdate: function() {
             if (this.props.text) {
-                $(this.refs.tooltip.getDOMNode()).attr('title', this.props.text).tooltip('fixTitle');
+                this.updateTooltipTitle();
             } else {
                 this.removeTooltip();
             }
@@ -362,6 +364,9 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
                 placement: this.props.placement,
                 title: this.props.text
             });
+        },
+        updateTooltipTitle: function() {
+            $(this.refs.tooltip.getDOMNode()).attr('title', this.props.text).tooltip('fixTitle');
         },
         removeTooltip: function() {
             $(this.refs.tooltip.getDOMNode()).tooltip('destroy');

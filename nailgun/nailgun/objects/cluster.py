@@ -1317,7 +1317,7 @@ class Cluster(NailgunObject):
         :type instance: nailgun.db.sqlalchemy.models.Cluster instance
         """
         attrs = cls.get_editable_attributes(instance, False)
-        return attrs['common']['task_deploy']['value']
+        return attrs.get['common'].get('task_deploy', {}).get('value')
 
 
 class ClusterCollection(NailgunCollection):

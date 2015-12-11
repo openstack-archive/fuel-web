@@ -108,6 +108,7 @@
                 "username": "Username",
                 "password": "Password",
                 "login_error": "Unable to log in",
+                "keystone_unavailable_error": "Unable to log in. Keystone service is not available.",
                 "credentials_error": "Invalid credentials",
                 "log_in": "Log In",
                 "title": "Log In",

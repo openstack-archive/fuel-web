@@ -1,0 +1,65 @@
+Fuel Infrastructure
+===================
+
+Overview
+--------
+
+Fuel Infrastructure is the set of systems (servers and services) which provide
+the following functionality:
+
+* automatic tests for every patchset committed to Fuel Gerrit repositories,
+* Fuel nightly builds,
+* regular integration tests,
+* custom builds and custom tests,
+* release management and publishing,
+* centralized log storage for gathering logs from infra's servers,
+* internal and external mirrors, used by our infra and partners,
+* DNS service,
+* server's monitoring service,
+* docker's registry for managing dockers custom images,
+* small helper subsystems like common ZNC-bouncer, status pages and so on.
+
+Fuel Infrastructure servers are managed by Puppet from one Puppet Master node.
+
+To add new server to the infrastructure you can either take any server with base
+Ubuntu 14.04 installed and connect it to the Puppet Master via puppet agent, or
+you can first set up the PXE-server with PXETool :ref:`pxe-tool` and then run
+server provisioning in automated way.
+
+Your infrastructure must have a DNS service running in order to resolve the
+mandatory hosts like puppet-master.test.local or pxetool.test.local. There are
+at least two possible scenarios regarding DNS in your infra.
+Using DHCP service in your infra is optional, but can be more elastic and
+comfortable than static IP configuration.
+
+#. Create own DNS service provided by dnsmasq in your infra
+
+   # Install base Ubuntu 14.04 with SSH service and set appropriate FQDN like
+   # dns01.test.local and configure Dnsmasq service.
+
+   ::
+
+     apt-get update; apt-get install -y dnsmasq
+
+     echo "addn-hosts=/etc/dnsmasq.d/hosts" >> /etc/dnsmasq.conf
+
+     echo "192.168.50.2 puppet-master.test.local puppet-master" > /etc/dnsmasq.d/hosts
+
+     echo "192.168.50.3 pxetool.test.local puppet-master" > /etc/dnsmasq.d/hosts
+
+     service dnsmasq restart
+
+     Ensure to update /etc/resolv.conf file to point to your DNS if using static IP
+     configuration or update DHCP service in case of dynamic.
+
+#. Add new zone to your current DNS setup or use external, online DNS service
+
+   ::
+
+     Add a zone named 'test.local'.
+
+     Add appropriate A and its coresponding PTR record for 'puppet-master' name
+     (mandatory for deployment) at least.
+
+     Ensure to update /etc/resolv.conf file to point to your DNS if using static IP
+     configuration or update DHCP service in case of dynamic.

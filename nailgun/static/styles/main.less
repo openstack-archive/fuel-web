@@ -1404,7 +1404,7 @@ input[type=range] {
             width: 135px;
           }
           &.col-level {
-            width: 50px;
+            min-width: 60px;
           }
         }
         td {
@@ -2165,7 +2165,7 @@ input[type=range] {
         }
 
         .node-status {
-          width: 20%;
+          width: 22%;
           text-align: center;
           .font-semibold;
           .node-text-mixin;
@@ -2208,7 +2208,7 @@ input[type=range] {
         }
 
         .node-labels {
-          width: 5%;
+          width: @node-button-size;
           padding-top: 15px;
           position: relative;
           overflow: visible;
@@ -2558,7 +2558,7 @@ input[type=range] {
 
     .node-labels {
       text-align: left;
-      margin-left: 24px;
+      margin-left: 15px;
       margin-bottom: 5px;
       font-size: @base-font-size - 4;
       ul {

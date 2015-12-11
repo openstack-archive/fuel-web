@@ -458,6 +458,8 @@
                         "add_nodes_button": "Add Nodes",
                         "selected_options": "__count__ selected",
                         "select_all": "Select All",
+                        "label_value_not_specified" : "The label value not specified",
+                        "label_not_assigned": "The label not assigned",
                         "labels": {
                             "manage_labels": "Manage Labels",
                             "add_label": "Add Label",

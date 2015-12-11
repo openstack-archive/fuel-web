@@ -48,9 +48,11 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
         ],
         statics: {
             fetchData: function(options) {
-                return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
-                    return {};
-                });
+                return $.when(
+                    options.cluster.get('settings').fetch({cache: true}),
+                    options.cluster.get('defaultSettings').fetch({cache: true}),
+                    options.cluster.get('networkConfiguration').fetch({cache: true})
+                ).then(() => ({}));
             }
         },
         getInitialState: function() {
@@ -124,40 +126,21 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
         },
         loadDefaults: function() {
             var settings = this.props.cluster.get('settings'),
-                lockedCluster = !this.props.cluster.isAvailableForSettingsChanges(),
-                defaultSettings = new models.Settings(),
-                deferred = defaultSettings.fetch({url: _.result(this.props.cluster, 'url') + '/attributes/defaults'});
-
-            if (deferred) {
-                this.setState({actionInProgress: true});
-                deferred
-                    .done(_.bind(function() {
-                        _.each(settings.attributes, function(section, sectionName) {
-                            if ((!lockedCluster || section.metadata.always_editable) && section.metadata.group != 'network') {
-                                _.each(section, function(setting, settingName) {
-                                    // do not update hidden settings (hack for #1442143),
-                                    // the same for settings with group network
-                                    if (setting.type == 'hidden' || setting.group == 'network') return;
-                                    var path = settings.makePath(sectionName, settingName);
-                                    settings.set(path, defaultSettings.get(path), {silent: true});
-                                });
-                            }
-                        });
-
-                        settings.isValid({models: this.state.configModels});
-                        this.setState({
-                            actionInProgress: false,
-                            key: _.now()
-                        });
-                    }, this))
-                    .fail(function(response) {
-                        utils.showErrorDialog({
-                            title: i18n('cluster_page.settings_tab.settings_error.title'),
-                            message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning'),
-                            response: response
-                        });
+                defaultSettings = this.props.cluster.get('defaultSettings'),
+                lockedCluster = !this.props.cluster.isAvailableForSettingsChanges();
+            _.each(settings.attributes, (section, sectionName) => {
+                if ((!lockedCluster || section.metadata.always_editable) && section.metadata.group != 'network') {
+                    _.each(section, (setting, settingName) => {
+                        // do not update hidden settings (hack for #1442143),
+                        // the same for settings with group network
+                        if (setting.type == 'hidden' || setting.group == 'network') return;
+                        var path = settings.makePath(sectionName, settingName);
+                        settings.set(path, defaultSettings.get(path), {silent: true});
                     });
-            }
+                }
+            });
+            settings.isValid({models: this.state.configModels});
+            this.setState({key: _.now()});
         },
         revertChanges: function() {
             this.loadInitialSettings();

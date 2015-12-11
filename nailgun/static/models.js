@@ -100,13 +100,11 @@ define([
     };
 
     var restrictionMixin = models.restrictionMixin = {
-        expandRestrictions: function(restrictions, path) {
-            path = path || 'restrictions';
+        expandRestrictions: function(restrictions, path = 'restrictions') {
             this.expandedRestrictions = this.expandedRestrictions || {};
             this.expandedRestrictions[path] = _.map(restrictions, utils.expandRestriction, this);
         },
-        checkRestrictions: function(models, action, path) {
-            path = path || 'restrictions';
+        checkRestrictions: function(models, action, path = 'restrictions') {
             var restrictions = (this.expandedRestrictions || {})[path];
             if (action) restrictions = _.where(restrictions, {action: action});
             var satisfiedRestrictions = _.filter(restrictions, function(restriction) {
@@ -650,15 +648,15 @@ define([
             // any restrictions added later in the same model
             this.once('change', this.processRestrictions, this);
         },
-        validate: function(attrs, options) {
+        validate: function(attrs, options = {}) {
             var errors = {},
-                models = options ? options.models : {},
+                models = options.models || {},
                 checkRestrictions = _.bind(function(path) {
                     return this.checkRestrictions(models, null, path);
                 }, this);
-            _.each(attrs, function(group, groupName) {
+            _.each(attrs, (group, groupName) => {
                 if ((group.metadata || {}).enabled === false || checkRestrictions(this.makePath(groupName, 'metadata')).result) return;
-                _.each(group, function(setting, settingName) {
+                _.each(group, (setting, settingName) => {
                     var path = this.makePath(groupName, settingName);
                     if (checkRestrictions(path).result) return;
 

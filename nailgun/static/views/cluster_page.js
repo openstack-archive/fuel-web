@@ -107,6 +107,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     settings.url = _.result(cluster, 'url') + '/attributes';
                     cluster.set({settings: settings});
 
+                    var defaultSettings = new models.Settings();
+                    defaultSettings.url = _.result(cluster, 'url') + '/attributes/defaults';
+                    cluster.set({defaultSettings: defaultSettings});
+
                     var roles = new models.Roles();
                     roles.url = _.result(cluster, 'url') + '/roles';
                     cluster.set({roles: roles});
@@ -121,6 +125,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     promise = $.when(
                             cluster.fetch(),
                             cluster.get('settings').fetch(),
+                            cluster.get('defaultSettings').fetch(),
                             cluster.get('roles').fetch(),
                             cluster.get('pluginLinks').fetch({cache: true}),
                             cluster.fetchRelated('nodes'),

@@ -31,6 +31,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     var dialogs = {};
 
+    function getActiveDialog() {
+        return app.dialog;
+    }
+
+    function setActiveDialog(dialog) {
+        if (dialog) {
+            app.dialog = dialog;
+        } else {
+            delete app.dialog;
+        }
+    }
+
     var dialogMixin = dialogs.dialogMixin = {
         propTypes: {
             title: React.PropTypes.node,
@@ -47,7 +59,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         statics: {
             show: function(options) {
-                return React.render(React.createElement(this, options), $('#modal-container')[0]).getResult();
+                var activeDialog = getActiveDialog();
+                if (activeDialog) {
+                    var result = $.Deferred();
+                    $(activeDialog.getDOMNode()).on('hidden.bs.modal', () => {
+                        this.show(options).then(result.resolve, result.reject);
+                    });
+                    return result;
+                } else {
+                    return React.render(React.createElement(this, options), $('#modal-container')[0]).getResult();
+                }
             }
         },
         getInitialState: function() {
@@ -60,10 +81,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return this.state.result;
         },
         componentDidMount: function() {
+            setActiveDialog(this);
             Backbone.history.on('route', this.close, this);
             var $el = $(this.getDOMNode());
             $el.on('hidden.bs.modal', this.handleHidden);
-            $el.on('shown.bs.modal', function() {$el.find('input:enabled:first').focus();});
+            $el.on('shown.bs.modal', () => $el.find('input:enabled:first').focus());
             $el.modal(_.defaults(
                 {keyboard: false},
                 _.pick(this.props, ['background', 'backdrop']),
@@ -77,6 +99,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             Backbone.history.off(null, null, this);
             $(this.getDOMNode()).off('shown.bs.modal hidden.bs.modal');
             this.rejectResult();
+            setActiveDialog(null);
         },
         handleHidden: function() {
             React.unmountComponentAtNode(this.getDOMNode().parentNode);

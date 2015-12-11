@@ -158,19 +158,31 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 202)
 
     def test_openstack_config_delete(self):
+        obj_id = self.configs[0].id
+
         resp = self.app.delete(
             reverse('OpenstackConfigHandler',
-                    {'obj_id': self.configs[0].id}),
+                    {'obj_id': obj_id}),
             expect_errors=True)
         self.assertEqual(resp.status_code, 204)
 
         resp = self.app.get(
             reverse('OpenstackConfigHandler',
-                    {'obj_id': self.configs[0].id}),
+                    {'obj_id': obj_id}),
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json_body['is_active'], False)
+
+        # Try delete already deleted object
+        resp = self.app.delete(
+            reverse('OpenstackConfigHandler',
+                    {'obj_id': obj_id}),
+            headers=self.default_headers, expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json_body['message'],
+            "Configuration '{0}' has been already disabled.".format(obj_id))
 
     @classmethod
     def _make_filter_url(cls, **kwargs):

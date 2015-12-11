@@ -17,6 +17,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.errors import errors
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.openstack_config \
@@ -34,17 +35,22 @@ class OpenstackConfig(NailgunObject):
         data['is_active'] = True
         config = cls.find_config(**data)
         if config:
-            cls.delete(config)
+            cls.disable(config)
         return super(OpenstackConfig, cls).create(data)
 
     @classmethod
-    def delete(cls, instance):
-        """Deletes configuration.
+    def disable(cls, instance):
+        """Disables configuration.
 
         It is required to track history of previous configurations.
-        This why delete operation doesn't remove a record from the database,
+        This why disable operation doesn't remove a record from the database,
         it sets `is_active` property to False.
         """
+        if not instance.is_active:
+            raise errors.CannotUpdate(
+                "Configuration '{0}' has been already disabled.".format(
+                    instance.id))
+
         instance.is_active = False
         db().flush()
 

@@ -21,7 +21,7 @@ from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.openstack_config import OpenstackConfigValidator
-
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.task.manager import OpenstackConfigTaskManager
@@ -79,6 +79,31 @@ class OpenstackConfigHandler(SingleHandler):
         :http: * 405 (Method not allowed)
         """
         raise self.http(405)
+
+    @content
+    def DELETE(self, obj_id):
+        """:returns: Empty string
+
+        :http: * 204 (object successfully deleted)
+               * 400 (object is already deleted)
+               * 404 (object not found in db)
+        """
+        obj = self.get_object_or_404(
+            self.single,
+            obj_id
+        )
+
+        self.checked_data(
+            self.validator.validate_delete,
+            instance=obj
+        )
+
+        try:
+            self.single.disable(obj)
+        except errors.CannotUpdate as exc:
+            raise self.http(400, exc.message)
+
+        raise self.http(204)
 
 
 class OpenstackConfigExecuteHandler(BaseHandler):

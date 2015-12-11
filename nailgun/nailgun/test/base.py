@@ -412,9 +412,10 @@ class EnvironmentManager(object):
         self.db.commit()
         return notification
 
-    def create_node_group(self, api=True, **kwargs):
+    def create_node_group(self, api=True, cluster_id=None, **kwargs):
+        cluster = self._get_cluster(cluster_id=cluster_id)
         ng_data = {
-            'cluster_id': self.clusters[0].id,
+            'cluster_id': cluster.id,
             'name': 'test_ng'
         }
         if kwargs:
@@ -873,13 +874,36 @@ class EnvironmentManager(object):
             if item.get('pk') == pk and item.get('model') == model:
                 return item
 
-    def launch_provisioning_selected(self, nodes_uids=None):
+    def _get_cluster(self, cluster_num=0, cluster_id=None):
+        """Get cluster by number or cluster id.
+
+        :param cluster_num: cluster number
+        :type cluster_num: int
+        :param cluster_id: cluster id
+        :type cluster_id: int
+        :return: cluster
+        """
+        cluster = None
+        if cluster_id:
+            for c in self.clusters:
+                if c.id == cluster_id:
+                    cluster = c
+                    break
+            else:
+                raise Exception(
+                    'Cluster with ID "{0}" not found!'.format(cluster_id))
+        else:
+            cluster = self.clusters[cluster_num]
+        return cluster
+
+    def launch_provisioning_selected(self, nodes_uids=None, cluster_id=None):
         if self.clusters:
+            cluster = self._get_cluster(cluster_id=cluster_id)
             if not nodes_uids:
-                nodes_uids = [n.uid for n in self.clusters[0].nodes]
+                nodes_uids = [n.uid for n in cluster.nodes]
             action_url = reverse(
                 'ProvisionSelectedNodes',
-                kwargs={'cluster_id': self.clusters[0].id}
+                kwargs={'cluster_id': cluster.id}
             ) + '?nodes={0}'.format(','.join(nodes_uids))
             resp = self.app.put(
                 action_url,
@@ -897,12 +921,13 @@ class EnvironmentManager(object):
                 "Nothing to provision - try creating cluster"
             )
 
-    def launch_deployment(self):
+    def launch_deployment(self, cluster_id=None):
         if self.clusters:
+            cluster = self._get_cluster(cluster_id=cluster_id)
             resp = self.app.put(
                 reverse(
                     'ClusterChangesHandler',
-                    kwargs={'cluster_id': self.clusters[0].id}),
+                    kwargs={'cluster_id': cluster.id}),
                 headers=self.default_headers)
 
             return self.db.query(Task).filter_by(
@@ -913,12 +938,13 @@ class EnvironmentManager(object):
                 "Nothing to deploy - try creating cluster"
             )
 
-    def stop_deployment(self):
+    def stop_deployment(self, cluster_id=None):
         if self.clusters:
+            cluster = self._get_cluster(cluster_id=cluster_id)
             resp = self.app.put(
                 reverse(
                     'ClusterStopDeploymentHandler',
-                    kwargs={'cluster_id': self.clusters[0].id}),
+                    kwargs={'cluster_id': cluster.id}),
                 expect_errors=True,
                 headers=self.default_headers)
 
@@ -930,12 +956,13 @@ class EnvironmentManager(object):
                 "Nothing to stop - try creating cluster"
             )
 
-    def reset_environment(self, expect_http=202):
+    def reset_environment(self, expect_http=202, cluster_id=None):
         if self.clusters:
+            cluster = self._get_cluster(cluster_id=cluster_id)
             resp = self.app.put(
                 reverse(
                     'ClusterResetHandler',
-                    kwargs={'cluster_id': self.clusters[0].id}),
+                    kwargs={'cluster_id': cluster.id}),
                 expect_errors=True,
                 headers=self.default_headers)
             self.tester.assertEqual(resp.status_code, expect_http)
@@ -949,12 +976,13 @@ class EnvironmentManager(object):
                 "Nothing to reset - try creating cluster"
             )
 
-    def delete_environment(self, expect_http=202):
+    def delete_environment(self, expect_http=202, cluster_id=None):
         if self.clusters:
+            cluster = self._get_cluster(cluster_id=cluster_id)
             resp = self.app.delete(
                 reverse(
                     'ClusterHandler',
-                    kwargs={'obj_id': self.clusters[0].id}),
+                    kwargs={'obj_id': cluster.id}),
                 expect_errors=True,
                 headers=self.default_headers)
             self.tester.assertEqual(resp.status_code, expect_http)
@@ -968,16 +996,18 @@ class EnvironmentManager(object):
                 "Nothing to delete - try creating cluster"
             )
 
-    def update_environment(self, pending_release_id=None, expect_http=202):
+    def update_environment(self, pending_release_id=None, expect_http=202,
+                           cluster_id=None):
         if self.clusters:
+            cluster = self._get_cluster(cluster_id=cluster_id)
             if not pending_release_id:
-                pending_release_id = self.clusters[0].release_id
-            self.clusters[0].pending_release_id = pending_release_id
+                pending_release_id = cluster.release_id
+            cluster.pending_release_id = pending_release_id
             self.db.commit()
             resp = self.app.put(
                 reverse(
                     'ClusterUpdateHandler',
-                    kwargs={'cluster_id': self.clusters[0].id}),
+                    kwargs={'cluster_id': cluster.id}),
                 expect_errors=True,
                 headers=self.default_headers)
             self.tester.assertEqual(expect_http, resp.status_code)
@@ -991,8 +1021,10 @@ class EnvironmentManager(object):
                 "Nothing to update - try creating cluster"
             )
 
-    def launch_verify_networks(self, data=None, expect_errors=False):
+    def launch_verify_networks(self, data=None, expect_errors=False,
+                               cluster_id=None):
         if self.clusters:
+            cluster = self._get_cluster(cluster_id=cluster_id)
             net_urls = {
                 "nova_network": {
                     "config": "NovaNetworkConfigurationHandler",
@@ -1003,14 +1035,14 @@ class EnvironmentManager(object):
                     "verify": "NeutronNetworkConfigurationVerifyHandler"
                 }
             }
-            provider = self.clusters[0].net_provider
+            provider = cluster.net_provider
             if data:
                 nets = jsonutils.dumps(data)
             else:
                 resp = self.app.get(
                     reverse(
                         net_urls[provider]["config"],
-                        kwargs={'cluster_id': self.clusters[0].id}
+                        kwargs={'cluster_id': cluster.id}
                     ),
                     headers=self.default_headers
                 )
@@ -1020,7 +1052,7 @@ class EnvironmentManager(object):
             resp = self.app.put(
                 reverse(
                     net_urls[provider]["verify"],
-                    kwargs={'cluster_id': self.clusters[0].id}),
+                    kwargs={'cluster_id': cluster.id}),
                 nets,
                 headers=self.default_headers,
                 expect_errors=expect_errors,

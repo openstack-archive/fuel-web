@@ -7,150 +7,60 @@ Overview
 Fuel Infrastructure is the set of systems (servers and services) which provide
 the following functionality:
 
-* automatic tests for every patchset commited to Fuel Gerrit repositories,
+* automatic tests for every patchset committed to Fuel Gerrit repositories,
 * Fuel nightly builds,
 * regular integration tests,
 * custom builds and custom tests,
 * release management and publishing,
+* centralized log storage for gathering logs from infra's servers,
+* internal and external mirrors, used by our infra and partners,
+* DNS service,
+* server's monitoring service,
+* docker's registry for managing custom docker images,
 * small helper subsystems like common ZNC-bouncer, status pages and so on.
 
 Fuel Infrastructure servers are managed by Puppet from one Puppet Master node.
 
 To add new server to the infrastructure you can either take any server with base
 Ubuntu 14.04 installed and connect it to the Puppet Master via puppet agent, or
-you can first set up the PXE-server with PXETool :ref:`pxe-tool` and then run server
-provisioning in automated way.
+you can first set up the PXE-server with PXETool and then run
+server provisioning in automated way.
 
-Puppet
-------
+Your infrastructure must have a DNS service running in order to resolve the
+mandatory hosts like puppet-master.test.local or pxetool.test.local. There are
+at least two possible scenarios regarding DNS in your infra.
+Using DHCP service in your infra is optional, but can be more elastic and
+comfortable than static IP configuration.
 
-.. _pxe-tool:
+#. Create own DNS service provided by dnsmasq in your infra.
 
-Puppet Master
-~~~~~~~~~~~~~
+   #. Install base Ubuntu 14.04 with SSH service and set appropriate FQDN like
+      ``dns01.test.local`` and configure Dnsmasq service.
 
+     .. code-block:: console
 
-Puppet deployment with Fuel Infra manifests requires Puppet Master.
-To install Puppet Master to the brand new server:
+       apt-get update; apt-get install -y dnsmasq
 
-#. Get required repository with Puppet configuration:
+       echo "addn-hosts=/etc/dnsmasq.d/hosts" >> /etc/dnsmasq.conf
 
-   ::
+       echo "192.168.50.2 puppet-master.test.local puppet-master" > /etc/dnsmasq.d/hosts
 
-     git clone ssh://(gerrit_user_name)@review.fuel-infra.org:29418/fuel-infra/puppet-manifests
+       echo "192.168.50.3 pxetool.test.local puppet-master" > /etc/dnsmasq.d/hosts
 
-#. Create a script to update puppet server to current version:
+       service dnsmasq restart
 
-   ::
+   #. Ensure to update /etc/resolv.conf file to point to your DNS if using static IP
+      configuration or update DHCP service in case of dynamic.
 
-     #!/bin/bash
+#. Add new zone to your current DNS setup or use external, online DNS service.
 
-     REPO='/home/user/puppet-manifests'
-     SERVER='pxetool'
-     # sync repo files
-     rsync -av --delete $REPO/modules/ root@$SERVER:/etc/puppet/modules/
-     rsync -av --delete $REPO/manifests/ root@$SERVER:/etc/puppet/manifests/
-     rsync -av --delete $REPO/bin/ root@$SERVER:/etc/puppet/bin/
-     rsync -av --delete $REPO/hiera/ root@$SERVER:/etc/puppet/hiera/
-     # create symlinks
-     ssh root@$SERVER ln -s /etc/puppet/hiera/common-example.yaml /var/lib/hiera/common.yaml 2> /dev/null
+   #. Add a zone named ``test.local``.
 
-#. Install base Ubuntu 14.04 with SSH server running (set hostname to pxetool.test.local).
-   Download and install Puppet Agent package.
+   #. Add appropriate A and its coresponding PTR record for ``puppet-master`` name
+      (mandatory for deployment) at least.
 
-#. Run previously created script on your workstation to push configuration and scripts
-   to new server.  Run /etc/puppet/bin/install_puppet_master.sh as root on new server.
-
-The last script does the following:
-
-* upgrades all packages on the system
-* installs required modules
-* installs puppet and Puppet Master packages
-* runs puppet apply to setup Puppet Master
-* runs puppet agent to do a second pass and verify installation is usable
-
-.. note:: Puppet manifests take data (passwords, keys or configuration
-  parameters) from hiera configuration. To work with our predefined test data
-  script links ``hiera/common-example.yaml`` file to
-  ``/var/lib/hiera/common.yaml``.  This step must be done before running
-  ``bin/install_puppet_master.sh``.
-
-Once done, you can start deploying other nodes.
-
-Nodes and Roles
-~~~~~~~~~~~~~~~
-
-Currently, we define server roles via our hiera configuration (ssh://review.fuel-infra.org:29418/fuel-infra/puppet-manifests) using facter value ``ROLE``. Several roles are defined in ``hiera/roles``:
-
-* anon_stat.yaml
-* gerrit.yaml
-* glusterfs_testing.yaml
-* jenkins_master.yaml
-* jenkins_slave.yaml
-* lab.yaml
-* mongo_testing.yaml
-* nailgun_demo.yaml
-* puppetmaster.yaml
-* seed.yaml
-* tools.yaml
-* tracker.yaml
-* web.yaml
-* zbxproxy.yaml
-* zbxserver.yaml
-* znc.yaml
-
-The most of roles are self explainable.
-
-Generic Node Installation
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Follow these steps to deploy chosen node:
-
-* install base Ubuntu 14.04
-* install puppetlabs agent package
-* append to ``/etc/hosts`` - ``<Puppet Master IP> puppet pxetool.test.local``
-* run ``FACTER_ROLE=<role name> puppet agent --test`` to apply configuration
-
-Jenkins
--------
-
-Our Jenkins instances are configured to run in master-slave mode. We have
-Jenkins master instance on a virtual machine and a number of hardware nodes
-working as Jenkins slaves.
-
-Jenkins slaves setup
-~~~~~~~~~~~~~~~~~~~~
-
-There are several ways to setup Jenkins master-slave connection, and we use two
-of them. The first one is organized simply by putting Jenkins master SSH-key in
-authorized_keys file for jenkins user on a slave machine. Then you go to the
-Jenkins Web UI and create node manually by specifying node IP address. Jenkins
-master connects to the slave via SSH, downloads slave.jar file and runs jenkins
-process on a slave.
-
-The second approach requires more configuration steps to take, but allows you to
-create slave node automatically from a slave node itself. To use it you need:
-
-* install Swarm Plugin on Jenkins master
-* create Jenkins user with ability to create nodes
-* install jenkins-swarm-slave package on the slave
-* configure the slave to use the mentioned Jenkins user
-* run jenkins-swarm-slave service on the slave
-
-Service will automatically connect to Jenkins master and create a node with proper
-name and IP address.
-
-Though this approach seems to be complicated, it is quite easy to implement it
-with Puppet, as we do in jenkins::slave Puppet class (defined in
-puppet-manifests/modules/jenkins/manifests/slave.pp).
-
-If you use Gerrit slave with HTTPs support (default hiera value), please also
-include jenkins::swarm_slave as it will trust Jenkins Master certificate on
-Node side.
-
-The downside of the swarm slave plugin is that every time you reboot Jenkins
-master instance, slaves are recreated and, therefore, lose all the labels
-assigned to them via Jenkins WebUI.
+   #. Ensure to update ``/etc/resolv.conf`` file to point to your DNS if using static IP
+      configuration or update DHCP service in case of dynamic.
 
 Jenkins Jobs
 ------------
@@ -168,7 +78,7 @@ To begin work with jenkins job builder we need to install it and configure.
 
 #. Install packages required to work with JJB
 
-   ::
+   .. code-block:: console
 
      apt-get install -y git python-tox
      # or
@@ -176,7 +86,7 @@ To begin work with jenkins job builder we need to install it and configure.
 
 #. Download git repository and install JJB
 
-   ::
+   .. code-block:: console
 
      git clone https://github.com/fuel-infra/jenkins-jobs.git
      cd jenkins-jobs
@@ -185,7 +95,7 @@ To begin work with jenkins job builder we need to install it and configure.
 #. Enable python environment, please replace <server> with server name, for
    example fuel-ci
 
-   ::
+   .. code-block:: console
 
      source .tox/<server>/bin/activate
 
@@ -193,7 +103,7 @@ To begin work with jenkins job builder we need to install it and configure.
    at any place, for this documentation we assume that it will be placed in
    conf/ directory, inside local copy of jenkins-jobs repository.
 
-   ::
+   .. code-block:: console
 
     [jenkins]
     user=<JENKINS USER>
@@ -223,14 +133,14 @@ When JJB is installed and configured you can upload jobs to jenkins master.
 Upload all jobs configured for one specified server, for example upload of
 fule-ci can be done in this way:
 
-   ::
+   .. code-block:: console
 
      jenkins-jobs --conf conf/jenkins_jobs.ini update servers/fuel-ci:common
 
 
 Upload only one job
 
-   ::
+   .. code-block:: console
 
      jenkins-jobs --conf conf/jenkins_jobs.ini update servers/fuel-ci:common 8.0-community.all
 
@@ -249,7 +159,7 @@ For minimal environment we need 3 systems:
   mind that you have to explicitely set run_test and build_fuel_iso variables
   to true, as ones are not enabled by default.
 
-   ::
+   .. code-block:: ini
 
     ---
     classes:
@@ -280,7 +190,7 @@ a few steps:
 
 #. Create your own jobs repository, for start we will use fuel-ci jobs
 
-   ::
+   .. code-block:: console
 
      cd jenkins-jobs/servers
      cp -pr fuel-ci test-ci
@@ -299,7 +209,7 @@ a few steps:
    * If you don't need reporting jobs you should delete triggering of
      fuel_community_build_reports in all jobs or disable reporting job
 
-    ::
+    .. code-block:: ini
 
      - job:
         ...
@@ -312,7 +222,7 @@ a few steps:
    * Update seed name server in file
      servers/test-ci/8.0/fuel_community_publish_iso.yaml
 
-    ::
+    .. code-block:: ini
 
      - job:
         ...
@@ -328,7 +238,7 @@ a few steps:
    * Update seed name server in file
      servers/test-ci/8.0/builders/publish_fuel_community_iso.sh
 
-    ::
+    .. code-block:: console
 
       sed -i 's/seed-us1.fuel-infra.org/seed.test.local/g' servers/test-ci/8.0/builders/publish_fuel_community_iso.sh
       sed -i 's/seed-cz1.fuel-infra.org/seed.test.local/g' servers/test-ci/8.0/builders/publish_fuel_community_iso.sh
@@ -341,7 +251,7 @@ a few steps:
       * enable python environment
       * use correct jenkins_jobs.ini file (with correct jenkins master server)
 
-   ::
+   .. code-block:: console
 
      jenkins-jobs --conf conf/jenkins_jobs.ini update servers/test-ci:common 8.0-community.all
      jenkins-jobs --conf conf/jenkins_jobs.ini update servers/test-ci:common 8.0.publish_fuel_community_iso

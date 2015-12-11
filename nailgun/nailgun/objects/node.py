@@ -347,6 +347,20 @@ class Node(NailgunObject):
         return new_attributes
 
     @classmethod
+    def network_configuration_locked(cls, instance):
+        """Returns true if update of network configuration is not allowed.
+
+        It is not allowed during provision/deployment, after
+        successful deployment and during node removal.
+        """
+        return instance.status not in (
+            consts.NODE_STATUSES.discover,
+            consts.NODE_STATUSES.provisioned,
+            consts.NODE_STATUSES.error,
+        )
+
+
+    @classmethod
     def hardware_info_locked(cls, instance):
         """Returns true if update of hardware information is not allowed.
 
@@ -486,7 +500,7 @@ class Node(NailgunObject):
             # the current instance. This appears to overwrite the object in the
             # current session and we lose the meta changes.
             db().flush()
-            if cls.hardware_info_locked(instance):
+            if cls.network_configuration_locked(instance):
                 logger.debug("Interfaces are locked for update on node %s",
                              instance.human_readable_name)
             else:

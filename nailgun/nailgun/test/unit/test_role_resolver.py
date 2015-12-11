@@ -52,9 +52,10 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
         ]
 
     def setUp(self):
-        objs_mock = mock.patch('nailgun.utils.role_resolver.objects').start()
-        objs_mock.Node.all_roles.side_effect = self.roles_of_nodes
+        objs_mock = mock.patch('nailgun.utils.role_resolver.objects')
         self.addCleanup(objs_mock.stop)
+        objs_mock.start()
+        objs_mock.Node.all_roles.side_effect = self.roles_of_nodes
 
     def test_resolve_by_pattern(self):
         resolver = role_resolver.RoleResolver(self.nodes)

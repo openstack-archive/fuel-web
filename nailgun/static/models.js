@@ -452,7 +452,8 @@ define([
             return status;
         },
         getLabel: function(label) {
-            return this.get('labels')[label];
+            var labelValue = this.get('labels')[label];
+            return _.isUndefined(labelValue) ? false : labelValue;
         }
     });
 

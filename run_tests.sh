@@ -81,7 +81,7 @@ TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
 GULP="./node_modules/.bin/gulp"
-TOXENV=${TOXENV:-py26}
+TOXENV=${TOXENV:-py27}
 
 # test options
 testrargs=

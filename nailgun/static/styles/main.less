@@ -3812,12 +3812,15 @@ input[type=range] {
     &.public {
       margin-top: 5px;
     }
-    .help-block {
-      display: block;
+    &:not(.network) .has-error .help-block {
       clear: both;
       margin-left: @default-label-width;
       padding-top: 0;
       max-width: none;
+      display: block;
+    }
+    &.network .help-block {
+      max-width: 400px;
     }
     .form-group {
       padding: 0;
@@ -3963,7 +3966,7 @@ input[type=range] {
   }
 
   //vlan tag control
-  .vlan-tagging {
+  .forms-box:not(.network) .vlan-tagging {
     height: 40px;
     .form-group {
       input[type=text] {

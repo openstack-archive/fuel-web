@@ -114,7 +114,10 @@ default_messages = {
 
     "UnresolvableConflict": "Unresolvable conflict",
 
-    "NodeNotBelongToCluster": "The Node doesn't belong to the Cluster"
+    "NodeNotBelongToCluster": "The Node doesn't belong to the Cluster",
+
+    "TaskBaseDeploymentNotAllowed":
+        "The task-based deployment is not allowed"
 }
 
 

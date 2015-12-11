@@ -46,6 +46,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
+from nailgun.orchestrator import task_based_deploy
 from nailgun.orchestrator import tasks_serializer
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
@@ -139,12 +140,16 @@ class DeploymentTask(object):
     """
 
     @classmethod
-    def _get_deployment_method(cls, cluster):
+    def _get_deployment_method(cls, cluster, ignore_task_deploy=False):
         """Get deployment method name based on cluster version
 
         :param cluster: Cluster db object
+        :param ignore_task_deploy: do not check that task deploy enabled
         :returns: string - deploy/granular_deploy
         """
+        if not ignore_task_deploy and \
+                objects.Cluster.is_task_deploy_enabled(cluster):
+            return "task_deploy"
         if objects.Release.is_granular_enabled(cluster.release):
             return 'granular_deploy'
         return 'deploy'
@@ -174,9 +179,18 @@ class DeploymentTask(object):
         db().flush()
 
         deployment_mode = cls._get_deployment_method(task.cluster)
-        message = getattr(cls, deployment_mode)(
-            task, nodes, deployment_tasks, reexecutable_filter
-        )
+        while True:
+            try:
+                message = getattr(cls, deployment_mode)(
+                    task, nodes, deployment_tasks, reexecutable_filter
+                )
+                break
+            except errors.TaskBaseDeploymentNotAllowed:
+                deployment_mode = cls._get_deployment_method(
+                    task.cluster, True
+                )
+                logger.warning("fallback to %s deploy.", deployment_mode)
+
         # After serialization set pending_addition to False
         for node in nodes:
             node.pending_addition = False
@@ -214,6 +228,24 @@ class DeploymentTask(object):
         }
 
     deploy = granular_deploy
+
+    @classmethod
+    def task_deploy(
+            cls, task, nodes, deployment_tasks, reexecutable_filter):
+
+        deployment_tasks = deployment_tasks or \
+            objects.Cluster.get_deployment_tasks(task.cluster)
+
+        serialized_cluster = deployment_serializers.serialize(
+            None, task.cluster, nodes
+        )
+        serialized_tasks = task_based_deploy.TasksSerializer.serialize(
+            task.cluster, nodes, deployment_tasks
+        )
+        return {
+            "deployment_info": serialized_cluster,
+            "deployment_tasks": serialized_tasks
+        }
 
 
 class UpdateNodesInfoTask(object):

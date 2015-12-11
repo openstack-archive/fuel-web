@@ -964,6 +964,16 @@
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
             type: "textarea"
+          task_deploy:
+            value: false
+            label: "Enable task based deploy"
+            description: "Enables new deployment engine based on cross-node dependencies for deployment tasks which allows to deploy all nodes simultaneously. Works only for deployment tasks with version >= 2.0.0."
+            weight: 11
+            type: "checkbox"
+            restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
+
         public_network_assignment:
           metadata:
             weight: 10

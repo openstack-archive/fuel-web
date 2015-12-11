@@ -1309,6 +1309,16 @@ class Cluster(NailgunObject):
             sa.not_(models.Node.pending_deletion)
         ).all()
 
+    @classmethod
+    def is_task_deploy_enabled(cls, instance):
+        """Tests that task based deploy is enabled.
+
+        :param instance: cluster for checking
+        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
+        """
+        attrs = cls.get_editable_attributes(instance, False)
+        return attrs['common']['task_deploy']['value']
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

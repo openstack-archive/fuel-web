@@ -52,6 +52,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             componentMixins.dispatcherMixin('deploymentTaskStarted', function() {
                 this.refreshCluster().always(this.startPolling);
             }),
+            componentMixins.dispatcherMixin('networkVerificationTaskStarted', function() {
+                this.startPolling();
+            }),
             componentMixins.dispatcherMixin('deploymentTaskFinished', function() {
                 this.refreshCluster().always(() => dispatcher.trigger('updateNotifications'));
             })

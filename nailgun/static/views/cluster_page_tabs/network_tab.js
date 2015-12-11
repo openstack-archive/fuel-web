@@ -527,7 +527,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 },
                 renderOn: 'change invalid'
             }),
-            componentMixins.pollingMixin(3),
             componentMixins.unsavedChangesMixin
         ],
         statics: {
@@ -538,12 +537,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     cluster.get('networkConfiguration').fetch({cache: true})
                 ).then(() => ({}));
             }
-        },
-        shouldDataBeFetched: function() {
-            return !!this.props.cluster.task({group: 'network', active: true});
-        },
-        fetchData: function() {
-            return this.props.cluster.task({group: 'network', active: true}).fetch();
         },
         getInitialState: function() {
             var settings = this.props.cluster.get('settings');
@@ -671,7 +664,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     // button without clicking "Save Changes" button first).
                     // For proper implementation, this should be managed by backend
                     this.props.cluster.get('tasks').get(task.id).set('unsaved', this.hasChanges());
-                    return this.startPolling();
+                    dispatcher.trigger('networkVerificationTaskStarted');
+                    return $.Deferred().resolve();
                 })
                 .always(() => {
                     this.setState({actionInProgress: false});

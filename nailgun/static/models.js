@@ -248,19 +248,16 @@ define([
     };
 
     models.Plugin = BaseModel.extend({
-        constructorName: 'Plugin',
         urlRoot: '/api/plugins'
     });
 
     models.Plugins = BaseCollection.extend({
-        constructorName: 'Plugins',
         model: models.Plugin,
         url: '/api/plugins'
     });
 
     models.Role = BaseModel.extend(restrictionMixin).extend({
         idAttribute: 'name',
-        constructorName: 'Role',
         parse: function(response) {
             _.extend(response, _.omit(response.meta, 'name'));
             response.label = response.meta.name;
@@ -270,7 +267,6 @@ define([
     });
 
     models.Roles = BaseCollection.extend(restrictionMixin).extend({
-        constructorName: 'Roles',
         comparator: 'weight',
         model: models.Role,
         initialize: function() {
@@ -306,23 +302,18 @@ define([
     });
 
     models.Release = BaseModel.extend({
-        constructorName: 'Release',
         urlRoot: '/api/releases'
     });
 
-    models.ReleaseNetworkProperties = BaseModel.extend({
-        constructorName: 'ReleaseNetworkProperties'
-    });
+    models.ReleaseNetworkProperties = BaseModel.extend({});
 
     models.Releases = BaseCollection.extend(cacheMixin).extend({
-        constructorName: 'Releases',
         cacheFor: 60 * 1000,
         model: models.Release,
         url: '/api/releases'
     });
 
     models.Cluster = BaseModel.extend({
-        constructorName: 'Cluster',
         urlRoot: '/api/clusters',
         defaults: function() {
             var defaults = {
@@ -367,14 +358,12 @@ define([
     });
 
     models.Clusters = BaseCollection.extend({
-        constructorName: 'Clusters',
         model: models.Cluster,
         url: '/api/clusters',
         comparator: 'id'
     });
 
     models.Node = BaseModel.extend({
-        constructorName: 'Node',
         urlRoot: '/api/nodes',
         statuses: [
             'ready',
@@ -457,7 +446,6 @@ define([
     });
 
     models.Nodes = BaseCollection.extend({
-        constructorName: 'Nodes',
         model: models.Node,
         url: '/api/nodes',
         comparator: 'id',
@@ -523,12 +511,10 @@ define([
     });
 
     models.NodesStatistics = BaseModel.extend({
-        constructorName: 'NodesStatistics',
         urlRoot: '/api/nodes/allocation/stats'
     });
 
     models.Task = BaseModel.extend({
-        constructorName: 'Task',
         urlRoot: '/api/tasks',
         releaseId: function() {
             var id;
@@ -581,7 +567,6 @@ define([
     });
 
     models.Tasks = BaseCollection.extend({
-        constructorName: 'Tasks',
         model: models.Task,
         url: '/api/tasks',
         toJSON: function() {
@@ -601,12 +586,10 @@ define([
     });
 
     models.Notification = BaseModel.extend({
-        constructorName: 'Notification',
         urlRoot: '/api/notifications'
     });
 
     models.Notifications = BaseCollection.extend({
-        constructorName: 'Notifications',
         model: models.Notification,
         url: '/api/notifications',
         comparator: function(notification) {
@@ -615,7 +598,6 @@ define([
     });
 
     models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).extend(restrictionMixin).extend({
-        constructorName: 'Settings',
         urlRoot: '/api/clusters/',
         root: 'editable',
         cacheFor: 60 * 1000,
@@ -715,7 +697,6 @@ define([
     });
 
     models.FuelSettings = models.Settings.extend({
-        constructorName: 'FuelSettings',
         url: '/api/settings',
         root: 'settings',
         parse: function(response) {
@@ -724,7 +705,6 @@ define([
     });
 
     models.Disk = BaseModel.extend({
-        constructorName: 'Disk',
         urlRoot: '/api/nodes/',
         parse: function(response) {
             response.volumes = new models.Volumes(response.volumes);
@@ -751,14 +731,12 @@ define([
     });
 
     models.Disks = BaseCollection.extend({
-        constructorName: 'Disks',
         model: models.Disk,
         url: '/api/nodes/',
         comparator: 'name'
     });
 
     models.Volume = BaseModel.extend({
-        constructorName: 'Volume',
         urlRoot: '/api/volumes/',
         getMinimalSize: function(minimum) {
             var currentDisk = this.collection.disk,
@@ -782,13 +760,11 @@ define([
     });
 
     models.Volumes = BaseCollection.extend({
-        constructorName: 'Volumes',
         model: models.Volume,
         url: '/api/volumes/'
     });
 
     models.Interface = BaseModel.extend({
-        constructorName: 'Interface',
         parse: function(response) {
             response.assigned_networks = new models.InterfaceNetworks(response.assigned_networks);
             response.assigned_networks.interface = this;
@@ -831,7 +807,6 @@ define([
     });
 
     models.Interfaces = BaseCollection.extend({
-        constructorName: 'Interfaces',
         model: models.Interface,
         generateBondName: function(base) {
             var index, proposedName;
@@ -848,14 +823,12 @@ define([
     var networkPreferredOrder = ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'];
 
     models.InterfaceNetwork = BaseModel.extend({
-        constructorName: 'InterfaceNetwork',
         getFullNetwork: function(networks) {
             return networks.findWhere({name: this.get('name')});
         }
     });
 
     models.InterfaceNetworks = BaseCollection.extend({
-        constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
         comparator: function(network) {
             return _.indexOf(networkPreferredOrder, network.get('name'));
@@ -863,7 +836,6 @@ define([
     });
 
     models.Network = BaseModel.extend({
-        constructorName: 'Network',
         getVlanRange: function(networkingParameters) {
             if (!this.get('meta').neutron_vlan_range) {
                 var externalNetworkData = this.get('meta').ext_net_data;
@@ -875,19 +847,15 @@ define([
     });
 
     models.Networks = BaseCollection.extend({
-        constructorName: 'Networks',
         model: models.Network,
         comparator: function(network) {
             return _.indexOf(networkPreferredOrder, network.get('name'));
         }
     });
 
-    models.NetworkingParameters = BaseModel.extend({
-        constructorName: 'NetworkingParameters'
-    });
+    models.NetworkingParameters = BaseModel.extend({});
 
     models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
-        constructorName: 'NetworkConfiguration',
         cacheFor: 60 * 1000,
         parse: function(response) {
             response.networks = new models.Networks(response.networks);
@@ -1097,62 +1065,51 @@ define([
     });
 
     models.LogSource = BaseModel.extend({
-        constructorName: 'LogSource',
         urlRoot: '/api/logs/sources'
     });
 
     models.LogSources = BaseCollection.extend({
-        constructorName: 'LogSources',
         model: models.LogSource,
         url: '/api/logs/sources'
     });
 
     models.TestSet = BaseModel.extend({
-        constructorName: 'TestSet',
         urlRoot: '/ostf/testsets'
     });
 
     models.TestSets = BaseCollection.extend({
-        constructorName: 'TestSets',
         model: models.TestSet,
         url: '/ostf/testsets'
     });
 
     models.Test = BaseModel.extend({
-        constructorName: 'Test',
         urlRoot: '/ostf/tests'
     });
 
     models.Tests = BaseCollection.extend({
-        constructorName: 'Tests',
         model: models.Test,
         url: '/ostf/tests'
     });
 
     models.TestRun = BaseModel.extend({
-        constructorName: 'TestRun',
         urlRoot: '/ostf/testruns'
     });
 
     models.TestRuns = BaseCollection.extend({
-        constructorName: 'TestRuns',
         model: models.TestRun,
         url: '/ostf/testruns'
     });
 
     models.OSTFClusterMetadata = BaseModel.extend({
-        constructorName: 'OSTFClusterMetadata',
         urlRoot: '/api/ostf'
     });
 
     models.FuelVersion = BaseModel.extend({
-        constructorName: 'FuelVersion',
         urlRoot: '/api/version',
         authExempt: true
     });
 
     models.User = BaseModel.extend({
-        constructorName: 'User',
         locallyStoredAttributes: ['username', 'token'],
         initialize: function() {
             _.each(this.locallyStoredAttributes, function(attribute) {
@@ -1172,17 +1129,14 @@ define([
     });
 
     models.LogsPackage = BaseModel.extend({
-        constructorName: 'LogsPackage',
         urlRoot: '/api/logs/package'
     });
 
     models.CapacityLog = BaseModel.extend({
-        constructorName: 'CapacityLog',
         urlRoot: '/api/capacity'
     });
 
     models.WizardModel = Backbone.DeepModel.extend({
-        constructorName: 'WizardModel',
         parseConfig: function(config) {
             var result = {};
             _.each(config, _.bind(function(paneConfig, paneName) {
@@ -1246,7 +1200,6 @@ define([
     });
 
     models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
-        constructorName: 'MirantisCredentials',
         baseUrl: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
         validate: function(attrs) {
             var errors = {};
@@ -1265,7 +1218,6 @@ define([
     });
 
     models.MirantisLoginForm = models.MirantisCredentials.extend({
-        constructorName: 'MirantisLoginForm',
         url: function() {
             return this.baseUrl + 'login';
         },
@@ -1273,7 +1225,6 @@ define([
     });
 
     models.MirantisRegistrationForm = models.MirantisCredentials.extend({
-        constructorName: 'MirantisRegistrationForm',
         url: function() {
             return this.baseUrl + 'registration';
         },
@@ -1281,7 +1232,6 @@ define([
     });
 
     models.MirantisRetrievePasswordForm = models.MirantisCredentials.extend({
-        constructorName: 'MirantisRetrievePasswordForm',
         url: function() {
             return this.baseUrl + 'restore_password';
         },
@@ -1289,7 +1239,6 @@ define([
     });
 
     models.NodeNetworkGroup = BaseModel.extend({
-        constructorName: 'NodeNetworkGroup',
         urlRoot: '/api/nodegroups',
         isDefault: function() {
             return _.min(_.pluck(this.collection.where({cluster_id: this.get('cluster_id')}), 'id')) == this.id;
@@ -1313,19 +1262,15 @@ define([
     });
 
     models.NodeNetworkGroups = BaseCollection.extend(cacheMixin).extend({
-        constructorName: 'NodeNetworkGroups',
         cacheFor: 60 * 1000,
         model: models.NodeNetworkGroup,
         url: '/api/nodegroups',
         comparator: 'id'
     });
 
-    models.PluginLink = BaseModel.extend({
-        constructorName: 'PluginLink'
-    });
+    models.PluginLink = BaseModel.extend({});
 
     models.PluginLinks = BaseCollection.extend(cacheMixin).extend({
-        constructorName: 'PluginLinks',
         cacheFor: 60 * 1000,
         model: models.PluginLink,
         comparator: 'id'

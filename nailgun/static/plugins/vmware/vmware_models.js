@@ -42,7 +42,6 @@ function($, _, i18n, Backbone, models) {
     }
 
     var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.restrictionMixin).extend({
-        constructorName: 'BaseModel',
         toJSON: function() {
             return _.omit(this.attributes, 'metadata');
         },
@@ -98,7 +97,6 @@ function($, _, i18n, Backbone, models) {
     });
 
     var BaseCollection = Backbone.Collection.extend(models.superMixin).extend({
-        constructorName: 'BaseCollection',
         model: BaseModel,
         isValid: function() {
             this.validationError = this.validate();
@@ -120,7 +118,6 @@ function($, _, i18n, Backbone, models) {
     });
 
     var NovaCompute = BaseModel.extend({
-        constructorName: 'NovaCompute',
         checkEmptyTargetNode: function() {
             var targetNode = this.get('target_node');
             if (targetNode.current && targetNode.current.id == 'invalid') {
@@ -156,7 +153,6 @@ function($, _, i18n, Backbone, models) {
     });
 
     var NovaComputes = BaseCollection.extend({
-        constructorName: 'NovaComputes',
         model: NovaCompute,
         validate: function() {
             this._super('validate', arguments);
@@ -171,7 +167,6 @@ function($, _, i18n, Backbone, models) {
     });
 
     var AvailabilityZone = BaseModel.extend({
-        constructorName: 'AvailabilityZone',
         constructor: function(data) {
             Backbone.Model.apply(this, arguments);
             if (data) {
@@ -220,15 +215,13 @@ function($, _, i18n, Backbone, models) {
     });
 
     var AvailabilityZones = BaseCollection.extend({
-        constructorName: 'AvailabilityZones',
         model: AvailabilityZone
     });
 
-    var Network = BaseModel.extend({constructorName: 'Network'});
-    var Glance = BaseModel.extend({constructorName: 'Glance'});
+    var Network = BaseModel.extend({});
+    var Glance = BaseModel.extend({});
 
     var VCenter = BaseModel.extend({
-        constructorName: 'VCenter',
         url: function() {
             return '/api/v1/clusters/' + this.id + '/vmware_attributes' + (this.loadDefaults ? '/defaults' : '');
         },

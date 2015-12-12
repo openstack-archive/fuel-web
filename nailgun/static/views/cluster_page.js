@@ -192,7 +192,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     requests.push(task.destroy({silent: true}));
                 }
             }, this);
-            return $.when.apply($, requests);
+            return $.when(...requests);
         },
         shouldDataBeFetched: function() {
             return this.props.cluster.task({group: ['deployment', 'network'], active: true});

@@ -171,7 +171,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             if (oldTestruns.length) {
                 requests.push(Backbone.sync('update', oldTestruns));
             }
-            $.when.apply($, requests)
+            $.when(...requests)
                 .done(_.bind(function() {
                     this.startPolling(true);
                 }, this))

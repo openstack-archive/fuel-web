@@ -71,7 +71,7 @@ define([
 
             args.unshift(this.models);
 
-            return _[method].apply(_, args);
+            return _[method](...args);
         };
     });
 

@@ -124,7 +124,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
                 }, this));
                 requests.push(request);
             }
-            return $.when.apply($, requests);
+            return $.when(...requests);
         },
         render: function() {
             var cluster = this.props.cluster;

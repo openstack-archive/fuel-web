@@ -90,11 +90,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     {url: 'healthcheck', tab: HealthCheckTab}
                 ];
             },
-            fetchData: function(id, activeTab) {
+            fetchData: function(id, activeTab, ...tabOptions) {
                 var cluster, promise, currentClusterId;
                 var nodeNetworkGroups = app.nodeNetworkGroups;
-                var tab = _.find(this.getTabs(), {url: activeTab}).tab,
-                    tabOptions = _.toArray(arguments).slice(2);
+                var tab = _.find(this.getTabs(), {url: activeTab}).tab;
                 try {
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}
@@ -192,7 +191,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     requests.push(task.destroy({silent: true}));
                 }
             }, this);
-            return $.when.apply($, requests);
+            return $.when(...requests);
         },
         shouldDataBeFetched: function() {
             return this.props.cluster.task({group: ['deployment', 'network'], active: true});

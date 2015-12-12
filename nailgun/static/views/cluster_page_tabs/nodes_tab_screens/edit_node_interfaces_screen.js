@@ -53,7 +53,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 var networkConfiguration = cluster.get('networkConfiguration'),
                     networksMetadata = new models.ReleaseNetworkProperties();
 
-                return $.when.apply($, nodes.map(function(node) {
+                return $.when(...nodes.map(function(node) {
                     node.interfaces = new models.Interfaces();
                     return node.interfaces.fetch({
                         url: _.result(node, 'url') + '/interfaces',
@@ -186,7 +186,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 });
             });
             this.setState({actionInProgress: true});
-            return $.when.apply($, nodes.map(function(node) {
+            return $.when(...nodes.map(function(node) {
                 var oldNodeBonds, nodeBonds;
                 // removing previously configured bonds
                 oldNodeBonds = node.interfaces.filter(function(ifc) {return ifc.isBond();});
@@ -607,7 +607,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     return result.concat(modeSet.values);
                 }, [], this));
             }, this);
-            return _.intersection.apply(_, availableModes);
+            return _.intersection(...availableModes);
         },
         getBondPropertyValues: function(propertyName, value) {
             var bondType = this.props.bondType;

@@ -45,7 +45,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
 
                 var volumes = new models.Volumes();
                 volumes.url = _.result(nodes.at(0), 'url') + '/volumes';
-                return $.when.apply($, nodes.map(function(node) {
+                return $.when(...nodes.map(function(node) {
                         node.disks = new models.Disks();
                         return node.disks.fetch({url: _.result(node, 'url') + '/disks'});
                     }, this).concat(volumes.fetch()))
@@ -96,7 +96,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             this.setState({actionInProgress: true});
-            return $.when.apply($, this.props.nodes.map(function(node) {
+            return $.when(...this.props.nodes.map(function(node) {
                     node.disks.each(function(disk, index) {
                         disk.set({volumes: new models.Volumes(this.props.disks.at(index).get('volumes').toJSON())});
                     }, this);

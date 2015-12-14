@@ -71,7 +71,7 @@ define([
 
             args.unshift(this.models);
 
-            return _[method].apply(_, args);
+            return _[method](...args);
         };
     });
 
@@ -676,8 +676,8 @@ define([
             }, this);
             return _.isEmpty(errors) ? null : errors;
         },
-        makePath: function() {
-            return _.toArray(arguments).join('.');
+        makePath: function(...args) {
+            return args.join('.');
         },
         getValueAttribute: function(settingName) {
             return settingName == 'metadata' ? 'enabled' : 'value';
@@ -1259,8 +1259,8 @@ define([
             }, this);
             return _.isEmpty(errors) ? null : errors;
         },
-        makePath: function() {
-            return _.toArray(arguments).join('.');
+        makePath: function(...args) {
+            return args.join('.');
         }
     });
 

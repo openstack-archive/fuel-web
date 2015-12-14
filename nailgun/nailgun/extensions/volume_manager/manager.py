@@ -674,6 +674,14 @@ class VolumeManager(object):
 
         disks = only_disks(volumes)
 
+        if not disks:
+            logger.debug("VolumeManager nothing to find in empty volumes "
+                         "by disk %s", disk_info)
+            return None
+
+        logger.debug("VolumeManager finding disk by disk info: %s, "
+                     "in volumes: %s", disk_info, disks)
+
         disk_info_composite_id = cls._build_disk_id_by_keys(
             disk_info, keys=('disk',), keys_for_lists=('extra',))
         disk_info_id_only = cls._build_disk_id_by_keys(

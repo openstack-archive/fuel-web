@@ -454,9 +454,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     return _.unique(nodes.map(function(node) {
                         // Handle the situation when this.props.interfaces has updated but
                         // interfacesMap hasn't been recalculated yet
-                        if (_.isNull(interfacesMap[index]) || interfacesMap.length <= index) return null;
+                        var nodeInterfaces = node.interfaces.at(interfacesMap[index]);
+                        if (_.isNull(interfacesMap[index]) || _.isUndefined(nodeInterfaces)) return null;
                         return utils.showBandwidth(
-                            node.interfaces.at(interfacesMap[index]).get('current_speed')
+                            nodeInterfaces.get('current_speed')
                         );
                     }));
                 },

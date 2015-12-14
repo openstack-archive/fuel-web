@@ -178,10 +178,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             _.invoke(this.state.availableFilters, 'updateLimits', this.props.nodes, true);
             _.invoke(this.state.activeFilters, 'updateLimits', this.props.nodes, false);
         },
+        normalizeAppliedFilters: function() {
+            var normalizedFilters = _.map(this.state.activeFilters, (filter) => {
+                if (filter.isLabel) {
+                    filter.values = _.intersection(filter.values, this.props.nodes.getLabelValues(filter.name));
+                } else if (_.contains(['manufacturer', 'group_id', 'cluster'], filter.name)) {
+                    filter.values = _.filter(filter.values, (value) => {
+                        return this.props.nodes.any((node) => node.get(filter.name) == value);
+                    }, this);
+                }
+                return filter;
+            }, this);
+            if (!_.isEqual(_.pluck(normalizedFilters, 'values'), _.pluck(this.state.activeFilters, 'values'))) {
+                this.updateFilters(normalizedFilters);
+            }
+        },
         componentWillMount: function() {
             this.updateInitialRoles();
             this.props.nodes.on('update reset', this.updateInitialRoles, this);
             this.props.nodes.on('update reset', this.calculateFilterLimits, this);
+            this.normalizeAppliedFilters();
 
             this.changeSearch = _.debounce(this.changeSearch, 200, {leading: true});
 

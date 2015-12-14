@@ -556,13 +556,14 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             };
         },
         componentDidMount: function() {
-            this.props.cluster.get('tasks').on('change:status change:unsaved', this.removeUnsavedNetworkVerificationTasks, this);
+            this.props.cluster.get('tasks').on('change:status change:unsaved', this.destroyUnsavedNetworkVerificationTask, this);
         },
         componentWillUnmount: function() {
             this.loadInitialConfiguration();
-            this.props.cluster.get('tasks').off(null, this.removeUnsavedNetworkVerificationTasks, this);
+            this.props.cluster.get('tasks').off(null, this.destroyUnsavedNetworkVerificationTask, this);
+            this.removeUnsavedTasks();
         },
-        removeUnsavedNetworkVerificationTasks: function(task) {
+        destroyUnsavedNetworkVerificationTask: function(task) {
             // FIXME(vkramskikh): remove tasks which we marked as "unsaved" hacky flag
             // immediately after completion, so they won't be taken into account when
             // we determine cluster verification status. They need to be removed silently
@@ -572,6 +573,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 task.unset('id'); // hack to prevent issuing another DELETE requests after actual removal
                 this.props.cluster.get('tasks').add(task, {silent: true});
             }
+        },
+        removeUnsavedTasks: function() {
+            var clusterTasks = this.props.cluster.get('tasks');
+            clusterTasks.each((task) => task.get('unsaved') && clusterTasks.remove(task));
         },
         isNetworkConfigurationChanged: function() {
             return !_.isEqual(this.state.initialConfiguration, this.props.cluster.get('networkConfiguration').toJSON());

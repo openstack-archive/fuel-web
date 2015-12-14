@@ -448,14 +448,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             // calculate interfaces speed
             var getIfcSpeed = function(index) {
-                    return _.unique(nodes.map(function(node) {
+                    return _.compact(_.unique(nodes.map(function(node) {
                         // Handle the situation when this.props.interfaces has updated but
                         // interfacesMap hasn't been recalculated yet
-                        if (_.isNull(interfacesMap[index]) || interfacesMap.length <= index) return null;
-                        return utils.showBandwidth(
-                            node.interfaces.at(interfacesMap[index]).get('current_speed')
-                        );
-                    }));
+                        var nodeInterface = node.interfaces.at(interfacesMap[index]);
+                        if (nodeInterface) return utils.showBandwidth(nodeInterface.get('current_speed'));
+                    })));
                 },
                 interfaceSpeeds = interfaces.map(function(ifc, index) {
                     if (ifc.isBond()) {

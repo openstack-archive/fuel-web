@@ -134,7 +134,10 @@ gulp.task('jison', function() {
 });
 
 gulp.task('license', function(cb) {
-    require('nlf').find({production: true, depth: 0}, function(err, data) {
+    require('nlf').find({
+        production: true,
+        depth: argv.depth || 0
+    }, function(err, data) {
         if (err) cb(err);
         // https://github.com/openstack/requirements#for-new-requirements
         // Is the library license compatible?

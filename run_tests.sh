@@ -33,6 +33,8 @@ function usage {
   echo "  -E, --no-extensions         Don't run EXTENSIONS unit/integration tests"
   echo "      --ui-lint               Run UI linting tasks"
   echo "      --no-ui-lint            Don't run UI linting tasks"
+  echo "      --ui-license            Run UI license checks"
+  echo "      --no-ui-license         Don't run UI license checks"
   echo "      --ui-unit               Run UI unit tests"
   echo "      --no-ui-unit            Don't run UI unit tests"
   echo "      --ui-func               Run UI functional tests"
@@ -55,12 +57,14 @@ function process_options {
       -x|--performance) performance_tests=1;;
       -p|--flake8) flake8_checks=1;;
       -P|--no-flake8) no_flake8_checks=1;;
-      -w|--webui) ui_lint_checks=1; ui_unit_tests=1; ui_func_tests=1;;
-      -W|--no-webui) no_ui_lint_checks=1; no_ui_unit_tests=1; no_ui_func_tests=1;;
+      -w|--webui) ui_lint_checks=1; ui_license_checks=1; ui_unit_tests=1; ui_func_tests=1;;
+      -W|--no-webui) no_ui_lint_checks=1; no_ui_license_checks=1; no_ui_unit_tests=1; no_ui_func_tests=1;;
       -e|--extensions) extensions_tests=1;;
       -E|--no-extensions) no_extensions_tests=1;;
       --ui-lint) ui_lint_checks=1;;
       --no-ui-lint) no_ui_lint_checks=1;;
+      --ui-license) ui_license_checks=1;;
+      --no-ui-license) no_ui_license_checks=1;;
       --ui-unit) ui_unit_tests=1;;
       --no-ui-unit) no_ui_unit_tests=1;;
       --ui-func) ui_func_tests=1;;
@@ -108,6 +112,8 @@ flake8_checks=0
 no_flake8_checks=0
 ui_lint_checks=0
 no_ui_lint_checks=0
+ui_license_checks=0
+no_ui_license_checks=0
 ui_unit_tests=0
 no_ui_unit_tests=0
 ui_func_tests=0
@@ -143,17 +149,19 @@ function run_tests {
   if [[ $nailgun_tests -eq 0 && \
       $performance_tests -eq 0 && \
       $ui_lint_checks -eq 0 && \
+      $ui_license_checks -eq 0 && \
       $ui_unit_tests -eq 0 && \
       $ui_func_tests -eq 0 && \
       $extensions_tests -eq 0 && \
       $flake8_checks -eq 0 ]]; then
 
-    if [ $no_nailgun_tests -ne 1 ];    then nailgun_tests=1;  fi
-    if [ $no_ui_lint_checks -ne 1 ];   then ui_lint_checks=1; fi
-    if [ $no_ui_unit_tests -ne 1 ];    then ui_unit_tests=1;  fi
-    if [ $no_ui_func_tests -ne 1 ];    then ui_func_tests=1;  fi
-    if [ $no_flake8_checks -ne 1 ];    then flake8_checks=1;  fi
-    if [ $no_extensions_tests -ne 1 ]; then extensions_tests=1; fi
+    if [ $no_nailgun_tests -ne 1 ];      then nailgun_tests=1;     fi
+    if [ $no_ui_lint_checks -ne 1 ];     then ui_lint_checks=1;    fi
+    if [ $no_ui_license_checks -ne 1 ];  then ui_license_checks=1; fi
+    if [ $no_ui_unit_tests -ne 1 ];      then ui_unit_tests=1;     fi
+    if [ $no_ui_func_tests -ne 1 ];      then ui_func_tests=1;     fi
+    if [ $no_flake8_checks -ne 1 ];      then flake8_checks=1;     fi
+    if [ $no_extensions_tests -ne 1 ];   then extensions_tests=1;  fi
 
   fi
 
@@ -171,6 +179,11 @@ function run_tests {
   if [ $ui_lint_checks -eq 1 ]; then
     echo "Starting UI lint checks..."
     run_lint_ui || errors+=" ui_lint_checks"
+  fi
+
+  if [ $ui_license_checks -eq 1 ]; then
+    echo "Starting UI license checks..."
+    run_ui_license_checks || errors+=" ui_license_checks"
   fi
 
   if [ $ui_unit_tests -eq 1 ]; then
@@ -358,13 +371,26 @@ function run_flake8 {
 }
 
 
-# Check javascript files with `jshint`. It's necessary to run it inside
+# Lints Javascript and style files. It's necessary to run it inside
 # `nailgun` folder, so we temporary change current dir.
 function run_lint_ui {
   pushd $ROOT/nailgun >> /dev/null
 
   local result=0
   npm run lint || result=1
+
+  popd >> /dev/null
+  return $result
+}
+
+
+# Checks UI dependency licenses. It's necessary to run it inside
+# `nailgun` folder, so we temporary change current dir.
+function run_ui_license_checks {
+  pushd $ROOT/nailgun >> /dev/null
+
+  local result=0
+  npm run license || result=1
 
   popd >> /dev/null
   return $result

@@ -571,10 +571,4 @@ class TasksSerializer(object):
 
         :param task: the task instance
         """
-        task_version = StrictVersion(task.get('version', '1.0.0'))
-        if task_version < cls.min_supported_task_version:
-            logger.warning(
-                "Task '%s' does not supported task based deploy.",
-                task['id']
-            )
-            raise errors.TaskBaseDeploymentNotAllowed
+        pass

@@ -294,11 +294,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         getFilterOptions: function(filter) {
             if (filter.isLabel) {
-                var values = _.uniq(_.reject(this.props.nodes.getLabelValues(filter.name), _.isUndefined));
-                return values.map(function(value) {
+                var values = _.uniq(this.props.nodes.getLabelValues(filter.name)),
+                    ns = 'cluster_page.nodes_tab.node_management_panel.';
+                return values.map((value) => {
                     return {
                         name: value,
-                        label: _.isNull(value) ? i18n('common.not_specified') : value
+                        label: _.isNull(value) ? i18n(ns + 'label_value_not_specified') : value === false ? i18n(ns + 'label_not_assigned') : value
                     };
                 });
             }
@@ -431,11 +432,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
                 // filters
                 return _.all(this.state.activeFilters, function(filter) {
-                    if (filter.isLabel) {
-                        return filter.values.length ? _.contains(filter.values, node.getLabel(filter.name)) : !_.isUndefined(node.getLabel(filter.name));
-                    }
-
                     if (!filter.values.length) return true;
+
+                    if (filter.isLabel) {
+                        return _.contains(filter.values, node.getLabel(filter.name));
+                    }
 
                     var result;
                     switch (filter.name) {
@@ -512,9 +513,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
     MultiSelectControl = React.createClass({
         propTypes: {
-            name: React.PropTypes.string,
+            name: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.bool]),
             options: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-            values: React.PropTypes.arrayOf(React.PropTypes.string),
+            values: React.PropTypes.arrayOf(React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.bool])),
             label: React.PropTypes.node.isRequired,
             dynamicValues: React.PropTypes.bool,
             onChange: React.PropTypes.func,
@@ -932,9 +933,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     .sort(function(filter1, filter2) {
                         return utils.natsort(filter1.title, filter2.title, {insensitive: true});
                     });
-                appliedFilters = _.reject(this.props.activeFilters, function(filter) {
-                    return !filter.isLabel && !filter.values.length;
-                });
+                appliedFilters = _.reject(this.props.activeFilters, (filter) => !filter.values.length);
             }
 
             this.props.selectedNodeLabels.sort(_.partialRight(utils.natsort, {insensitive: true}));

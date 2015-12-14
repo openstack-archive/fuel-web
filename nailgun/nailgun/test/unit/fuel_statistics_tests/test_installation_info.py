@@ -402,6 +402,14 @@ class TestInstallationInfo(BaseTestCase):
             ('murano_settings', 'murano_repo_url'),
             ('use_fedora_lt', 'kernel'),
             ('public_ssl', 'cert_data'), ('public_ssl', 'hostname'),
+            ('access', 'operator_user_name'),
+            ('access', 'operator_user_password'),
+            ('access', 'operator_user_homedir'),
+            ('access', 'operator_user_authkeys'),
+            ('access', 'operator_user_sudo'),
+            ('access', 'service_user_name'),
+            ('access', 'service_user_sudo'),
+            ('access', 'service_user_homedir'),
         )
         return filter(lambda x: x not in private_paths, leafs_paths)
 

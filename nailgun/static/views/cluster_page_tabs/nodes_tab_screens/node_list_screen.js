@@ -97,7 +97,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 modelOrCollection: function(props) {return props.cluster && props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
-            componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters')
+            componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'normalizeAppliedFilters')
         ],
         getDefaultProps: function() {
             return {
@@ -178,10 +178,31 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             _.invoke(this.state.availableFilters, 'updateLimits', this.props.nodes, true);
             _.invoke(this.state.activeFilters, 'updateLimits', this.props.nodes, false);
         },
+        normalizeAppliedFilters: function(checkStandardNodeFilters = false) {
+            if (!this.props.cluster || this.props.mode != 'add') {
+                var normalizedFilters = _.map(this.state.activeFilters, (activeFilter) => {
+                    var filter = _.cloneDeep(activeFilter);
+                    if (filter.values.length) {
+                        if (filter.isLabel) {
+                            filter.values = _.intersection(filter.values, this.props.nodes.getLabelValues(filter.name));
+                        } else if (checkStandardNodeFilters && _.contains(['manufacturer', 'group_id', 'cluster'], filter.name)) {
+                            filter.values = _.filter(filter.values, (value) => {
+                                return this.props.nodes.any((node) => node.get(filter.name) == value);
+                            }, this);
+                        }
+                    }
+                    return filter;
+                }, this);
+                if (!_.isEqual(_.pluck(normalizedFilters, 'values'), _.pluck(this.state.activeFilters, 'values'))) {
+                    this.updateFilters(normalizedFilters);
+                }
+            }
+        },
         componentWillMount: function() {
             this.updateInitialRoles();
             this.props.nodes.on('update reset', this.updateInitialRoles, this);
             this.props.nodes.on('update reset', this.calculateFilterLimits, this);
+            this.normalizeAppliedFilters(true);
 
             this.changeSearch = _.debounce(this.changeSearch, 200, {leading: true});
 
@@ -245,7 +266,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         updateSearch: function(value) {
             this.setState({search: value});
             if (!this.props.cluster || this.props.mode != 'add') {
-                this.changeUISettings('search', value);
+                this.changeUISettings({search: value});
             }
         },
         addSorting: function(sorter) {
@@ -265,32 +286,25 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return sorter;
             }));
         },
-        updateSorting: function(sorters, updateLabelsOnly) {
+        updateSorting: function(sorters) {
             this.setState({activeSorters: sorters});
             if (!this.props.cluster || this.props.mode != 'add') {
                 var groupedSorters = _.groupBy(sorters, 'isLabel');
-                if (!updateLabelsOnly) {
-                    this.changeUISettings('sort', _.map(groupedSorters.false, Sorter.toObject));
-                }
-                this.changeUISettings('sort_by_labels', _.map(groupedSorters.true, Sorter.toObject));
+                this.changeUISettings({
+                    sort: _.map(groupedSorters.false, Sorter.toObject),
+                    sort_by_labels: _.map(groupedSorters.true, Sorter.toObject)
+                });
             }
         },
-        updateFilters: function(filters, updateLabelsOnly) {
+        updateFilters: function(filters) {
             this.setState({activeFilters: filters});
             if (!this.props.cluster || this.props.mode != 'add') {
                 var groupedFilters = _.groupBy(filters, 'isLabel');
-                if (!updateLabelsOnly) {
-                    this.changeUISettings('filter', Filter.toObject(groupedFilters.false));
-                }
-                this.changeUISettings('filter_by_labels', Filter.toObject(groupedFilters.true));
+                this.changeUISettings({
+                    filter: Filter.toObject(groupedFilters.false),
+                    filter_by_labels: Filter.toObject(groupedFilters.true)
+                });
             }
-        },
-        removeDeletedLabelsFromActiveSortersAndFilters: function() {
-            var isNotUnusedLabel = _.bind(function(obj) {
-                return !obj.isLabel || !_.all(this.props.nodes.getLabelValues(obj.name), _.isUndefined);
-            }, this);
-            this.updateSorting(_.filter(this.state.activeSorters, isNotUnusedLabel), true);
-            this.updateFilters(_.filter(this.state.activeFilters, isNotUnusedLabel), true);
         },
         getFilterOptions: function(filter) {
             if (filter.isLabel) {
@@ -380,13 +394,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         changeViewMode: function(name, value) {
             this.setState({viewMode: value});
             if (!this.props.cluster || this.props.mode != 'add') {
-                this.changeUISettings('view_mode', value);
+                this.changeUISettings({view_mode: value});
             }
         },
-        changeUISettings: function(name, value) {
+        changeUISettings: function(newSettings) {
             var uiSettings = (this.props.cluster || this.props.fuelSettings).get('ui_settings'),
                 options = {patch: true, wait: true, validate: false};
-            uiSettings[name] = value;
+            _.extend(uiSettings, newSettings);
             if (this.props.cluster) {
                 this.props.cluster.save({ui_settings: uiSettings}, options);
             } else {
@@ -1633,7 +1647,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var labelNs = 'cluster_page.nodes_tab.node_management_panel.labels.',
                 getLabelValue = function(node, label) {
                     var labelValue = node.getLabel(label);
-                    return _.isUndefined(labelValue) ?
+                    return labelValue === false ?
                             i18n(labelNs + 'not_assigned_label', {label: label})
                         :
                             _.isNull(labelValue) ?

@@ -1742,7 +1742,8 @@ class AllocateVIPs70Mixin(object):
                 # value in order to reduce number of SQL queries.
                 if noderoles not in noderole_nodegroup:
                     noderole_nodegroup[noderoles] = \
-                        objects.Cluster.get_node_group(cluster, noderoles)
+                        objects.Cluster.get_common_node_group(cluster,
+                                                              noderoles)
                 nodegroup = noderole_nodegroup[noderoles]
 
                 # Since different node roles may have the same node group,
@@ -1899,7 +1900,8 @@ class AllocateVIPs80Mixin(object):
                 # value in order to reduce number of SQL queries.
                 if noderoles not in noderole_nodegroup:
                     noderole_nodegroup[noderoles] = \
-                        objects.Cluster.get_node_group(cluster, noderoles)
+                        objects.Cluster.get_common_node_group(cluster,
+                                                              noderoles)
                 nodegroup = noderole_nodegroup[noderoles]
 
                 # Since different node roles may have the same node group,

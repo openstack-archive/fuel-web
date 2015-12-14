@@ -1104,11 +1104,22 @@ class MulticastVerificationTask(BaseNetworkVerification):
 class CheckNetworksTask(object):
 
     @classmethod
-    def execute(cls, task, data, check_admin_untagged=False):
+    def execute(cls, task, data, check_all_parameters=False):
+        """Execute NetworkCheck task
+
+        :param task: Task instance
+        :param data: task data
+        :param check_all_parameters: bool flag to specify that all network
+        checks should be run. Without this flag only check for network
+        configuration parameters will be run. For now, check_all_parameters
+        is set to True only if task is executed from VerifyNetworks or
+        CheckBeforeDeployment tasks.
+        """
 
         checker = NetworkCheck(task, data)
         checker.check_configuration()
-        if check_admin_untagged:
+        if check_all_parameters:
+            checker.check_network_template()
             warn_msgs = checker.check_interface_mapping()
             if warn_msgs:
                 task.result = {"warning": warn_msgs}

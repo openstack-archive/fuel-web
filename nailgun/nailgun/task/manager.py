@@ -513,7 +513,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             check_networks,
             tasks.CheckNetworksTask,
             data=network_info,
-            check_admin_untagged=True
+            check_all_parameters=True
         )
 
         if check_networks.status == consts.TASK_STATUSES.error:
@@ -857,7 +857,7 @@ class UpdateEnvironmentTaskManager(TaskManager):
 
 class CheckNetworksTaskManager(TaskManager):
 
-    def execute(self, data, check_admin_untagged=False):
+    def execute(self, data, check_all_parameters=False):
         # Make a copy of original 'data' due to being changed by
         # 'tasks.CheckNetworksTask'
         data_copy = copy.deepcopy(data)
@@ -885,7 +885,7 @@ class CheckNetworksTaskManager(TaskManager):
             task,
             tasks.CheckNetworksTask,
             data_copy,
-            check_admin_untagged
+            check_all_parameters
         )
 
         task = objects.Task.get_by_uid(
@@ -996,7 +996,7 @@ class VerifyNetworksTaskManager(TaskManager):
             task,
             tasks.CheckNetworksTask,
             data=nets,
-            check_admin_untagged=True
+            check_all_parameters=True
         )
         db().refresh(task)
 

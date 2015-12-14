@@ -1052,10 +1052,12 @@ class TestClusterObject(BaseTestCase):
 
         self.assertEqual(
             group_id,
-            objects.Cluster.get_node_group(self.cluster, ['compute']).id)
+            objects.Cluster.get_common_node_group(self.cluster,
+                                                  ['compute']).id)
         self.assertEqual(
             controller.group_id,
-            objects.Cluster.get_node_group(self.cluster, ['controller']).id)
+            objects.Cluster.get_common_node_group(self.cluster,
+                                                  ['controller']).id)
 
     def test_get_node_group_multiple_return_same_group(self):
         group_id = self.env.create_node_group().json_body['id']
@@ -1069,7 +1071,7 @@ class TestClusterObject(BaseTestCase):
 
         self.assertEqual(
             group_id,
-            objects.Cluster.get_node_group(
+            objects.Cluster.get_common_node_group(
                 self.cluster, ['compute', 'cinder']).id)
 
     def test_get_node_group_multiple_fail(self):
@@ -1089,7 +1091,7 @@ class TestClusterObject(BaseTestCase):
             errors.CanNotFindCommonNodeGroup,
             '^Node roles \[controller, cinder\] has more than one common '
             'node group$',
-            objects.Cluster.get_node_group,
+            objects.Cluster.get_common_node_group,
             self.cluster,
             ['controller', 'cinder'])
 

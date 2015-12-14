@@ -126,6 +126,18 @@ class OpenstackConfig(NailgunObject):
 
         return configs
 
+    @classmethod
+    def disable_by_nodes(cls, nodes):
+        """Disactivate all active configurations for specified nodes."""
+        node_ids = [n.id for n in nodes]
+        (db().query(cls.model)
+            .filter_by(
+                config_type=consts.OPENSTACK_CONFIG_TYPES.node,
+                is_active=True)
+            .filter(models.OpenstackConfig.node_id.in_(node_ids))
+            .update({models.OpenstackConfig.is_active: False},
+                    synchronize_session=False))
+
 
 class OpenstackConfigCollection(NailgunCollection):
 

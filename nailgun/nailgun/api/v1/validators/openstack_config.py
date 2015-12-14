@@ -17,6 +17,7 @@ import six
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import openstack_config as schema
 from nailgun.errors import errors
+from nailgun import objects
 
 
 class OpenstackConfigValidator(BasicValidator):
@@ -38,6 +39,17 @@ class OpenstackConfigValidator(BasicValidator):
         data = super(OpenstackConfigValidator, cls).validate(data)
         cls.validate_schema(data, schema)
         cls._check_exclusive_fields(data)
+
+        cluster = objects.Cluster.get_by_uid(data['cluster_id'],
+                                             fail_if_not_found=True)
+        if 'node_id' in data:
+            node = objects.Node.get_by_uid(
+                data['node_id'], fail_if_not_found=True)
+            if node.cluster_id != cluster.id:
+                raise errors.InvalidData(
+                    "Node '{0}' is not assigned to cluster '{1}'".format(
+                        data['node_id'], cluster.id))
+
         return data
 
     @classmethod

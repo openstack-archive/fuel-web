@@ -721,6 +721,45 @@
             regex:
               source: &non_empty_string '\S'
               error: "Empty password"
+          os_user_name:
+            label: "Operating System user account name"
+            description: ""
+            weight: 50
+            type: 'text'
+            value: 'fueladmin'
+          os_user_password:
+            label: "Operating System user account password"
+            description: ""
+            weight: 60
+            type: 'password'
+            value: 'fueladmin'
+          os_user_homedir:
+            label: "Operating System user account home directory"
+            description: ""
+            weight: 70
+            type: 'text'
+            value: '/home/fueladmin'
+          os_user_authkeys:
+            label: "Operating System user account authorized keys"
+            description: ""
+            weight: 80
+            type: 'textarea'
+            value: ''
+          os_user_sudo:
+            label: "Operating System user account sudo commands"
+            description: ""
+            weight: 90
+            type: 'textarea'
+            value: ''
+          svc_user_name:
+            type: 'hidden'
+            value: 'fuel'
+          svc_user_sudo:
+            type: 'hidden'
+            value: 'ALL=(ALL) NOPASSWD: ALL'
+          svc_user_homedir:
+            type: 'hidden'
+            value: '/var/lib/fuel'
         workloads_collector:
           metadata:
             label: "Workloads Collector User"
@@ -1248,6 +1287,9 @@
               source: '^[1-9]\d*$'
               error: "Invalid number"
       generated:
+        access:
+          svc_user_password:
+            generator: "password"
         mysql:
           root_password:
             generator: "password"

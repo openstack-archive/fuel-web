@@ -988,6 +988,23 @@ DUMP:
         command: dmesg
         to_file: dmesg.txt
 
+      - path: /var/log/libvirt/qemu/instance*.log
+        type: file
+      - path: /var/log/libvirt/libvirtd.log
+        type: file
+      - path: /var/log/neutron
+        type: dir
+      - path: /var/log/nova
+        type: dir
+      - path: /var/log/*-all.log
+        type: file
+      - path: /var/log/syslog
+        type: file
+      - exclude:
+        - '/disk*'
+        path: /var/lib/nova/instances/*-*
+        type: dir
+
 # performance tests settings
 PERFORMANCE_TESTS_RUN_NUMBER: 10
 PERFORMANCE_TESTS_TOLERANCE: 0.1

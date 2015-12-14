@@ -1,82 +1,29 @@
-#    Copyright 2013 Mirantis, Inc.
+# Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
 #
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#         http://www.apache.org/licenses/LICENSE-2.0
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-import os
-import os.path
-import sys
+# THIS FILE IS MANAGED BY THE GLOBAL REQUIREMENTS REPO - DO NOT EDIT
+import setuptools
 
-from setuptools import find_packages
-from setuptools import setup
+# In python < 2.7.4, a lazy loading of package `pbr` will break
+# setuptools if some other modules registered functions in `atexit`.
+# solution from: http://bugs.python.org/issue15881#msg170215
+try:
+    import multiprocessing  # noqa
+except ImportError:
+    pass
 
-name = 'nailgun'
-version = '9.0.0'
-
-
-def find_requires():
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    requirements = []
-    with open('{0}/requirements.txt'.format(dir_path), 'r') as reqs:
-        requirements = reqs.readlines()
-    if sys.version_info == (2, 6):
-        requirements.append('argparse')
-        requirements.append('ordereddict')
-    return requirements
-
-
-def recursive_data_files(spec_data_files):
-    result = []
-    for dstdir, srcdir in spec_data_files:
-        for topdir, dirs, files in os.walk(srcdir):
-            for f in files:
-                result.append((os.path.join(dstdir, topdir),
-                               [os.path.join(topdir, f)]))
-    return result
-
-
-if __name__ == "__main__":
-    setup(name=name,
-          version=version,
-          description='Nailgun package',
-          long_description="""Nailgun package""",
-          classifiers=[
-              "Development Status :: 4 - Beta",
-              "Programming Language :: Python",
-              "Topic :: Internet :: WWW/HTTP",
-              "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
-          ],
-          author='Mirantis Inc.',
-          author_email='product@mirantis.com',
-          url='http://mirantis.com',
-          keywords='web wsgi nailgun mirantis',
-          packages=find_packages(),
-          zip_safe=False,
-          install_requires=find_requires(),
-          include_package_data=True,
-          scripts=['manage.py'],
-          entry_points={
-              'console_scripts': [
-                  'nailgun_syncdb = nailgun.db:syncdb',
-                  'nailgun_fixtures = \
-                      nailgun.db.sqlalchemy.fixman:upload_fixtures',
-                  'nailgund = nailgun.app:appstart',
-                  'assassind = nailgun.assassin.assassind:run',
-                  'receiverd = nailgun.rpc.receiverd:run',
-                  'statsenderd = nailgun.statistics.statsenderd:run',
-                  'oswl_collectord = nailgun.statistics.oswl.collector:run',
-                  ('oswl_cleaner = nailgun.statistics.oswl.helpers:'
-                   'delete_expired_oswl_entries'),
-              ],
-          },
-          data_files=recursive_data_files([('share/nailgun', 'static')])
-          )
+setuptools.setup(
+    setup_requires=['pbr>=1.8'],
+    pbr=True)

@@ -1,20 +1,21 @@
--r requirements.txt
-hacking==0.10
-mock==1.0.1
-nose==1.1.2
-unittest2==0.5.1
-nose2==0.4.1
-nose-timer==0.2.0
-sphinx==1.2
-rst2pdf==0.93
-sphinxcontrib-plantuml==0.3
-sphinxcontrib-blockdiag==1.3.0
-sphinxcontrib-actdiag==0.6.0
-sphinxcontrib-seqdiag==0.6.0
-sphinxcontrib-nwdiag==0.7.0
-tox==1.7.1
-webtest==2.0.14
-pyprof2calltree==1.3.2
-gprof2dot==2014.09.29
-pytest
-pytest-xdist
+# The order of packages is significant, because pip processes them in the order
+# of appearance. Changing the order has an impact on the overall integration
+# process, which may cause wedges in the gate later.
+mock>=1.2
+sphinx!=1.2.0,!=1.3b1,<1.3,>=1.1.2
+sphinxcontrib-blockdiag
+unittest2
+WebTest>=2.0
+hacking<0.11,>=0.10.2
+
+# Requrements beyond this line are not in Global Requirements list
+# and must be either added there or replaced with alternatives.
+gprof2dot>=2014.09.29
+pyprof2calltree>=1.3.2
+pytest-xdist>=1.13.1
+pytest>=2.8.5
+rst2pdf>=0.93
+sphinxcontrib-actdiag>=0.6.0
+sphinxcontrib-nwdiag>=0.7.0
+sphinxcontrib-plantuml>=0.3
+sphinxcontrib-seqdiag>=0.8.5

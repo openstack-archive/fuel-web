@@ -1279,7 +1279,7 @@
             restrictions:
               - "settings:storage.images_ceph.value == false"
           osd_pool_size:
-            value: "2"
+            value: "3"
             label: "Ceph object replication factor"
             description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes."
             weight: 85

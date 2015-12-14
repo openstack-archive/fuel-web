@@ -309,10 +309,11 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         statics: {
             paneName: 'Compute',
             componentType: 'hypervisor',
-            title: i18n('dialog.create_cluster_wizard.compute.title')
-        },
-        hasErrors: function() {
-            return !_.any(this.components, (component) => component.get('enabled'));
+            title: i18n('dialog.create_cluster_wizard.compute.title'),
+            hasErrors: function(allComponents) {
+                var components = allComponents.getComponentsByType(this.componentType, {sorted: true});
+                return !_.any(components, (component) => component.get('enabled'));
+            }
         },
         render: function() {
             this.processRestrictions(this.components, ['hypervisor']);
@@ -323,7 +324,9 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                         components={this.components}
                         onChange={this.props.onChange}
                     />
-                    {this.hasErrors() && <div className='alert alert-warning'>{i18n('dialog.create_cluster_wizard.compute.empty_choice')}</div>}
+                    {this.constructor.hasErrors(this.props.allComponents) &&
+                        <div className='alert alert-warning'>{i18n('dialog.create_cluster_wizard.compute.empty_choice')}</div>
+                    }
                 </div>
             );
         }
@@ -336,15 +339,16 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             panesForRestrictions: ['hypervisor', 'network'],
             componentType: 'network',
             title: i18n('dialog.create_cluster_wizard.network.title'),
-            ml2CorePath: 'network:neutron:core:ml2'
-        },
-        hasErrors: function() {
-            var ml2core = _.find(this.components, (component) => component.id == this.constructor.ml2CorePath);
-            if (ml2core.get('enabled')) {
-                var ml2 = _.filter(this.components, (component) => component.isML2Driver());
-                return !_.any(ml2, (ml2driver) => ml2driver.get('enabled'));
+            ml2CorePath: 'network:neutron:core:ml2',
+            hasErrors: function (allComponents) {
+                var components = allComponents.getComponentsByType(this.componentType, {sorted: true});
+                var ml2core = _.find(components, (component) => component.id == this.ml2CorePath);
+                if (ml2core && ml2core.get('enabled')) {
+                    var ml2 = _.filter(components, (component) => component.isML2Driver());
+                    return !_.any(ml2, (ml2driver) => ml2driver.get('enabled'));
+                }
+                return false;
             }
-            return false;
         },
         onChange: function(name, value) {
             this.props.onChange(name, value);
@@ -533,15 +537,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
 
             this.updateState({activePaneIndex: 0});
         },
-        componentDidUpdate: function() {
-            var pane = this.refs.pane;
-            if (pane) {
-                var hasErrors = _.isFunction(pane.hasErrors) ? pane.hasErrors() : false;
-                if (hasErrors != this.state.paneHasErrors) {
-                    this.updateState({paneHasErrors: hasErrors});
-                }
-            }
-        },
         getListOfTypesToRestore: function(currentIndex, maxIndex) {
             var panesTypes = [];
             _.each(clusterWizardPanes, function(pane, paneIndex) {
@@ -553,15 +548,17 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         },
         updateState: function(nextState) {
             var numberOfPanes = this.getEnabledPanes().length;
-            var paneHasErrors = _.isBoolean(nextState.paneHasErrors) ? nextState.paneHasErrors : this.state.paneHasErrors;
             var nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex : this.state.activePaneIndex;
+            var pane = clusterWizardPanes[nextActivePaneIndex];
+            var paneHasErrors = _.isFunction(pane.hasErrors) ? pane.hasErrors(this.components) : false;
 
             var newState = _.merge(nextState, {
                 activePaneIndex: nextActivePaneIndex,
                 previousEnabled: nextActivePaneIndex > 0,
                 nextEnabled: !paneHasErrors,
                 nextVisible: (nextActivePaneIndex < numberOfPanes - 1),
-                createVisible: nextActivePaneIndex == numberOfPanes - 1
+                createVisible: nextActivePaneIndex == numberOfPanes - 1,
+                paneHasErrors: paneHasErrors
             });
             this.setState(newState);
         },
@@ -579,7 +576,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             if (this.state.activePaneIndex == 0) {
                 var status = this.createCluster();
                 if (!status) {
-                    this.updateState({paneHasErrors: true});
                     return;
                 }
             }
@@ -587,7 +583,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.updateState({
                 activePaneIndex: nextIndex,
                 maxAvailablePaneIndex: _.max([nextIndex, this.state.maxAvailablePaneIndex]),
-                paneHasErrors: false
             });
         },
         goToPane: function(index) {
@@ -666,7 +661,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             });
         },
         onChange: function(name, value) {
-            var paneHasErrors = false;
             var maxAvailablePaneIndex = this.state.maxAvailablePaneIndex;
             var pane = this.refs.pane;
             switch (name) {
@@ -685,10 +679,9 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     }
                     var component = this.components.findWhere({id: name});
                     component.set({enabled: value});
-                    paneHasErrors = _.isFunction(pane.hasErrors) && pane.hasErrors();
                     break;
             }
-            this.updateState({paneHasErrors: paneHasErrors, maxAvailablePaneIndex: maxAvailablePaneIndex});
+            this.updateState({maxAvailablePaneIndex: maxAvailablePaneIndex});
         },
         onKeyDown: function(e) {
             if (this.state.actionInProgress) {

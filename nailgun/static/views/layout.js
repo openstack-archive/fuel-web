@@ -201,8 +201,10 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         changeLocale: function(locale, e) {
             e.preventDefault();
             this.props.toggle(false);
-            i18n.setLocale(locale);
-            app.rootComponent.forceUpdate();
+            _.defer(() => {
+                i18n.setLocale(locale);
+                location.reload();
+            });
         },
         render: function() {
             var currentLocale = i18n.getCurrentLocale();

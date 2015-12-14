@@ -289,6 +289,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_password': settings.MCO_PASSWORD,
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
+                    'mco_identity': n.id,
                     'pm_data': {
                         'ks_spaces': VolumeManagerExtension.get_node_volumes(
                             n),
@@ -754,6 +755,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_password': settings.MCO_PASSWORD,
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
+                    'mco_identity': n.id,
                     'pm_data': {
                         'ks_spaces': VolumeManagerExtension.get_node_volumes(
                             n),
@@ -1259,6 +1261,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_password': settings.MCO_PASSWORD,
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
+                    'mco_identity': n.id,
                     'pm_data': {
                         'ks_spaces': VolumeManagerExtension.get_node_volumes(
                             n),

@@ -236,6 +236,21 @@ libvirt, defaults is =fuel_system_test=)
 
     export VENV_PATH=<path>/fuel-devops-venv
 
+If you want to use separated files for snapshots you need to use libvirtd in version >= 1.2.12
+and set env variable. This change will switch snapshots created by libvirt from internal
+to external mode.
+
+.. code-block:: bash
+
+    export SNAPSHOTS_EXTERNAL=true
+
+.. note:: External snapshots by default uses ~/.devops/snap directory to store memory dumps.
+   If you want to use other directory you can set SNAPSHOTS_EXTERNAL_DIR variable.
+
+   .. code-block:: bash
+
+      export SNAPSHOTS_EXTERNAL_DIR=~/.devops/snap
+
 Alternatively, you can edit this file to set them as a default values
 
 .. code-block:: bash

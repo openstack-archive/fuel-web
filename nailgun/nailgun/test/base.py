@@ -30,7 +30,6 @@ import uuid
 from datetime import datetime
 from functools import partial
 from itertools import izip
-from netaddr import IPAddress
 from netaddr import IPNetwork
 from random import randint
 
@@ -485,12 +484,6 @@ class EnvironmentManager(object):
             if net['id'] in netw_ids and net['name'] in ng2_networks:
                 for pkey, pval in six.iteritems(ng2_networks[net['name']]):
                     net[pkey] = pval
-            elif not net['gateway']:
-                net['ip_ranges'] = [[
-                    str(IPAddress(IPNetwork(net['cidr'])[2])),
-                    str(IPAddress(IPNetwork(net['cidr'])[254])),
-                ]]
-                net['gateway'] = str(IPNetwork(net['cidr'])[1])
             net['meta']['use_gateway'] = True
         if floating_ranges:
             netconfig['networking_parameters']['floating_ranges'] = \

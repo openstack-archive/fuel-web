@@ -37,7 +37,13 @@ class NodeGroup(NailgunObject):
             cluster = Cluster.get_by_uid(new_group.cluster_id)
             nm = Cluster.get_network_manager(cluster)
             nst = cluster.network_config.segmentation_type
-            nm.create_network_groups(cluster, nst, gid=new_group.id)
+            # We have two node groups here when user adds the first custom
+            # node group.
+            if NodeGroupCollection.get_by_cluster_id(cluster.id).count() == 2:
+                nm.ensure_gateways_present_in_default_node_group(cluster)
+            nm.create_network_groups(
+                cluster, neutron_segment_type=nst, node_group_id=new_group.id,
+                set_all_gateways=True)
             nm.create_admin_network_group(new_group.cluster_id, new_group.id)
         except (
             errors.OutOfVLANs,

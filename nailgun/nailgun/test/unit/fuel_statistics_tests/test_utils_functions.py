@@ -137,3 +137,14 @@ class TestUtilsFunctions(BaseTestCase):
             self.assertIsNone(
                 utils.get_nested_attr(containing_obj, attr_path)
             )
+
+    def test_get_version_info(self):
+        self.assertIsNone(utils.get_version_info(None))
+        self.env.create()
+        cluster = self.env.clusters[0]
+        version_info = utils.get_version_info(cluster)
+        self.assertItemsEqual(
+            ('release_os', 'release_name', 'release_version',
+             'environment_version', 'fuel_version'),
+            version_info.keys()
+        )

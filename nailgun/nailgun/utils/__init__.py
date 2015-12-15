@@ -226,3 +226,9 @@ def join_range(r):
     """Converts (1, 2) -> "1:2"
     """
     return ":".join(map(str, r)) if r else None
+
+
+def get_lines(text):
+    """Returns all non-empty lines in input string
+    """
+    return list(six.moves.filter(bool, text.splitlines()))

@@ -22,6 +22,7 @@ from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.orchestrator import provisioning_serializers as ps
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
+from nailgun import utils
 
 
 class TestGetSerializerForCluster(BaseIntegrationTest):
@@ -431,3 +432,72 @@ class TestProvisioningSerializer80(BaseIntegrationTest):
                 'fuel-bootstrap-image' in task['parameters']['cmd'],
                 'ironic.pub' in task['parameters']['cmd']]),
             serialized_info['pre_provision']))
+
+
+class TestProvisioningSerializer90(BaseIntegrationTest):
+
+    serializer = ps.ProvisioningSerializer90
+
+    def test_user_account_info(self):
+        self.env.create()
+        self.cluster_db = self.env.clusters[0]
+        self.env.create_nodes_w_interfaces_count(
+            1, 1,
+            roles=['controller'],
+            pending_addition=True,
+            cluster_id=self.cluster_db.id
+        )
+        self.env.create_nodes_w_interfaces_count(
+            1, 1,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=self.cluster_db.id
+        )
+
+        attributes = objects.Cluster.get_attributes(self.cluster_db)
+        generated = attributes['generated']
+        operator_user = attributes['editable']['operator_user']
+        service_user = attributes['editable']['service_user']
+        service_user.update(generated['service_user'])
+
+        serialized_cluster = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        operator_user_name = operator_user['name']['value']
+        operator_user_password = operator_user['password']['value']
+        operator_user_homedir = operator_user['homedir']['value']
+        operator_user_sudo = utils.get_lines(
+            operator_user['sudo']['value']
+        )
+        operator_user_authkeys = utils.get_lines(
+            operator_user['authkeys']['value']
+        )
+
+        service_user_name = service_user['name']['value']
+        service_user_password = service_user['password']
+        service_user_homedir = service_user['homedir']['value']
+        service_user_sudo = utils.get_lines(
+            service_user['sudo']['value']
+        )
+        root_password = service_user['root_password']
+
+        for node in serialized_cluster['nodes']:
+            self.assertEqual(
+                node['ks_meta']['operator_user'], {
+                    'name': operator_user_name,
+                    'password': operator_user_password,
+                    'homedir': operator_user_homedir,
+                    'sudo': operator_user_sudo,
+                    'ssh_keys': operator_user_authkeys,
+                }
+            )
+            self.assertEqual(
+                node['ks_meta']['service_user'], {
+                    'name': service_user_name,
+                    'homedir': service_user_homedir,
+                    'sudo': service_user_sudo,
+                    'password': service_user_password,
+                }
+            )
+            self.assertEqual(node['ks_meta']['root_password'],
+                             root_password)

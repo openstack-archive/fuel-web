@@ -295,6 +295,5 @@ def make_noop_task(uids, task):
     return {
         'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
         'uids': uids,
-        'fail_on_error': False,
-        'skipped': True
+        'fail_on_error': False
     }

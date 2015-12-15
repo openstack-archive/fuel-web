@@ -356,7 +356,9 @@ class TasksSerializer(object):
         task_serializer = serializer_factory(
             task, self.cluster, nodes, role_resolver=resolver_factory(nodes)
         )
-        skipped = task.get('skipped') or not task_serializer.should_execute()
+        # do not pass skipped attribute to astute
+        skipped = task.pop('skipped', False) or \
+            not task_serializer.should_execute()
         for astute_task in self.task_processor.process_tasks(
                 task, task_serializer.serialize()):
             # all skipped task shall have type skipped

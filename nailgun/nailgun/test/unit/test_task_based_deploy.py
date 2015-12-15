@@ -38,6 +38,109 @@ class TestTaskSerializers(BaseTestCase):
             self.env.clusters[-1], self.env.nodes
         )
 
+    def test_serialize(self):
+        tasks = [
+            {
+                "id": "test1", "role": ["controller"],
+                "type": "stage", "version": "2.0.0"
+            },
+            {
+                "id": "test2", "role": ["compute"],
+                "type": "stage", "version": "2.0.0"
+            },
+        ]
+        serialized = self.serializer.serialize(
+            self.env.clusters[-1], self.env.nodes, tasks
+        )
+        controllers = [
+            n.uid for n in self.env.nodes if "controller" in n.roles
+        ]
+        computes = [
+            n.uid for n in self.env.nodes if "compute" in n.roles
+        ]
+
+        self.assertEqual(1, len(controllers))
+        self.assertEqual(1, len(computes))
+        self.assertItemsEqual(
+            ["test1"],
+            (x["id"] for x in serialized[controllers[0]])
+        )
+        self.assertItemsEqual(
+            ["test2"],
+            (x["id"] for x in serialized[computes[0]])
+        )
+
+    def test_serialize_fail_if_all_task_have_not_version_2(self):
+        tasks = [
+            {
+                "id": "test1", "role": ["controller"],
+                "type": "stage", "version": "2.0.0"
+            },
+            {"id": "test2", "role": ["compute"], "type": "stage"},
+        ]
+        self.assertRaises(
+            task_based_deploy.errors.TaskBaseDeploymentNotAllowed,
+            self.serializer.serialize,
+            self.env.clusters[-1], self.env.nodes, tasks
+        )
+
+    def test_process_task_de_duplication(self):
+        task = {"id": "test", "type": "puppet", "parameters": {}}
+        self.serializer.process_task(
+            task, ["1"], task_based_deploy.NullResolver
+        )
+        # check de-duplication
+        self.serializer.process_task(
+            task, ["1"], task_based_deploy.NullResolver
+        )
+        self.assertItemsEqual(["1"], self.serializer.tasks_per_node)
+        self.assertItemsEqual(["test"], self.serializer.tasks_per_node["1"])
+        self.assertEqual(
+            "test", self.serializer.tasks_per_node["1"]["test"]["id"]
+        )
+        self.assertEqual(
+            "puppet", self.serializer.tasks_per_node["1"]["test"]["type"]
+        )
+        self.assertNotIn(
+            "skipped", self.serializer.tasks_per_node["1"]["test"]["type"]
+        )
+
+    def test_process_skipped_task(self):
+        task = {
+            "id": "test", "type": "puppet", "parameters": {}, 'skipped': True
+        }
+        self.serializer.process_task(
+            task, ["1"], task_based_deploy.NullResolver
+        )
+        self.assertItemsEqual(["1"], self.serializer.tasks_per_node)
+        self.assertItemsEqual(["test"], self.serializer.tasks_per_node["1"])
+        self.assertEqual(
+            "test", self.serializer.tasks_per_node["1"]["test"]["id"]
+        )
+        self.assertEqual(
+            "skipped", self.serializer.tasks_per_node["1"]["test"]["type"]
+        )
+        self.assertNotIn(
+            "skipped", self.serializer.tasks_per_node["1"]["test"]
+        )
+
+    def test_process_noop_task(self):
+        task = {"id": "test", "type": "stage", "role": "*"}
+        self.serializer.process_task(
+            task, ["1"], task_based_deploy.NullResolver
+        )
+        self.assertItemsEqual(["1"], self.serializer.tasks_per_node)
+        self.assertItemsEqual(["test"], self.serializer.tasks_per_node["1"])
+        self.assertEqual(
+            "test", self.serializer.tasks_per_node["1"]["test"]["id"]
+        )
+        self.assertEqual(
+            "skipped", self.serializer.tasks_per_node["1"]["test"]["type"]
+        )
+        self.assertNotIn(
+            "skipped", self.serializer.tasks_per_node["1"]["test"]
+        )
+
     def test_expand_task_groups(self):
         node_ids = ['1', '2']
         with mock.patch.object(self.serializer, 'role_resolver') as m_resolve:
@@ -247,8 +350,7 @@ class TestNoopSerializer(BaseTestCase):
             {
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'uids': [None],
-                'fail_on_error': False,
-                'skipped': True
+                'fail_on_error': False
             },
             task
         )

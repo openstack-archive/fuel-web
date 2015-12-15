@@ -16,11 +16,13 @@
 
 from mock import patch
 
+import copy
 import json
+import six
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -28,12 +30,17 @@ from nailgun.utils import reverse
 
 class TestNodeGroups(BaseIntegrationTest):
 
+    segmentation_type = consts.NEUTRON_SEGMENT_TYPES.gre
+
     def setUp(self):
         super(TestNodeGroups, self).setUp()
-        self.cluster = self.env.create_cluster(
-            api=False,
-            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
-            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.gre
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': self.segmentation_type
+            }
         )
 
     def test_nodegroup_creation(self):
@@ -102,7 +109,8 @@ class TestNodeGroups(BaseIntegrationTest):
         resp = self.env.create_node_group()
         response = resp.json_body
 
-        nets = db().query(NetworkGroup).filter_by(group_id=response['id'])
+        nets = db().query(models.NetworkGroup).filter_by(
+            group_id=response['id'])
         self.assertEquals(nets.count(), 5)
 
     @patch('nailgun.task.task.rpc.cast')
@@ -120,7 +128,8 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=False
         )
 
-        nets = db().query(NetworkGroup).filter_by(group_id=response['id'])
+        nets = db().query(models.NetworkGroup).filter_by(
+            group_id=response['id'])
         self.assertEquals(nets.count(), 0)
 
     def test_nodegroup_vlan_segmentation_type(self):
@@ -379,3 +388,142 @@ class TestNodeGroups(BaseIntegrationTest):
         message = resp.json_body['message']
         self.assertEquals(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
+
+    def test_net_config_is_valid_after_nodegroup_is_created(self):
+        # API validator does not allow to setup networks w/o gateways when
+        # cluster has multiple node groups. Since now, no additional actions
+        # are required from user to get valid configuration after new node
+        # group is created, i.e. this network configuration will pass through
+        # the API validator.
+        resp = self.env.create_node_group()
+        self.assertEquals(resp.status_code, 201)
+
+        config = self.env.neutron_networks_get(self.cluster.id).json_body
+        resp = self.env.neutron_networks_put(self.cluster.id, config)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_all_networks_have_gw_after_nodegroup_is_created(self):
+        resp = self.env.create_node_group()
+        self.assertEquals(resp.status_code, 201)
+
+        for network in self.cluster.network_groups:
+            if network.meta['notation'] is not None:
+                self.assertTrue(network.meta['use_gateway'])
+                self.assertIsNotNone(network.gateway)
+
+    def test_intersecting_ip_deleted_after_nodegroup_is_created(self):
+        net_roles = copy.copy(
+            self.env.clusters[0].release.network_roles_metadata)
+        net_roles.append({
+            'id': 'stor/vip',
+            'default_mapping': consts.NETWORKS.storage,
+            'properties': {
+                'subnet': True,
+                'gateway': False,
+                'vip': [{
+                    'name': 'my-vip',
+                    'node_roles': ['controller'],
+                }]
+            }})
+        self.env.clusters[0].release.network_roles_metadata = net_roles
+        self.db.flush()
+        # VIPs are allocated on this call
+        config = self.env.neutron_networks_get(self.cluster.id).json_body
+        # Storage network has no GW by default
+        vip_config = config['vips']['my-vip']['ipaddr']
+        self.assertEqual(
+            1,
+            self.db.query(models.IPAddr).filter_by(ip_addr=vip_config).count()
+        )
+
+        resp = self.env.create_node_group()
+        self.assertEquals(resp.status_code, 201)
+
+        # VIP address was deleted
+        self.assertEqual(
+            0,
+            self.db.query(models.IPAddr).filter_by(ip_addr=vip_config).count()
+        )
+        # Storage GW has this address now
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.assertEquals(resp.status_code, 200)
+        config = resp.json_body
+        for net in config['networks']:
+            if net['name'] == consts.NETWORKS.storage:
+                self.assertEqual(vip_config, net['gateway'])
+                break
+        else:
+            self.fail('No storage network found')
+        # VIP is allocated to different address
+        self.assertNotEqual(vip_config, config['vips']['my-vip']['ipaddr'])
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_ensure_gateways_present_cuts_ranges(self, _):
+        # setup particular networks without gateways
+        networks = {
+            'public': {'cidr': '199.101.9.0/24',
+                       'ip_ranges': [['199.101.9.1', '199.101.9.1'],
+                                     ['199.101.9.5', '199.101.9.111']]},
+            'management': {'cidr': '199.101.1.0/24'},
+            'storage': {'cidr': '199.101.2.0/24'},
+            'private': {'cidr': '199.101.3.0/24'},
+        }
+        config = self.env.neutron_networks_get(self.cluster.id).json_body
+        for net in config['networks']:
+            if net['name'] in networks:
+                for pkey, pval in six.iteritems(networks[net['name']]):
+                    net[pkey] = pval
+                net['meta']['use_gateway'] = False
+        config['networking_parameters']['floating_ranges'] = [
+            ['199.101.9.122', '199.101.9.233']]
+        resp = self.env.neutron_networks_put(self.cluster.id, config)
+        self.assertEquals(resp.status_code, 200)
+
+        ranges_before = {
+            'public': [['199.101.9.1', '199.101.9.1'],
+                       ['199.101.9.5', '199.101.9.111']],
+            'management': [['199.101.1.1', '199.101.1.254']],
+            'storage': [['199.101.2.1', '199.101.2.254']],
+            'private': [['199.101.3.1', '199.101.3.254']],
+        }
+        config = self.env.neutron_networks_get(self.cluster.id).json_body
+        for net in config['networks']:
+            if net['name'] in networks:
+                self.assertEqual(ranges_before[net['name']], net['ip_ranges'])
+
+        objects.Cluster.get_network_manager(self.cluster).\
+            ensure_gateways_present_in_default_node_group(self.cluster)
+
+        ranges_after = {
+            'public': [['199.101.9.5', '199.101.9.111']],
+            'management': [['199.101.1.2', '199.101.1.254']],
+            'storage': [['199.101.2.2', '199.101.2.254']],
+            'private': [['199.101.3.2', '199.101.3.254']],
+        }
+        config = self.env.neutron_networks_get(self.cluster.id).json_body
+        for net in config['networks']:
+            if net['name'] in networks:
+                self.assertEqual(ranges_after[net['name']], net['ip_ranges'])
+
+    def test_ensure_gateways_present_is_executed_once(self):
+        with patch.object(
+                objects.Cluster.get_network_manager(self.cluster),
+                'ensure_gateways_present_in_default_node_group') as \
+                ensure_mock:
+
+            for n in range(5):
+                resp = self.env.create_node_group(name='group{0}'.format(n))
+                self.assertEquals(resp.status_code, 201)
+                # one call is made when first custom node group is being added
+                # no more calls after that
+                self.assertEqual(ensure_mock.call_count, 1)
+
+
+class TestNodeGroupsVlan(TestNodeGroups):
+
+    segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
+
+
+class TestNodeGroupsTun(TestNodeGroups):
+
+    segmentation_type = consts.NEUTRON_SEGMENT_TYPES.tun

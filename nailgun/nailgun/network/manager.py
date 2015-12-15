@@ -301,6 +301,30 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
+    def get_assigned_vip(cls, nodegroup, network_name, vip_type):
+        """Get VIP address, if it was assigned already
+
+        :param nodegroup: Name of the node group.
+        :param nerwork_name: Name of a network the VIP is allocated in.
+        :param vip_type: Type of a required VIP.
+        :returns: IP address of a VIP that matches specified criterias.
+                  None, if no VIP matches specificied criterias.
+
+        """
+        network = cls.get_network_by_name_and_nodegroup(network_name,
+                                                        nodegroup)
+
+        cluster_vip_q = db().query(IPAddr).filter_by(vip_type=vip_type)
+
+        if network is not None:
+            cluster_vip_q = cluster_vip_q.filter_by(network=network.id)
+
+        cluster_vip = cluster_vip_q.first()
+
+        if cluster_vip:
+            return cluster_vip.ip_addr
+
+    @classmethod
     def assign_vip(cls, nodegroup, network_name,
                    vip_type=consts.NETWORK_VIP_TYPES.haproxy):
         """Idempotent assignment of VirtualIP addresses to nodegroup.
@@ -322,20 +346,18 @@ class NetworkManager(object):
         :type  vip_type: str
         :returns: assigned VIP (string)
         :raises: Exception
+
         """
-        network = db().query(NetworkGroup).\
-            filter_by(name=network_name, group_id=nodegroup.id).first()
-        ips_in_use = None
+        already_assigned = cls.get_assigned_vip(nodegroup,
+                                                network_name, vip_type)
+        network = cls.get_network_by_name_and_nodegroup(network_name,
+                                                        nodegroup)
 
-        # FIXME:
-        #   Built-in fuelweb_admin network doesn't belong to any node
-        #   group, since it's shared between all clusters. So we need
-        #   to handle this very special case if we want to be able
-        #   to allocate VIP in default admin network.
-        if not network and network_name == consts.NETWORKS.fuelweb_admin:
-            network = cls.get_admin_network_group()
+        if already_assigned is not None and \
+                cls.check_ip_belongs_to_net(already_assigned, network):
+            return already_assigned
 
-        if not network:
+        if network is None:
             raise errors.CanNotFindNetworkForNodeGroup(
                 u"Network '{0}' for nodegroup='{1}' not found.".format(
                     network_name, nodegroup.name))
@@ -345,10 +367,8 @@ class NetworkManager(object):
             node=None,
             vip_type=vip_type
         ).first()
-        # check if cluster_vip is in required cidr: network.cidr
-        if cluster_vip and cls.check_ip_belongs_to_net(cluster_vip.ip_addr,
-                                                       network):
-            return cluster_vip.ip_addr
+
+        ips_in_use = None
 
         if network_name == consts.NETWORKS.fuelweb_admin:
             # Nodes not currently assigned to a cluster will still
@@ -463,7 +483,7 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def assign_vips_for_net_groups_for_api(cls, cluster):
+    def assign_vips_for_net_groups_for_api(cls, cluster, allocate=True):
         return cls.assign_vips_for_net_groups(cluster)
 
     @classmethod
@@ -1722,6 +1742,31 @@ class NetworkManager(object):
             result.append(net_info)
         return result
 
+    @classmethod
+    def get_network_by_name_and_nodegroup(cls, name, nodegroup):
+        """Find a network that matches a specified name and a nodegroup.
+
+        :param name: Name of a network
+        :param nodegroup: The nodegroup object
+        :return: Network object that matches a specified name and a nodegroup.
+                 Admin network, if nothing found.
+
+        """
+        network = db().query(NetworkGroup).\
+            filter_by(name=name, group_id=nodegroup.id).first()
+        network = next((net for net in nodegroup.networks if net.name == name),
+                       None)
+
+        # FIXME:
+        #   Built-in fuelweb_admin network doesn't belong to any node
+        #   group, since it's shared between all clusters. So we need
+        #   to handle this very special case if we want to be able
+        #   to allocate VIP in default admin network.
+        if not network and name == consts.NETWORKS.fuelweb_admin:
+            network = cls.get_admin_network_group()
+
+        return network
+
 
 class AllocateVIPs70Mixin(object):
 
@@ -1766,51 +1811,17 @@ class AllocateVIPs70Mixin(object):
 
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
-        # noderole -> nodegroup mapping
-        #   is used for determine nodegroup where VIP should be allocated
-        noderole_nodegroup = {}
-        # nodegroup -> role-to-network mapping
-        #   is used for determine role-to-network mapping that is needed
-        #   for choosing proper network for VIP allocation
-        nodegroup_networks = {}
+        for nodegroup, net_group, vip_name, role, vip_info\
+                in cls.get_node_groups_info(cluster):
+            vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
 
-        # iterate over all network roles, assign vip and yield information
-        # about assignment
-        for role in objects.Cluster.get_network_roles(cluster):
-            properties = role.get('properties', {})
-            for vip_info in properties.get('vip', ()):
-                noderoles = tuple(vip_info.get('node_roles', ['controller']))
+            if vip_addr is None:
+                continue
 
-                # Since we're iterating over all VIP requests, we most
-                # likely meet the same noderoles again and again. Let's
-                # calculate node group just once, cache and use cached
-                # value in order to reduce number of SQL queries.
-                if noderoles not in noderole_nodegroup:
-                    noderole_nodegroup[noderoles] = \
-                        objects.Cluster.get_common_node_group(cluster,
-                                                              noderoles)
-                nodegroup = noderole_nodegroup[noderoles]
-
-                # Since different node roles may have the same node group,
-                # it'd be ridiculous to build "role-to-network-group" mapping
-                # each time we retrieve the group. So let's save mapping
-                # in cache and retrieve it if necessary.
-                if nodegroup.name not in nodegroup_networks:
-                    nodegroup_networks[nodegroup.name] = \
-                        cls.build_role_to_network_group_mapping(
-                            cluster, nodegroup.name)
-
-                net_group = cls.get_network_group_for_role(
-                    role,
-                    nodegroup_networks[nodegroup.name])
-                vip_name = vip_info['name']
-
-                # do allocation
-                vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
-                yield role, vip_info, vip_addr
+            yield role, vip_info, vip_addr
 
     @classmethod
-    def assign_vips_for_net_groups_for_api(cls, cluster):
+    def assign_vips_for_net_groups_for_api(cls, cluster, allocate=True):
         """Calls cls.assign_vip for all vips in network roles.
 
         Returns dict with vip definitions in API compatible format::
@@ -1823,13 +1834,17 @@ class AllocateVIPs70Mixin(object):
         :type  cluster: Cluster model
         :return: dict with vip definitions
         """
-        # check VIPs names overlapping before assigning them
-        cls.check_unique_vip_names_for_cluster(cluster)
 
         vips = {}
         vips['vips'] = {}
-        for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
-                cluster):
+        if allocate:
+            # check VIPs names overlapping before assigning them
+            cls.check_unique_vip_names_for_cluster(cluster)
+            allocated_vips_data = cls._assign_vips_for_net_groups(cluster)
+        else:
+            allocated_vips_data = cls._get_vips_for_net_groups(cluster)
+
+        for role, vip_info, vip_addr in allocated_vips_data:
 
             vip_name = vip_info['name']
 
@@ -1912,18 +1927,21 @@ class AllocateVIPs70Mixin(object):
                 .format(cluster.id, ', '.join(duplicate_vip_names))
             )
 
+    @classmethod
+    def _get_vips_for_net_groups(cls, cluster):
+        for nodegroup, net_group, vip_name, role, vip_info \
+                in cls.get_node_groups_info(cluster):
 
-class AllocateVIPs80Mixin(object):
+            net_mgr = objects.Cluster.get_network_manager(cluster)
+            vip_addr = net_mgr.get_assigned_vip(nodegroup, net_group, vip_name)
+
+            if vip_addr is None:
+                continue
+
+            yield role, vip_info, vip_addr
 
     @classmethod
-    def _build_advanced_vip_info(cls, vip_info, role, address):
-        info = AllocateVIPs70Mixin._build_advanced_vip_info(
-            vip_info, role, address)
-        info['vendor_specific'] = vip_info.get('vendor_specific')
-        return info
-
-    @classmethod
-    def _assign_vips_for_net_groups(cls, cluster):
+    def get_node_groups_info(cls, cluster):
         # noderole -> nodegroup mapping
         #   is used for determine nodegroup where VIP should be allocated
         noderole_nodegroup = {}
@@ -1973,10 +1991,17 @@ class AllocateVIPs80Mixin(object):
                         "Skip VIP '{0}' which is mapped to non-existing"
                         " network '{1}'".format(vip_name, net_group))
                     continue
+                yield nodegroup, net_group, vip_name, role, vip_info
 
-                # do allocation
-                vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
-                yield role, vip_info, vip_addr
+
+class AllocateVIPs80Mixin(object):
+
+    @classmethod
+    def _build_advanced_vip_info(cls, vip_info, role, address):
+        info = AllocateVIPs70Mixin._build_advanced_vip_info(
+            vip_info, role, address)
+        info['vendor_specific'] = vip_info.get('vendor_specific')
+        return info
 
 
 class AssignIPsLegacyMixin(object):

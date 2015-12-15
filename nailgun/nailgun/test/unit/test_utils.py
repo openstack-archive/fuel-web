@@ -23,6 +23,7 @@ from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
 from nailgun.utils import flatten
+from nailgun.utils import get_lines
 from nailgun.utils import grouper
 from nailgun.utils import traverse
 
@@ -81,6 +82,20 @@ class TestUtils(base.BaseIntegrationTest):
 
         self.assertEqual(
             list(grouper([0, 1, 2, 3, 4], 3, 'x')), [(0, 1, 2), (3, 4, 'x')])
+
+    def test_get_lines(self):
+        empty = ""
+        empty_multiline = "\n\n\n"
+        non_empty = "abc\nfoo\nbar"
+        mixed = "abc\n\nfoo\n\n\nbar"
+
+        self.assertEqual(get_lines(empty), [])
+
+        self.assertEqual(get_lines(empty_multiline), [])
+
+        self.assertEqual(get_lines(non_empty), ['abc', 'foo', 'bar'])
+
+        self.assertEqual(get_lines(mixed), ['abc', 'foo', 'bar'])
 
 
 class TestTraverse(base.BaseUnitTest):

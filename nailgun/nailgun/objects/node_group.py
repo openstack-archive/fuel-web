@@ -37,7 +37,11 @@ class NodeGroup(NailgunObject):
             cluster = Cluster.get_by_uid(new_group.cluster_id)
             nm = Cluster.get_network_manager(cluster)
             nst = cluster.network_config.segmentation_type
-            nm.create_network_groups(cluster, nst, gid=new_group.id)
+            if 
+            nm.check_gw_in_default_node_group(cluster)
+            nm.create_network_groups(
+                cluster, neutron_segment_type=nst, node_group_id=new_group.id,
+                set_all_gateways=True)
             nm.create_admin_network_group(new_group.cluster_id, new_group.id)
         except (
             errors.OutOfVLANs,

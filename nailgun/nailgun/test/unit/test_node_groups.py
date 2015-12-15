@@ -379,3 +379,11 @@ class TestNodeGroups(BaseIntegrationTest):
         message = resp.json_body['message']
         self.assertEquals(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
+
+    def test_net_config_is_consistent_after_nodegroup_is_created(self):
+        resp = self.env.create_node_group()
+        self.assertEquals(resp.status_code, 201)
+
+        config = self.env.neutron_networks_get(self.cluster.id).json_body
+        resp = self.env.neutron_networks_put(self.cluster.id, config)
+        self.assertEqual(resp.status_code, 200)

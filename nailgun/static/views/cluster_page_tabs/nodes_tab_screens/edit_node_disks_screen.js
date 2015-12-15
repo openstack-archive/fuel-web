@@ -219,7 +219,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             return {key: _.now()};
         },
         componentDidMount: function() {
-            $('.disk-details', this.getDOMNode())
+            $('.disk-details', React.findDOMNode(this))
                 .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
@@ -236,7 +236,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             }
         },
         toggleDisk: function(name) {
-            $(this.refs[name].getDOMNode()).collapse('toggle');
+            $(React.findDOMNode(this.refs[name])).collapse('toggle');
         },
         onRangeInput: _.debounce(function(name) {
             this.updateDisk(name, this.refs['range-' + name].getInputDOMNode().value);

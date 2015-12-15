@@ -129,10 +129,10 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
     // see https://github.com/facebook/react/issues/1950 for more info
     var ScreenTransitionWrapper = React.createClass({
         componentWillEnter: function(cb) {
-            $(this.getDOMNode()).hide().delay('fast').fadeIn('fast', cb);
+            $(React.findDOMNode(this)).hide().delay('fast').fadeIn('fast', cb);
         },
         componentWillLeave: function(cb) {
-            $(this.getDOMNode()).fadeOut('fast', cb);
+            $(React.findDOMNode(this)).fadeOut('fast', cb);
         },
         render: function() {
             if (this.props.loading) return (

@@ -62,7 +62,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 var activeDialog = getActiveDialog();
                 if (activeDialog) {
                     var result = $.Deferred();
-                    $(activeDialog.getDOMNode()).on('hidden.bs.modal', () => {
+                    $(React.findDOMNode(activeDialog)).on('hidden.bs.modal', () => {
                         this.show(options).then(result.resolve, result.reject);
                     });
                     return result;
@@ -83,7 +83,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             setActiveDialog(this);
             Backbone.history.on('route', this.close, this);
-            var $el = $(this.getDOMNode());
+            var $el = $(React.findDOMNode(this));
             $el.on('hidden.bs.modal', this.handleHidden);
             $el.on('shown.bs.modal', () => $el.find('input:enabled:first').focus());
             $el.modal(_.defaults(
@@ -97,15 +97,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         componentWillUnmount: function() {
             Backbone.history.off(null, null, this);
-            $(this.getDOMNode()).off('shown.bs.modal hidden.bs.modal');
+            $(React.findDOMNode(this)).off('shown.bs.modal hidden.bs.modal');
             this.rejectResult();
             setActiveDialog(null);
         },
         handleHidden: function() {
-            React.unmountComponentAtNode(this.getDOMNode().parentNode);
+            React.unmountComponentAtNode(React.findDOMNode(this).parentNode);
         },
         close: function() {
-            $(this.getDOMNode()).modal('hide');
+            $(React.findDOMNode(this)).modal('hide');
             this.rejectResult();
         },
         closeOnLinkClick: function(e) {
@@ -214,7 +214,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.startCountdown();
         },
         componentDidMount() {
-            $(this.getDOMNode()).on('shown.bs.modal', () => $(this.refs['retry-button'].getDOMNode()).focus());
+            $(React.findDOMNode(this)).on('shown.bs.modal', () => $(React.findDOMNode(this.refs['retry-button'])).focus());
         },
         startCountdown() {
             this.activeTimeout = _.delay(this.countdown, 1000);
@@ -693,13 +693,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             if (name && name != this.state.title) this.setState({title: name});
         },
         assignAccordionEvents: function() {
-            $('.panel-collapse', this.getDOMNode())
+            $('.panel-collapse', React.findDOMNode(this))
                 .on('show.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus');})
                 .on('hide.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus');})
                 .on('hidden.bs.collapse', function(e) {e.stopPropagation();});
         },
         toggle: function(groupIndex) {
-            $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
+            $(React.findDOMNode(this.refs['togglable_' + groupIndex])).collapse('toggle');
         },
         onVMsConfChange: function() {
             this.setState({VMsConfValidationError: null});
@@ -746,7 +746,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             } else if (e.key == 'Escape') {
                 this.endRenaming();
                 e.stopPropagation();
-                this.getDOMNode().focus();
+                React.findDOMNode(this).focus();
             }
         },
         renderBody: function() {

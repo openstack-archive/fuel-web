@@ -236,7 +236,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             if (task) task.destroy();
         },
         componentDidMount: function() {
-            $('.result-details', this.getDOMNode())
+            $('.result-details', React.findDOMNode(this))
                 .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },

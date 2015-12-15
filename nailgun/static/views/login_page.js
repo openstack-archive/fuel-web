@@ -59,7 +59,7 @@ function($, _, i18n, React, dispatcher, utils) {
 
             return keystoneClient.authenticate(username, password, {force: true})
                 .fail((xhr) => {
-                    $(this.refs.username.getDOMNode()).focus();
+                    $(React.findDOMNode(this.refs.username)).focus();
 
                     var status = xhr && xhr.status;
                     var error = 'login_error';
@@ -93,7 +93,7 @@ function($, _, i18n, React, dispatcher, utils) {
                 });
         },
         componentDidMount: function() {
-            $(this.refs.username.getDOMNode()).focus();
+            $(React.findDOMNode(this.refs.username)).focus();
         },
         getInitialState: function() {
             return {
@@ -107,8 +107,8 @@ function($, _, i18n, React, dispatcher, utils) {
         onSubmit: function(e) {
             e.preventDefault();
 
-            var username = this.refs.username.getDOMNode().value;
-            var password = this.refs.password.getDOMNode().value;
+            var username = React.findDOMNode(this.refs.username).value;
+            var password = React.findDOMNode(this.refs.password).value;
 
             this.setState({actionInProgress: true});
 

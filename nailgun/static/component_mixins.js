@@ -110,7 +110,7 @@ define([
                 };
             },
             handleBodyClick: function(e) {
-                if (!$(e.target).closest(this.getDOMNode()).length) {
+                if (!$(e.target).closest(React.findDOMNode(this)).length) {
                     _.defer(_.partial(this.props.toggle, false));
                 }
             },
@@ -137,7 +137,7 @@ define([
                 startRenaming: function(e) {
                     e.preventDefault();
                     $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
-                        if (e && !$(e.target).closest(this.refs[refname].getDOMNode()).length) {
+                        if (e && !$(e.target).closest(React.findDOMNode(this.refs[refname])).length) {
                             this.endRenaming();
                         } else {
                             e.preventDefault();

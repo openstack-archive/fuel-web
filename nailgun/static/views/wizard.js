@@ -121,7 +121,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             }
         },
         componentDidMount: function() {
-            $(this.getDOMNode()).find('input:enabled').first().focus();
+            $(React.findDOMNode(this)).find('input:enabled').first().focus();
         },
         areComponentsMutuallyExclusive: function(components) {
             var componentIndex = {};

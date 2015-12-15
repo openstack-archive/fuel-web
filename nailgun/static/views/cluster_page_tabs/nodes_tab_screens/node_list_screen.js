@@ -805,7 +805,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         activateSearch: function() {
             this.setState({activeSearch: true});
             $('html').on('click.search', _.bind(function(e) {
-                if (!this.props.search && this.refs.search && !$(e.target).closest(this.refs.search.getDOMNode()).length) {
+                if (!this.props.search && this.refs.search && !$(e.target).closest(React.findDOMNode(this.refs.search)).length) {
                     this.setState({activeSearch: false});
                 }
             }, this));

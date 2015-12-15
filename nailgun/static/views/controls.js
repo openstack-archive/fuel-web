@@ -63,7 +63,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
             return this.props.type == 'radio' || this.props.type == 'checkbox';
         },
         getInputDOMNode: function() {
-            return this.refs.input.getDOMNode();
+            return React.findDOMNode(this.refs.input);
         },
         debouncedChange: _.debounce(function() {
             return this.onChange();
@@ -85,7 +85,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
         },
         removeFile: function() {
             if (!this.props.disabled) {
-                this.refs.form.getDOMNode().reset();
+                React.findDOMNode(this.refs.form).reset();
                 this.saveFile(null, null);
             }
         },
@@ -359,17 +359,17 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
             this.removeTooltip();
         },
         addTooltip: function() {
-            $(this.refs.tooltip.getDOMNode()).tooltip({
+            $(React.findDOMNode(this.refs.tooltip)).tooltip({
                 container: this.props.container,
                 placement: this.props.placement,
                 title: this.props.text
             });
         },
         updateTooltipTitle: function() {
-            $(this.refs.tooltip.getDOMNode()).attr('title', this.props.text).tooltip('fixTitle');
+            $(React.findDOMNode(this.refs.tooltip)).attr('title', this.props.text).tooltip('fixTitle');
         },
         removeTooltip: function() {
-            $(this.refs.tooltip.getDOMNode()).tooltip('destroy');
+            $(React.findDOMNode(this.refs.tooltip)).tooltip('destroy');
         },
         render: function() {
             if (!this.props.wrap) return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});

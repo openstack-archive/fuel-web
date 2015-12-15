@@ -1208,7 +1208,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             } else if (e.key == 'Escape') {
                 this.endRenaming();
                 e.stopPropagation();
-                this.getDOMNode().focus();
+                React.findDOMNode(this).focus();
             }
         },
         startNodeNetworkGroupRenaming: function(e) {

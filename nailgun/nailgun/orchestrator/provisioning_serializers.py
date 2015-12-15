@@ -409,4 +409,36 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
         serialized_node = super(ProvisioningSerializer80, cls).serialize_node(
             cluster_attrs, node)
 
+        # Make sure that there are no empty strings as this might mess up
+        # cloud init templates
+        os_user_sudo = filter(lambda s: s,
+                              (cluster_attrs['access']['os_user_sudo']
+                               .splitlines()))
+        os_user_authkeys = filter(lambda s: s,
+                                  (cluster_attrs['access']['os_user_authkeys']
+                                   .splitlines()))
+        svc_user_sudo = filter(lambda s: s,
+                               (cluster_attrs['access']['svc_user_sudo']
+                                .splitlines()))
+
+        root_password = cluster_attrs['access']['root_password']
+
+        os_user = {
+            'name': cluster_attrs['access']['os_user_name'],
+            'password': cluster_attrs['access']['os_user_password'],
+            'homedir': cluster_attrs['access']['os_user_homedir'],
+            'sudo': os_user_sudo,
+            'ssh_keys': os_user_authkeys,
+        }
+        svc_user = {
+            'name': cluster_attrs['access']['svc_user_name'],
+            'homedir': cluster_attrs['access']['svc_user_homedir'],
+            'sudo': svc_user_sudo,
+            'password': cluster_attrs['access']['svc_user_password'],
+        }
+
+        serialized_node['ks_meta']['os_user'] = os_user
+        serialized_node['ks_meta']['svc_user'] = svc_user
+        serialized_node['ks_meta']['root_password'] = root_password
+
         return serialized_node

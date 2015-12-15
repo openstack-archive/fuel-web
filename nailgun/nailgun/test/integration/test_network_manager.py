@@ -207,11 +207,8 @@ class TestNetworkManager(BaseNetworkManagerTest):
         nodegroup = objects.Cluster.get_controllers_node_group(
             self.env.clusters[0])
 
-        self.assertNotRaises(
-            Exception,  # make sure there's no exceptions at all
-            self.env.network_manager.assign_vip,
-            nodegroup,
-            consts.NETWORKS.fuelweb_admin)
+        self.env.network_manager.assign_vip(nodegroup,
+                                            consts.NETWORKS.fuelweb_admin)
 
     def test_assign_vip_throws_not_found_exception(self):
         self.env.create_cluster(api=True)

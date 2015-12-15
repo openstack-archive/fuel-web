@@ -1774,8 +1774,9 @@
         label: "dialog.create_cluster_wizard.storage.ceph"
         description: "dialog.create_cluster_wizard.storage.ceph_block"
         weight: 10
-        bind:
-          - "settings:storage.volumes_ceph.value"
+        bind: !!pairs
+          - "settings:storage.volumes_ceph.value": true
+          - "settings:storage.volumes_lvm.value": false
         compatible:
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu

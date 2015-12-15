@@ -197,7 +197,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             components_metadata=self.env.get_default_components())
 
         expected_message = (
-            'Plugin plugin_with_components-0.1.0 is overlapping with release '
+            'Plugin plugin_with_components is overlapping with release '
             'by introducing the same component with name '
             '"hypervisor:test_hypervisor"')
 
@@ -219,8 +219,8 @@ class TestPluginManager(base.BaseIntegrationTest):
             components_metadata=self.env.get_default_components())
 
         expected_message = (
-            'Plugin plugin_with_components_2-0.1.0 is overlapping with '
-            'plugin_with_components_1-0.1.0 by introducing the same component '
+            'Plugin plugin_with_components_2 is overlapping with '
+            'plugin_with_components_1 by introducing the same component '
             'with name "hypervisor:test_hypervisor"')
 
         with self.assertRaisesRegexp(errors.AlreadyExists,

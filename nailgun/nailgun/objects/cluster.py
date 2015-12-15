@@ -229,7 +229,7 @@ class Cluster(NailgunObject):
 
         release = Release.get_by_uid(release_id)
         cluster_attributes = {}
-        for component in release.components_metadata:
+        for component in Release.get_all_components(release):
             if component['name'] in components:
                 for bind_item in component.get('bind', []):
                     if isinstance(bind_item, six.string_types):

@@ -45,9 +45,11 @@ class NetworkConfigurationSerializer(BasicSerializer):
             cls.serialize_network_group,
             nets
         )
+
         if cluster.is_ha_mode:
             result.update(
-                net_manager.assign_vips_for_net_groups_for_api(cluster))
+                net_manager.assign_vips_for_net_groups_for_api(cluster, False)
+            )
 
         return result
 

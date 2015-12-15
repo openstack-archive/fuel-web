@@ -395,3 +395,25 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
 
         PriorityStrategy().one_by_one(tasks)
         return tasks
+
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        serialized_node = super(ProvisioningSerializer80, cls).serialize_node(
+            cluster_attrs, node)
+
+        os_user_authkeys = cluster_attrs.get('os_user_authkeys',
+                                             '').split('\n')
+        os_user = {
+            'name': cluster_attrs.get('os_user_name', 'fueladmin'),
+            'password': cluster_attrs.get('os_user_password', 'fueladmin'),
+            'homedir': cluster_attrs.get('os_user_homedir',
+                                         '/home/fueladmin'),
+            'sudo': cluster_attrs.get('os_user_sudo',
+                                      '').split('\n'),
+        }
+
+        serialized_node['ks_meta']['os_user'] = os_user
+        [serialized_node['ks_meta']['authorized_keys'].append("\"%s\"" % key)
+            for key in os_user_authkeys]
+
+        return serialized_node

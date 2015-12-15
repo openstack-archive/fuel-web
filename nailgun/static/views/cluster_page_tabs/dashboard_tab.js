@@ -409,29 +409,29 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             // check node amount restrictions according to their roles
             function(cluster) {
                 var configModels = this.getConfigModels(),
-                    roleModels = cluster.get('roles'),
-                    validRoleModels = roleModels.filter(function(role) {
-                        return !role.checkRestrictions(configModels).result;
-                    }),
-                    limitValidations = _.zipObject(validRoleModels.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))];
-                    })),
-                    limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true, ['recommended'])];
-                    }));
+                    nodes = cluster.get('nodes'),
+                    validRoles = cluster.get('roles').filter((role) =>
+                        !role.checkRestrictions(configModels).result
+                    ),
+                    limitValidations = _.zipObject(validRoles.map((role) => [
+                            role.get('name'),
+                            role.checkLimits(configModels, nodes, true, ['min'], role.get('name') == 'controller' && cluster.get('status') == 'operational')
+                        ]
+                    )),
+                    limitRecommendations = _.zipObject(validRoles.map((role) => [
+                            role.get('name'),
+                            role.checkLimits(configModels, nodes, true, ['recommended'])
+                        ]
+                    ));
                 return {
-                    blocker: roleModels.map(_.bind(
-                        function(role) {
-                            var name = role.get('name'),
-                                limits = limitValidations[name];
-                            return limits && !limits.valid && limits.message;
-                        }, this)),
-                    warning: roleModels.map(_.bind(
-                        function(role) {
-                            var name = role.get('name'),
-                                recommendation = limitRecommendations[name];
-                            return recommendation && !recommendation.valid && recommendation.message;
-                        }, this))
+                    blocker: validRoles.map((role) => {
+                        var limits = limitValidations[role.get('name')];
+                        return limits && !limits.valid && limits.message;
+                    }),
+                    warning: validRoles.map((role) => {
+                        var recommendation = limitRecommendations[role.get('name')];
+                        return recommendation && !recommendation.valid && recommendation.message;
+                    })
                 };
             },
             // check cluster network configuration

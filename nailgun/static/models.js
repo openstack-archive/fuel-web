@@ -118,7 +118,7 @@ define([
             this.expandedLimits = this.expandedLimits || {};
             this.expandedLimits[this.get('name')] = limits;
         },
-        checkLimits: function(models, nodes, checkLimitIsReached = true, limitTypes = ['min', 'max']) {
+        checkLimits: function(models, nodes, checkLimitIsReached = true, limitTypes = ['min', 'max'], checkDeployedNodes = false) {
             /*
              *  Check the 'limits' section of configuration.
              *  models -- current models to check the limits
@@ -131,6 +131,9 @@ define([
              *        - the model is valid as is (return true) -- case for checkLimitIsReached = true
              *        - there can be no more nodes added (return false) -- case for checkLimitIsReached = false
              *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
+             *  checkDeployedNodes -- boolean (default: false),
+             *      if true then deployed nodes are checked only
+             *      if false then all nodes are checked
             **/
 
             var evaluateExpressionHelper = function(expression, models, options) {
@@ -160,7 +163,8 @@ define([
                     min: evaluateExpressionHelper(limits.min, models).value,
                     recommended: evaluateExpressionHelper(limits.recommended, models).value
                 },
-                count = nodes.nodesAfterDeploymentWithRole(name).length,
+                nodesAfterDeploymentWithRole = nodes.filter((node) => !node.get('pending_deletion') && node.hasRole(name)),
+                count = checkDeployedNodes ? _.where(nodesAfterDeploymentWithRole, {status: 'ready'}).length : nodesAfterDeploymentWithRole.length,
                 messages,
                 label = this.get('label');
 
@@ -186,10 +190,11 @@ define([
                 limitValues[limitType] = limitValue;
                 checkedLimitTypes[limitType] = true;
                 if (comparator(count, limitValue)) {
+                    var ns = checkDeployedNodes ? 'common.role_limits.redeployment.' : 'common.role_limits.';
                     return {
                         type: limitType,
                         value: limitValue,
-                        message: obj.message || i18n('common.role_limits.' + limitType, {limitValue: limitValue, count: count, roleName: label})
+                        message: obj.message || i18n(ns + limitType, {limitValue: limitValue, count: count, roleName: label})
                     };
                 }
             };
@@ -495,15 +500,9 @@ define([
         hasChanges() {
             return _.any(this.invoke('hasChanges'));
         },
-        nodesAfterDeployment: function() {
-            return this.filter(function(node) {return !node.get('pending_deletion');});
-        },
-        nodesAfterDeploymentWithRole: function(role) {
-            return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);});
-        },
         resources: function(resourceName) {
-            var resources = this.map(function(node) {return node.resource(resourceName);});
-            return _.reduce(resources, function(sum, n) {return sum + n;}, 0);
+            var resources = this.map((node) => node.resource(resourceName));
+            return _.reduce(resources, (sum, n) => sum + n, 0);
         },
         getLabelValues: function(label) {
             return this.invoke('getLabel', label);

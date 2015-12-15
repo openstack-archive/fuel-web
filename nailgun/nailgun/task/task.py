@@ -17,6 +17,7 @@
 import collections
 from copy import deepcopy
 import os
+from requests.exceptions import ConnectionError
 import socket
 
 import netaddr
@@ -1583,22 +1584,28 @@ class GenerateCapacityLogTask(object):
 class CheckRepositoryConnectionFromMasterNodeTask(object):
     @classmethod
     def execute(cls, task):
-        failed_responses = cls._get_failed_repositories(task)
+        try:
+            failed_responses = cls._get_failed_repositories(task)
+        except ConnectionError as error:
+            raise errors.CheckBeforeDeploymentError(
+                cls._generate_error_message(error.message))
 
         if len(failed_responses) > 0:
-            error_message = (
-                "Connection to following repositories could not be "
-                "established: {0}".format(
-                    ', '.join(
-                        '<{0} [{1}]>'.format(r.url, r.status_code)
-                        for r in failed_responses
-                    )
-                ))
+            error_message = cls._generate_error_message(
+                ', '.join(
+                    '<{0} [{1}]>'.format(r.url, r.status_code)
+                    for r in failed_responses)
+            )
             raise errors.CheckBeforeDeploymentError(error_message)
 
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+    @classmethod
+    def _generate_error_message(cls, message):
+        return "Connection to following repositories could not be "\
+               "established: {0}".format(message)
 
     @classmethod
     def _get_failed_repositories(cls, task):

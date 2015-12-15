@@ -546,7 +546,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             nm.assign_vip(nodegroup, consts.NETWORKS.fuelweb_admin, 'my-vip'),
             resp.json_body['vips']['my-vip']['ipaddr'])
 
-    def test_not_enough_ip_addresses_return_400_on_get(self):
+    def test_not_enough_ip_addresses_return_200_on_get(self):
         # restrict public network to have only 2 ip addresses
         netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
         public = next((
@@ -576,11 +576,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         resp = self.env.neutron_networks_get(
             self.cluster.id,
             expect_errors=True)
-        self.assertEqual(400, resp.status_code)
-        self.assertEqual(
-            "Not enough free IP addresses in ranges [172.16.0.2-172.16.0.4] "
-            "of 'public' network",
-            resp.json_body['message'])
+        self.assertEqual(200, resp.status_code)
 
     def test_not_enough_ip_addresses_return_400_on_put(self):
         netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
@@ -635,35 +631,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         ipaddr = resp.json_body['vips']['my-vip']['ipaddr']
         self.assertEqual('10.42.0.2', ipaddr)
-
-    def test_get_returns_error_if_vip_names_are_intersected(self):
-        cluster = self.env.create(
-            release_kwargs={'version': '2015.1.0-7.0'},
-            cluster_kwargs={
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
-                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
-                'api': False,
-            },
-            nodes_kwargs=[{'roles': ['controller']}]
-        )
-        cluster.release.network_roles_metadata.append({
-            'id': 'mymgmt/vip',
-            'default_mapping': consts.NETWORKS.management,
-            'properties': {
-                'subnet': True,
-                'gateway': False,
-                'vip': [{
-                    'name': 'management',
-                    'node_roles': ['compute'],
-                }]
-            }})
-        self.db.flush()
-        resp = self.env.neutron_networks_get(cluster.id, expect_errors=True)
-        self.assertEqual(400, resp.status_code)
-        self.assertIn(
-            'Duplicate VIP names found in network configuration',
-            resp.json_body['message']
-        )
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

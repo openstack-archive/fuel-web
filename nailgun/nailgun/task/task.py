@@ -17,6 +17,7 @@
 import collections
 from copy import deepcopy
 import os
+from requests.exceptions import ConnectionError
 import socket
 
 import netaddr
@@ -1594,7 +1595,15 @@ class GenerateCapacityLogTask(object):
 class CheckRepositoryConnectionFromMasterNodeTask(object):
     @classmethod
     def execute(cls, task):
-        failed_responses = cls._get_failed_repositories(task)
+        try:
+            failed_responses = cls._get_failed_repositories(task)
+        except ConnectionError as error:
+            logger.error("Connection to the repositories could not be "
+                         "established: {}.".format(error))
+            message = "Connection to the repositories could not be "\
+                      "established. Please refer to the Fuel Master "\
+                      "web backend logs for more details."
+            raise errors.CheckBeforeDeploymentError(message)
 
         if len(failed_responses) > 0:
             error_message = (

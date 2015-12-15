@@ -344,7 +344,8 @@ def get_serializer_for_cluster(cluster):
         '5': ProvisioningSerializer,
         '6.0': ProvisioningSerializer,
         '6.1': ProvisioningSerializer61,
-        '7.0': ProvisioningSerializer70
+        '7.0': ProvisioningSerializer70,
+        '8.0': ProvisioningSerializer80
     }
 
     for version, serializer in six.iteritems(serializers_map):
@@ -352,7 +353,7 @@ def get_serializer_for_cluster(cluster):
             return serializer
 
     # by default, we should return latest serializer
-    return ProvisioningSerializer80
+    return ProvisioningSerializer90
 
 
 def serialize(cluster, nodes, ignore_customized=False):
@@ -391,3 +392,34 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
 
         PriorityStrategy().one_by_one(tasks)
         return tasks
+
+
+class ProvisioningSerializer90(ProvisioningSerializer80):
+
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        serialized_node = super(ProvisioningSerializer80, cls).serialize_node(
+            cluster_attrs, node)
+
+        os_user = {
+            'name': cluster_attrs.get('os_user_name', 'fueladmin'),
+            'password': cluster_attrs.get('os_user_password', 'fueladmin'),
+            'homedir': cluster_attrs.get('os_user_homedir',
+                                         '/home/fueladmin'),
+            'sudo': cluster_attrs.get('os_user_sudo',
+                                      '').split('\n'),
+            'ssh_keys': cluster_attrs.get('os_user_authkeys',
+                                          '').split('\n')
+        }
+        svc_user = {
+            'name': cluster_attrs.get('svc_user_name', 'fuel'),
+            'homedir': cluster_attrs.get('svc_user_homedir',
+                                         '/var/lib/fuel'),
+            'sudo': cluster_attrs.get('svc_user_sudo',
+                                      'ALL=(ALL) NOPASSWD: ALL').split('\n'),
+        }
+
+        serialized_node['ks_meta']['os_user'] = os_user
+        serialized_node['ks_meta']['svc_user'] = svc_user
+
+        return serialized_node

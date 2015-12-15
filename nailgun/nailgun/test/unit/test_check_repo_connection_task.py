@@ -24,6 +24,7 @@ from nailgun.task.task import CheckRepoAvailability
 from nailgun.task.task import CheckRepoAvailabilityWithSetup
 from nailgun.task.task import CheckRepositoryConnectionFromMasterNodeTask
 from nailgun.test.base import BaseTestCase
+from requests.exceptions import ConnectionError
 
 
 @mock.patch('time.sleep')   # don't sleep on tests
@@ -31,6 +32,9 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
 
     _response_error = mock.Mock(status_code=500, url='url1')
     _response_ok = mock.Mock(status_code=200, url='url1')
+
+    _connection_error = ConnectionError()
+    _connection_error.message = 'Connection aborted.'
 
     def setUp(self):
         super(CheckRepositoryConnectionFromMasterNodeTaskTest, self).setUp()
@@ -73,6 +77,19 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
             cm.exception.message,
             'Connection to following repositories could not be established: '
             '<url1 [500]>')
+
+    @mock.patch('requests.get', side_effect=_connection_error)
+    @mock.patch('nailgun.task.task.logger.error')
+    def test_execute_fail_with_connection_error(self, m_error, _, __):
+        with self.assertRaises(errors.CheckBeforeDeploymentError) as cm:
+            CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
+
+        m_error.assert_called_once_with(self._connection_error)
+        self.assertEqual(
+            cm.exception.message,
+            "Connection to the repositories could not be "
+            "established. Please refer to the Fuel Master "
+            "web backend logs for more details.")
 
     @mock.patch('requests.get', side_effect=[_response_error, _response_ok])
     def test_execute_success_on_retry(self, _, __):

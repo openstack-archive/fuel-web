@@ -99,10 +99,6 @@ class ProviderHandler(BaseHandler):
             # some corner cases, and it should be fixed. in order
             # to simplify troubleshootng, let's print traceback to log.
             return self.serializer.serialize_for_cluster(cluster)
-        except errors.OutOfIPs as exc:
-            raise self.http(400, six.text_type(exc))
-        except errors.DuplicatedVIPNames as exc:
-            raise self.http(400, six.text_type(exc))
         except Exception:
             logger.exception('Serialization failed')
             raise
@@ -136,7 +132,10 @@ class ProviderHandler(BaseHandler):
         nm.update(cluster, data)
 
         try:
-            network_config = self.serializer.serialize_for_cluster(cluster)
+            network_config = self.serializer.serialize_for_cluster(cluster,
+                                                                   True)
+        except errors.DuplicatedVIPNames as exc:
+            raise self.http(400, six.text_type(exc))
         except errors.OutOfIPs as exc:
             network_id = getattr(exc, 'network_id', None)
             raise self.http(

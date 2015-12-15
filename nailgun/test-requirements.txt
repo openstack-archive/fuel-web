@@ -5,6 +5,7 @@ nose==1.1.2
 unittest2==0.5.1
 nose2==0.4.1
 nose-timer==0.2.0
+oslo.context<0.5.0
 sphinx==1.2
 rst2pdf==0.93
 sphinxcontrib-plantuml==0.3

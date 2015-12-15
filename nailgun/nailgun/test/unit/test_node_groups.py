@@ -466,6 +466,8 @@ class TestNodeGroups(BaseIntegrationTest):
         self.env.clusters[0].release.network_roles_metadata = net_roles
         self.db.flush()
         # VIPs are allocated on this call
+        self.env.neutron_networks_put(self.cluster.id, {})
+
         config = self.env.neutron_networks_get(self.cluster.id).json_body
         # Storage network has no GW by default
         vip_config = config['vips']['my-vip']['ipaddr']
@@ -476,6 +478,7 @@ class TestNodeGroups(BaseIntegrationTest):
 
         resp = self.env.create_node_group()
         self.assertEquals(resp.status_code, 201)
+        self.env.neutron_networks_put(self.cluster.id, {})
 
         # VIP address was deleted
         self.assertEqual(

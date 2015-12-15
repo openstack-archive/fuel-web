@@ -330,18 +330,20 @@ class PluginManager(object):
 
         for plugin_adapter in map(
                 wrap_plugin, PluginCollection.get_by_release(release)):
+            plugin_name = plugin_adapter.name
             for component in plugin_adapter.components_metadata:
                 name = component['name']
-                if name in seen_components:
+                if seen_components.get(name, plugin_name) != plugin_name:
                     raise errors.AlreadyExists(
                         'Plugin {0} is overlapping with {1} by introducing '
                         'the same component with name "{2}"'
-                        .format(plugin_adapter.full_name,
+                        .format(plugin_adapter.name,
                                 seen_components[name],
                                 name))
 
-                seen_components[name] = plugin_adapter.full_name
-                components.append(component)
+                if name not in seen_components:
+                    seen_components[name] = plugin_adapter.name
+                    components.append(component)
 
         return components
 

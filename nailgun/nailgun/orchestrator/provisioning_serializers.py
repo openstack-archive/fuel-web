@@ -352,7 +352,8 @@ def get_serializer_for_cluster(cluster):
         '5': ProvisioningSerializer,
         '6.0': ProvisioningSerializer,
         '6.1': ProvisioningSerializer61,
-        '7.0': ProvisioningSerializer70
+        '7.0': ProvisioningSerializer70,
+        '8.0': ProvisioningSerializer80
     }
 
     for version, serializer in six.iteritems(serializers_map):
@@ -360,7 +361,7 @@ def get_serializer_for_cluster(cluster):
             return serializer
 
     # by default, we should return latest serializer
-    return ProvisioningSerializer80
+    return ProvisioningSerializer90
 
 
 def serialize(cluster, nodes, ignore_customized=False):
@@ -399,3 +400,45 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
 
         PriorityStrategy().one_by_one(tasks)
         return tasks
+
+
+class ProvisioningSerializer90(ProvisioningSerializer80):
+
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        serialized_node = super(ProvisioningSerializer80, cls).serialize_node(
+            cluster_attrs, node)
+
+        # Make sure that there are no empty strings as this might mess up
+        # cloud init templates
+        os_user_sudo = filter(lambda s: s,
+                              (cluster_attrs['access']['os_user_sudo']
+                               .splitlines()))
+        os_user_authkeys = filter(lambda s: s,
+                                  (cluster_attrs['access']['os_user_authkeys']
+                                   .splitlines()))
+        svc_user_sudo = filter(lambda s: s,
+                               (cluster_attrs['access']['svc_user_sudo']
+                                .splitlines()))
+
+        root_password = cluster_attrs['access']['root_password']
+
+        os_user = {
+            'name': cluster_attrs['access']['os_user_name'],
+            'password': cluster_attrs['access']['os_user_password'],
+            'homedir': cluster_attrs['access']['os_user_homedir'],
+            'sudo': os_user_sudo,
+            'ssh_keys': os_user_authkeys,
+        }
+        svc_user = {
+            'name': cluster_attrs['access']['svc_user_name'],
+            'homedir': cluster_attrs['access']['svc_user_homedir'],
+            'sudo': svc_user_sudo,
+            'password': cluster_attrs['access']['svc_user_password'],
+        }
+
+        serialized_node['ks_meta']['os_user'] = os_user
+        serialized_node['ks_meta']['svc_user'] = svc_user
+        serialized_node['ks_meta']['root_password'] = root_password
+
+        return serialized_node

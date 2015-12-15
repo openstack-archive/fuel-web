@@ -1438,11 +1438,37 @@ class NetworkManager(object):
         return objects.NetworkGroup.create(data)
 
     @classmethod
-    def create_network_groups(cls, cluster, neutron_segment_type, gid=None):
-        """Method for creation of network groups for cluster.
+    def check_gw_in_default_node_group(cls, cluster):
+        for network in objects.Cluster.get_default_group(cluster).networks:
+            meta = network.meta
+            if meta['notation'] is None or meta['use_gateway']:
+                continue
+            cidr = IPNetwork(network.cidr)
+            default_gw_ip = cidr[1]
+            network.meta['use_gateway'] = True
+            network.gateway = str(default_gw_ip)
+            for ip_range_db in network.ip_ranges:
+                if default_gw_ip not in IPRange(ip_range_db.first,
+                                                ip_range_db.last):
+                    continue
+                if ip_range_db.first != ip_range_db.last:
+                    ip_range_db.first = str(cidr[2])
+                else:
+                    db.delete(ip_range_db)
+        db().flush()
 
+    @classmethod
+    def create_network_groups(cls, cluster, neutron_segment_type,
+                              node_group_id=None, set_all_gateways=False):
+        """Create network groups for node group.
+
+        Creates network groups for default node group of cluster if
+        node_group_id is not supplied. Node group should not contain any
+        network groups before this.
         :param cluster: Cluster instance.
-        :type  cluster: instance
+        :param neutron_segment_type: segmentation type (only for neutron)
+        :param node_group_id: ID of node group.
+        :param set_all_gateways: set gateways for all network groups
         :returns: None
         """
         networks_metadata = cluster.release.networks_metadata
@@ -1456,7 +1482,9 @@ class NetworkManager(object):
                 if cls.check_network_restrictions(cluster,
                                                   net['restrictions']):
                     continue
-            cls.create_network_group(cluster, net, gid)
+            if net['notation'] is not None and set_all_gateways:
+                net['use_gateway'] = True
+            cls.create_network_group(cluster, net, node_group_id)
 
     @classmethod
     def update_networks(cls, network_configuration):

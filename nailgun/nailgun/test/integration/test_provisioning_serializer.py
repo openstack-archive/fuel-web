@@ -86,6 +86,12 @@ class TestGetSerializerForCluster(BaseIntegrationTest):
 
         self.assertIs(serializer, ps.ProvisioningSerializer80)
 
+    def test_env_9_0(self):
+        cluster = self._get_cluster('2016.1-9.0')
+        serializer = ps.get_serializer_for_cluster(cluster)
+
+        self.assertIs(serializer, ps.ProvisioningSerializer90)
+
 
 class TestProvisioningSerializer(BaseIntegrationTest):
 
@@ -425,3 +431,80 @@ class TestProvisioningSerializer80(BaseIntegrationTest):
                 'fuel-bootstrap-image' in task['parameters']['cmd'],
                 'ironic.pub' in task['parameters']['cmd']]),
             serialized_info['pre_provision']))
+
+
+class TestProvisioningSerializer90(BaseIntegrationTest):
+
+    serializer = ps.ProvisioningSerializer90
+
+    def test_user_account_info(self):
+        self.env.create()
+        self.cluster_db = self.env.clusters[0]
+        self.env.create_nodes_w_interfaces_count(
+            1, 1,
+            **{
+                'roles': ['controller'],
+                'pending_addition': True,
+                'cluster_id': self.cluster_db.id
+            }
+        )
+        self.env.create_nodes_w_interfaces_count(
+            1, 1,
+            **{
+                'roles': ['compute'],
+                'pending_addition': True,
+                'cluster_id': self.cluster_db.id
+            }
+        )
+        self.attributes = self.cluster_db.attributes.editable
+        self.generated = self.cluster_db.attributes.generated
+        self.serialized_cluster = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        os_user_name = self.attributes.get('access', {}) \
+            .get('os_user_name', {}).get('value')
+        os_user_password = self.attributes.get('access', {}) \
+            .get('os_user_password', {}).get('value')
+        os_user_homedir = self.attributes.get('access', {}) \
+            .get('os_user_homedir', {}).get('value')
+        os_user_sudo = filter(lambda s: s,
+                              (self.attributes.get('access', {})
+                                   .get('os_user_sudo', {})
+                                   .get('value').splitlines()))
+        os_user_authkeys = filter(lambda s: s,
+                                  (self.attributes.get('access', {})
+                                       .get('os_user_authkeys', {})
+                                       .get('value').splitlines()))
+        svc_user_name = self.attributes.get('access', {}) \
+            .get('svc_user_name', {}).get('value')
+        svc_user_homedir = self.attributes.get('access', {}) \
+            .get('svc_user_homedir', {}).get('value')
+        svc_user_sudo = filter(lambda s: s,
+                               (self.attributes.get('access', {})
+                                    .get('svc_user_sudo', {})
+                                    .get('value').splitlines()))
+        svc_user_password = self.generated.get('access', {}) \
+            .get('svc_user_password', 'fuel')
+        root_password = self.generated.get('access', {}) \
+            .get('root_password', 'r00tme')
+
+        for node in self.serialized_cluster['nodes']:
+            self.assertEqual(
+                node['ks_meta']['os_user'], {
+                    'name': os_user_name,
+                    'password': os_user_password,
+                    'homedir': os_user_homedir,
+                    'sudo': os_user_sudo,
+                    'ssh_keys': os_user_authkeys,
+                }
+            )
+            self.assertEqual(
+                node['ks_meta']['svc_user'], {
+                    'name': svc_user_name,
+                    'homedir': svc_user_homedir,
+                    'sudo': svc_user_sudo,
+                    'password': svc_user_password,
+                }
+            )
+            self.assertEqual(node['ks_meta']['root_password'],
+                            root_password)

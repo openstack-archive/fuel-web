@@ -431,3 +431,96 @@ class TestProvisioningSerializer80(BaseIntegrationTest):
                 'fuel-bootstrap-image' in task['parameters']['cmd'],
                 'ironic.pub' in task['parameters']['cmd']]),
             serialized_info['pre_provision']))
+
+
+class TestProvisioningSerializer90(BaseIntegrationTest):
+
+    serializer = ps.ProvisioningSerializer90
+
+    def test_user_account_info(self):
+        self.env.create()
+        self.cluster_db = self.env.clusters[0]
+        self.env.create_nodes_w_interfaces_count(
+            1, 1,
+            roles=['controller'],
+            pending_addition=True,
+            cluster_id=self.cluster_db.id
+        )
+        self.env.create_nodes_w_interfaces_count(
+            1, 1,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=self.cluster_db.id
+        )
+        attributes = self.cluster_db.attributes.editable
+        generated = self.cluster_db.attributes.generated
+        serialized_cluster = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        operator_user_name = attributes.get('operator_user', {}) \
+            .get('name', {}).get('value')
+        operator_user_password = attributes.get('operator_user', {}) \
+            .get('password', {}).get('value')
+        operator_user_homedir = attributes.get('operator_user', {}) \
+            .get('homedir', {}).get('value')
+        operator_user_sudo = self.serializer.get_lines(
+            (attributes.get('operator_user', {})
+                       .get('sudo', {})
+                       .get('value')))
+        operator_user_authkeys = self.serializer.get_lines(
+            (attributes.get('operator_user', {})
+                       .get('authkeys', {})
+                       .get('value')))
+        service_user_name = attributes.get('service_user', {}) \
+            .get('name', {}).get('value')
+        service_user_password = generated.get('service_user', {}) \
+            .get('password')
+        service_user_homedir = attributes.get('service_user', {}) \
+            .get('homedir', {}).get('value')
+        service_user_sudo = self.serializer.get_lines(
+            (attributes.get('service_user', {})
+                       .get('sudo', {})
+                       .get('value')))
+        root_password = generated.get('service_user', {}) \
+            .get('root_password')
+
+        for node in serialized_cluster['nodes']:
+            self.assertEqual(
+                node['ks_meta']['operator_user'], {
+                    'name': operator_user_name,
+                    'password': operator_user_password,
+                    'homedir': operator_user_homedir,
+                    'sudo': operator_user_sudo,
+                    'ssh_keys': operator_user_authkeys,
+                }
+            )
+            self.assertEqual(
+                node['ks_meta']['service_user'], {
+                    'name': service_user_name,
+                    'homedir': service_user_homedir,
+                    'sudo': service_user_sudo,
+                    'password': service_user_password,
+                }
+            )
+            self.assertEqual(node['ks_meta']['root_password'],
+                             root_password)
+
+    def test_get_lines(self):
+        empty = ""
+        empty_multiline = "\n\n\n"
+        non_empty = "abc\nfoo\nbar"
+        mixed = "abc\n\nfoo\n\n\nbar"
+
+        self.assertEqual(len(self.serializer.get_lines(empty)), 0)
+        self.assertEqual(self.serializer.get_lines(empty), [])
+
+        self.assertEqual(len(self.serializer.get_lines(empty_multiline)), 0)
+        self.assertEqual(self.serializer.get_lines(empty_multiline), [])
+
+        self.assertEqual(len(self.serializer.get_lines(non_empty)), 3)
+        self.assertEqual(self.serializer.get_lines(non_empty),
+                         ['abc', 'foo', 'bar'])
+
+        self.assertEqual(len(self.serializer.get_lines(mixed)), 3)
+        self.assertEqual(self.serializer.get_lines(mixed),
+                         ['abc', 'foo', 'bar'])

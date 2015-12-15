@@ -16,6 +16,7 @@
 import datetime
 import six
 
+from nailgun.statistics import utils
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
@@ -273,3 +274,22 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         last_changed = OpenStackWorkloadStats.get_last_by(
             cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertEqual(False, last_changed.is_sent)
+
+    def test_oswl_statistics_save_version_info(self):
+        self.env.create()
+        cluster = self.env.clusters[0]
+
+        # Without version info
+        oswl_statistics_save(cluster.id, consts.OSWL_RESOURCE_TYPES.vm, [])
+        oswl = OpenStackWorkloadStats.get_last_by(
+            cluster.id, consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertEqual({}, oswl.version_info)
+
+        # With version info
+        oswl_statistics_save(
+            cluster.id, consts.OSWL_RESOURCE_TYPES.vm, [{'id': 1}],
+            version_info=utils.get_version_info(cluster)
+        )
+        oswl = OpenStackWorkloadStats.get_last_by(
+            cluster.id, consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertEqual(utils.get_version_info(cluster), oswl.version_info)

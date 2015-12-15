@@ -582,3 +582,26 @@ class TestPluginLinks(base.BaseAlembicMigrationTest):
         ).inserted_primary_key[0]
         fetched_data = db.execute(sa.select([plugin_links])).fetchone()
         self.assertEqual(link_id, fetched_data[0])
+
+
+class TestOswlStats(base.BaseAlembicMigrationTest):
+    def test_oswl_stats_creation(self):
+        oswl = self.meta.tables['oswl_stats']
+        expected_version_info = {"fuel_release": "7.0"}
+        oswl_data = {
+            'cluster_id': 0,
+            'created_date': datetime.utcnow().date(),
+            'updated_time': datetime.utcnow().time(),
+            'resource_type': 'vm',
+            'resource_checksum': 'x',
+            'is_sent': False,
+            'version_info': expected_version_info
+        }
+
+        expected_id = db.execute(
+            oswl.insert(), [oswl_data]).inserted_primary_key[0]
+        actual_id, actual_version_info = db.execute(
+            sa.select([oswl.c.id, oswl.c.version_info])
+        ).first()
+        self.assertEqual(expected_id, actual_id)
+        self.assertEqual(expected_version_info, actual_version_info)

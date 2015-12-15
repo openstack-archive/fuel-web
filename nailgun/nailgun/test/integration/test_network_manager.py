@@ -776,8 +776,12 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def test_restricted_networks(self):
         rel = self.env.create_release()
-        enabled_net = {'name': 'always_enabled', 'restrictions': ['false']}
-        disabled_net = {'name': 'always_disabled', 'restrictions': ['true']}
+        enabled_net = {'name': 'always_enabled',
+                       'notation': None,
+                       'restrictions': ['false']}
+        disabled_net = {'name': 'always_disabled',
+                        'notation': None,
+                        'restrictions': ['true']}
         netw_meta = deepcopy(rel.networks_metadata)
         netw_meta['neutron']['networks'].extend([enabled_net, disabled_net])
         rel.networks_metadata = netw_meta

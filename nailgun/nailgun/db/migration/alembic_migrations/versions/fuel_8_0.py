@@ -27,6 +27,7 @@ down_revision = '1e50a4903910'
 from alembic import op
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils.migration import drop_enum
@@ -122,9 +123,11 @@ def upgrade():
     create_openstack_configs_table()
     upgrade_master_node_ui_settings()
     upgrade_plugins_parameters()
+    upgrade_oswl_stats_version_info()
 
 
 def downgrade():
+    downgrade_oswl_stats_version_info()
     downgrade_plugins_parameters()
     downgrade_master_node_ui_settings()
     downgrade_openstack_configs()
@@ -752,3 +755,14 @@ def upgrade_plugins_parameters():
 
 def downgrade_plugins_parameters():
     op.drop_column('plugins', 'is_hotpluggable')
+
+
+def upgrade_oswl_stats_version_info():
+    op.add_column(
+        'oswl_stats', sa.Column('version_info', postgresql.JSON,
+                                nullable=True, server_default='{}')
+    )
+
+
+def downgrade_oswl_stats_version_info():
+    op.drop_column('oswl_stats', 'version_info')

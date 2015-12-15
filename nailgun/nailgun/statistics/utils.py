@@ -139,3 +139,22 @@ def set_proxy(proxy):
 
 def dithered(medium, interval=(0.9, 1.1)):
     return random.randint(int(medium * interval[0]), int(medium * interval[1]))
+
+
+def get_version_info(cluster):
+    """Returns current Fuel and OpenStack version info
+
+    :param cluster: cluster
+    :type cluster: nailgun.db.sqlalchemy.models.Cluster
+    :return: dict with version info or None
+    """
+    try:
+        return {
+            'fuel_version': cluster.fuel_version,
+            'openstack_version': cluster.release.version,
+            'openstack_name': cluster.release.name,
+            'openstack_os': cluster.release.operating_system
+        }
+    except Exception:
+        logger.exception("Fetching version info for cluster '%s' failed",
+                         cluster)

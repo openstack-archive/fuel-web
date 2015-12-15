@@ -16,7 +16,9 @@
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Date
+from sqlalchemy.dialects import postgresql
 from sqlalchemy import Enum
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import Time
@@ -50,3 +52,5 @@ class OpenStackWorkloadStats(Base):
 
     resource_checksum = Column(Text, nullable=False)
     is_sent = Column(Boolean, nullable=False, default=False, index=True)
+    version_info = Column(MutableDict.as_mutable(postgresql.JSON),
+                          nullable=True, default={}, server_default='{}')

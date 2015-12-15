@@ -1344,7 +1344,20 @@ class TestClusterObject(BaseTestCase):
             'additional_components': {'sahara': {'value': False}}
         }
 
-        release = self.env.create_release(components_metadata=components)
+        release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system=consts.RELEASE_OS.ubuntu,
+            modes=[consts.CLUSTER_MODES.ha_compact],
+            components_metadata=components)
+
+        self.env.create_plugin(
+            name='plugin_with_test_network_for_neutron',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            components_metadata=self.env.get_default_components(
+                name='network:neutron:test_network',
+                bind=[['cluster:net_segment_type', 'tun']]))
+
         tests_data = [{
             'selected_components': ['network:neutron:tun',
                                     'hypervisor:libvirt:kvm',
@@ -1360,6 +1373,14 @@ class TestClusterObject(BaseTestCase):
             'expected_values': {
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
                 'segmentation_type': None
+            }
+        }, {
+            'selected_components': ['network:neutron:test_network',
+                                    'hypervisor:libvirt:kvm',
+                                    'additional_service:sahara'],
+            'expected_values': {
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'segmentation_type': consts.NEUTRON_SEGMENT_TYPES.tun
             }
         }]
         for i, test_data in enumerate(tests_data):
@@ -1629,7 +1650,7 @@ class TestRelease(BaseTestCase):
     def test_get_all_components(self):
         release = self.env.create_release(
             version='2015.1-8.0',
-            operating_system='Ubuntu',
+            operating_system=consts.RELEASE_OS.ubuntu,
             modes=[consts.CLUSTER_MODES.ha_compact],
             components_metadata=self.env.get_default_components(
                 name='hypervisor:test_component_1'))

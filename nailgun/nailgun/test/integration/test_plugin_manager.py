@@ -166,13 +166,34 @@ class TestPluginManager(base.BaseIntegrationTest):
         PluginManager.sync_plugins_metadata([self.env.plugins[0].id])
         self.assertEqual(sync_mock.call_count, 1)
 
-    def test_get_components_metadata(self):
+    def test_get_components(self):
         self.env.create_plugin(
             name='plugin_with_components',
             package_version='4.0.0',
             fuel_version=['8.0'],
             components_metadata=self.env.get_default_components())
 
+        components_metadata = PluginManager.get_components_metadata(
+            self.release)
+        self.assertEqual(
+            components_metadata, self.env.get_default_components())
+
+    def test_get_components_for_same_plugins_with_different_verions(self):
+        self.env.create_plugin(
+            name='plugin_with_components_to_test_verions',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            components_metadata=self.env.get_default_components())
+
+        self.env.create_plugin(
+            name='plugin_with_components_to_test_verions',
+            version='1.0.0',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            components_metadata=self.env.get_default_components())
+
+        # PluginManager should return only one component for same plugin
+        # but different versions
         components_metadata = PluginManager.get_components_metadata(
             self.release)
         self.assertEqual(
@@ -197,7 +218,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             components_metadata=self.env.get_default_components())
 
         expected_message = (
-            'Plugin plugin_with_components-0.1.0 is overlapping with release '
+            'Plugin plugin_with_components is overlapping with release '
             'by introducing the same component with name '
             '"hypervisor:test_hypervisor"')
 
@@ -219,8 +240,8 @@ class TestPluginManager(base.BaseIntegrationTest):
             components_metadata=self.env.get_default_components())
 
         expected_message = (
-            'Plugin plugin_with_components_2-0.1.0 is overlapping with '
-            'plugin_with_components_1-0.1.0 by introducing the same component '
+            'Plugin plugin_with_components_2 is overlapping with '
+            'plugin_with_components_1 by introducing the same component '
             'with name "hypervisor:test_hypervisor"')
 
         with self.assertRaisesRegexp(errors.AlreadyExists,

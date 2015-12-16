@@ -148,8 +148,8 @@ class ProviderHandler(BaseHandler):
         if admin_nets != nm.get_admin_networks():
             try:
                 task = UpdateDnsmasqTaskManager().execute()
-            except errors.TaskAlreadyRunning as exc:
-                raise self.http(409, six.text_type(exc))
+            except errors.TaskAlreadyRunning:
+                raise self.http(409, errors.UpdateDnsmasqTaskIsRunning.message)
             if task.status == consts.TASK_STATUSES.error:
                 raise self.http(400, task.message)
 

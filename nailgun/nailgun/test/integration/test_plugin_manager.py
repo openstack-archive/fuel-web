@@ -299,12 +299,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_a1.id,
                 'plugin_version': plugin_a1.version,
-                'restrictions': [
-                    {
-                        'action': 'disable',
-                        'condition': 'cluster:is_locked'
-                    }
-                ]
+                'always_editable': False,
             }, pl_a1['metadata']
         )
         self.assertItemsEqual(
@@ -319,12 +314,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_b.id,
                 'plugin_version': plugin_b.version,
-                'restrictions': [
-                    {
-                        'action': 'disable',
-                        'condition': 'cluster:is_locked'
-                    }
-                ]
+                'always_editable': False,
             }, pl_b['metadata']
         )
         self.assertEqual(
@@ -368,12 +358,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_a1.id,
                 'plugin_version': plugin_a1.version,
-                'restrictions': [
-                    {
-                        'action': 'disable',
-                        'condition': 'cluster:is_locked'
-                    }
-                ]
+                'always_editable': False,
             }, pl_a1['metadata']
         )
         self.assertItemsEqual(
@@ -388,12 +373,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_b.id,
                 'plugin_version': plugin_b.version,
-                'restrictions': [
-                    {
-                        'action': 'disable',
-                        'condition': 'cluster:is_locked'
-                    }
-                ]
+                'always_editable': False,
             }, pl_b['metadata']
         )
         self.assertEqual(

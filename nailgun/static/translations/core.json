@@ -564,7 +564,8 @@
                             "invalid_repo": "Invalid repo format",
                             "invalid_priority": "Invalid priority"
                         }
-                    }
+                    },
+                    "plugin_versions": "Versions"
                 },
                 "dashboard_tab": {
                     "delete_environment": "Delete Environment",

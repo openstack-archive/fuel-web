@@ -146,14 +146,7 @@ class PluginManager(object):
         """
         metadata['plugin_id'] = plugin.id
         metadata['plugin_version'] = plugin.version
-        if plugin.is_hotpluggable:
-            metadata['always_editable'] = True
-        elif all_versions:
-            restriction = metadata.setdefault('restrictions', [])
-            restriction.append({
-                'action': 'disable',
-                'condition': 'cluster:is_locked'
-            })
+        metadata['always_editable'] = plugin.is_hotpluggable
 
     @classmethod
     def get_cluster_plugins_with_tasks(cls, cluster):

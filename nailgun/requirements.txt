@@ -13,9 +13,9 @@ fysom==1.0.11
 iso8601==0.1.9
 jsonschema==2.3.0
 kombu==3.0.16
-netaddr>=0.7.10,<=0.7.13
-oslo.context<0.5.0
+netaddr>=0.7.10,<=0.7.14
 oslo.config>=1.2.1,<=1.11.0
+oslo.context<0.5.0
 # TODO(prmtl): remove upper bounds after all openstack packages will
 # release versions that have the same pbr requirements.
 # for the day of writing this comment there was 2 outdated packages:

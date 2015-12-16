@@ -13,4 +13,5 @@ Table of contents
    buildsystem
    ci/overview
    ci/third_party
+   infra/jenkins_slave_deployment
    packaging

@@ -1704,10 +1704,11 @@
           - name: hypervisor:qemu
             message: "dialog.create_cluster_wizard.compute.vcenter_warning"
       - name: network:neutron:core:ml2
+        default: true
         weight: 1000
         label: "dialog.create_cluster_wizard.network.neutron_ml2"
         description: "dialog.create_cluster_wizard.network.neutron_ml2_description"
-      - name: network:neutron:vlan
+      - name: network:neutron:ml2:vlan
         default: true
         bind: !!pairs
           - "cluster:net_provider": "neutron"
@@ -1715,12 +1716,15 @@
         weight: 5
         label: "common.network.neutron_vlan"
         description: "dialog.create_cluster_wizard.network.neutron_vlan_description"
-        compatible:
-          - name: hypervisor:qemu
         incompatible:
-          - name: hypervisor:vmware
-            message: "dialog.create_cluster_wizard.network.hypervisor_alert"
-      - name: network:neutron:tun
+          - name: network:neutron:ml2:tun
+            message: "dialog.create_cluster_wizard.network.vlan_tun_alert"
+        compatible:
+          - name: network:neutron:core:ml2
+          - name: hypervisor:qemu
+        requires:
+          - name: network:neutron:core:ml2
+      - name: network:neutron:ml2:tun
         bind: !!pairs
          - "cluster:net_provider": "neutron"
          - "cluster:net_segment_type": "tun"
@@ -1728,12 +1732,17 @@
         label: "common.network.neutron_tun"
         description: "dialog.create_cluster_wizard.network.neutron_tun_description"
         compatible:
+          - name: network:neutron:core:ml2
           - name: hypervisor:qemu
         incompatible:
+          - name: network:neutron:ml2:vlan
+            message: "dialog.create_cluster_wizard.network.vlan_tun_alert"
           - name: hypervisor:vmware
             message: "dialog.create_cluster_wizard.network.hypervisor_alert"
           - name: additional_service:ironic
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+        requires:
+          - name: network:neutron:core:ml2
       - name: network:nova_network
         bind: !!pairs
           - "cluster:net_provider": "nova_network"
@@ -1758,8 +1767,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
         incompatible:
           - name: storage:block:ceph
@@ -1774,8 +1783,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
           - name: storage:object:ceph
           - name: storage:ephemeral:ceph
@@ -1792,8 +1801,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
           - name: storage:block:ceph
           - name: storage:ephemeral:ceph
@@ -1807,8 +1816,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
           - name: storage:block:ceph
           - name: storage:object:ceph
@@ -1822,8 +1831,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
           - name: storage:block:ceph
           - name: storage:object:ceph
@@ -1837,8 +1846,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
           - name: storage:block:lvm
           - name: storage:block:ceph
@@ -1858,8 +1867,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
           - name: storage:block:lvm
           - name: storage:block:ceph
@@ -1878,8 +1887,8 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:vlan
+          - name: network:neutron:ml2:tun
           - name: network:nova_network
           - name: storage:block:lvm
           - name: storage:block:ceph
@@ -1897,7 +1906,7 @@
         description: "dialog.create_cluster_wizard.additional.install_ironic_description"
         compatible:
           - name: hypervisor:qemu
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:object:ceph
@@ -1909,7 +1918,7 @@
         incompatible:
           - name: network:nova_network
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
-          - name: network:neutron:tun
+          - name: network:neutron:ml2:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
     modes: ['ha_compact']
     extensions: ['volume_manager']

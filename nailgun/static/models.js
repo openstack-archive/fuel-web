@@ -100,19 +100,27 @@ define([
     };
 
     var restrictionMixin = models.restrictionMixin = {
-        expandRestrictions: function(restrictions, path) {
-            path = path || 'restrictions';
+        expandRestrictions: function(restrictions, path = 'restrictions') {
             this.expandedRestrictions = this.expandedRestrictions || {};
             this.expandedRestrictions[path] = _.map(restrictions, utils.expandRestriction, this);
         },
-        checkRestrictions: function(models, action, path) {
-            path = path || 'restrictions';
+        checkRestrictions: function(models, action, path = 'restrictions') {
             var restrictions = (this.expandedRestrictions || {})[path];
-            if (action) restrictions = _.where(restrictions, {action: action});
-            var satisfiedRestrictions = _.filter(restrictions, function(restriction) {
-                return new Expression(restriction.condition, models, restriction).evaluate();
-            });
-            return {result: !!satisfiedRestrictions.length, message: _.compact(_.pluck(satisfiedRestrictions, 'message')).join(' ')};
+            if (action) {
+                restrictions = _.where(restrictions, {action: action});
+            }
+            var sectionName = path.split('.')[0],
+                satisfiedRestrictions = _.filter(restrictions,
+                    (restriction) => new Expression(
+                        restriction.condition,
+                        models,
+                        _.extend(restriction, {strict: _.isFunction(this.isPlugin) && !this.isPlugin(sectionName)})
+                    ).evaluate()
+                );
+            return {
+                result: !!satisfiedRestrictions.length,
+                message: _.compact(_.pluck(satisfiedRestrictions, 'message')).join(' ')
+            };
         },
         expandLimits: function(limits) {
             this.expandedLimits = this.expandedLimits || {};
@@ -623,24 +631,80 @@ define([
         isNew: function() {
             return false;
         },
+        isPlugin: function(sectionName) {
+            return (this.get(sectionName).metadata || {}).class == 'plugin';
+        },
         parse: function(response) {
-            return response[this.root];
+            var settings = response[this.root];
+            this.mergePluginSettings(settings);
+            return settings;
+        },
+        mergePluginSettings: function(settings) {
+            _.each(settings, (section, sectionName) => {
+                if ((section.metadata || {}).class == 'plugin') {
+                    var pluginMetadata = section.metadata,
+                        chosenVersionData = pluginMetadata.versions.find(
+                            (version) => version.metadata.plugin_id == pluginMetadata.chosen_id
+                        );
+                    this.clearPluginRestrictions(pluginMetadata);
+                    pluginMetadata.restrictions = _.union(pluginMetadata.restrictions, chosenVersionData.metadata.restrictions);
+                    pluginMetadata.always_editable = chosenVersionData.metadata.always_editable || false;
+                    settings[sectionName] = _.extend(_.pick(section, 'metadata'), _.omit(chosenVersionData, 'metadata'));
+                }
+            });
         },
         toJSON: function() {
-            if (!this.root) return this._super('toJSON', arguments);
-            var data = {};
-            data[this.root] = this._super('toJSON', arguments);
-            return data;
+            var settings = this._super('toJSON', arguments);
+            if (!this.root) return settings;
+            this.updatePluginSettings(settings);
+            return {[this.root]: settings};
+        },
+        clearPluginRestrictions: function(pluginMetadata) {
+            if ((pluginMetadata.restrictions || []).length) {
+                var versionRestrictions = _.chain(pluginMetadata.versions)
+                        .map((version) => version.metadata.restrictions)
+                        .compact()
+                        .flatten()
+                        .pluck('condition')
+                        .value();
+                pluginMetadata.restrictions = _.filter(pluginMetadata.restrictions,
+                    (restriction) => !_.contains(versionRestrictions, restriction.condition)
+                );
+            }
+            if (_.isEqual(pluginMetadata.restrictions, [])) delete pluginMetadata.restrictions;
+        },
+        updatePluginSettings: function(settings) {
+            _.each(settings, (section, sectionName) => {
+                if (this.isPlugin(sectionName)) {
+                    var pluginMetadata = section.metadata,
+                        chosenVersionData = pluginMetadata.versions.find(
+                            (version) => version.metadata.plugin_id == section.metadata.chosen_id
+                        );
+                    this.clearPluginRestrictions(pluginMetadata);
+                    _.each(section, (setting, settingName) => {
+                        if (settingName != 'metadata') chosenVersionData[settingName].value = setting.value;
+                    });
+                    settings[sectionName] = _.pick(section, 'metadata');
+                }
+            });
         },
         processRestrictions: function() {
-            _.each(this.attributes, function(group, groupName) {
-                if (group.metadata) {
-                    this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+            _.each(this.attributes, function(section, sectionName) {
+                if (section.metadata) {
+                    this.expandRestrictions(section.metadata.restrictions, this.makePath(sectionName, 'metadata'));
+                    if (this.isPlugin(sectionName)) {
+                        _.each(section.metadata.versions, (version) => {
+                            this.expandRestrictions(version.metadata.restrictions, this.makePath(sectionName, 'metadata'));
+                            _.each(version,
+                                (setting, settingName) => this.expandRestrictions(setting.restrictions, this.makePath(sectionName, settingName))
+                            , this);
+                        }, this);
+                    }
                 }
-                _.each(group, function(setting, settingName) {
-                    this.expandRestrictions(setting.restrictions, this.makePath(groupName, settingName));
-                    _.each(setting.values, function(value) {
-                        this.expandRestrictions(value.restrictions, this.makePath(groupName, settingName, value.data));
+                _.each(section, (setting, settingName) => {
+                    this.expandRestrictions(setting.restrictions, this.makePath(sectionName, settingName));
+                    _.each(setting.values, (value) => {
+                        this.expandRestrictions(value.restrictions, this.makePath(sectionName, settingName, value.data));
                     }, this);
                 }, this);
             }, this);
@@ -653,9 +717,7 @@ define([
         validate: function(attrs, options) {
             var errors = {},
                 models = options ? options.models : {},
-                checkRestrictions = _.bind(function(path) {
-                    return this.checkRestrictions(models, null, path);
-                }, this);
+                checkRestrictions = (path) => this.checkRestrictions(models, null, path);
             _.each(attrs, function(group, groupName) {
                 if ((group.metadata || {}).enabled === false || checkRestrictions(this.makePath(groupName, 'metadata')).result) return;
                 _.each(group, function(setting, settingName) {
@@ -692,7 +754,7 @@ define([
                 }
                 return result || _.any(group, function(setting, settingName) {
                     if (this.checkRestrictions(models, null, this.makePath(groupName, settingName)).result) return false;
-                    return !_.isEqual(setting.value, initialAttributes[groupName][settingName].value);
+                    return !_.isEqual(setting.value, (initialAttributes[groupName][settingName] || {}).value);
                 }, this);
             }, this);
         },

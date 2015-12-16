@@ -1169,3 +1169,20 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
         update_task = self.db.query(models.Task).filter_by(
             name=consts.TASK_NAMES.update_dnsmasq).first()
         self.assertEqual(update_task.status, consts.TASK_STATUSES.running)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_node_group_deletion_failed_while_previous_in_progress(self,
+                                                                   mocked_rpc):
+        ng1 = self.env.create_node_group(name='ng_1').json_body
+        ng2 = self.env.create_node_group(name='ng_2').json_body
+        self.assertEqual(mocked_rpc.call_count, 0)
+
+        self.env.delete_node_group(ng1['id'])
+        self.assertEqual(mocked_rpc.call_count, 1)
+        # delete other node group
+        # request should be rejected as previous update_dnsmasq task is still
+        # in progress
+        resp = self.env.delete_node_group(ng2['id'], status_code=409)
+        self.assertEqual(resp.status_code, 409)
+        # no more calls were made
+        self.assertEqual(mocked_rpc.call_count, 1)

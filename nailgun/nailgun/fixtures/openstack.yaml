@@ -1685,29 +1685,15 @@
             datacenter: ""
             datastore: ""
     components_metadata:
-      - name: hypervisor:libvirt:kvm
-        bind: !!pairs
-          - "settings:common.libvirt_type.value": "kvm"
-        weight: 5
-        label: "dialog.create_cluster_wizard.compute.kvm"
-        description: "dialog.create_cluster_wizard.compute.kvm_description"
-        compatible:
-          - name: hypervisor:vmware
-        incompatible:
-          - name: hypervisor:libvirt:qemu
-            message: "dialog.create_cluster_wizard.compute.libvirt_alert"
-      - name: hypervisor:libvirt:qemu
+      - name: hypervisor:qemu
+        default: true
         bind: !!pairs
           - "settings:common.libvirt_type.value": "qemu"
-        weight: 10
-        default: true
+        weight: 5
         label: "dialog.create_cluster_wizard.compute.qemu"
         description: "dialog.create_cluster_wizard.compute.qemu_description"
         compatible:
           - name: hypervisor:vmware
-        incompatible:
-          - name: hypervisor:libvirt:kvm
-            message: "dialog.create_cluster_wizard.compute.libvirt_alert"
       - name: hypervisor:vmware
         weight: 15
         bind:
@@ -1715,8 +1701,10 @@
         label: "dialog.create_cluster_wizard.compute.vcenter"
         description: "dialog.create_cluster_wizard.compute.vcenter_description"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
+        requires:
+          - name: hypervisor:qemu
+            message: "dialog.create_cluster_wizard.compute.vcenter_warning"
       - name: network:neutron:core:ml2
         weight: 1000
         label: "dialog.create_cluster_wizard.network.neutron_ml2"
@@ -1730,8 +1718,7 @@
         label: "common.network.neutron_vlan"
         description: "dialog.create_cluster_wizard.network.neutron_vlan_description"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
         incompatible:
           - name: hypervisor:vmware
             message: "dialog.create_cluster_wizard.network.hypervisor_alert"
@@ -1743,8 +1730,7 @@
         label: "common.network.neutron_tun"
         description: "dialog.create_cluster_wizard.network.neutron_tun_description"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
         incompatible:
           - name: hypervisor:vmware
             message: "dialog.create_cluster_wizard.network.hypervisor_alert"
@@ -1772,8 +1758,7 @@
         bind:
           - "settings:storage.volumes_lvm.value"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1789,8 +1774,7 @@
           - "settings:storage.volumes_ceph.value": true
           - "settings:storage.volumes_lvm.value": false
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1808,8 +1792,7 @@
         bind:
           - "settings:storage.objects_ceph.value"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1824,8 +1807,7 @@
         bind:
           - "settings:storage.ephemeral_ceph.value"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1840,8 +1822,7 @@
         bind:
           - "settings:storage.images_ceph.value"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1856,8 +1837,7 @@
         label: "dialog.create_cluster_wizard.additional.install_sahara"
         description: "dialog.create_cluster_wizard.additional.install_sahara_description"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1878,8 +1858,7 @@
         label: "dialog.create_cluster_wizard.additional.install_murano"
         description: "dialog.create_cluster_wizard.additional.install_murano_description"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1899,8 +1878,7 @@
         label: "dialog.create_cluster_wizard.additional.install_ceilometer"
         description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
@@ -1920,8 +1898,7 @@
         label: "dialog.create_cluster_wizard.additional.install_ironic"
         description: "dialog.create_cluster_wizard.additional.install_ironic_description"
         compatible:
-          - name: hypervisor:libvirt:kvm
-          - name: hypervisor:libvirt:qemu
+          - name: hypervisor:qemu
           - name: network:neutron:vlan
           - name: storage:block:lvm
           - name: storage:block:ceph

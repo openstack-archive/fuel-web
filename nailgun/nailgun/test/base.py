@@ -809,12 +809,12 @@ class EnvironmentManager(object):
             {
                 'name': 'hypervisor:test_hypervisor',
                 'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}
+                    {'name': 'hypervisor:*'},
+                    {'name': 'storage:object:block:swift'}
                 ],
                 'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}
+                    {'name': 'network:*'},
+                    {'name': 'additional_service:*'}
                 ]
             }
         ]

@@ -15,6 +15,7 @@
 
 import jsonschema
 from jsonschema.exceptions import ValidationError
+import six
 
 from oslo_serialization import jsonutils
 
@@ -29,6 +30,8 @@ class BasicValidator(object):
 
     @classmethod
     def validate_json(cls, data):
+        # todo(ikutukov): this method not only validation json but also
+        # returning parsed data
         if data:
             try:
                 res = jsonutils.loads(data)
@@ -60,7 +63,12 @@ class BasicValidator(object):
         except ValidationError as exc:
             if len(exc.path) > 0:
                 raise errors.InvalidData(
-                    ": ".join([exc.path.pop(), exc.message])
+                    # NOTE(ikutukov): here was a exc.path.pop(). It was buggy
+                    # because JSONSchema error path could contain integers
+                    # and joining integers as string is not a good idea in
+                    # python. So some schema error messages were not working
+                    # properly and give 500 error code except 400.
+                    ": ".join([six.text_type(exc.path), exc.message])
                 )
             raise errors.InvalidData(exc.message)
 

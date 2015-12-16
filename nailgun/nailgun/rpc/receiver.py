@@ -254,7 +254,7 @@ class NailgunReceiver(object):
 
         # for deployment we need just to pop
         master = next((
-            n for n in nodes if n['uid'] == consts.MASTER_ROLE), {})
+            n for n in nodes if n['uid'] == consts.MASTER_NODE_UID), {})
 
         # we should remove master node from the nodes since it requires
         # special handling and won't work with old code
@@ -356,7 +356,7 @@ class NailgunReceiver(object):
         # if task was failed on master node then we should
         # mark all cluster's nodes in error state
         master = next((
-            n for n in nodes if n['uid'] == consts.MASTER_ROLE), {})
+            n for n in nodes if n['uid'] == consts.MASTER_NODE_UID), {})
 
         # we should remove master node from the nodes since it requires
         # special handling and won't work with old code

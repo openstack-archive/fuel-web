@@ -67,8 +67,8 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
     def test_resolve_master(self):
         resolver = role_resolver.RoleResolver(self.nodes)
         self.assertEqual(
-            [consts.MASTER_ROLE],
-            resolver.resolve(consts.MASTER_ROLE)
+            [consts.MASTER_NODE_UID],
+            resolver.resolve(consts.TASK_ROLES.master)
         )
 
     def test_resolve_any(self):

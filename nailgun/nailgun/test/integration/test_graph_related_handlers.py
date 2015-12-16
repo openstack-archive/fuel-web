@@ -39,6 +39,7 @@ class BaseGraphTasksTests(BaseIntegrationTest):
           requires: [pre_deployment_end]
         - id: deploy_end
           type: stage
+          version: 1.0.0
           requires: [deploy_start]
         - id: pre_deployment_start
           type: stage
@@ -75,6 +76,16 @@ class BaseGraphTasksTests(BaseIntegrationTest):
         """
         return yaml.load(yaml_tasks)
 
+    def get_tasks_with_unsuported_role(self):
+        yaml_tasks = """
+        - id: test-controller
+          role: "test-controller"
+          parameters:
+            strategy:
+              type: one_by_one
+        """
+        return yaml.load(yaml_tasks)
+
     def get_tasks_with_cycles(self):
         yaml_tasks = """
         - id: test-controller-1
@@ -92,6 +103,53 @@ class BaseGraphTasksTests(BaseIntegrationTest):
           type: group
           role: [test-controller]
           required_for: [non_existing_stage]
+          parameters:
+            strategy:
+              type: one_by_one
+        """
+        return yaml.load(yaml_tasks)
+
+    def get_tasks_with_cross_dependencies(self):
+        yaml_tasks = """
+        - id: test-controller
+          type: group
+          version: 2.0.0
+          role: [test-controller]
+          cross-depends:
+             - name: test-compute
+               role: '*'
+               polcy: any
+          parameters:
+            strategy:
+              type: one_by_one
+        - id: test-compute
+          type: group
+          version: 2.0.0
+          role: [test-compute]
+          cross-depends:
+              - name: test-cinder
+                role: [test_cinder]
+          parameters:
+            strategy:
+              type: one_by_one
+        - id: test-cinder
+          type: group
+          version: 2.0.0
+          role: [test-cinder]
+          parameters:
+            strategy:
+              type: one_by_one
+        """
+        return yaml.load(yaml_tasks)
+
+    def get_tasks_cross_dependencies_without_name(self):
+        yaml_tasks = """
+        - id: test-controller
+          type: group
+          role: [test-controller]
+          cross-depends:
+             - role: '*'
+               polcy: any
           parameters:
             strategy:
               type: one_by_one
@@ -248,6 +306,39 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
             "Tasks 'non_existing_stage' can't be in requires|required_for|"
             "groups|tasks for [test-controller] because they don't exist in "
             "the graph", resp.json_body['message'])
+
+    def test_upload_tasks_without_unsupported_role(self):
+        tasks = self.get_tasks_with_unsuported_role()
+        resp = self.app.put(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            params=jsonutils.dumps(tasks),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_upload_tasks_with_cross_dependencies(self):
+        tasks = self.get_tasks_with_cross_dependencies()
+        resp = self.app.put(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            params=jsonutils.dumps(tasks),
+            headers=self.default_headers,
+        )
+        cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
+        self.assertEqual(cluster_tasks, resp.json)
+
+    def test_upload_cross_dependencies_without_name(self):
+        tasks = self.get_tasks_cross_dependencies_without_name()
+        resp = self.app.put(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            params=jsonutils.dumps(tasks),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
 
     def test_post_tasks(self):
         resp = self.app.post(

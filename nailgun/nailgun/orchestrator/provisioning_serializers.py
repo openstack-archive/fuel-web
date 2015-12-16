@@ -301,7 +301,7 @@ class ProvisioningSerializer61(ProvisioningSerializer):
         if is_build_images:
             tasks.append(
                 tasks_templates.make_provisioning_images_task(
-                    [consts.MASTER_ROLE],
+                    [consts.MASTER_NODE_UID],
                     attrs['repo_setup']['repos'],
                     attrs['provision'],
                     cluster.id))
@@ -318,7 +318,7 @@ class ProvisioningSerializer61(ProvisioningSerializer):
         if is_download_debian_installer:
             tasks.append(
                 tasks_templates.make_download_debian_installer_task(
-                    [consts.MASTER_ROLE],
+                    [consts.MASTER_NODE_UID],
                     attrs['repo_setup']['repos'],
                     attrs['repo_setup']['installer_kernel'],
                     attrs['repo_setup']['installer_initrd']))
@@ -385,12 +385,12 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
         if attrs['ironic']['enabled']:
             tasks.append(
                 tasks_templates.generate_ironic_bootstrap_keys_task(
-                    [consts.MASTER_ROLE],
+                    [consts.MASTER_NODE_UID],
                     cluster.id))
 
             tasks.append(
                 tasks_templates.make_ironic_bootstrap_task(
-                    [consts.MASTER_ROLE],
+                    [consts.MASTER_NODE_UID],
                     cluster.id))
 
         PriorityStrategy().one_by_one(tasks)

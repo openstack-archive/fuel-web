@@ -448,9 +448,9 @@ class TasksSerializer(object):
             return
 
         for dep in dependencies:
-            roles = dep.get('role', consts.ALL_ROLES)
+            roles = dep.get('role', consts.TASK_ROLES.all)
 
-            if roles == consts.ROLE_SELF_NODE:
+            if roles == consts.TASK_ROLES.self:
                 node_ids = [node_id]
             else:
                 node_ids = self.role_resolver.resolve(

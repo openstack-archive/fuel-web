@@ -252,7 +252,8 @@ define([
                             {
                                 'Networking Setup': function() {
                                     return this.remote
-                                        .clickByCssSelector('input[value=network\\:neutron\\:tun]');
+                                        .clickByCssSelector('input[value=network\\:neutron\\:ml2\\:vlan]')
+                                        .clickByCssSelector('input[value=network\\:neutron\\:ml2\\:tun]');
                                 }
                             }
                         );

@@ -23,6 +23,7 @@ from nailgun.test import base
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
+from nailgun.utils import filter_dict
 from nailgun.utils import flatten
 from nailgun.utils import grouper
 from nailgun.utils import http_get

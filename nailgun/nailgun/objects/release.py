@@ -160,12 +160,70 @@ class Release(NailgunObject):
     def get_all_components(cls, instance):
         """Get all components related to release
 
+        Due to components architecture compatible/incompatible are duplex
+        relations. So if some component compatible/incompatible with another
+        the last one also should have such relation.
+
         :param instance: Release instance
         :type instance: Release DB instance
         :returns: list -- list of all components
         """
         plugin_components = PluginManager.get_components_metadata(instance)
-        return instance.components_metadata + plugin_components
+        components = instance.components_metadata + plugin_components
+
+        for component in components:
+            for incompatible_item in component.get('incompatible', []):
+                incompatible_components = cls._find_components(
+                    incompatible_item['name'], components)
+
+                if incompatible_components:
+                    for incompatible_component in incompatible_components:
+                        incompatible_component.setdefault('incompatible', [])
+                        incompatible_names = set(
+                            item['name']
+                            for item in incompatible_component['incompatible'])
+
+                        if component['name'] not in incompatible_names:
+                            incompatible_component['incompatible'].append({
+                                'name': component['name'],
+                                'message': 'Not compatible with {0}'.format(
+                                    component.get('label'))
+                            })
+
+            for compatible_item in component.get('compatible', []):
+                compatible_components = cls._find_components(
+                    compatible_item['name'], components)
+
+                if compatible_components:
+                    for compatible_component in compatible_components:
+                        compatible_component.setdefault('compatible', [])
+                        compatible_names = set(
+                            item['name']
+                            for item in compatible_component['compatible'])
+
+                        if component['name'] not in compatible_names:
+                            compatible_component['compatible'].append({
+                                'name': component['name']})
+
+        return components
+
+    @staticmethod
+    def _find_components(name, components):
+        """Find proper components by name or wildcard
+
+        Example:
+            find_components('component_name', components_list)
+            find_components('component_type:*', components_list)
+
+        :param name: component name or wildcard
+        :type name: string
+        :param components: list of components objects(dicts)
+        :type components: list
+        :returns: generator of components objects
+        """
+        prefix = name.split('*', 1)[0]
+        return (component for component in components
+                if component['name'].startswith(prefix))
 
 
 class ReleaseCollection(NailgunCollection):

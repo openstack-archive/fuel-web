@@ -1654,28 +1654,53 @@ class TestRelease(BaseTestCase):
                 'mode': ['ha'],
                 'deployment_scripts_path': 'deployment_scripts/'}],
             components_metadata=self.env.get_default_components(
-                name='storage:test_component_2')
+                name='storage:test_component_2',
+                label='Test storage',
+                incompatible=[{
+                    'name': 'hypervisor:test_component_1',
+                    'message': 'component_2 not compatible with component_1'}])
         )
 
         components = objects.Release.get_all_components(release)
 
-        self.assertListEqual(components, [
-            {
-                'name': 'hypervisor:test_component_1',
-                'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
-                'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]},
-            {
-                'name': 'storage:test_component_2',
-                'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
-                'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]}])
+        self.assertListEqual(components, [{
+            'name': 'hypervisor:test_component_1',
+            'compatible': [
+                {'name': 'hypervisors:*'},
+                {'name': 'storages:object:block:swift'}],
+            'incompatible': [
+                {'name': 'networks:*'},
+                {'name': 'additional_services:*'},
+                {'name': 'storage:test_component_2',
+                 'message': 'Not compatible with Test storage'}]}, {
+            'name': 'storage:test_component_2',
+            'label': 'Test storage',
+            'compatible': [
+                {'name': 'hypervisors:*'},
+                {'name': 'storages:object:block:swift'}],
+            'incompatible': [
+                {'name': 'hypervisor:test_component_1',
+                 'message': 'component_2 not compatible with component_1'}]}])
+
+    def test_find_components(self):
+        components = [
+            {'name': 'test_component_type_1:test_component_1'},
+            {'name': 'test_component_type_2:test_component_2'},
+            {'name': 'test_component_type_2:test_component_3'}
+        ]
+
+        self.assertEqual(
+            [{'name': 'test_component_type_1:test_component_1'}],
+            list(objects.Release._find_components(
+                'test_component_type_1:test_component_1', components)))
+
+        self.assertItemsEqual(
+            [
+                {'name': 'test_component_type_2:test_component_2'},
+                {'name': 'test_component_type_2:test_component_3'}
+            ],
+            list(objects.Release._find_components(
+                'test_component_type_2:*', components)))
 
 
 class TestOpenstackConfig(BaseTestCase):

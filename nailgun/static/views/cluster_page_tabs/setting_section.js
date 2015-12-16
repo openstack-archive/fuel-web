@@ -148,6 +148,18 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 );
             });
         },
+        onPluginVersionChange: function(pluginName, version) {
+            var {settings, settingsForChecks} = this.props,
+                path = this.props.makePath(pluginName, 'metadata', 'chosen_id');
+            settingsForChecks.set(path, Number(version));
+            settingsForChecks.mergePluginSettings(settingsForChecks.attributes);
+            // FIXME: the following hacks cause we can't pass {validate: true} option to set method
+            // this form of validation isn't supported in Backbone DeepModel
+            settings.validationError = null;
+            settings.set(path, Number(version));
+            settings.mergePluginSettings(settings.attributes);
+            settings.isValid({models: this.props.configModels});
+        },
         render: function() {
             var group = this.props.settings.get(this.props.sectionName),
                 metadata = group.metadata,
@@ -178,6 +190,20 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                         }
                     </h3>
                     <div>
+                        {metadata.class == 'plugin' &&
+                            <controls.RadioGroup
+                                name={this.props.sectionName}
+                                label={i18n('cluster_page.settings_tab.plugin_versions')}
+                                values={_.map(metadata.versions, (version) => {
+                                    return {
+                                        data: version.metadata.plugin_id,
+                                        label: version.metadata.plugin_version,
+                                        defaultChecked: version.metadata.plugin_id == metadata.chosen_id
+                                    };
+                                })}
+                                onChange={this.onPluginVersionChange}
+                            />
+                        }
                         {_.map(sortedSettings, function(settingName) {
                             var setting = group[settingName],
                                 path = this.props.makePath(this.props.sectionName, settingName),

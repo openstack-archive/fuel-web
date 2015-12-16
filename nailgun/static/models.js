@@ -624,13 +624,71 @@ define([
             return false;
         },
         parse: function(response) {
-            return response[this.root];
+            var settings = response[this.root];
+            //FIXME: plugin settingshandling need for cluster settings only
+            if (this.root == 'editable') this.mergePluginSettings(settings);
+            return settings;
+        },
+        mergePluginSettings: function(settings) {
+            _.each(settings, (section) => {
+                if (section.metadata.class == 'plugin') {
+                    var pluginMetadata = section.metadata,
+                        chosenVersionData = pluginMetadata.versions.find(
+                            (version) => version.metadata.plugin_id == pluginMetadata.chosen_id
+                        ),
+                        chosenVersionMetadata = chosenVersionData.metadata,
+                        chosenVersionSettings = _.omit(chosenVersionData, 'metadata');
+                    // merge chosen plugin version always_editable flag
+                    pluginMetadata.always_editable = chosenVersionMetadata.always_editable || false;
+                    // merge chosen plugin version restrictions
+                    this.clearPluginRestrictions(pluginMetadata);
+                    pluginMetadata.restrictions = _.union(pluginMetadata.restrictions, chosenVersionMetadata.restrictions);
+                    // merge chosen plugin version settings
+                    _.each(section, (setting, settingName) => {
+                        if (settingName != 'metadata') delete section[settingName];
+                    });
+                    _.extend(section, chosenVersionSettings);
+                }
+            });
         },
         toJSON: function() {
-            if (!this.root) return this._super('toJSON', arguments);
-            var data = {};
-            data[this.root] = this._super('toJSON', arguments);
-            return data;
+            var settings = this._super('toJSON', arguments);
+            if (!this.root) return settings;
+            //FIXME: plugin settingshandling need for cluster settings only
+            if (this.root == 'editable') this.updatePluginSettings(settings);
+            return {[this.root]: settings};
+        },
+        clearPluginRestrictions: function(pluginMetadata) {
+            if ((pluginMetadata.restrictions || []).length) {
+                var versionRestrictions = _.chain(pluginMetadata.versions)
+                        .map((version) => version.metadata.restrictions)
+                        .compact()
+                        .flatten()
+                        .pluck('condition')
+                        .value();
+                pluginMetadata.restrictions = _.filter(pluginMetadata.restrictions,
+                    (restriction) => !_.contains(versionRestrictions, restriction.condition)
+                );
+            }
+            if (pluginMetadata.restrictions && !pluginMetadata.restrictions.length) delete pluginMetadata.restrictions;
+        },
+        updatePluginSettings: function(settings) {
+            _.each(settings, (section, sectionName) => {
+                if (section.metadata.class == 'plugin') {
+                    var chosenVersionData = section.metadata.versions.find(
+                            (version) => version.metadata.plugin_id == section.metadata.chosen_id
+                        );
+                    this.clearPluginRestrictions(section.metadata);
+                    // update chosen plugin version settings
+                    _.each(section, (setting, settingName) => {
+                        if (settingName != 'metadata') {
+                            chosenVersionData[settingName].value = setting.value;
+                        }
+                    });
+                    // clear plugin data
+                    settings[sectionName] = _.pick(section, 'metadata');
+                }
+            });
         },
         processRestrictions: function() {
             _.each(this.attributes, function(group, groupName) {
@@ -692,7 +750,7 @@ define([
                 }
                 return result || _.any(group, function(setting, settingName) {
                     if (this.checkRestrictions(models, null, this.makePath(groupName, settingName)).result) return false;
-                    return !_.isEqual(setting.value, initialAttributes[groupName][settingName].value);
+                    return !_.isEqual(setting.value, (initialAttributes[groupName][settingName] || {}).value);
                 }, this);
             }, this);
         },

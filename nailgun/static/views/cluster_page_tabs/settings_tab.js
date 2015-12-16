@@ -90,8 +90,9 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             // collecting data to save
-            var settings = this.props.cluster.get('settings'),
-                dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
+            var settings = this.props.cluster.get('settings');
+
+            var dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
                     return (group.metadata || {}).always_editable;
                 });
             var options = {url: settings.url, patch: true, wait: true, validate: false},
@@ -207,7 +208,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
 
             // Prepare list of settings organized by groups
             var groupedSettings = {};
-            _.each(settingsGroupList, function(group) {
+            _.each(settingsGroupList, (group) => {
                 groupedSettings[group] = {};
             });
             _.each(settings.attributes, function(section, sectionName) {
@@ -217,6 +218,8 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                         hasErrors = invalidSections[sectionName];
                     if (group) {
                         if (group != 'network') groupedSettings[settings.sanitizeGroup(group)][sectionName] = {invalid: hasErrors};
+                    } else if (section.metadata.class == 'plugin') {
+                        groupedSettings.other[sectionName] = {invalid: hasErrors};
                     } else {
                         // Settings like 'Common' can be splitted to different groups
                         var settingGroups = _.chain(section)

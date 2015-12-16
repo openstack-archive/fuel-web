@@ -249,3 +249,33 @@ def http_get(url, retries_on=[500, 502], retries=3, timeout=2):
         time.sleep(timeout)
 
     return response
+
+
+def filter_dict(data, paths_to_keep):
+    """Filter nested dict preserving branches that matches paths and removing
+    that don't.
+
+    :param data: nested dict
+    :type data: dict(dict)
+    :param paths_to_keep:   list of paths in form
+                            "root_field.nested_field.onemore"
+    :type paths_to_keep: iterable
+    :return:
+    """
+    if paths_to_keep is None:
+        return data
+
+    filtered_data = {}
+    for path_str in paths_to_keep:
+        path_segments = path_str.split(".")
+        try:
+            # get nested field
+            val = reduce(lambda d, k: d[k], path_segments, data)
+            # perform update by path_segments
+            dict_cursor = filtered_data
+            for path_item in path_segments[:-1]:
+                dict_cursor = dict_cursor.setdefault(path_item, {})
+            dict_cursor[path_segments[-1]] = val
+        except (KeyError, TypeError):
+            pass
+    return filtered_data

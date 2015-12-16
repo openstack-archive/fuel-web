@@ -22,7 +22,7 @@ from nailgun.orchestrator.priority_serializers import PriorityStrategy
 def stage_serialize(serializer, graph_tasks, cluster, nodes):
     """Serialize tasks for given stage
 
-    :param serialize: orchestrator.plugins.BasePluginDeploymentHooksSerializer
+    :param serializer: plugins_serializers.BasePluginDeploymentHooksSerializer
     :param graph_tasks: list of tasks
     :param cluster: cluster db object
     :param nodes: list of node db objects

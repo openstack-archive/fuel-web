@@ -15,7 +15,7 @@
 #    under the License.
 
 import collections
-from copy import deepcopy
+import copy
 import os
 import socket
 
@@ -46,7 +46,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
-from nailgun.orchestrator import task_based_deploy
+from nailgun.orchestrator import task_based_deployment
 from nailgun.orchestrator import tasks_serializer
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
@@ -155,6 +155,33 @@ class DeploymentTask(object):
         return 'deploy'
 
     @classmethod
+    def _add_deployment_hooks_from_plugins(cls, tasks):
+        """Adds plugin pre/post deployments tasks."""
+
+        # TODO(bgaifullin): Make this tasks in plugins as obsolete
+        # and drop support of them
+        # of Task Based Deployment
+        # Added fake task for pre and post.
+        # This will cause engine to generate chain of tasks for each stage.
+        # Tasks in chain will run step by step.
+
+        # pre-deployment hook
+        tasks.append({
+            'id': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
+            'version': consts.TASK_CROSS_DEPENDENCY,
+            'type': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
+            'requires': [consts.STAGES.pre_deployment + '_end'],
+            'required_for': [consts.STAGES.deploy + '_start'],
+        })
+        # post-deployment hook
+        tasks.append({
+            'id': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
+            'version': consts.TASK_CROSS_DEPENDENCY,
+            'type': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
+            'requires': [consts.STAGES.post_deployment + '_end'],
+        })
+
+    @classmethod
     def message(cls, task, nodes, deployment_tasks=None,
                 reexecutable_filter=None):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
@@ -236,10 +263,12 @@ class DeploymentTask(object):
         deployment_tasks = deployment_tasks or \
             objects.Cluster.get_deployment_tasks(task.cluster)
 
+        deployment_tasks = copy.copy(deployment_tasks)
+        cls._add_deployment_hooks_from_plugins(deployment_tasks)
         serialized_cluster = deployment_serializers.serialize(
             None, task.cluster, nodes
         )
-        serialized_tasks = task_based_deploy.TasksSerializer.serialize(
+        serialized_tasks = task_based_deployment.TasksSerializer.serialize(
             task.cluster, nodes, deployment_tasks
         )
         return {
@@ -1483,7 +1512,7 @@ class DumpTask(object):
             Node.status.in_(['ready', 'provisioned', 'deploying', 'error'])
         ).all()
 
-        dump_conf = deepcopy(settings.DUMP)
+        dump_conf = copy.deepcopy(settings.DUMP)
         for node in nodes:
             host = {
                 'hostname': objects.Node.get_slave_name(node),

@@ -27,6 +27,8 @@ define(
 function($, _, i18n, React, utils, models, componentMixins, controls) {
     'use strict';
 
+    var PureRenderMixin = React.addons.PureRenderMixin;
+
     var LogsTab = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5)
@@ -109,7 +111,8 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     <div className='title'>{i18n('cluster_page.logs_tab.title')}</div>
                     <div className='col-xs-12 content-elements'>
                         <LogFilterBar
-                            {... _.pick(this.props, 'cluster', 'selectedLogs', 'changeLogSelection')}
+                            {... _.pick(this.props, 'selectedLogs', 'changeLogSelection')}
+                            nodes={this.props.cluster.get('nodes')}
                             showLogs={this.showLogs}
                             onShowButtonClick={this.onShowButtonClick}
                         />
@@ -133,6 +136,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
     });
 
     var LogFilterBar = React.createClass({
+        mixins: [PureRenderMixin],
         getInitialState: function() {
             return _.extend({}, this.props.selectedLogs, {
                 sourcesLoadingState: 'loading',
@@ -142,23 +146,10 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             });
         },
         fetchSources: function(type, nodeId) {
-            var cluster = this.props.cluster,
-                nodes = cluster.get('nodes'),
+            var nodes = this.props.nodes,
                 chosenNodeId = nodeId || (nodes.length ? nodes.first().id : null);
             this.sources = new models.LogSources();
-            if (type == 'remote') {
-                if (chosenNodeId) {
-                    this.sources.deferred = this.sources.fetch({url: '/api/logs/sources/nodes/' + chosenNodeId});
-                }
-            } else if (!cluster.get('log_sources')) {
-                this.sources.deferred = this.sources.fetch();
-                this.sources.deferred.done(_.bind(function() {
-                    cluster.set('log_sources', this.sources.toJSON());
-                }, this));
-            } else {
-                this.sources.reset(cluster.get('log_sources'));
-                this.sources.deferred = $.Deferred().resolve();
-            }
+            this.sources.deferred = type == 'remote' && chosenNodeId ? this.sources.fetch({url: '/api/logs/sources/nodes/' + chosenNodeId}) : this.sources.deferred = this.sources.fetch();
             this.sources.deferred.done(_.bind(function() {
                 var filteredSources = this.sources.filter(function(source) {return source.get('remote') == (type != 'local');}),
                     chosenSource = _.findWhere(filteredSources, {id: this.state.source}) || _.first(filteredSources),
@@ -283,7 +274,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         },
         renderTypeSelect: function() {
             var types = [['local', 'Fuel Master']];
-            if (this.props.cluster.get('nodes').length) {
+            if (this.props.nodes.length) {
                 types.push(['remote', 'Other servers']);
             }
             var typeOptions = types.map(function(type) {
@@ -302,7 +293,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             </div>;
         },
         renderNodeSelect: function() {
-            var sortedNodes = this.props.cluster.get('nodes').models.sort(_.partialRight(utils.compare, {attr: 'name'})),
+            var sortedNodes = this.props.nodes.models.sort(_.partialRight(utils.compare, {attr: 'name'})),
                 nodeOptions = sortedNodes.map(function(node) {
                     return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
                 });
@@ -335,7 +326,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             </div>;
         },
         renderLevelSelect: function() {
-            var levelOptions = {};
+            var levelOptions = [];
             if (this.state.source && this.state.sources.length) {
                 levelOptions = this.state.sources.get(this.state.source).get('levels').map(function(level) {
                     return <option value={level} key={level}>{level}</option>;

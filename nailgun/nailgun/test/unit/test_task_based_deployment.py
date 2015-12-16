@@ -17,7 +17,7 @@
 import mock
 
 from nailgun import consts
-from nailgun.orchestrator import task_based_deploy
+from nailgun.orchestrator import task_based_deployment
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import BaseUnitTest
 
@@ -34,7 +34,7 @@ class TestTaskSerializers(BaseTestCase):
                  'roles': ['compute']}
             ]
         )
-        self.serializer = task_based_deploy.TasksSerializer(
+        self.serializer = task_based_deployment.TasksSerializer(
             self.env.clusters[-1], self.env.nodes
         )
 
@@ -79,7 +79,7 @@ class TestTaskSerializers(BaseTestCase):
             {"id": "test2", "role": ["compute"], "type": "stage"},
         ]
         self.assertRaises(
-            task_based_deploy.errors.TaskBaseDeploymentNotAllowed,
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
             self.serializer.serialize,
             self.env.clusters[-1], self.env.nodes, tasks
         )
@@ -87,11 +87,11 @@ class TestTaskSerializers(BaseTestCase):
     def test_process_task_de_duplication(self):
         task = {"id": "test", "type": "puppet", "parameters": {}}
         self.serializer.process_task(
-            task, ["1"], task_based_deploy.NullResolver
+            task, ["1"], task_based_deployment.NullResolver
         )
         # check de-duplication
         self.serializer.process_task(
-            task, ["1"], task_based_deploy.NullResolver
+            task, ["1"], task_based_deployment.NullResolver
         )
         self.assertItemsEqual(["1"], self.serializer.tasks_per_node)
         self.assertItemsEqual(["test"], self.serializer.tasks_per_node["1"])
@@ -110,7 +110,7 @@ class TestTaskSerializers(BaseTestCase):
             "id": "test", "type": "puppet", "parameters": {}, 'skipped': True
         }
         self.serializer.process_task(
-            task, ["1"], task_based_deploy.NullResolver
+            task, ["1"], task_based_deployment.NullResolver
         )
         self.assertItemsEqual(["1"], self.serializer.tasks_per_node)
         self.assertItemsEqual(["test"], self.serializer.tasks_per_node["1"])
@@ -127,7 +127,7 @@ class TestTaskSerializers(BaseTestCase):
     def test_process_noop_task(self):
         task = {"id": "test", "type": "stage", "role": "*"}
         self.serializer.process_task(
-            task, ["1"], task_based_deploy.NullResolver
+            task, ["1"], task_based_deployment.NullResolver
         )
         self.assertItemsEqual(["1"], self.serializer.tasks_per_node)
         self.assertItemsEqual(["test"], self.serializer.tasks_per_node["1"])
@@ -277,7 +277,7 @@ class TestTaskSerializers(BaseTestCase):
             self.serializer.resolve_relation('task_1', node_ids, False)
         )
 
-    @mock.patch.object(task_based_deploy, 'logger')
+    @mock.patch.object(task_based_deployment, 'logger')
     def test_resolve_relation_warn_if_not_found(self, m_logger):
         node_ids = ['1', '2', '3']
         self.serializer.tasks_per_node = dict(
@@ -296,17 +296,17 @@ class TestTaskSerializers(BaseTestCase):
 
     def test_ensure_task_based_deployment_allowed(self):
         self.assertRaises(
-            task_based_deploy.errors.TaskBaseDeploymentNotAllowed,
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
             self.serializer.ensure_task_based_deploy_allowed,
             {'id': 'task'}
         )
         self.assertRaises(
-            task_based_deploy.errors.TaskBaseDeploymentNotAllowed,
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
             self.serializer.ensure_task_based_deploy_allowed,
             {'id': 'task', 'version': '1.2.3'}
         )
         self.assertNotRaises(
-            task_based_deploy.errors.TaskBaseDeploymentNotAllowed,
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
             self.serializer.ensure_task_based_deploy_allowed,
             {'id': 'task', 'version': consts.TASK_CROSS_DEPENDENCY}
         )
@@ -326,7 +326,7 @@ class TestNoopSerializer(BaseTestCase):
         )
 
     def test_get_uids(self):
-        serializer = task_based_deploy.NoopSerializer(
+        serializer = task_based_deployment.NoopSerializer(
             {'id': 'deploy_start', 'type': 'stage'},
             self.env, self.env.nodes
         )
@@ -338,7 +338,7 @@ class TestNoopSerializer(BaseTestCase):
         )
 
     def test_serialize(self):
-        serializer = task_based_deploy.NoopSerializer(
+        serializer = task_based_deployment.NoopSerializer(
             {'id': 'deploy_start', 'type': 'stage'},
             self.env, self.env.nodes
         )
@@ -365,22 +365,22 @@ class TestDeploymentTaskSerializer(BaseUnitTest):
         return task
 
     def test_get_stage_serializer(self):
-        factory = task_based_deploy.DeployTaskSerializer()
+        factory = task_based_deployment.DeployTaskSerializer()
         self.assertIs(
-            task_based_deploy.CreateVMsOnCompute,
+            task_based_deployment.CreateVMsOnCompute,
             factory.get_stage_serializer(
                 self.make_task('generate_vms')
             )
         )
 
         self.assertIs(
-            task_based_deploy.NoopSerializer,
+            task_based_deployment.NoopSerializer,
             factory.get_stage_serializer(
                 self.make_task('post_deployment', type='stage')
             )
         )
         self.assertIs(
-            task_based_deploy.NoopSerializer,
+            task_based_deployment.NoopSerializer,
             factory.get_stage_serializer(
                 self.make_task('pre_deployment', type='skipped')
             )
@@ -390,14 +390,29 @@ class TestDeploymentTaskSerializer(BaseUnitTest):
                 factory.get_stage_serializer(
                     self.make_task('upload_repos')
                 ),
-                task_based_deploy.StandartConfigRolesHook
+                task_based_deployment.StandartConfigRolesHook
+            )
+        )
+
+    def test_get_stage_serializer_for_plugins(self):
+        factory = task_based_deployment.DeployTaskSerializer()
+        self.assertIs(
+            task_based_deployment.PluginPostDeploymentSerializer,
+            factory.get_stage_serializer(
+                {"type": consts.PLUGIN_POST_DEPLOYMENT_HOOK}
+            )
+        )
+        self.assertIs(
+            task_based_deployment.PluginPreDeploymentSerializer,
+            factory.get_stage_serializer(
+                {"type": consts.PLUGIN_PRE_DEPLOYMENT_HOOK}
             )
         )
 
 
 class TestTaskProcessor(BaseUnitTest):
     def setUp(self):
-        self.processor = task_based_deploy.TaskProcessor()
+        self.processor = task_based_deployment.TaskProcessor()
 
     def test_link_tasks_on_same_node(self):
         previous = {

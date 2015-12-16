@@ -31,35 +31,6 @@ from nailgun.settings import settings
 from nailgun.utils.role_resolver import BaseRoleResolver
 
 
-def get_uids_for_tasks(nodes, tasks):
-    """Return node uids where particular tasks should be executed
-
-    :param nodes: list of Node db objects
-    :param tasks: list of dicts
-    :returns: list of strings
-    """
-    roles = []
-    for task in tasks:
-        # plugin tasks may store information about node
-        # role not only in `role` key but also in `groups`
-        task_role = task.get('role', task.get('groups'))
-        if task_role == consts.TASK_ROLES.all:
-            return get_uids_for_roles(nodes, consts.TASK_ROLES.all)
-        elif task_role == consts.TASK_ROLES.master:
-            return [consts.MASTER_NODE_UID]
-        elif isinstance(task_role, list):
-            roles.extend(task_role)
-        # if task has 'skipped' status it is allowed that 'roles' and
-        # 'groups' are not be specified
-        elif task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped:
-            logger.warn(
-                'Wrong roles format in task %s: either '
-                '`roles` or `groups` must be specified and contain '
-                'a list of roles or "*"',
-                task)
-    return get_uids_for_roles(nodes, roles)
-
-
 def get_uids_for_roles(nodes, roles):
     """Returns list of uids for nodes that matches roles
 

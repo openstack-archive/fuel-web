@@ -16,12 +16,12 @@
 
 """Serializer for plugins tasks"""
 
+import itertools
 
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.orchestrator.tasks_serializer import get_uids_for_roles
-from nailgun.orchestrator.tasks_serializer import get_uids_for_tasks
+from nailgun.orchestrator.tasks_serializer import LegacyRoleResolver
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
@@ -30,12 +30,19 @@ from nailgun.settings import settings
 class BasePluginDeploymentHooksSerializer(object):
     # TODO(dshulyak) refactor it to be consistent with task_serializer
 
-    def __init__(self, cluster, nodes):
+    def __init__(self, cluster, nodes, role_resolver=None):
+        """Initialises.
+
+        :param cluster: the cluster object instance
+        :param nodes: the list of nodes for deployment
+        :param role_resolver: the instance of BaseRoleResolver
+        """
+
         self.cluster = cluster
         self.nodes = nodes
+        self.role_resolver = role_resolver or LegacyRoleResolver(nodes)
 
     def deployment_tasks(self, plugins, stage):
-        tasks = []
         plugin_tasks = []
         sorted_plugins = sorted(plugins, key=lambda p: p.plugin.name)
 
@@ -47,7 +54,7 @@ class BasePluginDeploymentHooksSerializer(object):
         sorted_tasks = self._sort_by_stage_postfix(plugin_tasks)
         for task in sorted_tasks:
             make_task = None
-            uids = get_uids_for_roles(self.nodes, task['role'])
+            uids = self.role_resolver.resolve(task['role'])
             if not uids:
                 continue
 
@@ -62,23 +69,23 @@ class BasePluginDeploymentHooksSerializer(object):
                             'not supported').format(task)
 
             if make_task:
-                tasks.append(self._serialize_task(make_task(uids, task), task))
-
-        return tasks
+                yield self._serialize_task(make_task(uids, task), task)
 
     def _set_tasks_defaults(self, plugin, tasks):
         for task in tasks:
             self._set_task_defaults(plugin, task)
         return tasks
 
-    def _set_task_defaults(self, plugin, task):
+    @staticmethod
+    def _set_task_defaults(plugin, task):
         task['parameters'].setdefault('cwd', plugin.slaves_scripts_path)
         task.setdefault('diagnostic_name', plugin.full_name)
         task.setdefault('fail_on_error', True)
 
         return task
 
-    def _serialize_task(self, task, default_task):
+    @staticmethod
+    def _serialize_task(task, default_task):
         task.update({
             'diagnostic_name': default_task['diagnostic_name'],
             'fail_on_error': default_task['fail_on_error']})
@@ -88,7 +95,8 @@ class BasePluginDeploymentHooksSerializer(object):
         return self._serialize_task(
             self._set_task_defaults(plugin, task), task)
 
-    def _sort_by_stage_postfix(self, tasks):
+    @staticmethod
+    def _sort_by_stage_postfix(tasks):
         """Sorts tasks by task postfixes
 
         for example here are several tasks' stages:
@@ -103,7 +111,7 @@ class BasePluginDeploymentHooksSerializer(object):
         stage: post_deployment # because by default postifx is 0
         stage: post_deployment/100
         """
-        def postfix(task):
+        def get_postfix(task):
             stage_list = task['stage'].split('/')
             postfix = stage_list[-1] if len(stage_list) > 1 else 0
 
@@ -117,18 +125,18 @@ class BasePluginDeploymentHooksSerializer(object):
 
             return postfix
 
-        return sorted(tasks, key=postfix)
+        return sorted(tasks, key=get_postfix)
 
 
 class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
     def serialize(self):
-        tasks = []
         plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
-        tasks.extend(self.create_repositories(plugins))
-        tasks.extend(self.sync_scripts(plugins))
-        tasks.extend(self.deployment_tasks(plugins))
-        return tasks
+        return itertools.chain(
+            self.create_repositories(plugins),
+            self.sync_scripts(plugins),
+            self.deployment_tasks(plugins)
+        )
 
     def _get_node_uids_for_plugin_tasks(self, plugin):
         # TODO(aroma): remove concatenation of tasks when unified way of
@@ -136,22 +144,37 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         # plugin tasks
         tasks_to_process = plugin.tasks + plugin.deployment_tasks
 
-        uids = get_uids_for_tasks(self.nodes, tasks_to_process)
+        roles = []
+        for task in tasks_to_process:
+            # plugin tasks may store information about node
+            # role not only in `role` key but also in `groups`
+            task_role = task.get('role', task.get('groups'))
+            if task_role == consts.TASK_ROLES.all:
+                # just return all nodes
+                return self.role_resolver.resolve(consts.TASK_ROLES.all)
+            elif task_role == consts.TASK_ROLES.master:
+                # NOTE(aroma): pre-deployment tasks should not be executed on
+                # master node because in some cases it leads to errors due to
+                # commands need to be run are not compatible with master node
+                # OS (CentOS). E.g. of such situation - create repository
+                # executes `apt-get update` which fails on CentOS
+                continue
+            elif isinstance(task_role, list):
+                roles.extend(task_role)
+            # if task has 'skipped' status it is allowed that 'roles' and
+            # 'groups' are not be specified
+            elif task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped:
+                logger.warn(
+                    'Wrong roles format in task %s: either '
+                    '`roles` or `groups` must be specified and contain '
+                    'a list of roles or "*"',
+                    task)
 
-        # NOTE(aroma): pre-deployment tasks should not be executed on
-        # master node because in some cases it leads to errors due to
-        # commands need to be run are not compatible with master node
-        # OS (CentOS). E.g. of such situation - create repository
-        # executes `apt-get update` which fails on CentOS
-        if consts.MASTER_NODE_UID in uids:
-            uids.remove(consts.MASTER_NODE_UID)
-
-        return uids
+        return self.role_resolver.resolve(roles)
 
     def create_repositories(self, plugins):
         operating_system = self.cluster.release.operating_system
 
-        repo_tasks = []
         for plugin in plugins:
             uids = self._get_node_uids_for_plugin_tasks(plugin)
 
@@ -162,54 +185,49 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
             if operating_system == consts.RELEASE_OS.centos:
                 repo = self.get_centos_repo(plugin)
-                repo_tasks.append(
-                    self.serialize_task(
-                        plugin,
-                        templates.make_centos_repo_task(uids, repo)))
+                yield self.serialize_task(
+                    plugin,
+                    templates.make_centos_repo_task(uids, repo)
+                )
 
             elif operating_system == consts.RELEASE_OS.ubuntu:
                 repo = self.get_ubuntu_repo(plugin)
 
-                repo_tasks.append(
-                    self.serialize_task(
-                        plugin,
-                        templates.make_ubuntu_sources_task(uids, repo)))
+                yield self.serialize_task(
+                    plugin,
+                    templates.make_ubuntu_sources_task(uids, repo)
+                )
 
                 # do not add preferences task to task list if we can't
                 # complete it (e.g. can't retrieve or parse Release file)
                 task = templates.make_ubuntu_preferences_task(uids, repo)
                 if task is not None:
-                    repo_tasks.append(self.serialize_task(plugin, task))
+                    yield self.serialize_task(plugin, task)
 
                 # apt-get update executed after every additional source.list
                 # to be able understand what plugin source.list caused error
-                repo_tasks.append(
-                    self.serialize_task(
-                        plugin,
-                        templates.make_apt_update_task(uids)))
+                yield self.serialize_task(
+                    plugin,
+                    templates.make_apt_update_task(uids)
+                )
             else:
                 raise errors.InvalidOperatingSystem(
                     'Operating system {0} is invalid'.format(operating_system))
 
-        return repo_tasks
-
     def sync_scripts(self, plugins):
-        tasks = []
         for plugin in plugins:
             uids = self._get_node_uids_for_plugin_tasks(plugin)
 
             if not uids:
                 continue
 
-            tasks.append(
-                self.serialize_task(
-                    plugin,
-                    templates.make_sync_scripts_task(
-                        uids,
-                        plugin.master_scripts_path(self.cluster),
-                        plugin.slaves_scripts_path)))
-
-        return tasks
+            yield self.serialize_task(
+                plugin,
+                templates.make_sync_scripts_task(
+                    uids,
+                    plugin.master_scripts_path(self.cluster),
+                    plugin.slaves_scripts_path)
+            )
 
     def deployment_tasks(self, plugins):
         return super(
@@ -237,10 +255,8 @@ class PluginsPostDeploymentHooksSerializer(
         BasePluginDeploymentHooksSerializer):
 
     def serialize(self):
-        tasks = []
         plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
-        tasks.extend(self.deployment_tasks(plugins))
-        return tasks
+        return self.deployment_tasks(plugins)
 
     def deployment_tasks(self, plugins):
         return super(

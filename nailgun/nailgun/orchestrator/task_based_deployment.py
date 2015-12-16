@@ -24,6 +24,7 @@ import six
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.orchestrator import plugins_serializers
 from nailgun.orchestrator.tasks_serializer import CreateVMsOnCompute
 from nailgun.orchestrator.tasks_serializer import StandartConfigRolesHook
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
@@ -50,11 +51,68 @@ class NoopSerializer(StandartConfigRolesHook):
         yield make_noop_task(uids, self.task)
 
 
+class PluginTaskSerializer(StandartConfigRolesHook):
+    serializer_class = None
+
+    def should_execute(self):
+        return True
+
+    def serialize(self):
+        serializer = self.serializer_class(
+            self.cluster, self.nodes, role_resolver=self.role_resolver
+        )
+        return serializer.serialize()
+
+
+class PluginPreDeploymentSerializer(PluginTaskSerializer):
+    """Serializes plugin pre-deployment tasks."""
+    serializer_class = \
+        plugins_serializers.PluginsPreDeploymentHooksSerializer
+
+
+class PluginPostDeploymentSerializer(PluginTaskSerializer):
+    """Serializes plugin post-deployment tasks."""
+    serializer_class = \
+        plugins_serializers.PluginsPostDeploymentHooksSerializer
+
+
+def add_plugin_deployment_hooks(tasks):
+    """Adds the artificial tasks for deployment hooks from plugins.
+
+    :param tasks: the origin list of deployment tasks
+    :return: the sequence of deployment tasks that includes
+             pre/post deployment hooks for plugins
+    """
+
+    # TODO(bgaifullin): Make this tasks in plugins as obsolete
+    # and drop support of them
+    # of Task Based Deployment
+    # Added fake task for pre and post.
+    # This will cause engine to generate chain of tasks for each stage.
+    # Tasks in chain will run step by step.
+
+    hooks = [
+        {'id': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
+         'version': consts.TASK_CROSS_DEPENDENCY,
+         'type': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
+         'requires': [consts.STAGES.pre_deployment + '_end'],
+         'required_for': [consts.STAGES.deploy + '_start']},
+        {'id': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
+         'version': consts.TASK_CROSS_DEPENDENCY,
+         'type': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
+         'requires': [consts.STAGES.post_deployment + '_end']}
+    ]
+
+    return itertools.chain(iter(tasks), iter(hooks))
+
+
 class DeployTaskSerializer(TaskSerializers):
-    noop_task_types = (
-        consts.ORCHESTRATOR_TASK_TYPES.skipped,
-        consts.ORCHESTRATOR_TASK_TYPES.stage
-    )
+    task_types_mapping = {
+        consts.ORCHESTRATOR_TASK_TYPES.skipped: NoopSerializer,
+        consts.ORCHESTRATOR_TASK_TYPES.stage: NoopSerializer,
+        consts.PLUGIN_PRE_DEPLOYMENT_HOOK: PluginPreDeploymentSerializer,
+        consts.PLUGIN_POST_DEPLOYMENT_HOOK: PluginPostDeploymentSerializer
+    }
 
     def __init__(self):
         # because we are used only stage_serializers need to
@@ -65,8 +123,9 @@ class DeployTaskSerializer(TaskSerializers):
         )
 
     def get_stage_serializer(self, task):
-        if task.get('type') in self.noop_task_types:
-            return NoopSerializer
+        serializer = self.task_types_mapping.get(task['type'], None)
+        if serializer is not None:
+            return serializer
         return super(DeployTaskSerializer, self).get_stage_serializer(
             task
         )
@@ -310,7 +369,7 @@ class TasksSerializer(object):
         :return: the list of serialized task per node
         """
         serializer = cls(cluster, nodes)
-        serializer.resolve_nodes(tasks, nodes)
+        serializer.resolve_nodes(add_plugin_deployment_hooks(tasks), nodes)
         serializer.resolve_dependencies()
         return dict(
             (k, list(six.itervalues(v)))

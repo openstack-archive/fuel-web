@@ -46,7 +46,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
-from nailgun.orchestrator import task_based_deploy
+from nailgun.orchestrator import task_based_deployment
 from nailgun.orchestrator import tasks_serializer
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
@@ -239,7 +239,7 @@ class DeploymentTask(object):
         serialized_cluster = deployment_serializers.serialize(
             None, task.cluster, nodes
         )
-        serialized_tasks = task_based_deploy.TasksSerializer.serialize(
+        serialized_tasks = task_based_deployment.TasksSerializer.serialize(
             task.cluster, nodes, deployment_tasks
         )
         return {

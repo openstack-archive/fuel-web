@@ -18,12 +18,12 @@ import copy
 import mock
 
 from nailgun import consts
-from nailgun.test import base
-
 from nailgun.orchestrator.plugins_serializers import \
     BasePluginDeploymentHooksSerializer
 from nailgun.orchestrator.plugins_serializers import \
     PluginsPreDeploymentHooksSerializer
+from nailgun.test import base
+from nailgun.utils.role_resolver import NullResolver
 
 
 class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
@@ -38,10 +38,11 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
         ]
         self.hook = BasePluginDeploymentHooksSerializer(
             self.nodes,
-            self.cluster)
+            self.cluster,
+            role_resolver=NullResolver([x['id'] for x in self.nodes])
+        )
 
-    @mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles')
-    def test_original_order_of_deployment_tasks(self, get_uids_for_roles_mock):
+    def test_original_order_of_deployment_tasks(self):
         stage = 'pre_deployment'
         role = 'controller'
 
@@ -60,9 +61,7 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
              'parameters': {'cmd': 'test2', 'cwd': '/', 'timeout': 15}}
         ]
 
-        get_uids_for_roles_mock.return_value = [1, 2]
-
-        raw_result = self.hook.deployment_tasks([plugin], stage)
+        raw_result = list(self.hook.deployment_tasks([plugin], stage))
         result = [r['type'] for r in raw_result]
         self.assertEqual(result, ['shell', 'puppet', 'shell'])
         self.assertEqual(raw_result[0]['parameters']['cmd'], 'test1')
@@ -71,8 +70,7 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
             'modules')
         self.assertEqual(raw_result[2]['parameters']['cmd'], 'test2')
 
-    @mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles')
-    def test_support_reboot_type_task(self, get_uids_for_roles_mock):
+    def test_support_reboot_type_task(self):
         stage = 'pre_deployment'
 
         plugin = mock.Mock()
@@ -85,8 +83,6 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
             'stage': stage,
             'parameters': {'timeout': 15}}]
 
-        get_uids_for_roles_mock.return_value = [1, 2]
-
         result = self.hook.deployment_tasks([plugin], stage)
         expecting_format = {
             'id': None,
@@ -96,11 +92,9 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
             'type': 'reboot',
             'uids': [1, 2]}
 
-        self.assertEqual(result, [expecting_format])
+        self.assertItemsEqual([expecting_format], result)
 
-    @mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles',
-                return_value=[1, 2])
-    def test_generates_scripts_path_in_case_of_several_plugins(self, _):
+    def test_generates_scripts_path_in_case_of_several_plugins(self):
         stage = 'pre_deployment'
         plugins = []
         names = ['plugin_name1', 'plugin_name2']
@@ -122,8 +116,6 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
         self.assertEqual(script_paths, names)
 
 
-@mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles',
-            return_value=[1, 2])
 class TestTasksDeploymentOrder(base.BaseTestCase):
 
     def setUp(self):
@@ -134,7 +126,9 @@ class TestTasksDeploymentOrder(base.BaseTestCase):
             {'id': 2, 'role': 'compute'}]
         self.hook = BasePluginDeploymentHooksSerializer(
             self.nodes,
-            self.cluster)
+            self.cluster,
+            role_resolver=NullResolver([x['id'] for x in self.nodes])
+        )
 
     def make_plugin_mock_with_stages(self, plugin_name, stages):
         common_attrs = {
@@ -155,7 +149,7 @@ class TestTasksDeploymentOrder(base.BaseTestCase):
 
         return plugin
 
-    def test_sorts_plugins_by_numerical_postfixes(self, _):
+    def test_sorts_plugins_by_numerical_postfixes(self):
         plugin1 = self.make_plugin_mock_with_stages('name1', [
             'pre_deployment/-100',
             'pre_deployment/100.0',
@@ -197,14 +191,13 @@ class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
         ]
         self.hook = PluginsPreDeploymentHooksSerializer(
             self.cluster,
-            self.nodes)
+            self.nodes,
+            role_resolver=NullResolver([x['id'] for x in self.nodes])
+        )
 
         plugin = mock.Mock(tasks=[], deployment_tasks=[])
         self.plugins = [plugin]
 
-    @mock.patch(
-        'nailgun.orchestrator.plugins_serializers.get_uids_for_tasks',
-        return_value=[1, 2])
     @mock.patch(
         'nailgun.orchestrator.plugins_serializers.'
         'templates.make_ubuntu_sources_task',
@@ -220,7 +213,7 @@ class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
         return_value={'task_type': 'apt_update_task',
                       'parameters': {}})
     def test_create_repositories_ubuntu_does_not_generate_prefences_if_none(
-            self, _, __, ___, ____):
+            self, *_):
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.hook.create_repositories(self.plugins)
         self.assertItemsEqual(

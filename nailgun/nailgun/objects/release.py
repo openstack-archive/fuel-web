@@ -172,7 +172,39 @@ class Release(NailgunObject):
         :returns: list -- list of all components
         """
         plugin_components = PluginManager.get_components_metadata(instance)
-        return instance.components_metadata + plugin_components
+        components = instance.components_metadata + plugin_components
+
+        find_component = lambda c, l: [item for item in l if item['name'] == c]
+
+        for component in components:
+            for incompatible_item in component.get('incompatible', []):
+                incompatible_component = find_component(
+                    incompatible_item['name'], components)[0]
+                incompatible_component.setdefault('incompatible', [])
+                incompatible_names = set(
+                    item['name']
+                    for item in incompatible_component['incompatible'])
+
+                if component['name'] not in incompatible_names:
+                    incompatible_component['incompatible'].append({
+                        'name': component['name'],
+                        'message': 'Not compatible with {0}'.format(
+                            component.get('label'))
+                    })
+
+            for compatible_item in component.get('compatible', []):
+                compatible_component = find_component(
+                    compatible_item['name'], components)[0]
+                compatible_component.setdefault('compatible', [])
+                compatible_names = set(
+                    item['name']
+                    for item in compatible_component['compatible'])
+
+                if component['name'] not in compatible_names:
+                    incompatible_component['compatible'].append({
+                        'name': component['name']})
+
+        return components
 
 
 class ReleaseCollection(NailgunCollection):

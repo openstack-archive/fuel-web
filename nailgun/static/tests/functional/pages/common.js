@@ -110,9 +110,9 @@ define([
                     .then(function() {
                         return self.clusterPage.goToTab('Nodes');
                     })
-                    .waitForCssSelector('button.btn-add-nodes', 1000)
+                    .waitForCssSelector('button.btn-add-nodes', 3000)
                     .clickByCssSelector('button.btn-add-nodes')
-                    .waitForCssSelector('.node', 2000)
+                    .waitForCssSelector('.node', 3000)
                     .then(function() {
                         if (nodeNameFilter) return self.clusterPage.searchForNode(nodeNameFilter);
                     })
@@ -123,7 +123,7 @@ define([
                         return self.clusterPage.checkNodes(nodesAmount, nodeStatus);
                     })
                     .clickByCssSelector('.btn-apply')
-                    .waitForElementDeletion('.btn-apply', 2000);
+                    .waitForElementDeletion('.btn-apply', 3000);
             }
         };
         return CommonMethods;

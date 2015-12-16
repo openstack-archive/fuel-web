@@ -232,7 +232,7 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .assertElementDisappears('.dashboard-block .progress', 10000, 'Progress bar disappears after deployment')
+                    .assertElementDisappears('.dashboard-block .progress', 60000, 'Progress bar disappears after deployment')
                     .assertElementAppears('.dashboard-tab .alert strong', 1000, 'Error message is shown when adding error node')
                     .assertElementTextEquals('.dashboard-tab .alert strong', 'Error',
                             'Deployment failed in case of adding offline nodes')

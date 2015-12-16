@@ -34,7 +34,7 @@ define([
                     .clickLinkByText(tabName)
                     .end()
                 .then(pollUntil(function(textToFind) {
-                    return $('.cluster-tab.active').text() == textToFind ? true : null; // eslint-disable-line no-undef
+                    return window.$('.cluster-tab.active').text() == textToFind || null;
                 }, [tabName], 3000));
         },
         removeCluster: function(clusterName) {
@@ -135,7 +135,7 @@ define([
                 .then(function() {
                     return self.modal.waitToClose();
                 })
-                .waitForElementDeletion('div.progress-bar', 10000);
+                .waitForElementDeletion('div.progress-bar', 20000);
         },
         isTabLocked: function(tabName) {
             var self = this;

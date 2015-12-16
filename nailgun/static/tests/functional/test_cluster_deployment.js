@@ -100,7 +100,7 @@ define([
                     .then(function() {
                         return dashboardPage.stopDeployment();
                     })
-                    .assertElementDisappears('div.deploy-process div.progress', 5000, 'Deployment stopped')
+                    .assertElementDisappears('div.deploy-process div.progress', 20000, 'Deployment stopped')
                     .assertElementAppears(dashboardPage.deployButtonSelector, 1000, 'Deployment button available')
                     .assertElementContainsText('div.alert-warning strong', 'Success', 'Deployment successfully stopped alert is expected')
                     .assertElementNotExists('.go-to-healthcheck', 'Healthcheck link is not visible after stopped deploy')
@@ -134,7 +134,7 @@ define([
                     .then(function() {
                         return dashboardPage.startDeployment();
                     })
-                    .assertElementDisappears('.dashboard-block .progress', 50000, 'Progress bar disappears after deployment')
+                    .assertElementDisappears('.dashboard-block .progress', 60000, 'Progress bar disappears after deployment')
                     .assertElementAppears('.links-block', 5000, 'Deployment completed')
                     .assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy')
                     .findByLinkText('Horizon')

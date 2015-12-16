@@ -176,6 +176,11 @@ Setup for Web UI Tests
     cd fuel-web
     ./run_tests.sh --webui
 
+   By default Firefox browser is used. You can specify the browser using
+   BROWSER environment variable::
+
+    BROWSER=chrome ./run_tests.sh --webui
+
 
 .. _running-parallel-tests-py:
 

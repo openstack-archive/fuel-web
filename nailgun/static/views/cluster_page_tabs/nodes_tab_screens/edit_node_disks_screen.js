@@ -240,7 +240,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         },
         onRangeInput: _.debounce(function(name) {
             this.updateDisk(name, this.refs['range-' + name].getInputDOMNode().value);
-        }, 10, {leading: true}),
+        }, 5, {leading: true}),
         render: function() {
             var disk = this.props.disk,
                 volumesInfo = this.props.volumesInfo,
@@ -344,7 +344,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                         type='range'
                                                         ref={'range-' + volumeName}
                                                         onInput={_.partial(this.onRangeInput, volumeName)}
-                                                        defaultValue={value}
+                                                        value={value}
                                                     />
                                                 </div>
                                                 <controls.Input {...props}

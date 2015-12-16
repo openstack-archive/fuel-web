@@ -366,6 +366,11 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.stage,
                   ORCHESTRATOR_TASK_TYPES.skipped)
 
+
+PLUGIN_PRE_DEPLOYMENT_HOOK = "_plugin_pre_deployment_hook"
+
+PLUGIN_POST_DEPLOYMENT_HOOK = "_plugin_post_deployment_hook"
+
 # filter for deployment tasks which should be rerun on deployed nodes to make
 # re-setup of network on nodes
 TASKS_TO_RERUN_ON_DEPLOY_CHANGES = ['deploy_changes']

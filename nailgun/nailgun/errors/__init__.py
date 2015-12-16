@@ -87,6 +87,9 @@ default_messages = {
     "NetworkTemplateMissingNetworkGroup": "Network group is missing",
     "DuplicatedVIPNames": ("Cannot assign VIPs for the cluster due to "
                            "overlapping of names of the VIPs"),
+    "UpdateDnsmasqTaskIsRunning": ("update_dnsmasq task is not finished "
+                              "after the previous data change. Please try "
+                              "again after a few seconds."),
 
     # RPC errors
     "CannotFindTask": "Cannot find task",

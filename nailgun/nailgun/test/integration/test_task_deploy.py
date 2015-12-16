@@ -19,7 +19,7 @@ import mock
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.orchestrator.task_based_deploy import TasksSerializer
+from nailgun.orchestrator.task_based_deployment import TasksSerializer
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -34,7 +34,11 @@ class TestTaskDeploy(BaseIntegrationTest):
                 {"name": "Second",
                  "roles": ["compute"],
                  "pending_addition": True}
-            ]
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2015.1.0-8.0',
+            },
         )
         self.cluster = self.env.clusters[-1]
 
@@ -43,6 +47,25 @@ class TestTaskDeploy(BaseIntegrationTest):
         cluster_attrs['common']['task_deploy']['value'] = enable
         self.cluster.attributes.editable = cluster_attrs
         self.db().flush()
+
+    def add_plugin_with_tasks(self, task_id):
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks(
+            id=task_id, type="skipped",
+            role=["compute"]
+        )
+        tasks = self.env.get_default_plugin_tasks(
+            role=["compute"]
+        )
+        tasks.extend(self.env.get_default_plugin_tasks(
+            role=["compute"], stage="pre_deployment"
+        ))
+        self.env.create_plugin(
+            cluster=self.cluster,
+            enabled=True,
+            package_version="4.0.0",
+            deployment_tasks=deployment_tasks, tasks=tasks
+        )
+        self.db.flush()
 
     @fake_tasks(mock_rpc=False, fake_rpc=False)
     @mock.patch('nailgun.rpc.cast')
@@ -84,3 +107,36 @@ class TestTaskDeploy(BaseIntegrationTest):
              "pre_deployment", "post_deployment"],
             message["args"]
         )
+
+    @mock.patch.object(TasksSerializer, "ensure_task_based_deploy_allowed")
+    @mock.patch('nailgun.plugins.adapters.os.path.exists', return_value=True)
+    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_tasks')
+    def test_task_deploy_with_plugins(self, load_tasks, *_):
+        self.enable_deploy_task(True)
+        self.add_plugin_with_tasks("plugin_deployment_task")
+        # There is bug[1] in PluginAdapters,
+        # it always reads the tasks from local file sytem.
+        # [1] https://bugs.launchpad.net/fuel/+bug/1527320
+        load_tasks.return_value = self.env.plugins[-1].tasks
+        message = self.get_deploy_message()
+        compute_uid = next(
+            (x.uid for x in self.env.nodes if 'compute' in x.roles), None
+        )
+        self.assertIsNotNone(compute_uid)
+        compute_tasks = message['args']['deployment_tasks'][compute_uid]
+
+        expected_tasks = {
+            consts.PLUGIN_PRE_DEPLOYMENT_HOOK + "_start",
+            consts.PLUGIN_PRE_DEPLOYMENT_HOOK + "_end",
+            consts.PLUGIN_POST_DEPLOYMENT_HOOK,
+            "plugin_deployment_task"
+        }
+
+        for task in compute_tasks:
+            expected_tasks.discard(task['id'])
+
+        if len(expected_tasks):
+            self.fail(
+                "The following task is not found in tasks for deploy {0}."
+                .format(sorted(expected_tasks))
+            )

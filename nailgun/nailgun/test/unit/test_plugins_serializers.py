@@ -202,9 +202,6 @@ class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
         self.plugins = [plugin]
 
     @mock.patch(
-        'nailgun.orchestrator.plugins_serializers.get_uids_for_tasks',
-        return_value=[1, 2])
-    @mock.patch(
         'nailgun.orchestrator.plugins_serializers.'
         'templates.make_ubuntu_sources_task',
         return_value={'task_type': 'ubuntu_sources_task',

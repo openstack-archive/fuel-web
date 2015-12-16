@@ -34,7 +34,7 @@ define([
                     .clickLinkByText(tabName)
                     .end()
                 .then(pollUntil(function(textToFind) {
-                    return $('.cluster-tab.active').text() == textToFind ? true : null; // eslint-disable-line no-undef
+                    return window.$('.cluster-tab.active').text() == textToFind;
                 }, [tabName], 3000));
         },
         removeCluster: function(clusterName) {

@@ -1488,7 +1488,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             .filter(
                                 (sectionName) => {
                                     var section = settings.get(sectionName);
-                                    return (section.metadata.group == 'network' || !section.metadata.group && _.any(section, {group: 'network'})) &&
+                                    return (section.metadata.group == 'network' || _.any(section, {group: 'network'})) &&
                                         !this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
                                 }
                             )
@@ -1506,7 +1506,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                                 !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
                                             ) return settingName;
                                         }));
-                                    if (_.isEmpty(settingsToDisplay)) return null;
+                                    if (_.isEmpty(settingsToDisplay) && !settings.isPlugin(sectionName)) return null;
                                     return <SettingSection
                                         key={sectionName}
                                         cluster={this.props.cluster}

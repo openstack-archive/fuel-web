@@ -29,11 +29,10 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
     var SettingSection = React.createClass({
         processRestrictions: function(sectionName, settingName) {
             var result = false,
-                path = this.props.makePath(sectionName, settingName),
                 messages = [];
 
-            var restrictionsCheck = this.props.checkRestrictions('disable', path),
-                messagesCheck = this.props.checkRestrictions('none', path);
+            var restrictionsCheck = this.props.checkRestrictions('disable', sectionName, settingName),
+                messagesCheck = this.props.checkRestrictions('none', sectionName, settingName);
 
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
             if (messagesCheck.message) messages.push(messagesCheck.message);
@@ -112,13 +111,13 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 }
             }, this);
             // collect dependencies
-            _.each(this.props.settings.attributes, function(group, sectionName) {
+            _.each(this.props.settings.attributes, function(section, sectionName) {
                 // don't take into account hidden dependent settings
-                if (this.props.checkRestrictions('hide', this.props.makePath(sectionName, 'metadata')).result) return;
-                _.each(group, function(setting, settingName) {
+                if (this.props.checkRestrictions('hide', sectionName, 'metadata').result) return;
+                _.each(section, function(setting, settingName) {
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
                     var pathToCheck = this.props.makePath(sectionName, settingName);
-                    if (!this.areCalculationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', pathToCheck).result) return;
+                    if (!this.areCalculationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', sectionName, settingName).result) return;
                     if (setting[this.props.getValueAttribute(settingName)] == true) {
                         addDependentRestrictions(pathToCheck, setting.label);
                     } else {
@@ -148,15 +147,29 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 );
             });
         },
+        onPluginVersionChange: function(pluginName, version) {
+            var {settings, settingsForChecks} = this.props,
+                path = this.props.makePath(pluginName, 'metadata', 'chosen_id');
+            settingsForChecks.set(path, Number(version));
+            settingsForChecks.mergePluginSettings(settingsForChecks.attributes);
+            // FIXME: the following hacks cause we can't pass {validate: true} option to set method
+            // this form of validation isn't supported in Backbone DeepModel
+            settings.validationError = null;
+            settings.set(path, Number(version));
+            settings.mergePluginSettings(settings.attributes);
+            settings.isValid({models: this.props.configModels});
+        },
         render: function() {
-            var group = this.props.settings.get(this.props.sectionName),
+            var {settings, sectionName} = this.props,
+                group = settings.get(sectionName),
                 metadata = group.metadata,
-                sortedSettings = _.sortBy(this.props.settingsToDisplay, function(settingName) {return group[settingName].weight;}),
-                processedGroupRestrictions = this.processRestrictions(this.props.sectionName, 'metadata'),
-                processedGroupDependencies = this.checkDependencies(this.props.sectionName, 'metadata'),
+                sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => group[settingName].weight),
+                processedGroupRestrictions = this.processRestrictions(sectionName, 'metadata'),
+                processedGroupDependencies = this.checkDependencies(sectionName, 'metadata'),
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
                 showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable,
                 groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
+
             return (
                 <div className='setting-section'>
                     {showSettingGroupWarning && processedGroupRestrictions.message &&
@@ -167,23 +180,40 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                             <controls.Input
                                 type='checkbox'
                                 name='metadata'
-                                label={metadata.label || this.props.sectionName}
+                                label={metadata.label || sectionName}
                                 defaultChecked={metadata.enabled}
                                 disabled={isGroupDisabled || processedGroupDependencies.result}
                                 tooltipText={showSettingGroupWarning && groupWarning}
                                 onChange={this.props.onChange}
                             />
                         :
-                            <span className={'subtab-group-' + this.props.sectionName}>{this.props.sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || this.props.sectionName}</span>
+                            <span className={'subtab-group-' + sectionName}>{sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>
                         }
                     </h3>
                     <div>
+                        {settings.isPlugin(sectionName) &&
+                            <div className='plugin-versions clearfix'>
+                                <controls.RadioGroup
+                                    name={sectionName}
+                                    label={i18n('cluster_page.settings_tab.plugin_versions')}
+                                    values={_.map(metadata.versions, (version) => {
+                                        return {
+                                            data: version.metadata.plugin_id,
+                                            label: version.metadata.plugin_version,
+                                            defaultChecked: version.metadata.plugin_id == metadata.chosen_id,
+                                            disabled: isGroupDisabled || (metadata.toggleable && !metadata.enabled)
+                                        };
+                                    })}
+                                    onChange={this.onPluginVersionChange}
+                                />
+                            </div>
+                        }
                         {_.map(sortedSettings, function(settingName) {
                             var setting = group[settingName],
-                                path = this.props.makePath(this.props.sectionName, settingName),
-                                error = (this.props.settings.validationError || {})[path],
-                                processedSettingRestrictions = this.processRestrictions(this.props.sectionName, settingName),
-                                processedSettingDependencies = this.checkDependencies(this.props.sectionName, settingName),
+                                path = this.props.makePath(sectionName, settingName),
+                                error = (settings.validationError || {})[path],
+                                processedSettingRestrictions = this.processRestrictions(sectionName, settingName),
+                                processedSettingDependencies = this.checkDependencies(sectionName, settingName),
                                 isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
                                 showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
                                 settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
@@ -205,9 +235,9 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                             if (setting.values) {
                                 var values = _.chain(_.cloneDeep(setting.values))
                                     .map(function(value) {
-                                        var valuePath = this.props.makePath(path, value.data),
-                                            processedValueRestrictions = this.props.checkRestrictions('disable', valuePath);
-                                        if (!this.props.checkRestrictions('hide', valuePath).result) {
+                                        var valuePath = this.props.makePath(settingName, value.data),
+                                            processedValueRestrictions = this.props.checkRestrictions('disable', sectionName, valuePath);
+                                        if (!this.props.checkRestrictions('hide', sectionName, valuePath).result) {
                                             value.disabled = isSettingDisabled || processedValueRestrictions.result;
                                             value.defaultChecked = value.data == setting.value;
                                             value.tooltipText = showSettingWarning && processedValueRestrictions.message;

@@ -3769,6 +3769,25 @@ input[type=range] {
       }
     }
   }
+  .plugin-versions {
+    margin-bottom: 25px;
+    .radio-group {
+      > h4, > div {
+        display: block;
+        float: left;
+        margin: 0;
+      }
+      h4 {
+        position: relative;
+        top: -2px;
+      }
+      .custom-tumbler + span {
+        position: relative;
+        top: 1px;
+        padding-right: 5px;
+      }
+    }
+  }
 }
 
 // Settings tab
@@ -3779,6 +3798,11 @@ input[type=range] {
       align-items: center;
       min-height: 30px;
       padding-top: 0;
+    }
+  }
+  .plugin-versions {
+    .radio-group {
+      margin-left: 10px;
     }
   }
 }

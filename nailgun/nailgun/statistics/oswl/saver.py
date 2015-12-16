@@ -71,7 +71,7 @@ def oswl_data_checksum(data):
     return hashlib.sha1(json.dumps(data)).hexdigest()
 
 
-def oswl_statistics_save(cluster_id, resource_type, data):
+def oswl_statistics_save(cluster_id, resource_type, data, version_info=None):
     """Save OSWL statistics data for given cluster and resource_type to DB.
 
     DB changes are not committed here.
@@ -85,6 +85,9 @@ def oswl_statistics_save(cluster_id, resource_type, data):
         'resource_data': {'current': data},
         'resource_checksum': cs
     }
+    if version_info is not None:
+        obj_data['version_info'] = version_info
+
     if rec:
         if cs == rec.resource_checksum:
             return

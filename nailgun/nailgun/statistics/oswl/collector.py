@@ -59,11 +59,13 @@ def collect(resource_type):
             try:
                 client_provider = helpers.ClientProvider(cluster)
                 proxy_for_os_api = utils.get_proxy_for_cluster(cluster)
+                version_info = utils.get_version_info(cluster)
 
                 with utils.set_proxy(proxy_for_os_api):
                     data = helpers.get_info_from_os_resource_manager(
                         client_provider, resource_type)
-                    oswl_statistics_save(cluster.id, resource_type, data)
+                    oswl_statistics_save(cluster.id, resource_type, data,
+                                         version_info=version_info)
 
             except errors.StatsException as e:
                 logger.error("Cannot collect OSWL resource {0} for cluster "

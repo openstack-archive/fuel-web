@@ -133,6 +133,9 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
     });
 
     var LogFilterBar = React.createClass({
+        shouldComponentUpdate: function(nextProps, nextState) {
+            return this.state !== nextState;
+        },
         getInitialState: function() {
             return _.extend({}, this.props.selectedLogs, {
                 sourcesLoadingState: 'loading',

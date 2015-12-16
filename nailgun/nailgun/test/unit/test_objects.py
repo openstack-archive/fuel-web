@@ -1652,29 +1652,61 @@ class TestRelease(BaseTestCase):
                 'os': 'ubuntu',
                 'mode': ['ha'],
                 'deployment_scripts_path': 'deployment_scripts/'}],
-            components_metadata=self.env.get_default_components(
-                name='storage:test_component_2')
+            components_metadata=[dict(
+                name='storage:test_component_2',
+                label='Test storage',
+                incompatible=[{
+                    'name': 'hypervisor:test_component_1',
+                    'message': 'component_2 not compatible with component_1'}]
+            ), dict(
+                name='network:test_component_3',
+                label='Test network',
+                compatible=[{
+                    'name': 'storage:test_component_2'}])]
         )
 
         components = objects.Release.get_all_components(release)
 
-        self.assertListEqual(components, [
-            {
-                'name': 'hypervisor:test_component_1',
-                'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
-                'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]},
-            {
-                'name': 'storage:test_component_2',
-                'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
-                'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]}])
+        self.assertItemsEqual(components, [{
+            'name': 'hypervisor:test_component_1',
+            'compatible': [
+                {'name': 'hypervisor:*'},
+                {'name': 'storage:object:block:swift'}],
+            'incompatible': [
+                {'name': 'network:*'},
+                {'name': 'additional_service:*'},
+                {'name': 'storage:test_component_2',
+                 'message': 'Not compatible with Test storage'}]}, {
+            'name': 'storage:test_component_2',
+            'label': 'Test storage',
+            'compatible': [
+                {'name': 'network:test_component_3'}],
+            'incompatible': [
+                {'name': 'hypervisor:test_component_1',
+                 'message': 'component_2 not compatible with component_1'}]}, {
+            'name': 'network:test_component_3',
+            'label': 'Test network',
+            'compatible': [
+                {'name': 'storage:test_component_2'}],
+            'incompatible': [
+                {'name': 'hypervisor:test_component_1',
+                 'message': 'Not compatible with hypervisor:test_component_1'}]
+        }])
+
+    def test_contain_component(self):
+        components = [
+            {'name': 'test_component_type_1:test_component_1'},
+            {'name': 'test_component_type_2:*'}
+        ]
+
+        self.assertTrue(objects.Release._contain(
+            components, 'test_component_type_1:test_component_1'))
+
+        self.assertTrue(objects.Release._contain(
+            components, 'test_component_type_2:test_component_3'))
+
+        self.assertFalse(objects.Release._contain(
+            components, 'test_component_type_1:test_component_4'))
 
 
 class TestOpenstackConfig(BaseTestCase):

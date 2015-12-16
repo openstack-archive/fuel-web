@@ -104,7 +104,7 @@ class TestTaskSerializers(BaseTestCase):
                 )
             )
             m_resolve.resolve.assert_called_with(
-                consts.ALL_ROLES, consts.NODE_RESOLVE_POLICY.all
+                consts.TASK_ROLES.all, consts.NODE_RESOLVE_POLICY.all
             )
             # concrete role and policy
             self.assertItemsEqual(

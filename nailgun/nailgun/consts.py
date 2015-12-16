@@ -375,9 +375,7 @@ TASK_REFRESH_FIELD = 'refresh_on'
 ROLE_NAME_MAX_SIZE = 64
 EXTENSION_NAME_MAX_SIZE = 64
 
-ALL_ROLES = '*'
-MASTER_ROLE = 'master'
-ROLE_SELF_NODE = 'self'
+MASTER_NODE_UID = 'master'
 
 # version of Fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'
@@ -444,6 +442,11 @@ OPENSTACK_CONFIG_TYPES = Enum(
 NODE_RESOLVE_POLICY = Enum(
     "all",
     "any"
+)
+
+TASK_ROLES = Enum(
+    '*', 'master', 'self',
+    names=('all', 'master', 'self')
 )
 
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'

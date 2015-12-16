@@ -116,7 +116,7 @@ class RoleResolver(BaseRoleResolver):
     # the mapping roles, those are resolved to known list of IDs
     # master is used to run tasks on master node
     SPECIAL_ROLES = {
-        consts.MASTER_ROLE: [consts.MASTER_ROLE]
+        consts.TASK_ROLES.master: [consts.MASTER_NODE_UID]
     }
 
     def __init__(self, nodes):
@@ -132,7 +132,7 @@ class RoleResolver(BaseRoleResolver):
     def resolve(self, roles, policy=None):
         if isinstance(roles, six.string_types) and roles in self.SPECIAL_ROLES:
             result = self.SPECIAL_ROLES[roles]
-        elif roles == consts.ALL_ROLES:
+        elif roles == consts.TASK_ROLES.all:
             result = list(set(
                 uid for nodes in six.itervalues(self.__mapping)
                 for uid in nodes

@@ -267,7 +267,7 @@ function run_nailgun_tests {
   pushd $ROOT/nailgun >> /dev/null
   # # run tests
   NAILGUN_CONFIG=$config \
-  tox -epy26 -- $options $TESTS  || result=1
+  tox --recreate -epy26 -- $options $TESTS  || result=1
   popd >> /dev/null
   return $result
 }

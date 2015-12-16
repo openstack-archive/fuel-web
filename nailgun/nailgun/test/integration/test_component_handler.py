@@ -50,23 +50,24 @@ class TestComponentHandler(base.BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(resp.json_body, [
+        self.assertItemsEqual(resp.json_body, [
             {
                 'name': 'hypervisor:test_component_1',
                 'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
+                    {'name': 'hypervisor:*'},
+                    {'name': 'storage:object:block:swift'},
+                    {'name': 'storage:test_component_2'}],
                 'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]},
+                    {'name': 'network:*'},
+                    {'name': 'additional_service:*'}]},
             {
                 'name': 'storage:test_component_2',
                 'compatible': [
-                    {'name': 'hypervisors:*'},
-                    {'name': 'storages:object:block:swift'}],
+                    {'name': 'hypervisor:*'},
+                    {'name': 'storage:object:block:swift'}],
                 'incompatible': [
-                    {'name': 'networks:*'},
-                    {'name': 'additional_services:*'}]}])
+                    {'name': 'network:*'},
+                    {'name': 'additional_service:*'}]}])
 
     def test_404_for_get_components_with_none_release_id(self):
         resp = self.app.get(

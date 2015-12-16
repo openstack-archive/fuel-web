@@ -18,6 +18,7 @@
 Release object and collection
 """
 
+import copy
 from distutils.version import StrictVersion
 import yaml
 
@@ -160,12 +161,51 @@ class Release(NailgunObject):
     def get_all_components(cls, instance):
         """Get all components related to release
 
+        Due to components architecture compatible/incompatible are duplex
+        relations. So if some component is compatible/incompatible with another
+        the last one also should have such relation.
+
         :param instance: Release instance
         :type instance: Release DB instance
         :returns: list -- list of all components
         """
         plugin_components = PluginManager.get_components_metadata(instance)
-        return instance.components_metadata + plugin_components
+        components = copy.deepcopy(
+            instance.components_metadata + plugin_components)
+        # we should provide commutative property for compatible/incompatible
+        # relations between components
+        for comp_i in components:
+            for comp_j in components:
+                if comp_i == comp_j:
+                    continue
+                if cls._check_relation(comp_j, comp_i, 'incompatible'):
+                    comp_i.setdefault('incompatible', []).append({
+                        'name': comp_j['name'],
+                        'message': "Not compatible with {0}".format(
+                            comp_j.get('label') or comp_j.get('name'))})
+                if cls._check_relation(comp_j, comp_i, 'compatible'):
+                    comp_i.setdefault('compatible', []).append({
+                        'name': comp_j['name']})
+
+        return components
+
+    @classmethod
+    def _check_relation(cls, a, b, relation):
+        """Helper function to check commutative property for relations"""
+        return (cls._contain(a.get(relation, []), b['name']) and not
+                cls._contain(b.get(relation, []), a['name']))
+
+    @staticmethod
+    def _contain(components, name):
+        """Check if component with given name exists in components list
+
+        :param components: list of components objects(dicts)
+        :type components: list
+        :param name: component name or wildcard
+        :type name: string
+        """
+        prefixes = [comp['name'].split('*', 1)[0] for comp in components]
+        return any(filter(lambda x: name.startswith(x), prefixes))
 
 
 class ReleaseCollection(NailgunCollection):

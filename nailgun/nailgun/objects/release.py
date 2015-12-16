@@ -160,12 +160,55 @@ class Release(NailgunObject):
     def get_all_components(cls, instance):
         """Get all components related to release
 
+        Due to components architecture compatible/incompatible are duplex
+        relations. So if some component compatible/incompatible with another
+        the last one also should have such relation.
+
         :param instance: Release instance
         :type instance: Release DB instance
         :returns: list -- list of all components
         """
         plugin_components = PluginManager.get_components_metadata(instance)
-        return instance.components_metadata + plugin_components
+        components = instance.components_metadata + plugin_components
+
+        for component_i in components:
+            for component_j in components:
+                if component_i == component_j:
+                    continue
+                if (cls._contain(
+                        component_j.get('incompatible', []),
+                        component_i['name']) and not
+                    cls._contain(
+                        component_i.get('incompatible', []),
+                        component_j['name'])):
+                    component_i.setdefault('incompatible', []).append({
+                        'name': component_j['name'],
+                        'message': "Not compatible with {0}".format(
+                            component_j.get('label') or
+                            component_j.get('name'))})
+                if (cls._contain(
+                        component_j.get('compatible', []),
+                        component_i['name']) and not
+                    cls._contain(
+                        component_i.get('incompatible', []),
+                        component_j['name'])):
+                    component_i.setdefault('compatible', []).append({
+                        'name': component_j['name']})
+
+        return components
+
+    @staticmethod
+    def _contain(components, name):
+        """Check if component with given name exists in components list
+
+        :param components: list of components objects(dicts)
+        :type components: list
+        :param name: component name or wildcard
+        :type name: string
+        """
+
+        prefix = name.split('*', 1)[0]
+        return any(filter(lambda x: x['name'].startswith(prefix), components))
 
 
 class ReleaseCollection(NailgunCollection):

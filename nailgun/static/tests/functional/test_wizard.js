@@ -65,7 +65,7 @@ define([
                     .pressKeys('\uE007')
                     .assertElementsExist('.wizard-step.available', 5, 'All steps are available at the end')
                     .clickLinkByText('Compute')
-                    .clickByCssSelector('input[name=hypervisor\\:libvirt\\:kvm]')
+                    .clickByCssSelector('input[name=hypervisor\\:libvirt]')
                     .assertElementsExist('.wizard-step.available', 5,
                         'All steps are available if no changes to restrictions are made')
                     .clickByCssSelector('input[name=hypervisor\\:vmware]')

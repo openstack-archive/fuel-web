@@ -31,6 +31,7 @@ define([
             var self = this;
 
             return this.remote
+                .setFindTimeout(500)
                 .setWindowSize(1280, 1024)
                 .getCurrentUrl()
                 .then(function(url) {

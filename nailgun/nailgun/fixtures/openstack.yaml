@@ -1707,10 +1707,11 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
       - name: network:neutron:core:ml2
+        default: true
         weight: 1000
         label: "dialog.create_cluster_wizard.network.neutron_ml2"
         description: "dialog.create_cluster_wizard.network.neutron_ml2_description"
-      - name: network:neutron:vlan
+      - name: network:neutron:ml2:vlan
         default: true
         bind: !!pairs
           - "cluster:net_provider": "neutron"
@@ -1719,11 +1720,11 @@
         label: "common.network.neutron_vlan"
         description: "dialog.create_cluster_wizard.network.neutron_vlan_description"
         compatible:
+          - name: network:neutron:core:ml2
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
-        incompatible:
-          - name: hypervisor:vmware
-            message: "dialog.create_cluster_wizard.network.hypervisor_alert"
+        requires:
+          - name: network:neutron:core:ml2
       - name: network:neutron:tun
         bind: !!pairs
          - "cluster:net_provider": "neutron"
@@ -1764,7 +1765,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
         incompatible:
@@ -1781,7 +1782,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:object:ceph
@@ -1800,7 +1801,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:block:ceph
@@ -1816,7 +1817,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:block:ceph
@@ -1832,7 +1833,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:block:ceph
@@ -1848,7 +1849,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:block:lvm
@@ -1870,7 +1871,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:block:lvm
@@ -1891,7 +1892,7 @@
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
           - name: hypervisor:vmware
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:block:lvm
@@ -1911,7 +1912,7 @@
         compatible:
           - name: hypervisor:libvirt:kvm
           - name: hypervisor:libvirt:qemu
-          - name: network:neutron:vlan
+          - name: network:neutron:ml2:vlan
           - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:object:ceph

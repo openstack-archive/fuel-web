@@ -42,7 +42,6 @@ gulp.task('i18n:validate', function() {
     validateTranslations(tranlations, locales);
 });
 
-var selenium = require('selenium-standalone');
 var seleniumProcess = null;
 function shutdownSelenium() {
     if (seleniumProcess) {
@@ -51,15 +50,22 @@ function shutdownSelenium() {
     }
 }
 
+var SELENIUM_VERSION = '2.46.0';
+
 gulp.task('selenium:fetch', function(cb) {
-    var defaultVersion = '2.45.0';
-    selenium.install({version: argv.version || defaultVersion}, cb);
+    var selenium = require('selenium-standalone');
+    selenium.install({version: argv.version || SELENIUM_VERSION}, cb);
 });
 
 gulp.task('selenium', ['selenium:fetch'], function(cb) {
+    var selenium = require('selenium-standalone');
     var port = process.env.SELENIUM_SERVER_PORT || 4444;
     selenium.start(
-        {seleniumArgs: ['--port', port], spawnOptions: {stdio: 'pipe'}},
+        {
+            version: argv.version || SELENIUM_VERSION,
+            seleniumArgs: ['--port', port],
+            spawnOptions: {stdio: 'pipe'}
+        },
         function(err, child) {
             if (err) throw err;
             child.on('exit', function() {

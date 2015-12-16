@@ -209,6 +209,10 @@ define(
             // if component has requires,
             // it is disabled until all requires are already enabled
             _.each(paneComponents, (component) => {
+                // skip already disabled components
+                if (component.get('disabled')) {
+                    return;
+                }
                 var requires = component.get('requires') || [];
                 if (requires.length == 0) {
                     // no requires

@@ -1258,18 +1258,21 @@ class Cluster(NailgunObject):
         )
 
     @classmethod
-    def get_nodes_to_update_config(cls, cluster, node_id=None, node_role=None):
+    def get_nodes_to_update_config(cls, cluster, node_id=None, node_role=None,
+                                   only_ready_nodes=True):
         """Get nodes for specified cluster that should be updated.
 
         Configuration update can be executed for all nodes in the cluster,
         or for single node, or for all nodes with specified role.
-        This function returns list of nodes that will be updated
-        according to filters that were passed.
+        If :param only_ready_nodes set by True function returns list of nodes
+        that will be updated during next config update execution.
+        If :param only_ready_nodes set by False function returns list of all
+        nodes that will finally get an updated configuration.
         """
-        query = (
-            cls.get_nodes_not_for_deletion(cluster)
-            .filter_by(status=consts.NODE_STATUSES.ready))
+        query = cls.get_nodes_not_for_deletion(cluster)
 
+        if only_ready_nodes:
+            query = query.filter_by(status=consts.NODE_STATUSES.ready)
         if node_id:
             query = query.filter_by(id=node_id)
         elif node_role:

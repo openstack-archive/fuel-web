@@ -216,14 +216,14 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
 
     var NodeDisk = React.createClass({
         getInitialState: function() {
-            return {key: _.now()};
+            return {collapsed: true};
         },
         componentDidMount: function() {
             $('.disk-details', React.findDOMNode(this))
                 .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
-        updateDisk: function(name, value, force) {
+        updateDisk: function(name, value) {
             var size = parseInt(value) || 0,
                 volumeInfo = this.props.volumesInfo[name];
             if (size > volumeInfo.max) {
@@ -231,16 +231,10 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             }
             this.props.disk.get('volumes').findWhere({name: name}).set({size: size}).isValid({minimum: volumeInfo.min});
             this.props.disk.trigger('change', this.props.disk);
-            if (force) {
-                this.setState({key: _.now()});
-            }
         },
         toggleDisk: function(name) {
             $(React.findDOMNode(this.refs[name])).collapse('toggle');
         },
-        onRangeInput: _.debounce(function(name) {
-            this.updateDisk(name, this.refs['range-' + name].getInputDOMNode().value);
-        }, 10, {leading: true}),
         render: function() {
             var disk = this.props.disk,
                 volumesInfo = this.props.volumesInfo,
@@ -280,7 +274,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                         </div>
                                     </div>
                                     {!this.props.disabled && volumesInfo[volumeName].min <= 0 && this.state.collapsed &&
-                                        <div className='close-btn' onClick={_.partial(this.updateDisk, volumeName, 0, true)}>&times;</div>
+                                        <div className='close-btn' onClick={_.partial(this.updateDisk, volumeName, 0)}>&times;</div>
                                     }
                                 </div>
                             );
@@ -340,18 +334,17 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                 </label>
                                                 <div className='col-xs-4 volume-group-range'>
                                                     <controls.Input {...props}
-                                                        key={currentMinSize + currentMaxSize + this.state.key}
                                                         type='range'
                                                         ref={'range-' + volumeName}
-                                                        onInput={_.partial(this.onRangeInput, volumeName)}
-                                                        defaultValue={value}
+                                                        onChange={_.partialRight(this.updateDisk)}
+                                                        value={value}
                                                     />
                                                 </div>
                                                 <controls.Input {...props}
                                                     key={value}
                                                     type='number'
                                                     wrapperClassName='col-xs-3 volume-group-input'
-                                                    onChange={_.partialRight(this.updateDisk, true)}
+                                                    onChange={_.partialRight(this.updateDisk)}
                                                     error={validationError && ''}
                                                     value={value}
                                                 />

@@ -361,8 +361,8 @@ class TestClusterComponents(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             u"Incompatible components were found: "
-            "'network:core:test_network_1' incompatible with "
-            "[u'hypervisor:test_hypervisor'].",
+            "'hypervisor:test_hypervisor' incompatible with "
+            "[u'network:core:test_network_1'].",
             resp.json_body['message']
         )
 

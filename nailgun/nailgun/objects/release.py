@@ -172,7 +172,47 @@ class Release(NailgunObject):
         :returns: list -- list of all components
         """
         plugin_components = PluginManager.get_components_metadata(instance)
-        return instance.components_metadata + plugin_components
+        components = instance.components_metadata + plugin_components
+
+        for component in components:
+            for incompatible_item in component.get('incompatible', []):
+                incompatible_component = cls.find_component(
+                    incompatible_item['name'], components)
+
+                if incompatible_component:
+                    incompatible_component.setdefault('incompatible', [])
+                    incompatible_names = set(
+                        item['name']
+                        for item in incompatible_component['incompatible'])
+
+                    if component['name'] not in incompatible_names:
+                        incompatible_component['incompatible'].append({
+                            'name': component['name'],
+                            'message': 'Not compatible with {0}'.format(
+                                component.get('label'))
+                        })
+
+            for compatible_item in component.get('compatible', []):
+                compatible_component = cls.find_component(
+                    compatible_item['name'], components)
+
+                if compatible_component:
+                    compatible_component.setdefault('compatible', [])
+                    compatible_names = set(
+                        item['name']
+                        for item in compatible_component['compatible'])
+
+                    if component['name'] not in compatible_names:
+                        compatible_component['compatible'].append({
+                            'name': component['name']})
+
+        return components
+
+    @staticmethod
+    def find_component(name, components):
+        prefix = name.split('*', 1)[0]
+        return ([component for component in components
+                if component['name'].startswith(prefix)][:1] or [None])[0]
 
 
 class ReleaseCollection(NailgunCollection):

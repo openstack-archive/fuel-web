@@ -143,8 +143,8 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         # commands need to be run are not compatible with master node
         # OS (CentOS). E.g. of such situation - create repository
         # executes `apt-get update` which fails on CentOS
-        if consts.MASTER_ROLE in uids:
-            uids.remove(consts.MASTER_ROLE)
+        if consts.MASTER_NODE_UID in uids:
+            uids.remove(consts.MASTER_NODE_UID)
 
         return uids
 

@@ -607,9 +607,9 @@ class DeleteIBPImagesTask(object):
             'execute_tasks',
             'remove_images_resp',
             {
-                'tasks': [tasks_templates.make_shell_task([consts.MASTER_ROLE],
-                                                          task_params),
-                          ]
+                'tasks': [tasks_templates.make_shell_task(
+                    [consts.MASTER_NODE_UID], task_params
+                )]
             }
         )
         return rpc_message
@@ -721,7 +721,7 @@ class RemoveClusterKeys(object):
             {
                 "tasks": [
                     tasks_templates.make_shell_task(
-                        [consts.MASTER_ROLE],
+                        [consts.MASTER_NODE_UID],
                         {
                             "parameters": {
                                 "cmd": "rm -rf /var/lib/fuel/keys/{0}".format(

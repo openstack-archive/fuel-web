@@ -875,7 +875,8 @@
                         "neutron_vlan_description": "Your network hardware must be configured for VLAN segmentation. This option supports up to 4095 networks.",
                         "neutron_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE using the Fuel CLI). Your network hardware must support VXLAN segmentation. This option supports millions of tenant data networks.",
                         "neutron_ml2": "ML2 plugin",
-                        "neutron_ml2_description": "Core ML2 plugin"
+                        "neutron_ml2_description": "Core ML2 plugin",
+                        "vlan_tun_alert": "VLAN and tunneling are mutual excluded."
                     },
                     "storage": {
                         "title": "Storage Backends",

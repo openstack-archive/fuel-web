@@ -1863,7 +1863,7 @@ class UpdateOpenstackConfigTask(object):
 
     @classmethod
     def message(cls, task, cluster, nodes):
-        configs = objects.OpenstackConfig.find_configs_for_nodes(
+        configs = objects.OpenstackConfigCollection.find_configs_for_nodes(
             cluster, nodes)
 
         refresh_on = set()

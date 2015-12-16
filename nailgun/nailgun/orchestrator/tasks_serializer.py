@@ -407,7 +407,7 @@ class UploadConfiguration(GenericRolesHook):
     def serialize(self):
         configs = self.configs
         if configs is None:
-            configs = objects.OpenstackConfig.find_configs_for_nodes(
+            configs = objects.OpenstackConfigCollection.find_configs_for_nodes(
                 self.cluster, self.nodes)
 
         node_configs = defaultdict(lambda: defaultdict(dict))

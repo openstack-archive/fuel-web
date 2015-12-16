@@ -647,6 +647,7 @@
                     "node_network_group_duplicate_error": "This node network group name is already taken",
                     "node_network_group_default_name": "This name is assigned to default node network group",
                     "node_network_group_creation_error": "Node Network Group Creation Error",
+                    "node_network_group_deletion_error": "Node Network Group Deletion Error",
                     "default_node_network_group_info": "This node network group uses shared admin network and cannot be deleted",
                     "save_changes_warning": "It is necessary to save changes before creating a new node network group",
                     "verification_multirack_warning": "Network verification is disabled for environments containing more than one node network group",

@@ -804,16 +804,20 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return fieldsWithVerificationErrors;
         },
         removeNodeNetworkGroup: function() {
+            var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
             dialogs.RemoveNodeNetworkGroupDialog
-                .show({
-                    showUnsavedChangesWarning: this.hasChanges()
-                })
-                .then(() => {
-                    var currentNodeNetworkGroup = this.nodeNetworkGroups.findWhere({name: this.props.activeNetworkSectionName});
-                    this.props.nodeNetworkGroups.remove(currentNodeNetworkGroup);
-                    return currentNodeNetworkGroup.destroy();
-                })
-                .then(() => this.props.cluster.get('networkConfiguration').fetch())
+                .show({showUnsavedChangesWarning: this.hasChanges()})
+                .then(() => nodeNetworkGroup.destroy({silent: true}))
+                .then(
+                    () => {
+                        this.props.nodeNetworkGroups.remove(nodeNetworkGroup);
+                        return this.props.cluster.get('networkConfiguration').fetch();
+                    },
+                    (response) => utils.showErrorDialog({
+                        title: i18n(networkTabNS + 'node_network_group_deletion_error'),
+                        response: response
+                    })
+                )
                 .then(this.updateInitialConfiguration);
         },
         addNodeNetworkGroup: function(hasChanges) {

@@ -18,7 +18,6 @@
 Handlers dealing with node groups
 """
 
-import six
 import web
 
 from nailgun.api.v1.handlers.base import CollectionHandler
@@ -54,7 +53,7 @@ class NodeGroupHandler(SingleHandler):
         try:
             task = UpdateDnsmasqTaskManager().execute()
         except errors.TaskAlreadyRunning as exc:
-            raise self.http(409, six.text_type(exc))
+            raise self.http(409, errors.CanNotDeleteNodeGroup.message)
         if task.status == consts.TASK_STATUSES.error:
             raise self.http(400, task.message)
         raise web.webapi.HTTPError(

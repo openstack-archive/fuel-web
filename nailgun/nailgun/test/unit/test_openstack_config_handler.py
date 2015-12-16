@@ -18,8 +18,6 @@ import urllib
 from oslo_serialization import jsonutils
 
 from nailgun import consts
-from nailgun.db import db
-from nailgun import objects
 from nailgun.objects.serializers.openstack_config import \
     OpenstackConfigSerializer
 from nailgun.test.base import BaseIntegrationTest
@@ -41,15 +39,20 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             3, cluster_id=self.clusters[0].id,
             status=consts.NODE_STATUSES.ready)
 
-        self.configs = []
-        self.create_openstack_config(
+        self.env.create_openstack_config(
             cluster_id=self.clusters[0].id, configuration={})
-        self.create_openstack_config(
+        self.env.create_openstack_config(
             cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
-            configuration={})
-        self.create_openstack_config(
+            configuration={
+                'nova_config': 'value_2_1'
+            })
+        self.env.create_openstack_config(
             cluster_id=self.clusters[0].id, node_id=self.nodes[1].id,
-            configuration={}, is_active=False)
+            configuration={
+                'nova_config': 'value_1_1'
+            })
+
+        self.configs = self.env.openstack_configs
 
     def create_running_deployment_task(self):
         return self.env.create_task(
@@ -57,12 +60,6 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             name=consts.TASK_NAMES.deployment,
             status=consts.TASK_STATUSES.running
         ).id
-
-    def create_openstack_config(self, **kwargs):
-        config = objects.OpenstackConfig.create(kwargs)
-        db().commit()
-        self.configs.append(config)
-        return config
 
     def check_fail_deploy_running(self, deploy_task_id, resp):
         self.assertEqual(resp.status_code, 403)
@@ -90,7 +87,9 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         data = {
             'cluster_id': self.clusters[0].id,
             'node_id': self.nodes[1].id,
-            'configuration': {}
+            'configuration': {
+                'nova_config': 'value_1_2'
+            }
         }
         resp = self.app.post(
             reverse('OpenstackConfigCollectionHandler'),

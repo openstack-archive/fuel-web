@@ -447,7 +447,7 @@ class NetAssignmentValidator(BasicValidator):
                 "There is no node with ID '{0}' in DB".format(node['id']),
                 log_message=True
             )
-        if objects.Node.hardware_info_locked(db_node):
+        if objects.Node.is_interfaces_configuration_locked(db_node):
             raise errors.InvalidData(
                 "Node '{0}': Interfaces configuration can't be changed after "
                 "or during deployment.".format(db_node.id))

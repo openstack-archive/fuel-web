@@ -406,7 +406,7 @@ class TestHandlers(BaseIntegrationTest):
             consts.NODE_STATUSES.discover: False,
             consts.NODE_STATUSES.error: False,
             consts.NODE_STATUSES.provisioning: True,
-            consts.NODE_STATUSES.provisioned: True,
+            consts.NODE_STATUSES.provisioned: False,
             consts.NODE_STATUSES.deploying: True,
             consts.NODE_STATUSES.ready: True,
             consts.NODE_STATUSES.removing: True}

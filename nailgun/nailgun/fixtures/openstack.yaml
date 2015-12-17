@@ -1932,7 +1932,7 @@
   fields:
     name: "Kilo on CentOS 6.5"
     state: "unavailable"
-    version: "2015.1.0-8.0"
+    version: "2015.1.0-9.0"
     can_update_from_versions: []
     operating_system: "CentOS"
     description: "This option will install the OpenStack Kilo packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -1969,7 +1969,7 @@
             description: |
               To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-package-updates --help" on the Fuel master node.
               Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
-              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-8.0/reference-architecture.html#fuel-rep-mirror).
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-9.0/reference-architecture.html#fuel-rep-mirror).
             value:
               - type: "rpm"
                 name: "mos"
@@ -2005,7 +2005,7 @@
   extend: *base_release
   fields:
     name: "Kilo on Ubuntu 14.04"
-    version: "2015.1.0-8.0"
+    version: "2015.1.0-9.0"
     can_update_from_versions: []
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Kilo packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -2027,7 +2027,7 @@
               Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
               To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
               Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
-              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-8.0/operations.html#external-ubuntu-ops).
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-9.0/operations.html#external-ubuntu-ops).
             value:
               - type: "deb"
                 name: "ubuntu"
@@ -2050,25 +2050,25 @@
               - type: "deb"
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
-                suite: "mos8.0"
+                suite: "mos9.0"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-updates"
                 uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos8.0-updates"
+                suite: "mos9.0-updates"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-security"
                 uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos8.0-security"
+                suite: "mos9.0-security"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-holdback"
                 uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos8.0-holdback"
+                suite: "mos9.0-holdback"
                 section: "main restricted"
                 priority: 1100
               - type: "deb"

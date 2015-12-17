@@ -1,10 +1,9 @@
 %define name fuel-nailgun
-%{!?version: %define version 8.0.0}
+%{!?version: %define version 9.0.0}
 %{!?release: %define release 1}
 
 Summary: Nailgun package
 Name: %{name}
-Obsoletes: nailgun
 Version: %{version}
 Release: %{release}
 Source0: %{name}-%{version}.tar.gz

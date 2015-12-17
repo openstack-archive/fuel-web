@@ -1,3 +1,9 @@
+nailgun (9.0.0-1) trusty; urgency=low
+
+  * Bump version to 9.0
+
+ -- Sergey Kulanov <skulanov@mirantis.com>  Thu, 17 Dec 2015 16:52:26 +0200
+
 nailgun (8.0.0-1) trusty; urgency=low
 
   * Change version to 8.0.0

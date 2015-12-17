@@ -435,7 +435,7 @@ class EnvironmentManager(object):
 
         return ng
 
-    def delete_node_group(self, ng_id, api=True):
+    def delete_node_group(self, ng_id, status_code=200, api=True):
         if api:
             return self.app.delete(
                 reverse(
@@ -443,7 +443,7 @@ class EnvironmentManager(object):
                     kwargs={'obj_id': ng_id}
                 ),
                 headers=self.default_headers,
-                expect_errors=False
+                expect_errors=(status_code != 200)
             )
         else:
             ng = db().query(NodeGroup).get(ng_id)

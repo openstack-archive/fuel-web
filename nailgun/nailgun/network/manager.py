@@ -1460,37 +1460,34 @@ class NetworkManager(object):
 
     @classmethod
     def update_networks(cls, network_configuration):
-        if 'networks' in network_configuration:
-            for ng in network_configuration['networks']:
+        for ng in network_configuration.get('networks', []):
 
-                ng_db = db().query(NetworkGroup).get(ng['id'])
+            ng_db = db().query(NetworkGroup).get(ng['id'])
 
-                if 'meta' not in ng:
-                    # there are no restrictions on update process if
-                    # meta is not supplied
-                    objects.NetworkGroup.update(ng_db, ng)
-                    continue
+            if 'meta' not in ng:
+                # there are no restrictions on update process if
+                # meta is not supplied
+                objects.NetworkGroup.update(ng_db, ng)
+                continue
 
-                # only 'notation' and 'use_gateway' attributes is
-                # allowed to be updated in network group metadata for
-                # old clusters so here we updated it manually with data
-                # which doesn't contain 'meta' key
-                meta_to_update = {}
+            # only 'notation' and 'use_gateway' attributes is
+            # allowed to be updated in network group metadata for
+            # old clusters so here we updated it manually with data
+            # which doesn't contain 'meta' key
+            meta_to_update = {}
 
-                for param in ('notation', 'use_gateway'):
-                    if param in ng.get('meta', {}):
-                        meta_to_update[param] = ng['meta'][param]
+            for param in ('notation', 'use_gateway'):
+                if param in ng.get('meta', {}):
+                    meta_to_update[param] = ng['meta'][param]
 
-                # update particular keys in data
-                objects.NetworkGroup.update_meta(
-                    ng_db, meta_to_update
-                )
+            # update particular keys in data
+            ng_db.meta.update(meta_to_update)
 
-                # preserve original input dict but remove 'meta' key
-                # for proper update of the network group instance
-                data_to_update = dict(ng)
-                del data_to_update['meta']
-                objects.NetworkGroup.update(ng_db, data_to_update)
+            # preserve original input dict but remove 'meta' key
+            # for proper update of the network group instance
+            data_to_update = dict(ng)
+            del data_to_update['meta']
+            objects.NetworkGroup.update(ng_db, data_to_update)
 
     @classmethod
     def update(cls, cluster, network_configuration):

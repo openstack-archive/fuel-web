@@ -124,16 +124,16 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             $(React.findDOMNode(this)).find('input:enabled').first().focus();
         },
         areComponentsMutuallyExclusive: function(components) {
-            var componentIndex = {};
-            _.each(components, (component) => {
-                componentIndex[component.id] = component;
+            if (components.length <= 1) {
+                return false;
+            }
+            var allComponentsExclusive = _.all(components, (component) => {
+                var peerIds = _.pluck(_.filter(components, (peer) => component.id != peer.id), 'id');
+                var incompatibleIds = _.pluck(_.pluck(component.get('incompatible'), 'component'), 'id');
+                // peerIds should be subset of incompatibleIds to have exclusiveness property
+                return peerIds.length == _.intersection(peerIds, incompatibleIds).length;
             });
-
-            return _.any(components, (component) => {
-                return _.any(component.get('incompatible'), (incompatible) => {
-                    return componentIndex[incompatible.component.id];
-                });
-            });
+            return allComponentsExclusive;
         },
         processRestrictions: function(paneComponents, types, stopList = []) {
             this.processIncompatible(paneComponents, types, stopList);

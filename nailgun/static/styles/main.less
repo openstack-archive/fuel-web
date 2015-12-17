@@ -3446,16 +3446,16 @@ input[type=range] {
       }
 
       .ifc-info-block {
-        margin-bottom: @base-ifc-indent;
+        margin-bottom: @base-ifc-indent * 2;
         &:last-child {
-          margin-bottom: 0;
+          margin-bottom: @base-ifc-indent;
         }
         .ifc-connection {
           @ifc-size: 40px;
           border-radius: @base-ifc-indent;
           background: @gray + 50%;
           padding: @base-ifc-indent;
-          margin-right: @base-ifc-indent;
+          margin-right: @base-ifc-indent * 2;
           .ifc-connection-status {
             height: @ifc-size;
             width: @ifc-size;
@@ -3468,8 +3468,9 @@ input[type=range] {
           }
         }
         .ifc-info, .ifc-info .btn-link {
-          padding: 0;
+          padding: 2px 0 0 0;
           border: 0;
+          font-size: @base-font-size - 1px;
           max-width: 160px;
           word-break: break-all;
           line-height: 1;

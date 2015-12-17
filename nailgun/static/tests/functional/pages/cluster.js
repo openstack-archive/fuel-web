@@ -102,8 +102,8 @@ define([
                                     .then(function(nodes) {
                                         return nodes[index].click();
                                     })
-                                    .catch(function() {
-                                        throw new Error('Failed to add ' + amount + ' nodes to the cluster');
+                                    .catch(function(e) {
+                                        throw new Error('Failed to add ' + amount + ' nodes to the cluster: ' + e);
                                     });
                         },
                         true);

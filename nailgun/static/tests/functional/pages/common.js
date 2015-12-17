@@ -84,8 +84,8 @@ define([
                     .then(function() {
                         return self.clusterPage.removeCluster(clusterName);
                     })
-                    .catch(function() {
-                        if (!suppressErrors) throw new Error('Unable to delete cluster ' + clusterName);
+                    .catch(function(e) {
+                        if (!suppressErrors) throw new Error('Unable to delete cluster ' + clusterName + ': ' + e);
                     });
             },
             doesClusterExist: function(clusterName) {

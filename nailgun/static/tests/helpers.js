@@ -428,6 +428,28 @@ define([
                         .end();
             });
         },
+        assertElementPropertyEquals: function(cssSelector, attribute, expectedText, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .getProperty(attribute)
+                        .then(function(actualText) {
+                            assert.equal(actualText, expectedText, message);
+                        })
+                        .end();
+            });
+        },
+        assertElementPropertyContains: function(cssSelector, attribute, text, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .getProperty(attribute)
+                        .then(function(actualText) {
+                            assert.include(actualText, text, message);
+                        })
+                        .end();
+            });
+        },
         assertElementSelected: function(cssSelector, message) {
             return new this.constructor(this, function() {
                 return this.parent

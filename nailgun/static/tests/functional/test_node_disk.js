@@ -56,7 +56,7 @@ define([
                     .findByCssSelector(sdaDisk + ' input[type=number][name=image]')
                         // get the initial size of the Image Storage volume
                         .then(function(input) {
-                            return input.getAttribute('value')
+                            return input.getProperty('value')
                                 .then(function(value) {
                                     initialImageSize = value;
                                 });
@@ -74,7 +74,7 @@ define([
                     .clickByCssSelector(sdaDisk + ' .disk-visual [data-volume=os] .toggle')
                     .findByCssSelector(sdaDisk + ' .disk-utility-box [data-volume=os] input')
                         .then(function(input) {
-                            return input.getAttribute('value')
+                            return input.getProperty('value')
                                 .then(function(value) {
                                     assert.ok(value, 'Base System is allocated on SDA disk');
                                 });
@@ -82,7 +82,7 @@ define([
                         .end()
                     .findByCssSelector(sdaDisk + ' .disk-utility-box [data-volume=image] input')
                         .then(function(input) {
-                            return input.getAttribute('value')
+                            return input.getProperty('value')
                                 .then(function(value) {
                                     assert.ok(value, 'Image Storage is allocated on SDA disk');
                                 });
@@ -100,7 +100,7 @@ define([
                     .clickByCssSelector(applyButtonSelector)
                     .assertElementDisappears('.btn-load-defaults:disabled', 2000, 'Wait for changes applied')
                     .clickByCssSelector(loadDefaultsButtonSelector)
-                    .assertElementAttributeEquals(sdaDisk + ' input[type=number][name=image]', 'value', initialImageSize, 'Image Storage size restored to default')
+                    .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', initialImageSize, 'Image Storage size restored to default')
                     .assertElementEnabled(cancelButtonSelector, 'Cancel button is enabled')
                     .assertElementEnabled(applyButtonSelector, 'Apply button is enabled')
                     .clickByCssSelector(applyButtonSelector);
@@ -127,7 +127,7 @@ define([
                                 });
                         })
                         .end()
-                    .assertElementAttributeEquals(sdaDisk + ' input[type=number][name=image]', 'value', 0, 'Image Storage volume was removed successfully')
+                    .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', 0, 'Image Storage volume was removed successfully')
                     .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=unallocated]')
                         // check that there is unallocated space after Image Storage removal
                         .then(function(element) {
@@ -138,7 +138,7 @@ define([
                         })
                         .end()
                     .clickByCssSelector(cancelButtonSelector)
-                    .assertElementAttributeEquals(sdaDisk + ' input[type=number][name=image]', 'value', initialImageSize, 'Image Storage volume control contains correct value')
+                    .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', initialImageSize, 'Image Storage volume control contains correct value')
                     .assertElementDisabled(applyButtonSelector, 'Apply button is disabled');
             },
             'Test volume size validation': function() {

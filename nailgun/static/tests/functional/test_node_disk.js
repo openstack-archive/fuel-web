@@ -49,7 +49,7 @@ define([
                         return common.addNodesToCluster(1, ['Controller']);
                     })
                     // check node
-                    .clickByCssSelector('.node.pending_addition > label')
+                    .clickByCssSelector('.node.pending_addition input[type=checkbox]')
                     // click Configure Disks button
                     .clickByCssSelector('.btn-configure-disks')
                     .assertElementsAppear('.edit-node-disks-screen', 2000, 'Node disk screen loaded')
@@ -100,6 +100,7 @@ define([
                     .clickByCssSelector(applyButtonSelector)
                     .assertElementDisappears('.btn-load-defaults:disabled', 2000, 'Wait for changes applied')
                     .clickByCssSelector(loadDefaultsButtonSelector)
+                    .assertElementDisappears('.btn-load-defaults:disabled', 2000, 'Wait for defaults loaded')
                     .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', initialImageSize, 'Image Storage size restored to default')
                     .assertElementEnabled(cancelButtonSelector, 'Cancel button is enabled')
                     .assertElementEnabled(applyButtonSelector, 'Apply button is enabled')

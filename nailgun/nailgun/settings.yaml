@@ -19,7 +19,7 @@ AUTH:
 
 VERSION:
   # this value is still here for backward compatibility
-  release: "8.0"
+  release: "9.0"
 
 API: "1"
 

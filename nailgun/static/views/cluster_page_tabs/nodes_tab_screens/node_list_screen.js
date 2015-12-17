@@ -1227,7 +1227,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         count: this.props.filteredNodes.length,
                                                         total: this.props.screenNodes.length
                                                     })}
-                                                    {_.map(appliedFilters, function(filter) {
+                                                    {_.map(appliedFilters, (filter) => {
                                                         var options = filter.isNumberRange ? null : this.props.getFilterOptions(filter);
                                                         return (
                                                             <div key={filter.name}>
@@ -1236,9 +1236,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                                     {filter.isNumberRange ?
                                                                         _.uniq(filter.values).join(' - ')
                                                                     :
-                                                                        _.map(filter.values, function(value) {
-                                                                            return _.find(options, {name: value}).label;
-                                                                        }).join(', ')
+                                                                        _.pluck(
+                                                                            _.filter(options, (option) => _.contains(filter.values, option.name))
+                                                                        , 'label').join(', ')
                                                                     }
                                                                 </span>
                                                             </div>

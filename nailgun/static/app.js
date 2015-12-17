@@ -204,7 +204,7 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
                         return $.Deferred().resolve();
                     } else {
                         this.mountNode.empty();
-                        dialogs.NailgunUnavailabilityDialog.show();
+                        dialogs.NailgunUnavailabilityDialog.show({}, {preventDuplicate: true});
                     }
                 })
                 .then(() => Backbone.history.start());
@@ -251,6 +251,7 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
 
         patchBackboneSync() {
             var originalSync = Backbone.sync;
+            if (originalSync.patched) return;
             Backbone.sync = function(method, model, options = {}) {
                 // our server doesn't support PATCH, so use PUT instead
                 if (method == 'patch') {
@@ -273,6 +274,7 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
                 }
                 return originalSync.call(this, method, model, options);
             };
+            Backbone.sync.patched = true;
         }
     }
 

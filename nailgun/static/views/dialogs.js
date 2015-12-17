@@ -58,16 +58,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             ])
         },
         statics: {
-            show: function(options) {
+            show: function(dialogOptions = {}, showOptions = {}) {
                 var activeDialog = getActiveDialog();
                 if (activeDialog) {
                     var result = $.Deferred();
-                    $(React.findDOMNode(activeDialog)).on('hidden.bs.modal', () => {
-                        this.show(options).then(result.resolve, result.reject);
-                    });
+                    if (showOptions.preventDuplicate && activeDialog.constructor === this) {
+                        result.reject();
+                    } else {
+                        $(React.findDOMNode(activeDialog)).on('hidden.bs.modal', () => {
+                            this.show(dialogOptions).then(result.resolve, result.reject);
+                        });
+                    }
                     return result;
                 } else {
-                    return React.render(React.createElement(this, options), $('#modal-container')[0]).getResult();
+                    return React.render(React.createElement(this, dialogOptions), $('#modal-container')[0]).getResult();
                 }
             }
         },

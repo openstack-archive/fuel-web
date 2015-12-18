@@ -1553,7 +1553,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return (
                 <div className='verification-control'>
                     <div className='forms-box'>
-                        <h3>{i18n(networkTabNS + 'tabs.network_verification')}</h3>
+                        <h3>{i18n(networkTabNS + 'tabs.connectivity_check')}</h3>
                         {this.props.isMultirack &&
                             <div className='alert alert-warning'>
                                 <p>{i18n(networkTabNS + 'verification_multirack_warning')}</p>

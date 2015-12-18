@@ -1022,7 +1022,8 @@
                     "incomplete_actions_text": "There are incompleted operations in the OpenStack environment. Removing of the OpenStack environment may fail and lead to the inconsistent state.",
                     "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes. All logs from deleted nodes will be removed.",
                     "default_text": "Are you sure you want to delete this environment?",
-                    "enter_environment_name": "Please type the name of the environment \"__name__\" to confirm."
+                    "enter_environment_name": "Please type the name of the environment \"__name__\" to confirm.",
+                    "stop_deployment_is_running": "Stopping of the environment deployment is in progress. Some environment nodes can be rebooted at the moment. Deleting of the environment can lead to issues with offline nodes. This would be safer to delete the environment after the deployment is stopped."
                 },
                 "stop_deployment": {
                     "title": "Stop Deployment",

@@ -477,22 +477,32 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         removeCluster: function() {
             this.setState({actionInProgress: true});
-            this.props.cluster.destroy({wait: true})
-                .done(function() {
-                    this.close();
-                    dispatcher.trigger('updateNodeStats updateNotifications');
-                    app.navigate('#clusters', {trigger: true});
-                }.bind(this))
-                .fail(this.showError);
+            this.props.cluster
+                .destroy({wait: true})
+                .then(
+                    () => {
+                        this.close();
+                        dispatcher.trigger('updateNodeStats updateNotifications');
+                        app.navigate('#clusters', {trigger: true});
+                    },
+                    this.showError
+                );
         },
         showConfirmationForm: function() {
             this.setState({confirmation: true});
         },
         getText: function() {
-            var cluster = this.props.cluster,
-                ns = 'dialog.remove_cluster.';
-            if (cluster.task({active: true})) return i18n(ns + 'incomplete_actions_text');
-            if (cluster.get('nodes').length) return i18n(ns + 'node_returned_text');
+            var ns = 'dialog.remove_cluster.',
+                runningTask = this.props.cluster.task({active: true});
+            if (runningTask) {
+                if (runningTask.match({name: 'stop_deployment'})) {
+                    return i18n(ns + 'stop_deployment_is_running');
+                }
+                return i18n(ns + 'incomplete_actions_text');
+            }
+            if (this.props.cluster.get('nodes').length) {
+                return i18n(ns + 'node_returned_text');
+            }
             return i18n(ns + 'default_text');
         },
         renderBody: function() {
@@ -509,10 +519,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <controls.Input
                                 type='text'
                                 disabled={this.state.actionInProgress}
-                                onChange={_.bind(function(name, value) {
-                                    this.setState({confirmationError: value != clusterName});
-                                }, this)}
-                                onPaste={function(e) {e.preventDefault();}}
+                                onChange={(name, value) => this.setState({confirmationError: value != clusterName})}
+                                onPaste={(e) => e.preventDefault()}
                                 autoFocus
                             />
                         </div>

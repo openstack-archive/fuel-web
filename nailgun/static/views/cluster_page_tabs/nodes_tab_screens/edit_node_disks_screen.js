@@ -341,7 +341,6 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                                     />
                                                 </div>
                                                 <controls.Input {...props}
-                                                    key={value}
                                                     type='number'
                                                     wrapperClassName='col-xs-3 volume-group-input'
                                                     onChange={_.partialRight(this.updateDisk)}

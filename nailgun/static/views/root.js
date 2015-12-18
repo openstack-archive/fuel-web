@@ -22,7 +22,7 @@ define([
     'dispatcher',
     'component_mixins',
     'react-dnd',
-    'react-dnd/modules/backends/HTML5'
+    'react-dnd-html5-backend'
 ], function(_, i18n, React, utils, layoutComponents, dispatcher, componentMixins, DND, HTML5Backend) {
     'use strict';
 

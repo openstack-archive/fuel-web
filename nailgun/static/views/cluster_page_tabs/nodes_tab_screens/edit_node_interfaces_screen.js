@@ -129,22 +129,30 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         interfacesToJSON: function(interfaces, remainingNodesMode) {
             // Sometimes 'state' is sent from the API and sometimes not
             // It's better to just unify all inputs to the one without state.
-            var picker = remainingNodesMode ? this.interfacesPickFromJSON : function(json) { return _.omit(json, 'state'); };
-
-            return interfaces.map(function(ifc) {
-                return picker(ifc.toJSON());
-            });
+            var picker = remainingNodesMode ? this.interfacesPickFromJSON : (json) => _.omit(json, 'state');
+            return interfaces.map((ifc) => picker(ifc.toJSON()));
         },
         hasChangesInRemainingNodes: function() {
-            var initialInterfacesOmitted = _.map(this.state.initialInterfaces, this.interfacesPickFromJSON);
-
-            return _.any(this.props.nodes.slice(1), _.bind(function(node) {
-                return !_.isEqual(initialInterfacesOmitted, this.interfacesToJSON(node.interfaces, true));
-            }, this));
+            var initialInterfacesData = _.map(this.state.initialInterfaces, this.interfacesPickFromJSON);
+            return _.any(this.props.nodes.slice(1), (node) => {
+                var interfacesData = this.interfacesToJSON(node.interfaces, true);
+                return _.any(initialInterfacesData, (ifcData, index) => {
+                    return _.any(ifcData, (data, attribute) => {
+                        if (attribute == 'slaves') {
+                            // bond 'slaves' attribute contains information about slave name only
+                            // but interface names can be different between nodes
+                            // and can not be used for the comparison
+                            return data.length != (interfacesData[index].slaves || {}).length;
+                        }
+                        return !_.isEqual(data, interfacesData[index][attribute]);
+                    });
+                });
+            });
         },
         hasChanges: function() {
-            return !this.isLocked() && (!_.isEqual(this.state.initialInterfaces, this.interfacesToJSON(this.props.interfaces)) ||
-                this.hasChangesInRemainingNodes());
+            return !this.isLocked() &&
+                (!_.isEqual(this.state.initialInterfaces, this.interfacesToJSON(this.props.interfaces)) ||
+                this.props.nodes.length > 1 && this.hasChangesInRemainingNodes());
         },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
@@ -171,8 +179,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             var nodes = this.props.nodes,
                 interfaces = this.props.interfaces,
-                bonds = interfaces.filter(function(ifc) {return ifc.isBond();}),
-                bondsByName = bonds.reduce(function(result, bond) {
+                bonds = interfaces.filter((ifc) => ifc.isBond()),
+                bondsByName = bonds.reduce((result, bond) => {
                         result[bond.get('name')] = bond;
                         return result;
                     }, {});
@@ -180,11 +188,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             // bonding map contains indexes of slave interfaces
             // it is needed to build the same configuration for all the nodes
             // as interface names might be different, so we use indexes
-            var bondingMap = _.map(bonds, function(bond) {
-                return _.map(bond.get('slaves'), function(slave) {
-                    return interfaces.indexOf(interfaces.findWhere(slave));
-                });
-            });
+            var bondingMap = _.map(bonds,
+                (bond) => _.map(bond.get('slaves'), (slave) => interfaces.indexOf(interfaces.find(slave)))
+            );
             this.setState({actionInProgress: true});
             return $.when(...nodes.map(function(node) {
                 var oldNodeBonds, nodeBonds;

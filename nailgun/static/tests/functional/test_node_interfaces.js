@@ -127,7 +127,10 @@ define([
                         return interfacesPage.bondInterfaces('eth1', 'eth5');
                     })
                     .then(function() {
-                        return interfacesPage.bondInterfaces('bond0', 'bond1');
+                        return interfacesPage.selectInterface('bond0');
+                    })
+                    .then(function() {
+                        return interfacesPage.selectInterface('bond1');
                     })
                     .assertElementDisabled('.btn-bond', 'Making sure bond button is disabled')
                     .assertElementContainsText('.alert.alert-warning', ' network interface is already bonded with other network inteface.', 'Warning message should appear when intended to bond bonds');

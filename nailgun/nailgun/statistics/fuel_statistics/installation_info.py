@@ -114,6 +114,9 @@ class InstallationInfo(object):
                       'mongo', None),
         WhiteListRule(('additional_components', 'ironic', 'value'),
                       'ironic', None),
+        WhiteListRule(('additional_components',
+                       'murano-glance-artifacts-plugin', 'value'),
+                      'murano-glance-artifacts-plugin', None),
 
         WhiteListRule(('workloads_collector', 'enabled', 'value'),
                       'workloads_collector_enabled', None),

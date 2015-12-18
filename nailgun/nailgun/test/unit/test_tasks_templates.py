@@ -107,11 +107,12 @@ class TestMakeTask(base.BaseTestCase):
     def test_make_reboot_task(self):
         result = tasks_templates.make_reboot_task(
             [1, 2, 3],
-            {'parameters': {'timeout': 10}})
+            {'id': 'reboot', 'parameters': {'timeout': 10}})
 
         self.assertEqual(
             result,
-            {'type': 'reboot',
+            {'id': 'reboot',
+             'type': 'reboot',
              'uids': [1, 2, 3],
              'parameters': {
                  'timeout': 10}})
@@ -174,6 +175,7 @@ class TestMakeTask(base.BaseTestCase):
             cid=123)
         cmd_path = "/etc/puppet/modules/osnailyfacter/modular/astute/"
         self.assertEqual(result, {
+            'id': None,
             'type': 'shell',
             'uids': [1, 2, 3],
             'parameters': {
@@ -199,6 +201,7 @@ class TestMakeTask(base.BaseTestCase):
         ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
 
         self.assertEqual(result, {
+            'id': None,
             'type': 'shell',
             'uids': [1, 2, 3],
             'parameters': {
@@ -244,6 +247,7 @@ class TestMakeTask(base.BaseTestCase):
                                   'local': local_initrd})
 
             self.assertEqual(result, {
+                'id': None,
                 'type': 'shell',
                 'uids': [1, 2, 3],
                 'parameters': {

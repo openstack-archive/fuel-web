@@ -114,6 +114,7 @@ class TestDeleteIBPImagesTask(BaseTestCase):
 
         self.assertEqual(rpc_message, {
             'tasks': [{
+                'id': None,
                 'type': 'shell',
                 'uids': [consts.MASTER_ROLE],
                 'parameters': {

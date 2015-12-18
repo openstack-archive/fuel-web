@@ -348,6 +348,7 @@ class TestNoopSerializer(BaseTestCase):
 
         self.assertEqual(
             {
+                'id': 'deploy_start',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'uids': [None],
                 'fail_on_error': False

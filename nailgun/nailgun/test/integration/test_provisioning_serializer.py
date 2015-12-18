@@ -183,6 +183,8 @@ class TestProvisioningSerializer(BaseIntegrationTest):
                 'peerdns': 'no',
                 'onboot': 'yes'
             })
+            # check identity key for mcollective
+            self.assertEqual(node['ks_meta']['mco_identity'], node_db.id)
 
     def test_node_serialization_w_bonded_admin_iface(self):
         self.cluster_db = self.env.clusters[0]

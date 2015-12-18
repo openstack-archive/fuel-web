@@ -145,6 +145,15 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
+
+                # NOTE(aroma): identity parameter usually is added/updated
+                # by nailgun agent but due to particularities of its execution
+                # flow such action may lead to deployment failures [1].
+                # Hence we supply the information here so fuel-agent will
+                # create mcollective config initially with the data present,
+                # [1]: https://bugs.launchpad.net/fuel/+bug/1518306
+                'mco_identity': node.id,
+
                 'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                 'authorized_keys':
                 ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],

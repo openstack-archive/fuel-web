@@ -856,6 +856,10 @@ DUMP:
       - type: file
         path: /root/*.ks
       - type: file
+        path: /etc/apache2*
+      - type: file
+        path: /etc/httpd*
+      - type: file
         path: /etc/ceph*
       - type: file
         path: /etc/keystone*

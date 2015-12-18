@@ -171,7 +171,7 @@ define([
                     });
             },
             'Test statistics update': function() {
-                this.timeout = 90000;
+                this.timeout = 120000;
                 var controllerNodes = 3,
                     storageCinderNodes = 1,
                     computeNodes = 2,
@@ -219,7 +219,7 @@ define([
                     });
             },
             'Testing error nodes in cluster deploy': function() {
-                this.timeout = 60000;
+                this.timeout = 120000;
                 return this.remote
                     .then(function() {
                         return common.addNodesToCluster(1, ['Controller'], 'error');

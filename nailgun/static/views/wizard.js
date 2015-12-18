@@ -199,7 +199,8 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                 component.set({
                     disabled: isDisabled,
                     warnings: warnings.join(' '),
-                    availability: 'incompatible'
+                    availability: 'incompatible',
+                    enabled: isDisabled ? false : component.get('enabled')
                 });
             });
         },

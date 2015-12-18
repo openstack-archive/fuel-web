@@ -402,6 +402,26 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         isSavingPossible: function() {
             return !_.chain(this.state.interfaceErrors).values().some().value() && !this.state.actionInProgress && this.hasChanges();
         },
+        getIfcProperty: function(property) {
+            var {interfaces, nodes} = this.props,
+                bondsCount = interfaces.filter((ifc) => ifc.isBond()).length,
+                getPropertyValues = function(ifcIndex) {
+                    return _.uniq(nodes.map((node) => {
+                        var nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length,
+                            nodeInterface = node.interfaces.at(ifcIndex + nodeBondsCount);
+                        if (property == 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
+                        return nodeInterface.get(property);
+                    }));
+                };
+            return interfaces.map((ifc, index) => {
+                if (ifc.isBond()) {
+                    return _.map(ifc.get('slaves'),
+                        (slave) => getPropertyValues(interfaces.indexOf(interfaces.find(slave)) - bondsCount)
+                    );
+                }
+                return [getPropertyValues(index - bondsCount)];
+            });
+        },
         render: function() {
             var nodes = this.props.nodes,
                 nodeNames = nodes.pluck('name'),
@@ -423,24 +443,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     return ifc.isBond() && this.validateSpeedsForBonding([ifc]);
                 }, this);
 
-            // calculate interfaces speed
-            var getIfcSpeed = function(ifcIndex) {
-                    return _.compact(_.unique(nodes.map(function(node) {
-                        var nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length,
-                            nodeInterface = node.interfaces.at(ifcIndex + nodeBondsCount);
-                        return utils.showBandwidth(nodeInterface.get('current_speed'));
-                    })));
-                },
-                bondsCount = interfaces.filter((ifc) => ifc.isBond()).length,
-                interfaceSpeeds = interfaces.map(function(ifc, index) {
-                    if (ifc.isBond()) {
-                        return _.map(ifc.get('slaves'), function(slave) {
-                            return getIfcSpeed(interfaces.indexOf(interfaces.findWhere(slave)) - bondsCount);
-                        });
-                    } else {
-                        return [getIfcSpeed(index - bondsCount)];
-                    }
-                });
+            var interfaceSpeeds = this.getIfcProperty('current_speed'),
+                interfaceNames = this.getIfcProperty('name');
 
             return (
                 <div className='row'>
@@ -490,6 +494,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     bondingProperties={this.props.bondingConfig.properties}
                                     bondType={this.getBondType()}
                                     interfaceSpeeds={interfaceSpeeds[index]}
+                                    interfaceNames={interfaceNames[index]}
                                 />
                             );
                         }, this))}
@@ -741,11 +746,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                                     <div className={utils.classNames(connectionStatusClasses(slaveInterface))} />
                                                 </div>
                                                 <div className='ifc-info pull-left'>
+                                                    {this.props.interfaceNames[index].length == 1 &&
+                                                        <div>
+                                                            {i18n(ns + 'name')}: <span className='ifc-name'>{this.props.interfaceNames[index]}</span>
+                                                        </div>
+                                                    }
                                                     {this.props.nodes.length == 1 &&
-                                                        [
-                                                            <div key='ifc-name'>{i18n(ns + 'name')}: <span className='ifc-name'>{slaveInterface.get('name')}</span></div>,
-                                                            <div key='ifc-mac'>{i18n(ns + 'mac')}: {slaveInterface.get('mac')}</div>
-                                                        ]
+                                                        <div>{i18n(ns + 'mac')}: {slaveInterface.get('mac')}</div>
                                                     }
                                                     <div>
                                                         {i18n(ns + 'speed')}: {this.props.interfaceSpeeds[index].join(', ')}

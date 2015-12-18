@@ -182,39 +182,6 @@ class TestAttributes(BaseIntegrationTest):
         )
         self.assertEqual(400, resp.status_code)
 
-    def test_attributes_vcenter_neutron_fails(self):
-        cluster_id = self.env.create_cluster(api=True,
-                                             net_provider='neutron')['id']
-        resp = self.app.get(
-            reverse(
-                'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster_id}),
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)
-        resp = self.app.patch(
-            reverse(
-                'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster_id}),
-            params=jsonutils.dumps({
-                'editable': {
-                    'common': {
-                        'use_vcenter': {
-                            'type': 'hidden',
-                            'value': True,
-                            'weight': 30,
-                        },
-                    },
-                },
-            }),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(400, resp.status_code)
-        self.assertEqual('vCenter requires Nova Network to be set '
-                         'as a network provider',
-                         resp.json_body.get('message'))
-
     def test_get_default_attributes(self):
         cluster = self.env.create_cluster(api=True)
         release = self.db.query(Release).get(

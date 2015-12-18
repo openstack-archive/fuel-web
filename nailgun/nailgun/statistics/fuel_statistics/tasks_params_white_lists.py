@@ -88,7 +88,8 @@ _task_output_white_list_template = {
                     }
                 },
                 "quantum": "",
-                "glance": {
+                "
+        ": {
                     "image_cache_max_size": ""
                 },
                 "cobbler": {
@@ -151,6 +152,9 @@ _task_output_white_list_template = {
                     "enabled": ""
                 },
                 "murano-cfapi": {
+                    "enabled": ""
+                },
+                "murano_glance_artifacts_plugin": {
                     "enabled": ""
                 },
                 "role": "",

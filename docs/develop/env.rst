@@ -134,12 +134,30 @@ your Fuel ISO build environment on Ubuntu 14.04:
     make clean          #remove build/ directory
     make deep_clean     #remove build/ and local_mirror/
 
-.. note:: In case you are using Virtualbox for building iso, please ensure that the build
-    directory BUILD_DIR and LOCAL_MIRROR
-    (see `config.mk <https://github.com/openstack/fuel-main/blob/master/config.mk>`_)
-    both ``are OUT`` of the Virtualbox
-    `shared folder path <https://www.virtualbox.org/manual/ch04.html#sharedfolders>`_
+.. note::
 
+   In case you are using a virtual machine for building the iso,
+   please ensure that
+
+   - the build directory BUILD_DIR and LOCAL_MIRROR (see `config.mk
+     <https://github.com/openstack/fuel-main/blob/master/config.mk>`_)
+     both ``are OUT`` of the shared folder path.  For more information
+     see:
+
+     - `the documentation of Virtualbox's shared folders
+       <https://www.virtualbox.org/manual/ch04.html#sharedfolders>`_
+     - `the documentation of Vagrant's synced folders
+       <https://docs.vagrantup.com/v2/synced-folders/>`_
+
+   - the virtual machine has kernel with the support for the ``aufs``
+     file system, to prevent random docker abruptly termination.
+     Install the kernel with::
+
+         sudo apt-get install --yes linux-image-extra-virtual
+
+     and reboot.  More information at `Select a storage driver for
+     docker
+     <https://docs.docker.com/engine/userguide/storagedriver/selectadriver/>`_.
 
 You can also use the following tools to make your work and development process
 with Fuel easier:

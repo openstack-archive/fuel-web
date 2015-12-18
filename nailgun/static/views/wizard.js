@@ -199,6 +199,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                 component.set({
                     disabled: isDisabled,
                     warnings: warnings.join(' '),
+                    enabled: isDisabled ? false : component.get('enabled'),
                     availability: 'incompatible'
                 });
             });
@@ -230,6 +231,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     disabled: isDisabled,
                     isRequired: true,
                     warnings: isDisabled ? warnings.join(' ') : null,
+                    enabled: isDisabled ? false : component.get('enabled'),
                     availability: 'incompatible'
                 });
             });

@@ -904,6 +904,17 @@
             restrictions:
               - "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
               - "settings:storage.images_ceph.value == true and settings:storage.objects_ceph.value == false": "Ironic requires Swift or RadosGW for Glance images."
+          murano-glance-artifacts-plugin:
+            value: false
+            label: "Enable glance artifact repository"
+            description: "If selected glance artifact repository will be enabled"
+            weight: 80
+            type: "checkbox"
+            restrictions:
+              - condition: "settings:additional_components.murano.value == false"
+                message: "Murano should be enabled"
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
         common:
           metadata:
             label: "Common"

@@ -144,6 +144,7 @@ def make_sync_scripts_task(uids, src, dst):
 
 def make_shell_task(uids, task):
     return {
+        'id': task.get('id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.shell,
         'uids': uids,
         'parameters': {
@@ -174,6 +175,7 @@ def make_apt_update_task(uids):
 
 def make_puppet_task(uids, task):
     return {
+        'id': task.get('id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
         'uids': uids,
         'parameters': {
@@ -185,6 +187,7 @@ def make_puppet_task(uids, task):
 
 def make_generic_task(uids, task):
     task = {
+        'id': task.get('id'),
         'type': task['type'],
         'uids': uids,
         'fail_on_error': task.get('fail_on_error', True),
@@ -197,6 +200,7 @@ def make_generic_task(uids, task):
 
 def make_reboot_task(uids, task):
     return {
+        'id': task.get('id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.reboot,
         'uids': uids,
         'parameters': {
@@ -293,6 +297,7 @@ def make_noop_task(uids, task):
     :param task: the task instance
     """
     return {
+        'id': task.get('id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
         'uids': uids,
         'fail_on_error': False

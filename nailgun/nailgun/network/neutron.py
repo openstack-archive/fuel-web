@@ -379,6 +379,7 @@ class NeutronManager70(
         This also creates bonds in the database and ensures network
         groups are assigned to the correct interface or bond.
         """
+        cls.clear_assigned_networks(node)
         interfaces = cls.get_interfaces_from_template(node)
 
         endpoint_mapping = cls.get_node_network_mapping(node)
@@ -392,8 +393,18 @@ class NeutronManager70(
                 continue
 
             iface, vlan = cls._split_iface_name(values['name'])
+            is_sub_iface = (vlan is not None) and (iface in interfaces)
 
-            node_ifaces.setdefault(iface, values)
+            # If the current interface is a sub-interface (e.g bond0.302) then
+            # node_ifaces should be populated with the values of the parent
+            # interface. If a sub-interface is processed first the entry for
+            # the parent interface will be missing any data defined in its
+            # transformation (e.g. bond_properties). The only thing the
+            # sub-interface actually needs to do is update assigned_networks so
+            # populating node_ifaces with the parent data is correct.
+            default = interfaces[iface] if is_sub_iface else values
+
+            node_ifaces.setdefault(iface, default)
             node_ifaces[iface].setdefault('assigned_networks', [])
 
             # Default admin network has no node group
@@ -418,7 +429,14 @@ class NeutronManager70(
                 ng = {'id': net_db.id}
                 node_ifaces[iface]['assigned_networks'].append(ng)
 
-            if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
+            # The parent interface NIC ID does not need to be updated for each
+            # sub-interface as it will have the same value every time. This
+            # also avoids issues caused by the assumption that all add-port
+            # actions are for ethernet interfaces. A bond sub-interface added
+            # via add-port will NOT exist in the database at this point and is
+            # not an ethernet interface so no NIC will be found.
+            if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
+                    and not is_sub_iface:
                 nic = objects.Node.get_nic_by_name(node, iface)
                 node_ifaces[iface]['id'] = nic.id
 

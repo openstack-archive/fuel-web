@@ -335,7 +335,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             </div>;
         },
         renderLevelSelect: function() {
-            var levelOptions = {};
+            var levelOptions = [];
             if (this.state.source && this.state.sources.length) {
                 levelOptions = this.state.sources.get(this.state.source).get('levels').map(function(level) {
                     return <option value={level} key={level}>{level}</option>;

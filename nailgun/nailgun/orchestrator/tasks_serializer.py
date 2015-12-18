@@ -43,10 +43,10 @@ def get_uids_for_tasks(nodes, tasks):
         # plugin tasks may store information about node
         # role not only in `role` key but also in `groups`
         task_role = task.get('role', task.get('groups'))
-        if task_role == consts.ALL_ROLES:
-            return get_uids_for_roles(nodes, consts.ALL_ROLES)
-        elif task_role == consts.MASTER_ROLE:
-            return [consts.MASTER_ROLE]
+        if task_role == consts.TASK_ROLES.all:
+            return get_uids_for_roles(nodes, consts.TASK_ROLES.all)
+        elif task_role == consts.TASK_ROLES.master:
+            return [consts.MASTER_NODE_UID]
         elif isinstance(task_role, list):
             roles.extend(task_role)
         # if task has 'skipped' status it is allowed that 'roles' and
@@ -64,16 +64,16 @@ def get_uids_for_roles(nodes, roles):
     """Returns list of uids for nodes that matches roles
 
     :param nodes: list of nodes
-    :param roles: list of roles or consts.ALL_ROLES
+    :param roles: list of roles or consts.TASK_ROLES.all
     :returns: list of strings
     """
 
     uids = set()
 
-    if roles == consts.ALL_ROLES:
+    if roles == consts.TASK_ROLES.all:
         uids.update([n.uid for n in nodes])
-    elif roles == consts.MASTER_ROLE:
-        return [consts.MASTER_ROLE]
+    elif roles == consts.TASK_ROLES.master:
+        return [consts.MASTER_NODE_UID]
     elif isinstance(roles, list):
         for node in nodes:
             if set(roles) & set(objects.Node.all_roles(node)):
@@ -180,7 +180,7 @@ class UploadMOSRepo(GenericRolesHook):
     identity = 'upload_core_repos'
 
     def get_uids(self):
-        return self.role_resolver.resolve(consts.ALL_ROLES)
+        return self.role_resolver.resolve(consts.TASK_ROLES.all)
 
     def serialize(self):
         uids = self.get_uids()
@@ -224,7 +224,7 @@ class RsyncPuppet(GenericRolesHook):
     identity = 'rsync_core_puppet'
 
     def get_uids(self):
-        return self.role_resolver.resolve(consts.ALL_ROLES)
+        return self.role_resolver.resolve(consts.TASK_ROLES.all)
 
     def serialize(self):
         src_path = self.task['parameters']['src'].format(

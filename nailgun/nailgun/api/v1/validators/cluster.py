@@ -275,8 +275,6 @@ class AttributesValidator(BasicValidator):
         if cluster is not None:
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
 
-            cls._validate_net_provider(attrs, cluster)
-
             # NOTE(agordeev): disable classic provisioning for 7.0 or higher
             if StrictVersion(cluster.release.environment_version) >= \
                     StrictVersion(consts.FUEL_IMAGE_BASED_ONLY):
@@ -300,17 +298,6 @@ class AttributesValidator(BasicValidator):
         cls.validate_editable_attributes(attrs)
 
         return d
-
-    @classmethod
-    def _validate_net_provider(cls, data, cluster):
-        common_attrs = data.get('editable', {}).get('common', {})
-        net_provider = cluster.net_provider
-
-        if common_attrs.get('use_vcenter', {}).get('value') is True and \
-                net_provider != consts.CLUSTER_NET_PROVIDERS.nova_network:
-                    raise errors.InvalidData(u'vCenter requires Nova Network '
-                                             'to be set as a network provider',
-                                             log_message=True)
 
     @classmethod
     def validate_editable_attributes(cls, data):

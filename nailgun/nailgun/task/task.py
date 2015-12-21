@@ -1416,41 +1416,27 @@ class CheckBeforeDeploymentTask(object):
             return
 
         template = (cluster.network_config.configuration_template
-                    ['adv_net_template']['default'])
-
-        template_roles = set(template['templates_for_node_role'])
-        cluster_roles = objects.Cluster.get_assigned_roles(cluster)
-
-        missing_roles = cluster_roles - template_roles
-        if missing_roles:
-            error_roles = ', '.join(missing_roles)
-            error_msg = ('Roles {0} are missing from network configuration'
-                         ' template').format(error_roles)
-            raise errors.NetworkTemplateMissingRoles(error_msg)
-
-        network_roles = set()
-        for net_template in template['network_scheme'].values():
-            network_roles.update(net_template['roles'])
-
-        cluster_net_roles = \
-            set(m['id'] for m in cluster.release.network_roles_metadata)
-        missing_net_roles = set(cluster_net_roles) - network_roles
-
-        if missing_net_roles:
-            error_roles = ', '.join(missing_net_roles)
-            error_msg = ('Network roles {0} are missing from network '
-                         'configuration template').format(error_roles)
-            raise errors.NetworkTemplateMissingNetRoles(error_msg)
-
-        template = (cluster.network_config.configuration_template
                     ['adv_net_template'])
+
+        # following loop does two things: checking that networks of each
+        # network group from the template belongs to those of particular
+        # node group of the cluster and cumulating node roles from the template
+        # for further check
+
+        template_node_roles = set()
+
         for node_group in cluster.node_groups:
+            template_for_node_group = (
+                template[node_group.name] if node_group.name in template
+                else template['default']
+            )
             required_nets = set(
-                template[node_group.name]['network_assignments'].keys())
+                template_for_node_group['network_assignments'].keys()
+            )
             ng_nets = set(ng.name for ng in node_group.networks)
             # Admin net doesn't have a nodegroup so must be added to
             # the default group
-            if node_group.name == consts.NODE_GROUPS.default:
+            if node_group.default:
                 ng_nets.add(consts.NETWORKS.fuelweb_admin)
 
             missing_nets = required_nets - ng_nets
@@ -1463,6 +1449,18 @@ class CheckBeforeDeploymentTask(object):
                                  node_group.name)
                              )
                 raise errors.NetworkTemplateMissingNetworkGroup(error_msg)
+
+            template_node_roles.update(
+                template_for_node_group['templates_for_node_role'])
+
+        cluster_roles = objects.Cluster.get_assigned_roles(cluster)
+
+        missing_roles = cluster_roles - template_node_roles
+        if missing_roles:
+            error_roles = ', '.join(missing_roles)
+            error_msg = ('Node roles {0} are missing from '
+                         'network configuration template').format(error_roles)
+            raise errors.NetworkTemplateMissingRoles(error_msg)
 
     @classmethod
     def _check_deployment_graph_for_correctness(self, task):

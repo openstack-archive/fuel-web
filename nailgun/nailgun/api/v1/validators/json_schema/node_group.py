@@ -22,6 +22,7 @@ single_schema = {
         "id": {"type": "integer"},
         "cluster_id": {"type": "integer"},
         "name": {"type": "string"},
+        "default": {"type": "boolean"}
     },
     "required": ["cluster_id", "name"],
 }

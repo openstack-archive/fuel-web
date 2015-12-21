@@ -107,13 +107,16 @@ function($, _, React, i18n, utils) {
 
             var lastState,
                 added = 0,
-                excerpt = ifcModes.map(
+                excerpt = [];
+            _.each(ifcModes,
                     (mode) => {
                         if (!_.isNull(mode.state) && mode.state !== lastState) {
                             lastState = mode.state;
                             added++;
-                            return (added > 1 ? ', ' : '') + mode.name + ' ' + states[mode.state];
+                            excerpt.push((added > 1 ? ', ' : '') + mode.name + ' ' + states[mode.state]);
                         }
+                        // show no more than two modes in the button
+                        if (added == 2) return false;
                     }
                 );
             if (added < ifcModes.length) excerpt.push(', ...');

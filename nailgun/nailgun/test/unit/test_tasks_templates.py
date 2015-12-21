@@ -192,6 +192,8 @@ class TestMakeTask(base.BaseTestCase):
 
     def test_make_ironic_bootstrap_task(self):
         cid = 123
+        bootstrap_path = "/var/www/nailgun/bootstrap/ironic/{cid}".format(
+            cid=cid)
 
         result = tasks_templates.make_ironic_bootstrap_task(
             [1, 2, 3],
@@ -199,6 +201,16 @@ class TestMakeTask(base.BaseTestCase):
 
         extra_conf_files = "/usr/share/ironic-fa-bootstrap-configs/"
         ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
+        bootstrap_fuel_pkgs = (" --package openssh-server --package ntp "
+                               "--package fuel-agent --package ubuntu-minimal "
+                               "--package live-boot --package wget "
+                               "--package live-boot-initramfs-tools "
+                               "--package squashfs-tools "
+                               "--package linux-firmware --package msmtp-mta "
+                               "--package hpsa-dkms --package i40e-dkms "
+                               "--package linux-firmware-nonfree "
+                               "--package xz-utils "
+                               "--package linux-headers-generic")
 
         self.assertEqual(result, {
             'id': None,
@@ -206,14 +218,17 @@ class TestMakeTask(base.BaseTestCase):
             'uids': [1, 2, 3],
             'parameters': {
                 'cmd': (
-                    "BOOTSTRAP_FUEL_PKGS='openssh-server ntp fuel-agent' "
-                    "EXTRA_CONF_FILES='{extra_conf_files}' "
-                    "DESTDIR='/var/www/nailgun/bootstrap/ironic/{cid}' "
-                    "BOOTSTRAP_SSH_KEYS='{bootstrap_ssh_keys}' "
-                    'fuel-bootstrap-image ').format(
+                    "test -e {bootstrap_path}/* || "
+                    "(fuel-bootstrap build {bootstrap_fuel_pkgs} "
+                    "--root-ssh-authorized-file {bootstrap_ssh_keys} "
+                    "--output-dir {bootstrap_path}/ "
+                    "--extra-dir {extra_conf_files} --no-compress "
+                    '--no-default-extra-dirs --no-default-packages)').format(
                         cid=cid,
                         extra_conf_files=extra_conf_files,
-                        bootstrap_ssh_keys=ssh_keys),
+                        bootstrap_ssh_keys=ssh_keys,
+                        bootstrap_fuel_pkgs=bootstrap_fuel_pkgs,
+                        bootstrap_path=bootstrap_path),
                 'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
                 'retries': 1,
                 'interval': 1,

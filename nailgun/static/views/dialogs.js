@@ -1463,17 +1463,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             };
         },
         renderBody: function() {
-            var name = 'node_network_group_name';
             return (
                 <div className='node-network-group-creation'>
                     <controls.Input
-                        key={name}
-                        name={name}
-                        ref={name}
+                        name='node-network-group-name'
                         type='text'
                         label={i18n(this.props.ns + 'node_network_group_name')}
-                        onChange={this.handleChange}
-                        onKeyDown={this.handleKeyDown}
+                        onChange={this.onChange}
+                        onKeyDown={this.onKeyDown}
                         error={this.state.error}
                         wrapperClassName='node-group-name'
                         inputClassName='node-group-input-name'
@@ -1494,31 +1491,34 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 </button>
             ];
         },
-        handleKeyDown: function(e) {
+        onKeyDown: function(e) {
             if (e.key == 'Enter') {
-                if (this.state.error) return false;
                 e.preventDefault();
                 this.createNodeNetworkGroup();
             }
         },
-        handleChange: function(name, value) {
-            var newNodeNetworkGroup = new models.NodeNetworkGroup(),
-                validationError;
-            validationError = newNodeNetworkGroup.validate({name: value, nodeNetworkGroups: this.props.nodeNetworkGroups});
+        onChange: function(name, value) {
             this.setState({
-                error: validationError,
+                error: null,
                 name: value
             });
         },
         createNodeNetworkGroup: function() {
-            this.setState({actionInProgress: true});
-            var name = this.state.name,
-                nodeNetworkGroup = new models.NodeNetworkGroup({
+            var error = (new models.NodeNetworkGroup()).validate({
+                name: this.state.name,
+                nodeNetworkGroups: this.props.nodeNetworkGroups
+            });
+            if (error) {
+                this.setState({error: error});
+            } else {
+                this.setState({actionInProgress: true});
+                (new models.NodeNetworkGroup({
                     cluster_id: this.props.clusterId,
-                    name: name
-                });
-            nodeNetworkGroup.save()
-                .done(this.submitAction);
+                    name: this.state.name
+                }))
+                    .save(null, {validate: false})
+                    .done(this.submitAction);
+            }
         }
     });
 

@@ -101,7 +101,8 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_id': cluster_db.id,
             'openstack_version_prev': None,
             'openstack_version': cluster_db.release.version,
-            'fuel_version': cluster_db.fuel_version
+            'fuel_version': cluster_db.fuel_version,
+            'plugins': []
         }
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
@@ -465,7 +466,8 @@ class TestHandlers(BaseIntegrationTest):
             'openstack_version_prev': None,
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version,
-            'tasks': []
+            'tasks': [],
+            'plugins': []
         }
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
@@ -952,7 +954,8 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_id': cluster_db.id,
             'openstack_version_prev': None,
             'openstack_version': cluster_db.release.version,
-            'fuel_version': cluster_db.fuel_version
+            'fuel_version': cluster_db.fuel_version,
+            'plugins': []
         }
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes

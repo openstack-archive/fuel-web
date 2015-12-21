@@ -16,6 +16,7 @@
 from netaddr import IPNetwork
 from oslo_serialization import jsonutils
 import six
+from sqlalchemy.sql.expression import true as sa_true
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.network_template import \
@@ -206,7 +207,7 @@ class NetworkConfigurationValidator(BasicValidator):
             if ng_db.group_id is None:
                 # shared admin network. get nodes from all default groups
                 nodes = db().query(Node.ip).join(NodeGroup).filter(
-                    NodeGroup.name == consts.NODE_GROUPS.default
+                    NodeGroup.default == sa_true()
                 )
             else:
                 nodes = db().query(Node.ip).filter(
@@ -568,7 +569,7 @@ class NetAssignmentValidator(BasicValidator):
         # default nodegroups of clusters hence holds no value
         # in 'group_id' field yet still must be included into list
         # of networks available for assignment
-        if node_group_db.name == consts.NODE_GROUPS.default:
+        if node_group_db.default:
             fuelweb_admin_net = \
                 objects.NetworkGroup.get_default_admin_network()
             net_group_ids.add(fuelweb_admin_net.id)

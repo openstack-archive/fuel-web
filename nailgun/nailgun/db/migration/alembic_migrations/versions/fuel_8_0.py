@@ -124,9 +124,11 @@ def upgrade():
     upgrade_master_node_ui_settings()
     upgrade_plugins_parameters()
     upgrade_oswl_stats_version_info()
+    upgrade_nodegroups_parameters()
 
 
 def downgrade():
+    downgrade_nodegroups_parameters()
     downgrade_oswl_stats_version_info()
     downgrade_plugins_parameters()
     downgrade_master_node_ui_settings()
@@ -766,3 +768,11 @@ def upgrade_oswl_stats_version_info():
 
 def downgrade_oswl_stats_version_info():
     op.drop_column('oswl_stats', 'version_info')
+
+
+def upgrade_nodegroups_parameters():
+    op.add_column('nodegroups', sa.Column('default', sa.Boolean()))
+
+
+def downgrade_nodegroups_parameters():
+    op.drop_column('nodegroups', 'default')

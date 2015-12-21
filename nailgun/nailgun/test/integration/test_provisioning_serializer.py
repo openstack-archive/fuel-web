@@ -375,7 +375,7 @@ class TestProvisioningSerializer80(BaseIntegrationTest):
 
         self.assertTrue(filter(
             lambda task: all([
-                'fuel-bootstrap-image' in task['parameters']['cmd'],
+                'fuel-bootstrap' in task['parameters']['cmd'],
                 'ironic.pub' in task['parameters']['cmd']]),
             serialized_info['pre_provision']))
 

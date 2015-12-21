@@ -13,4 +13,5 @@ Table of contents
    buildsystem
    ci/overview
    ci/third_party
+   infra/seed_server_deployment
    packaging

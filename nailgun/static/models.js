@@ -1299,18 +1299,14 @@ define([
             return _.min(_.pluck(this.collection.where({cluster_id: this.get('cluster_id')}), 'id')) == this.id;
         },
         validate: function(options) {
-            var newName = options.name,
-                networkTabNS = 'cluster_page.network_tab.',
-                nodeNetworkGroups = this.collection || options.nodeNetworkGroups;
-            if (!nodeNetworkGroups) return null;
+            var ns = 'cluster_page.network_tab.',
+                newName = options.name;
             if (newName.toLowerCase() == 'default') {
-                return i18n(networkTabNS + 'node_network_group_default_name');
+                return i18n(ns + 'node_network_group_default_name');
             }
+            var nodeNetworkGroups = this.collection || options.nodeNetworkGroups;
             if (_.contains(nodeNetworkGroups.pluck('name'), newName)) {
-                return i18n(networkTabNS + 'node_network_group_duplicate_error');
-            }
-            if (!newName.match(utils.regexes.nodeNetworkGroupName)) {
-                return i18n(networkTabNS + 'validation.invalid_node_network_group_name');
+                return i18n(ns + 'node_network_group_duplicate_error');
             }
             return null;
         }

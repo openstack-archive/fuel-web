@@ -199,6 +199,15 @@ class TestMakeTask(base.BaseTestCase):
 
         extra_conf_files = "/usr/share/ironic-fa-bootstrap-configs/"
         ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
+        bootstrap_fuel_pkgs = (" --package openssh-server --package ntp "
+                               "--package fuel-agent --package ubuntu-minimal "
+                               "--package live-boot --package "
+                               "live-boot-initramfs-tools --package wget "
+                               "--package linux-firmware --package "
+                               "linux-firmware-nonfree --package xz-utils "
+                               "--package squashfs-tools --package msmtp-mta "
+                               "--package hpsa-dkms --package i40e-dkms "
+                               "--package linux-headers-generic")
 
         self.assertEqual(result, {
             'id': None,
@@ -206,14 +215,15 @@ class TestMakeTask(base.BaseTestCase):
             'uids': [1, 2, 3],
             'parameters': {
                 'cmd': (
-                    "BOOTSTRAP_FUEL_PKGS='openssh-server ntp fuel-agent' "
-                    "EXTRA_CONF_FILES='{extra_conf_files}' "
-                    "DESTDIR='/var/www/nailgun/bootstrap/ironic/{cid}' "
-                    "BOOTSTRAP_SSH_KEYS='{bootstrap_ssh_keys}' "
-                    'fuel-bootstrap-image ').format(
+                    "fuel-bootstrap {bootstrap_fuel_pkgs}"
+                    "--root-ssh-authorized-file {bootstrap_ssh_keys}"
+                    "--output-dir /var/www/nailgun/bootstrap/ironic/{cid}"
+                    "--extra-dir {extra_conf_files}"
+                    '--no-default-extra-dirs --no-default-packages').format(
                         cid=cid,
                         extra_conf_files=extra_conf_files,
-                        bootstrap_ssh_keys=ssh_keys),
+                        bootstrap_ssh_keys=ssh_keys,
+                        bootstrap_fuel_pkgs=bootstrap_fuel_pkgs),
                 'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
                 'retries': 1,
                 'interval': 1,

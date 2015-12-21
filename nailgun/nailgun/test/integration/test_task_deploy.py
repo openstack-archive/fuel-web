@@ -19,9 +19,11 @@ import mock
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.objects import Task
 from nailgun.orchestrator.task_based_deployment import TasksSerializer
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.utils import reverse
 
 
 class TestTaskDeploy(BaseIntegrationTest):
@@ -140,3 +142,37 @@ class TestTaskDeploy(BaseIntegrationTest):
                 "The following task is not found in tasks for deploy {0}."
                 .format(sorted(expected_tasks))
             )
+
+    @fake_tasks(mock_rpc=False, fake_rpc=False)
+    @mock.patch.object(TasksSerializer, "ensure_task_based_deploy_allowed")
+    @mock.patch('nailgun.rpc.cast')
+    def test_task_deploy_specified_tasks(self, rpc_cast, *_):
+        self.enable_deploy_task(True)
+        compute = next(
+            (x for x in self.env.nodes if 'compute' in x.roles), None
+        )
+        self.assertIsNotNone(compute)
+        compute.status = consts.NODE_STATUSES.provisioned
+        compute.pending_addition = False
+        self.db.flush()
+
+        resp = self.app.put(
+            reverse(
+                'DeploySelectedNodesWithTasks',
+                kwargs={'cluster_id': self.cluster.id}
+            ) + '?nodes={0}'.format(compute.uid),
+            params='["deploy_legacy"]',
+            headers=self.default_headers
+        )
+        self.assertNotEqual(
+            consts.TASK_STATUSES.error,
+            Task.get_by_uuid(
+                uuid=resp.json_body['uuid'], fail_if_not_found=True
+            ).status
+        )
+
+        deploy_tasks = rpc_cast.call_args[0][1]['args']['deployment_tasks']
+        self.assertItemsEqual(
+            ["deploy_legacy"],
+            (task["id"] for task in deploy_tasks[compute.uid])
+        )

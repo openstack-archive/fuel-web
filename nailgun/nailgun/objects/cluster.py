@@ -937,12 +937,12 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_default_group(cls, instance):
-        default = consts.NODE_GROUPS.default
-        return next(g for g in instance.node_groups if g.name == default)
+        return next(g for g in instance.node_groups if g.is_default)
 
     @classmethod
     def create_default_group(cls, instance):
-        node_group = models.NodeGroup(name=consts.NODE_GROUPS.default)
+        node_group = models.NodeGroup(name=consts.NODE_GROUPS.default,
+                                      is_default=True)
         instance.node_groups.append(node_group)
         db.add(node_group)
         db().flush()

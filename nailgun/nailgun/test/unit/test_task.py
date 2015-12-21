@@ -14,6 +14,7 @@
 #    under the License.
 
 import mock
+import six
 
 from oslo_serialization import jsonutils
 import yaml
@@ -401,39 +402,6 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             if net['name'] == name:
                 return net
 
-    def test_network_template_validation(self):
-        net_template = self.env.read_fixtures(['network_template_80'])[0]
-        objects.Cluster.set_network_template(
-            self.cluster,
-            net_template
-        )
-
-        self.assertNotRaises(
-            errors.NetworkTemplateMissingRoles,
-            task.CheckBeforeDeploymentTask._validate_network_template,
-            self.task)
-
-        ceph_node = self.env.create_node(roles=['ceph-osd'],
-                                         cluster_id=self.cluster.id)
-        self.assertRaises(
-            errors.NetworkTemplateMissingRoles,
-            task.CheckBeforeDeploymentTask._validate_network_template,
-            self.task)
-
-        objects.Node.delete(ceph_node)
-        del (net_template['adv_net_template']['default']
-             ['network_scheme']['common']['roles']['murano/api'])
-        objects.Cluster.set_network_template(
-            self.cluster,
-            net_template
-        )
-
-        self.assertRaisesRegexp(
-            errors.NetworkTemplateMissingNetRoles,
-            "Network roles murano/api are missing",
-            task.CheckBeforeDeploymentTask._validate_network_template,
-            self.task)
-
     def test_missing_network_group_with_template(self):
         net_template = self.env.read_fixtures(['network_template_80'])[0]
         objects.Cluster.set_network_template(
@@ -449,6 +417,29 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             "The following network groups are missing: public",
             task.CheckBeforeDeploymentTask._validate_network_template,
             self.task)
+
+    def test_missing_node_role_from_template(self):
+        net_template = self.env.read_fixtures(['network_template_80'])[0]
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+        cluster_assigned_roles = \
+            objects.Cluster.get_assigned_roles(self.cluster)
+
+        conf_template = self.cluster.network_config.configuration_template
+
+        for net_group in six.itervalues(conf_template['adv_net_template']):
+            template_node_roles = net_group['templates_for_node_role']
+            for assigned_role in cluster_assigned_roles:
+                if assigned_role in template_node_roles:
+                    del template_node_roles[assigned_role]
+
+        self.assertRaises(
+            errors.NetworkTemplateMissingRoles,
+            task.CheckBeforeDeploymentTask._validate_network_template,
+            self.task
+        )
 
     def test_missing_network_group_with_template_multi_ng(self):
         net_template = self.env.read_fixtures(['network_template_80'])[0]

@@ -379,3 +379,8 @@ class TestNodeGroups(BaseIntegrationTest):
         message = resp.json_body['message']
         self.assertEquals(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
+
+    def test_default_group_created_at_cluster_creation(self):
+        self.env.create_cluster()
+        cluster = self.env.clusters[0]
+        self.assertTrue(cluster.node_groups[0].default)

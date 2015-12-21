@@ -107,12 +107,13 @@ function($, _, React, i18n, utils) {
 
             var lastState,
                 added = 0,
-                excerpt = ifcModes.map(
+                excerpt = [];
+            _.each(ifcModes,
                     (mode) => {
-                        if (!_.isNull(mode.state) && mode.state !== lastState) {
+                        if (!_.isNull(mode.state) && mode.state !== lastState && added <= 1) {
                             lastState = mode.state;
                             added++;
-                            return (added > 1 ? ', ' : '') + mode.name + ' ' + states[mode.state];
+                            excerpt.push((added > 1 ? ', ' : '') + mode.name + ' ' + states[mode.state]);
                         }
                     }
                 );

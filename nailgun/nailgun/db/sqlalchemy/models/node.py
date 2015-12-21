@@ -47,6 +47,8 @@ class NodeGroup(Base):
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     name = Column(String(50), nullable=False)
+    default = Column(Boolean, default=False, nullable=False,
+                     server_default='false', index=True)
     nodes = relationship("Node", backref="nodegroup")
     networks = relationship(
         "NetworkGroup",

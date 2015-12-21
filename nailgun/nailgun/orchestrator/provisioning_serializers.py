@@ -391,13 +391,13 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
 
         attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
 
-        if attrs['ironic']['enabled']:
+        if attrs['ironic']['enabled'] and cluster.status != 'new':
             tasks.append(
                 tasks_templates.generate_ironic_bootstrap_keys_task(
                     [consts.MASTER_NODE_UID],
                     cluster.id))
 
-            tasks.append(
+            tasks.extend(
                 tasks_templates.make_ironic_bootstrap_task(
                     [consts.MASTER_NODE_UID],
                     cluster.id))

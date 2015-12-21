@@ -115,7 +115,7 @@ function($, _, React, i18n, utils) {
                             return (added > 1 ? ', ' : '') + mode.name + ' ' + states[mode.state];
                         }
                     }
-                );
+                ).slice(0, 2);
             if (added < ifcModes.length) excerpt.push(', ...');
             return excerpt;
         },

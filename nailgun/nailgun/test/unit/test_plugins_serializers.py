@@ -89,6 +89,7 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
 
         result = self.hook.deployment_tasks([plugin], stage)
         expecting_format = {
+            'id': None,
             'diagnostic_name': 'plugin_name',
             'fail_on_error': True,
             'parameters': {'timeout': 15},

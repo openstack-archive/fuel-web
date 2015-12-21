@@ -1050,7 +1050,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
             strategy:
               type: one_by_one
 
-        - id: do-something
+        - id: deployment_task_id
           type: puppet
           groups: [test_role]
           required_for: [deploy_end]
@@ -1119,6 +1119,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
             'priority': 100,
             'type': 'puppet',
             'uids': [self.cluster.nodes[0].uid],
+            'id': 'deployment_task_id'
         }])
 
     def test_tasks_were_not_serialized(self):
@@ -1141,6 +1142,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
             self.cluster, self.cluster.nodes)
+        self.maxDiff = None
         self.assertItemsEqual(serialized_data[0]['tasks'], [
             {
                 'parameters': {
@@ -1151,6 +1153,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                     'cwd': '/'},
                 'priority': 100,
                 'type': 'puppet',
+                'id': 'netconfig',
                 'uids': [self.cluster.nodes[0].uid],
             }, {
                 'parameters': {
@@ -1160,6 +1163,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                     'timeout': 3600},
                 'priority': 200,
                 'type': 'puppet',
+                'id': 'deploy_legacy',
                 'uids': [self.cluster.nodes[0].uid],
             }, {
                 'parameters': {
@@ -1170,6 +1174,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                     'cwd': '/'},
                 'priority': 300,
                 'type': 'puppet',
+                'id': 'globals',
                 'uids': [self.cluster.nodes[0].uid],
             }])
 

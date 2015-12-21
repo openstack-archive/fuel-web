@@ -402,5 +402,10 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
                     [consts.MASTER_NODE_UID],
                     cluster.id))
 
+            tasks.append(
+                tasks_templates.extract_ironic_bootstrap_task(
+                    [consts.MASTER_NODE_UID],
+                    cluster.id))
+
         PriorityStrategy().one_by_one(tasks)
         return tasks

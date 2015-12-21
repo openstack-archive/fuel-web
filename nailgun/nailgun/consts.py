@@ -457,3 +457,10 @@ TASK_ROLES = Enum(
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'
 
 TASK_CROSS_DEPENDENCY = '2.0.0'
+
+IRONIC_BOOTSTRAP_PKGS = ['', 'openssh-server', 'ntp', 'fuel-agent',
+                         'ubuntu-minimal', 'live-boot', 'wget',
+                         'live-boot-initramfs-tools', 'squashfs-tools',
+                         'linux-firmware', 'msmtp-mta', 'hpsa-dkms',
+                         'i40e-dkms', 'linux-firmware-nonfree', 'xz-utils',
+                         'linux-headers-generic']

@@ -397,7 +397,7 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
                     [consts.MASTER_NODE_UID],
                     cluster.id))
 
-            tasks.append(
+            tasks.extend(
                 tasks_templates.make_ironic_bootstrap_task(
                     [consts.MASTER_NODE_UID],
                     cluster.id))

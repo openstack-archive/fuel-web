@@ -21,6 +21,8 @@ import requests
 
 from oslo_serialization import jsonutils
 
+from nailgun.consts import IRONIC_BOOTSTRAP_PKGS
+
 from nailgun.test import base
 
 from nailgun.orchestrator import tasks_templates
@@ -192,6 +194,8 @@ class TestMakeTask(base.BaseTestCase):
 
     def test_make_ironic_bootstrap_task(self):
         cid = 123
+        bootstrap_path = "/var/www/nailgun/bootstrap/ironic/{cid}".format(
+            cid=cid)
 
         result = tasks_templates.make_ironic_bootstrap_task(
             [1, 2, 3],
@@ -200,20 +204,26 @@ class TestMakeTask(base.BaseTestCase):
         extra_conf_files = "/usr/share/ironic-fa-bootstrap-configs/"
         ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
 
+        ironic_bootstrap_pkgs = '--package ' + ' --package '.join(
+            IRONIC_BOOTSTRAP_PKGS)
+
         self.assertEqual(result, {
             'id': None,
             'type': 'shell',
             'uids': [1, 2, 3],
             'parameters': {
                 'cmd': (
-                    "BOOTSTRAP_FUEL_PKGS='openssh-server ntp fuel-agent' "
-                    "EXTRA_CONF_FILES='{extra_conf_files}' "
-                    "DESTDIR='/var/www/nailgun/bootstrap/ironic/{cid}' "
-                    "BOOTSTRAP_SSH_KEYS='{bootstrap_ssh_keys}' "
-                    'fuel-bootstrap-image ').format(
+                    "test -e {bootstrap_path}/* || "
+                    "(fuel-bootstrap build {ironic_bootstrap_pkgs} "
+                    "--root-ssh-authorized-file {bootstrap_ssh_keys} "
+                    "--output-dir {bootstrap_path}/ "
+                    "--extra-dir {extra_conf_files} --no-compress "
+                    '--no-default-extra-dirs --no-default-packages)').format(
                         cid=cid,
                         extra_conf_files=extra_conf_files,
-                        bootstrap_ssh_keys=ssh_keys),
+                        bootstrap_ssh_keys=ssh_keys,
+                        ironic_bootstrap_pkgs=ironic_bootstrap_pkgs,
+                        bootstrap_path=bootstrap_path),
                 'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
                 'retries': 1,
                 'interval': 1,

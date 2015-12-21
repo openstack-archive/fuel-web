@@ -244,18 +244,26 @@ def generate_ironic_bootstrap_keys_task(uids, cid):
 def make_ironic_bootstrap_task(uids, cid):
     extra_conf_files = "/usr/share/ironic-fa-bootstrap-configs/"
     ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
+    bootstrap_fuel_pkgs = (" openssh-server ntp fuel-agent ubuntu-minimal "
+                           "live-boot live-boot-initramfs-tools wget "
+                           "linux-firmware linux-firmware-nonfree xz-utils "
+                           "squashfs-tools msmtp-mta hpsa-dkms i40e-dkms "
+                           "linux-headers-generic")
+
+    bootstrap_fuel_pkgs = bootstrap_fuel_pkgs.replace(" ", " --package ")
 
     return make_shell_task(uids, {
         'parameters': {
             'cmd': (
-                "BOOTSTRAP_FUEL_PKGS='openssh-server ntp fuel-agent' "
-                "EXTRA_CONF_FILES='{extra_conf_files}' "
-                "DESTDIR='/var/www/nailgun/bootstrap/ironic/{cid}' "
-                "BOOTSTRAP_SSH_KEYS='{bootstrap_ssh_keys}' "
-                'fuel-bootstrap-image ').format(
+                "fuel-bootstrap {bootstrap_fuel_pkgs}"
+                "--root-ssh-authorized-file {bootstrap_ssh_keys}"
+                "--output-dir /var/www/nailgun/bootstrap/ironic/{cid}"
+                "--extra-dir {extra_conf_files}"
+                '--no-default-extra-dirs --no-default-packages').format(
                     cid=cid,
                     extra_conf_files=extra_conf_files,
-                    bootstrap_ssh_keys=ssh_keys),
+                    bootstrap_ssh_keys=ssh_keys,
+                    bootstrap_fuel_pkgs=bootstrap_fuel_pkgs),
             'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
             'retries': 1}})
 

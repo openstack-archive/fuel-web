@@ -137,6 +137,8 @@ class DeploymentMultinodeSerializer(object):
         net_common_attrs = net_serializer.get_common_attrs(cluster, attrs)
         attrs = utils.dict_merge(attrs, net_common_attrs)
 
+        self.inject_list_of_plugins(attrs, cluster)
+
         return attrs
 
     def current_release(self, cluster):
@@ -326,6 +328,10 @@ class DeploymentMultinodeSerializer(object):
         if self.task_graph is not None:
             for node in serialized_nodes:
                 node['tasks'] = self.task_graph.deploy_task_serialize(node)
+
+    def inject_list_of_plugins(self, attributes, cluster):
+        plugins = objects.ClusterPlugins.get_enabled(cluster.id)
+        attributes['plugins'] = [p['name'] for p in plugins]
 
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):

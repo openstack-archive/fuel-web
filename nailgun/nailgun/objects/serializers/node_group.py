@@ -22,5 +22,6 @@ class NodeGroupSerializer(BasicSerializer):
     fields = (
         "id",
         "cluster_id",
-        "name"
+        "name",
+        "is_default"
     )

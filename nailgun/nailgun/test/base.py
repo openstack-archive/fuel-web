@@ -412,7 +412,7 @@ class EnvironmentManager(object):
         self.db.commit()
         return notification
 
-    def create_node_group(self, api=True, **kwargs):
+    def create_node_group(self, api=True, expect_errors=False, **kwargs):
         ng_data = {
             'cluster_id': self.clusters[0].id,
             'name': 'test_ng'
@@ -424,7 +424,7 @@ class EnvironmentManager(object):
                 reverse('NodeGroupCollectionHandler'),
                 jsonutils.dumps(ng_data),
                 headers=self.default_headers,
-                expect_errors=False
+                expect_errors=expect_errors
             )
 
             ng = resp

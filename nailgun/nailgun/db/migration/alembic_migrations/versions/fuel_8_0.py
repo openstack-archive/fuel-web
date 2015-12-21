@@ -29,6 +29,7 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
@@ -124,9 +125,11 @@ def upgrade():
     upgrade_master_node_ui_settings()
     upgrade_plugins_parameters()
     upgrade_oswl_stats_version_info()
+    upgrade_nodegroups_parameters()
 
 
 def downgrade():
+    downgrade_nodegroups_parameters()
     downgrade_oswl_stats_version_info()
     downgrade_plugins_parameters()
     downgrade_master_node_ui_settings()
@@ -766,3 +769,26 @@ def upgrade_oswl_stats_version_info():
 
 def downgrade_oswl_stats_version_info():
     op.drop_column('oswl_stats', 'version_info')
+
+
+def upgrade_nodegroups_parameters():
+    connection = op.get_bind()
+
+    op.add_column('nodegroups', sa.Column('is_default', sa.Boolean(),
+                                          nullable=False,
+                                          server_default='false',
+                                          index=True))
+
+    # we must update the flag for existing default nodegroups
+    # which distinguisher is their name
+    update_query = sa.text('''
+        UPDATE nodegroups SET is_default = :is_default
+        WHERE name = :default_nodegroup_name
+    ''')
+
+    connection.execute(update_query, is_default=True,
+                       default_nodegroup_name=consts.NODE_GROUPS.default)
+
+
+def downgrade_nodegroups_parameters():
+    op.drop_column('nodegroups', 'is_default')

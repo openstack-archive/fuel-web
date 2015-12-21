@@ -400,6 +400,8 @@ class TasksSerializer(object):
             self.process_task(task, nodes, lambda _: self.role_resolver)
 
         self.expand_task_groups(tasks_groups, tasks_mapping)
+        # make sure that null node is present
+        self.tasks_per_node.setdefault(None, dict())
 
     def process_task(self, task, nodes, resolver_factory):
         """Processes one task one nodes of cluster.

@@ -1298,19 +1298,17 @@ define([
         isDefault: function() {
             return _.min(_.pluck(this.collection.where({cluster_id: this.get('cluster_id')}), 'id')) == this.id;
         },
-        validate: function(options) {
-            var newName = options.name,
-                networkTabNS = 'cluster_page.network_tab.',
-                nodeNetworkGroups = this.collection || options.nodeNetworkGroups;
-            if (!nodeNetworkGroups) return null;
+        validate: function(options = {}) {
+            var ns = 'cluster_page.network_tab.',
+                newName = _.trim(options.name) || '';
+            if (!newName) {
+                return i18n(ns + 'node_network_group_empty_name');
+            }
             if (newName.toLowerCase() == 'default') {
-                return i18n(networkTabNS + 'node_network_group_default_name');
+                return i18n(ns + 'node_network_group_default_name');
             }
-            if (_.contains(nodeNetworkGroups.pluck('name'), newName)) {
-                return i18n(networkTabNS + 'node_network_group_duplicate_error');
-            }
-            if (!newName.match(utils.regexes.nodeNetworkGroupName)) {
-                return i18n(networkTabNS + 'validation.invalid_node_network_group_name');
+            if ((this.collection || options.nodeNetworkGroups).any({name: newName})) {
+                return i18n(ns + 'node_network_group_duplicate_error');
             }
             return null;
         }

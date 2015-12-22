@@ -45,38 +45,45 @@ def recursive_data_files(spec_data_files):
 
 
 if __name__ == "__main__":
-    setup(name=name,
-          version=version,
-          description='Nailgun package',
-          long_description="""Nailgun package""",
-          classifiers=[
+    setup(
+        name=name,
+        version=version,
+        description='Nailgun package',
+        long_description="""Nailgun package""",
+        classifiers=[
               "Development Status :: 4 - Beta",
               "Programming Language :: Python",
               "Topic :: Internet :: WWW/HTTP",
               "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
           ],
-          author='Mirantis Inc.',
-          author_email='product@mirantis.com',
-          url='http://mirantis.com',
-          keywords='web wsgi nailgun mirantis',
-          packages=find_packages(),
-          zip_safe=False,
-          install_requires=find_requires(),
-          include_package_data=True,
-          scripts=['manage.py'],
-          entry_points={
-              'console_scripts': [
-                  'nailgun_syncdb = nailgun.db:syncdb',
-                  'nailgun_fixtures = \
-                      nailgun.db.sqlalchemy.fixman:upload_fixtures',
-                  'nailgund = nailgun.app:appstart',
-                  'assassind = nailgun.assassin.assassind:run',
-                  'receiverd = nailgun.rpc.receiverd:run',
-                  'statsenderd = nailgun.statistics.statsenderd:run',
-                  'oswl_collectord = nailgun.statistics.oswl.collector:run',
-                  ('oswl_cleaner = nailgun.statistics.oswl.helpers:'
-                   'delete_expired_oswl_entries'),
-              ],
-          },
-          data_files=recursive_data_files([('share/nailgun', 'static')])
-          )
+        author='Mirantis Inc.',
+        author_email='product@mirantis.com',
+        url='http://mirantis.com',
+        keywords='web wsgi nailgun mirantis',
+        packages=find_packages(),
+        zip_safe=False,
+        install_requires=find_requires(),
+        include_package_data=True,
+        scripts=['manage.py'],
+        entry_points={
+            'console_scripts': [
+                'nailgun_syncdb = nailgun.db:syncdb',
+                ('nailgun_fixtures = '
+                 'nailgun.db.sqlalchemy.fixman:upload_fixtures'),
+                'nailgund = nailgun.app:appstart',
+                'assassind = nailgun.assassin.assassind:run',
+                'receiverd = nailgun.rpc.receiverd:run',
+                'statsenderd = nailgun.statistics.statsenderd:run',
+                'oswl_collectord = nailgun.statistics.oswl.collector:run',
+                ('oswl_cleaner = nailgun.statistics.oswl.helpers:'
+                 'delete_expired_oswl_entries'),
+            ],
+            'nailgun.extensions': [
+                ('cluster_upgrade = nailgun.extensions.cluster_upgrade'
+                 '.extension:ClusterUpgradeExtension'),
+                ('volume_manager = nailgun.extensions.volume_manager'
+                 '.extension:VolumeManagerExtension')
+            ],
+        },
+        data_files=recursive_data_files([('share/nailgun', 'static')]),
+    )

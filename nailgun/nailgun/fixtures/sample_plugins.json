@@ -1,7 +1,7 @@
 [
     {
-        "pk": 1,
-        "model": "nailgun.plugin",
+        "model": "nailgun.Plugin",
+        "identity_fields": ["name", "version"],
         "fields": {
             "name": "logging",
             "title": "The Logging, Monitoring and Alerting (LMA) Collector Plugin",
@@ -52,11 +52,22 @@
                     "label": "label"
                 }
             }
-        }
+        },
+        "children": [
+            {
+                "model": "nailgun.PluginLink",
+                "fields": {
+                    "plugin": null,
+                    "title": "Sample Plugin Dashboard",
+                    "description": "Collect logs, metrics and notifications from system and OpenStack services and forward that information to external backends such as Elasticsearch and InfluxDB.",
+                    "url": "/sample_plugin_dashboard"
+                }
+            }
+        ]
     },
     {
-        "pk": 2,
-        "model": "nailgun.plugin",
+        "model": "nailgun.Plugin",
+        "identity_fields": ["name", "version"],
         "fields": {
             "name": "VPNaaS",
             "title": "VPNaaS plugin for Neutron",
@@ -92,8 +103,8 @@
         }
     },
     {
-        "pk": 3,
-        "model": "nailgun.plugin",
+        "model": "nailgun.Plugin",
+        "identity_fields": ["name", "version"],
         "fields": {
             "name": "zabbix_monitoring",
             "title": "Zabbix for Fuel",
@@ -141,8 +152,8 @@
         }
     },
     {
-        "pk": 4,
-        "model": "nailgun.plugin",
+        "model": "nailgun.Plugin",
+        "identity_fields": ["name", "version"],
         "fields": {
             "name": "zabbix_monitoring",
             "title": "Zabbix for Fuel",

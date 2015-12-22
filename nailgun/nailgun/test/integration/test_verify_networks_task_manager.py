@@ -498,7 +498,6 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
         )
 
         template = self.env.read_fixtures(['network_template_80'])[0]
-        template.pop('pk')
         self.upload_template(self.cluster['id'], template)
 
         if net_type == consts.NEUTRON_SEGMENT_TYPES.vlan:

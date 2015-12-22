@@ -41,7 +41,6 @@ class TestHandlers(BaseIntegrationTest):
     def test_network_template_upload(self):
         cluster = self.env.create_cluster(api=False)
         template = self.env.read_fixtures(['network_template_80'])[0]
-        template.pop('pk')  # PK is not needed
 
         resp = self.app.put(
             reverse(
@@ -84,7 +83,6 @@ class TestHandlers(BaseIntegrationTest):
         )[0]
 
         template = self.env.read_fixtures(['network_template_70'])[0]
-        template.pop('pk')  # PK is not needed
 
         resp = self.app.put(
             reverse(
@@ -127,7 +125,6 @@ class TestHandlers(BaseIntegrationTest):
 
     def check_put_delete_template(self, cluster, forbidden=False):
         template = self.env.read_fixtures(['network_template_80'])[0]
-        template.pop('pk')  # PK is not needed
         resp = self.app.put(
             reverse(
                 'TemplateNetworkConfigurationHandler',

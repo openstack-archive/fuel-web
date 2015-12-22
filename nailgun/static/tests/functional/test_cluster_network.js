@@ -335,7 +335,7 @@ define([
             modal;
 
         return {
-            name: 'Networks page Node network group tests',
+            name: 'Node network group tests',
             setup: function() {
                 common = new Common(this.remote);
                 clusterPage = new ClusterPage(this.remote);
@@ -360,7 +360,7 @@ define([
                         return modal.waitToOpen();
                     })
                     .assertElementContainsText('h4.modal-title', 'Add New Node Network Group', 'Add New Node Network Group modal expected')
-                    .setInputValue('[name=node_network_group_name]', 'Node_Network_Group_1')
+                    .setInputValue('[name=node-network-group-name]', 'Node_Network_Group_1')
                     .then(function() {
                         return modal.clickFooterButton('Add Group');
                     })
@@ -388,7 +388,7 @@ define([
                         // Enter
                         .type('\uE007')
                         .end()
-                    .assertElementAppears('.has-error.node-group-renaming', 1000, 'Error is displayed in case of dublicate name')
+                    .assertElementAppears('.has-error.node-group-renaming', 1000, 'Error is displayed in case of duplicate name')
                     .findByCssSelector('.node-group-renaming input[type=text]')
                         .clearValue()
                         .type('Node_Network_Group_2')

@@ -83,7 +83,7 @@ define([
                     .assertElementAppears('.dashboard-block a.btn-add-nodes', 2000, 'All changes discarded, add nodes button gets visible in deploy readiness block');
             },
             'Start/stop deployment': function() {
-                this.timeout = 60000;
+                this.timeout = 100000;
                 return this.remote
                     .then(function() {
                         return common.addNodesToCluster(3, ['Controller']);

@@ -646,6 +646,7 @@
                     "node_network_group_name": "Name",
                     "node_network_group_duplicate_error": "This node network group name is already taken",
                     "node_network_group_default_name": "This name is assigned to default node network group",
+                    "node_network_group_empty_name": "Node network group name can not be empty",
                     "node_network_group_creation_error": "Node Network Group Creation Error",
                     "node_network_group_deletion_error": "Node Network Group Deletion Error",
                     "default_node_network_group_info": "This node network group uses shared admin network and cannot be deleted",
@@ -725,8 +726,7 @@
                         "invalid_mac": "Invalid MAC address",
                         "ip_start_is_out_of_ip_range": "The IP start value is out of the selected IP range",
                         "ip_end_is_out_of_ip_range": "The IP end value is out of the selected IP range",
-                        "invalid_name": "Invalid network name",
-                        "invalid_node_network_group_name": "Invalid node network group name"
+                        "invalid_name": "Invalid network name"
                     },
                     "tabs": {
                         "nova_configuration": "Nova Configuration",

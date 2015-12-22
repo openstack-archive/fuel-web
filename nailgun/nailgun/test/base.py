@@ -548,9 +548,8 @@ class EnvironmentManager(object):
         return plugin_link
 
     def default_metadata(self):
-        item = self.find_item_by_pk_model(
-            self.read_fixtures(("sample_environment",)),
-            1, 'nailgun.node')
+        fixtures = self.read_fixtures(("sample_environment",))
+        item = next(fix for fix in fixtures if fix['model'] == 'nailgun.Node')
         return item.get('fields').get('meta', {})
 
     def generate_random_mac(self):
@@ -833,7 +832,9 @@ class EnvironmentManager(object):
         for fxtr_path in self.fxtr_paths_by_names(fxtr_names):
             with open(fxtr_path, "r") as fxtr_file:
                 try:
-                    data.extend(load_fixture(fxtr_file))
+                    fixtures = [f for f in load_fixture(fxtr_file)
+                                if f.get('save_to_db', True)]
+                    data.extend(fixtures)
                 except Exception as exc:
                     logger.error(
                         'Error "%s" occurred while loading '
@@ -861,11 +862,6 @@ class EnvironmentManager(object):
                     "Fixture file was not found: %s",
                     fxtr
                 )
-
-    def find_item_by_pk_model(self, data, pk, model):
-        for item in data:
-            if item.get('pk') == pk and item.get('model') == model:
-                return item
 
     def launch_provisioning_selected(self, nodes_uids=None):
         if self.clusters:

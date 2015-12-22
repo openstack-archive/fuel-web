@@ -682,7 +682,6 @@ class TestNetworkCheck(BaseIntegrationTest):
             'controller': default_nt['templates_for_node_role']['controller'],
             'compute': default_nt['templates_for_node_role']['compute']
         }
-        fake_template.pop('pk')  # PK is not needed
 
         cluster_db.network_config.configuration_template = fake_template
         self.db.flush()

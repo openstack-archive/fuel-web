@@ -1,6 +1,9 @@
 ---
 - &base_release
-  model: "nailgun.release"
+  model: "nailgun.Release"
+  save_to_db: False
+  identity_fields:
+    - name
   fields:
     state: "available"
     modes_metadata:
@@ -1927,8 +1930,8 @@
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
     modes: ['ha_compact']
     extensions: ['volume_manager']
-- pk: 1
-  extend: *base_release
+- extend: *base_release
+  save_to_db: True
   fields:
     name: "Kilo on CentOS 6.5"
     state: "unavailable"
@@ -2001,8 +2004,8 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-- pk: 2
-  extend: *base_release
+- extend: *base_release
+  save_to_db: True
   fields:
     name: "Kilo on Ubuntu 14.04"
     version: "2015.1.0-8.0"

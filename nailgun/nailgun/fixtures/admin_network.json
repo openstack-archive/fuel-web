@@ -1,7 +1,7 @@
 [
     {
-        "pk": 1,
-        "model": "nailgun.network_group",
+        "identity_fields": ["name"],
+        "model": "nailgun.NetworkGroup",
         "fields": {
             "name": "fuelweb_admin",
             "cidr": "{{settings.ADMIN_NETWORK['cidr']}}",
@@ -16,23 +16,23 @@
                 "unmovable": true,
                 "configurable": false
             }
-        }
-    },
-    {
-        "pk": 1,
-        "model": "nailgun.i_p_addr_range",
-        "fields": {
-            "network_group": 1,
-            "first": "{{settings.ADMIN_NETWORK['first']}}",
-            "last": "{{settings.ADMIN_NETWORK['last']}}"
-        }
-    },
-    {
-        "pk": 1,
-        "model": "nailgun.i_p_addr",
-        "fields": {
-            "network_data": 1,
-            "ip_addr": "{{settings.MASTER_IP}}"
-        }
+        },
+        "children": [
+            {
+                "model": "nailgun.IPAddrRange",
+                "fields": {
+                    "network_group": null,
+                    "first": "{{settings.ADMIN_NETWORK['first']}}",
+                    "last": "{{settings.ADMIN_NETWORK['last']}}"
+                }
+            },
+            {
+                "model": "nailgun.IPAddr",
+                "fields": {
+                    "network_data": null,
+                    "ip_addr": "{{settings.MASTER_IP}}"
+                }
+            }
+        ]
     }
 ]

@@ -105,9 +105,11 @@
                 "descriptions": {
                     "public": "Addresses of the public network can be used to communicate with the cluster and its VMs from outside of the environment (the Internet, corporate network, end users). The public network also provides Virtual IPs for public endpoints, which are used to connect to OpenStack services APIs.",
                     "storage": "Part of the environment's internal network. It carries replication traffic from Ceph or Swift. Ceph public traffic is dispatched through br-mgmt bridge (Management network).",
-                    "management" : "Part of the environment's internal network. It is used to put tagged VLAN traffic from private tenant networks on physical NIC interfaces. This network can also be used for serving iSCSI protocol exchanges between Compute and Storage nodes. As to the Management, it serves for all other internal communications, including database queries, AMQP messaging, high availability services).",
-                    "internal" : "The internal network connects all OpenStack nodes in the environment. All components of an OpenStack environment communicate with each other using this network. This network must be isolated from both the private and public networks for security reasons. The internal network can also be used for serving iSCSI protocol exchanges between Compute and Storage nodes.",
-                    "floating" : "The floating range is IPs that are assigned to individual VM instances by the project administrator. Neutron services can then configure these addresses on the public network interface of the Network controller node."
+                    "management": "Part of the environment's internal network. It is used to put tagged VLAN traffic from private tenant networks on physical NIC interfaces. This network can also be used for serving iSCSI protocol exchanges between Compute and Storage nodes. As to the Management, it serves for all other internal communications, including database queries, AMQP messaging, high availability services).",
+                    "internal": "The internal network connects all OpenStack nodes in the environment. All components of an OpenStack environment communicate with each other using this network. This network must be isolated from both the private and public networks for security reasons. The internal network can also be used for serving iSCSI protocol exchanges between Compute and Storage nodes.",
+                    "floating": "The floating range is IPs that are assigned to individual VM instances by the project administrator. Neutron services can then configure these addresses on the public network interface of the Network controller node.",
+                    "private": "The private network facilitates communication between each tenant's VMs. Private network address spaces are not a part of the public network address space; fixed IPs of virtual instances cannot be accessed directly from the rest of the public network.",
+                    "baremetal": "Separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes."
                 }
             },
             "login_page": {
@@ -694,8 +696,9 @@
                         "dns_nameservers": "Guest OS DNS Servers",
                         "l2_configuration": "Neutron L2 Configuration",
                         "l3_configuration": "Neutron L3 Configuration",
-                        "l2_description": "",
-                        "dns_servers_description": "",
+                        "l2_description": "The VLAN/Tunnel configuration is used for Private networks",
+                        "dns_servers_description": "DNS servers for VMs in the environment",
+                        "baremetal_parameters_description": "Baremetal network is pre-existing network where baremetal nodes to be managed by OpenStack Ironic are attached (not the IPMI network). It is reqistered as provider network in Neutron and used for provisioning barematal nodes and accessing them.",
                         "gre_id_range": "Tunnel ID range",
                         "vlan_range": "VLAN ID range",
                         "base_mac": "Base MAC address",

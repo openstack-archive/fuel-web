@@ -313,7 +313,8 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             </div>;
         },
         renderSourceSelect: function() {
-            var sourceOptions = this.state.type == 'local' ? this.getLocalSources() : this.getRemoteSources();
+            var createFragment = React.addons.createFragment,
+                sourceOptions = this.state.type == 'local' ? this.getLocalSources() : createFragment(this.getRemoteSources());
             return <div className='col-md-2 col-sm-3'>
                 <controls.Input
                     type='select'

@@ -99,7 +99,7 @@ def do_upgrade_head_extensions():
 
 
 def do_upgrade_head_core():
-    do_alembic_command('upgrade', ALEMBIC_CONFIG, 'head')
+    do_alembic_command('upgrade', ALEMBIC_CONFIG, 'core@head')
 
 
 def do_upgrade_head():

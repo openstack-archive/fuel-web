@@ -87,8 +87,8 @@ def load_db_parsers(subparsers):
         'dumpdata', help='dump models as fixture'
     )
     dumpdata_parser.add_argument(
-        'model', action='store', help='model name to dump; underscored name'
-        'should be used, e.g. network_group for NetworkGroup model'
+        'model', action='store', help='model name to dump; SQLAlchemy model '
+        'name should be used, e.g. NetworkGroup for network_groups table'
     )
     generate_parser = subparsers.add_parser(
         'generate_nodes_fixture', help='generate new nodes fixture'

@@ -1,7 +1,7 @@
 [
     {
-        "pk": 1,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "discover",
             "name": "Supermicro X9DRW",
@@ -338,8 +338,8 @@
         }
     },
     {
-        "pk": 2,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "discover",
             "name": "Dell Inspiron",
@@ -556,8 +556,8 @@
         }
     },
     {
-        "pk": 3,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "discover",
             "name": "Supermicro X9SCD",
@@ -753,8 +753,8 @@
         }
     },
     {
-        "pk": 4,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "discover",
             "name": "Supermicro X9SCD (offline)",
@@ -884,8 +884,8 @@
         }
     },
     {
-        "pk": 5,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "error",
             "error_msg": "You need more money",
@@ -1016,8 +1016,8 @@
         }
     },
     {
-        "pk": 6,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "discover",
             "name": "VirtualBox",
@@ -1105,8 +1105,8 @@
         }
     },
     {
-        "pk": 7,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "discover",
             "name": "KVM",
@@ -1217,8 +1217,8 @@
         }
     },
     {
-        "pk": 8,
-        "model": "nailgun.node",
+        "model": "nailgun.Node",
+        "identity_fields": ["name", "hostname"],
         "fields": {
             "status": "discover",
             "name": "Supermicro X9DRW (srv07)",

@@ -65,8 +65,7 @@ class TestFixture(BaseIntegrationTest):
 
     def test_json_fixture(self):
         data = '''[{
-            "pk": 2,
-            "model": "nailgun.release",
+            "model": "nailgun.Release",
             "fields": {
                 "name": "JSONFixtureRelease",
                 "version": "0.0.1",
@@ -84,13 +83,16 @@ class TestFixture(BaseIntegrationTest):
     def test_yaml_fixture(self):
         data = '''---
 - &base_release
-  model: nailgun.release
+  model: nailgun.Release
+  save_to_db: false
   fields:
     name: BaseRelease
     version: 0.0.1
     operating_system: AbstractOS
-- pk: 2
-  extend: *base_release
+- extend: *base_release
+  save_to_db: true
+  identity_field:
+    - name
   fields:
     name: YAMLFixtureRelease
     version: 1.0.0

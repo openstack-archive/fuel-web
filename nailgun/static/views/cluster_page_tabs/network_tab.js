@@ -1288,6 +1288,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return (
                 <div className={'forms-box ' + networkName}>
                     <h3 className='networks'>{i18n('network.' + networkName)}</h3>
+                    <div className='network-description'>{i18n('network.descriptions.' + networkName)}</div>
                     <CidrControl
                         {... this.composeProps('cidr')}
                         changeNetworkNotation={this.changeNetworkNotation}
@@ -1425,6 +1426,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         <h3>
                             <span className='subtab-group-floating-net'>{i18n(networkTabNS + 'floating_net')}</span>
                         </h3>
+                        <div className='network-description'>{i18n('network.descriptions.floating')}</div>
                         <Range
                             {...this.composeProps('floating_ranges', true)}
                             rowsClassName='floating-ranges-rows'
@@ -1436,6 +1438,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         <h3>
                             <span className='subtab-group-internal-net'>{i18n(networkTabNS + 'internal_net')}</span>
                         </h3>
+                        <div className='network-description'>{i18n('network.descriptions.internal')}</div>
                         {this.renderInput('internal_cidr')}
                         {this.renderInput('internal_gateway')}
                         {this.renderInput('internal_name', false, {maxLength: '65'})}

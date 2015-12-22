@@ -3823,6 +3823,17 @@ input[type=range] {
     &.network .help-block {
       max-width: 400px;
     }
+    h3 {
+      margin-bottom: @base-indent;
+      & + .form-group {
+        margin-top: @base-indent * 2;
+      }
+    }
+    .network-description {
+      color: @gray;
+      font-size: @base-font-size - 2;
+      margin-bottom: @base-indent * 2;
+    }
     .form-group {
       padding: 0;
       &.floating_ranges {

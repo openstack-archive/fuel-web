@@ -1,5 +1,4 @@
 [{
-    "pk": 1,
     "adv_net_template": {
         "default": {
             "network_assignments": {
@@ -411,7 +410,6 @@
 },
 
 {
-    "pk": 2,
     "adv_net_template": {
         "default": {
             "network_assignments": {

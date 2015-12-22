@@ -300,14 +300,15 @@ function run_ui_func_tests {
 
     SERVER_PORT=$NAILGUN_PORT \
     ARTIFACTS=$artifacts \
-    ${GULP} functional-tests --suites=$testcase
-    if [ $? -ne 0 ]; then
-      result=1
-      break
-    fi
+    ${GULP} functional-tests --suites=$testcase || result=1
 
     if [ $no_nailgun_start -ne 1 ]; then
       kill_server $NAILGUN_PORT
+    fi
+
+    if [ $result -ne 0 ]; then
+      cat $server_log
+      break
     fi
   done
 

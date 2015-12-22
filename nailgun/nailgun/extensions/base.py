@@ -15,25 +15,20 @@
 #    under the License.
 
 import abc
+
+
 import six
+from stevedore.extension import ExtensionManager
 
 from nailgun.errors import errors
+from nailgun.extensions import consts
+
+
+EXTENSION_MANAGER = ExtensionManager(namespace=consts.EXTENSIONS_NAMESPACE)
 
 
 def get_all_extensions():
-    # TODO(eli): implement extensions autodiscovery
-    # should be done as a part of blueprint
-    # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
-    from nailgun.extensions.cluster_upgrade.extension \
-        import ClusterUpgradeExtension
-    from nailgun.extensions.volume_manager.extension \
-        import VolumeManagerExtension
-
-    extensions = [
-        VolumeManagerExtension,
-        ClusterUpgradeExtension,
-    ]
-    return extensions
+    return (ext.plugin for ext in EXTENSION_MANAGER.extensions)
 
 
 def get_extension(name):
@@ -42,13 +37,14 @@ def get_extension(name):
     :param str name: name of the extension
     :returns: extension class
     """
-    extensions = filter(lambda e: e.name == name, get_all_extensions())
+    extension = next(
+        (e for e in get_all_extensions() if e.name == name), None)
 
-    if not extensions:
+    if extension is None:
         raise errors.CannotFindExtension(
             "Cannot find extension with name '{0}'".format(name))
 
-    return extensions[0]
+    return extension
 
 
 def _get_extension_by_node_or_env(call_name, node):
@@ -136,6 +132,10 @@ class BaseExtension(object):
     @abc.abstractproperty
     def name(self):
         """Uniq name of the extension."""
+
+    @abc.abstractproperty
+    def description(self):
+        """Brief description of extension"""
 
     @abc.abstractproperty
     def version(self):

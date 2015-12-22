@@ -18,3 +18,5 @@
 # not hardcode information about tables which are specific
 # for extension or core into extension's and core's migrations.
 extensions_migration_buffer_table_name = 'extensions_migration_buffer'
+
+EXTENSIONS_NAMESPACE = 'nailgun.extensions'

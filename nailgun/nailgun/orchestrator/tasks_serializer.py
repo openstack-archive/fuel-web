@@ -406,7 +406,10 @@ class UploadConfiguration(GenericRolesHook):
             for config_dest in node_configs[node_id]:
                 path = os.path.join(consts.OVERRIDE_CONFIG_BASE_PATH,
                                     config_dest + '.yaml')
-                data = {'configuration': node_configs[node_id][config_dest]}
+                # Converts config from MutableDict to dict
+                # needs for further serialization to yaml
+                data = {
+                    'configuration': dict(node_configs[node_id][config_dest])}
                 node = nodes_to_update[node_id]
                 yield templates.make_upload_task(
                     [node.uid], path=path, data=yaml.safe_dump(data))

@@ -260,7 +260,7 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
                 // add auth token to header if auth is enabled
                 if (app.version.get('auth_required') && !this.authExempt) {
                     return app.keystoneClient.authenticate()
-                        .fail(app.logout)
+                        .fail(() => app.logout())
                         .then(() => {
                             options.headers = options.headers || {};
                             options.headers['X-Auth-Token'] = app.keystoneClient.token;

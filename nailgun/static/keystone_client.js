@@ -97,8 +97,10 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
         }
 
         deauthenticate() {
+            var token = this.token;
+
             if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
-            if (!this.token) return $.Deferred().reject();
+            if (!token) return $.Deferred().reject();
 
             delete this.userId;
             delete this.token;
@@ -106,11 +108,11 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
 
             Cookies.remove('token');
 
-            this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + this.token, {
+            this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + token, {
                 type: 'DELETE',
                 dataType: 'json',
                 contentType: 'application/json',
-                headers: {'X-Auth-Token': this.token}
+                headers: {'X-Auth-Token': token}
             })
             .always(() => delete this.tokenRemoveRequest);
 

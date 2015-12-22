@@ -14,118 +14,37 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"Contains base class for Nailgun extensions"
+
 import abc
+
 import six
-
-from nailgun.errors import errors
-
-
-def get_all_extensions():
-    # TODO(eli): implement extensions autodiscovery
-    # should be done as a part of blueprint
-    # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
-    from nailgun.extensions.cluster_upgrade.extension \
-        import ClusterUpgradeExtension
-    from nailgun.extensions.volume_manager.extension \
-        import VolumeManagerExtension
-
-    extensions = [
-        VolumeManagerExtension,
-        ClusterUpgradeExtension,
-    ]
-    return extensions
-
-
-def get_extension(name):
-    """Retrieves extension by name
-
-    :param str name: name of the extension
-    :returns: extension class
-    """
-    extensions = filter(lambda e: e.name == name, get_all_extensions())
-
-    if not extensions:
-        raise errors.CannotFindExtension(
-            "Cannot find extension with name '{0}'".format(name))
-
-    return extensions[0]
-
-
-def _get_extension_by_node_or_env(call_name, node):
-    found_extension = None
-
-    # Try to find extension in node
-    if node:
-        for extension in node.extensions:
-            if call_name in get_extension(extension).provides:
-                found_extension = extension
-
-    # Try to find extension by environment
-    if not found_extension and node.cluster:
-        for extension in node.cluster.extensions:
-            if call_name in get_extension(extension).provides:
-                found_extension = extension
-
-    if not found_extension:
-        raise errors.CannotFindExtension(
-            "Cannot find extension which provides "
-            "'{0}' call".format(call_name))
-
-    return get_extension(found_extension)
-
-
-def node_extension_call(call_name, node, *args, **kwargs):
-    extension = _get_extension_by_node_or_env(call_name, node)
-
-    return getattr(extension, call_name)(node, *args, **kwargs)
-
-
-def fire_callback_on_node_create(node):
-    for extension in get_all_extensions():
-        extension.on_node_create(node)
-
-
-def fire_callback_on_node_update(node):
-    for extension in get_all_extensions():
-        extension.on_node_update(node)
-
-
-def fire_callback_on_node_reset(node):
-    for extension in get_all_extensions():
-        extension.on_node_reset(node)
-
-
-def fire_callback_on_node_delete(node):
-    for extension in get_all_extensions():
-        extension.on_node_delete(node)
-
-
-def fire_callback_on_node_collection_delete(node_ids):
-    for extension in get_all_extensions():
-        extension.on_node_collection_delete(node_ids)
-
-
-def fire_callback_on_cluster_delete(cluster):
-    for extension in get_all_extensions():
-        extension.on_cluster_delete(cluster)
 
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseExtension(object):
+    """Base class for Nailgun extension
 
-    # If extension provides API, define here urls in then
-    # next format:
-    # [
-    #   {
-    #     "uri": r'/new/url',
-    #     "handler": HandlerClass
-    #   }
-    # ]
+    If extension provides API, define here urls in then following format:
+    urls = [
+      {
+        "uri": r'/new/url',
+        "handler": HandlerClass
+      }
+    ]
     urls = []
 
-    # Specify a list of calls which extension provides.
-    # This list is required for core and other extensions
-    # to find extension with specific functionality.
+    Specify a list of calls which extension provides.
+    This list is required for core and other extensions
+    to find extension with specific functionality.
+
+    provides = [
+        'method_1',
+        'method_2',
+    ]
+    """
+
+    urls = []
     provides = []
 
     @classmethod
@@ -136,6 +55,10 @@ class BaseExtension(object):
     @abc.abstractproperty
     def name(self):
         """Uniq name of the extension."""
+
+    @abc.abstractproperty
+    def description(self):
+        """Brief description of extension"""
 
     @abc.abstractproperty
     def version(self):

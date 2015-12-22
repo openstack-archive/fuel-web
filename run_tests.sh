@@ -285,11 +285,10 @@ function run_ui_func_tests {
   fi
 
   # run js testcases
-  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
   local result=0
-  local pid
 
   for testcase in $TESTS; do
+    local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
     if [ $no_nailgun_start -ne 1 ]; then
       dropdb $config
       syncdb $config true
@@ -310,9 +309,9 @@ function run_ui_func_tests {
       cat $server_log
       break
     fi
+    rm $server_log
   done
 
-  rm $server_log
   popd >> /dev/null
 
   return $result

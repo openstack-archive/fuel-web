@@ -24,6 +24,7 @@ Create Date: 2015-10-15 17:20:11.132934
 revision = '43b2cb64dae6'
 down_revision = '1e50a4903910'
 
+
 from alembic import op
 from oslo_serialization import jsonutils
 import sqlalchemy as sa

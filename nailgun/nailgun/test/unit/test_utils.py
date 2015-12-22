@@ -398,7 +398,7 @@ class TestFakeNodeGenerator(base.BaseUnitTest):
             total_nodes_count >= actual_error_nodes + actual_offline_nodes)
 
     def test_generate_fake_node_common_structure(self):
-        pk = 123
+        hostname_postfix = '123'
         sample_node_fields = {
             'status': 'discover',
             'name': 'Supermicro X9DRW',
@@ -422,9 +422,10 @@ class TestFakeNodeGenerator(base.BaseUnitTest):
                 'memory': []
             }
         }
-        generated_node = self.generator.generate_fake_node(pk)
-        self.assertEqual(generated_node.get('pk'), pk)
-        self.assertEqual(generated_node.get('model'), 'nailgun.node')
+        generated_node = self.generator.generate_fake_node(hostname_postfix)
+        self.assertTrue(generated_node['fields']['hostname'].
+                        endswith(hostname_postfix))
+        self.assertEqual(generated_node.get('model'), 'nailgun.Node')
         generated_node_fields = generated_node.get('fields', {})
         self.assertItemsEqual(sample_node_fields.keys(),
                               generated_node_fields.keys())
@@ -435,22 +436,24 @@ class TestFakeNodeGenerator(base.BaseUnitTest):
         self.assertEqual(generated_node_fields.get('progress'), 0)
 
     def test_generate_fake_node_with_params(self):
-        pk = 123
+        hostname_postfix = '123'
         is_online = False
 
         generated_node = self.generator.generate_fake_node(
-            pk, is_online=is_online, use_offload_iface=True)
-        self.assertEqual(pk, generated_node.get('pk'))
+            hostname_postfix, is_online=is_online, use_offload_iface=True)
+        self.assertTrue(generated_node['fields']['hostname'].
+                        endswith(hostname_postfix))
         generated_node_fields = generated_node.get('fields')
         self.assertEqual(is_online, generated_node_fields.get('online'))
         self.assertEqual('discover', generated_node_fields.get('status'))
         self.assertIn('offloading_modes',
                       generated_node_fields['meta'].get('interfaces')[0])
 
-        pk = 321
+        hostname_postfix = '321'
         generated_node = self.generator.generate_fake_node(
-            pk, is_error=True, use_offload_iface=False)
-        self.assertEqual(pk, generated_node.get('pk'))
+            hostname_postfix, is_error=True, use_offload_iface=False)
+        self.assertTrue(generated_node['fields']['hostname'].
+                        endswith(hostname_postfix))
         generated_node_fields = generated_node.get('fields')
         self.assertTrue(generated_node_fields.get('online'))
         self.assertEqual('error', generated_node_fields.get('status'))

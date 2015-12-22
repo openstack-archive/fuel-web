@@ -108,7 +108,7 @@ class TestNetworkTemplateSerializer80(
             'transformations': [],
             'roles': {'baremetal': 'br-baremetal'}}
         self.cluster.network_config.configuration_template = {
-            'adv_net_template': {'default': brmtl_template}, 'pk': 1}
+            'adv_net_template': {'default': brmtl_template}}
         serializer_type = get_serializer_for_cluster(self.cluster)
         self.serializer = serializer_type(AstuteGraph(self.cluster))
         self._check_baremetal_neutron_attrs(self.cluster)

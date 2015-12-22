@@ -15,7 +15,6 @@
 #    under the License.
 
 from datetime import datetime
-import itertools
 import jinja2
 import os.path
 import Queue
@@ -76,49 +75,97 @@ def load_fixture(fileobj, loader=None):
     fixture = loader.load(
         template_fixture(fileobj)
     )
-    fixture = filter(lambda obj: obj.get('pk') is not None, fixture)
-    for i in range(0, len(fixture)):
-        def extend(obj):
-            if 'extend' in obj:
-                obj['extend'] = extend(obj['extend'])
-            return dict_merge(obj.get('extend', {}), obj)
+
+    def extend(obj):
+        if 'extend' in obj:
+            obj['extend'] = extend(obj['extend'])
+        return dict_merge(obj.get('extend', {}), obj)
+
+    for i, obj in enumerate(fixture):
         fixture[i] = extend(fixture[i])
         fixture[i].pop('extend', None)
 
     return fixture
 
 
+def _get_related_model(db_field):
+    """Returns related DB model if db_field is relationship property
+
+    :param db_field: SQLAlchemy column
+    :return: SQLAlchemy model or None
+    """
+    fk_model = None
+    try:
+        if hasattr(db_field.comparator.prop, "argument"):
+            if hasattr(db_field.comparator.prop.argument, "__call__"):
+                fk_model = db_field.comparator.prop.argument()
+            else:
+                fk_model = db_field.comparator.prop.argument.class_
+    except AttributeError:
+        pass
+    return fk_model
+
+
+def _get_name_and_db_model(fixture_data):
+    """Extracts model_name and model class from fixture['model'] value
+
+    :param fixture_data: fixture data
+    :type fixture_data: dict
+    :return: model_name and SQLAlchemy model class
+    :rtype: tuple
+    """
+    model_name = fixture_data["model"].split(".")[1]
+    return model_name, getattr(models, model_name)
+
+
 def upload_fixture(fileobj, loader=None):
     fixture = load_fixture(fileobj, loader)
 
+    # Filtering fixtures with save_to_db False and without identity_fields
+    fixture = [obj for obj in fixture if obj.get('save_to_db', True) and
+               obj.get('identity_fields')]
+
     queue = Queue.Queue()
-    keys = {}
+
+    # Created objects cache
+    created_objects = {}
 
     for obj in fixture:
-        pk = obj['pk']
-        model_name = obj["model"].split(".")[1]
+        identity_fields = obj.get('identity_fields', [])
+        model_name, model = _get_name_and_db_model(obj)
 
-        try:
-            itertools.dropwhile(
-                lambda m: not hasattr(models, m),
-                [model_name.capitalize(),
-                 "".join(map(lambda n: n.capitalize(), model_name.split("_")))]
-            ).next()
-        except StopIteration:
+        if not identity_fields:
+            logger.warning("No identity fields for '{0}' in fixture '{1}'. "
+                           "Checking of presence in DB will be skipped.".
+                           format(obj['model'], fileobj.name))
+
+        if not hasattr(models, model_name):
             raise Exception("Couldn't find model {0}".format(model_name))
 
-        obj['model'] = getattr(models, capitalize_model_name(model_name))
-        keys[obj['model'].__tablename__] = {}
+        created_objects[model_name] = {}
 
-        # Check if it's already uploaded
-        obj_from_db = db().query(obj['model']).get(pk)
+        # Check if fixture already uploaded
+        query = db().query(model)
+        identity_values = []
+        for identity_field in identity_fields:
+            column = getattr(model.__table__.columns, identity_field)
+            value = obj['fields'][identity_field]
+            identity_values.append(value)
+            query = query.filter(column == value)
+            obj_from_db = query.first()
+
         if obj_from_db:
-            logger.info("Fixture model '%s' with pk='%s' already"
-                        " uploaded. Skipping", model_name, pk)
+            logger.info("Fixture '%s' from '%s' with %s=%s already"
+                        " uploaded. Skipping.", model_name, fileobj.name,
+                        identity_fields, identity_values)
             continue
         queue.put(obj)
 
-    pending_objects = []
+        # Adding child fixtures
+        for child in obj.get('children', []):
+            child_model_name, child_model = _get_name_and_db_model(child)
+            created_objects[child_model_name] = {}
+            queue.put(child)
 
     while True:
         try:
@@ -126,38 +173,19 @@ def upload_fixture(fileobj, loader=None):
         except Exception:
             break
 
-        new_obj = obj['model']()
+        model_name, model = _get_name_and_db_model(obj)
+        new_obj = model()
+
         fk_fields = {}
         for field, value in obj["fields"].iteritems():
-            f = getattr(obj['model'], field)
+            f = getattr(model, field)
             impl = getattr(f, 'impl', None)
-            fk_model = None
-            try:
-                if hasattr(f.comparator.prop, "argument"):
-                    if hasattr(f.comparator.prop.argument, "__call__"):
-                        fk_model = f.comparator.prop.argument()
-                    else:
-                        fk_model = f.comparator.prop.argument.class_
-            except AttributeError:
-                pass
+            fk_model = _get_related_model(f)
 
             if fk_model:
-                if value not in keys[fk_model.__tablename__]:
-                    if obj not in pending_objects:
-                        queue.put(obj)
-                        pending_objects.append(obj)
-                        continue
-                    else:
-                        logger.error(
-                            u"Can't resolve foreign key "
-                            "'{0}' for object '{1}'".format(
-                                field,
-                                obj["model"]
-                            )
-                        )
-                        break
-                else:
-                    value = keys[fk_model.__tablename__][value].id
+                fk_model_name = fk_model.__name__
+                last_id = max(created_objects[fk_model_name].keys())
+                value = created_objects[fk_model_name][last_id].id
 
             if isinstance(impl, orm.attributes.ScalarObjectAttributeImpl):
                 if value:
@@ -192,15 +220,19 @@ def upload_fixture(fileobj, loader=None):
                         db().query(data[1]).get(v)
                     )
         db().add(new_obj)
-        db().commit()
-        keys[obj['model'].__tablename__][obj["pk"]] = new_obj
+        db().flush()
+        added_obj_pk = getattr(
+            new_obj, model.__mapper__.primary_key[0].name)
+        created_objects[model_name][added_obj_pk] = new_obj
 
         # UGLY HACK for testing
         if new_obj.__class__.__name__ == 'Node':
             objects.Node.create_attributes(new_obj)
             objects.Node.update_interfaces(new_obj)
             fire_callback_on_node_create(new_obj)
-            db().commit()
+            db().flush()
+
+    db().commit()
 
 
 def get_base_fixtures_path():
@@ -238,10 +270,12 @@ def upload_fixtures():
 def dump_fixture(model_name):
     dump = []
     app_name = 'nailgun'
-    model = getattr(models, capitalize_model_name(model_name))
+    model = getattr(models, model_name)
     for obj in db().query(model).all():
         obj_dump = {}
-        obj_dump['pk'] = getattr(obj, model.__mapper__.primary_key[0].name)
+        parent_key_name = model.__mapper__.primary_key[0].name
+        obj_dump['identity_fields'] = [parent_key_name]
+        obj_dump['id'] = getattr(obj, parent_key_name)
         obj_dump['model'] = "%s.%s" % (app_name, model_name)
         obj_dump['fields'] = {}
         dump.append(obj_dump)

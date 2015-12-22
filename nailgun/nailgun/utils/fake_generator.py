@@ -307,30 +307,32 @@ class FakeNodesGenerator(object):
             'devices': devices
         }
 
-    def generate_fake_node(self, pk, is_online=True, is_error=False,
-                           use_offload_iface=False, min_ifaces_num=1):
+    def generate_fake_node(self, hostname_postfix, is_online=True,
+                           is_error=False, use_offload_iface=False,
+                           min_ifaces_num=1):
         """Generate one fake node
 
-        :param int pk: node's database primary key
+        :param int hostname_postfix: node's name postfix
         :param bool is_online: node's online status
         :param bool is_error: node's error status
         :param bool use_offload_iface: use offloading_modes data for
                                        node's interfaces or not
+        :param min_ifaces_num: minimal ifaces num for the node
         :returns: kwargs dict that represents fake node
         """
 
         kind = random.choice(['real', 'virtual'])
         manufacture = random.choice(MANUFACTURERS[kind])
         self.mcounter[manufacture] = self.mcounter.get(manufacture, 0) + 1
-        hostname = 'node-{0}'.format(pk)
+        hostname = 'node-{0}'.format(hostname_postfix)
         platform_name = random.choice(['', 'X9SCD', 'N5110', 'X9DRW'])
         mac = self._generate_mac()
         net = random.choice(['net1', 'net2'])
         ip, netmask = self._get_network_data(net)
 
         return {
-            'pk': pk,
-            'model': 'nailgun.node',
+            'model': 'nailgun.Node',
+            'identity_fields': ['name', 'hostname'],
             'fields': {
                 'status': 'error' if is_error else 'discover',
                 'manufacturer': manufacture,

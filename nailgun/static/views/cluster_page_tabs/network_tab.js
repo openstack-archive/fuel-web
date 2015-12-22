@@ -1288,6 +1288,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return (
                 <div className={'forms-box ' + networkName}>
                     <h3 className='networks'>{i18n('network.' + networkName)}</h3>
+                    <div className='network-description'>{i18n('network.descriptions.' + networkName)}</div>
                     <CidrControl
                         {... this.composeProps('cidr')}
                         changeNetworkNotation={this.changeNetworkNotation}
@@ -1390,6 +1391,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return (
                 <div className='forms-box' key='neutron-l2'>
                     <h3 className='networks'>{i18n(parametersNS + 'l2_configuration')}</h3>
+                    <div className='network-description'>{i18n(networkTabNS + 'networking_parameters.l2_description')}</div>
                     <div>
                         <Range
                             {...this.composeProps(idRangePrefix + '_range', true)}
@@ -1425,6 +1427,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         <h3>
                             <span className='subtab-group-floating-net'>{i18n(networkTabNS + 'floating_net')}</span>
                         </h3>
+                        <div className='network-description'>{i18n('network.descriptions.floating')}</div>
                         <Range
                             {...this.composeProps('floating_ranges', true)}
                             rowsClassName='floating-ranges-rows'
@@ -1436,6 +1439,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         <h3>
                             <span className='subtab-group-internal-net'>{i18n(networkTabNS + 'internal_net')}</span>
                         </h3>
+                        <div className='network-description'>{i18n('network.descriptions.internal')}</div>
                         {this.renderInput('internal_cidr')}
                         {this.renderInput('internal_gateway')}
                         {this.renderInput('internal_name', false, {maxLength: '65'})}
@@ -1458,6 +1462,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                         <h3>
                             <span className='subtab-group-dns-nameservers'>{i18n(networkTabNS + 'dns_nameservers')}</span>
                         </h3>
+                        <div className='network-description'>{i18n(networkTabNS + 'networking_parameters.dns_servers_description')}</div>
                         <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
                     </div>
                 </div>

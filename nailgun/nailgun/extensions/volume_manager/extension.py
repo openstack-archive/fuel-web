@@ -37,6 +37,8 @@ class VolumeManagerExtension(BaseExtension):
         'set_node_volumes',
         'set_default_node_volumes']
 
+    description = "Volume Manager Extension"
+
     @classmethod
     def alembic_migrations_path(cls):
         return os.path.join(os.path.dirname(__file__),

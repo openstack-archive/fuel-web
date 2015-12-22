@@ -34,11 +34,12 @@ class TestBaseExtension(BaseTestCase):
     def setUp(self):
         super(TestBaseExtension, self).setUp()
 
-        class Extexnsion(BaseExtension):
+        class Extension(BaseExtension):
             name = 'ext_name'
             version = '1.0.0'
+            description = 'ext description'
 
-        self.extension = Extexnsion()
+        self.extension = Extension()
 
     def test_alembic_table_version(self):
         self.assertEqual(
@@ -82,12 +83,12 @@ class TestExtensionUtils(BaseTestCase):
 
         return node
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_get_extension(self, get_m):
         get_extension('ex1')
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_get_extension_raises_errors(self, get_m):
         self.assertRaisesRegexp(
@@ -96,7 +97,7 @@ class TestExtensionUtils(BaseTestCase):
             get_extension,
             'unknown_ex')
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_node_extension_call_raises_error(self, _):
         self.assertRaisesRegexp(
@@ -106,7 +107,7 @@ class TestExtensionUtils(BaseTestCase):
             'method_call',
             self.make_node())
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_node_extension_call_extension_from_node(self, get_m):
         node = self.make_node(
@@ -122,7 +123,7 @@ class TestExtensionUtils(BaseTestCase):
         ex1.method_call.assert_called_once_with(node)
         self.assertFalse(ex2.method_call.called)
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_node_extension_call_default_extension_from_cluster(self, get_m):
         node = self.make_node(
@@ -138,7 +139,7 @@ class TestExtensionUtils(BaseTestCase):
         self.assertFalse(ex1.method_call.called)
         ex2.method_call.assert_called_once_with(node)
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_fire_callback_on_node_create(self, get_m):
         node = mock.MagicMock()
@@ -147,7 +148,7 @@ class TestExtensionUtils(BaseTestCase):
         for ext in get_m.return_value:
             ext.on_node_create.assert_called_once_with(node)
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_fire_callback_on_node_update(self, get_m):
         node = mock.MagicMock()
@@ -156,7 +157,7 @@ class TestExtensionUtils(BaseTestCase):
         for ext in get_m.return_value:
             ext.on_node_update.assert_called_once_with(node)
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_fire_callback_on_node_reset(self, get_m):
         node = mock.MagicMock()
@@ -165,7 +166,7 @@ class TestExtensionUtils(BaseTestCase):
         for ext in get_m.return_value:
             ext.on_node_reset.assert_called_once_with(node)
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_fire_callback_on_node_delete(self, get_m):
         node = mock.MagicMock()
@@ -174,7 +175,7 @@ class TestExtensionUtils(BaseTestCase):
         for ext in get_m.return_value:
             ext.on_node_delete.assert_called_once_with(node)
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_fire_callback_on_node_collection_delete(self, get_m):
         node_ids = [1, 2, 3, 4]
@@ -183,7 +184,7 @@ class TestExtensionUtils(BaseTestCase):
         for ext in get_m.return_value:
             ext.on_node_collection_delete.assert_called_once_with(node_ids)
 
-    @mock.patch('nailgun.extensions.base.get_all_extensions',
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
     def test_fire_callback_on_cluster_deletion(self, get_m):
         cluster = mock.MagicMock()

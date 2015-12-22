@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.consts import DEPLOY_STRATEGY
 from nailgun.consts import NODE_RESOLVE_POLICY
 from nailgun.consts import ORCHESTRATOR_TASK_TYPES
 from nailgun.consts import TASK_ROLES
@@ -35,6 +36,26 @@ RELATION_SCHEMA = {
 }
 
 
+TASK_STRATEGY = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'type': 'object',
+    'required': ['type'],
+    'properties': {
+        'type': {'enum': list(DEPLOY_STRATEGY), 'type': 'string'},
+        'amount': {'type': 'integer'}
+    }
+}
+
+
+TASK_PARAMETERS = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'type': 'object',
+    'properties': {
+        'strategy': TASK_STRATEGY
+    }
+}
+
+
 TASK_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'object',
@@ -44,19 +65,12 @@ TASK_SCHEMA = {
         'type': {'enum': list(ORCHESTRATOR_TASK_TYPES),
                  'type': 'string'},
         'version': {'type': 'string', "pattern": "^\d+.\d+.\d+$"},
-        'parameters': {'type': 'object'},
+        'parameters': TASK_PARAMETERS,
         'required_for': {'type': 'array'},
         'requires': {'type': 'array'},
         'cross-depends': {'type': 'array', 'items': RELATION_SCHEMA},
         'cross-depended-by': {'type': 'array', 'items': RELATION_SCHEMA},
         'strategy': {
-            'type': 'object',
-            'required': ['type'],
-            'properties': {
-                'type': {'enum': ['parallel', 'one-by-one'],
-                         'type': 'string'},
-                'amount': {'type': 'integer'}
-            }
         }
     }
 }

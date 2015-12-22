@@ -15,25 +15,17 @@
 #    under the License.
 
 import abc
+
+
 import six
+from stevedore.extension import ExtensionManager
 
 from nailgun.errors import errors
 
 
 def get_all_extensions():
-    # TODO(eli): implement extensions autodiscovery
-    # should be done as a part of blueprint
-    # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
-    from nailgun.extensions.cluster_upgrade.extension \
-        import ClusterUpgradeExtension
-    from nailgun.extensions.volume_manager.extension \
-        import VolumeManagerExtension
-
-    extensions = [
-        VolumeManagerExtension,
-        ClusterUpgradeExtension,
-    ]
-    return extensions
+    mgr = ExtensionManager(namespace='nailgun.extensions')
+    return [ext.plugin for ext in mgr.extensions]
 
 
 def get_extension(name):
@@ -42,13 +34,14 @@ def get_extension(name):
     :param str name: name of the extension
     :returns: extension class
     """
-    extensions = filter(lambda e: e.name == name, get_all_extensions())
+    extension = next(
+        (e for e in get_all_extensions() if e.name == name), None)
 
-    if not extensions:
+    if extension is None:
         raise errors.CannotFindExtension(
             "Cannot find extension with name '{0}'".format(name))
 
-    return extensions[0]
+    return extension
 
 
 def _get_extension_by_node_or_env(call_name, node):

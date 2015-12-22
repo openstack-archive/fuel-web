@@ -28,6 +28,8 @@ from sqlalchemy import orm
 import sqlalchemy.types
 
 from nailgun.db import db
+from nailgun.db.migration import ALEMBIC_CONFIG
+from nailgun.db.migration import do_alembic_command
 from nailgun.db.sqlalchemy import models
 from nailgun.extensions import fire_callback_on_node_create
 from nailgun.logger import logger
@@ -215,6 +217,12 @@ def get_all_fixtures_paths():
 
 
 def upload_fixtures():
+    """Uploads fixtures into DB through Alembic migrations workflow."""
+    do_alembic_command('upgrade', ALEMBIC_CONFIG, 'fixtures@head')
+
+
+def do_upload_fixtures():
+    """Uploads fixtures from files to DB."""
     fixtures_paths = get_all_fixtures_paths()
     for orig_path in settings.FIXTURES_TO_UPLOAD:
         if os.path.isabs(orig_path):

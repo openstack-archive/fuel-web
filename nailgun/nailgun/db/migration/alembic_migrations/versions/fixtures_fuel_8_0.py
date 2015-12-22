@@ -12,19 +12,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""Fixtures for Fuel 8.0
 
-import alembic
+Revision ID: bd024cf27524
+Revises: 43b2cb64dae6
+Create Date: 2015-12-22 15:51:35.473193
 
-from nailgun.db import dropdb
-from nailgun.db.migration import ALEMBIC_CONFIG
-from nailgun.test import base
+"""
+
+# revision identifiers, used by Alembic.
+
+revision = 'bd024cf27524'
+down_revision = None
+branch_labels = ('fixtures', )
 
 
-class TestDbMigrations(base.BaseTestCase):
+from nailgun.db.sqlalchemy import fixman
 
-    def test_clean_downgrade(self):
-        # We don't have data migration for clusters with vip_type 'ovs'
-        # so checking migration only for clean DB
-        dropdb()
-        alembic.command.upgrade(ALEMBIC_CONFIG, 'core@head')
-        alembic.command.downgrade(ALEMBIC_CONFIG, 'core@base')
+
+def upgrade():
+    fixman.do_upload_fixtures()
+
+
+def downgrade():
+    # Nothing to do. We shouldn't remove fixtures from DB
+    pass

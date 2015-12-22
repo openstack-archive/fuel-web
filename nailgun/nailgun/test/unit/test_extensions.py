@@ -34,11 +34,12 @@ class TestBaseExtension(BaseTestCase):
     def setUp(self):
         super(TestBaseExtension, self).setUp()
 
-        class Extexnsion(BaseExtension):
+        class Extension(BaseExtension):
             name = 'ext_name'
             version = '1.0.0'
+            description = 'ext description'
 
-        self.extension = Extexnsion()
+        self.extension = Extension()
 
     def test_alembic_table_version(self):
         self.assertEqual(

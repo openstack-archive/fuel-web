@@ -1927,7 +1927,7 @@
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
     modes: ['ha_compact']
     extensions: ['volume_manager']
-- pk: 1
+- pk: 3
   extend: *base_release
   fields:
     name: "Kilo on CentOS 6.5"
@@ -2001,7 +2001,7 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-- pk: 2
+- pk: 4
   extend: *base_release
   fields:
     name: "Kilo on Ubuntu 14.04"

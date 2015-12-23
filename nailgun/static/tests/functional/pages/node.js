@@ -28,8 +28,17 @@ define([
     NodeComponent.prototype = {
         constructor: NodeComponent,
         openCompactNodeExtendedView: function() {
+            var self = this;
             return this.remote
-                .clickByCssSelector('div.compact-node div.node-hardware p.btn');
+                .findByCssSelector('div.compact-node .node-hardware p:not(.btn)')
+                    .then(function(element) {
+                        return self.remote.moveMouseTo(element);
+                    })
+                    .end()
+                // the following timeout as we have 0.3s transition for the button
+                .sleep(300)
+                .clickByCssSelector('div.compact-node .node-hardware p.btn')
+                .waitForCssSelector('.node-popover', 1000);
         },
         openNodePopup: function(fromExtendedView) {
             var self = this,

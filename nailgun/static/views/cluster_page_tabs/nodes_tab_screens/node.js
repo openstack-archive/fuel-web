@@ -212,7 +212,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     name={this.props.node.id}
                     checked={this.props.checked}
                     disabled={this.props.locked || !this.props.node.isSelectable() || this.props.mode == 'edit'}
-                    onChange={this.props.mode != 'edit' ? this.props.onNodeSelection : _.noop}
+                    onChange={this.onNodeSelection}
                     wrapperClassName='pull-left'
                 />
             );
@@ -271,6 +271,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 labelsPopoverVisible: _.isBoolean(visible) ? visible : !this.state.labelsPopoverVisible
             });
         },
+        onNodeSelection: function() {
+            if (!this.props.node.isSelectable() || this.props.mode == 'edit') return;
+            this.props.onNodeSelection(!this.props.checked);
+        },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
@@ -313,7 +317,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         <label className='node-box'>
                             <div
                                 className='node-box-inner clearfix'
-                                onClick={isSelectable && _.partial(this.props.onNodeSelection, null, !this.props.checked)}
+                                onClick={this.onNodeSelection}
                             >
                                 <div className='node-checkbox'>
                                     {this.props.checked && <i className='glyphicon glyphicon-ok' />}

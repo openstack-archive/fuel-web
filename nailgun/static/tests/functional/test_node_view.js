@@ -56,11 +56,9 @@ define([
                         return common.addNodesToCluster(1, ['Controller']);
                     })
                     .assertElementExists('label.standard.active', 'Standard mode chosen by default')
-                    .findByClassName('node-box')
-                        .assertElementExists('.role-list', 'Role list is shown on node standard panel')
-                        .click()
-                        .assertElementExists('.checkbox-group input[type=checkbox]:checked', 'Node gets selected upon clicking')
-                        .end()
+                    .assertElementExists('.node .role-list', 'Role list is shown on node standard panel')
+                    .clickByCssSelector('.node input[type=checkbox]')
+                    .assertElementExists('.node.selected', 'Node gets selected upon clicking')
                     .assertElementExists('button.btn-delete-nodes:not(:disabled)', 'Delete Nodes and ...')
                     .assertElementExists('button.btn-edit-roles:not(:disabled)', '... Edit Roles buttons appear upon node selection')
                     .then(function() {

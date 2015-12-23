@@ -1623,7 +1623,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     label={i18n('common.select_all')}
                     wrapperClassName='select-all pull-right'
-                    onChange={_.bind(this.props.selectNodes, this.props, _.pluck(this.props.nodes, 'id'))}
+                    onChange={_.partial(this.props.selectNodes, _.pluck(this.props.nodes, 'id'))}
                 />
             );
         }
@@ -1855,7 +1855,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 cluster={this.props.cluster || this.props.clusters.get(node.get('cluster'))}
                                 checked={this.props.mode == 'edit' || this.props.selectedNodeIds[node.id]}
                                 locked={this.props.locked || _.contains(nodesWithRestrictionsIds, node.id)}
-                                onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}
+                                onNodeSelection={_.partial(this.props.selectNodes, [node.id], null)}
                             />;
                         }, this)}
                     </div>

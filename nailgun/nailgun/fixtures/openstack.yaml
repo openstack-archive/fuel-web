@@ -1930,12 +1930,12 @@
 - pk: 1
   extend: *base_release
   fields:
-    name: "Kilo on CentOS 6.5"
+    name: "Liberty on CentOS 6.5"
     state: "unavailable"
-    version: "2015.1.0-8.0"
+    version: "2015.2.0-8.0"
     can_update_from_versions: []
     operating_system: "CentOS"
-    description: "This option will install the OpenStack Kilo packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    description: "This option will install the OpenStack Liberty packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
       editable:
         kernel_params:
@@ -2004,11 +2004,11 @@
 - pk: 2
   extend: *base_release
   fields:
-    name: "Kilo on Ubuntu 14.04"
-    version: "2015.1.0-8.0"
+    name: "Liberty on Ubuntu 14.04"
+    version: "2015.2.0-8.0"
     can_update_from_versions: []
     operating_system: "Ubuntu"
-    description: "This option will install the OpenStack Kilo packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    description: "This option will install the OpenStack Liberty packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
       editable:
         kernel_params:

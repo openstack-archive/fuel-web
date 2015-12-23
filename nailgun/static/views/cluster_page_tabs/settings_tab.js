@@ -69,14 +69,6 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                 actionInProgress: false
             };
         },
-        componentWillMount: function() {
-            var settings = this.props.cluster.get('settings');
-            if (this.checkRestrictions('hide', settings.makePath(this.props.activeSettingsSectionName, 'metadata')).result) {
-                // FIXME: First group might also be hidded by restrictions
-                // which would cause no group selected
-                this.props.setActiveSettingsGroupName();
-            }
-        },
         componentDidMount: function() {
             this.props.cluster.get('settings').isValid({models: this.state.configModels});
         },
@@ -131,8 +123,8 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
-                    .done(_.bind(function() {
-                        _.each(settings.attributes, function(section, sectionName) {
+                    .done(() => {
+                        _.each(settings.attributes, (section, sectionName) => {
                             if ((!lockedCluster || section.metadata.always_editable) && section.metadata.group != 'network') {
                                 _.each(section, function(setting, settingName) {
                                     // do not update hidden settings (hack for #1442143),
@@ -143,20 +135,20 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                                 });
                             }
                         });
-
+                        settings.mergePluginSettings(settings.attributes);
                         settings.isValid({models: this.state.configModels});
                         this.setState({
                             actionInProgress: false,
                             key: _.now()
                         });
-                    }, this))
-                    .fail(function(response) {
-                        utils.showErrorDialog({
+                    })
+                    .fail(
+                        (response) => utils.showErrorDialog({
                             title: i18n('cluster_page.settings_tab.settings_error.title'),
                             message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning'),
                             response: response
-                        });
-                    });
+                        })
+                    );
             }
         },
         revertChanges: function() {
@@ -164,7 +156,9 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             this.setState({key: _.now()});
         },
         loadInitialSettings: function() {
-            this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialAttributes)).isValid({models: this.state.configModels});
+            this.props.cluster.get('settings')
+                .set(_.cloneDeep(this.state.initialAttributes))
+                .isValid({models: this.state.configModels});
         },
         onChange: function(groupName, settingName, value) {
             var settings = this.props.cluster.get('settings'),
@@ -177,8 +171,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             settings.isValid({models: this.state.configModels});
         },
         checkRestrictions: function(action, path) {
-            var settings = this.props.cluster.get('settings');
-            return settings.checkRestrictions(this.state.configModels, action, path);
+            return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, path);
         },
         isSavingPossible: function() {
             var cluster = this.props.cluster,
@@ -207,9 +200,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
 
             // Prepare list of settings organized by groups
             var groupedSettings = {};
-            _.each(settingsGroupList, function(group) {
-                groupedSettings[group] = {};
-            });
+            _.each(settingsGroupList, (group) => groupedSettings[group] = {});
             _.each(settings.attributes, function(section, sectionName) {
                 var isHidden = this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
                 if (!isHidden) {
@@ -217,6 +208,10 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                         hasErrors = invalidSections[sectionName];
                     if (group) {
                         if (group != 'network') groupedSettings[settings.sanitizeGroup(group)][sectionName] = {invalid: hasErrors};
+                    } else if (settings.isPlugin(sectionName)) {
+                        // do not check plugin settings groups because plugin settings
+                        // should not be spread between different groups
+                        groupedSettings.other[sectionName] = {invalid: hasErrors};
                     } else {
                         // Settings like 'Common' can be splitted to different groups
                         var settingGroups = _.chain(section)

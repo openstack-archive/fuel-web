@@ -17,18 +17,21 @@
 define([
     'intern!object',
     'tests/functional/pages/common',
+    'tests/functional/pages/node',
     'tests/functional/pages/modal'
-], function(registerSuite, Common, ModalWindow) {
+], function(registerSuite, Common, NodeComponent, ModalWindow) {
     'use strict';
 
     registerSuite(function() {
         var common,
+            node,
             modal;
 
         return {
             name: 'Equipment Page',
             setup: function() {
                 common = new Common(this.remote);
+                node = new NodeComponent(this.remote);
                 modal = new ModalWindow(this.remote);
 
                 return this.remote
@@ -66,6 +69,7 @@ define([
             'Check action buttons': function() {
                 return this.remote
                     .assertElementNotExists('.node .btn-discard', 'No discard changes button on a node')
+                    .assertElementExists('.node.offline .node-remove-button', 'Removing of offline nodes is available on the page')
                     .clickByCssSelector('.node.pending_addition > label')
                     .assertElementNotExists('.control-buttons-box .btn', 'No management buttons for selected node')
                     .assertElementExists('.node-list-management-buttons .btn-labels:not(:disabled)', 'Nodes can be labelled on the page')
@@ -81,12 +85,10 @@ define([
                         return modal.close();
                     })
                     .clickByCssSelector('label.compact')
-                    // open node extended view
-                    .clickByCssSelector('div.compact-node div.node-hardware p.btn')
-                    .assertElementNotExists('.node-popover .node-buttons .btn:not(.btn-view-logs)', 'No action buttons in node extended view in compact mode')
-                    // open extended view of the offline node
-                    .clickByCssSelector('.node.offline div.node-hardware p.btn')
-                    .assertElementExists('.node-popover .node-buttons .node-remove-button', 'Removing of offline nodes is available on the page');
+                    .then(function() {
+                        return node.openCompactNodeExtendedView();
+                    })
+                    .assertElementNotExists('.node-popover .node-buttons .btn:not(.btn-view-logs)', 'No action buttons in node extended view in compact mode');
             }
         };
     });

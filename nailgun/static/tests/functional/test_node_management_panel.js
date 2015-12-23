@@ -89,7 +89,7 @@ define([
                         // need to wait debounced search input
                         .sleep(200)
                         .assertElementsExist('.node-list .node', 3, 'Search was successfull')
-                        .clickByCssSelector('.node-list')
+                        .clickByCssSelector('.page-title')
                         .assertElementNotExists(searchButtonSelector, 'Active search control remains open when clicking outside the input')
                         .clickByCssSelector('.node-management-panel .btn-clear-search')
                         .assertElementsExist('.node-list .node', 4, 'Search was reset')

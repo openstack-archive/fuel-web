@@ -45,7 +45,6 @@ from nailgun.network.neutron import NeutronManager70
 from nailgun.network.neutron import NeutronManager80
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.network.nova_network import NovaNetworkManager70
-from nailgun.network.nova_network import NovaNetworkManager80
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -1289,20 +1288,6 @@ class TestNovaNetworkManager70(TestNeutronManager70):
                 objects.Cluster.get_controllers_node_group(self.cluster),
                 mock.ANY, vip_type='public')
             self.assertEqual(endpoint_ip, vip)
-
-
-class TestNovaNetworkManager80(TestNovaNetworkManager70):
-    def _create_env(self):
-        return self.env.create(
-            release_kwargs={'version': '1111-8.0'},
-            cluster_kwargs={
-                'api': False,
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
-            }
-        )
-
-    def test_get_network_manager(self):
-        self.assertIs(self.net_manager, NovaNetworkManager80)
 
 
 class TestTemplateManager70(BaseNetworkManagerTest):

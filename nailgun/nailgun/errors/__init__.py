@@ -88,8 +88,10 @@ default_messages = {
     "DuplicatedVIPNames": ("Cannot assign VIPs for the cluster due to "
                            "overlapping of names of the VIPs"),
     "UpdateDnsmasqTaskIsRunning": ("update_dnsmasq task is not finished "
-                              "after the previous configuration change. "
-                              "Please try again after a few seconds."),
+                                   "after the previous configuration change. "
+                                   "Please try again after a few seconds."),
+    "NovaNetworkNotSupported": ("Nova network is not supported in current "
+                                "release"),
 
     # RPC errors
     "CannotFindTask": "Cannot find task",
@@ -114,13 +116,9 @@ default_messages = {
 
     # unknown
     "UnknownError": "Unknown error",
-
     "UnresolvableConflict": "Unresolvable conflict",
-
     "NodeNotBelongToCluster": "The Node doesn't belong to the Cluster",
-
-    "TaskBaseDeploymentNotAllowed":
-        "The task-based deployment is not allowed"
+    "TaskBaseDeploymentNotAllowed": "The task-based deployment is not allowed"
 }
 
 

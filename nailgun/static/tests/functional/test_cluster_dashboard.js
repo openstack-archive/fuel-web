@@ -40,6 +40,7 @@ define([
         dashboardPage = new DashboardPage(this.remote);
         clusterName = common.pickRandomName('Test Cluster');
 
+<<<<<<< c5186848680d329e56c5a398b433f3fbc6e549f9
         return this.remote
           .then(function() {
             return common.getIn();
@@ -242,36 +243,6 @@ define([
           .then(function() {
             return dashboardPage.discardChanges();
           });
-      },
-      'VCenter warning appears': function() {
-        var vCenterClusterName = clusterName + 'VCenter test';
-        return this.remote
-          .clickLinkByText('Environments')
-          .assertElementsAppear('a.clusterbox', 2000, 'The list of clusters is shown when navigating to Environments link')
-          .then(function() {
-            return common.createCluster(
-              vCenterClusterName,
-              {
-                Compute: function() {
-                  // Selecting VCenter
-                  return this.remote
-                    .clickByCssSelector('.custom-tumbler input[name=hypervisor\\:vmware]');
-                },
-                'Networking Setup': function() {
-                  // Selecting Nova Network
-                  return this.remote
-                    .clickByCssSelector('.custom-tumbler input[value=network\\:nova_network]');
-                }
-              }
-            );
-          })
-          .then(function() {
-            return common.addNodesToCluster(1, ['Controller']);
-          })
-          .then(function() {
-            return clusterPage.goToTab('Dashboard');
-          })
-          .assertElementContainsText('.warnings-block', 'VMware settings are invalid', 'VMware warning is shown');
       }
     };
   });

@@ -17,7 +17,7 @@ description:
   Exceptions are when maintainers are actually cores, or when maintainers
   are not available for some reason (e.g. on vacation).
 
-  [1] http://specs.openstack.org/openstack/fuel-specs/policy/team-structure.html
+  [1] https://specs.openstack.org/openstack/fuel-specs/policy/team-structure
   [2] https://review.openstack.org/#/admin/groups/664,members
   [3] http://lists.openstack.org/pipermail/openstack-dev/2015-August/072406.html
 
@@ -25,6 +25,64 @@ description:
   to read this as a configuration data.
 
 maintainers:
+
+- debian/: &packaging_team
+    - name:   Mikhail Ivanov
+      email:  mivanov@mirantis.com
+      IRC:    mivanov
+
+    - name:   Artem Silenkov
+      email:  asilenkov@mirantis.com
+      IRC:    asilenkov
+
+    - name:   Alexander Tsamutali
+      email:  atsamutali@mirantis.com
+      IRC:    astsmtl
+
+    - name:   Daniil Trishkin
+      email:  dtrishkin@mirantis.com
+      IRC:    dtrishkin
+
+    - name:   Ivan Udovichenko
+      email:  iudovichenko@mirantis.com
+      IRC:    tlbr
+
+    - name:   Igor Yozhikov
+      email:  iyozhikov@mirantis.com
+      IRC:    IgorYozhikov
+
+- docs/: &docs_team
+     - name:   Svetlana Karslioglu
+       email:  skarslioglu@mirantis.com
+       IRC:    lanakars
+
+     - name:   Evgeny Konstantinov
+       email:  evkonst@mirantis.com
+       IRC:    evkonst
+
+     - name:   Michele Fagan
+       email:  mfagan@mirantis.com
+       IRC:    mfagan
+
+     - name:   Sheena Gregson
+       email:  sgregson@mirantis.com
+       IRC:    SheenaG
+
+     - name:   Olga Gusarenko
+       email:  ogusarenko@mirantis.com
+       IRC:    ogusarenko
+
+     - name:   Olena Logvinova
+       email:  ologvinova@mirantis.com
+       IRC:    ologvinova
+
+     - name:   Mariia Zlatkova
+       email:  mzlatkova@mirantis.com
+       IRC:    mzlatkova
+
+     - name:   Alexander Adamov
+       email:  aadamov@mirantis.com
+       IRC:    alexadamov
 
 - nailgun/:
     - name:   Aleksandr Kislitskii
@@ -85,37 +143,6 @@ maintainers:
 - nailgun/gulp/: *ui_experts
 - nailgun/package.json: *ui_experts
 
-- docs/: &docs_team
-     - name:   Svetlana Karslioglu
-       email:  skarslioglu@mirantis.com
-       IRC:    lanakars
-
-     - name:   Evgeny Konstantinov
-       email:  evkonst@mirantis.com
-       IRC:    evkonst
-
-     - name:   Michele Fagan
-       email:  mfagan@mirantis.com
-       IRC:    mfagan
-
-     - name:   Sheena Gregson
-       email:  sgregson@mirantis.com
-       IRC:    SheenaG
-
-     - name:   Olga Gusarenko
-       email:  ogusarenko@mirantis.com
-       IRC:    ogusarenko
-
-     - name:   Olena Logvinova
-       email:  ologvinova@mirantis.com
-       IRC:    ologvinova
-
-     - name:   Mariia Zlatkova
-       email:  mzlatkova@mirantis.com
-       IRC:    mzlatkova
-
-     - name:   Alexander Adamov
-       email:  aadamov@mirantis.com
-       IRC:    alexadamov
-
 - nailgun/static/translations/core.json: *docs_team
+
+- specs/: *packaging_team

@@ -19,7 +19,7 @@ import mock
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.orchestrator.task_based_deployment import TasksSerializer
+from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -75,7 +75,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         args, kwargs = rpc_cast.call_args
         return args[1][1]
 
-    @mock.patch.object(TasksSerializer, "ensure_task_based_deploy_allowed")
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     def test_task_deploy_used_if_option_enabled(self, _):
         self.enable_deploy_task(True)
         message = self.get_deploy_message()
@@ -85,7 +85,7 @@ class TestTaskDeploy(BaseIntegrationTest):
             message["args"]
         )
 
-    @mock.patch.object(TasksSerializer, "ensure_task_based_deploy_allowed")
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     def test_fallback_to_granular_deploy(self, ensure_allowed):
         ensure_allowed.side_effect = errors.TaskBaseDeploymentNotAllowed
         self.enable_deploy_task(True)
@@ -108,7 +108,7 @@ class TestTaskDeploy(BaseIntegrationTest):
             message["args"]
         )
 
-    @mock.patch.object(TasksSerializer, "ensure_task_based_deploy_allowed")
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     @mock.patch('nailgun.plugins.adapters.os.path.exists', return_value=True)
     @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_tasks')
     def test_task_deploy_with_plugins(self, load_tasks, *_):

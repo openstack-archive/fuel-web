@@ -114,7 +114,7 @@ class TestInstallationInfo(BaseTestCase):
             cluster_kwargs={
                 'release_id': release[0].id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron},
             nodes_kwargs=nodes_params
         )
         self.env.create_node({'status': consts.NODE_STATUSES.discover})
@@ -137,7 +137,7 @@ class TestInstallationInfo(BaseTestCase):
             cluster_kwargs={
                 'release_id': release[0].id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron},
             nodes_kwargs=nodes_params
         )
         self.env.create_node({'status': consts.NODE_STATUSES.discover})
@@ -151,7 +151,7 @@ class TestInstallationInfo(BaseTestCase):
 
         self.assertEquals(consts.CLUSTER_MODES.ha_compact,
                           cluster_info['mode'])
-        self.assertEquals(consts.CLUSTER_NET_PROVIDERS.nova_network,
+        self.assertEquals(consts.CLUSTER_NET_PROVIDERS.neutron,
                           cluster_info['net_provider'])
         self.assertEquals(consts.CLUSTER_STATUSES.new,
                           cluster_info['status'])

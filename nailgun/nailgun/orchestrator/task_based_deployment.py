@@ -139,9 +139,28 @@ class TaskProcessor(object):
         'required_for', 'cross-depended-by'
     )
 
+    min_supported_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
+
     def __init__(self):
         # stores mapping between ids of generated tasks and origin task
         self.origin_task_ids = dict()
+
+    @classmethod
+    def ensure_task_based_deploy_allowed(cls, task):
+        """Raises error if task is supported task based deployment.
+
+        :param task: the task instance
+        """
+        if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.stage:
+            return
+
+        task_version = StrictVersion(task.get('version', '1.0.0'))
+        if task_version < cls.min_supported_task_version:
+            logger.warning(
+                "Task '%s' does not supported task based deploy.",
+                task['id']
+            )
+            raise errors.TaskBaseDeploymentNotAllowed
 
     def get_origin(self, task_id):
         """Gets the origin ID of task.
@@ -190,12 +209,20 @@ class TaskProcessor(object):
 
         task_iter = iter(serialized_tasks)
         frame = collections.deque(itertools.islice(task_iter, 2), maxlen=2)
-        if len(frame) < 2:
+
+        # in case if there is no nodes was resolved
+        # the serializers return empty list of task
+        if len(frame) == 0:
+            return
+
+        # check only if task will be add to graph
+        self.ensure_task_based_deploy_allowed(origin_task)
+
+        if len(frame) == 1:
             # It is simple case when chain contains only 1 task
             # do nothing
             # check that that frame is not empty
-            if len(frame) == 1:
-                yield self._convert_task(frame.pop(), origin_task)
+            yield self._convert_task(frame.pop(), origin_task)
             return
 
         # it is chain of tasks, need to properly handle them
@@ -345,8 +372,6 @@ class TaskProcessor(object):
 class TasksSerializer(object):
     """The deploy tasks serializer."""
 
-    min_supported_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
-
     def __init__(self, cluster, nodes):
         """Initializes.
 
@@ -388,7 +413,6 @@ class TasksSerializer(object):
         tasks_groups = collections.defaultdict(set)
 
         for task in tasks:
-            self.ensure_task_based_deploy_allowed(task)
             if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
                 tasks_for_role = task.get('tasks')
                 if tasks_for_role:
@@ -566,17 +590,3 @@ class TasksSerializer(object):
                 "no candidates in nodes '%s'.",
                 name, ", ".join(six.moves.map(str, node_ids))
             )
-
-    @classmethod
-    def ensure_task_based_deploy_allowed(cls, task):
-        """Raises error if task is supported task based deployment.
-
-        :param task: the task instance
-        """
-        task_version = StrictVersion(task.get('version', '1.0.0'))
-        if task_version < cls.min_supported_task_version:
-            logger.warning(
-                "Task '%s' does not supported task based deploy.",
-                task['id']
-            )
-            raise errors.TaskBaseDeploymentNotAllowed

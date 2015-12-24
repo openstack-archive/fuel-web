@@ -331,14 +331,30 @@ var Compute = React.createClass({
     paneName: 'Compute',
     componentType: 'hypervisor',
     title: i18n('dialog.create_cluster_wizard.compute.title'),
+    vCenterPath: 'hypervisor:vmware',
+    vCenterNetworkBackends: ['network:neutron:ml2:nsx', 'network:neutron:ml2:dvs'],
     hasErrors(wizard) {
       var allComponents = wizard.get('components'),
         components = allComponents.getComponentsByType(this.componentType, {sorted: true});
       return !_.any(components, (component) => component.get('enabled'));
     }
   },
+  checkVCenter(allComponents) {
+    // TODO remove this hack in 9.0
+    var hasCompatibleBackends = _.any(allComponents.models, (component) => {
+      return _.contains(this.constructor.vCenterNetworkBackends, component.id);
+    });
+    if (!hasCompatibleBackends) {
+      var vCenter = _.find(allComponents.models, (component) => component.id == this.constructor.vCenterPath);
+      vCenter.set({
+        disabled: true,
+        warnings: i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')
+      });
+    }
+  },
   render() {
     this.processRestrictions(this.components, ['hypervisor']);
+    this.checkVCenter(this.props.allComponents);
     return (
       <div className='wizard-compute-pane'>
         <ComponentCheckboxGroup

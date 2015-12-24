@@ -64,10 +64,10 @@ define([
                     // Finish
                     .pressKeys('\uE007')
                     .assertElementsExist('.wizard-step.available', 5, 'All steps are available at the end')
-                    .clickLinkByText('Compute')
-                    .clickByCssSelector('input[name=hypervisor\\:vmware]')
-                    .assertElementExists('.wizard-step.available', 1,
-                        'Only one step is available after changing hypervisor');
+                    .clickLinkByText('Compute');
+                    //.clickByCssSelector('input[name=hypervisor\\:vmware]')
+                    //.assertElementExists('.wizard-step.available', 1,
+                    //    'Only one step is available after changing hypervisor');
             }
         };
     });

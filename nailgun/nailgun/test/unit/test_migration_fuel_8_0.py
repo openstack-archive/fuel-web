@@ -95,6 +95,7 @@ def prepare():
             {'cluster_id': clusterid, 'name': 'test_nodegroup_a'},
             {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
             {'cluster_id': clusterid, 'name': 'test_nodegroup_b'},
+            {'cluster_id': clusterid, 'name': consts.NODE_GROUPS.default},
         ])
 
     netconfigid = insert_table_row(
@@ -244,6 +245,23 @@ class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):
         db.execute(self.meta.tables['nodegroups'].insert(),
                    [{'cluster_id': nodegroup['cluster_id'],
                      'name': six.text_type(uuid.uuid4())}])
+
+    def test_node_group_has_default_field(self):
+        nodegroup = db.execute(
+            sa.select(
+                [self.meta.tables['nodegroups'].c.is_default])).fetchone()
+        self.assertEqual(nodegroup['is_default'], False)
+
+    def test_existing_default_groups_are_updated_by_default_flag(self):
+        nodegroups = db.execute(
+            sa.select([self.meta.tables['nodegroups'].c.name,
+                       self.meta.tables['nodegroups'].c.is_default])
+        )
+        for ng in nodegroups:
+            if ng[0] == consts.NODE_GROUPS.default:
+                self.assertTrue(ng[1])
+            else:
+                self.assertFalse(ng[1])
 
 
 class TestReleaseMigrations(base.BaseAlembicMigrationTest):

@@ -53,12 +53,34 @@ class NodeGroupValidator(BasicValidator):
                     data['name'], data['cluster_id']))
 
     @classmethod
+    def _validate_default_flag(self, data):
+        """Vadidate default flag
+
+        Since changing of 'is_default' flag for node group is forbidden
+        this method validate such case
+
+        :param data: input request data
+        :type data: dict
+        """
+        nodegroup = objects.NodeGroupCollection.filter_by(
+            None, name=data['name'], cluster_id=data['cluster_id']).first()
+        if nodegroup and data['is_default'] != nodegroup.is_default:
+                raise errors.NotAllowed(
+                    "'default' flag for node group cannot be changed"
+                )
+
+    @classmethod
     def validate(cls, data):
         data = cls.validate_json(data)
         cluster = objects.Cluster.get_by_uid(
             data['cluster_id'], fail_if_not_found=True)
 
         cls._validate_unique_name(data)
+
+        if data.get('is_default'):
+            raise errors.NotAllowed(
+                "Default node group is created only by Nailgun."
+            )
 
         if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
             raise errors.NotAllowed(
@@ -80,4 +102,6 @@ class NodeGroupValidator(BasicValidator):
         data = cls.validate_json(data)
         cls._validate_unique_name(
             data, objects.NodeGroup.model.id != instance.id)
+        if 'is_default' in data:
+            cls._validate_default_flag(data)
         return data

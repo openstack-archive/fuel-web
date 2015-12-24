@@ -206,7 +206,7 @@ class NetworkConfigurationValidator(BasicValidator):
             if ng_db.group_id is None:
                 # shared admin network. get nodes from all default groups
                 nodes = db().query(Node.ip).join(NodeGroup).filter(
-                    NodeGroup.name == consts.NODE_GROUPS.default
+                    NodeGroup.is_default.is_(True)
                 )
             else:
                 nodes = db().query(Node.ip).filter(
@@ -568,7 +568,7 @@ class NetAssignmentValidator(BasicValidator):
         # default nodegroups of clusters hence holds no value
         # in 'group_id' field yet still must be included into list
         # of networks available for assignment
-        if node_group_db.name == consts.NODE_GROUPS.default:
+        if node_group_db.is_default:
             fuelweb_admin_net = \
                 objects.NetworkGroup.get_default_admin_network()
             net_group_ids.add(fuelweb_admin_net.id)

@@ -52,7 +52,6 @@ from nailgun.network.neutron import NeutronManager80
 from nailgun.network.neutron import NeutronManagerLegacy
 from nailgun.network.nova_network import NovaNetworkManager61
 from nailgun.network.nova_network import NovaNetworkManager70
-from nailgun.network.nova_network import NovaNetworkManager80
 from nailgun.network.nova_network import NovaNetworkManagerLegacy
 
 
@@ -1330,9 +1329,6 @@ class TestClusterObject(BaseTestCase):
             'bind': [['cluster:net_provider', 'neutron'],
                      ['cluster:net_segment_type', 'tun']]
         }, {
-            'name': 'network:nova_network',
-            'bind': [['cluster:net_provider', 'nova_network']]
-        }, {
             'name': 'hypervisor:libvirt:kvm',
             'bind': [['settings:common.libvirt_type.value', 'kvm']]
         }, {
@@ -1365,14 +1361,6 @@ class TestClusterObject(BaseTestCase):
             'expected_values': {
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'segmentation_type': consts.NEUTRON_SEGMENT_TYPES.tun
-            }
-        }, {
-            'selected_components': ['network:nova_network',
-                                    'hypervisor:libvirt:kvm',
-                                    'additional_service:sahara'],
-            'expected_values': {
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
-                'segmentation_type': None
             }
         }, {
             'selected_components': ['network:neutron:test_network',
@@ -1597,7 +1585,6 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
             ('2014.2.2-6.0', NovaNetworkManagerLegacy),
             ('2014.2.2-6.1', NovaNetworkManager61),
             ('2015.6.7-7.0', NovaNetworkManager70),
-            ('2016.1.1-8.0', NovaNetworkManager80),
         ):
             self.check_neutron_network_manager(
                 consts.CLUSTER_NET_PROVIDERS.nova_network,

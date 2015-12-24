@@ -915,8 +915,6 @@
             value: false
             weight: 30
             type: "hidden"
-            restrictions:
-              - condition: "cluster:net_provider == 'nova_network'"
           libvirt_type:
             value: "qemu"
             values:
@@ -1550,7 +1548,7 @@
             name: "network"
             type: "object"
             restrictions:
-              - condition: "cluster:net_provider != 'nova_network' or networking_parameters:net_manager != 'VlanManager' or settings:common.use_vcenter.value == false"
+              - condition: "settings:common.use_vcenter.value == false"
                 action: "hide"
             fields:
               -
@@ -1687,20 +1685,6 @@
             message: "dialog.create_cluster_wizard.network.hypervisor_alert"
           - name: additional_service:ironic
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
-      - name: network:nova_network
-        bind: !!pairs
-          - "cluster:net_provider": "nova_network"
-        weight: 15
-        label: "dialog.create_cluster_wizard.network.nova_network"
-        description: "dialog.create_cluster_wizard.network.nova_network_description"
-        compatible:
-          - name: hypervisor:vmware
-        requires:
-          - name: 'hypervisor:vmware'
-            message: "dialog.create_cluster_wizard.network.nova_network_vcenter_alert"
-        incompatible:
-          - name: additional_service:ironic
-            message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
       - name: storage:block:lvm
         label: "dialog.create_cluster_wizard.storage.lvm"
         description: "dialog.create_cluster_wizard.storage.default_provider"
@@ -1713,7 +1697,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
         incompatible:
           - name: storage:block:ceph
             message: "LVM not compatible with Ceph"
@@ -1729,7 +1712,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
           - name: storage:object:ceph
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
@@ -1747,7 +1729,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
           - name: storage:block:ceph
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
@@ -1762,7 +1743,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
           - name: storage:block:ceph
           - name: storage:object:ceph
           - name: storage:image:ceph
@@ -1777,7 +1757,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
           - name: storage:block:ceph
           - name: storage:object:ceph
           - name: storage:ephemeral:ceph
@@ -1792,7 +1771,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
           - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:object:ceph
@@ -1813,7 +1791,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
           - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:object:ceph
@@ -1833,7 +1810,6 @@
           - name: hypervisor:vmware
           - name: network:neutron:vlan
           - name: network:neutron:tun
-          - name: network:nova_network
           - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:object:ceph
@@ -1860,8 +1836,6 @@
           - name: additional_service:murano
           - name: additional_service:ceilometer
         incompatible:
-          - name: network:nova_network
-            message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
           - name: network:neutron:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
     modes: ['ha_compact']

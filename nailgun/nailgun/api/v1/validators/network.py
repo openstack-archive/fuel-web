@@ -468,6 +468,16 @@ class NetAssignmentValidator(BasicValidator):
             iface_nets = [n.get('name')
                           for n in iface.get('assigned_networks')]
 
+            # node interfaces must have at least one assigned network
+            if not iface_nets:
+                raise errors.InvalidData(
+                    "Node '{0}': at least one interfaces must have "
+                    "assigned network"
+                    .format(
+                        node['id']
+                    )
+                )
+
             # networks can be assigned only to nodes added
             # into cluster
             if iface_nets and not db_node.cluster:

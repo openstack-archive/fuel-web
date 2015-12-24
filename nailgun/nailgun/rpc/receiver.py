@@ -1152,47 +1152,25 @@ class NailgunReceiver(object):
         logger.info("RPC method stats_user_resp processed")
 
     @classmethod
-    def check_repositories_resp(cls, **kwargs):
-        logger.info(
-            "RPC method check_repositories_resp received: %s",
-            jsonutils.dumps(kwargs)
-        )
-        task_uuid = kwargs.get('task_uuid')
-        nodes = kwargs.get('nodes')
+    def _check_repos_connectivity(cls, resp_kwargs, failed_nodes_msg,
+                                  suggestion_msg=''):
+        """Analyze response data to check repo connectivity from nodes
 
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-        failed_nodes = [node for node in nodes if node['status'] != 0]
-        failed_nodes_ids = [node['uid'] for node in failed_nodes]
-
-        progress = 100
-        message = ''
-
-        if not failed_nodes_ids:
-            status = consts.TASK_STATUSES.ready
-        else:
-            failed_urls = set()
-            for n in failed_nodes:
-                failed_urls.update(n['out'].get('failed_urls', []))
-
-            message = ('These nodes: "{0}" failed to connect to '
-                       'some of these repositories: "{1}"').format(
-                           '", "'.join([str(id) for id in failed_nodes_ids]),
-                           '", "'.join(failed_urls))
-
-            status = consts.TASK_STATUSES.error
-
-        objects.Task.update_verify_networks(
-            task, status, progress, message, [])
-
-    @classmethod
-    def check_repositories_with_setup_resp(cls, **kwargs):
-        logger.info(
-            "RPC method check_repositories_with_setup received: %s" %
-            jsonutils.dumps(kwargs)
-        )
-
-        task_uuid = kwargs.get('task_uuid')
-        response = kwargs.get('nodes', [])
+        :param resp_kwargs: task response data
+        :type resp_kwargs: dict
+        :param failed_nodes_msg: error message part if the task has not
+            due to underlying command execution error; is formatted by
+            node name
+        :type failed_nodes_msg: str
+        :param failed_repos_msg: error message part if connection to the
+            repositories cannot be established; is formatted by list of names
+            of the repositories
+        :type failed_repos_msg: str
+        :param err_msg: general error message part
+        :type err_msg: str
+        """
+        task_uuid = resp_kwargs.get('task_uuid')
+        response = resp_kwargs.get('nodes', [])
         status = consts.TASK_STATUSES.ready
         progress = 100
 
@@ -1212,24 +1190,60 @@ class NailgunReceiver(object):
                     failed_repos.update(
                         node_response['out'].get('failed_urls', []))
                 failed_nodes.append(node.name)
-        msg = ''
+
+        err_msg = ''
+
+        failed_repos_msg = (
+            'Following repos are not available - {0}\n. '
+        )
 
         if failed_nodes:
-            msg = ('Repo availability verification using public network'
-                   ' failed on following nodes {0}.\n '.format(
-                       ', '.join(failed_nodes)))
+            err_msg = failed_nodes_msg.format(', '.join(failed_nodes))
         if failed_repos:
-            msg += ('Following repos are not available - {0}\n. '.format(
-                    ', '.join(failed_repos)))
-        if msg:
-            msg += ('Check your public network settings and '
-                    'availability of the repositories from public network. '
-                    'Please examine nailgun and astute'
-                    ' logs for additional details.')
+            err_msg += failed_repos_msg.format(', '.join(failed_repos))
+        if err_msg and suggestion_msg:
+            err_msg += suggestion_msg
+
+        if err_msg:
             status = consts.TASK_STATUSES.error
 
         objects.Task.update_verify_networks(
-            task, status, progress, msg, {})
+            task, status, progress, err_msg, {})
+
+    @classmethod
+    def check_repositories_resp(cls, **kwargs):
+        logger.info(
+            "RPC method check_repositories_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+
+        failed_nodes_msg = (
+            'Repo availability verification'
+            ' failed on following nodes {0}.\n '
+        )
+
+        cls._check_repos_connectivity(kwargs, failed_nodes_msg)
+
+    @classmethod
+    def check_repositories_with_setup_resp(cls, **kwargs):
+        logger.info(
+            "RPC method check_repositories_with_setup received: %s" %
+            jsonutils.dumps(kwargs)
+        )
+
+        failed_nodes_msg = (
+            'Repo availability verification using public network'
+            ' failed on following nodes {0}.\n '
+        )
+        suggestion_msg = (
+            'Check your public network settings and '
+            'availability of the repositories from public network. '
+            'Please examine nailgun and astute'
+            ' logs for additional details.'
+        )
+
+        cls._check_repos_connectivity(kwargs, failed_nodes_msg,
+                                      suggestion_msg)
 
     @classmethod
     def task_in_orchestrator(cls, **kwargs):

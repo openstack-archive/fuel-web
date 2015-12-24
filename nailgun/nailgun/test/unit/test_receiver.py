@@ -97,6 +97,9 @@ class TestNailgunReceiver(base.BaseTestCase):
 
     @patch('nailgun.objects.Task.update_verify_networks')
     def test_check_repositories_resp_success(self, update_verify_networks):
+        # since check_repositories and check_repositories_with_setup
+        # have same structure of response data we may test both of the
+        # response methods here
         repo_check_message = {
             "status": "ready",
             "progress": 100,
@@ -106,13 +109,16 @@ class TestNailgunReceiver(base.BaseTestCase):
                 "err": "",
                 "out": "",
                 "uid": "1"}]}
-        NailgunReceiver.check_repositories_resp(**repo_check_message)
+        for resp_method in ('check_repositories_resp',
+                            'check_repositories_with_setup_resp'):
+            getattr(NailgunReceiver, resp_method)(**repo_check_message)
 
-        update_verify_networks.assert_called_with(
-            self.task, 'ready', 100, '', [])
+            update_verify_networks.assert_called_with(
+                self.task, 'ready', 100, '', {})
 
     @patch('nailgun.objects.Task.update_verify_networks')
     def test_check_repositories_resp_error(self, update_verify_networks):
+        # ditto as in previous test case
         urls = ['url2', 'url1', 'url3', 'url1']
         repo_check_message = {
             "status": "ready",
@@ -122,20 +128,34 @@ class TestNailgunReceiver(base.BaseTestCase):
                 "status": 1,
                 "out": {"failed_urls": urls},
                 "err": "",
-                "uid": "1"}]}
-        NailgunReceiver.check_repositories_resp(**repo_check_message)
+                "uid": self.cluster.nodes[0].uid}]}
 
-        update_verify_networks.assert_called_with(
-            self.task, 'error', 100, ANY, [])
-        actual_msg = update_verify_networks.call_args[0][3]
-        expected_urls_set = set(urls)
-        actual_urls = actual_msg.replace('"', '').replace(',', '').\
-            split()[-len(expected_urls_set):]
-        self.assertItemsEqual(expected_urls_set, actual_urls)
-        self.assertRegexpMatches(
-            actual_msg,
-            r'These nodes: "1" failed to '
-            'connect to some of these repositories: .*')
+        expected_err_msg = {
+            'check_repositories_resp': (
+                r'Repo availability verification'
+                ' failed on following nodes {0}.\n '
+                'Following repos are not available - '
+                .format(self.cluster.nodes[0].name)
+            ),
+            'check_repositories_with_setup_resp': (
+                r'Repo availability verification'
+                ' using public network'
+                ' failed on following nodes {0}.\n '
+                'Following repos are not available - '
+                .format(self.cluster.nodes[0].name)
+            ),
+        }
+        for resp_method in expected_err_msg:
+            getattr(NailgunReceiver, resp_method)(**repo_check_message)
+            update_verify_networks.assert_called_with(
+                self.task, 'error', 100, ANY, {})
+            actual_msg = update_verify_networks.call_args[0][3]
+
+            self.assertIn(', '.join(set(urls)), actual_msg)
+            self.assertIn(
+                expected_err_msg[resp_method],
+                actual_msg,
+            )
 
     def test_task_in_orchestrator_task_not_found(self):
         resp = {'task_uuid': 'fake_uuid'}

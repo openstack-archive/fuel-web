@@ -433,7 +433,8 @@ class Cluster(NailgunObject):
                 return nova_network.NovaNetworkManager70
 
             if StrictVersion(ver) >= StrictVersion('8.0'):
-                return nova_network.NovaNetworkManager80
+                raise errors.NovaNetworkNotSupported()
+
             return nova_network.NovaNetworkManager
 
         raise ValueError(

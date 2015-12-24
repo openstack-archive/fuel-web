@@ -74,9 +74,12 @@ class TestTaskSerializers(BaseTestCase):
         tasks = [
             {
                 "id": "test1", "role": ["controller"],
-                "type": "stage", "version": "2.0.0"
+                "type": "puppet", "version": "2.0.0", "parameters": {}
             },
-            {"id": "test2", "role": ["compute"], "type": "stage"},
+            {
+                "id": "test2", "role": ["compute"], "type": "puppet",
+                "parameters": {}
+            },
         ]
         self.assertRaises(
             task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
@@ -84,8 +87,28 @@ class TestTaskSerializers(BaseTestCase):
             self.env.clusters[-1], self.env.nodes, tasks
         )
 
+    def test_serialize_success_if_all_applicable_task_has_version_2(self):
+        tasks = [
+            {
+                "id": "test1", "role": ["controller"],
+                "type": "puppet", "version": "2.0.0", "parameters": {}
+            },
+            {
+                "id": "test2", "role": ["cinder"], "type": "puppet",
+                "parameters": {}
+            },
+        ]
+        self.assertNotRaises(
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
+            self.serializer.serialize,
+            self.env.clusters[-1], self.env.nodes, tasks
+        )
+
     def test_process_task_de_duplication(self):
-        task = {"id": "test", "type": "puppet", "parameters": {}}
+        task = {
+            "id": "test", "type": "puppet", "parameters": {},
+            "version": "2.0.0"
+        }
         self.serializer.process_task(
             task, ["1"], task_based_deployment.NullResolver
         )
@@ -107,7 +130,8 @@ class TestTaskSerializers(BaseTestCase):
 
     def test_process_skipped_task(self):
         task = {
-            "id": "test", "type": "puppet", "parameters": {}, 'skipped': True
+            "id": "test", "type": "puppet", "version": "2.0.0",
+            "parameters": {}, 'skipped': True,
         }
         self.serializer.process_task(
             task, ["1"], task_based_deployment.NullResolver
@@ -148,8 +172,10 @@ class TestTaskSerializers(BaseTestCase):
             self.serializer.expand_task_groups(
                 {'role': ['task1', 'task2']},
                 {
-                    'task1': {'id': 'task1', 'type': 'skipped', 'role': '*'},
-                    'task2': {'id': 'task2', 'type': 'skipped', 'role': '*'}
+                    'task1': {'id': 'task1', 'version': '2.0.0',
+                              'type': 'skipped', 'role': '*'},
+                    'task2': {'id': 'task2', 'version': '2.0.0',
+                              'type': 'skipped', 'role': '*'}
                 }
             )
             self.assertIn('1', self.serializer.tasks_per_node)
@@ -294,23 +320,6 @@ class TestTaskSerializers(BaseTestCase):
             "not_exists", "1, 2, 3"
         )
 
-    def test_ensure_task_based_deployment_allowed(self):
-        self.assertRaises(
-            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
-            self.serializer.ensure_task_based_deploy_allowed,
-            {'id': 'task'}
-        )
-        self.assertRaises(
-            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
-            self.serializer.ensure_task_based_deploy_allowed,
-            {'id': 'task', 'version': '1.2.3'}
-        )
-        self.assertNotRaises(
-            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
-            self.serializer.ensure_task_based_deploy_allowed,
-            {'id': 'task', 'version': consts.TASK_CROSS_DEPENDENCY}
-        )
-
 
 class TestNoopSerializer(BaseTestCase):
     def setUp(self):
@@ -410,8 +419,9 @@ class TestDeploymentTaskSerializer(BaseUnitTest):
         )
 
 
-class TestTaskProcessor(BaseUnitTest):
+class TestTaskProcessor(BaseTestCase):
     def setUp(self):
+        super(TestTaskProcessor, self).setUp()
         self.processor = task_based_deployment.TaskProcessor()
 
     def test_link_tasks_on_same_node(self):
@@ -527,12 +537,14 @@ class TestTaskProcessor(BaseUnitTest):
 
     def test_process_tasks_if_not_chain(self):
         origin_task = {
-            'id': 'task', 'requires': ['a'], 'cross-depends': [{'name': 'b'}],
+            'id': 'task', 'version': '2.0.0',
+            'requires': ['a'], 'cross-depends': [{'name': 'b'}],
             'required_for': ['c'], 'cross-depended-by': [{'name': 'd'}]
         }
         serialized = iter([{'type': 'puppet'}])
 
-        tasks = self.processor.process_tasks(origin_task, serialized)
+        tasks = list(self.processor.process_tasks(origin_task, serialized))
+        del origin_task['version']
         self.assertItemsEqual(
             [dict(origin_task, type='puppet')],
             tasks
@@ -541,7 +553,8 @@ class TestTaskProcessor(BaseUnitTest):
 
     def test_process_if_chain(self):
         origin_task = {
-            'id': 'task', 'requires': ['a'], 'cross-depends': [{'name': 'b'}],
+            'id': 'task', 'version': '2.0.0',
+            'requires': ['a'], 'cross-depends': [{'name': 'b'}],
             'required_for': ['c'], 'cross-depended-by': [{'name': 'd'}]
         }
         serialized = iter([
@@ -574,3 +587,25 @@ class TestTaskProcessor(BaseUnitTest):
         self.assertEqual('task', self.processor.get_origin('task_start'))
         self.assertEqual('task', self.processor.get_origin('task#1'))
         self.assertEqual('task', self.processor.get_origin('task_end'))
+
+    def test_ensure_task_based_deployment_allowed(self):
+        self.assertRaises(
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
+            self.processor.ensure_task_based_deploy_allowed,
+            {'id': 'task'}
+        )
+        self.assertRaises(
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
+            self.processor.ensure_task_based_deploy_allowed,
+            {'id': 'task', 'version': '1.2.3'}
+        )
+        self.assertNotRaises(
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
+            self.processor.ensure_task_based_deploy_allowed,
+            {'id': 'task', 'version': consts.TASK_CROSS_DEPENDENCY}
+        )
+        self.assertNotRaises(
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
+            self.processor.ensure_task_based_deploy_allowed,
+            {'id': 'task', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
+        )

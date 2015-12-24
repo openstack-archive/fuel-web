@@ -860,6 +860,7 @@
                         "qemu_description": "Select this option if you want to use QEMU as a hypervisor with capability of KVM acceleration.",
                         "vcenter_description": "Select this option if you run OpenStack on VMware vCenter.",
                         "vcenter_warning": "vCenter can't be deployed without QEMU-KVM option selected.",
+                        "vcenter_requires_network_backend": "vCenter requires DVS or NSX network backend",
                         "empty_choice":  "Please select at least one hypervisor type"
                     },
                     "network": {
@@ -868,9 +869,6 @@
                         "description_link": "Mirantis OpenStack Planning Guide for Network Topology",
                         "release_alert": "Neutron is not supported in __NameAndRelease.release_name__",
                         "hypervisor_alert": "Neutron is not available with vCenter as a selected compute option.",
-                        "nova_network_vcenter_alert": "Legacy Networking (nova-network) requires vCenter to be a selected compute option.",
-                        "nova_network": "(DEPRECATED) Legacy Networking (nova-network)",
-                        "nova_network_description": "This option is only available if you use VMware vCenter. OpenStack is deprecating nova-network in upcoming releases.",
                         "neutron_gre_description": "Your network hardware must support GRE segmentation. This option supports up to 65535 networks.",
                         "neutron_vlan": "Neutron with VLAN segmentation (default)",
                         "neutron_vlan_description": "Your network hardware must be configured for VLAN segmentation. This option supports up to 4095 networks.",

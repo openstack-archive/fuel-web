@@ -242,8 +242,9 @@ define([
                     .then(function() {
                         return dashboardPage.discardChanges();
                     });
-            },
-            'VCenter warning appears': function() {
+            }
+            // TODO(apopovych): move into plugin
+            /*'VCenter warning appears': function() {
                 var vCenterClusterName = clusterName + 'VCenter test';
                 return this.remote
                     .clickLinkByText('Environments')
@@ -256,11 +257,6 @@ define([
                                     // Selecting VCenter
                                     return this.remote
                                         .clickByCssSelector('.custom-tumbler input[name=hypervisor\\:vmware]');
-                                },
-                                'Networking Setup': function() {
-                                    // Selecting Nova Network
-                                    return this.remote
-                                        .clickByCssSelector('.custom-tumbler input[value=network\\:nova_network]');
                                 }
                             }
                         );
@@ -272,7 +268,7 @@ define([
                         return clusterPage.goToTab('Dashboard');
                     })
                     .assertElementContainsText('.warnings-block', 'VMware settings are invalid', 'VMware warning is shown');
-            }
+            }*/
         };
     });
 });

@@ -429,12 +429,7 @@ class Cluster(NailgunObject):
             if StrictVersion(ver) == StrictVersion('6.1'):
                 return nova_network.NovaNetworkManager61
 
-            if StrictVersion(ver) == StrictVersion('7.0'):
-                return nova_network.NovaNetworkManager70
-
-            if StrictVersion(ver) >= StrictVersion('8.0'):
-                return nova_network.NovaNetworkManager80
-            return nova_network.NovaNetworkManager
+            return nova_network.NovaNetworkManager70
 
         raise ValueError(
             'The network provider "{0}" is not supported.'

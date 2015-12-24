@@ -554,8 +554,9 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
 
-        cls.check_networks_are_acceptable_for_node_to_assign(interfaces,
-                                                             db_node)
+        if db_node.cluster:
+            cls.check_networks_are_acceptable_for_node_to_assign(interfaces,
+                                                                 db_node)
 
     @classmethod
     def check_networks_are_acceptable_for_node_to_assign(cls, interfaces,

@@ -344,8 +344,39 @@ class TestDeploymentAttributesSerialization80(
             self.cluster_db, self.cluster_db.nodes)
         for node in serialized_for_astute:
             self.assertIn("node_volumes", node)
-            self.assertEqual(expected_node_volumes_hash,
-                             node["node_volumes"])
+            self.assertItemsEqual(
+                expected_node_volumes_hash, node["node_volumes"])
+
+    def test_attributes_contains_plugins(self):
+        self.env.create_plugin(
+            cluster=self.cluster_db,
+            name='plugin_1',
+            package_version='4.0.0',
+            fuel_version=['8.0'])
+        self.env.create_plugin(
+            cluster=self.cluster_db,
+            name='plugin_2',
+            package_version='4.0.0',
+            fuel_version=['8.0'])
+        self.env.create_plugin(
+            cluster=self.cluster_db,
+            enabled=False,
+            name='plugin_3',
+            package_version='4.0.0',
+            fuel_version=['8.0'])
+
+        expected_plugins_list = ['plugin_1', 'plugin_2']
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute']
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in serialized_for_astute:
+            self.assertIn('plugins', node)
+            self.assertItemsEqual(
+                expected_plugins_list, node['plugins'])
 
 
 class TestMultiNodeGroupsSerialization80(BaseDeploymentSerializer):

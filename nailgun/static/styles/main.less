@@ -3869,28 +3869,13 @@ input[type=range] {
     margin: @base-indent * 2 0 @base-indent * 2 -@base-indent;
   }
   .network-group-name {
-    @node-group-title-height: 50px;
     margin: 5px 0 10px 0;
     font-size: @base-font-size + 12;
-    height: @node-group-title-height;
-    &.default {
-      height: @node-group-title-height + 20px;
-      .name {
-        height: @node-group-title-height;
-      }
-      .node-group-renaming {
-        height: @node-group-title-height - 4px;
-        &.has-error {
-          margin-bottom: 10px;
-        }
-      }
-    }
     &.no-rename {
       .btn-link {
         text-decoration: none;
         cursor: default;
         color: #337ab7;
-        text-transform: capitalize;
       }
     }
     .node-group-renaming {
@@ -3899,6 +3884,10 @@ input[type=range] {
       margin-bottom: 0;
       div {
         margin-left: 15px;
+      }
+      input {
+        margin-top: 3px;
+        height: 30px;
       }
     }
     .name {
@@ -3915,6 +3904,8 @@ input[type=range] {
       font-size: @base-font-size;
       display: block;
       margin-left: 15px;
+      padding-bottom: 10px;
+
     }
     .has-error {
       .help-block {
@@ -3922,12 +3913,6 @@ input[type=range] {
         margin-left: 15px;
         margin-top: 0;
       }
-    }
-  }
-  .show-all-networks {
-    margin-top: 13px;
-    label {
-      font-weight: normal;
     }
   }
 

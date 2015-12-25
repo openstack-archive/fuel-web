@@ -655,7 +655,6 @@
                     "add": "Add Group",
                     "node_network_group_name": "Name",
                     "node_network_group_duplicate_error": "This node network group name is already taken",
-                    "node_network_group_default_name": "This name is assigned to default node network group",
                     "node_network_group_empty_name": "Node network group name can not be empty",
                     "node_network_group_creation_error": "Node Network Group Creation Error",
                     "node_network_group_deletion_error": "Node Network Group Deletion Error",

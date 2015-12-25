@@ -1336,20 +1336,13 @@ define([
     models.NodeNetworkGroup = BaseModel.extend({
         constructorName: 'NodeNetworkGroup',
         urlRoot: '/api/nodegroups',
-        isDefault: function() {
-            return _.min(_.pluck(this.collection.where({cluster_id: this.get('cluster_id')}), 'id')) == this.id;
-        },
         validate: function(options = {}) {
-            var ns = 'cluster_page.network_tab.',
-                newName = _.trim(options.name) || '';
+            var newName = _.trim(options.name) || '';
             if (!newName) {
-                return i18n(ns + 'node_network_group_empty_name');
-            }
-            if (newName.toLowerCase() == 'default') {
-                return i18n(ns + 'node_network_group_default_name');
+                return i18n('cluster_page.network_tab.node_network_group_empty_name');
             }
             if ((this.collection || options.nodeNetworkGroups).any({name: newName})) {
-                return i18n(ns + 'node_network_group_duplicate_error');
+                return i18n('cluster_page.network_tab.node_network_group_duplicate_error');
             }
             return null;
         }
@@ -1360,7 +1353,7 @@ define([
         cacheFor: 60 * 1000,
         model: models.NodeNetworkGroup,
         url: '/api/nodegroups',
-        comparator: 'id'
+        comparator: (nodeNetworkGroup) => -nodeNetworkGroup.get('is_default')
     });
 
     models.PluginLink = BaseModel.extend({

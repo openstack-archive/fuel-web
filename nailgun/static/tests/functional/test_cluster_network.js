@@ -331,6 +331,7 @@ define([
     registerSuite(function() {
         var common,
             clusterPage,
+            dashboardPage,
             clusterName,
             modal;
 
@@ -339,6 +340,7 @@ define([
             setup: function() {
                 common = new Common(this.remote);
                 clusterPage = new ClusterPage(this.remote);
+                dashboardPage = new DashboardPage(this.remote);
                 clusterName = common.pickRandomName('Test Cluster');
                 modal = new ModalWindow(this.remote);
 
@@ -381,21 +383,13 @@ define([
                 return this.remote
                     .clickByCssSelector('.subtab-link-Node_Network_Group_1')
                     .clickByCssSelector('.glyphicon-pencil')
-                    .assertElementAppears('.network-group-name input[type=text]', 2000, 'Node network group renaming control is rendered')
+                    .waitForCssSelector('.network-group-name input[type=text]', 2000)
                     .findByCssSelector('.node-group-renaming input[type=text]')
-                        .clearValue()
-                        .type('default')
-                        // Enter
-                        .type('\uE007')
-                        .end()
-                    .assertElementAppears('.has-error.node-group-renaming', 1000, 'Error is displayed in case of duplicate name')
-                    .findByCssSelector('.node-group-renaming input[type=text]')
-                        .clearValue()
                         .type('Node_Network_Group_2')
                         // Enter
                         .type('\uE007')
                         .end()
-                    .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'New subtab title is shown');
+                    .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'Node network group was successfully renamed');
             },
             'Node network group deletion': function() {
                 return this.remote
@@ -414,8 +408,37 @@ define([
                     .then(function() {
                         return modal.waitToClose();
                     })
-                    .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000, 'Node network groups title disappears')
-                    .assertElementDisappears('.network-group-name .btn-link', 1000, 'Default Node Network group title disappers');
+                    .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000, 'Node network groups title disappears');
+            },
+            'Node network group renaming in deployed environment': function() {
+                this.timeout = 100000;
+                return this.remote
+                    .then(function() {
+                        return common.addNodesToCluster(1, ['Controller']);
+                    })
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .then(function() {
+                        return dashboardPage.startDeployment();
+                    })
+                    .waitForElementDeletion('.dashboard-block .progress', 60000)
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    })
+                    .clickByCssSelector('.subtab-link-default')
+                    .assertElementNotExists('.glyphicon-pencil', 'Renaming of a node network group is fobidden in deployed environment')
+                    .clickByCssSelector('.network-group-name .name')
+                    .assertElementNotExists('.network-group-name input[type=text]', 'Renaming is not started on a node network group name click')
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .then(function() {
+                        return clusterPage.resetEnvironment(clusterName);
+                    })
+                    .then(function() {
+                        return dashboardPage.discardChanges();
+                    });
             }
         };
     });

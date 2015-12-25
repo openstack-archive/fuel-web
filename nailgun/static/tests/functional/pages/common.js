@@ -77,6 +77,8 @@ define([
                 var self = this;
                 return this.remote
                     .clickLinkByText('Environments')
+                    .clickByCssSelector('button.btn-danger')
+                    .catch(function() {})
                     .waitForCssSelector('.clusters-page', 2000)
                     .then(function() {
                         return self.clustersPage.goToEnvironment(clusterName);

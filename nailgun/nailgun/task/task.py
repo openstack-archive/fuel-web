@@ -159,7 +159,7 @@ class DeploymentTask(object):
     def message(cls, task, nodes, deployment_tasks=None,
                 reexecutable_filter=None):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
-        deployment_tasks = deployment_tasks or []
+        task_ids = deployment_tasks or []
 
         nodes_ids = [n.id for n in nodes]
         for n in db().query(Node).filter_by(
@@ -183,7 +183,7 @@ class DeploymentTask(object):
         while True:
             try:
                 message = getattr(cls, deployment_mode)(
-                    task, nodes, deployment_tasks, reexecutable_filter
+                    task, nodes, task_ids, reexecutable_filter
                 )
                 break
             except errors.TaskBaseDeploymentNotAllowed:
@@ -206,10 +206,9 @@ class DeploymentTask(object):
         return rpc_message
 
     @classmethod
-    def granular_deploy(cls, task, nodes, deployment_tasks,
-                        reexecutable_filter):
+    def granular_deploy(cls, task, nodes, task_ids, reexecutable_filter):
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-        orchestrator_graph.only_tasks(deployment_tasks)
+        orchestrator_graph.only_tasks(task_ids)
         orchestrator_graph.reexecutable_tasks(reexecutable_filter)
 
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
@@ -231,11 +230,13 @@ class DeploymentTask(object):
     deploy = granular_deploy
 
     @classmethod
-    def task_deploy(
-            cls, task, nodes, deployment_tasks, reexecutable_filter):
-
-        deployment_tasks = deployment_tasks or \
-            objects.Cluster.get_deployment_tasks(task.cluster)
+    def task_deploy(cls, task, nodes, task_ids, reexecutable_filter):
+        deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+        if task_ids:
+            task_ids = set(task_ids)
+            deployment_tasks = (
+                t for t in deployment_tasks if t['id'] in task_ids
+            )
 
         serialized_cluster = deployment_serializers.serialize(
             None, task.cluster, nodes

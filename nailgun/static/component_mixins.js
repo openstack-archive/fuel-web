@@ -21,8 +21,9 @@ define([
     'i18n',
     'dispatcher',
     'react',
+    'react-dom',
     'react.backbone'
-], function($, _, Backbone, utils, i18n, dispatcher, React) {
+], function($, _, Backbone, utils, i18n, dispatcher, React, ReactDOM) {
     'use strict';
 
     return {
@@ -110,7 +111,7 @@ define([
                 };
             },
             handleBodyClick: function(e) {
-                if (!$(e.target).closest(React.findDOMNode(this)).length) {
+                if (!$(e.target).closest(ReactDOM.findDOMNode(this)).length) {
                     _.defer(_.partial(this.props.toggle, false));
                 }
             },
@@ -137,7 +138,7 @@ define([
                 startRenaming: function(e) {
                     e.preventDefault();
                     $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
-                        if (e && !$(e.target).closest(React.findDOMNode(this.refs[refname])).length) {
+                        if (e && !$(e.target).closest(ReactDOM.findDOMNode(this.refs[refname])).length) {
                             this.endRenaming();
                         } else {
                             e.preventDefault();

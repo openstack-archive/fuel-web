@@ -19,6 +19,7 @@ define(
     'i18n',
     'jquery',
     'react',
+    'react-dom',
     'utils',
     'models',
     'dispatcher',
@@ -26,7 +27,7 @@ define(
     'component_mixins',
     'views/controls'
 ],
-function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins, controls) {
+function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, componentMixins, controls) {
     'use strict';
 
     var namespace = 'cluster_page.dashboard_tab.';
@@ -236,7 +237,7 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             if (task) task.destroy();
         },
         componentDidMount: function() {
-            $('.result-details', React.findDOMNode(this))
+            $('.result-details', ReactDOM.findDOMNode(this))
                 .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },

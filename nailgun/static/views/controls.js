@@ -20,8 +20,8 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
-    function(i18n, $, _, React, utils, componentMixins) {
+define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'component_mixins'],
+    function(i18n, $, _, React, ReactDOM, utils, componentMixins) {
     'use strict';
 
     var controls = {};
@@ -63,7 +63,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
             return this.props.type == 'radio' || this.props.type == 'checkbox';
         },
         getInputDOMNode: function() {
-            return React.findDOMNode(this.refs.input);
+            return ReactDOM.findDOMNode(this.refs.input);
         },
         debouncedChange: _.debounce(function() {
             return this.onChange();
@@ -85,7 +85,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
         },
         removeFile: function() {
             if (!this.props.disabled) {
-                React.findDOMNode(this.refs.form).reset();
+                ReactDOM.findDOMNode(this.refs.form).reset();
                 this.saveFile(null, null);
             }
         },
@@ -359,17 +359,17 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'component_mixins'],
             this.removeTooltip();
         },
         addTooltip: function() {
-            $(React.findDOMNode(this.refs.tooltip)).tooltip({
+            $(ReactDOM.findDOMNode(this.refs.tooltip)).tooltip({
                 container: this.props.container,
                 placement: this.props.placement,
                 title: this.props.text
             });
         },
         updateTooltipTitle: function() {
-            $(React.findDOMNode(this.refs.tooltip)).attr('title', this.props.text).tooltip('fixTitle');
+            $(ReactDOM.findDOMNode(this.refs.tooltip)).attr('title', this.props.text).tooltip('fixTitle');
         },
         removeTooltip: function() {
-            $(React.findDOMNode(this.refs.tooltip)).tooltip('destroy');
+            $(ReactDOM.findDOMNode(this.refs.tooltip)).tooltip('destroy');
         },
         render: function() {
             if (!this.props.wrap) return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});

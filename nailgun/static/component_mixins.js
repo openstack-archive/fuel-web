@@ -110,7 +110,7 @@ define([
                 };
             },
             handleBodyClick: function(e) {
-                if (!$(e.target).closest(React.findDOMNode(this)).length) {
+                if (!$(e.target).closest(require('react-dom').findDOMNode(this)).length) {
                     _.defer(_.partial(this.props.toggle, false));
                 }
             },
@@ -137,7 +137,7 @@ define([
                 startRenaming: function(e) {
                     e.preventDefault();
                     $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
-                        if (e && !$(e.target).closest(React.findDOMNode(this.refs[refname])).length) {
+                        if (e && !$(e.target).closest(require('react-dom').findDOMNode(this.refs[refname])).length) {
                             this.endRenaming();
                         } else {
                             e.preventDefault();

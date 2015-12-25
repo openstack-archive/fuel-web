@@ -146,7 +146,7 @@
         },
 
         el: function() {
-            return this.isMounted() && React.findDOMNode(this);
+            return this.isMounted() && ReactDOM.findDOMNode(this);
         }
     };
 

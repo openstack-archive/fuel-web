@@ -18,17 +18,17 @@ define(
     'jquery',
     'underscore',
     'react',
+    'react-dom',
     'views/controls',
     'views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
+    'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen',
+    'react/lib/ReactTransitionGroup'
 ],
-function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen, ReactTransitionGroup) {
     'use strict';
-
-    var ReactTransitionGroup = React.addons.TransitionGroup;
 
     var NodesTab = React.createClass({
         getInitialState: function() {
@@ -129,10 +129,10 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
     // see https://github.com/facebook/react/issues/1950 for more info
     var ScreenTransitionWrapper = React.createClass({
         componentWillEnter: function(cb) {
-            $(React.findDOMNode(this)).hide().delay('fast').fadeIn('fast', cb);
+            $(ReactDOM.findDOMNode(this)).hide().delay('fast').fadeIn('fast', cb);
         },
         componentWillLeave: function(cb) {
-            $(React.findDOMNode(this)).fadeOut('fast', cb);
+            $(ReactDOM.findDOMNode(this)).fadeOut('fast', cb);
         },
         render: function() {
             if (this.props.loading) return (

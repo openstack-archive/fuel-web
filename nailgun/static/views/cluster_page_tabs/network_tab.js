@@ -20,19 +20,20 @@ define(
     'i18n',
     'backbone',
     'react',
+    'react-dom',
     'models',
     'dispatcher',
     'utils',
     'views/dialogs',
     'component_mixins',
     'views/controls',
-    'views/cluster_page_tabs/setting_section'
+    'views/cluster_page_tabs/setting_section',
+    'react-addons-transition-group'
 ],
-function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, componentMixins, controls, SettingSection) {
+function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialogs, componentMixins, controls, SettingSection, CSSTransitionGroup) {
     'use strict';
 
-    var CSSTransitionGroup = React.addons.CSSTransitionGroup,
-        parametersNS = 'cluster_page.network_tab.networking_parameters.',
+    var parametersNS = 'cluster_page.network_tab.networking_parameters.',
         networkTabNS = 'cluster_page.network_tab.',
         defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
 
@@ -1205,7 +1206,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             } else if (e.key == 'Escape') {
                 this.endRenaming();
                 e.stopPropagation();
-                React.findDOMNode(this).focus();
+                ReactDOM.findDOMNode(this).focus();
             }
         },
         startNodeNetworkGroupRenaming: function(e) {

@@ -381,21 +381,13 @@ define([
                 return this.remote
                     .clickByCssSelector('.subtab-link-Node_Network_Group_1')
                     .clickByCssSelector('.glyphicon-pencil')
-                    .assertElementAppears('.network-group-name input[type=text]', 2000, 'Node network group renaming control is rendered')
+                    .waitForCssSelector('.network-group-name input[type=text]', 2000)
                     .findByCssSelector('.node-group-renaming input[type=text]')
-                        .clearValue()
-                        .type('default')
-                        // Enter
-                        .type('\uE007')
-                        .end()
-                    .assertElementAppears('.has-error.node-group-renaming', 1000, 'Error is displayed in case of duplicate name')
-                    .findByCssSelector('.node-group-renaming input[type=text]')
-                        .clearValue()
                         .type('Node_Network_Group_2')
                         // Enter
                         .type('\uE007')
                         .end()
-                    .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'New subtab title is shown');
+                    .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'Node network group was successfully renamed');
             },
             'Node network group deletion': function() {
                 return this.remote

@@ -19,6 +19,7 @@ define(
     'underscore',
     'i18n',
     'react',
+    'react-dom',
     'backbone',
     'utils',
     'models',
@@ -26,7 +27,7 @@ define(
     'views/dialogs',
     'views/controls'
 ],
-function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, controls) {
+function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, dialogs, controls) {
     'use strict';
 
     var AVAILABILITY_STATUS_ICONS = {
@@ -121,7 +122,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             }
         },
         componentDidMount: function() {
-            $(React.findDOMNode(this)).find('input:enabled').first().focus();
+            $(ReactDOM.findDOMNode(this)).find('input:enabled').first().focus();
         },
         areComponentsMutuallyExclusive: function(components) {
             if (components.length <= 1) {

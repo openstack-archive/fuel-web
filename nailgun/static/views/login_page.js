@@ -19,10 +19,11 @@ define(
     'underscore',
     'i18n',
     'react',
+    'react-dom',
     'dispatcher',
     'utils'
 ],
-function($, _, i18n, React, dispatcher, utils) {
+function($, _, i18n, React, ReactDOM, dispatcher, utils) {
     'use strict';
 
     var LoginPage = React.createClass({
@@ -59,7 +60,7 @@ function($, _, i18n, React, dispatcher, utils) {
 
             return keystoneClient.authenticate(username, password, {force: true})
                 .fail((xhr) => {
-                    $(React.findDOMNode(this.refs.username)).focus();
+                    $(ReactDOM.findDOMNode(this.refs.username)).focus();
 
                     var status = xhr && xhr.status;
                     var error = 'login_error';
@@ -93,7 +94,7 @@ function($, _, i18n, React, dispatcher, utils) {
                 });
         },
         componentDidMount: function() {
-            $(React.findDOMNode(this.refs.username)).focus();
+            $(ReactDOM.findDOMNode(this.refs.username)).focus();
         },
         getInitialState: function() {
             return {
@@ -107,8 +108,8 @@ function($, _, i18n, React, dispatcher, utils) {
         onSubmit: function(e) {
             e.preventDefault();
 
-            var username = React.findDOMNode(this.refs.username).value;
-            var password = React.findDOMNode(this.refs.password).value;
+            var username = ReactDOM.findDOMNode(this.refs.username).value;
+            var password = ReactDOM.findDOMNode(this.refs.password).value;
 
             this.setState({actionInProgress: true});
 

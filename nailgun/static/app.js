@@ -21,6 +21,7 @@ define(
     'i18n',
     'backbone',
     'react',
+    'react-dom',
     'utils',
     'models',
     'keystone_client',
@@ -41,7 +42,7 @@ define(
     'bootstrap',
     './styles/main.less'
 ],
-function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootComponent, dialogs, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, ReactDOM, utils, models, KeystoneClient, RootComponent, dialogs, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     class Router extends Backbone.Router {
@@ -211,7 +212,7 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
         }
 
         renderLayout() {
-            var wrappedRootComponent = React.render(
+            var wrappedRootComponent = ReactDOM.render(
                 React.createElement(
                     RootComponent,
                     _.pick(this, 'version', 'user', 'fuelSettings', 'statistics', 'notifications')

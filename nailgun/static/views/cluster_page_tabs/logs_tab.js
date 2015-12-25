@@ -22,9 +22,11 @@ define(
     'utils',
     'models',
     'component_mixins',
-    'views/controls'
+    'views/controls',
+    'react/lib/ReactComponentWithPureRenderMixin',
+    'react/lib/ReactFragment'
 ],
-function($, _, i18n, React, utils, models, componentMixins, controls) {
+function($, _, i18n, React, utils, models, componentMixins, controls, PureRenderMixin, ReactFragment) {
     'use strict';
 
     var LogsTab = React.createClass({
@@ -135,7 +137,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
 
     var LogFilterBar = React.createClass({
         // PureRenderMixin added for prevention the rerender LogFilterBar (because of polling) in Mozilla browser
-        mixins: [React.addons.PureRenderMixin],
+        mixins: [PureRenderMixin],
         getInitialState: function() {
             return _.extend({}, this.props.selectedLogs, {
                 sourcesLoadingState: 'loading',
@@ -232,7 +234,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     }
                 }, this);
             }
-            return React.addons.createFragment(options);
+            return ReactFragment.create(options);
         },
         handleShowButtonClick: function() {
             this.setState({locked: true});

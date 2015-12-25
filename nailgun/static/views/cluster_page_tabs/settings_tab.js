@@ -22,12 +22,11 @@ define(
     'utils',
     'models',
     'component_mixins',
-    'views/cluster_page_tabs/setting_section'
+    'views/cluster_page_tabs/setting_section',
+    'react/lib/ReactCSSTransitionGroup'
 ],
-function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
+function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSSTransitionGroup) {
     'use strict';
-
-    var CSSTransitionGroup = React.addons.CSSTransitionGroup;
 
     var SettingsTab = React.createClass({
         mixins: [
@@ -321,7 +320,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
         render: function() {
             return (
                 <div className='col-xs-2'>
-                    <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
+                    <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked' transitionEnter={false} transitionLeave={false}>
                     {
                         this.props.settingsGroupList.map(function(groupName) {
                             if (!this.props.groupedSettings[groupName]) return null;

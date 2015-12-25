@@ -34,8 +34,7 @@ module.exports = {
         modulesDirectories: ['static', 'node_modules', 'vendor/custom'],
         extensions: ['', '.js'],
         alias: {
-            underscore: 'lodash',
-            react: 'react/addons'
+            underscore: 'lodash'
         }
     },
     node: {},

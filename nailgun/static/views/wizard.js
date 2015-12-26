@@ -141,7 +141,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         },
         processCompatible: function(allComponents, paneComponents, types, stopList = []) {
             // all previously enabled components
-            // should be compatible with the current component.
+            // should be compatible with the current component
             _.each(paneComponents, (component) => {
                 // skip already disabled
                 if (component.get('disabled')) {
@@ -253,7 +253,27 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'NameAndRelease',
-            title: i18n('dialog.create_cluster_wizard.name_release.title')
+            title: i18n('dialog.create_cluster_wizard.name_release.title'),
+            hasErrors: function(wizard) {
+                return !!wizard.get('name_error');
+            }
+        },
+        isValid: function() {
+            var wizard = this.props.wizard;
+            var [name, cluster, clusters] = [wizard.get('name'), wizard.get('cluster'), wizard.get('clusters')];
+            // test cluster name is already taken
+            if (clusters.findWhere({name: name})) {
+                var error = i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name});
+                wizard.set({name_error: error});
+                return false;
+            }
+            // validate cluster fields
+            cluster.isValid();
+            if (cluster.validationError && cluster.validationError.name) {
+                wizard.set({name_error: cluster.validationError.name});
+                return false;
+            }
+            return true;
         },
         render: function() {
             var releases = this.props.releases,
@@ -309,10 +329,12 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         statics: {
             paneName: 'Compute',
             componentType: 'hypervisor',
-            title: i18n('dialog.create_cluster_wizard.compute.title')
-        },
-        hasErrors: function() {
-            return !_.any(this.components, (component) => component.get('enabled'));
+            title: i18n('dialog.create_cluster_wizard.compute.title'),
+            hasErrors: function(wizard) {
+                var allComponents = wizard.get('components'),
+                    components = allComponents.getComponentsByType(this.componentType, {sorted: true});
+                return !_.any(components, (component) => component.get('enabled'));
+            }
         },
         render: function() {
             this.processRestrictions(this.components, ['hypervisor']);
@@ -323,7 +345,9 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                         components={this.components}
                         onChange={this.props.onChange}
                     />
-                    {this.hasErrors() && <div className='alert alert-warning'>{i18n('dialog.create_cluster_wizard.compute.empty_choice')}</div>}
+                    {this.constructor.hasErrors(this.props.wizard) &&
+                        <div className='alert alert-warning'>{i18n('dialog.create_cluster_wizard.compute.empty_choice')}</div>
+                    }
                 </div>
             );
         }
@@ -336,15 +360,17 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             panesForRestrictions: ['hypervisor', 'network'],
             componentType: 'network',
             title: i18n('dialog.create_cluster_wizard.network.title'),
-            ml2CorePath: 'network:neutron:core:ml2'
-        },
-        hasErrors: function() {
-            var ml2core = _.find(this.components, (component) => component.id == this.constructor.ml2CorePath);
-            if (ml2core.get('enabled')) {
-                var ml2 = _.filter(this.components, (component) => component.isML2Driver());
-                return !_.any(ml2, (ml2driver) => ml2driver.get('enabled'));
+            ml2CorePath: 'network:neutron:core:ml2',
+            hasErrors: function(wizard) {
+                var allComponents = wizard.get('components'),
+                    components = allComponents.getComponentsByType(this.componentType, {sorted: true});
+                var ml2core = _.find(components, (component) => component.id == this.ml2CorePath);
+                if (ml2core && ml2core.get('enabled')) {
+                    var ml2 = _.filter(components, (component) => component.isML2Driver());
+                    return !_.any(ml2, (ml2driver) => ml2driver.get('enabled'));
+                }
+                return false;
             }
-            return false;
         },
         onChange: function(name, value) {
             this.props.onChange(name, value);
@@ -522,6 +548,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.settings = new models.Settings();
             this.releases = new models.Releases();
             this.cluster = new models.Cluster();
+            this.wizard.set({cluster: this.cluster, clusters: this.props.clusters});
         },
         componentDidMount: function() {
             this.releases.fetch().done(_.bind(function() {
@@ -532,15 +559,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             }, this));
 
             this.updateState({activePaneIndex: 0});
-        },
-        componentDidUpdate: function() {
-            var pane = this.refs.pane;
-            if (pane) {
-                var hasErrors = _.isFunction(pane.hasErrors) ? pane.hasErrors() : false;
-                if (hasErrors != this.state.paneHasErrors) {
-                    this.updateState({paneHasErrors: hasErrors});
-                }
-            }
         },
         getListOfTypesToRestore: function(currentIndex, maxIndex) {
             var panesTypes = [];
@@ -553,15 +571,17 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         },
         updateState: function(nextState) {
             var numberOfPanes = this.getEnabledPanes().length;
-            var paneHasErrors = _.isBoolean(nextState.paneHasErrors) ? nextState.paneHasErrors : this.state.paneHasErrors;
             var nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex : this.state.activePaneIndex;
+            var pane = clusterWizardPanes[nextActivePaneIndex];
+            var paneHasErrors = _.isFunction(pane.hasErrors) ? pane.hasErrors(this.wizard) : false;
 
             var newState = _.merge(nextState, {
                 activePaneIndex: nextActivePaneIndex,
                 previousEnabled: nextActivePaneIndex > 0,
                 nextEnabled: !paneHasErrors,
                 nextVisible: (nextActivePaneIndex < numberOfPanes - 1),
-                createVisible: nextActivePaneIndex == numberOfPanes - 1
+                createVisible: nextActivePaneIndex == numberOfPanes - 1,
+                paneHasErrors: paneHasErrors
             });
             this.setState(newState);
         },
@@ -572,53 +592,45 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             var panes = this.getEnabledPanes();
             return panes[this.state.activePaneIndex];
         },
+        isCurrentPaneValid: function() {
+            var pane = this.refs.pane;
+            if (pane && _.isFunction(pane.isValid) && !pane.isValid()) {
+                this.updateState({paneHasErrors: true});
+                return false;
+            }
+            return true;
+        },
         prevPane: function() {
+            // check for pane's validation errors
+            if (!this.isCurrentPaneValid()) {
+                return;
+            }
+
             this.updateState({activePaneIndex: this.state.activePaneIndex - 1});
         },
         nextPane: function() {
-            if (this.state.activePaneIndex == 0) {
-                var status = this.createCluster();
-                if (!status) {
-                    this.updateState({paneHasErrors: true});
-                    return;
-                }
+            // check for pane's validation errors
+            if (!this.isCurrentPaneValid()) {
+                return;
             }
+
             var nextIndex = this.state.activePaneIndex + 1;
             this.updateState({
                 activePaneIndex: nextIndex,
-                maxAvailablePaneIndex: _.max([nextIndex, this.state.maxAvailablePaneIndex]),
-                paneHasErrors: false
+                maxAvailablePaneIndex: _.max([nextIndex, this.state.maxAvailablePaneIndex])
             });
         },
         goToPane: function(index) {
             if (index > this.state.maxAvailablePaneIndex) {
                 return;
             }
+
+            // check for pane's validation errors
+            if (!this.isCurrentPaneValid()) {
+                return;
+            }
+
             this.updateState({activePaneIndex: index});
-        },
-        createCluster: function() {
-            var success = true;
-            var name = this.wizard.get('name');
-            var release = this.wizard.get('release');
-            this.cluster.off();
-            this.cluster.on('invalid', function() {
-                success = false;
-            }, this);
-            if (this.props.clusters.findWhere({name: name})) {
-                var error = i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name});
-                this.wizard.set({name_error: error});
-                return false;
-            }
-            success = success && this.cluster.set({
-                name: name,
-                release: release.id,
-                components: this.components
-            }, {validate: true});
-            if (this.cluster.validationError && this.cluster.validationError.name) {
-                this.wizard.set({name_error: this.cluster.validationError.name});
-                return false;
-            }
-            return success;
         },
         saveCluster: function() {
             if (this.stopHandlingKeys) {
@@ -627,6 +639,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             this.stopHandlingKeys = true;
             this.setState({actionInProgress: true});
             var cluster = this.cluster;
+            cluster.set({components: this.components});
             var deferred = cluster.save();
             if (deferred) {
                 this.updateState({disabled: true});
@@ -654,11 +667,13 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
         },
         selectRelease: function(releaseId) {
             var release = this.releases.findWhere({id: releaseId});
-            this.wizard.set('release', release);
+            this.wizard.set({release: release});
+            this.cluster.set({release: releaseId});
 
             // fetch components based on releaseId
             this.setState({loading: true});
             this.components = new models.ComponentsCollection([], {releaseId: releaseId});
+            this.wizard.set({components: this.components});
             this.components.fetch().done(() => {
                 this.components.invoke('expandWildcards', this.components);
                 this.components.invoke('restoreDefaultValue', this.components);
@@ -666,12 +681,11 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             });
         },
         onChange: function(name, value) {
-            var paneHasErrors = false;
             var maxAvailablePaneIndex = this.state.maxAvailablePaneIndex;
-            var pane = this.refs.pane;
             switch (name) {
                 case 'name':
                     this.wizard.set('name', value);
+                    this.cluster.set('name', value);
                     this.wizard.unset('name_error');
                     break;
                 case 'release':
@@ -685,10 +699,9 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                     }
                     var component = this.components.findWhere({id: name});
                     component.set({enabled: value});
-                    paneHasErrors = _.isFunction(pane.hasErrors) && pane.hasErrors();
                     break;
             }
-            this.updateState({paneHasErrors: paneHasErrors, maxAvailablePaneIndex: maxAvailablePaneIndex});
+            this.updateState({maxAvailablePaneIndex: maxAvailablePaneIndex});
         },
         onKeyDown: function(e) {
             if (this.state.actionInProgress) {

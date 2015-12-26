@@ -1391,7 +1391,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return (
                 <div className='forms-box' key='neutron-l2'>
                     <h3 className='networks'>{i18n(parametersNS + 'l2_configuration')}</h3>
-                    <div className='network-description'>{i18n(networkTabNS + 'networking_parameters.l2_description')}</div>
+                    <div className='network-description'>{i18n(networkTabNS + 'networking_parameters.l2_' + networkParameters.get('segmentation_type') + '_description')}</div>
                     <div>
                         <Range
                             {...this.composeProps(idRangePrefix + '_range', true)}
@@ -1449,6 +1449,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             <h3>
                                 <span className='subtab-group-baremetal-net'>{i18n(networkTabNS + 'baremetal_net')}</span>
                             </h3>
+                            <div className='network-description'>{i18n(networkTabNS + 'networking_parameters.baremetal_parameters_description')}</div>
                             <Range
                                 key='baremetal_range'
                                 {...this.composeProps('baremetal_range', true)}

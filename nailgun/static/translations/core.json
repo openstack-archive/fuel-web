@@ -103,11 +103,13 @@
                 "private": "Private",
                 "baremetal": "Baremetal",
                 "descriptions": {
-                    "public": "Addresses of the public network can be used to communicate with the cluster and its VMs from outside of the environment (the Internet, corporate network, end users). The public network also provides Virtual IPs for public endpoints, which are used to connect to OpenStack services APIs.",
-                    "storage": "Part of the environment's internal network. It carries replication traffic from Ceph or Swift. Ceph public traffic is dispatched through br-mgmt bridge (Management network).",
-                    "management" : "Part of the environment's internal network. It is used to put tagged VLAN traffic from private tenant networks on physical NIC interfaces. This network can also be used for serving iSCSI protocol exchanges between Compute and Storage nodes. As to the Management, it serves for all other internal communications, including database queries, AMQP messaging, high availability services).",
-                    "internal" : "The internal network connects all OpenStack nodes in the environment. All components of an OpenStack environment communicate with each other using this network. This network must be isolated from both the private and public networks for security reasons. The internal network can also be used for serving iSCSI protocol exchanges between Compute and Storage nodes.",
-                    "floating" : "The floating range is IPs that are assigned to individual VM instances by the project administrator. Neutron services can then configure these addresses on the public network interface of the Network controller node."
+                    "public": "The Public network allows inbound connections to VMs (Controllers and Tenant VMs) from external networks (e.g., Internet) as well as outbound connections from VMs to the external networks.",
+                    "storage": "The Storage network is used to provide storage services such as replication traffic from Ceph. Management network is used for Ceph Public traffic.",
+                    "management": "The Management network is primarily used for OpenStack Cloud Management. It is used to access OpenStack services (nova-api, OpenStack dashboard, etc).",
+                    "internal": "The Internal network connects all OpenStack nodes in the environment. All components of an OpenStack environment communicate with each other using this network.",
+                    "floating": "This network is used to assign Floating IPs to tenant VMs.",
+                    "private": "The private network facilitates communication between each tenant's VMs. Private network address spaces are not a part of the public network address space; fixed IPs of virtual instances cannot be accessed directly from the rest of the public network.",
+                    "baremetal": "Separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes."
                 }
             },
             "login_page": {
@@ -694,8 +696,10 @@
                         "dns_nameservers": "Guest OS DNS Servers",
                         "l2_configuration": "Neutron L2 Configuration",
                         "l3_configuration": "Neutron L3 Configuration",
-                        "l2_description": "",
-                        "dns_servers_description": "",
+                        "l2_vlan_description": "Neutron supports different types of network segmentation such as VLAN, GRE, VXLAN etc. This section is specific to VLAN segmentation related parameters such as VLAN ID ranges for tenant separation and the Base MAC address.",
+                        "l2_tun_description": "Neutron supports different types of network segmentation such as VLAN, GRE, VXLAN etc. This section is specific to a tunneling segmentation related parameters such as Tunnel ID ranges for tenant separation and the Base MAC address.",
+                        "dns_servers_description": "This setting is used to specify the upstream name servers for the environment. These servers will be used to forward DNS queries for external DNS names to DNS servers outside the environment.",
+                        "baremetal_parameters_description": "The Baremetal network is used by OpenStack Ironic. OpenStack Ironic will manage the physical nodes attached to this network. This is not the IPMI network for the hosts.  This network is registered as a provider network in Neutron and used for provisioning and accessing the baremetal hosts.",
                         "gre_id_range": "Tunnel ID range",
                         "vlan_range": "VLAN ID range",
                         "base_mac": "Base MAC address",

@@ -158,10 +158,10 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body,
+        self.assertEqual(resp.json_body['message'],
                          'Default node group cannot be deleted.')
 
-    def test_delete_node_group_with_nodes_not_in_bootstrap(self):
+    def test_delete_non_default_node_group_error(self):
         node_group = self.env.create_node_group(api=False,
                                                 cluster_id=self.cluster.id)
         self.env.create_node(group_id=node_group.id)
@@ -176,7 +176,7 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body,
+        self.assertEqual(resp.json_body['message'],
                          'Node group can be deleted only when all its nodes '
                          'are in bootstrap state.')
 

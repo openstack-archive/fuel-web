@@ -601,7 +601,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             networkConfiguration.get('networking_parameters').set(_.cloneDeep(this.state.initialConfiguration.networking_parameters));
         },
         loadInitialSettings: function() {
-            this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialSettingsAttributes)).isValid({models: this.state.configModels});
+            var settings = this.props.cluster.get('settings');
+            settings.set(_.cloneDeep(this.state.initialSettingsAttributes), {silent: true, validate: false});
+            settings.mergePluginSettings();
+            settings.isValid({models: this.state.configModels});
         },
         updateInitialConfiguration: function() {
             this.setState({initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON())});
@@ -1500,7 +1503,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                             .filter(
                                 (sectionName) => {
                                     var section = settings.get(sectionName);
-                                    return (section.metadata.group == 'network' || !section.metadata.group && _.any(section, {group: 'network'})) &&
+                                    return (section.metadata.group == 'network' || _.any(section, {group: 'network'})) &&
                                         !this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
                                 }
                             )
@@ -1518,7 +1521,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                                 !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
                                             ) return settingName;
                                         }));
-                                    if (_.isEmpty(settingsToDisplay)) return null;
+                                    if (_.isEmpty(settingsToDisplay) && !settings.isPlugin(section)) return null;
                                     return <SettingSection
                                         key={sectionName}
                                         cluster={this.props.cluster}

@@ -767,7 +767,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 _.isNull(this.props.cluster.get('settings').validationError);
         },
         renderButtons: function() {
-            var isCancelChangesDisabled = this.isLocked() || !this.hasChanges();
+            var isCancelChangesDisabled = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true}) || !this.hasChanges();
             return (
                 <div className='well clearfix'>
                     <div className='btn-group pull-right'>
@@ -962,11 +962,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 }
                                 {activeNetworkSectionName == 'network_settings' &&
                                     <NetworkSettings
-                                        key={this.state.key}
+                                        {... _.pick(this.state, 'key', 'configModels', 'settingsForChecks')}
                                         cluster={this.props.cluster}
                                         locked={this.state.actionInProgress}
-                                        configModels={this.state.configModels}
-                                        settingsForChecks={this.state.settingsForChecks}
+                                        initialAttributes={this.state.initialSettingsAttributes}
                                     />
                                 }
                                 {activeNetworkSectionName == 'network_verification' &&
@@ -1505,19 +1504,17 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                         }));
                                     if (_.isEmpty(settingsToDisplay) && !settings.isPlugin(section)) return null;
                                     return <SettingSection
+                                        {... _.pick(this.props, 'cluster', 'initialAttributes', 'settingsForChecks', 'configModels')}
                                         key={sectionName}
-                                        cluster={this.props.cluster}
                                         sectionName={sectionName}
                                         settingsToDisplay={settingsToDisplay}
                                         onChange={_.bind(this.onChange, this, sectionName)}
                                         allocatedRoles={allocatedRoles}
                                         settings={settings}
-                                        settingsForChecks={this.props.settingsForChecks}
                                         makePath={settings.makePath}
                                         getValueAttribute={settings.getValueAttribute}
                                         locked={locked}
                                         lockedCluster={lockedCluster}
-                                        configModels={this.props.configModels}
                                         checkRestrictions={this.checkRestrictions}
                                     />;
                                 }

@@ -1026,6 +1026,7 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(
             self.cluster['id'], data, expect_errors=(status_code != 200))
         self.assertEqual(resp.status_code, status_code)
+        return resp
 
     def test_update_dnsmasq_is_started_with_correct_message(self):
         message = {
@@ -1155,7 +1156,9 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
 
         # request was rejected as previous update_dnsmasq task is still
         # in progress
-        self.change_ip_range(status_code=409)
+        resp = self.change_ip_range(status_code=409)
+        self.assertEqual(resp.json_body['message'],
+                         errors.UpdateDnsmasqTaskIsRunning.message)
         # no more calls were made
         self.assertEqual(mocked_rpc.call_count, 1)
 
@@ -1184,5 +1187,7 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
         # in progress
         resp = self.env.delete_node_group(ng2['id'], status_code=409)
         self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json_body['message'],
+                         errors.UpdateDnsmasqTaskIsRunning.message)
         # no more calls were made
         self.assertEqual(mocked_rpc.call_count, 1)

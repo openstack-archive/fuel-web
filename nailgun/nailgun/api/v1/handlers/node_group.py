@@ -39,6 +39,7 @@ class NodeGroupHandler(SingleHandler):
     single = objects.NodeGroup
     validator = NodeGroupValidator
 
+    @content
     def DELETE(self, group_id):
         """:returns: {}
 
@@ -56,10 +57,7 @@ class NodeGroupHandler(SingleHandler):
             raise self.http(409, errors.UpdateDnsmasqTaskIsRunning.message)
         if task.status == consts.TASK_STATUSES.error:
             raise self.http(400, task.message)
-        raise web.webapi.HTTPError(
-            status="204 No Content",
-            data=""
-        )
+        raise self.http(204)
 
 
 class NodeGroupCollectionHandler(CollectionHandler):

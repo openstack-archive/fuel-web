@@ -726,16 +726,16 @@ define([
             return settingName == 'metadata' ? 'enabled' : 'value';
         },
         hasChanges: function(initialAttributes, models) {
-            return _.any(this.attributes, function(group, groupName) {
-                var metadata = group.metadata,
+            return _.any(this.attributes, function(section, sectionName) {
+                var metadata = section.metadata,
                     result = false;
                 if (metadata) {
-                    if (this.checkRestrictions(models, null, this.makePath(groupName, 'metadata')).result) return result;
-                    if (!_.isUndefined(metadata.enabled)) result = metadata.enabled != initialAttributes[groupName].metadata.enabled;
+                    if (this.checkRestrictions(models, null, this.makePath(sectionName, 'metadata')).result) return result;
+                    if (!_.isUndefined(metadata.enabled)) result = metadata.enabled != initialAttributes[sectionName].metadata.enabled;
                 }
-                return result || _.any(group, function(setting, settingName) {
-                    if (this.checkRestrictions(models, null, this.makePath(groupName, settingName)).result) return false;
-                    return !_.isEqual(setting.value, (initialAttributes[groupName][settingName] || {}).value);
+                return result || (metadata || {}).enabled !== false && _.any(section, (setting, settingName) => {
+                    if (this.checkRestrictions(models, null, this.makePath(sectionName, settingName)).result) return false;
+                    return !_.isEqual(setting.value, (initialAttributes[sectionName][settingName] || {}).value);
                 }, this);
             }, this);
         },

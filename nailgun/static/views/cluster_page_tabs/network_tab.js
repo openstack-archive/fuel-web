@@ -809,16 +809,21 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         removeNodeNetworkGroup: function() {
             var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
             dialogs.RemoveNodeNetworkGroupDialog
-                .show({showUnsavedChangesWarning: this.hasChanges()})
-                .then(() => nodeNetworkGroup.destroy({wait: true}))
-                .then(
-                    () => this.props.cluster.get('networkConfiguration').fetch(),
-                    (response) => utils.showErrorDialog({
-                        title: i18n(networkTabNS + 'node_network_group_deletion_error'),
-                        response: response
-                    })
-                )
-                .then(this.updateInitialConfiguration);
+                .show({
+                    showUnsavedChangesWarning: this.hasChanges()
+                })
+                .done(
+                    () => nodeNetworkGroup
+                        .destroy({wait: true})
+                        .then(
+                            () => this.props.cluster.get('networkConfiguration').fetch(),
+                            (response) => utils.showErrorDialog({
+                                title: i18n(networkTabNS + 'node_network_group_deletion_error'),
+                                response: response
+                            })
+                        )
+                        .then(this.updateInitialConfiguration)
+                );
         },
         addNodeNetworkGroup: function(hasChanges) {
             if (hasChanges) {
@@ -828,21 +833,22 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 });
                 return;
             }
-            dialogs.CreateNodeNetworkGroupDialog.show({
-                clusterId: this.props.cluster.id,
-                nodeNetworkGroups: this.nodeNetworkGroups
-            })
-                .then(() => {
+            dialogs.CreateNodeNetworkGroupDialog
+                .show({
+                    clusterId: this.props.cluster.id,
+                    nodeNetworkGroups: this.nodeNetworkGroups
+                })
+                .done(() => {
                     this.setState({hideVerificationResult: true});
-                    return this.nodeNetworkGroups.fetch();
-                })
-                .then(() => {
-                    var newNodeNetworkGroup = this.nodeNetworkGroups.last();
-                    this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
-                    this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
-                    return this.props.cluster.get('networkConfiguration').fetch();
-                })
-                .then(this.updateInitialConfiguration);
+                    return this.nodeNetworkGroups.fetch()
+                        .then(() => {
+                            var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+                            this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
+                            this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
+                            return this.props.cluster.get('networkConfiguration').fetch();
+                        })
+                        .then(this.updateInitialConfiguration);
+                });
         },
         render: function() {
             var isLocked = this.isLocked(),

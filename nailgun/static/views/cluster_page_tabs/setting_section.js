@@ -112,13 +112,13 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 }
             }, this);
             // collect dependencies
-            _.each(this.props.settings.attributes, function(group, sectionName) {
+            _.each(this.props.settings.attributes, function(section, sectionName) {
                 // don't take into account hidden dependent settings
                 if (this.props.checkRestrictions('hide', this.props.makePath(sectionName, 'metadata')).result) return;
-                _.each(group, function(setting, settingName) {
+                _.each(section, function(setting, settingName) {
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
                     var pathToCheck = this.props.makePath(sectionName, settingName);
-                    if (!this.areCalculationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', pathToCheck).result) return;
+                    if (!this.areCalculationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', sectionName, settingName).result) return;
                     if (setting[this.props.getValueAttribute(settingName)] == true) {
                         addDependentRestrictions(pathToCheck, setting.label);
                     } else {
@@ -148,42 +148,70 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 );
             });
         },
+        onPluginVersionChange: function(pluginName, version) {
+            var settings = this.props.settings;
+            // FIXME: the following hacks cause we can't pass {validate: true} option to set method
+            // this form of validation isn't supported in Backbone DeepModel
+            settings.validationError = null;
+            settings.set(this.props.makePath(pluginName, 'metadata', 'chosen_id'), Number(version));
+            settings.mergePluginSettings();
+            settings.isValid({models: this.props.configModels});
+            this.props.settingsForChecks.set(_.cloneDeep(settings.attributes));
+        },
         render: function() {
-            var group = this.props.settings.get(this.props.sectionName),
-                metadata = group.metadata,
-                sortedSettings = _.sortBy(this.props.settingsToDisplay, function(settingName) {return group[settingName].weight;}),
-                processedGroupRestrictions = this.processRestrictions(this.props.sectionName, 'metadata'),
-                processedGroupDependencies = this.checkDependencies(this.props.sectionName, 'metadata'),
+            var {settings, sectionName} = this.props,
+                section = settings.get(sectionName),
+                isPlugin = settings.isPlugin(section),
+                metadata = section.metadata,
+                sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => section[settingName].weight),
+                processedGroupRestrictions = this.processRestrictions(sectionName, 'metadata'),
+                processedGroupDependencies = this.checkDependencies(sectionName, 'metadata'),
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
                 showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable,
                 groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
+
             return (
                 <div className='setting-section'>
-                    {showSettingGroupWarning && processedGroupRestrictions.message &&
-                        <div className='alert alert-warning'>{processedGroupRestrictions.message}</div>
-                    }
                     <h3>
                         {metadata.toggleable ?
                             <controls.Input
                                 type='checkbox'
                                 name='metadata'
-                                label={metadata.label || this.props.sectionName}
+                                label={metadata.label || sectionName}
                                 defaultChecked={metadata.enabled}
                                 disabled={isGroupDisabled || processedGroupDependencies.result}
                                 tooltipText={showSettingGroupWarning && groupWarning}
                                 onChange={this.props.onChange}
                             />
                         :
-                            <span className={'subtab-group-' + this.props.sectionName}>{this.props.sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || this.props.sectionName}</span>
+                            <span className={'subtab-group-' + sectionName}>{sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>
                         }
                     </h3>
                     <div>
+                        {isPlugin &&
+                            <div className='plugin-versions clearfix'>
+                                <controls.RadioGroup
+                                    name={sectionName}
+                                    label={i18n('cluster_page.settings_tab.plugin_versions')}
+                                    values={_.map(metadata.versions, (version) => {
+                                        return {
+                                            data: version.metadata.plugin_id,
+                                            label: version.metadata.plugin_version,
+                                            defaultChecked: version.metadata.plugin_id == metadata.chosen_id,
+                                            disabled: isGroupDisabled || (metadata.toggleable && !metadata.enabled)
+                                        };
+                                    })}
+                                    onChange={this.onPluginVersionChange}
+                                />
+                            </div>
+                        }
                         {_.map(sortedSettings, function(settingName) {
-                            var setting = group[settingName],
-                                path = this.props.makePath(this.props.sectionName, settingName),
-                                error = (this.props.settings.validationError || {})[path],
-                                processedSettingRestrictions = this.processRestrictions(this.props.sectionName, settingName),
-                                processedSettingDependencies = this.checkDependencies(this.props.sectionName, settingName),
+                            var setting = section[settingName],
+                                settingKey = settingName + (isPlugin ? '-' + metadata.chosen_id : ''),
+                                path = this.props.makePath(sectionName, settingName),
+                                error = (settings.validationError || {})[path],
+                                processedSettingRestrictions = this.processRestrictions(sectionName, settingName),
+                                processedSettingDependencies = this.checkDependencies(sectionName, settingName),
                                 isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
                                 showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
                                 settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
@@ -194,7 +222,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                 return <CustomControl
                                     {...setting}
                                     {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
-                                    key={settingName}
+                                    key={settingKey}
                                     path={path}
                                     error={error}
                                     disabled={isSettingDisabled}
@@ -217,7 +245,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                     .compact()
                                     .value();
                                 if (setting.type == 'radio') return <controls.RadioGroup {...this.props}
-                                    key={settingName}
+                                    key={settingKey}
                                     name={settingName}
                                     label={setting.label}
                                     values={values}
@@ -230,7 +258,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                     <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
                             return <controls.Input
                                 {... _.pick(setting, 'type', 'label')}
-                                key={settingName}
+                                key={settingKey}
                                 name={settingName}
                                 description={settingDescription}
                                 children={setting.type == 'select' ? this.composeOptions(setting.values) : null}

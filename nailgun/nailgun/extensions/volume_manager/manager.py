@@ -626,6 +626,28 @@ class VolumeManager(object):
         self.__logger('Initialized with volumes: %s' % self.volumes)
         self.__logger('Initialized with disks: %s' % self.disks)
 
+    @staticmethod
+    def _build_disk_id_by_keys(data, keys=(), keys_for_lists=()):
+        """Builds disk identifier by given keys and keys_for_lists
+
+        Identifier set of values. Values are extracted from data by
+        keys. List of values extracted from data by keys_for_lists.
+
+        :param data: dict with disk data
+        :param keys: collection of keys for values for disk identifier
+        :param keys_for_lists: collection of keys for lists of values
+        for disk identifier
+        :return: disk identifier as set of disk data values
+        """
+        result = set()
+        for k in keys:
+            value = data.get(k)
+            if value is not None:
+                result.add(value)
+        for k in keys_for_lists:
+            result.update(data.get(k, []))
+        return result
+
     @classmethod
     def find_existing_disk(cls, disk_info, volumes):
         """Find existing disk among volume data if possible.
@@ -642,17 +664,65 @@ class VolumeManager(object):
         If existing disk isn't found by a set of 'extra' links, then disk will
         be guessed by 'by-path' link as a fallback.
         """
-        existing_disk = None
-        if disk_info.get('extra'):
-            existing_disk = filter(
-                lambda disk: set(disk_info['extra']) & set(disk.get('extra',
-                                                                    [])),
-                only_disks(volumes))
-        if not existing_disk:
-            existing_disk = filter(
-                lambda disk: disk_info['disk'] == disk['id'],
-                only_disks(volumes))
-        return existing_disk
+
+        # We are trying to cover cases when disk path can be changed:
+        # https://bugs.launchpad.net/fuel/+bug/1277151 and ids for disks
+        # can be the same:
+        # https://bugs.launchpad.net/fuel/+bug/1503987
+        # We are matching disk by composite key (id, path), if it is not
+        # found then by (id) and by (path) if not found by (id).
+
+        disks = only_disks(volumes)
+
+        disk_info_composite_id = cls._build_disk_id_by_keys(
+            disk_info, keys=('disk',), keys_for_lists=('extra',))
+        disk_info_id_only = cls._build_disk_id_by_keys(
+            disk_info, keys_for_lists=('extra',))
+        disk_info_path_only = cls._build_disk_id_by_keys(
+            disk_info, keys=('disk',))
+
+        found_by_composite_id = []
+        found_by_id = []
+        found_by_path = []
+
+        for disk in disks:
+            # Matching disk by composite identifier built from  path stored in
+            # 'disk' and id(s) stored in 'extra'. Here we perform strict match
+            # for cover case with same ids for different disks
+            if disk_info_composite_id and disk_info_composite_id == \
+                    cls._build_disk_id_by_keys(disk, keys=('id',),
+                                               keys_for_lists=('extra',)):
+                found_by_composite_id.append(disk)
+
+            # Matching disk by identifier built from disk id(s) 'extra'
+            if disk_info_id_only and disk_info_id_only & \
+                    cls._build_disk_id_by_keys(
+                        disk, keys_for_lists=('extra',)):
+                found_by_id.append(disk)
+
+            # Matching disk by identifier built from path stored in 'disk'
+            if disk_info_path_only and disk_info_path_only & \
+                    cls._build_disk_id_by_keys(
+                        disk, keys=('id',)):
+                found_by_path.append(disk)
+
+        if found_by_composite_id:
+            return found_by_composite_id
+        logger.warning("VolumeManager disk not found by composite "
+                       "identifier 'disk', 'extra': %s",
+                       disk_info_composite_id)
+
+        if found_by_id:
+            return found_by_id
+        logger.warning("VolumeManager disk not found by 'extra' "
+                       "identifier: %s", disk_info_id_only)
+
+        if found_by_path:
+            return found_by_path
+        logger.error("VolumeManager disk not found by 'disk' identifier: %s",
+                     disk_info_path_only)
+
+        return None
 
     def set_volume_size(self, disk_id, volume_name, size):
         """Set size of volume."""

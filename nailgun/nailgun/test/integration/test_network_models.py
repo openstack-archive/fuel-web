@@ -91,7 +91,7 @@ class TestNetworkModels(BaseIntegrationTest):
                     kwargs={'cluster_id': self.env.clusters[0].id}),
             jsonutils.dumps({
                 'editable': {
-                    "foo": "bar"
+                    "foo": {"bar": None}
                 }
             }),
             headers=self.default_headers,

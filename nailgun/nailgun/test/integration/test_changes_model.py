@@ -106,7 +106,7 @@ class TestClusterChanges(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             jsonutils.dumps({
                 'editable': {
-                    "foo": "bar"
+                    'foo': {'bar': None}
                 }
             }),
             headers=self.default_headers

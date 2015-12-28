@@ -158,6 +158,21 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             settings.isValid({models: this.props.configModels});
             this.props.settingsForChecks.set(_.cloneDeep(settings.attributes));
         },
+        togglePlugin: function(pluginName, settingName, enabled) {
+            this.props.onChange(settingName, enabled);
+            var pluginMetadata = this.props.settings.get(pluginName).metadata;
+            if (enabled) {
+                // check for editable plugin version
+                var chosenVersionData = _.find(pluginMetadata.versions, (version) => version.metadata.plugin_id == pluginMetadata.chosen_id);
+                if (this.props.lockedCluster && !chosenVersionData.metadata.always_editable) {
+                    var editableVersion = _.find(pluginMetadata.versions, (version) => version.metadata.always_editable).metadata.plugin_id;
+                    this.onPluginVersionChange(pluginName, editableVersion);
+                }
+            } else {
+                var initialVersion = this.props.initialAttributes[pluginName].metadata.chosen_id;
+                if (pluginMetadata.chosen_id !== initialVersion) this.onPluginVersionChange(pluginName, initialVersion);
+            }
+        },
         render: function() {
             var {settings, sectionName} = this.props,
                 section = settings.get(sectionName),
@@ -166,7 +181,8 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => section[settingName].weight),
                 processedGroupRestrictions = this.processRestrictions(sectionName, 'metadata'),
                 processedGroupDependencies = this.checkDependencies(sectionName, 'metadata'),
-                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || processedGroupRestrictions.result,
+                isGroupAlwaysEditable = isPlugin ? _.any(metadata.versions, (version) => version.metadata.always_editable) : metadata.always_editable,
+                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !isGroupAlwaysEditable) || processedGroupRestrictions.result,
                 showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable,
                 groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
 
@@ -181,7 +197,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                 defaultChecked={metadata.enabled}
                                 disabled={isGroupDisabled || processedGroupDependencies.result}
                                 tooltipText={showSettingGroupWarning && groupWarning}
-                                onChange={this.props.onChange}
+                                onChange={isPlugin ? _.partial(this.togglePlugin, sectionName) : this.props.onChange}
                             />
                         :
                             <span className={'subtab-group-' + sectionName}>{sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>
@@ -191,6 +207,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                         {isPlugin &&
                             <div className='plugin-versions clearfix'>
                                 <controls.RadioGroup
+                                    key={metadata.chosen_id}
                                     name={sectionName}
                                     label={i18n('cluster_page.settings_tab.plugin_versions')}
                                     values={_.map(metadata.versions, (version) => {
@@ -198,9 +215,9 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                             data: version.metadata.plugin_id,
                                             label: version.metadata.plugin_version,
                                             defaultChecked: version.metadata.plugin_id == metadata.chosen_id,
-                                            disabled: isGroupDisabled || (metadata.toggleable && !metadata.enabled)
+                                            disabled: this.props.locked || (this.props.lockedCluster && !version.metadata.always_editable) || processedGroupRestrictions.result || (metadata.toggleable && !metadata.enabled)
                                         };
-                                    })}
+                                    }, this)}
                                     onChange={this.onPluginVersionChange}
                                 />
                             </div>

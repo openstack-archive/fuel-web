@@ -936,7 +936,7 @@ define([
                             if (!utils.validateIP(network.get('gateway'))) {
                                 networkErrors.gateway = i18n(ns + 'invalid_gateway');
                             } else if (!cidrError && !utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
-                                networkErrors.gateway = i18n(ns + 'gateway_is_out_of_ip_range');
+                                networkErrors.gateway = i18n(ns + 'gateway_does_not_match_cidr');
                             }
                         }
                         //FIXME (morale): same VLAN IDs are not permitted for nova-network for now
@@ -956,7 +956,7 @@ define([
                             if (!utils.validateIP(baremetalGateway)) {
                                 networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
                             } else if (!baremetalCidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
-                                networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_is_out_of_baremetal_network');
+                                networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
                             }
                             var baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], baremetalCidrError ? null : cidr);
                             if (baremetalRangeErrors.length) {
@@ -1036,7 +1036,7 @@ define([
                 if (!utils.validateIP(gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'invalid_gateway');
                 } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
-                    networkingParametersErrors.internal_gateway = i18n(ns + 'gateway_is_out_of_internal_network');
+                    networkingParametersErrors.internal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
                 }
                 var networkNamesRegExp = /^[a-z][\w\-]*$/i;
                 _.each(['internal_name', 'floating_name'], (paramName) => {

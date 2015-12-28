@@ -118,7 +118,7 @@
             "licenses": ["Apache License Version 2.0"],
             "homepage": "https://github.com/openstack/fuel-plugin-external-zabbix",
             "groups": ["monitoring"],
-            "is_hotpluggable": true,
+            "is_hotpluggable": false,
             "releases": [
                 {
                     "os": "ubuntu",

@@ -215,6 +215,14 @@ def get_all_fixtures_paths():
 
 
 def upload_fixtures():
+    # TODO(akislitsky): Temporary workaround for preventing uploading
+    # fixtures on Fuel upgrade and container restart. We should remove
+    # this after DB data upload will be switched from fixtures loading
+    # to the the API calls.
+    if db().query(models.Release).count():
+        logger.info("Fixtures are already uploaded. Skipping")
+        return
+
     fixtures_paths = get_all_fixtures_paths()
     for orig_path in settings.FIXTURES_TO_UPLOAD:
         if os.path.isabs(orig_path):

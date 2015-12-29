@@ -869,6 +869,23 @@ define([
                     errors.push(i18n(ns + 'invalid_mtu'));
                 }
             }
+
+            // check interface networks have the same vlan id
+            var vlans = _.reject(networks.pluck('vlan_start'), _.isNull);
+            if (_.uniq(vlans).length < vlans.length) errors.push(i18n(ns + 'networks_with_the_same_vlan'));
+
+            // check interface network vlan ids included in Neutron L2 vlan range
+            var vlanRanges = _.reject(networks.map(
+                    (network) => network.getVlanRange(attrs.networkingParameters)
+                ), _.isNull);
+            if (
+                _.any(vlanRanges,
+                    (currentRange) => _.any(vlanRanges,
+                        (range) => !_.isEqual(currentRange, range) && range[1] >= currentRange[0] && range[0] <= currentRange[1]
+                    )
+                )
+            ) errors.push(i18n(ns + 'vlan_range_intersection'));
+
             return errors;
         }
     });

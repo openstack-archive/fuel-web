@@ -187,7 +187,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
 
             return (
-                <div className='setting-section'>
+                <div className={'setting-section ' + sectionName}>
                     <h3>
                         {metadata.toggleable ?
                             <controls.Input

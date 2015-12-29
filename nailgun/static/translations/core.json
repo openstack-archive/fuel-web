@@ -415,7 +415,9 @@
                         },
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks cannot be assigned to the same interface.",
-                            "invalid_mtu": "Invalid MTU value"
+                            "invalid_mtu": "Invalid MTU value",
+                            "vlan_intersection": "Networks with the same VLAN ID cannot be assigned to the same interface.",
+                            "vlan_range_intersection": "The network VLAN ID range should not include VLAN IDs of other networks assigned to the interface."
                         },
                         "disable_offloading": "Offloading Disabled",
                         "default_offloading": "Default Offloading",

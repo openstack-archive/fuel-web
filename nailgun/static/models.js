@@ -869,6 +869,32 @@ define([
                     errors.push(i18n(ns + 'invalid_mtu'));
                 }
             }
+            var vlanRangesMap = [];
+            networks.each(
+                (network) => {
+                    var vlanRange = _.uniq(network.getVlanRange(attrs.networkingParameters));
+                    if (vlanRange.length == 1) {
+                        vlanRangesMap.push(vlanRange);
+                    } else if (vlanRange.length > 1) {
+                        vlanRangesMap.push(_.range(vlanRange[0], vlanRange[1]));
+                    }
+                }
+            );
+            _.each(vlanRangesMap,
+                (vlanRange, key1) => {
+                    var intersection = false;
+                    _.each(vlanRangesMap, (vRange, key2) => {
+                        if (key1 != key2 && (_.intersection(vlanRange, vRange).length > 0)) {
+                            intersection = true;
+                            return false;
+                        }
+                    });
+                    if (intersection) {
+                        errors.push(i18n(ns + 'vlan_intersection'));
+                        return false;
+                    }
+                }
+            );
             return errors;
         }
     });

@@ -11,7 +11,7 @@ Table of contents
    user
    devops
    buildsystem
-   ci/overview
-   ci/third_party
    infra/jenkins_master_deployment
+   infra/overview
+   infra/third_party
    packaging

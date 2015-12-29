@@ -392,6 +392,7 @@ function syncdb {
   if [[ $# -ne 0 && $defaults = true ]]; then
     NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddefault > /dev/null
     NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddata nailgun/fixtures/sample_environment.json > /dev/null
+    NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddata nailgun/fixtures/sample_plugins.json > /dev/null
   fi
 
   popd >> /dev/null

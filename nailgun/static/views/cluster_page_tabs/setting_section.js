@@ -187,7 +187,7 @@ define(
                 groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
 
             return (
-                <div className='setting-section'>
+                <div className={'setting-section setting-section-' + sectionName}>
                     <h3>
                         {metadata.toggleable ?
                             <controls.Input

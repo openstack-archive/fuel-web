@@ -43,7 +43,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "2016.1.0-9.0",
+                    "version": "liberty-9.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"
@@ -56,7 +56,14 @@
                     "type": "text",
                     "description": "description",
                     "weight": 25,
-                    "label": "label"
+                    "label": "label",
+                    "restrictions": [
+                        {
+                            "condition": "settings:zabbix_monitoring.zabbix_checkbox.value == true",
+                            "message": "Zabbix conflict",
+                            "strict": false
+                        }
+                    ]
                 }
             }
         }
@@ -96,7 +103,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "2016.1.0-9.0",
+                    "version": "liberty-9.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"
@@ -143,7 +150,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "2016.1.0-9.0",
+                    "version": "liberty-9.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"
@@ -207,7 +214,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "2016.1.0-9.0",
+                    "version": "liberty-9.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"

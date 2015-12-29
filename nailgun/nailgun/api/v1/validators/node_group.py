@@ -90,11 +90,17 @@ class NodeGroupValidator(BasicValidator):
         return data
 
     @classmethod
-    def validate_delete(cls, data, instance, force=False):
-        if (instance.nodes or instance.networks) and not force:
+    def validate_delete(cls, data, instance):
+        if instance.is_default:
             raise errors.CannotDelete(
-                "You cannot delete a node group that contains "
-                "nodes or networks"
+                "Default node group cannot be deleted."
+            )
+        if instance.nodes and not all(
+                node.status == consts.NODE_STATUSES.discover
+                for node in instance.nodes):
+            raise errors.CannotDelete(
+                "Node group can be deleted only when all its nodes "
+                "are in bootstrap state."
             )
 
     @classmethod

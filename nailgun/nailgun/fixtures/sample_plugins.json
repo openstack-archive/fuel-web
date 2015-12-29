@@ -56,7 +56,14 @@
                     "type": "text",
                     "description": "description",
                     "weight": 25,
-                    "label": "label"
+                    "label": "label",
+                    "restrictions": [
+                        {
+                            "condition": "settings:zabbix_monitoring.zabbix_checkbox.value == true",
+                            "message": "Zabbix conflict",
+                            "strict": false
+                        }
+                    ]
                 }
             }
         }

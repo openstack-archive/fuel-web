@@ -14,5 +14,6 @@ Table of contents
    infra/jenkins_master_deployment
    infra/jenkins_slave_deployment
    infra/overview
+   infra/puppet_master_deployment
    infra/third_party
    packaging

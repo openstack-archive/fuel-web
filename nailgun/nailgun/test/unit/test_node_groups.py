@@ -132,6 +132,20 @@ class TestNodeGroups(BaseIntegrationTest):
             group_id=response['id'])
         self.assertEquals(nets.count(), 0)
 
+    def test_delete_default_node_group_error(self):
+        group_id = objects.Cluster.get_default_group(self.cluster).id
+        resp = self.app.delete(
+            reverse(
+                'NodeGroupHandler',
+                kwargs={'obj_id': group_id}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json_body['message'],
+                         'Default node group cannot be deleted.')
+
     def test_nodegroup_vlan_segmentation_type(self):
         cluster = self.env.create_cluster(
             api=False,

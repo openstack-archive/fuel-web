@@ -113,24 +113,72 @@ class TestNodeGroups(BaseIntegrationTest):
             group_id=response['id'])
         self.assertEquals(nets.count(), 5)
 
-    @patch('nailgun.task.task.rpc.cast')
-    def test_nodegroup_deletion(self, _):
-        resp = self.env.create_node_group()
-        response = resp.json_body
-        group_id = response['id']
-
+    def _check_node_group_deleted(self, node_group_id):
         self.app.delete(
             reverse(
                 'NodeGroupHandler',
-                kwargs={'obj_id': group_id}
+                kwargs={'obj_id': node_group_id}
             ),
             headers=self.default_headers,
             expect_errors=False
         )
 
+        node_group = db().query(models.NodeGroup).filter_by(
+            id=node_group_id
+        ).first()
+        self.assertIsNone(node_group)
+
         nets = db().query(models.NetworkGroup).filter_by(
-            group_id=response['id'])
+            group_id=node_group_id)
         self.assertEquals(nets.count(), 0)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_nodegroup_deletion_without_nodes(self, _):
+        resp = self.env.create_node_group()
+        response = resp.json_body
+        group_id = response['id']
+
+        self._check_node_group_deleted(group_id)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_node_group_deleted_with_neworks_in_bootstrap_only(self, _):
+        node_group = self.env.create_node_group(api=False,
+                                                cluster_id=self.cluster.id)
+        self.env.create_nodes(2, group_id=node_group.id)
+        self._check_node_group_deleted(node_group.id)
+
+    def test_delete_default_node_group_error(self):
+        group_id = objects.Cluster.get_default_group(self.cluster).id
+        resp = self.app.delete(
+            reverse(
+                'NodeGroupHandler',
+                kwargs={'obj_id': group_id}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body,
+                         'Default node group cannot be deleted.')
+
+    def test_delete_node_group_with_nodes_not_in_bootstrap(self):
+        node_group = self.env.create_node_group(api=False,
+                                                cluster_id=self.cluster.id)
+        self.env.create_node(group_id=node_group.id)
+        self.env.create_node(group_id=node_group.id,
+                             status=consts.NODE_STATUSES.error)
+        resp = self.app.delete(
+            reverse(
+                'NodeGroupHandler',
+                kwargs={'obj_id': node_group.id}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body,
+                         'Node group can be deleted only when all its nodes '
+                         'are in bootstrap state.')
 
     def test_nodegroup_vlan_segmentation_type(self):
         cluster = self.env.create_cluster(

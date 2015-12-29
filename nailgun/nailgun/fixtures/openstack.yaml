@@ -1095,11 +1095,11 @@
               generator: "from_settings"
               generator_arg: "DNS_UPSTREAM"
             label: "DNS list"
-            description: "List of upstream DNS servers, separated by comma"
+            description: "List of upstream DNS servers, separated by comma (up to 3 values)"
             weight: 10
             type: "text"
             regex:
-              source: '^\*$|^(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3}(?:\s*,\s*(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3})*$'
+              source: '^\*$|^(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3}(?:\s*,\s*(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3}){,2}$'
               error: "Invalid IP address list"
         external_ntp:
           metadata:

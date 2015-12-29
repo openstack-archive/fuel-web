@@ -56,7 +56,14 @@
                     "type": "text",
                     "description": "description",
                     "weight": 25,
-                    "label": "label"
+                    "label": "label",
+                    "restrictions": [
+                        {
+                            "condition": "settings:zabbix_monitoring.zabbix_checkbox.value == true",
+                            "message": "Zabbix conflict",
+                            "strict": false
+                        }
+                    ]
                 }
             }
         }
@@ -118,7 +125,7 @@
             "licenses": ["Apache License Version 2.0"],
             "homepage": "https://github.com/openstack/fuel-plugin-external-zabbix",
             "groups": ["monitoring"],
-            "is_hotpluggable": true,
+            "is_hotpluggable": false,
             "releases": [
                 {
                     "os": "ubuntu",

@@ -87,6 +87,55 @@ class TestTaskSerializers(BaseTestCase):
             self.env.clusters[-1], self.env.nodes, tasks
         )
 
+    def _check_run_selected_tasks(self, ids, controller_tasks, compute_tasks):
+        tasks = [
+            {
+                "id": "task1", "tasks": ["task2", "task3"], "type": "group",
+                "version": "2.0.0", "role": ["controller"]
+            },
+            {
+                "id": "task2", "role": ["controller"],
+                "type": "puppet", "version": "2.0.0", "parameters": {}
+            },
+            {
+                "id": "task3", "role": ["compute"],
+                "type": "puppet", "version": "2.0.0", "parameters": {}
+            },
+        ]
+        serialized = self.serializer.serialize(
+            self.env.clusters[-1], self.env.nodes, tasks, ids
+        )
+        controllers = [
+            n.uid for n in self.env.nodes if "controller" in n.roles
+        ]
+        computes = [
+            n.uid for n in self.env.nodes if "compute" in n.roles
+        ]
+        self.assertEqual(1, len(controllers))
+        self.assertEqual(1, len(computes))
+        self.assertItemsEqual(
+            ["task2", "task3"],
+            (x["id"] for x in serialized[controllers[0]])
+        )
+        self.assertItemsEqual(
+            ["task3"],
+            (x["id"] for x in serialized[computes[0]])
+        )
+        for expected_tasks, node in ((controller_tasks, controllers[0]),
+                                     (compute_tasks, computes[0])):
+
+            self.assertItemsEqual(
+                expected_tasks,
+                (x["id"] for x in serialized[node]
+                 if x["type"] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
+            )
+
+    def test_process_with_selected_group_id(self):
+        self._check_run_selected_tasks(["task1"], ["task2", "task3"], [])
+
+    def test_process_with_selected_task_id(self):
+        self._check_run_selected_tasks(["task3"], ["task3"], ["task3"])
+
     def test_serialize_success_if_all_applicable_task_has_version_2(self):
         tasks = [
             {
@@ -170,7 +219,10 @@ class TestTaskSerializers(BaseTestCase):
         with mock.patch.object(self.serializer, 'role_resolver') as m_resolve:
             m_resolve.resolve.return_value = node_ids
             self.serializer.expand_task_groups(
-                {'role': ['task1', 'task2']},
+                [
+                    {"type": "group", "id": "group1", "role": "compute",
+                     "tasks": ["task1", "task2"]}
+                ],
                 {
                     'task1': {'id': 'task1', 'version': '2.0.0',
                               'type': 'skipped', 'role': '*'},
@@ -319,6 +371,22 @@ class TestTaskSerializers(BaseTestCase):
             "no candidates in nodes '%s'.",
             "not_exists", "1, 2, 3"
         )
+
+    def test_need_overwrite_task(self):
+        self.assertTrue(self.serializer.need_overwrite_task(
+            {}, {"id": "task1", "type": "puppet"}
+        ))
+        self.assertTrue(self.serializer.need_overwrite_task(
+            {"task1": {"type": "skipped"}}, {"id": "task1", "type": "puppet"}
+        ))
+
+        self.assertFalse(self.serializer.need_overwrite_task(
+            {"task1": {"type": "skipped"}}, {"id": "task1", "type": "skipped"}
+        ))
+
+        self.assertFalse(self.serializer.need_overwrite_task(
+            {"task1": {"type": "puppet"}}, {"id": "task1", "type": "skipped"}
+        ))
 
 
 class TestNoopSerializer(BaseTestCase):

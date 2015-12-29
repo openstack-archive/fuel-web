@@ -12,6 +12,7 @@ Table of contents
    devops
    buildsystem
    infra/jenkins_master_deployment
+   infra/jenkins_slave_deployment
    infra/overview
    infra/third_party
    packaging

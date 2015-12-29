@@ -872,6 +872,7 @@
                         "vcenter_user_warning": "Username cannot be empty",
                         "vcenter_password_warning": "Password cannot be empty",
                         "vcenter_cluster_warning": "Invalid cluster list",
+                        "vcenter_requires_network_backend": "vCenter requires DVS or NSX network backend",
                         "empty_choice":  "Please select at least one hypervisor type"
                     },
                     "network": {

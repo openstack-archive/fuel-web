@@ -23,7 +23,7 @@ define([
     'tests/functional/pages/cluster',
     'tests/functional/pages/modal',
     'tests/functional/pages/dashboard'
-], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow, DashboardPage) {
+], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow) {
     'use strict';
 
     registerSuite(function() {

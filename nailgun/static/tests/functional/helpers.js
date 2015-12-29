@@ -439,6 +439,17 @@ define([
                         .end();
             });
         },
+        assertElementPropertyNotEquals: function(cssSelector, attribute, textToCheck, message) {
+            return new this.constructor(this, function() {
+                return this.parent
+                    .findByCssSelector(cssSelector)
+                        .getProperty(attribute)
+                        .then(function(actualText) {
+                            assert.notEqual(actualText, textToCheck, message);
+                        })
+                        .end();
+            });
+        },
         assertElementPropertyContains: function(cssSelector, attribute, text, message) {
             return new this.constructor(this, function() {
                 return this.parent

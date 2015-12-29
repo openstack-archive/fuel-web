@@ -49,6 +49,12 @@ class NodeGroupHandler(SingleHandler):
                * 409 (previous dsnmasq setup is not finished yet)
         """
         node_group = self.get_object_or_404(objects.NodeGroup, group_id)
+
+        self.checked_data(
+            self.validator.validate_delete,
+            instance=node_group
+        )
+
         db().delete(node_group)
         db().flush()
         try:

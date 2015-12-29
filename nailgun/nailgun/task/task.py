@@ -232,17 +232,11 @@ class DeploymentTask(object):
     @classmethod
     def task_deploy(cls, task, nodes, task_ids, reexecutable_filter):
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
-        if task_ids:
-            task_ids = set(task_ids)
-            deployment_tasks = (
-                t for t in deployment_tasks if t['id'] in task_ids
-            )
-
         serialized_cluster = deployment_serializers.serialize(
             None, task.cluster, nodes
         )
         serialized_tasks = task_based_deployment.TasksSerializer.serialize(
-            task.cluster, nodes, deployment_tasks
+            task.cluster, nodes, deployment_tasks, task_ids
         )
         return {
             "deployment_info": serialized_cluster,

@@ -87,6 +87,29 @@ class TestTaskSerializers(BaseTestCase):
             self.env.clusters[-1], self.env.nodes, tasks
         )
 
+    def test_process_with_specified_task_ids(self):
+        tasks = [
+            {
+                "id": "test1", "tasks": ["test2"], "type": "group",
+                "version": "2.0.0", "role": ["controller"]
+            },
+            {
+                "id": "test2", "role": ["compute"],
+                "type": "stage", "version": "2.0.0"
+            },
+        ]
+        serialized = self.serializer.serialize(
+            self.env.clusters[-1], self.env.nodes, tasks, ["test1"]
+        )
+        controllers = [
+            n.uid for n in self.env.nodes if "controller" in n.roles
+        ]
+        self.assertEqual(1, len(controllers))
+        self.assertItemsEqual(
+            ["test2"],
+            (x["id"] for x in serialized[controllers[0]])
+        )
+
     def test_serialize_success_if_all_applicable_task_has_version_2(self):
         tasks = [
             {

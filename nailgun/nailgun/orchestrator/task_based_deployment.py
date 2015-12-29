@@ -386,27 +386,32 @@ class TasksSerializer(object):
         self.tasks_per_node = collections.defaultdict(dict)
 
     @classmethod
-    def serialize(cls, cluster, nodes, tasks):
+    def serialize(cls, cluster, nodes, tasks, task_ids=None):
         """Resolves roles and dependencies for tasks.
 
         :param cluster: the cluster instance
         :param nodes: the list of nodes
         :param tasks: the list of tasks
+        :param task_ids: run selected tasks only
         :return: the list of serialized task per node
         """
         serializer = cls(cluster, nodes)
-        serializer.resolve_nodes(add_plugin_deployment_hooks(tasks), nodes)
+        serializer.resolve_nodes(
+            add_plugin_deployment_hooks(tasks), nodes,
+            cls.make_task_filter(task_ids)
+        )
         serializer.resolve_dependencies()
         return dict(
             (k, list(six.itervalues(v)))
             for k, v in six.iteritems(serializer.tasks_per_node)
         )
 
-    def resolve_nodes(self, tasks, nodes):
+    def resolve_nodes(self, tasks, nodes, task_filter):
         """Resolves node roles in tasks.
 
         :param tasks: the deployment tasks
         :param nodes: the list of nodes to deploy
+        :param task_filter: filter for tasks
         :return the mapping tasks per node
         """
 
@@ -414,15 +419,19 @@ class TasksSerializer(object):
         tasks_groups = collections.defaultdict(set)
 
         for task in tasks:
+            # always add task to mapping, because it is used to resolve groups
+            tasks_mapping[task['id']] = task
+            if not task_filter(task):
+                continue
+
             if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
                 tasks_for_role = task.get('tasks')
                 if tasks_for_role:
                     tasks_groups[tuple(task.get('role', ()))].update(
                         tasks_for_role
                     )
-                continue
-            tasks_mapping[task['id']] = task
-            self.process_task(task, nodes, lambda _: self.role_resolver)
+            else:
+                self.process_task(task, nodes, lambda _: self.role_resolver)
 
         self.expand_task_groups(tasks_groups, tasks_mapping)
         # make sure that null node is present
@@ -502,9 +511,8 @@ class TasksSerializer(object):
                     raise errors.InvalidData(
                         'Task %s cannot be resolved', task_id
                     )
-
-                for node_id in self.role_resolver.resolve(roles):
-                    self.process_task(task, [node_id], NullResolver)
+                node_ids = self.role_resolver.resolve(roles)
+                self.process_task(task, node_ids, NullResolver)
 
     def expand_dependencies(self, node_id, dependencies, is_required_for):
         """Expands task dependencies on same node.
@@ -591,3 +599,17 @@ class TasksSerializer(object):
                 "no candidates in nodes '%s'.",
                 name, ", ".join(six.moves.map(str, node_ids))
             )
+
+    @classmethod
+    def make_task_filter(cls, task_ids):
+        """Makes task filter according to specified ids.
+
+        :param task_ids: the selected  ids of tasks
+        :return: function that check task
+        """
+        if not task_ids:
+            return lambda _: True
+        if not isinstance(task_ids, set):
+            task_ids = set(task_ids)
+
+        return lambda x: x['id'] in task_ids

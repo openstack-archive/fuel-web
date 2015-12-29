@@ -869,6 +869,25 @@ define([
                     errors.push(i18n(ns + 'invalid_mtu'));
                 }
             }
+
+            var vlanRanges = _.reject(networks.map((network) => network.getVlanRange(attrs.networkingParameters)), _.isNull);
+
+            _.each(vlanRanges, (currentRange, currentIndex) => {
+                var intersection = false;
+                _.each(vlanRanges, (range, index) => {
+                    if (currentIndex == index) return;
+                    intersection = currentRange[0] == currentRange[1] ?
+                            utils.validateVlanRange(range[0], range[1], currentRange[0])
+                        :
+                            range[1] >= currentRange[0] && range[0] <= currentRange[1];
+                    if (intersection) {
+                        errors.push(i18n(ns + (currentRange[0] == currentRange[1] ? 'vlan_intersection' : 'vlan_range_intersection')));
+                    }
+                    return !intersection;
+                });
+                return !intersection;
+            });
+
             return errors;
         }
     });

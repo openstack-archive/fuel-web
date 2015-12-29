@@ -1,0 +1,11 @@
+Code-Review+1: Mateusz Matuszkowiak <mmatuszkowiak@mirantis.com>
+Code-Review+1: Pawel Brzozowski <pbrzozowski@mirantis.com>
+Code-Review+2: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Workflow+1: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 29 Dec 2015 15:11:44 +0000
+Reviewed-on: https://review.openstack.org/256322
+Project: openstack/fuel-web
+Branch: refs/heads/master

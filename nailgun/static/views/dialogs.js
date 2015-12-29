@@ -1470,7 +1470,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         type='text'
                         label={i18n(this.props.ns + 'node_network_group_name')}
                         onChange={this.onChange}
-                        onKeyDown={this.onKeyDown}
                         error={this.state.error}
                         wrapperClassName='node-group-name'
                         inputClassName='node-group-input-name'
@@ -1517,7 +1516,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     name: this.state.name
                 }))
                     .save(null, {validate: false})
-                    .done(this.submitAction);
+                    .then(
+                        this.submitAction,
+                        (response) => {
+                            this.close();
+                            utils.showErrorDialog({
+                                title: i18n(this.props.ns + 'node_network_group_creation_error'),
+                                response: response
+                            });
+                        }
+                    );
             }
         }
     });

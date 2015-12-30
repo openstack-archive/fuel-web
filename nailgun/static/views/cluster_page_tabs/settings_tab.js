@@ -278,6 +278,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                                             ) return settingName;
                                         }, this));
                                     return <SettingSection
+                                        {... _.pick(this.state, 'initialAttributes', 'settingsForChecks', 'configModels')}
                                         key={sectionName}
                                         cluster={this.props.cluster}
                                         sectionName={sectionName}
@@ -285,12 +286,10 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                                         onChange={_.bind(this.onChange, this, sectionName)}
                                         allocatedRoles={allocatedRoles}
                                         settings={settings}
-                                        settingsForChecks={this.state.settingsForChecks}
                                         makePath={settings.makePath}
                                         getValueAttribute={settings.getValueAttribute}
                                         locked={locked}
                                         lockedCluster={lockedCluster}
-                                        configModels={this.state.configModels}
                                         checkRestrictions={this.checkRestrictions}
                                     />;
                                 }, this)}

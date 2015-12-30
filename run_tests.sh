@@ -306,7 +306,7 @@ function run_ui_func_tests {
     fi
 
     if [ $result -ne 0 ]; then
-      cat $server_log
+      mv $server_log $artifacts/app.log
       break
     fi
     rm $server_log

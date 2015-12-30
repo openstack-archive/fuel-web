@@ -109,7 +109,8 @@
                     "internal": "The Internal network connects all OpenStack nodes in the environment. All components of an OpenStack environment communicate with each other using this network.",
                     "floating": "This network is used to assign Floating IPs to tenant VMs.",
                     "private": "The private network facilitates communication between each tenant's VMs. Private network address spaces are not a part of the public network address space; fixed IPs of virtual instances cannot be accessed directly from the rest of the public network.",
-                    "baremetal": "Separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes."
+                    "baremetal": "Separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes.",
+                    "fuelweb_admin" : "The Fuel Master node uses the Admin (PXE) network to provision and orchestrate the OpenStack environment. It is used during installation to provide DNS, DHCP, and gateway services to a node before that node is provisioned."
                 }
             },
             "login_page": {

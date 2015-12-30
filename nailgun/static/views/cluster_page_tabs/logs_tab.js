@@ -232,7 +232,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     }
                 }, this);
             }
-            return options;
+            return React.addons.createFragment(options);
         },
         handleShowButtonClick: function() {
             this.setState({locked: true});

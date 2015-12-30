@@ -17,4 +17,5 @@ Table of contents
    infra/puppet_master_deployment
    infra/seed_server_deployment
    infra/third_party
+   infra/zabbix_server_deployment
    packaging

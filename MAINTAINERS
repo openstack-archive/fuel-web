@@ -101,6 +101,10 @@ maintainers:
       email:  mkwiek@mirantis.com
       IRC:    mkwiek
 
+    - name:   Oleksandr Saprykin
+      email:  asaprykin@mirantis.com
+      IRC:    asaprykin
+
 - nailgun/nailgun/extensions/volume_manager/:
     - name:   Evgeny Li
       email:  eli@mirantis.com

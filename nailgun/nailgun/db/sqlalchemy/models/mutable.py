@@ -16,14 +16,111 @@
 
 import copy
 
-from sqlalchemy.ext.mutable import Mutable
-from sqlalchemy.ext.mutable import MutableDict as MutableDictBase
+from sqlalchemy.ext.mutable import Mutable as MutableBase
 
 
-class MutableDict(MutableDictBase):
-    # TODO(vkaplov): delete this class after methods pop and popitem
-    # will be implemented in sqlalchemy lib.
-    # https://bitbucket.org/zzzeek/sqlalchemy/issues/3605
+class Mutable(MutableBase):
+    def cast(self, value):
+        """Cast type of value.
+
+        If value of MutableBase type, then just update the '_parents'.
+        :param value: value to be casted
+        :return: casted value
+        """
+        if isinstance(value, MutableBase):
+            value._parents = self._parents
+            return value
+
+        if isinstance(value, dict):
+            value = MutableDict(value)
+        elif isinstance(value, list):
+            value = MutableList(value)
+
+        if isinstance(value, MutableBase):
+            value._parents = self._parents
+        return value
+
+
+class MutableDict(Mutable, dict):
+    def __init__(self, *args, **kwargs):
+        super(MutableDict, self).__init__(*args, **kwargs)
+        for key, value in self.items():
+            self[key] = self.cast(value)
+
+    @classmethod
+    def coerce(cls, key, value):
+        """Convert plain dictionaries to MutableDict.
+
+        :param key: string name of the ORM-mapped attribute being set.
+        :param value: the incoming value.
+        :return: the method should return the coerced value
+        :raises ValueError: if the coercion cannot be completed.
+        """
+        if not isinstance(value, cls):
+            if isinstance(value, dict):
+                return cls(value)
+
+            # this call will raise ValueError
+            return Mutable.coerce(key, value)
+        return value
+
+    def __setitem__(self, key, value):
+        """Detect dict set events and emit change events.
+
+        :param key: key of element
+        :param value: new value of element
+        """
+        dict.__setitem__(self, key, self.cast(value))
+        self.changed()
+
+    def setdefault(self, key, default=None):
+        """Detect dict setdefault events and emit change events.
+
+        :param key: key in the dictionary
+        :param default: default value.
+        :return: if key is in the dictionary return value, otherwise default.
+        """
+        result = dict.setdefault(self, key, self.cast(default))
+        self.changed()
+        return result
+
+    def __delitem__(self, key):
+        """Detect dictionary del events and emit change events.
+
+        :param key: key in the dictionary
+        """
+        dict.__delitem__(self, key)
+        self.changed()
+
+    def update(self, *args, **kwargs):
+        """Detect dictionary update events and emit change events.
+
+        :param args: accept the same args as builtin dict
+        :param kwargs: accept the same kwargs as builtin dict
+        """
+        tmp = dict()
+        tmp.update(*args, **kwargs)
+        dict.update(self, {k: self.cast(v) for k, v in tmp.items()})
+        self.changed()
+
+    def clear(self):
+        """Detect dictionary clear events and emit change events."""
+        dict.clear(self)
+        self.changed()
+
+    def __getstate__(self):
+        """Get state as builtin dict
+
+        :return: current state
+        """
+        return dict(self)
+
+    def __setstate__(self, state):
+        """Detect setstate event and emit change events.
+
+        :param state: new object state
+        """
+        self.update(state)
 
     def pop(self, *args):
         """Pop element and emit change events if item removed.
@@ -46,11 +143,28 @@ class MutableDict(MutableDictBase):
         self.changed()
         return result
 
+    @classmethod
+    def __copy__(cls, value):
+        """Create and return copy of value.
+
+        :param value: MutableDict object
+        """
+        clone = MutableDict()
+        clone.__setstate__(value)
+        return clone
+
+    def __deepcopy__(self, memo, _deepcopy=copy.deepcopy):
+        """Recursive copy each element."""
+        clone = MutableDict()
+        clone.__setstate__({k: _deepcopy(v, memo) for k, v in self.items()})
+        return clone
+
 
 class MutableList(Mutable, list):
-    # TODO(fzhadaev): delete this class after it will be
-    #                 implemented in sqlalchemy lib.
-    # https://bitbucket.org/zzzeek/sqlalchemy/issues/3297
+    def __init__(self, *args, **kwargs):
+        super(MutableList, self).__init__(*args, **kwargs)
+        for index in xrange(len(self)):
+            self[index] = self.cast(self[index])
 
     @classmethod
     def coerce(cls, key, value):
@@ -61,23 +175,20 @@ class MutableList(Mutable, list):
         :return: the method should return the coerced value
         :raises ValueError: if the coercion cannot be completed.
         """
-
-        if not isinstance(value, MutableList):
+        if not isinstance(value, cls):
             if isinstance(value, list):
                 return MutableList(value)
 
             # this call will raise ValueError
             return Mutable.coerce(key, value)
-        else:
-            return value
+        return value
 
     def append(self, value):
         """Append value to end and emit change events.
 
         :param value: element value
         """
-
-        list.append(self, value)
+        list.append(self, self.cast(value))
         self.changed()
 
     def extend(self, iterable):
@@ -85,8 +196,8 @@ class MutableList(Mutable, list):
 
         :param iterable: iterable on elements
         """
-
-        list.extend(self, iterable)
+        casted_elements = (self.cast(value) for value in iterable)
+        list.extend(self, casted_elements)
         self.changed()
 
     def insert(self, index, value):
@@ -95,8 +206,7 @@ class MutableList(Mutable, list):
         :param index: index of next element
         :param value: value of inserting element
         """
-
-        list.insert(self, index, value)
+        list.insert(self, index, self.cast(value))
         self.changed()
 
     def pop(self, index=-1):
@@ -106,7 +216,6 @@ class MutableList(Mutable, list):
         :return: element
         :raises IndexError: if list is empty or index is out of range.
         """
-
         result = list.pop(self, index)
         self.changed()
         return result
@@ -119,7 +228,6 @@ class MutableList(Mutable, list):
         :param value: value of element
         :raises ValueError: if the value is not present.
         """
-
         list.remove(self, value)
         self.changed()
 
@@ -129,8 +237,7 @@ class MutableList(Mutable, list):
         :param key: index of element
         :param value: new value of element
         """
-
-        list.__setitem__(self, key, value)
+        list.__setitem__(self, key, self.cast(value))
         self.changed()
 
     def __delitem__(self, key):
@@ -138,7 +245,6 @@ class MutableList(Mutable, list):
 
         :param key: index of element
         """
-
         list.__delitem__(self, key)
         self.changed()
 
@@ -147,7 +253,6 @@ class MutableList(Mutable, list):
 
         :return: current state
         """
-
         return list(self)
 
     def __setstate__(self, state):
@@ -155,7 +260,6 @@ class MutableList(Mutable, list):
 
         :param state: new object state
         """
-
         self[:] = state
 
     def __setslice__(self, first, last, sequence):
@@ -165,8 +269,8 @@ class MutableList(Mutable, list):
         :param last: last (not included) element index
         :param sequence: elements that to be inserted
         """
-
-        list.__setslice__(self, first, last, sequence)
+        casted_sequence = (self.cast(value) for value in sequence)
+        list.__setslice__(self, first, last, casted_sequence)
         self.changed()
 
     def __delslice__(self, first, last):
@@ -175,7 +279,6 @@ class MutableList(Mutable, list):
         :param first: first element index
         :param last: last (not included) element index
         """
-
         list.__delslice__(self, first, last)
         self.changed()
 

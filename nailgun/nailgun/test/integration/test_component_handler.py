@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
 from nailgun import consts
 from nailgun.test import base
 from nailgun.utils import reverse
@@ -28,7 +29,8 @@ class TestComponentHandler(base.BaseIntegrationTest):
             operating_system='Ubuntu',
             modes=[consts.CLUSTER_MODES.ha_compact],
             components_metadata=self.env.get_default_components(
-                name='hypervisor:test_component_1'))
+                name='hypervisor:test_component_1',
+                bind='some_action_to_process'))
         self.plugin = self.env.create_plugin(
             name='compatible_plugin',
             fuel_version=['8.0'],
@@ -43,6 +45,7 @@ class TestComponentHandler(base.BaseIntegrationTest):
                 bind='some_action_to_process'))
 
     def test_get_components(self):
+        original_components = deepcopy(self.release.components_metadata)
         resp = self.app.get(
             reverse(
                 'ComponentCollectionHandler',
@@ -67,6 +70,8 @@ class TestComponentHandler(base.BaseIntegrationTest):
                 'incompatible': [
                     {'name': 'networks:*'},
                     {'name': 'additional_services:*'}]}])
+        self.assertItemsEqual(self.release.components_metadata,
+                              original_components)
 
     def test_404_for_get_components_with_none_release_id(self):
         resp = self.app.get(

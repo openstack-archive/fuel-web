@@ -153,14 +153,14 @@ define([
         },
         renderList: function(list, key) {
             return (
-                <p key={key}>
+                <div key={key}>
                     {i18n('statistics.' + key + '_title')}
                     <ul>
                         {_.map(list, function(item) {
                             return <li key={item}>{i18n('statistics.' + key + '.' + item)}</li>;
                         })}
                     </ul>
-                </p>
+                </div>
             );
         },
         renderIntro: function() {

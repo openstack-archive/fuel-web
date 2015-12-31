@@ -170,7 +170,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         getInitialState: function() {
             return {
                 activeSettingsSectionName: this.pickDefaultSettingGroup(),
-                activeNetworkSectionName: '',
+                activeNetworkSectionName: this.props.nodeNetworkGroups.find({is_default: true}).get('name'),
                 selectedNodeIds: {},
                 selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
             };

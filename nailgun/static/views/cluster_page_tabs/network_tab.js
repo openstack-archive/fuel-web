@@ -812,8 +812,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 .show({
                     showUnsavedChangesWarning: this.hasChanges()
                 })
-                .done(
-                    () => nodeNetworkGroup
+                .done(() => {
+                    this.props.setActiveNetworkSectionName(this.nodeNetworkGroups.find({is_default: true}).get('name'));
+                    return nodeNetworkGroup
                         .destroy({wait: true})
                         .then(
                             () => this.props.cluster.get('networkConfiguration').fetch(),
@@ -822,8 +823,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 response: response
                             })
                         )
-                        .then(this.updateInitialConfiguration)
-                );
+                        .then(this.updateInitialConfiguration);
+                });
         },
         addNodeNetworkGroup: function(hasChanges) {
             if (hasChanges) {
@@ -881,19 +882,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 isMultiRack = nodeNetworkGroups.length > 1,
                 networkVerifyTask = cluster.task('verify_networks'),
                 networkCheckTask = cluster.task('check_networks'),
-                isNodeNetworkGroupSectionSelected = !_.contains(defaultNetworkSubtabs, activeNetworkSectionName),
                 notEnoughOnlineNodesForVerification = cluster.get('nodes').where({online: true}).length < 2,
                 isVerificationDisabled = networkConfiguration.validationError ||
                     this.state.actionInProgress ||
                     !!cluster.task({group: ['deployment', 'network'], active: true}) ||
                     isMultiRack ||
                     notEnoughOnlineNodesForVerification;
-
-            if (!activeNetworkSectionName ||
-                    (activeNetworkSectionName && !nodeNetworkGroups.findWhere({name: activeNetworkSectionName}) &&
-                    isNodeNetworkGroupSectionSelected)) {
-                activeNetworkSectionName = _.first(nodeNetworkGroups.pluck('name'));
-            }
 
             networkConfiguration.isValid();
             var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}),
@@ -956,7 +950,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                                 showVerificationResult={!this.state.hideVerificationResult}
                             />
                             <div className='col-xs-10'>
-                                {isNodeNetworkGroupSectionSelected &&
+                                {!_.contains(defaultNetworkSubtabs, activeNetworkSectionName) &&
                                     <NodeNetworkGroup
                                         {...nodeNetworkGroupProps}
                                         nodeNetworkGroups={nodeNetworkGroups}

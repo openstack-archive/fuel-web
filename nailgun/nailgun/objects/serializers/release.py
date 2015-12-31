@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
 from nailgun.objects.serializers.base import BasicSerializer
 
 
@@ -50,8 +51,9 @@ class ComponentSerializer(BasicSerializer):
 
     @classmethod
     def serialize(cls, instance):
+        component = deepcopy(instance)
+
         # binds use for mapping components on cluster_attributes options,
         # it's only back-end logic and no need send it to client
-        instance.pop('bind', None)
-
-        return instance
+        component.pop('bind', None)
+        return component

@@ -320,7 +320,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
         render: function() {
             return (
                 <div className='col-xs-2'>
-                    <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
+                    <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked' transitionEnter={false} transitionLeave={false}>
                     {
                         this.props.settingsGroupList.map(function(groupName) {
                             if (!this.props.groupedSettings[groupName]) return null;

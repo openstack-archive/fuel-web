@@ -271,7 +271,7 @@ function run_ui_func_tests {
 
   if [ $no_ui_compression -ne 1 ]; then
     echo "Compressing UI... "
-    ${GULP} build --no-sourcemaps --static-dir=$COMPRESSED_STATIC_DIR
+    ${GULP} build --no-sourcemaps --extra-entries=sinon --static-dir=$COMPRESSED_STATIC_DIR
     if [ $? -ne 0 ]; then
       popd >> /dev/null
       return 1

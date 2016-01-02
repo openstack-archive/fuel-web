@@ -20,6 +20,7 @@ define(
     'i18n',
     'backbone',
     'react',
+    'react-dom',
     'utils',
     'models',
     'dispatcher',
@@ -28,7 +29,7 @@ define(
     'component_mixins',
     'views/cluster_page_tabs/nodes_tab_screens/node'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins, Node) {
+function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, dialogs, componentMixins, Node) {
     'use strict';
     var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
 
@@ -805,7 +806,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         activateSearch: function() {
             this.setState({activeSearch: true});
             $('html').on('click.search', _.bind(function(e) {
-                if (!this.props.search && this.refs.search && !$(e.target).closest(React.findDOMNode(this.refs.search)).length) {
+                if (!this.props.search && this.refs.search && !$(e.target).closest(ReactDOM.findDOMNode(this.refs.search)).length) {
                     this.setState({activeSearch: false});
                 }
             }, this));

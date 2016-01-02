@@ -20,12 +20,13 @@ define(
     'i18n',
     'backbone',
     'react',
+    'react-dom',
     'utils',
     'models',
     'component_mixins',
     'views/controls'
 ],
-function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) {
+function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, controls) {
     'use strict';
 
     var EditNodeDisksScreen = React.createClass({
@@ -219,7 +220,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             return {collapsed: true};
         },
         componentDidMount: function() {
-            $('.disk-details', React.findDOMNode(this))
+            $('.disk-details', ReactDOM.findDOMNode(this))
                 .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
@@ -233,7 +234,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             this.props.disk.trigger('change', this.props.disk);
         },
         toggleDisk: function(name) {
-            $(React.findDOMNode(this.refs[name])).collapse('toggle');
+            $(ReactDOM.findDOMNode(this.refs[name])).collapse('toggle');
         },
         render: function() {
             var disk = this.props.disk,

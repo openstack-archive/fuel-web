@@ -101,19 +101,19 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                                 {this.renderInput('send_anonymous_statistic', 'welcome-checkbox-box', disabled)}
                                 {this.renderIntro()}
                                 {this.renderInput('send_user_info', 'welcome-checkbox-box', disabled)}
-                                <p>
+                                <div>
                                     <div className='notice'>{i18n(ns + 'privacy_policy')}</div>
                                     <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a></div>
-                                </p>
+                                </div>
                             </div>
                         :
                             <div>
                                 {this.renderIntro()}
                                 {this.renderInput('send_anonymous_statistic', 'welcome-checkbox-box')}
-                                <p>
+                                <div>
                                     <div>{i18n(ns + 'statistics_collector')}</div>
                                     <div><a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a></div>
-                                </p>
+                                </div>
                             </div>
                         }
                         <div className='welcome-button-box row'>

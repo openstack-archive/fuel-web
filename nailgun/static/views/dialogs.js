@@ -77,6 +77,11 @@ define(
                 }
             }
         },
+        updateProps(partialProps) {
+            var props;
+            props = _.extend({}, this.props, partialProps);
+            ReactDOM.render(React.createElement(this.constructor, props), ReactDOM.findDOMNode(this).parentNode);
+        },
         getInitialState() {
             return {
                 actionInProgress: false,
@@ -125,7 +130,7 @@ define(
         showError(response, message) {
             var props = {error: true};
             props.message = utils.getResponseText(response) || message;
-            this.setProps(props);
+            this.updateProps(props);
         },
         renderImportantLabel() {
             return <span className='label label-danger'>{i18n('common.important')}</span>;
@@ -692,14 +697,15 @@ define(
             if (this.props.node.get('pending_addition') && this.props.node.hasRole('virt')) {
                 var VMsConfModel = new models.BaseModel();
                 VMsConfModel.url = _.result(this.props.node, 'url') + '/vms_conf';
-                this.setProps({VMsConfModel: VMsConfModel});
+                this.updateProps({VMsConfModel: VMsConfModel});
                 this.setState({actionInProgress: true});
-                VMsConfModel.fetch().always(() => {
-                    this.setState({
-                        actionInProgress: false,
-                        VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
+                VMsConfModel.fetch()
+                    .always(() => {
+                        this.setState({
+                            actionInProgress: false,
+                            VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
+                        });
                     });
-                });
             }
         },
         setDialogTitle() {

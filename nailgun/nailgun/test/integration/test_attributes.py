@@ -865,17 +865,11 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
         plugin = self.env.create_plugin(
             cluster=self.cluster,
             version='1.0.1',
-            is_hotpluggable=False,
+            is_hotpluggable=True,
             enabled=True,
             **self.plugin_data
         )
-        self.env.create_plugin(
-            cluster=self.cluster,
-            is_hotpluggable=True,
-            version='1.0.2',
-            enabled=False,
-            **self.plugin_data
-        )
+
         self.cluster.status = consts.CLUSTER_STATUSES.operational
         self.assertTrue(self.cluster.is_locked)
         resp = self._modify_plugin(plugin, True)

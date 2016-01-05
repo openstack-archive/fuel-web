@@ -20,6 +20,7 @@ except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
 
+import copy
 import mock
 import os
 import re
@@ -1276,8 +1277,9 @@ class EnvironmentManager(object):
         )
 
     def _set_additional_component(self, cluster, component, value):
-        attrs = cluster.attributes.editable
+        attrs = copy.deepcopy(cluster.attributes.editable)
         attrs['additional_components'][component]['value'] = value
+
         self.app.patch(
             reverse(
                 'ClusterAttributesHandler',

@@ -213,7 +213,7 @@ class TestMakeTask(base.BaseTestCase):
             'uids': [1, 2, 3],
             'parameters': {
                 'cmd': (
-                    "test -e {bootstrap_path}* || "
+                    "test -e {bootstrap_path}vmlinuz || "
                     "(fuel-bootstrap build {ironic_bootstrap_pkgs} "
                     "--root-ssh-authorized-file {bootstrap_ssh_keys} "
                     "--output-dir {bootstrap_path} "

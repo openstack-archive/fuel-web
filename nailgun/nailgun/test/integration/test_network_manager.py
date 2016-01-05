@@ -1465,6 +1465,11 @@ class TestNeutronManager80(BaseNetworkManagerTest):
             }
         )
 
+    def _check_nic_mapping(self, node, expected_mapping):
+        for nic in node.interfaces:
+            assigned_nets = [net['name'] for net in nic.assigned_networks]
+            self.assertItemsEqual(assigned_nets, expected_mapping[nic.name])
+
     def _check_vip_configuration(self, expected_vips, real_vips):
         for vip in expected_vips:
             name = vip['name']
@@ -1505,3 +1510,25 @@ class TestNeutronManager80(BaseNetworkManagerTest):
         self.assertNotIn('unmapped_vip', assigned_vips)
 
         self._check_vip_configuration(expected_vips, assigned_vips)
+
+    def test_network_template_vlan_bonds(self):
+        expected_mapping = {
+            'eth0': ['fuelweb_admin'],
+            'eth1': [],
+            'eth2': [],
+            'bond0': ['storage', 'public', 'management', 'private'],
+        }
+
+        self.env.create_nodes_w_interfaces_count(
+            1, 3,
+            roles=['controller'],
+            cluster_id=self.cluster['id']
+        )
+        node = self.env.nodes[0]
+        net_template = self.env.read_fixtures(['network_template_80'])[2]
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+
+        self._check_nic_mapping(node, expected_mapping)

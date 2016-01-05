@@ -73,7 +73,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     }
                     return result;
                 } else {
-                    return ReactDOM.render(React.createElement(this, dialogOptions), $('#modal-container')[0]).getResult();
+                    return ReactDOM.render(React.createElement(this, dialogOptions), document.getElementById('modal-container')).getResult();
                 }
             }
         },
@@ -125,7 +125,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         showError: function(response, message) {
             var props = {error: true};
             props.message = utils.getResponseText(response) || message;
-            this.setProps(props);
+            ReactDOM.render(React.createElement(this.constructor, props), document.getElementById('modal-container'));
         },
         renderImportantLabel: function() {
             return <span className='label label-danger'>{i18n('common.important')}</span>;
@@ -692,14 +692,17 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             if (this.props.node.get('pending_addition') && this.props.node.hasRole('virt')) {
                 var VMsConfModel = new models.BaseModel();
                 VMsConfModel.url = _.result(this.props.node, 'url') + '/vms_conf';
-                this.setProps({VMsConfModel: VMsConfModel});
+                var props = this.props;
+                props = _.extend(props, {VMsConfModel: VMsConfModel});
+                ReactDOM.render(React.createElement(this.constructor, props), document.getElementById('modal-container'));
                 this.setState({actionInProgress: true});
-                VMsConfModel.fetch().always(_.bind(function() {
-                    this.setState({
-                        actionInProgress: false,
-                        VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
+                VMsConfModel.fetch()
+                    .always(() => {
+                        this.setState({
+                            actionInProgress: false,
+                            VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
+                        });
                     });
-                }, this));
             }
         },
         setDialogTitle: function() {

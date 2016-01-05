@@ -33,6 +33,14 @@ define(
 
     var dialogs = {};
 
+    var setPropsMixin = {
+        _setProps(partialProps) {
+            var props = this.props;
+            props = _.extend(props, partialProps);
+            ReactDOM.render(React.createElement(this.constructor, props), document.getElementById('modal-container'));
+        }
+    };
+
     function getActiveDialog() {
         return app.dialog;
     }
@@ -125,7 +133,7 @@ define(
         showError(response, message) {
             var props = {error: true};
             props.message = utils.getResponseText(response) || message;
-            this.setProps(props);
+            this._setProps(props);
         },
         renderImportantLabel() {
             return <span className='label label-danger'>{i18n('common.important')}</span>;
@@ -614,7 +622,8 @@ define(
         mixins: [
             dialogMixin,
             componentMixins.backboneMixin('node'),
-            componentMixins.renamingMixin('hostname')
+            componentMixins.renamingMixin('hostname'),
+            setPropsMixin
         ],
         getDefaultProps() {
             return {modalClass: 'always-show-scrollbar'};
@@ -692,14 +701,15 @@ define(
             if (this.props.node.get('pending_addition') && this.props.node.hasRole('virt')) {
                 var VMsConfModel = new models.BaseModel();
                 VMsConfModel.url = _.result(this.props.node, 'url') + '/vms_conf';
-                this.setProps({VMsConfModel: VMsConfModel});
+                this._setProps({VMsConfModel: VMsConfModel});
                 this.setState({actionInProgress: true});
-                VMsConfModel.fetch().always(() => {
-                    this.setState({
-                        actionInProgress: false,
-                        VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
+                VMsConfModel.fetch()
+                    .always(() => {
+                        this.setState({
+                            actionInProgress: false,
+                            VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
+                        });
                     });
-                });
             }
         },
         setDialogTitle() {

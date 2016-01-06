@@ -27,7 +27,7 @@ define(
     'component_mixins',
     'views/controls'
 ],
-function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, componentMixins, controls) {
+(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, componentMixins, controls) => {
     'use strict';
 
     var namespace = 'cluster_page.dashboard_tab.';
@@ -341,9 +341,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             return _.reduce(
                 this.validations,
                 function(accumulator, validator) {
-                    return _.merge(accumulator, validator.call(this, cluster), function(a, b) {
-                        return a.concat(_.compact(b));
-                    });
+                    return _.merge(accumulator, validator.call(this, cluster), (a, b) => a.concat(_.compact(b)));
                 },
                 {blocker: [], error: [], warning: []},
                 this
@@ -411,35 +409,27 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             function(cluster) {
                 var configModels = this.getConfigModels(),
                     roleModels = cluster.get('roles'),
-                    validRoleModels = roleModels.filter(function(role) {
-                        return !role.checkRestrictions(configModels).result;
-                    }),
-                    limitValidations = _.zipObject(validRoleModels.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))];
-                    })),
-                    limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true, ['recommended'])];
-                    }));
+                    validRoleModels = roleModels.filter((role) => !role.checkRestrictions(configModels).result),
+                    limitValidations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))])),
+                    limitRecommendations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true, ['recommended'])]));
                 return {
-                    blocker: roleModels.map(_.bind(
-                        function(role) {
+                    blocker: roleModels.map((role) => {
                             var name = role.get('name'),
                                 limits = limitValidations[name];
                             return limits && !limits.valid && limits.message;
-                        }, this)),
-                    warning: roleModels.map(_.bind(
-                        function(role) {
+                        }),
+                    warning: roleModels.map((role) => {
                             var name = role.get('name'),
                                 recommendation = limitRecommendations[name];
                             return recommendation && !recommendation.valid && recommendation.message;
-                        }, this))
+                        })
                 };
             },
             // check cluster network configuration
             function(cluster) {
                 if (this.props.nodeNetworkGroups.where({cluster_id: cluster.id}).length > 1) return null;
                 var networkVerificationTask = cluster.task('verify_networks'),
-                    makeComponent = _.bind(function(text, isError) {
+                    makeComponent = (text, isError) => {
                         var span = (
                             <span key='invalid_networks'>
                                 {text}
@@ -450,7 +440,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                             </span>
                         );
                         return isError ? {error: [span]} : {warning: [span]};
-                    }, this);
+                    };
                 if (_.isUndefined(networkVerificationTask)) {
                     return makeComponent(i18n(this.ns + 'verification_not_performed'));
                 } else if (networkVerificationTask.match({status: 'error'})) {
@@ -622,7 +612,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 ram = 0,
                 ns = namespace + 'cluster_info_fields.';
 
-            this.props.cluster.get('nodes').each(function(node) {
+            this.props.cluster.get('nodes').each((node) => {
                 cores += node.resource('ht_cores');
                 hdds += node.resource('hdd');
                 ram += node.resource('ram');
@@ -819,7 +809,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 if (deferred) {
                     this.setState({disabled: true});
                     deferred
-                        .fail(_.bind(function(response) {
+                        .fail((response) => {
                             if (response.status == 409) {
                                 this.setState({error: utils.getResponseText(response)});
                             } else {
@@ -828,14 +818,14 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                                     response: response
                                 });
                             }
-                        }, this))
-                        .done(function() {
+                        })
+                        .done(() => {
                             dispatcher.trigger('updatePageLayout');
                         })
-                        .always(_.bind(function() {
+                        .always(() => {
                             this.setState({disabled: false});
                             if (!(this.state && this.state.error)) this.props.endRenaming();
-                        }, this));
+                        });
                 } else if (cluster.validationError) {
                     this.setState({error: cluster.validationError.name});
                 }

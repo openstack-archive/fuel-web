@@ -22,7 +22,7 @@ define(
     'views/controls',
     'component_mixins'
 ],
-function(_, i18n, React, models, controls, componentMixins) {
+(_, i18n, React, models, controls, componentMixins) => {
     'use strict';
 
     var ReleasesPage = React.createClass({
@@ -40,7 +40,7 @@ function(_, i18n, React, models, controls, componentMixins) {
             }
         },
         getReleaseData(release) {
-            return _.map(this.props.columns, function(attr) {
+            return _.map(this.props.columns, (attr) => {
                 if (attr == 'state') {
                     return i18n('release_page.release.' + (release.get(attr)));
                 }
@@ -57,8 +57,8 @@ function(_, i18n, React, models, controls, componentMixins) {
                         <div className='row'>
                             <div className='col-xs-12 content-elements'>
                                 <controls.Table
-                                    head={_.map(this.props.columns, function(column) {
-                                        return {label: i18n('release_page.' + column), className: column};
+                                    head={_.map(this.props.columns, (column) => {
+                                        return ({label: i18n('release_page.' + column), className: column});
                                     })}
                                     body={this.props.releases.map(this.getReleaseData)}
                                 />

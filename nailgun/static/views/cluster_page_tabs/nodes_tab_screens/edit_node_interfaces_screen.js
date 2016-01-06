@@ -29,7 +29,7 @@ define(
     'react-dnd',
     'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins, DND, OffloadingModes) {
+($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins, DND, OffloadingModes) => {
     'use strict';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.';
@@ -64,7 +64,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     networksMetadata.fetch({
                         url: '/api/releases/' + cluster.get('release_id') + '/networks'
                     })]))
-                    .then(_.bind(function() {
+                    .then(() => {
                         var interfaces = new models.Interfaces();
                         interfaces.set(_.cloneDeep(nodes.at(0).interfaces.toJSON()), {parse: true});
                         return {
@@ -77,7 +77,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 settings: cluster.get('settings')
                             }
                         };
-                    }, this));
+                    });
             }
         },
         getInitialState() {
@@ -132,16 +132,16 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             this.setState({actionInProgress: true});
             $.when(this.props.interfaces.fetch({
                 url: _.result(this.props.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true
-            }, this)).done(_.bind(function() {
+            }, this)).done(() => {
                 this.setState({actionInProgress: false});
-            }, this)).fail(_.bind(function(response) {
+            }).fail((response) => {
                 var errorNS = ns + 'configuration_error.';
                 utils.showErrorDialog({
                     title: i18n(errorNS + 'title'),
                     message: i18n(errorNS + 'load_defaults_warning'),
                     response: response
                 });
-            }, this));
+            });
         },
         revertChanges() {
             this.props.interfaces.reset(_.cloneDeep(this.state.initialInterfaces), {parse: true});
@@ -167,15 +167,15 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return $.when(...nodes.map(function(node) {
                 var oldNodeBonds, nodeBonds;
                 // removing previously configured bonds
-                oldNodeBonds = node.interfaces.filter(function(ifc) {return ifc.isBond();});
+                oldNodeBonds = node.interfaces.filter((ifc) => ifc.isBond());
                 node.interfaces.remove(oldNodeBonds);
                 // creating node-specific bonds without slaves
-                nodeBonds = _.map(bonds, function(bond) {
+                nodeBonds = _.map(bonds, (bond) => {
                     return new models.Interface(_.omit(bond.toJSON(), 'slaves'), {parse: true});
-                }, this);
+                });
                 node.interfaces.add(nodeBonds);
                 // determining slaves using bonding map
-                _.each(nodeBonds, function(bond, bondIndex) {
+                _.each(nodeBonds, (bond, bondIndex) => {
                     var slaveIndexes = bondingMap[bondIndex],
                         slaveInterfaces = _.map(slaveIndexes, node.interfaces.at, node.interfaces);
                     bond.set({slaves: _.invoke(slaveInterfaces, 'pick', 'name')});
@@ -202,11 +202,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
                 return Backbone.sync('update', node.interfaces, {url: _.result(node, 'url') + '/interfaces'});
             }, this))
-                .done(_.bind(function() {
+                .done(() => {
                     this.setState({initialInterfaces: _.cloneDeep(this.interfacesToJSON(this.props.interfaces))});
                     dispatcher.trigger('networkConfigurationUpdated');
-                }, this))
-                .fail(function(response) {
+                })
+                .fail((response) => {
                     var errorNS = ns + 'configuration_error.';
 
                     utils.showErrorDialog({
@@ -214,9 +214,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         message: i18n(errorNS + 'saving_warning'),
                         response: response
                     });
-                }).always(_.bind(function() {
+                }).always(() => {
                     this.setState({actionInProgress: false});
-                }, this));
+                });
         },
         configurationTemplateExists() {
             return !_.isEmpty(this.props.cluster.get('networkConfiguration').get('networking_parameters').get('configuration_template'));
@@ -251,26 +251,23 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 },
                 this);
         },
+<<<<<<< 0f587b9f6f0870851008e96bffad300c5bfb41c2
         getIntersectedOffloadingModes(interfaces) {
             var offloadingModes = interfaces.map(function(ifc) {
                 return ifc.get('offloading_modes') || [];
             });
+=======
+        getIntersectedOffloadingModes: function(interfaces) {
+            var offloadingModes = interfaces.map((ifc) => ifc.get('offloading_modes') || []);
+>>>>>>> [Upgrading to ES 2015 syntax] Arrow callbacks
             if (!offloadingModes.length) return [];
 
-            return offloadingModes.reduce(
-                (function(result, modes) {
-                    return this.findOffloadingModesIntersection(result, modes);
-                }).bind(this)
-            );
+            return offloadingModes.reduce((result, modes) => this.findOffloadingModesIntersection(result, modes));
         },
         bondInterfaces() {
             this.setState({actionInProgress: true});
-            var interfaces = this.props.interfaces.filter(function(ifc) {
-                    return ifc.get('checked') && !ifc.isBond();
-                }),
-                bonds = this.props.interfaces.find(function(ifc) {
-                    return ifc.get('checked') && ifc.isBond();
-                }),
+            var interfaces = this.props.interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond()),
+                bonds = this.props.interfaces.find((ifc) => ifc.get('checked') && ifc.isBond()),
                 bondingProperties = this.props.bondingConfig.properties;
 
             if (!bonds) {
@@ -300,7 +297,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 // remove the bond to add it later and trigger re-rendering
                 this.props.interfaces.remove(bonds, {silent: true});
             }
-            _.each(interfaces, function(ifc) {
+            _.each(interfaces, (ifc) => {
                 bonds.get('assigned_networks').add(ifc.get('assigned_networks').models);
                 ifc.get('assigned_networks').reset();
                 ifc.set({checked: false});
@@ -319,17 +316,15 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             var networks = this.props.cluster.get('networkConfiguration').get('networks'),
                 bond = this.props.interfaces.find({name: bondName}),
                 slaves = bond.get('slaves'),
-                bondHasUnmovableNetwork = bond.get('assigned_networks').any(
-                    function(interfaceNetwork) {
-                        return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
-                    }
-                ),
+                bondHasUnmovableNetwork = bond.get('assigned_networks').any((interfaceNetwork) => {
+                    return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
+                }),
                 slaveInterfaceNames = _.pluck(slaves, 'name'),
                 targetInterface = bond;
 
             // if PXE interface is being removed - place networks there
             if (bondHasUnmovableNetwork) {
-                var pxeInterface = this.props.interfaces.find(function(ifc) {
+                var pxeInterface = this.props.interfaces.find((ifc) => {
                     return ifc.get('pxe') && _.contains(slaveInterfaceNames, ifc.get('name'));
                 });
                 if (!slaveInterfaceName || pxeInterface && pxeInterface.get('name') == slaveInterfaceName) {
@@ -341,9 +336,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             if (slaveInterfaceName) {
                 var slavesUpdated = _.reject(slaves, {name: slaveInterfaceName}),
                     names = _.pluck(slavesUpdated, 'name'),
-                    bondSlaveInterfaces = this.props.interfaces.filter(function(ifc) {
-                        return _.contains(names, ifc.get('name'));
-                    });
+                    bondSlaveInterfaces = this.props.interfaces.filter((ifc) => _.contains(names, ifc.get('name')));
 
                 bond.set({
                     slaves: slavesUpdated,
@@ -380,7 +373,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             if (!this.props.interfaces) {
                 return;
             }
-            this.props.interfaces.each(_.bind(function(ifc) {
+            this.props.interfaces.each((ifc) => {
                 validationResult = ifc.validate({
                     networkingParameters: networkingParameters,
                     networks: networks
@@ -388,7 +381,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 if (validationResult.length) {
                     interfaceErrors[ifc.get('name')] = validationResult.join(' ');
                 }
-            }), this);
+            });
             if (!_.isEqual(this.state.interfaceErrors, interfaceErrors)) {
                 this.setState({interfaceErrors: interfaceErrors});
             }
@@ -429,8 +422,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 locked = this.isLocked(),
                 bondingAvailable = this.bondingAvailable(),
                 configurationTemplateExists = this.configurationTemplateExists(),
-                checkedInterfaces = interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();}),
-                checkedBonds = interfaces.filter(function(ifc) {return ifc.get('checked') && ifc.isBond();}),
+                checkedInterfaces = interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond()),
+                checkedBonds = interfaces.filter((ifc) => ifc.get('checked') && ifc.isBond()),
                 creatingNewBond = checkedInterfaces.length >= 2 && !checkedBonds.length,
                 addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length == 1,
                 bondingPossible = creatingNewBond || addingInterfacesToExistingBond,
@@ -479,7 +472,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         </div>
                     }
                     <div className='ifc-list col-xs-12'>
-                        {interfaces.map(_.bind(function(ifc, index) {
+                        {interfaces.map((ifc, index) => {
                             var ifcName = ifc.get('name');
                             if (!_.contains(slaveInterfaceNames, ifcName)) return (
                                 <NodeInterfaceDropTarget {...this.props}
@@ -497,7 +490,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     interfaceNames={interfaceNames[index]}
                                 />
                             );
-                        }, this))}
+                        })}
                     </div>
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
@@ -577,13 +570,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             var configModels = _.clone(this.props.configModels);
             var availableModes = [];
             var interfaces = this.props.interface.isBond() ? this.props.interface.getSlaveInterfaces() : [this.props.interface];
-            _.each(interfaces, function(ifc) {
+            _.each(interfaces, (ifc) => {
                 configModels.interface = ifc;
-                availableModes.push(_.reduce(modes, function(result, modeSet) {
+                availableModes.push(_.reduce(modes, (result, modeSet) => {
                     if (modeSet.condition && !utils.evaluateExpression(modeSet.condition, configModels).value) return result;
                     return result.concat(modeSet.values);
-                }, [], this));
-            }, this);
+                }, []));
+            });
             return _.intersection(...availableModes);
         },
         getBondPropertyValues(propertyName, value) {
@@ -619,13 +612,19 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         onLacpChange(name, value) {
             this.updateBondProperties({lacp_rate: value});
         },
+<<<<<<< 0f587b9f6f0870851008e96bffad300c5bfb41c2
         getBondingOptions(bondingModes, attributeName) {
             return _.map(bondingModes, function(mode) {
+=======
+        getBondingOptions: function(bondingModes, attributeName) {
+            return _.map(bondingModes, (mode) => {
+>>>>>>> [Upgrading to ES 2015 syntax] Arrow callbacks
                 return (
                     <option key={'option-' + mode} value={mode}>
                         {i18n(ns + attributeName + '.' + mode.replace('.', '_'))}
-                    </option>);
-            }, this);
+                    </option>
+                );
+            });
         },
         toggleOffloading() {
             var interfaceProperties = this.props.interface.get('interface_properties'),

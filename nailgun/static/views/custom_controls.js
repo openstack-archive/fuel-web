@@ -21,7 +21,7 @@ define([
     'react',
     'utils',
     'views/controls'
-], function($, _, i18n, React, utils, controls) {
+], ($, _, i18n, React, utils, controls) => {
     'use strict';
 
     var customControls = {};
@@ -53,7 +53,7 @@ define([
                 return _.compact(errors).length ? errors : null;
             },
             repoToString(repo, os) {
-                var repoData = _.compact(this.defaultProps.repoAttributes[os].map(function(attribute) {return repo[attribute];}));
+                var repoData = _.compact(this.defaultProps.repoAttributes[os].map((attribute) => repo[attribute]));
                 if (!repoData.length) return ''; // in case of new repo
                 return repoData.join(' ');
             }
@@ -107,7 +107,7 @@ define([
                     var repo = repos[index],
                         match = value.match(this.props.repoRegexes[os]);
                     if (match) {
-                        _.each(this.props.repoAttributes[os], function(attribute, index) {
+                        _.each(this.props.repoAttributes[os], (attribute, index) => {
                             repo[attribute] = match[index + 1] || '';
                         });
                     } else {

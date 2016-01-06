@@ -21,7 +21,7 @@ define(
     'i18n',
     'utils'
 ],
-function($, _, React, i18n, utils) {
+($, _, React, i18n, utils) => {
     'use strict';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.',
@@ -41,14 +41,19 @@ function($, _, React, i18n, utils) {
             mode.state = state;
             _.each(mode.sub, function(mode) {this.setModeState(mode, state);}, this);
         },
+<<<<<<< 0f587b9f6f0870851008e96bffad300c5bfb41c2
         checkModes(mode, sub) {
             var changedState = sub.reduce(
                     (function(state, childMode) {
+=======
+        checkModes: function(mode, sub) {
+            var changedState = sub.reduce((state, childMode) => {
+>>>>>>> [Upgrading to ES 2015 syntax] Arrow callbacks
                         if (!_.isEmpty(childMode.sub)) {
                             this.checkModes(childMode, childMode.sub);
                         }
                         return (state === 0 || state === childMode.state) ? childMode.state : -1;
-                    }).bind(this),
+                    },
                     0
                 ),
                 oldState;
@@ -122,12 +127,17 @@ function($, _, React, i18n, utils) {
             if (added < ifcModes.length) excerpt.push(', ...');
             return excerpt;
         },
+<<<<<<< 0f587b9f6f0870851008e96bffad300c5bfb41c2
         renderChildModes(modes, level) {
             return modes.map((function(mode) {
+=======
+        renderChildModes: function(modes, level) {
+            return modes.map((mode) => {
+>>>>>>> [Upgrading to ES 2015 syntax] Arrow callbacks
                 var lines = [
                     <tr key={mode.name} className={'level' + level}>
                         <td>{mode.name}</td>
-                        {[true, false, null].map((function(modeState) {
+                        {[true, false, null].map((modeState) => {
                             var styles = {
                                 'btn-link': true,
                                 active: mode.state === modeState
@@ -142,14 +152,14 @@ function($, _, React, i18n, utils) {
                                     </button>
                                 </td>
                             );
-                        }).bind(this))}
+                        })}
                     </tr>
                 ];
                 if (mode.sub) {
                     return _.union([lines, this.renderChildModes(mode.sub, level + 1)]);
                 }
                 return lines;
-            }).bind(this));
+            });
         },
         render() {
             var modes = [],

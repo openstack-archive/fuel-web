@@ -23,7 +23,7 @@ define(
     'dispatcher',
     'utils'
 ],
-function($, _, i18n, React, ReactDOM, dispatcher, utils) {
+($, _, i18n, React, ReactDOM, dispatcher, utils) => {
     'use strict';
 
     var LoginPage = React.createClass({
@@ -114,9 +114,9 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
             this.setState({actionInProgress: true});
 
             this.login(username, password)
-                .fail(_.bind(function() {
+                .fail(() => {
                     this.setState({actionInProgress: false});
-                }, this));
+                });
         },
         render() {
             var httpsUsed = location.protocol == 'https:';

@@ -22,7 +22,7 @@ define(
     'component_mixins',
     'views/statistics_mixin'
 ],
-function(_, i18n, React, models, componentMixins, statisticsMixin) {
+(_, i18n, React, models, componentMixins, statisticsMixin) => {
     'use strict';
 
     var WelcomePage = React.createClass({
@@ -34,7 +34,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             title: i18n('welcome_page.title'),
             hiddenLayout: true,
             fetchData() {
-                return app.fuelSettings.fetch().then(function() {
+                return app.fuelSettings.fetch().then(() => {
                     var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
                     tracking.processRestrictions();
                     return {
@@ -54,13 +54,13 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             this.setState({locked: true});
             this.props.settings.set(this.props.tracking.attributes);
             this.saveSettings(currentAttributes)
-                .done(function() {
+                .done(() => {
                     app.navigate('', {trigger: true});
                 })
-                .fail(_.bind(function() {
+                .fail(() => {
                     statistics.user_choice_saved.value = false;
                     this.setState({locked: false});
-                }, this));
+                });
         },
         render() {
             var ns = 'welcome_page.',

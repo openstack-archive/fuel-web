@@ -27,7 +27,7 @@ define(
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen',
     'react-addons-transition-group'
 ],
-function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen, ReactTransitionGroup) {
+($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen, ReactTransitionGroup) => {
     'use strict';
 
     var NodesTab = React.createClass({
@@ -62,15 +62,15 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
                     cluster: this.props.cluster,
                     screenOptions: screenOptions || this.state.screenOptions
                 })
-                .done(_.bind(function(data) {
+                .done((data) => {
                     this.setState({
                         loading: false,
                         screenData: data || {}
                     });
-                }, this))
-                .fail(_.bind(function() {
+                })
+                .fail(() => {
                     app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                }, this));
+                });
         },
         getScreen(props) {
             return (props || this.props).tabOptions[0] || 'list';

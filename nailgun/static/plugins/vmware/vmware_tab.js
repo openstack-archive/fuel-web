@@ -25,7 +25,7 @@ define(
     'views/controls',
     'component_mixins',
     'plugins/vmware/vmware_models'
-], function(React, $, i18n, _, dispatcher, utils, controls, componentMixins, vmwareModels) {
+], (React, $, i18n, _, dispatcher, utils, controls, componentMixins, vmwareModels) => {
     'use strict';
 
     var Field = React.createClass({
@@ -39,7 +39,7 @@ define(
             }
             this.props.model.set(name, currentValue);
             this.setState({model: this.props.model});
-            _.defer(function() {dispatcher.trigger('vcenter_model_update');});
+            _.defer(() => {dispatcher.trigger('vcenter_model_update');});
         },
         render() {
             var metadata = this.props.metadata,
@@ -54,7 +54,7 @@ define(
                     disabled={this.props.disabled}
                     error={(this.props.model.validationError || {})[metadata.name]}
                 >
-                    {metadata.type == 'select' && value.options.map(function(value) {
+                    {metadata.type == 'select' && value.options.map((value) => {
                         return <option key={value.id} value={value.id}>{value.label}</option>;
                     })}
                 </controls.Input>
@@ -110,9 +110,7 @@ define(
 
             // add nodes of 'compute-vmware' type to targetNode select
             var targetNode = this.props.model.get('target_node') || {};
-            var nodes = this.props.cluster.get('nodes').filter(function(node) {
-                return node.hasRole('compute-vmware');
-            });
+            var nodes = this.props.cluster.get('nodes').filter((node) => node.hasRole('compute-vmware'));
 
             targetNode.options = [];
             if (targetNode.current.id == 'controllers' || !this.props.isLocked) {
@@ -120,7 +118,7 @@ define(
             } else {
                 targetNode.options.push({id: 'invalid', label: 'Select node'});
             }
-            nodes.forEach(function(node) {
+            nodes.forEach((node) => {
                 targetNode.options.push({
                     id: node.get('hostname'),
                     label: node.get('name') + ' (' + node.get('mac').substr(9) + ')'
@@ -136,7 +134,7 @@ define(
                             <button
                                 className='btn btn-link'
                                 disabled={this.props.disabled}
-                                onClick={_.bind(function() {this.props.onAdd(this.props.model);}, this)}
+                                onClick={() => {this.props.onAdd(this.props.model);}}
                             >
                                 <i className='glyphicon glyphicon-plus-sign' />
                             </button>
@@ -144,7 +142,7 @@ define(
                                 <button
                                     className='btn btn-link'
                                     disabled={this.props.disabled}
-                                    onClick={_.bind(function() {this.props.onRemove(this.props.model);}, this)}
+                                    onClick={() => {this.props.onRemove(this.props.model);}}
                                 >
                                     <i className='glyphicon glyphicon-minus-sign' />
                                 </button>
@@ -171,13 +169,13 @@ define(
             collection.add(newItem, {at: index + 1});
             collection.parseRestrictions();
             this.setState({model: this.props.model});
-            _.defer(function() {dispatcher.trigger('vcenter_model_update'); });
+            _.defer(() => {dispatcher.trigger('vcenter_model_update'); });
         },
         removeNovaCompute(current) {
             var collection = this.props.model.get('nova_computes');
             collection.remove(current);
             this.setState({model: this.props.model});
-            _.defer(function() { dispatcher.trigger('vcenter_model_update'); });
+            _.defer(() => { dispatcher.trigger('vcenter_model_update'); });
         },
         renderFields() {
             var model = this.props.model,
@@ -258,10 +256,12 @@ define(
                     </div>
                     <ul className='unassigned-node-list'>
                         {
-                            this.props.errors.unassigned_nodes.map(function(node) {
+                            this.props.errors.unassigned_nodes.map((node) => {
                                 return (
-                                    <li className='unassigned-node'>
-                                        <span className='unassigned-node-name'>{node.get('name')}</span>
+                                    <li key={node.id}
+                                        className='unassigned-node'>
+                                        <span
+                                            className='unassigned-node-name'>{node.get('name')}</span>
                                         &nbsp;
                                         ({node.get('mac')})
                                     </li>
@@ -319,11 +319,11 @@ define(
             });
 
             this.onModelSync();
-            dispatcher.on('vcenter_model_update', _.bind(function() {
+            dispatcher.on('vcenter_model_update', () => {
                 if (this.isMounted()) {
                     this.forceUpdate();
                 }
-            }, this));
+            });
         },
         componentWillUnmount() {
             this.model.off('sync', null, this);
@@ -337,9 +337,9 @@ define(
         },
         onLoadDefaults() {
             this.model.loadDefaults = true;
-            this.model.fetch().done(_.bind(function() {
+            this.model.fetch().done(() => {
                 this.model.loadDefaults = false;
-            }, this));
+            });
         },
         applyChanges() {
             return this.model.save();
@@ -358,13 +358,13 @@ define(
             } catch (error) {
                 return false;
             }
-            var oldData = JSON.stringify(old, function(key, data) {
+            var oldData = JSON.stringify(old, (key, data) => {
                 if (key == 'target_node') {
                     delete data.options;
                 }
                 return data;
             });
-            var currentData = JSON.stringify(current, function(key, data) {
+            var currentData = JSON.stringify(current, (key, data) => {
                 if (key == 'target_node') {
                     delete data.options;
                 }

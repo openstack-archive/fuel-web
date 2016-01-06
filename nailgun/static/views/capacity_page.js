@@ -22,7 +22,7 @@ define(
     'component_mixins',
     'views/controls'
 ],
-function(_, i18n, React, models, componentMixins, controls) {
+(_, i18n, React, models, componentMixins, controls) => {
     'use strict';
 
     var CapacityPage = React.createClass({
@@ -36,9 +36,8 @@ function(_, i18n, React, models, componentMixins, controls) {
             breadcrumbsPath: [['home', '#'], ['support', '#support'], 'capacity'],
             fetchData() {
                 var task = new models.Task();
-                return task.save({}, {url: '/api/capacity/', method: 'PUT'}).then(function() {
-                    return {capacityLog: new models.CapacityLog()};
-                });
+                return task.save({}, {url: '/api/capacity/', method: 'PUT'})
+                    .then(() => ({capacityLog: new models.CapacityLog()}));
             }
         },
         shouldDataBeFetched() {

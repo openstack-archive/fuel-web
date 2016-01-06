@@ -17,7 +17,7 @@ define([
     'underscore',
     'i18next-client',
     './translations/core.json'
-], function(_, i18next, translations) {
+], (_, i18next, translations) => {
     'use strict';
 
     var defaultLocale = 'en-US';

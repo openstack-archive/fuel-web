@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore', 'expression/parser'], function(_, ExpressionParser) {
+define(['underscore', 'expression/parser'], (_, ExpressionParser) => {
     'use strict';
 
     function ModelPath(path) {

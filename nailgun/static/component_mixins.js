@@ -23,7 +23,7 @@ define([
     'react',
     'react-dom',
     'react.backbone'
-], function($, _, Backbone, utils, i18n, dispatcher, React, ReactDOM) {
+], ($, _, Backbone, utils, i18n, dispatcher, React, ReactDOM) => {
     'use strict';
 
     return {
@@ -63,7 +63,7 @@ define([
                             isSavingPossible: _.result(this, 'isSavingPossible'),
                             applyChanges: this.applyChanges,
                             revertChanges: this.revertChanges
-                        }).done(function() {
+                        }).done(() => {
                             app.navigate(href, {trigger: true});
                         });
                 }
@@ -137,13 +137,13 @@ define([
                 },
                 startRenaming: function(e) {
                     e.preventDefault();
-                    $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
+                    $('html').on(this.state.renamingMixinEventName, (e) => {
                         if (e && !$(e.target).closest(ReactDOM.findDOMNode(this.refs[refname])).length) {
                             this.endRenaming();
                         } else {
                             e.preventDefault();
                         }
-                    }, this));
+                    });
                     this.setState({isRenaming: true});
                 },
                 endRenaming: function() {

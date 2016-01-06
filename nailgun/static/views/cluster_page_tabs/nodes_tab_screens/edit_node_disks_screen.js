@@ -26,7 +26,7 @@ define(
     'component_mixins',
     'views/controls'
 ],
-function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, controls) {
+($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, controls) => {
     'use strict';
 
     var EditNodeDisksScreen = React.createClass({
@@ -46,11 +46,11 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
 
                 var volumes = new models.Volumes();
                 volumes.url = _.result(nodes.at(0), 'url') + '/volumes';
-                return $.when(...nodes.map(function(node) {
+                return $.when(...nodes.map((node) => {
                         node.disks = new models.Disks();
                         return node.disks.fetch({url: _.result(node, 'url') + '/disks'});
                     }, this).concat(volumes.fetch()))
-                    .then(function() {
+                    .then(() => {
                         var disks = new models.Disks(_.cloneDeep(nodes.at(0).disks.toJSON()), {parse: true});
                         return {
                             disks: disks,
@@ -79,16 +79,16 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
         loadDefaults: function() {
             this.setState({actionInProgress: true});
             this.props.disks.fetch({url: _.result(this.props.nodes.at(0), 'url') + '/disks/defaults/'})
-                .fail(_.bind(function(response) {
+                .fail((response) => {
                     var ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
                     utils.showErrorDialog({
                         title: i18n(ns + 'title'),
                         message: utils.getResponseText(response) || i18n(ns + 'load_defaults_warning')
                     });
-                }, this))
-                .always(_.bind(function() {
+                })
+                .always(() => {
                     this.setState({actionInProgress: false});
-                }, this));
+                });
         },
         revertChanges: function() {
             this.props.disks.reset(_.cloneDeep(this.state.initialDisks), {parse: true});
@@ -104,16 +104,16 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                     return Backbone.sync('update', node.disks, {url: _.result(node, 'url') + '/disks'});
                 }, this))
                 .done(this.updateInitialData)
-                .fail(_.bind(function(response) {
+                .fail((response) => {
                     var ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
                     utils.showErrorDialog({
                         title: i18n(ns + 'title'),
                         message: utils.getResponseText(response) || i18n(ns + 'saving_warning')
                     });
-                }, this))
-                .always(_.bind(function() {
+                })
+                .always(() => {
                     this.setState({actionInProgress: false});
-                }, this));
+                });
         },
         getDiskMetaData: function(disk) {
             var result,
@@ -122,9 +122,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             // if at least one entry presents both in disk and metadata entry,
             // this metadata entry is for our disk
             var extra = disk.get('extra') || [];
-            result = _.find(disksMetaData, function(diskMetaData) {
-                return _.isArray(diskMetaData.extra) && _.intersection(diskMetaData.extra, extra).length;
-            }, this);
+            result = _.find(disksMetaData, (diskMetaData) =>
+                _.isArray(diskMetaData.extra) && _.intersection(diskMetaData.extra, extra).length
+            );
             // if matching "extra" fields doesn't work, try to search by disk id
             if (!result) {
                 result = _.find(disksMetaData, {disk: disk.id});
@@ -157,9 +157,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             return disk.get('size') ? utils.floor(size / disk.get('size') * 100, 2) : 0;
         },
         hasErrors: function() {
-            return this.props.disks.any(function(disk) {
-                return disk.get('volumes').any('validationError');
-            });
+            return this.props.disks.any((disk) =>
+                disk.get('volumes').any('validationError')
+            );
         },
         isSavingPossible: function() {
             return !this.state.actionInProgress && this.hasChanges() && !this.hasErrors();
@@ -293,8 +293,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                                 <div>
                                     <h5>{i18n(ns + 'disk_information')}</h5>
                                     <div className='form-horizontal disk-info-box'>
-                                        {_.map(utils.sortEntryProperties(diskMetaData, sortOrder), function(propertyName) {
-                                            return (
+                                        {_.map(utils.sortEntryProperties(diskMetaData, sortOrder), (propertyName) =>
+                                            (
                                                 <div className='form-group' key={'property_' + propertyName}>
                                                     <label className='col-xs-2'>{propertyName.replace(/_/g, ' ')}</label>
                                                     <div className='col-xs-10'>
@@ -303,8 +303,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                                                         </p>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
+                                            )
+                                        )}
                                     </div>
                                 </div>
                             }

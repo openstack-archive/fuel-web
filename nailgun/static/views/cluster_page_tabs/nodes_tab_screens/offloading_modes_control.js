@@ -21,7 +21,7 @@ define(
     'i18n',
     'utils'
 ],
-function($, _, React, i18n, utils) {
+($, _, React, i18n, utils) => {
     'use strict';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.',
@@ -42,13 +42,12 @@ function($, _, React, i18n, utils) {
             _.each(mode.sub, function(mode) {this.setModeState(mode, state);}, this);
         },
         checkModes: function(mode, sub) {
-            var changedState = sub.reduce(
-                    (function(state, childMode) {
+            var changedState = sub.reduce((state, childMode) => {
                         if (!_.isEmpty(childMode.sub)) {
                             this.checkModes(childMode, childMode.sub);
                         }
                         return (state === 0 || state === childMode.state) ? childMode.state : -1;
-                    }).bind(this),
+                    },
                     0
                 ),
                 oldState;
@@ -123,11 +122,11 @@ function($, _, React, i18n, utils) {
             return excerpt;
         },
         renderChildModes: function(modes, level) {
-            return modes.map((function(mode) {
+            return modes.map((mode) => {
                 var lines = [
                     <tr key={mode.name} className={'level' + level}>
                         <td>{mode.name}</td>
-                        {[true, false, null].map((function(modeState) {
+                        {[true, false, null].map((modeState) => {
                             var styles = {
                                 'btn-link': true,
                                 active: mode.state === modeState
@@ -142,14 +141,14 @@ function($, _, React, i18n, utils) {
                                     </button>
                                 </td>
                             );
-                        }).bind(this))}
+                        })}
                     </tr>
                 ];
                 if (mode.sub) {
                     return _.union([lines, this.renderChildModes(mode.sub, level + 1)]);
                 }
                 return lines;
-            }).bind(this));
+            });
         },
         render: function() {
             var modes = [],

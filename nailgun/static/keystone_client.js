@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
+define(['jquery', 'underscore', 'js-cookie'], ($, _, Cookies) => {
     'use strict';
 
     class KeystoneClient {

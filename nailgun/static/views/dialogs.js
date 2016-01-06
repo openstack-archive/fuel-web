@@ -28,7 +28,7 @@ define(
     'component_mixins',
     'react-addons-linked-state-mixin'
 ],
-function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, componentMixins, LinkedStateMixin) {
+($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, componentMixins, LinkedStateMixin) => {
     'use strict';
 
     var dialogs = {};
@@ -179,7 +179,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 error = jsonObj.message;
                 if (_.isObject(form)) {
                     form.validationError = {};
-                    _.each(jsonObj.errors, function(value, name) {
+                    _.each(jsonObj.errors, (value, name) => {
                         form.validationError['credentials.' + name] = value;
                     });
                 }
@@ -301,7 +301,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         discardNodeChanges() {
             this.setState({actionInProgress: true});
-            var nodes = new models.Nodes(this.props.nodes.map(function(node) {
+            var nodes = new models.Nodes(this.props.nodes.map((node) => {
                 if (node.get('pending_deletion')) return {
                     id: node.id,
                     pending_deletion: false
@@ -358,10 +358,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
-                .done(function() {
+                .done(() => {
                     this.close();
                     dispatcher.trigger('deploymentTaskStarted');
-                }.bind(this))
+                })
                 .fail(this.showError);
         },
         renderBody: function() {
@@ -416,18 +416,18 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.setState({actionInProgress: true});
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/spawn_vms', type: 'PUT'})
-                .done(function() {
+                .done(() => {
                     this.close();
                     dispatcher.trigger('deploymentTaskStarted');
-                }.bind(this))
-                .fail(_.bind(function(response) {
+                })
+                .fail((response) => {
                     this.showError(response, i18n('dialog.provision_vms.provision_vms_error'));
-                }, this));
+                });
         },
         renderBody: function() {
-            var vmsCount = this.props.cluster.get('nodes').where(function(node) {
-                return node.get('pending_addition') && node.hasRole('virt');
-            }).length;
+            var vmsCount = this.props.cluster.get('nodes').where((node) =>
+                node.get('pending_addition') && node.hasRole('virt')
+            ).length;
             return i18n('dialog.provision_vms.text', {count: vmsCount});
         },
         renderFooter: function() {
@@ -445,13 +445,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.setState({actionInProgress: true});
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/stop_deployment', type: 'PUT'})
-                .done(function() {
+                .done(() => {
                     this.close();
                     dispatcher.trigger('deploymentTaskStarted');
-                }.bind(this))
-                .fail(_.bind(function(response) {
+                })
+                .fail((response) => {
                     this.showError(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
-                }, this));
+                });
         },
         renderBody: function() {
             return (
@@ -560,10 +560,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/reset', type: 'PUT'})
-                .done(function() {
+                .done(() => {
                     this.close();
                     dispatcher.trigger('deploymentTaskStarted');
-                }.bind(this))
+                })
                 .fail(this.showError);
         },
         renderBody: function() {
@@ -581,9 +581,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                 type='text'
                                 name='name'
                                 disabled={this.state.actionInProgress}
-                                onChange={_.bind(function(name, value) {
+                                onChange={(name, value) => {
                                     this.setState({confirmationError: value != clusterName});
-                                }, this)}
+                                }}
                                 onPaste={function(e) {e.preventDefault();}}
                                 autoFocus
                             />
@@ -641,22 +641,22 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     case 'memory':
                         if (_.isArray(meta.memory.devices) && meta.memory.devices.length) {
                             var sizes = _.countBy(_.pluck(meta.memory.devices, 'size'), utils.showMemorySize);
-                            summary = _.map(_.keys(sizes).sort(), function(size) {return sizes[size] + ' x ' + size;}).join(', ');
+                            summary = _.map(_.keys(sizes).sort(), (size) => sizes[size] + ' x ' + size).join(', ');
                             summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' + i18n('dialog.show_node.total');
                         } else summary = utils.showMemorySize(meta.memory.total) + ' ' + i18n('dialog.show_node.total');
                         break;
                     case 'disks':
                         summary = meta.disks.length + ' ';
                         summary += i18n('dialog.show_node.drive', {count: meta.disks.length});
-                        summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), function(sum, n) {return sum + n;}, 0)) + ' ' + i18n('dialog.show_node.total');
+                        summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), (sum, n) => sum + n, 0)) + ' ' + i18n('dialog.show_node.total');
                         break;
                     case 'cpu':
                         var frequencies = _.countBy(_.pluck(meta.cpu.spec, 'frequency'), utils.showFrequency);
-                        summary = _.map(_.keys(frequencies).sort(), function(frequency) {return frequencies[frequency] + ' x ' + frequency;}).join(', ');
+                        summary = _.map(_.keys(frequencies).sort(), (frequency) => frequencies[frequency] + ' x ' + frequency).join(', ');
                         break;
                     case 'interfaces':
                         var bandwidths = _.countBy(_.pluck(meta.interfaces, 'current_speed'), utils.showBandwidth);
-                        summary = _.map(_.keys(bandwidths).sort(), function(bandwidth) {return bandwidths[bandwidth] + ' x ' + bandwidth;}).join(', ');
+                        summary = _.map(_.keys(bandwidths).sort(), (bandwidth) => bandwidths[bandwidth] + ' x ' + bandwidth).join(', ');
                         break;
                 }
             } catch (ignore) {}
@@ -694,12 +694,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 VMsConfModel.url = _.result(this.props.node, 'url') + '/vms_conf';
                 this.setProps({VMsConfModel: VMsConfModel});
                 this.setState({actionInProgress: true});
-                VMsConfModel.fetch().always(_.bind(function() {
+                VMsConfModel.fetch().always(() => {
                     this.setState({
                         actionInProgress: false,
                         VMsConf: JSON.stringify(VMsConfModel.get('vms_conf'))
                     });
-                }, this));
+                });
             }
         },
         setDialogTitle: function() {
@@ -708,9 +708,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         assignAccordionEvents: function() {
             $('.panel-collapse', ReactDOM.findDOMNode(this))
-                .on('show.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus');})
-                .on('hide.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus');})
-                .on('hidden.bs.collapse', function(e) {e.stopPropagation();});
+                .on('show.bs.collapse', (e) => {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus');})
+                .on('hide.bs.collapse', (e) => {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus');})
+                .on('hidden.bs.collapse', (e) => {e.stopPropagation();});
         },
         toggle: function(groupIndex) {
             $(ReactDOM.findDOMNode(this.refs['togglable_' + groupIndex])).collapse('toggle');
@@ -728,12 +728,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             if (parsedVMsConf) {
                 this.setState({actionInProgress: true});
                 this.props.VMsConfModel.save({vms_conf: parsedVMsConf}, {method: 'PUT'})
-                    .fail(_.bind(function(response) {
+                    .fail((response) => {
                         this.setState({VMsConfValidationError: utils.getResponseText(response)});
-                    }, this))
-                    .always(_.bind(function() {
+                    })
+                    .always(() => {
                         this.setState({actionInProgress: false});
-                    }, this));
+                    });
             }
         },
         startHostnameRenaming: function(e) {
@@ -1046,7 +1046,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         deleteNodes: function() {
             this.setState({actionInProgress: true});
-            var nodes = new models.Nodes(this.props.nodes.map(function(node) {
+            var nodes = new models.Nodes(this.props.nodes.map((node) => {
                 // mark deployed node as pending deletion
                 if (node.get('status') == 'ready') return {
                     id: node.id,
@@ -1061,17 +1061,17 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 };
             }));
             Backbone.sync('update', nodes)
-                .then(_.bind(function() {
+                .then(() => {
                     return this.props.cluster.fetchRelated('nodes');
-                }, this))
-                .done(_.bind(function() {
+                })
+                .done(() => {
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
                     this.state.result.resolve();
                     this.close();
-                }, this))
-                .fail(_.bind(function(response) {
+                })
+                .fail((response) => {
                     this.showError(response, i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
-                }, this));
+                });
         }
     });
 
@@ -1166,15 +1166,15 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 var keystoneClient = app.keystoneClient;
                 this.setState({actionInProgress: true});
                 keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
-                    .done(_.bind(function() {
+                    .done(() => {
                         dispatcher.trigger(this.state.newPassword == keystoneClient.DEFAULT_PASSWORD ? 'showDefaultPasswordWarning' : 'hideDefaultPasswordWarning');
                         app.user.set({token: keystoneClient.token});
                         this.close();
-                    }, this))
-                    .fail(_.bind(function() {
+                    })
+                    .fail(() => {
                         this.setState({validationError: true, actionInProgress: false});
                         $(this.refs.currentPassword.getInputDOMNode()).focus();
-                    }, this));
+                    });
             }
         }
     });
@@ -1200,15 +1200,15 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         componentDidMount: function() {
             var registrationForm = this.props.registrationForm;
             registrationForm.fetch()
-                .then(null, function() {
+                .then(null, () => {
                     registrationForm.url = registrationForm.nailgunUrl;
                     return registrationForm.fetch();
                 })
-                .fail(_.bind(function(response) {
+                .fail((response) => {
                     this.showResponseErrors(response);
                     this.setState({connectionError: true});
-                }, this))
-                .always(_.bind(function() {this.setState({loading: false});}, this));
+                })
+                .always(() => {this.setState({loading: false});});
         },
         onChange: function(inputName, value) {
             var registrationForm = this.props.registrationForm,
@@ -1217,7 +1217,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             registrationForm.set(name, value);
         },
         composeOptions: function(values) {
-            return _.map(values, function(value, index) {
+            return _.map(values, (value, index) => {
                 return (
                     <option key={index} value={value.data}>
                         {value.label}
@@ -1246,7 +1246,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             var registrationForm = this.props.registrationForm;
             this.setState({actionInProgress: true});
             registrationForm.save(registrationForm.attributes, {type: 'POST'})
-                .done(_.bind(function(response) {
+                .done((response) => {
                     var currentAttributes = _.cloneDeep(this.props.settings.attributes);
 
                     var collector = function(path) {
@@ -1258,16 +1258,16 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     _.each(['email', 'password'], collector('tracking'), this);
 
                     this.props.saveSettings(currentAttributes)
-                        .done(_.bind(function() {
+                        .done(() => {
                             this.props.tracking.set(this.props.settings.attributes);
                             this.props.setConnected();
                             this.close();
-                        }, this));
-                }, this))
-                .fail(_.bind(function(response) {
+                        });
+                })
+                .fail((response) => {
                     this.setState({actionInProgress: false});
                     this.showResponseErrors(response, registrationForm);
-                }, this));
+                });
         },
         checkCountry: function() {
             var country = this.props.registrationForm.attributes.credentials.country.value;
@@ -1281,7 +1281,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 error = this.state.error,
                 sortedFields = _.chain(_.keys(fieldsList))
                     .without('metadata')
-                    .sortBy(function(inputName) {return fieldsList[inputName].weight;})
+                    .sortBy((inputName) => fieldsList[inputName].weight)
                     .value(),
                 halfWidthField = ['first_name', 'last_name', 'company', 'phone', 'country', 'region'];
             return (
@@ -1360,15 +1360,15 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         componentDidMount: function() {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
             remoteRetrievePasswordForm.fetch()
-                .then(null, function() {
+                .then(null, () => {
                     remoteRetrievePasswordForm.url = remoteRetrievePasswordForm.nailgunUrl;
                     return remoteRetrievePasswordForm.fetch();
                 })
-                .fail(_.bind(function(response) {
+                .fail((response) => {
                     this.showResponseErrors(response);
                     this.setState({connectionError: true});
-                }, this))
-                .always(_.bind(function() {this.setState({loading: false});}, this));
+                })
+                .always(() => {this.setState({loading: false});});
         },
         onChange: function(inputName, value) {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
@@ -1382,9 +1382,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 remoteRetrievePasswordForm.save()
                     .done(this.passwordSent)
                     .fail(this.showResponseErrors)
-                    .always(_.bind(function() {
+                    .always(() => {
                         this.setState({actionInProgress: false});
-                    }, this));
+                    });
             }
         },
         passwordSent: function() {

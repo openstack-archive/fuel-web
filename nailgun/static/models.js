@@ -23,7 +23,7 @@ define([
     'expression/objects',
     'views/custom_controls',
     'deep-model'
-], function($, _, i18n, Backbone, utils, Expression, expressionObjects, customControls) {
+], ($, _, i18n, Backbone, utils, Expression, expressionObjects, customControls) => {
     'use strict';
 
     var models = {};
@@ -44,7 +44,7 @@ define([
 
     var collectionMixin = {
         getByIds: function(ids) {
-            return this.filter(function(model) {return _.contains(ids, model.id);});
+            return this.filter((model) => _.contains(ids, model.id));
         }
     };
 
@@ -58,7 +58,7 @@ define([
         'partition'
     ];
 
-    _.each(collectionMethods, function(method) {
+    _.each(collectionMethods, (method) => {
         collectionMixin[method] = function() {
             var args = _.toArray(arguments),
                 source = args[0];
@@ -88,9 +88,9 @@ define([
         sync: function() {
             var deferred = this._super('sync', arguments);
             if (this.cacheFor) {
-                deferred.done(_.bind(function() {
+                deferred.done(() => {
                     this.lastSyncTime = new Date();
-                }, this));
+                });
             }
             return deferred;
         },
@@ -200,7 +200,7 @@ define([
 
             // Check the overridden limit types
             messages = _.chain(overrides)
-                .map(function(override) {
+                .map((override) => {
                     var exp = evaluateExpressionHelper(override.condition, models).value;
 
                     if (exp) {
@@ -212,7 +212,7 @@ define([
                 .value();
             // Now check the global, not-overridden limit types
             messages = messages.concat(_.chain(limitTypes)
-                .map(function(limitType) {
+                .map((limitType) => {
                     if (checkedLimitTypes[limitType]) {
                         return;
                     }
@@ -228,7 +228,7 @@ define([
             // message, i.e. for 'min' and 'recommended' types we
             // pick one with maximal value, for 'max' type we pick
             // the minimal one.
-            messages = _.map(limitTypes, function(limitType) {
+            messages = _.map(limitTypes, (limitType) => {
                     var message = _.chain(messages)
                         .filter({type: limitType})
                         .sortBy('value')
@@ -290,9 +290,7 @@ define([
                     roleName = role.get('name');
 
                 if (roleConflicts == '*') {
-                    role.conflicts = _.map(this.reject({name: roleName}), function(role) {
-                        return role.get('name');
-                    });
+                    role.conflicts = _.map(this.reject({name: roleName}), (role) => role.get('name'));
                 } else {
                     role.conflicts = _.chain(role.conflicts)
                         .union(roleConflicts)
@@ -400,11 +398,11 @@ define([
                 } else if (resourceName == 'ht_cores') {
                     resource = this.get('meta').cpu.total;
                 } else if (resourceName == 'hdd') {
-                    resource = _.reduce(this.get('meta').disks, function(hdd, disk) {return _.isNumber(disk.size) ? hdd + disk.size : hdd;}, 0);
+                    resource = _.reduce(this.get('meta').disks, (hdd, disk) => _.isNumber(disk.size) ? hdd + disk.size : hdd, 0);
                 } else if (resourceName == 'ram') {
                     resource = this.get('meta').memory.total;
                 } else if (resourceName == 'disks') {
-                    resource = _.pluck(this.get('meta').disks, 'size').sort(function(a, b) {return a - b;});
+                    resource = _.pluck(this.get('meta').disks, 'size').sort((a, b) => a - b);
                 } else if (resourceName == 'disks_amount') {
                     resource = this.get('meta').disks.length;
                 } else if (resourceName == 'interfaces') {
@@ -414,7 +412,7 @@ define([
             return _.isNaN(resource) ? 0 : resource;
         },
         sortedRoles: function(preferredOrder) {
-            return _.union(this.get('roles'), this.get('pending_roles')).sort(function(a, b) {
+            return _.union(this.get('roles'), this.get('pending_roles')).sort((a, b) => {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
@@ -441,7 +439,7 @@ define([
             return status == 'discover' || status == 'error' || status == 'provisioned';
         },
         getRolesSummary: function(releaseRoles) {
-            return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {
+            return _.map(this.sortedRoles(releaseRoles.pluck('name')), (role) => {
                 return releaseRoles.findWhere({name: role}).get('label');
             }).join(', ');
         },
@@ -500,14 +498,14 @@ define([
             return _.any(this.invoke('hasChanges'));
         },
         nodesAfterDeployment: function() {
-            return this.filter(function(node) {return !node.get('pending_deletion');});
+            return this.filter((node) => {return !node.get('pending_deletion');});
         },
         nodesAfterDeploymentWithRole: function(role) {
-            return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);});
+            return _.filter(this.nodesAfterDeployment(), (node) => {return node.hasRole(role);});
         },
         resources: function(resourceName) {
-            var resources = this.map(function(node) {return node.resource(resourceName);});
-            return _.reduce(resources, function(sum, n) {return sum + n;}, 0);
+            var resources = this.map((node) => {return node.resource(resourceName);});
+            return _.reduce(resources, (sum, n) => {return sum + n;}, 0);
         },
         getLabelValues: function(label) {
             return this.invoke('getLabel', label);
@@ -516,7 +514,7 @@ define([
             if (!this.length) return false;
             var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles')),
                 disks = this.at(0).resource('disks');
-            return !this.any(function(node) {
+            return !this.any((node) => {
                 var roleConflict = _.difference(roles, _.union(node.get('roles'), node.get('pending_roles'))).length;
                 return roleConflict || !_.isEqual(disks, node.resource('disks'));
             });
@@ -595,7 +593,7 @@ define([
         comparator: 'id',
         filterTasks: function(filters) {
             return _.flatten(_.map(this.model.prototype.extendGroups(filters), function(name) {
-                return this.filter(function(task) {
+                return this.filter((task) => {
                     return task.match(_.extend(_.omit(filters, 'group'), {name: name}));
                 });
             }, this));
@@ -780,7 +778,7 @@ define([
         getUnallocatedSpace: function(options) {
             options = options || {};
             var volumes = options.volumes || this.get('volumes');
-            var allocatedSpace = volumes.reduce(function(sum, volume) {return volume.get('name') == options.skip ? sum : sum + volume.get('size');}, 0);
+            var allocatedSpace = volumes.reduce((sum, volume) => {return volume.get('name') == options.skip ? sum : sum + volume.get('size');}, 0);
             return this.get('size') - allocatedSpace;
         },
         validate: function(attrs) {
@@ -848,14 +846,14 @@ define([
         getSlaveInterfaces: function() {
             if (!this.isBond()) {return [this];}
             var slaveInterfaceNames = _.pluck(this.get('slaves'), 'name');
-            return this.collection.filter(function(slaveInterface) {
+            return this.collection.filter((slaveInterface) => {
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
             });
         },
         validate: function(attrs) {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));
-            var untaggedNetworks = networks.filter(function(network) { return _.isNull(network.getVlanRange(attrs.networkingParameters)); });
+            var untaggedNetworks = networks.filter((network) => _.isNull(network.getVlanRange(attrs.networkingParameters)));
             var ns = 'cluster_page.nodes_tab.configure_interfaces.validation.';
             // public and floating networks are allowed to be assigned to the same interface
             var maxUntaggedNetworksCount = networks.any({name: 'public'}) && networks.any({name: 'floating'}) ? 2 : 1;
@@ -978,7 +976,7 @@ define([
                 var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
                 var nodeNetworkGroupErrors = {};
                 // validate networks
-                currentNetworks.each(function(network) {
+                currentNetworks.each((network) => {
                     var networkErrors = {};
                     if (network.get('meta').configurable) {
                         var cidr = network.get('cidr');
@@ -1000,9 +998,9 @@ define([
                         //FIXME (morale): same VLAN IDs are not permitted for nova-network for now
                         var forbiddenVlans = [];
                         if (novaNetManager) {
-                            forbiddenVlans = currentNetworks.map(function(net) {
-                                return net.id != network.id ? net.get('vlan_start') : null;
-                            });
+                            forbiddenVlans = currentNetworks.map((net) =>
+                                net.id != network.id ? net.get('vlan_start') : null
+                            );
                         }
                         _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
                         if (!_.isEmpty(networkErrors)) {
@@ -1048,7 +1046,7 @@ define([
                         networkingParametersErrors.fixed_networks_amount = i18n(ns + 'need_more_vlan');
                     }
                     var vlanIntersection = false;
-                    _.each(_.compact(networks.pluck('vlan_start')), function(vlan) {
+                    _.each(_.compact(networks.pluck('vlan_start')), (vlan) => {
                         if (utils.validateVlanRange(fixedVlan, fixedVlan + fixedAmount - 1, vlan)) {
                             vlanIntersection = true;
                         }
@@ -1077,7 +1075,7 @@ define([
                 } else if (idStart == idEnd) {
                     idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'not_enough_id');
                 } else if (segmentation == 'vlan') {
-                    _.each(_.compact(networks.pluck('vlan_start')), function(vlan) {
+                    _.each(_.compact(networks.pluck('vlan_start')), (vlan) => {
                         if (utils.validateVlanRange(idStart, idEnd, vlan)) {
                             idRangeErrors[0] = i18n(ns + 'vlan_intersection');
                         }
@@ -1145,7 +1143,7 @@ define([
                 }
             }
             var nameserverErrors = [];
-            _.each(networkParameters.get('dns_nameservers'), function(nameserver) {
+            _.each(networkParameters.get('dns_nameservers'), (nameserver) => {
                 nameserverErrors.push(!utils.validateIP(nameserver) ? i18n(ns + 'invalid_nameserver') : null);
             });
             if (_.compact(nameserverErrors).length) {
@@ -1224,7 +1222,7 @@ define([
                 if (locallyStoredValue) {
                     this.set(attribute, locallyStoredValue);
                 }
-                this.on('change:' + attribute, function(model, value) {
+                this.on('change:' + attribute, (model, value) => {
                     if (_.isUndefined(value)) {
                         localStorage.removeItem(attribute);
                     } else {
@@ -1249,9 +1247,9 @@ define([
         constructorName: 'WizardModel',
         parseConfig: function(config) {
             var result = {};
-            _.each(config, _.bind(function(paneConfig, paneName) {
+            _.each(config, (paneConfig, paneName) => {
                 result[paneName] = {};
-                _.each(paneConfig, function(attributeConfig, attribute) {
+                _.each(paneConfig, (attributeConfig, attribute) => {
                     var attributeConfigValue = attributeConfig.value;
                     if (_.isUndefined(attributeConfigValue)) {
                         switch (attributeConfig.type) {
@@ -1269,7 +1267,7 @@ define([
                     }
                     result[paneName][attribute] = attributeConfigValue;
                 });
-            }, this));
+            });
             return result;
         },
         processConfig: function(config) {
@@ -1277,11 +1275,11 @@ define([
         },
         restoreDefaultValues: function(panesToRestore) {
             var result = {};
-            _.each(this.defaults, _.bind(function(paneConfig, paneName) {
+            _.each(this.defaults, (paneConfig, paneName) => {
                 if (_.contains(panesToRestore, paneName)) {
                     result[paneName] = this.defaults[paneName];
                 }
-            }, this));
+            });
             this.set(result);
         },
         validate: function(attrs, options) {

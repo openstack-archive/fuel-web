@@ -26,7 +26,7 @@ define(
     'component_mixins',
     'views/dialogs'
 ],
-function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, dialogs) {
+($, _, i18n, Backbone, React, utils, models, controls, componentMixins, dialogs) => {
     'use strict';
 
     var components = {};
@@ -42,14 +42,14 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             componentMixins.pollingMixin(20)
         ],
         togglePopover: function(popoverName) {
-            return _.memoize(_.bind(function(visible) {
-                this.setState(function(previousState) {
+            return _.memoize((visible) => {
+                this.setState((previousState) => {
                     var nextState = {};
                     var key = popoverName + 'PopoverVisible';
                     nextState[key] = _.isBoolean(visible) ? visible : !previousState[key];
                     return nextState;
                 });
-            }, this));
+            });
         },
         setActive: function(url) {
             this.setState({activeElement: url});
@@ -291,7 +291,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             if (notificationsToMark.length) {
                 this.setState({unreadNotificationsIds: notificationsToMark.pluck('id')});
                 notificationsToMark.toJSON = function() {
-                    return notificationsToMark.map(function(notification) {
+                    return notificationsToMark.map((notification) => {
                         notification.set({status: 'read'});
                         return _.pick(notification.attributes, 'id', 'status');
                     }, this);
@@ -379,7 +379,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         render: function() {
             return (
                 <ol className='breadcrumb'>
-                    {_.map(this.state.path, function(breadcrumb, index) {
+                    {_.map(this.state.path, (breadcrumb, index) => {
                         if (!_.isArray(breadcrumb)) breadcrumb = [breadcrumb, null, {active: true}];
                         var text = breadcrumb[0];
                         var link = breadcrumb[1];

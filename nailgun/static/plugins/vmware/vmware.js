@@ -22,7 +22,7 @@ define(
     'i18n',
     './styles.less'
 ],
-function(VmWareTab, vmWareModels, translations, i18n) {
+(VmWareTab, vmWareModels, translations, i18n) => {
     'use strict';
 
     i18n.addTranslations(translations);

@@ -22,7 +22,7 @@ define(
     'models',
     'utils'
 ],
-function($, _, i18n, React, models, utils) {
+($, _, i18n, React, models, utils) => {
     'use strict';
 
     var PluginsPage = React.createClass({

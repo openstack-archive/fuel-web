@@ -27,7 +27,7 @@ define(
     'views/dialogs',
     'views/controls'
 ],
-function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, dialogs, controls) {
+($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, dialogs, controls) => {
     'use strict';
 
     var AVAILABILITY_STATUS_ICONS = {
@@ -308,7 +308,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                         onChange={this.props.onChange}
                     >
                         {
-                            releases.map(function(release) {
+                            releases.map((release) => {
                                 if (!release.get('is_deployable')) {
                                     return null;
                                 }
@@ -554,18 +554,18 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             this.wizard.set({cluster: this.cluster, clusters: this.props.clusters});
         },
         componentDidMount: function() {
-            this.releases.fetch().done(_.bind(function() {
+            this.releases.fetch().done(() => {
                 var defaultRelease = this.releases.findWhere({is_deployable: true});
                 this.wizard.set('release', defaultRelease.id);
                 this.selectRelease(defaultRelease.id);
                 this.setState({loading: false});
-            }, this));
+            });
 
             this.updateState({activePaneIndex: 0});
         },
         getListOfTypesToRestore: function(currentIndex, maxIndex) {
             var panesTypes = [];
-            _.each(clusterWizardPanes, function(pane, paneIndex) {
+            _.each(clusterWizardPanes, (pane, paneIndex) => {
                 if ((paneIndex <= maxIndex) && (paneIndex > currentIndex) && pane.componentType) {
                     panesTypes.push(pane.componentType);
                 }

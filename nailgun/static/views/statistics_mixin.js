@@ -22,7 +22,7 @@ define([
     'models',
     'views/dialogs',
     'views/controls'
-], function($, _, i18n, React, utils, models, dialogs, controls) {
+], ($, _, i18n, React, utils, models, dialogs, controls) => {
     'use strict';
 
     return {
@@ -49,13 +49,13 @@ define([
             var settings = this.props.settings;
             this.setState({actionInProgress: true});
             return settings.save(null, {patch: true, wait: true, validate: false})
-                .fail(function(response) {
+                .fail((response) => {
                     if (initialAttributes) settings.set(initialAttributes);
                     utils.showErrorDialog({response: response});
                 })
-                .always(_.bind(function() {
+                .always(() => {
                     this.setState({actionInProgress: false});
-                }, this));
+                });
         },
         prepareStatisticsToSave: function() {
             var currentAttributes = _.cloneDeep(this.props.settings.attributes);
@@ -100,16 +100,16 @@ define([
             if (this.props.tracking.isValid({models: this.configModels})) {
                 var remoteLoginForm = this.state.remoteLoginForm;
                 this.setState({actionInProgress: true});
-                _.each(tracking, function(data, inputName) {
+                _.each(tracking, (data, inputName) => {
                     var name = remoteLoginForm.makePath('credentials', inputName, 'value');
                     remoteLoginForm.set(name, tracking[inputName].value);
-                }, this);
+                });
                 remoteLoginForm.save()
                     .done(this.prepareTrackingToSave)
                     .fail(this.showResponseErrors)
-                    .always(_.bind(function() {
+                    .always(() => {
                         this.setState({actionInProgress: false});
-                    }, this));
+                    });
             }
         },
         checkRestrictions: function(name, action) {
@@ -156,9 +156,9 @@ define([
                 <div key={key}>
                     {i18n('statistics.' + key + '_title')}
                     <ul>
-                        {_.map(list, function(item) {
-                            return <li key={item}>{i18n('statistics.' + key + '.' + item)}</li>;
-                        })}
+                        {_.map(list, (item) =>
+                            (<li key={item}>{i18n('statistics.' + key + '.' + item)}</li>)
+                        )}
                     </ul>
                 </div>
             );
@@ -228,7 +228,7 @@ define([
             if (!this.state.isConnected) {
                 var tracking = this.props.tracking,
                     initialData = this.props.settings.get('tracking');
-                _.each(tracking.get('tracking'), function(data, name) {
+                _.each(tracking.get('tracking'), (data, name) => {
                     var path = tracking.makePath('tracking', name, 'value');
                     tracking.set(path, initialData[name].value);
                 });
@@ -239,7 +239,7 @@ define([
             var tracking = model.get('tracking'),
                 sortedFields = _.chain(_.keys(tracking))
                     .without('metadata')
-                    .sortBy(function(inputName) {return tracking[inputName].weight;})
+                    .sortBy((inputName) => tracking[inputName].weight)
                     .value();
             return (
                 <div>

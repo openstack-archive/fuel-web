@@ -23,7 +23,7 @@ define(
     'views/dialogs',
     'component_mixins'
 ],
-function(_, i18n, React, utils, models, dialogs, componentMixins) {
+(_, i18n, React, utils, models, dialogs, componentMixins) => {
     'use strict';
 
     var NotificationsPage, Notification;
@@ -36,9 +36,9 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
             breadcrumbsPath: [['home', '#'], 'notifications'],
             fetchData: function() {
                 var notifications = app.notifications;
-                return notifications.fetch().then(function() {
-                    return {notifications: notifications};
-                });
+                return notifications.fetch().then(() =>
+                    ({notifications: notifications})
+                );
             }
         },
         checkDateIsToday: function(date) {
@@ -59,12 +59,12 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
                                     <div className='title col-xs-12'>
                                         {this.checkDateIsToday(date) ? i18n('notifications_page.today') : date}
                                     </div>
-                                    {_.map(notifications, function(notification) {
+                                    {_.map(notifications, (notification) => {
                                         return <Notification
                                             key={notification.id}
                                             notification={notification}
                                         />;
-                                    }, this)}
+                                    })}
                                 </div>
                             );
                         }, this)}

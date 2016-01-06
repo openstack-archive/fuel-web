@@ -33,7 +33,7 @@ define(
     'views/cluster_page_tabs/healthcheck_tab',
     'plugins/vmware/vmware'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, DashboardTab, NodesTab, NetworkTab, SettingsTab, LogsTab, HealthCheckTab, vmWare) {
+($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, DashboardTab, NodesTab, NetworkTab, SettingsTab, LogsTab, HealthCheckTab, vmWare) => {
     'use strict';
 
     var ClusterPage = React.createClass({
@@ -129,7 +129,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             cluster.fetchRelated('tasks'),
                             nodeNetworkGroups.fetch({cache: true})
                         )
-                        .then(function() {
+                        .then(() => {
                             var networkConfiguration = new models.NetworkConfiguration();
                             networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                             cluster.set({
@@ -138,7 +138,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             });
                             return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
                         })
-                        .then(function() {
+                        .then(() => {
                             var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
                             if (!useVcenter) {
                                 return true;
@@ -147,11 +147,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             cluster.set({vcenter: vcenter});
                             return vcenter.fetch();
                         })
-                        .then(function() {
+                        .then(() => {
                             return tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
                         });
                 }
-                return promise.then(function(data) {
+                return promise.then((data) => {
                     return {
                         cluster: cluster,
                         nodeNetworkGroups: nodeNetworkGroups,
@@ -200,12 +200,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             var task = this.props.cluster.task({group: 'deployment', active: true});
             if (task) {
                 return task.fetch()
-                    .done(_.bind(function() {
+                    .done(() => {
                         if (task.match({active: false})) dispatcher.trigger('deploymentTaskFinished');
-                    }, this))
-                    .then(_.bind(function() {
-                        return this.props.cluster.fetchRelated('nodes');
-                    }, this));
+                    })
+                    .then(() =>
+                        this.props.cluster.fetchRelated('nodes')
+                    );
             } else {
                 task = this.props.cluster.task({name: 'verify_networks', active: true});
                 return task ? task.fetch() : $.Deferred().resolve();
@@ -222,9 +222,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         componentWillMount: function() {
             this.props.cluster.on('change:release_id', function() {
                 var release = new models.Release({id: this.props.cluster.get('release_id')});
-                release.fetch().done(_.bind(function() {
+                release.fetch().done(() => {
                     this.props.cluster.set({release: release});
-                }, this));
+                });
             }, this);
             this.updateLogSettings();
         },
@@ -248,9 +248,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             this.setState({selectedLogs: selectedLogs});
         },
         getAvailableTabs: function(cluster) {
-            return _.filter(this.constructor.getTabs(), function(tabData) {
-                return !tabData.tab.isVisible || tabData.tab.isVisible(cluster);
-            });
+            return _.filter(this.constructor.getTabs(),
+                (tabData) => !tabData.tab.isVisible || tabData.tab.isVisible(cluster));
         },
         pickDefaultSettingGroup: function() {
             return _.first(this.props.cluster.get('settings').getGroupList());
@@ -266,7 +265,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         selectNodes: function(ids, checked) {
             if (ids && ids.length) {
                 var nodeSelection = this.state.selectedNodeIds;
-                _.each(ids, function(id) {
+                _.each(ids, (id) => {
                     if (checked) {
                         nodeSelection[id] = true;
                     } else {

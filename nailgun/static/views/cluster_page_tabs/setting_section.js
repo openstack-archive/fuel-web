@@ -23,7 +23,7 @@ define(
     'views/controls',
     'views/custom_controls'
 ],
-function(_, i18n, utils, React, Expression, controls, customControls) {
+(_, i18n, utils, React, Expression, controls, customControls) => {
     'use strict';
 
     var SettingSection = React.createClass({
@@ -103,14 +103,14 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 currentSetting = this.props.settings.get(path);
             if (!this.areCalculationsPossible(currentSetting)) return [];
             var dependentRestrictions = {};
-            var addDependentRestrictions = _.bind(function(pathToCheck, label) {
-                var result = _.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
+            var addDependentRestrictions = (pathToCheck, label) => {
+                var result = _.filter(this.props.settings.expandedRestrictions[pathToCheck], (restriction) => {
                     return restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path);
                 });
                 if (result.length) {
                     dependentRestrictions[label] = result.concat(dependentRestrictions[label] || []);
                 }
-            }, this);
+            };
             // collect dependencies
             _.each(this.props.settings.attributes, function(section, sectionName) {
                 // don't take into account hidden dependent settings
@@ -133,14 +133,14 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                     pathToCheck = this.props.makePath(path, valueAttribute),
                     valuesToCheck = this.getValuesToCheck(currentSetting, valueAttribute),
                     checkValues = _.partial(this.checkValues, valuesToCheck, pathToCheck, currentSetting[valueAttribute]);
-                return _.compact(_.map(dependentRestrictions, function(restrictions, label) {
+                return _.compact(_.map(dependentRestrictions, (restrictions, label) => {
                     if (_.any(restrictions, checkValues)) return label;
                 }));
             }
             return [];
         },
         composeOptions: function(values) {
-            return _.map(values, function(value, index) {
+            return _.map(values, (value, index) => {
                 return (
                     <option key={index} value={value.data} disabled={value.disabled}>
                         {value.label}

@@ -25,7 +25,7 @@ define(
     'component_mixins',
     'views/wizard'
 ],
-function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateClusterWizard) {
+($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateClusterWizard) => {
     'use strict';
     var ClustersPage, ClusterList, Cluster;
 
@@ -38,14 +38,12 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
                 var clusters = new models.Clusters();
                 var nodes = new models.Nodes();
                 var tasks = new models.Tasks();
-                return $.when(clusters.fetch(), nodes.fetch(), tasks.fetch()).done(_.bind(function() {
-                    clusters.each(function(cluster) {
+                return $.when(clusters.fetch(), nodes.fetch(), tasks.fetch()).done(() => {
+                    clusters.each((cluster) => {
                         cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
                         cluster.set('tasks', new models.Tasks(tasks.where({cluster: cluster.id})));
                     }, this);
-                }, this)).then(function() {
-                    return {clusters: clusters};
-                });
+                }).then(() => ({clusters: clusters}));
             }
         },
         render: function() {
@@ -68,7 +66,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
         render: function() {
             return (
                 <div className='row'>
-                    {this.props.clusters.map(function(cluster) {
+                    {this.props.clusters.map((cluster) => {
                         return <Cluster key={cluster.id} cluster={cluster} />;
                     }, this)}
                     <div key='create-cluster' className='col-xs-3'>
@@ -105,23 +103,23 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
             var deletionTask = this.props.cluster.task('cluster_deletion');
             if (deletionTask) {
                 request = deletionTask.fetch();
-                request.fail(_.bind(function(response) {
+                request.fail((response) => {
                     if (response.status == 404) {
                         this.props.cluster.collection.remove(this.props.cluster);
                         dispatcher.trigger('updateNodeStats');
                     }
-                }, this));
+                });
                 requests.push(request);
             }
             var deploymentTask = this.props.cluster.task({group: 'deployment', active: true});
             if (deploymentTask) {
                 request = deploymentTask.fetch();
-                request.done(_.bind(function() {
+                request.done(() => {
                     if (deploymentTask.match({active: false})) {
                         this.props.cluster.fetch();
                         dispatcher.trigger('updateNodeStats');
                     }
-                }, this));
+                });
                 requests.push(request);
             }
             return $.when(...requests);

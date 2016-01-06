@@ -30,7 +30,7 @@ define(
     'views/cluster_page_tabs/setting_section',
     'react-addons-transition-group'
 ],
-function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialogs, componentMixins, controls, SettingSection, CSSTransitionGroup) {
+($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialogs, componentMixins, controls, SettingSection, CSSTransitionGroup) => {
     'use strict';
 
     var parametersNS = 'cluster_page.network_tab.networking_parameters.',
@@ -616,10 +616,10 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
         },
         prepareIpRanges: function() {
             var removeEmptyRanges = function(ranges) {
-                    return _.filter(ranges, function(range) {return _.compact(range).length;});
+                    return _.filter(ranges, (range) => _.compact(range).length);
                 },
                 networkConfiguration = this.props.cluster.get('networkConfiguration');
-            networkConfiguration.get('networks').each(function(network) {
+            networkConfiguration.get('networks').each((network) => {
                 if (network.get('meta').notation == 'ip_ranges') {
                     network.set({ip_ranges: removeEmptyRanges(network.get('ip_ranges'))});
                 }
@@ -729,9 +729,8 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             if (this.isNetworkSettingsChanged()) {
                 // collecting data to save
                 var settings = this.props.cluster.get('settings'),
-                    dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
-                        return (group.metadata || {}).always_editable;
-                    });
+                    dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
+                        _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
 
                 var options = {url: settings.url, patch: true, wait: true, validate: false},
                     deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
@@ -797,13 +796,13 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 fieldsWithVerificationErrors = [];
             // @TODO(morale): soon response format will be changed and this part should be rewritten
             if (task && task.get('result').length) {
-                _.each(task.get('result'), function(verificationError) {
-                    _.each(verificationError.ids, function(networkId) {
-                        _.each(verificationError.errors, function(field) {
+                _.each(task.get('result'), (verificationError) => {
+                    _.each(verificationError.ids, (networkId) => {
+                        _.each(verificationError.errors, (field) => {
                             fieldsWithVerificationErrors.push({network: networkId, field: field});
-                        }, this);
-                    }, this);
-                }, this);
+                        });
+                    });
+                });
             }
             return fieldsWithVerificationErrors;
         },
@@ -1331,7 +1330,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                             <controls.Input
                                 {...this.composeProps('fixed_network_size', false, true)}
                                 type='select'
-                                children={_.map(fixedNetworkSizeValues, function(value) {
+                                children={_.map(fixedNetworkSizeValues, (value) => {
                                             return <option key={value} value={value}>{value}</option>;
                                         })}
                                 inputClassName='pull-left'
@@ -1560,13 +1559,13 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                                         <div className='verification-router'></div>
                                     </div>
                                     <div className='animation-box'>
-                                        {_.times(3, function(index) {
+                                        {_.times(3, (index) => {
                                             ++index;
                                             return <div key={index} className={this.getConnectionStatus(task, index == 1) + ' connect-' + index}></div>;
-                                        }, this)}
+                                        })}
                                     </div>
                                     <div className='nodes-box'>
-                                        {_.times(3, function(index) {
+                                        {_.times(3, (index) => {
                                             ++index;
                                             return <div key={index} className={'verification-node-' + index}></div>;
                                         })}
@@ -1577,9 +1576,9 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                         <div className='row'>
                             <div className='verification-text-placeholder col-xs-12'>
                                 <ol className='verification-description'>
-                                    {_.times(5, function(index) {
+                                    {_.times(5, (index) => {
                                         return <li key={index}>{i18n(ns + 'step_' + index)}</li>;
-                                    }, this)}
+                                    })}
                                 </ol>
                             </div>
                         </div>
@@ -1617,12 +1616,11 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                             <controls.Table
                                 tableClassName='table table-condensed enable-selection'
                                 noStripes
-                                head={_.map(['node_name', 'node_mac_address', 'node_interface', 'expected_vlan'], function(attr) {
-                                    return {label: i18n(ns + attr)};
-                                })}
+                                head={_.map(['node_name', 'node_mac_address', 'node_interface', 'expected_vlan'],
+                                    (attr) => ({label: i18n(ns + attr)}))}
                                 body={
-                                    _.map(task.get('result'), function(node) {
-                                        var absentVlans = _.map(node.absent_vlans, function(vlan) {
+                                    _.map(task.get('result'), (node) => {
+                                        var absentVlans = _.map(node.absent_vlans, (vlan) => {
                                             return vlan || i18n(networkTabNS + 'untagged');
                                         });
                                         return [node.name || 'N/A', node.mac || 'N/A', node.interface, absentVlans.join(', ')];

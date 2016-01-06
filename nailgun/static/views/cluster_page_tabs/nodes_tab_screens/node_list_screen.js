@@ -29,7 +29,7 @@ define(
     'component_mixins',
     'views/cluster_page_tabs/nodes_tab_screens/node'
 ],
-function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, dialogs, componentMixins, Node) {
+($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, dialogs, componentMixins, Node) => {
     'use strict';
     var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
 
@@ -280,7 +280,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.updateSorting(_.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false)));
         },
         changeSortingOrder: function(sorterToChange) {
-            this.updateSorting(this.state.activeSorters.map(function(sorter) {
+            this.updateSorting(this.state.activeSorters.map((sorter) => {
                 if (sorter.name == sorterToChange.name && sorter.isLabel == sorterToChange.isLabel) {
                     return new Sorter(sorter.name, sorter.order == 'asc' ? 'desc' : 'asc', sorter.isLabel);
                 }
@@ -323,7 +323,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             switch (filter.name) {
                 case 'status':
                     var os = this.props.cluster && this.props.cluster.get('release').get('operating_system') || 'OS';
-                    options = this.props.statusesToFilter.map(function(status) {
+                    options = this.props.statusesToFilter.map((status) => {
                         return {
                             name: status,
                             label: i18n('cluster_page.nodes_tab.node.status.' + status, {os: os})
@@ -331,7 +331,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     });
                     break;
                 case 'manufacturer':
-                    options = _.uniq(this.props.nodes.pluck('manufacturer')).map(function(manufacturer) {
+                    options = _.uniq(this.props.nodes.pluck('manufacturer')).map((manufacturer) => {
                         manufacturer = manufacturer || '';
                         return {
                             name: manufacturer.replace(/\s/g, '_'),
@@ -343,7 +343,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     options = this.props.roles.invoke('pick', 'name', 'label');
                     break;
                 case 'group_id':
-                    options = _.uniq(this.props.nodes.pluck('group_id')).map(function(groupId) {
+                    options = _.uniq(this.props.nodes.pluck('group_id')).map((groupId) => {
                         var nodeNetworkGroup = this.props.nodeNetworkGroups.get(groupId);
                         return {
                             name: groupId,
@@ -352,24 +352,24 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                 :
                                     i18n('common.not_specified')
                         };
-                    }, this);
+                    });
                     break;
                 case 'cluster':
-                    options = _.uniq(this.props.nodes.pluck('cluster')).map(function(clusterId) {
+                    options = _.uniq(this.props.nodes.pluck('cluster')).map((clusterId) => {
                         return {
                             name: clusterId,
                             label: clusterId ? this.props.clusters.get(clusterId).get('name') : i18n('cluster_page.nodes_tab.node.unallocated')
                         };
-                    }, this);
+                    });
                     break;
             }
 
             // sort option list
-            options.sort(_.bind(function(option1, option2) {
+            options.sort((option1, option2) => {
                 // sort Node Network Group filter options by node network group id
                 if (this.props.name == 'group_id') return option1.name - option2.name;
                 return utils.natsort(option1.label, option2.label, {insensitive: true});
-            }, this));
+            });
 
             return options;
         },
@@ -377,7 +377,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.updateFilters(this.state.activeFilters.concat(filter));
         },
         changeFilter: function(filterToChange, values) {
-            this.updateFilters(this.state.activeFilters.map(function(filter) {
+            this.updateFilters(this.state.activeFilters.map((filter) => {
                 if (filter.name == filterToChange.name && filter.isLabel == filterToChange.isLabel) {
                     var changedFilter = new Filter(filter.name, values, filter.isLabel);
                     changedFilter.limits = filter.limits;
@@ -438,15 +438,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 // search field
                 if (this.state.search) {
                     var search = this.state.search.toLowerCase();
-                    if (!_.any(node.pick('name', 'mac', 'ip'), function(attribute) {
-                        return _.contains((attribute || '').toLowerCase(), search);
-                    })) {
+                    if (!_.any(node.pick('name', 'mac', 'ip'), (attribute) => _.contains((attribute || '').toLowerCase(), search))) {
                         return false;
                     }
                 }
 
                 // filters
-                return _.all(this.state.activeFilters, function(filter) {
+                return _.all(this.state.activeFilters, (filter) => {
                     if (!filter.values.length) return true;
 
                     if (filter.isLabel) {
@@ -456,7 +454,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     var result;
                     switch (filter.name) {
                         case 'roles':
-                            result = _.any(filter.values, function(role) {return node.hasRole(role);});
+                            result = _.any(filter.values, (role) => node.hasRole(role));
                             break;
                         case 'status':
                             result = _.contains(filter.values, node.getStatusSummary());
@@ -493,8 +491,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                         {... _.pick(this, 'toggleLabelsPanel')}
                         {... _.pick(this, 'changeSearch', 'clearSearchField')}
                         {... _.pick(this, 'changeViewMode')}
-                        labelSorters={screenNodesLabels.map(function(name) {return new Sorter(name, 'asc', true);})}
-                        labelFilters={screenNodesLabels.map(function(name) {return new Filter(name, [], true);})}
+                        labelSorters={screenNodesLabels.map((name) => new Sorter(name, 'asc', true))}
+                        labelFilters={screenNodesLabels.map((name) => new Filter(name, [], true))}
                         nodes={selectedNodes}
                         screenNodes={nodes}
                         filteredNodes={filteredNodes}
@@ -579,14 +577,14 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 labels = groupedOptions.true || [];
             }
 
-            var optionProps = _.bind(function(option) {
+            var optionProps = (option) => {
                 return {
                     key: option.name,
                     type: 'checkbox',
                     name: option.name,
                     label: option.title
                 };
-            }, this);
+            };
 
             var classNames = {
                 'btn-group multiselect': true,
@@ -774,21 +772,21 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 return data;
             }, this));
             return Backbone.sync('update', nodes)
-                .done(_.bind(function() {
-                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
+                .done(() => {
+                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(() => {
                         if (this.props.mode == 'add') {
                             dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
                             this.props.selectNodes();
                         }
-                    }, this));
-                }, this))
-                .fail(_.bind(function(response) {
+                    });
+                })
+                .fail((response) => {
                     this.setState({actionInProgress: false});
                     utils.showErrorDialog({
                         message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning'),
                         response: response
                     });
-                }, this));
+                });
         },
         applyAndRedirect: function() {
             this.applyChanges().done(this.changeScreen);
@@ -805,11 +803,11 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         activateSearch: function() {
             this.setState({activeSearch: true});
-            $('html').on('click.search', _.bind(function(e) {
+            $('html').on('click.search', (e) => {
                 if (!this.props.search && this.refs.search && !$(e.target).closest(ReactDOM.findDOMNode(this.refs.search)).length) {
                     this.setState({activeSearch: false});
                 }
-            }, this));
+            });
         },
         onSearchKeyDown: function(e) {
             if (e.key == 'Escape') {
@@ -920,34 +918,26 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 interfaceConflict = !this.props.nodes.areInterfacesConfigurable();
             }
 
-            var managementButtonClasses = _.bind(function(isActive, className) {
+            var managementButtonClasses = (isActive, className) => {
                 var classes = {
                     'btn btn-default pull-left': true,
                     active: isActive
                 };
                 classes[className] = true;
                 return classes;
-            }, this);
+            };
 
             var inactiveSorters, canResetSorters;
             var inactiveFilters, appliedFilters;
             if (this.props.mode != 'edit') {
-                var checkSorter = _.bind(function(sorter, isLabel) {
-                    return !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
-                }, this);
+                var checkSorter = (sorter, isLabel) => !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
                 inactiveSorters = _.union(_.filter(this.props.availableSorters, _.partial(checkSorter, _, false)), _.filter(this.props.labelSorters, _.partial(checkSorter, _, true)))
-                    .sort(function(sorter1, sorter2) {
-                        return utils.natsort(sorter1.title, sorter2.title, {insensitive: true});
-                    });
+                    .sort((sorter1, sorter2) => utils.natsort(sorter1.title, sorter2.title, {insensitive: true}));
                 canResetSorters = _.any(this.props.activeSorters, {isLabel: true}) || !_(this.props.activeSorters).where({isLabel: false}).map(Sorter.toObject).isEqual(this.props.defaultSorting);
 
-                var checkFilter = _.bind(function(filter, isLabel) {
-                    return !_.any(this.props.activeFilters, {name: filter.name, isLabel: isLabel});
-                }, this);
+                var checkFilter = (filter, isLabel) => !_.any(this.props.activeFilters, {name: filter.name, isLabel: isLabel});
                 inactiveFilters = _.union(_.filter(this.props.availableFilters, _.partial(checkFilter, _, false)), _.filter(this.props.labelFilters, _.partial(checkFilter, _, true)))
-                    .sort(function(filter1, filter2) {
-                        return utils.natsort(filter1.title, filter2.title, {insensitive: true});
-                    });
+                    .sort((filter1, filter2) => utils.natsort(filter1.title, filter2.title, {insensitive: true}));
                 appliedFilters = _.reject(this.props.activeFilters, (filter) => !filter.values.length);
             }
 
@@ -1046,10 +1036,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                         <button
                                             className='btn btn-default'
                                             disabled={this.state.actionInProgress}
-                                            onClick={_.bind(function() {
+                                            onClick={() => {
                                                 this.props.revertChanges();
                                                 this.changeScreen();
-                                            }, this)}
+                                            }}
                                         >
                                             {i18n('common.cancel_button')}
                                         </button>
@@ -1415,14 +1405,14 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             );
 
             return Backbone.sync('update', nodes)
-                .done(_.bind(function() {
-                    this.props.screenNodes.fetch().always(_.bind(function() {
+                .done(() => {
+                    this.props.screenNodes.fetch().always(() => {
                         dispatcher.trigger('labelsConfigurationUpdated');
                         this.props.screenNodes.trigger('change');
                         this.props.toggleLabelsPanel();
-                    }, this));
-                }, this))
-                .fail(function(response) {
+                    });
+                })
+                .fail((response) => {
                     utils.showErrorDialog({
                         message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.labels_warning'),
                         response: response
@@ -1556,9 +1546,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 roles = this.props.cluster.get('roles'),
                 conflicts = _.chain(this.props.selectedRoles)
                     .union(this.props.indeterminateRoles)
-                    .map(function(role) {
-                        return roles.find({name: role}).conflicts;
-                    })
+                    .map((role) => roles.find({name: role}).conflicts)
                     .flatten()
                     .uniq()
                     .value(),
@@ -1639,14 +1627,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 var diskSizes = node.resource('disks');
                 return i18n('node_details.disks_amount', {
                     count: diskSizes.length,
-                    size: diskSizes.map(function(size) {
-                            return utils.showDiskSize(size) + ' ' + i18n('node_details.hdd');
-                        }).join(', ')
+                    size: diskSizes.map((size) => utils.showDiskSize(size) + ' ' + i18n('node_details.hdd')).join(', ')
                 });
             };
 
             var labelNs = 'cluster_page.nodes_tab.node_management_panel.labels.',
-                getLabelValue = function(node, label) {
+                getLabelValue = (node, label) => {
                     var labelValue = node.getLabel(label);
                     return labelValue === false ?
                             i18n(labelNs + 'not_assigned_label', {label: label})
@@ -1657,7 +1643,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                 label + ' "' + labelValue + '"';
                 };
 
-            var groupingMethod = _.bind(function(node) {
+            var groupingMethod = (node) => {
                 return _.compact(_.map(this.props.activeSorters, function(sorter) {
                     if (_.contains(uniqValueSorters, sorter.name)) return;
 
@@ -1705,28 +1691,28 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     }
                     return result;
                 }, this)).join('; ');
-            }, this);
+            };
             var groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
 
             // sort grouped nodes by name, mac or ip
-            var formattedSorters = _.compact(_.map(this.props.activeSorters, function(sorter) {
+            var formattedSorters = _.compact(_.map(this.props.activeSorters, (sorter) => {
                 if (_.contains(uniqValueSorters, sorter.name)) {
                     return {attr: sorter.name, desc: sorter.order == 'desc'};
                 }
             }));
             if (formattedSorters.length) {
-                _.each(groups, function(group) {
-                    group[1].sort(function(node1, node2) {
-                        return utils.multiSort(node1, node2, formattedSorters);
-                    });
+                _.each(groups, (group) => {
+                    group[1].sort((node1, node2) =>
+                        utils.multiSort(node1, node2, formattedSorters)
+                    );
                 });
             }
 
             // sort grouped nodes by other applied sorters
             var preferredRolesOrder = this.props.roles.pluck('name');
-            return groups.sort(_.bind(function(group1, group2) {
+            return groups.sort((group1, group2) => {
                 var result;
-                _.each(this.props.activeSorters, function(sorter) {
+                _.each(this.props.activeSorters, (sorter) => {
                     var node1 = group1[1][0], node2 = group2[1][0];
 
                     if (sorter.isLabel) {
@@ -1784,9 +1770,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                         result = result * -1;
                     }
                     return !_.isUndefined(result) && !result;
-                }, this);
+                });
                 return result;
-            }, this));
+            });
         },
         render: function() {
             var groups = this.groupNodes(),
@@ -1832,10 +1818,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     NodeGroup = React.createClass({
         mixins: [SelectAllMixin],
         render: function() {
-            var availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
-                nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, function(node) {
-                    return _.any(this.props.rolesWithLimitReached, function(role) {return !node.hasRole(role);}, this);
-                }, this), 'id');
+            var availableNodes = this.props.nodes.filter((node) => node.isSelectable()),
+                nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, (node) => {
+                    return _.any(this.props.rolesWithLimitReached, (role) => !node.hasRole(role));
+                }), 'id');
             return (
                 <div className='nodes-group'>
                     <div className='row node-group-header'>

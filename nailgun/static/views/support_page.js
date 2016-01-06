@@ -25,7 +25,7 @@ define(
     'models',
     'views/statistics_mixin'
 ],
-function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) {
+($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) => {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -38,7 +38,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             breadcrumbsPath: [['home', '#'], 'support'],
             fetchData: function() {
                 var tasks = new models.Tasks();
-                return $.when(app.fuelSettings.fetch({cache: true}), tasks.fetch()).then(function() {
+                return $.when(app.fuelSettings.fetch({cache: true}), tasks.fetch()).then(() => {
                     var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes)),
                         statistics = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
                     return {
@@ -71,7 +71,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         <h1 className='title'>{i18n('support_page.title')}</h1>
                     </div>
                     <div className='content-box'>
-                        {_.reduce(elements, function(result, element, index) {
+                        {_.reduce(elements, (result, element, index) => {
                             if (index) result.push(<hr key={index} />);
                             result.push(element);
                             return result;
@@ -170,7 +170,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         hasChanges: function() {
             var initialData = this.props.settings.get('statistics'),
                 currentData = this.props.statistics.get('statistics');
-            return _.any(this.props.statsCheckboxes, function(field) {
+            return _.any(this.props.statsCheckboxes, (field) => {
                 return !_.isEqual(initialData[field].value, currentData[field].value);
             });
         },
@@ -184,7 +184,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             var statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
-                    .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
+                    .sortBy((settingName) => statistics[settingName].weight)
                     .value();
             return (
                 <SupportPageElement
@@ -242,9 +242,9 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             return this.isDumpTaskActive();
         },
         fetchData: function() {
-            return this.props.task.fetch().done(_.bind(function() {
+            return this.props.task.fetch().done(() => {
                 if (!this.isDumpTaskActive()) this.setState({generating: false});
-            }, this));
+            });
         },
         isDumpTaskActive: function() {
             return this.props.task && this.props.task.match({active: true});

@@ -25,7 +25,7 @@ define(
     'component_mixins',
     'views/controls'
 ],
-function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) {
+($, _, i18n, Backbone, React, models, utils, componentMixins, controls) => {
     'use strict';
 
     var HealthCheckTab = React.createClass({
@@ -47,12 +47,11 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     ostf.tests.url = _.result(ostf.tests, 'url') + '/' + clusterId;
                     ostf.testruns = new models.TestRuns();
                     ostf.testruns.url = _.result(ostf.testruns, 'url') + '/last/' + clusterId;
-                    return $.when(ostf.testsets.fetch(), ostf.tests.fetch(), ostf.testruns.fetch()).then(function() {
+                    return $.when(ostf.testsets.fetch(), ostf.tests.fetch(), ostf.testruns.fetch()).then(() => {
                         options.cluster.set({ostf: ostf});
                         return {};
-                    }, function() {
-                        return $.Deferred().resolve();
-                    });
+                    }, () => $.Deferred().resolve()
+                    );
                 }
                 return $.Deferred().resolve();
             }
@@ -101,7 +100,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             return {
                 actionInProgress: false,
                 credentialsVisible: null,
-                credentials: _.transform(this.props.cluster.get('settings').get('access'), function(result, value, key) {result[key] = value.value;})
+                credentials: _.transform(this.props.cluster.get('settings').get('access'), (result, value, key) => {result[key] = value.value;})
             };
         },
         isLocked: function() {
@@ -134,17 +133,17 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 }), 'id');
                 if (testsToRun.length) {
                     var testrunConfig = {tests: testsToRun},
-                        addCredentials = _.bind(function(obj) {
+                        addCredentials = (obj) => {
                             obj.ostf_os_access_creds = {
                                 ostf_os_username: this.state.credentials.user,
                                 ostf_os_tenant_name: this.state.credentials.tenant,
                                 ostf_os_password: this.state.credentials.password
                             };
                             return obj;
-                        }, this);
+                        };
 
                     if (this.props.testruns.where({testset: testsetId}).length) {
-                        _.each(this.props.testruns.where({testset: testsetId}), function(testrun) {
+                        _.each(this.props.testruns.where({testset: testsetId}), (testrun) => {
                             _.extend(testrunConfig, addCredentials({
                                 id: testrun.id,
                                 status: 'restarted'
@@ -172,15 +171,15 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 requests.push(Backbone.sync('update', oldTestruns));
             }
             $.when(...requests)
-                .done(_.bind(function() {
+                .done(() => {
                     this.startPolling(true);
-                }, this))
-                .fail(function(response) {
+                })
+                .fail((response) => {
                     utils.showErrorDialog({response: response});
                 })
-                .always(_.bind(function() {
+                .always(() => {
                     this.setState({actionInProgress: false});
-                }, this));
+                });
         },
         getActiveTestRuns: function() {
             return this.props.testruns.where({status: 'running'});
@@ -191,14 +190,14 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 this.setState({actionInProgress: true});
                 testruns.invoke('set', {status: 'stopped'});
                 testruns.toJSON = function() {
-                    return this.map(function(testrun) {
-                        return _.pick(testrun.attributes, 'id', 'status');
-                    });
+                    return this.map((testrun) =>
+                        _.pick(testrun.attributes, 'id', 'status')
+                    );
                 };
-                Backbone.sync('update', testruns).done(_.bind(function() {
+                Backbone.sync('update', testruns).done(() => {
                     this.setState({actionInProgress: false});
                     this.startPolling(true);
-                }, this));
+                });
             }
         },
         render: function() {
@@ -255,7 +254,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             <div className='alert alert-warning'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
                         }
                         <div key='testsets'>
-                            {this.props.testsets.map(_.bind(function(testset) {
+                            {this.props.testsets.map((testset) => {
                                 return <TestSet
                                     key={testset.id}
                                     testset={testset}
@@ -263,7 +262,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                     tests={new Backbone.Collection(this.props.tests.where({testset: testset.id}))}
                                     disabled={disabledState || hasRunningTests}
                                 />;
-                            }, this))}
+                            })}
                         </div>
                     </div>
                 </div>

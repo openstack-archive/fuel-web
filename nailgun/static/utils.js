@@ -26,7 +26,7 @@ define([
     'expression/objects',
     'react',
     'ip'
-], function(require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React, IP) {
+], (require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React, IP) => {
     'use strict';
 
     var utils = {
@@ -36,15 +36,11 @@ define([
             mac: /^([0-9a-f]{1,2}[\.:-]){5}([0-9a-f]{1,2})$/,
             cidr: /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/
         },
-        serializeTabOptions: function(options) {
-            return _.map(options, function(value, key) {
-                return key + ':' + value;
-            }).join(';');
+        serializeTabOptions: (options) => {
+            return _.map(options, (value, key) => key + ':' + value).join(';');
         },
-        deserializeTabOptions: function(serializedOptions) {
-            return _.object(_.map((serializedOptions || '').split(';'), function(option) {
-                return option.split(':');
-            }));
+        deserializeTabOptions: (serializedOptions) => {
+            return _.object(_.map((serializedOptions || '').split(';'), (option) => option.split(':')));
         },
         getNodeListFromTabOptions: function(options) {
             var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
@@ -151,9 +147,7 @@ define([
             return Math.pow(2, 32 - parseInt(_.last(cidr.split('/')), 10));
         },
         formatNumber: function(n) {
-            return String(n).replace(/\d/g, function(c, i, a) {
-                return i > 0 && c !== '.' && (a.length - i) % 3 === 0 ? ',' + c : c;
-            });
+            return String(n).replace(/\d/g, (c, i, a) => i > 0 && c !== '.' && (a.length - i) % 3 === 0 ? ',' + c : c);
         },
         floor: function(n, decimals) {
             return Math.floor(n * Math.pow(10, decimals)) / Math.pow(10, decimals);
@@ -281,7 +275,7 @@ define([
         sortEntryProperties: function(entry, sortOrder) {
             sortOrder = sortOrder || ['name'];
             var properties = _.keys(entry);
-            return _.sortBy(properties, function(property) {
+            return _.sortBy(properties, (property) => {
                 var index = _.indexOf(sortOrder, property);
                 return index == -1 ? properties.length : index;
             });

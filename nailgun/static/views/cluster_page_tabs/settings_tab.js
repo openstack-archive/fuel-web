@@ -25,7 +25,7 @@ define(
     'views/cluster_page_tabs/setting_section',
     'react-addons-transition-group'
 ],
-function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSSTransitionGroup) {
+($, _, i18n, React, utils, models, componentMixins, SettingSection, CSSTransitionGroup) => {
     'use strict';
 
     var SettingsTab = React.createClass({
@@ -47,9 +47,8 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
         ],
         statics: {
             fetchData: function(options) {
-                return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
-                    return {};
-                });
+                return $.when(options.cluster.get('settings').fetch({cache: true}),
+                    options.cluster.get('networkConfiguration').fetch({cache: true})).then(() => ({}));
             }
         },
         getInitialState: function() {
@@ -82,28 +81,27 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
 
             // collecting data to save
             var settings = this.props.cluster.get('settings'),
-                dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
-                    return (group.metadata || {}).always_editable;
-                });
+                dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
+                    _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
             var options = {url: settings.url, patch: true, wait: true, validate: false},
                 deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
-                    .done(_.bind(function() {
+                    .done(() => {
                         this.setState({initialAttributes: _.cloneDeep(settings.attributes)});
                         // some networks may have restrictions which are processed by nailgun,
                         // so networks need to be refetched after updating cluster attributes
                         this.props.cluster.get('networkConfiguration').cancelThrottling();
-                    }, this))
-                    .always(_.bind(function() {
+                    })
+                    .always(() => {
                         this.setState({
                             actionInProgress: false,
                             key: _.now()
                         });
                         this.props.cluster.fetch();
-                    }, this))
-                    .fail(function(response) {
+                    })
+                    .fail((response) => {
                         utils.showErrorDialog({
                             title: i18n('cluster_page.settings_tab.settings_error.title'),
                             message: i18n('cluster_page.settings_tab.settings_error.saving_warning'),
@@ -125,7 +123,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                     .done(() => {
                         _.each(settings.attributes, (section, sectionName) => {
                             if ((!lockedCluster || section.metadata.always_editable) && section.metadata.group != 'network') {
-                                _.each(section, function(setting, settingName) {
+                                _.each(section, (setting, settingName) => {
                                     // do not update hidden settings (hack for #1442143),
                                     // the same for settings with group network
                                     if (setting.type == 'hidden' || setting.group == 'network') return;
@@ -141,13 +139,13 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                             key: _.now()
                         });
                     })
-                    .fail(
-                        (response) => utils.showErrorDialog({
+                    .fail((response) => {
+                        utils.showErrorDialog({
                             title: i18n('cluster_page.settings_tab.settings_error.title'),
                             message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning'),
                             response: response
-                        })
-                    );
+                        });
+                    });
             }
         },
         revertChanges: function() {
@@ -185,7 +183,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                 settingsGroupList = settings.getGroupList(),
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
-                someSettingsEditable = _.any(settings.attributes, function(group) {return group.metadata.always_editable;}),
+                someSettingsEditable = _.any(settings.attributes, (group) => group.metadata.always_editable),
                 hasChanges = this.hasChanges(),
                 allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
                 classes = {
@@ -194,7 +192,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                 };
 
             var invalidSections = {};
-            _.each(settings.validationError, function(error, key) {
+            _.each(settings.validationError, (error, key) => {
                 invalidSections[_.first(key.split('.'))] = true;
             });
 
@@ -234,7 +232,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                                         !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
                                     ) return settingName;
                                 }, this)),
-                                hasErrors = _.any(pickedSettings, function(settingName) {
+                                hasErrors = _.any(pickedSettings, (settingName) => {
                                     return (settings.validationError || {})[settings.makePath(sectionName, settingName)];
                                 });
                             if (!_.isEmpty(pickedSettings)) {
@@ -262,9 +260,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                     {_.map(groupedSettings, function(selectedGroup, groupName) {
                         if (groupName != this.props.activeSettingsSectionName) return null;
 
-                        var sortedSections = _.sortBy(_.keys(selectedGroup), function(name) {
-                            return settings.get(name + '.metadata.weight');
-                        });
+                        var sortedSections = _.sortBy(_.keys(selectedGroup), (name) => settings.get(name + '.metadata.weight'));
                         return (
                             <div className={'col-xs-10 forms-box ' + groupName} key={groupName}>
                                 {_.map(sortedSections, function(sectionName) {

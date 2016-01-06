@@ -27,7 +27,7 @@ define(
     'views/dialogs',
     'component_mixins'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins) {
+($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins) => {
     'use strict';
 
     var Node = React.createClass({
@@ -79,12 +79,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var node = new models.Node(this.props.node.attributes),
                 data = {pending_deletion: false};
             node.save(data, {patch: true})
-                .done(_.bind(function() {
-                    this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
+                .done(() => {
+                    this.props.cluster.fetchRelated('nodes').done(() => {
                         this.setState({actionInProgress: false});
-                    }, this));
-                }, this))
-                .fail(function(response) {
+                    });
+                })
+                .fail((response) => {
                     utils.showErrorDialog({
                         title: i18n('cluster_page.nodes_tab.node.cant_discard'),
                         response: response
@@ -255,7 +255,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (_.isEmpty(labels)) return null;
             return (
                 <ul>
-                    {_.map(_.keys(labels).sort(_.partialRight(utils.natsort, {insensitive: true})), function(key) {
+                    {_.map(_.keys(labels).sort(_.partialRight(utils.natsort, {insensitive: true})), (key) => {
                         var value = labels[key];
                         return (
                             <li key={key + value} className='label'>

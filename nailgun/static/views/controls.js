@@ -21,7 +21,7 @@
 **/
 
 define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'component_mixins'],
-    function(i18n, $, _, React, ReactDOM, utils, componentMixins) {
+    (i18n, $, _, React, ReactDOM, utils, componentMixins) => {
     'use strict';
 
     var controls = {};
@@ -289,7 +289,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
                 <table className={utils.classNames(tableClasses)}>
                     <thead>
                         <tr>
-                            {_.map(this.props.head, function(column, index) {
+                            {_.map(this.props.head, (column, index) => {
                                 var classes = {};
                                 classes[column.className] = column.className;
                                 return <th key={index} className={utils.classNames(classes)}>{column.label}</th>;
@@ -297,13 +297,13 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
                         </tr>
                     </thead>
                     <tbody>
-                        {_.map(this.props.body, function(row, rowIndex) {
-                            return <tr key={rowIndex}>
-                                {_.map(row, function(column, columnIndex) {
-                                    return <td key={columnIndex} className='enable-selection'>{column}</td>;
-                                })}
-                            </tr>;
-                        })}
+                        {_.map(this.props.body, (row, rowIndex) =>
+                            (<tr key={rowIndex}>
+                                {_.map(row, (column, columnIndex) =>
+                                    (<td key={columnIndex} className='enable-selection'>{column}</td>)
+                                )}
+                            </tr>)
+                        )}
                     </tbody>
                 </table>
             );

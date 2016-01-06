@@ -21,7 +21,7 @@ define(
     'models',
     'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function($, _, React, models, NodeListScreen) {
+($, _, React, models, NodeListScreen) => {
     'use strict';
 
     var AddNodesScreen = React.createClass({
@@ -31,9 +31,8 @@ function($, _, React, models, NodeListScreen) {
                 nodes.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
                 };
-                return $.when(nodes.fetch(), options.cluster.get('roles').fetch(), options.cluster.get('settings').fetch({cache: true})).then(function() {
-                    return {nodes: nodes};
-                });
+                return $.when(nodes.fetch(), options.cluster.get('roles').fetch(),
+                    options.cluster.get('settings').fetch({cache: true})).then(() => ({nodes: nodes}));
             }
         },
         render: function() {

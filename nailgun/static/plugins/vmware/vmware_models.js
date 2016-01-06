@@ -22,7 +22,7 @@ define(
     'backbone',
     'models'
 ],
-function($, _, i18n, Backbone, models) {
+($, _, i18n, Backbone, models) => {
     'use strict';
 
     function isRegularField(field) {
@@ -107,7 +107,7 @@ function($, _, i18n, Backbone, models) {
             return this.validationError;
         },
         validate: function() {
-            var errors = _.compact(this.models.map(function(model) {
+            var errors = _.compact(this.models.map((model) => {
                 model.isValid();
                 return model.validationError;
             }));
@@ -186,7 +186,7 @@ function($, _, i18n, Backbone, models) {
             result.metadata = metadata;
 
             // regular fields
-            _.each(metadata, function(field) {
+            _.each(metadata, (field) => {
                 if (isRegularField(field)) {
                     result[field.name] = response[field.name];
                 }
@@ -195,7 +195,7 @@ function($, _, i18n, Backbone, models) {
             // nova_computes
             var novaMetadata = _.find(metadata, {name: 'nova_computes'});
             var novaValues = _.clone(response.nova_computes);
-            novaValues = _.map(novaValues, function(value) {
+            novaValues = _.map(novaValues, (value) => {
                 value.metadata = novaMetadata.fields;
                 return new NovaCompute(value);
             });
@@ -244,7 +244,7 @@ function($, _, i18n, Backbone, models) {
             // Availability Zone(s)
             var azMetadata = _.find(metadata, {name: 'availability_zones'});
             var azValues = _.clone(value.availability_zones);
-            azValues = _.map(azValues, function(value) {
+            azValues = _.map(azValues, (value) => {
                 value.metadata = azMetadata.fields;
                 return value;
             });
@@ -307,14 +307,14 @@ function($, _, i18n, Backbone, models) {
             var availabilityZones = this.get('availability_zones') || [];
             availabilityZones.each(function(zone) {
                 var novaComputes = zone.get('nova_computes') || [];
-                novaComputes.each(function(compute) {
+                novaComputes.each((compute) => {
                     var targetNode = compute.get('target_node');
                     assignedNodes[targetNode.current.id] = targetNode.current.label;
                 }, this);
             }, this);
-            var unassignedNodes = restrictionModels.cluster.get('nodes').filter(function(node) {
-                return _.contains(node.get('pending_roles'), 'compute-vmware') && !assignedNodes[node.get('hostname')];
-            });
+            var unassignedNodes = restrictionModels.cluster.get('nodes').filter((node) =>
+                _.contains(node.get('pending_roles'), 'compute-vmware') && !assignedNodes[node.get('hostname')]
+            );
             if (unassignedNodes.length > 0) {
                 errors.unassigned_nodes = unassignedNodes;
             }

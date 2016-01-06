@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
+/*eslint prefer-arrow-callback: 0*/
 define(['./intern'], function(config) {
     'use strict';
     config.environments = [{browserName: 'phantomjs'}];

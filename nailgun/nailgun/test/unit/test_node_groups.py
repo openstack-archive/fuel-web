@@ -259,6 +259,27 @@ class TestNodeGroups(BaseIntegrationTest):
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count(), 2)
 
+    def test_creation_not_allowed_when_ready_nodes(self):
+        cluster = self.env.create(
+            release_kwargs={'version': '1111-7.0'},
+            nodes_kwargs=[{'status': consts.NODE_STATUSES.ready},
+                          {'status': consts.NODE_STATUSES.error}]
+        )
+        resp = self.env.create_node_group(expect_errors=True,
+                                          cluster_id=cluster['id'])
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(resp.json_body['message'],
+                         "Reconfinguration of nodes after the "
+                         "deployment is allowed only for "
+                         "environments 8.0 or greater."
+                         )
+
+    def test_creation_allowed_when_ready_nodes_for_80(self):
+        self.env.create_node(cluster_id=self.cluster['id'],
+                             status=consts.NODE_STATUSES.ready)
+        resp = self.env.create_node_group(cluster_id=self.cluster['id'])
+        self.assertEqual(resp.status_code, 201)
+
     def test_nodegroup_rename(self):
         self.assertEquals(
             1,

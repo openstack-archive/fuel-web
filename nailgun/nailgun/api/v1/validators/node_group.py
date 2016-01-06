@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils.version import StrictVersion
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun import consts
 from nailgun.db import db
@@ -70,10 +72,26 @@ class NodeGroupValidator(BasicValidator):
                 )
 
     @classmethod
+    def _check_for_deployed_nodes(cls, cluster):
+        """Check if nodes reconfiguration is allowed for cluster"""
+        env_version = cluster.release.environment_version
+        if not StrictVersion(env_version) >= StrictVersion('8.0'):
+            if any(objects.Cluster.get_nodes_by_status(
+                    cluster,
+                    consts.NODE_STATUSES.ready)):
+                raise errors.NotAllowed(
+                    "Reconfinguration of nodes after the "
+                    "deployment is allowed only for "
+                    "environments 8.0 or greater."
+                )
+
+    @classmethod
     def validate(cls, data):
         data = cls.validate_json(data)
         cluster = objects.Cluster.get_by_uid(
             data['cluster_id'], fail_if_not_found=True)
+
+        cls._check_for_deployed_nodes(cluster)
 
         cls._validate_unique_name(data)
 
@@ -106,8 +124,16 @@ class NodeGroupValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance):
         data = cls.validate_json(data)
+
+        cluster = objects.Cluster.get_by_uid(
+            data['cluster_id'], fail_if_not_found=True)
+
+        cls._check_for_deployed_nodes(cluster)
+
         cls._validate_unique_name(
             data, objects.NodeGroup.model.id != instance.id)
+
         if 'is_default' in data:
             cls._validate_default_flag(data)
+
         return data

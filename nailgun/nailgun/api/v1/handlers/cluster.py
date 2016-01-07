@@ -40,7 +40,11 @@ from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 
+from nailgun.api.v1.validators.extension import ExtensionValidator
 from nailgun import errors
+
+from nailgun.extensions import set_extensions_for_object
+
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun import utils
@@ -505,3 +509,45 @@ class ClusterDeploymentGraphCollectionHandler(
     """Cluster Handler for deployment graphs configuration."""
 
     related = objects.Cluster
+
+
+class ClusterExtensionsHandler(BaseHandler):
+    """Cluster extensions handler"""
+
+    validator = ExtensionValidator
+
+    def _get_cluster_obj(self, cluster_id):
+        return self.get_object_or_404(
+            objects.Cluster, cluster_id,
+            log_404=(
+                "error",
+                "There is no cluster with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+
+    @handle_errors
+    @validate
+    @serialize
+    def GET(self, cluster_id):
+        """:returns: JSONized list of enabled Cluster extensions
+
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        cluster = self._get_cluster_obj(cluster_id)
+        return cluster.extensions
+
+    @handle_errors
+    @validate
+    @serialize
+    def PUT(self, cluster_id):
+        """:returns: JSONized list of enabled Cluster extensions
+
+        :http: * 200 (OK)
+               * 400 (there is no such extension available)
+               * 404 (cluster not found in db)
+        """
+        cluster = self._get_cluster_obj(cluster_id)
+        data = self.checked_data()
+        set_extensions_for_object(cluster, data)
+        return cluster.extensions

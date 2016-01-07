@@ -31,7 +31,7 @@ define(
 ],
 function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, dialogs, componentMixins, Node) {
     'use strict';
-    var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
+    let NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
 
     class Sorter {
         constructor(name, order, isLabel) {
@@ -43,7 +43,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         }
 
         static fromObject(sorterObject, isLabel) {
-            var sorterName = _.keys(sorterObject)[0];
+            let sorterName = _.keys(sorterObject)[0];
             return new Sorter(sorterName, sorterObject[sorterName], isLabel);
         }
 
@@ -75,9 +75,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
         updateLimits(nodes, updateValues) {
             if (this.isNumberRange) {
-                var limits = [0, 0];
+                let limits = [0, 0];
                 if (nodes.length) {
-                    var resources = nodes.invoke('resource', this.name);
+                    let resources = nodes.invoke('resource', this.name);
                     limits = [_.min(resources), _.max(resources)];
                     if (this.name == 'hdd' || this.name == 'ram') {
                         limits = [Math.floor(limits[0] / Math.pow(1024, 3)), Math.ceil(limits[1] / Math.pow(1024, 3))];
@@ -107,12 +107,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             };
         },
         getInitialState: function() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 nodes = this.props.nodes,
                 uiSettings = (cluster || this.props.fuelSettings).get('ui_settings');
 
-            var availableFilters = this.props.filters.map((name) => {
-                    var filter = new Filter(name, [], false);
+            let availableFilters = this.props.filters.map((name) => {
+                    let filter = new Filter(name, [], false);
                     filter.updateLimits(nodes, true);
                     return filter;
                 }),
@@ -125,7 +125,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     );
             _.invoke(activeFilters, 'updateLimits', nodes, false);
 
-            var availableSorters = this.props.sorters.map((name) => new Sorter(name, 'asc', false)),
+            let availableSorters = this.props.sorters.map((name) => new Sorter(name, 'asc', false)),
                 activeSorters = cluster && this.props.mode == 'add' ?
                     _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false))
                 :
@@ -134,21 +134,21 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                         _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
                     );
 
-            var search = cluster && this.props.mode == 'add' ? '' : uiSettings.search,
+            let search = cluster && this.props.mode == 'add' ? '' : uiSettings.search,
                 viewMode = uiSettings.view_mode,
                 isLabelsPanelOpen = false;
 
-            var states = {search, activeSorters, activeFilters, availableSorters, availableFilters, viewMode, isLabelsPanelOpen};
+            let states = {search, activeSorters, activeFilters, availableSorters, availableFilters, viewMode, isLabelsPanelOpen};
 
             // Equipment page
             if (!cluster) return states;
 
             // additonal Nodes tab states (Cluster page)
-            var roles = cluster.get('roles').pluck('name'),
+            let roles = cluster.get('roles').pluck('name'),
                 selectedRoles = nodes.length ? _.filter(roles, (role) => !nodes.any((node) => !node.hasRole(role))) : [],
                 indeterminateRoles = nodes.length ? _.filter(roles, (role) => !_.contains(selectedRoles, role) && nodes.any((node) => node.hasRole(role))) : [];
 
-            var configModels = {
+            let configModels = {
                     cluster: cluster,
                     settings: cluster.get('settings'),
                     version: app.version,
@@ -161,7 +161,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.props.selectNodes(ids, checked);
         },
         selectRoles: function(role, checked) {
-            var selectedRoles = this.state.selectedRoles;
+            let selectedRoles = this.state.selectedRoles;
             if (checked) {
                 selectedRoles.push(role);
             } else {
@@ -181,8 +181,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         normalizeAppliedFilters: function(checkStandardNodeFilters = false) {
             if (!this.props.cluster || this.props.mode != 'add') {
-                var normalizedFilters = _.map(this.state.activeFilters, (activeFilter) => {
-                    var filter = _.clone(activeFilter);
+                let normalizedFilters = _.map(this.state.activeFilters, (activeFilter) => {
+                    let filter = _.clone(activeFilter);
                     if (filter.values.length) {
                         if (filter.isLabel) {
                             filter.values = _.intersection(filter.values, this.props.nodes.getLabelValues(filter.name));
@@ -218,17 +218,17 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.props.nodes.off('change:pending_roles', this.checkRoleAssignment, this);
         },
         processRoleLimits: function() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 maxNumberOfNodes = [],
                 processedRoleLimits = {};
 
-            var selectedNodes = this.props.nodes.filter((node) => this.props.selectedNodeIds[node.id]),
+            let selectedNodes = this.props.nodes.filter((node) => this.props.selectedNodeIds[node.id]),
                 clusterNodes = this.props.cluster.get('nodes').filter((node) => !_.contains(this.props.selectedNodeIds, node.id)),
                 nodesForLimitCheck = new models.Nodes(_.union(selectedNodes, clusterNodes));
 
             cluster.get('roles').each(function(role) {
                 if ((role.get('limits') || {}).max) {
-                    var roleName = role.get('name'),
+                    let roleName = role.get('name'),
                         isRoleAlreadyAssigned = nodesForLimitCheck.any((node) => node.hasRole(roleName));
                     processedRoleLimits[roleName] = role.checkLimits(this.state.configModels, nodesForLimitCheck, !isRoleAlreadyAssigned, ['max']);
                 }
@@ -290,7 +290,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         updateSorting: function(sorters) {
             this.setState({activeSorters: sorters});
             if (!this.props.cluster || this.props.mode != 'add') {
-                var groupedSorters = _.groupBy(sorters, 'isLabel');
+                let groupedSorters = _.groupBy(sorters, 'isLabel');
                 this.changeUISettings({
                     sort: _.map(groupedSorters.false, Sorter.toObject),
                     sort_by_labels: _.map(groupedSorters.true, Sorter.toObject)
@@ -300,7 +300,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         updateFilters: function(filters) {
             this.setState({activeFilters: filters});
             if (!this.props.cluster || this.props.mode != 'add') {
-                var groupedFilters = _.groupBy(filters, 'isLabel');
+                let groupedFilters = _.groupBy(filters, 'isLabel');
                 this.changeUISettings({
                     filter: Filter.toObject(groupedFilters.false),
                     filter_by_labels: Filter.toObject(groupedFilters.true)
@@ -309,7 +309,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         getFilterOptions: function(filter) {
             if (filter.isLabel) {
-                var values = _.uniq(this.props.nodes.getLabelValues(filter.name)),
+                let values = _.uniq(this.props.nodes.getLabelValues(filter.name)),
                     ns = 'cluster_page.nodes_tab.node_management_panel.';
                 return values.map((value) => {
                     return {
@@ -319,10 +319,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 });
             }
 
-            var options;
+            let options;
             switch (filter.name) {
                 case 'status':
-                    var os = this.props.cluster && this.props.cluster.get('release').get('operating_system') || 'OS';
+                    let os = this.props.cluster && this.props.cluster.get('release').get('operating_system') || 'OS';
                     options = this.props.statusesToFilter.map(function(status) {
                         return {
                             name: status,
@@ -344,7 +344,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     break;
                 case 'group_id':
                     options = _.uniq(this.props.nodes.pluck('group_id')).map(function(groupId) {
-                        var nodeNetworkGroup = this.props.nodeNetworkGroups.get(groupId);
+                        let nodeNetworkGroup = this.props.nodeNetworkGroups.get(groupId);
                         return {
                             name: groupId,
                             label: nodeNetworkGroup ?
@@ -379,7 +379,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         changeFilter: function(filterToChange, values) {
             this.updateFilters(this.state.activeFilters.map(function(filter) {
                 if (filter.name == filterToChange.name && filter.isLabel == filterToChange.isLabel) {
-                    var changedFilter = new Filter(filter.name, values, filter.isLabel);
+                    let changedFilter = new Filter(filter.name, values, filter.isLabel);
                     changedFilter.limits = filter.limits;
                     return changedFilter;
                 }
@@ -399,7 +399,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }
         },
         changeUISettings: function(newSettings) {
-            var uiSettings = (this.props.cluster || this.props.fuelSettings).get('ui_settings'),
+            let uiSettings = (this.props.cluster || this.props.fuelSettings).get('ui_settings'),
                 options = {patch: true, wait: true, validate: false};
             _.extend(uiSettings, newSettings);
             if (this.props.cluster) {
@@ -422,22 +422,22 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             return _.chain(this.props.nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
         },
         render: function() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 locked = !!cluster && !!cluster.task({group: 'deployment', active: true}),
                 nodes = this.props.nodes,
                 processedRoleData = cluster ? this.processRoleLimits() : {};
 
             // labels to manage in labels panel
-            var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
+            let selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
                     return this.props.selectedNodeIds[node.id];
                 }, this)),
                 selectedNodeLabels = _.chain(selectedNodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
 
             // filter nodes
-            var filteredNodes = nodes.filter(function(node) {
+            let filteredNodes = nodes.filter(function(node) {
                 // search field
                 if (this.state.search) {
-                    var search = this.state.search.toLowerCase();
+                    let search = this.state.search.toLowerCase();
                     if (!_.any(node.pick('name', 'mac', 'ip'), function(attribute) {
                         return _.contains((attribute || '').toLowerCase(), search);
                     })) {
@@ -453,7 +453,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                         return _.contains(filter.values, node.getLabel(filter.name));
                     }
 
-                    var result;
+                    let result;
                     switch (filter.name) {
                         case 'roles':
                             result = _.any(filter.values, function(role) {return node.hasRole(role);});
@@ -468,7 +468,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                             break;
                         default:
                             // handle number ranges
-                            var currentValue = node.resource(filter.name);
+                            let currentValue = node.resource(filter.name);
                             if (filter.name == 'hdd' || filter.name == 'ram') currentValue = currentValue / Math.pow(1024, 3);
                             result = currentValue >= filter.values[0] && (_.isUndefined(filter.values[1]) || currentValue <= filter.values[1]);
                             break;
@@ -477,7 +477,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }, this);
             }, this);
 
-            var screenNodesLabels = this.getNodeLabels();
+            let screenNodesLabels = this.getNodeLabels();
             return (
                 <div>
                     {this.props.mode == 'edit' &&
@@ -546,7 +546,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         onChange: function(name, checked, isLabel) {
             if (!this.props.dynamicValues) {
-                var values = name == 'all' ?
+                let values = name == 'all' ?
                         checked ? _.pluck(this.props.options, 'name') : []
                     :
                         checked ? _.union(this.props.values, [name]) : _.difference(this.props.values, [name]);
@@ -561,8 +561,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         render: function() {
             if (!this.props.options.length) return null;
 
-            var valuesAmount = this.props.values.length;
-            var label = this.props.label;
+            let valuesAmount = this.props.values.length;
+            let label = this.props.label;
             if (!this.props.dynamicValues && valuesAmount) {
                 label = this.props.label + ': ' + (valuesAmount > 3 ?
                         i18n('cluster_page.nodes_tab.node_management_panel.selected_options', {label: this.props.label, count: valuesAmount})
@@ -572,14 +572,14 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     }, this).join(', '));
             }
 
-            var attributes, labels;
+            let attributes, labels;
             if (this.props.dynamicValues) {
-                var groupedOptions = _.groupBy(this.props.options, 'isLabel');
+                let groupedOptions = _.groupBy(this.props.options, 'isLabel');
                 attributes = groupedOptions.false || [];
                 labels = groupedOptions.true || [];
             }
 
-            var optionProps = _.bind(function(option) {
+            let optionProps = _.bind(function(option) {
                 return {
                     key: option.name,
                     type: 'checkbox',
@@ -588,7 +588,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 };
             }, this);
 
-            var classNames = {
+            let classNames = {
                 'btn-group multiselect': true,
                 open: this.props.isOpen,
                 'more-control': this.props.dynamicValues
@@ -672,7 +672,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             };
         },
         changeValue: function(name, value, index) {
-            var values = this.props.values;
+            let values = this.props.values;
             values[index] = _.max([Number(value), 0]);
             this.props.onChange(values);
         },
@@ -680,9 +680,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             if (e.key == 'Escape') this.props.toggle(this.props.name, false);
         },
         render: function() {
-            var classNames = {'btn-group number-range': true, open: this.props.isOpen};
+            let classNames = {'btn-group number-range': true, open: this.props.isOpen};
             if (this.props.className) classNames[this.props.className] = true;
-            var props = {
+            let props = {
                     type: 'number',
                     inputClassName: 'pull-left',
                     min: this.props.min,
@@ -738,7 +738,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
         },
         goToConfigurationScreen: function(action, conflict) {
             if (conflict) {
-                var ns = 'cluster_page.nodes_tab.node_management_panel.node_management_error.';
+                let ns = 'cluster_page.nodes_tab.node_management_panel.node_management_error.';
                 utils.showErrorDialog({
                     title: i18n(ns + 'title'),
                     message: <div><i className='glyphicon glyphicon-danger-sign' /> {i18n(ns + action + '_configuration_warning')}</div>
@@ -764,8 +764,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             this.setState({actionInProgress: true});
-            var nodes = new models.Nodes(this.props.nodes.map(function(node) {
-                var data = {id: node.id, pending_roles: node.get('pending_roles')};
+            let nodes = new models.Nodes(this.props.nodes.map(function(node) {
+                let data = {id: node.id, pending_roles: node.get('pending_roles')};
                 if (node.get('pending_roles').length) {
                     if (this.props.mode == 'add') return _.extend(data, {cluster_id: this.props.cluster.id, pending_addition: true});
                 } else if (node.get('pending_addition')) {
@@ -836,7 +836,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             });
         },
         toggleFilter: function(filter, visible) {
-            var isFilterOpen = this.isFilterOpen(filter);
+            let isFilterOpen = this.isFilterOpen(filter);
             visible = _.isBoolean(visible) ? visible : !isFilterOpen;
             this.setState({
                 openFilter: visible ? filter : isFilterOpen ? null : this.state.openFilter
@@ -912,16 +912,16 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             );
         },
         render: function() {
-            var ns = 'cluster_page.nodes_tab.node_management_panel.';
+            let ns = 'cluster_page.nodes_tab.node_management_panel.';
 
-            var disksConflict, interfaceConflict;
+            let disksConflict, interfaceConflict;
             if (this.props.mode == 'list' && this.props.nodes.length) {
                 disksConflict = !this.props.nodes.areDisksConfigurable();
                 interfaceConflict = !this.props.nodes.areInterfacesConfigurable();
             }
 
-            var managementButtonClasses = _.bind(function(isActive, className) {
-                var classes = {
+            let managementButtonClasses = _.bind(function(isActive, className) {
+                let classes = {
                     'btn btn-default pull-left': true,
                     active: isActive
                 };
@@ -929,10 +929,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 return classes;
             }, this);
 
-            var inactiveSorters, canResetSorters;
-            var inactiveFilters, appliedFilters;
+            let inactiveSorters, canResetSorters;
+            let inactiveFilters, appliedFilters;
             if (this.props.mode != 'edit') {
-                var checkSorter = _.bind(function(sorter, isLabel) {
+                let checkSorter = _.bind(function(sorter, isLabel) {
                     return !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
                 }, this);
                 inactiveSorters = _.union(_.filter(this.props.availableSorters, _.partial(checkSorter, _, false)), _.filter(this.props.labelSorters, _.partial(checkSorter, _, true)))
@@ -941,7 +941,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     });
                 canResetSorters = _.any(this.props.activeSorters, {isLabel: true}) || !_(this.props.activeSorters).where({isLabel: false}).map(Sorter.toObject).isEqual(this.props.defaultSorting);
 
-                var checkFilter = _.bind(function(filter, isLabel) {
+                let checkFilter = _.bind(function(filter, isLabel) {
                     return !_.any(this.props.activeFilters, {name: filter.name, isLabel: isLabel});
                 }, this);
                 inactiveFilters = _.union(_.filter(this.props.availableFilters, _.partial(checkFilter, _, false)), _.filter(this.props.labelFilters, _.partial(checkFilter, _, true)))
@@ -1134,7 +1134,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                             }
                                         </div>
                                         {this.props.activeSorters.map(function(sorter) {
-                                            var asc = sorter.order == 'asc';
+                                            let asc = sorter.order == 'asc';
                                             return (
                                                 <div
                                                     key={'sort_by-' + sorter.name + (sorter.isLabel && '-label')}
@@ -1181,7 +1181,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                             }
                                         </div>
                                         {_.map(this.props.activeFilters, function(filter) {
-                                            var props = {
+                                            let props = {
                                                 key: (filter.isLabel ? 'label-' : '') + filter.name,
                                                 ref: filter.name,
                                                 name: filter.name,
@@ -1229,7 +1229,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                                         total: this.props.screenNodes.length
                                                     })}
                                                     {_.map(appliedFilters, (filter) => {
-                                                        var options = filter.isNumberRange ? null : this.props.getFilterOptions(filter);
+                                                        let options = filter.isNumberRange ? null : this.props.getFilterOptions(filter);
                                                         return (
                                                             <div key={filter.name}>
                                                                 <strong>{filter.title}{!!filter.values.length && ':'} </strong>
@@ -1256,7 +1256,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                                 <strong className='col-xs-1'>{i18n(ns + 'sort_by')}</strong>
                                                 <div className='col-xs-11'>
                                                     {this.props.activeSorters.map(function(sorter, index) {
-                                                        var asc = sorter.order == 'asc';
+                                                        let asc = sorter.order == 'asc';
                                                         return (
                                                             <span key={sorter.name + (sorter.isLabel && '-label')}>
                                                                 {sorter.title}
@@ -1292,8 +1292,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     NodeLabelsPanel = React.createClass({
         mixins: [componentMixins.unsavedChangesMixin],
         getInitialState: function() {
-            var labels = _.map(this.props.labels, function(label) {
-                    var labelValues = this.props.nodes.getLabelValues(label),
+            let labels = _.map(this.props.labels, function(label) {
+                    let labelValues = this.props.nodes.getLabelValues(label),
                         definedLabelValues = _.reject(labelValues, _.isUndefined);
                     return {
                         key: label,
@@ -1318,7 +1318,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }, this);
         },
         addLabel: function() {
-            var labels = this.state.labels;
+            let labels = this.state.labels;
             labels.push({
                 key: '',
                 values: [null],
@@ -1328,7 +1328,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.setState({labels: labels});
         },
         changeLabelKey: function(index, oldKey, newKey) {
-            var labels = this.state.labels,
+            let labels = this.state.labels,
                 labelData = labels[index];
             labelData.key = newKey;
             if (!labelData.indeterminate) labelData.checked = true;
@@ -1336,7 +1336,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.setState({labels: labels});
         },
         changeLabelState: function(index, key, checked) {
-            var labels = this.state.labels,
+            let labels = this.state.labels,
                 labelData = labels[index];
             labelData.checked = checked;
             labelData.indeterminate = false;
@@ -1344,7 +1344,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.setState({labels: labels});
         },
         changeLabelValue: function(index, key, value) {
-            var labels = this.state.labels,
+            let labels = this.state.labels,
                 labelData = labels[index];
             labelData.values = [value || null];
             if (!labelData.indeterminate) labelData.checked = true;
@@ -1355,11 +1355,11 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             _.each(labels, (currentLabel, currentIndex) => {
                 currentLabel.error = null;
                 if (currentLabel.checked || currentLabel.indeterminate) {
-                    var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
+                    let ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
                     if (!_.trim(currentLabel.key)) {
                         currentLabel.error = i18n(ns + 'empty_label_key');
                     } else {
-                        var doesLabelExist = _.any(labels, (label, index) => {
+                        let doesLabelExist = _.any(labels, (label, index) => {
                             return index != currentIndex &&
                                 _.trim(label.key) == _.trim(currentLabel.key) &&
                                 (label.checked || label.indeterminate);
@@ -1380,23 +1380,23 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
             this.setState({actionInProgress: true});
 
-            var nodes = new models.Nodes(
+            let nodes = new models.Nodes(
                 this.props.nodes.map(function(node) {
-                    var nodeLabels = node.get('labels');
+                    let nodeLabels = node.get('labels');
 
                     _.each(this.state.labels, function(labelData, index) {
-                        var oldLabel = this.props.labels[index];
+                        let oldLabel = this.props.labels[index];
 
                         // delete label
                         if (!labelData.checked && !labelData.indeterminate) {
                             delete nodeLabels[oldLabel];
                         }
 
-                        var nodeHasLabel = !_.isUndefined(nodeLabels[oldLabel]),
+                        let nodeHasLabel = !_.isUndefined(nodeLabels[oldLabel]),
                             label = labelData.key;
                         // rename label
                         if ((labelData.checked || labelData.indeterminate) && nodeHasLabel) {
-                            var labelValue = nodeLabels[oldLabel];
+                            let labelValue = nodeLabels[oldLabel];
                             delete nodeLabels[oldLabel];
                             nodeLabels[label] = labelValue;
                         }
@@ -1430,7 +1430,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 });
         },
         render: function() {
-            var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
+            let ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
 
             return (
                 <div className='col-xs-12 labels'>
@@ -1448,7 +1448,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                             </p>
 
                             {_.map(this.state.labels, function(labelData, index) {
-                                var labelValueProps = labelData.values.length > 1 ? {
+                                let labelValueProps = labelData.values.length > 1 ? {
                                         value: '',
                                         wrapperClassName: 'has-warning',
                                         tooltipText: i18n(ns + 'label_value_warning')
@@ -1456,7 +1456,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                         value: labelData.values[0]
                                     };
 
-                                var showControlLabels = index == 0;
+                                let showControlLabels = index == 0;
                                 return (
                                     <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={index}>
                                         <controls.Input
@@ -1533,12 +1533,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }, this);
         },
         assignRoles: function() {
-            var roles = this.props.cluster.get('roles');
+            let roles = this.props.cluster.get('roles');
             this.props.nodes.each(function(node) {
                 if (this.props.selectedNodeIds[node.id]) roles.each(function(role) {
-                    var roleName = role.get('name');
+                    let roleName = role.get('name');
                     if (!node.hasRole(roleName, true)) {
-                        var nodeRoles = node.get('pending_roles');
+                        let nodeRoles = node.get('pending_roles');
                         if (_.contains(this.props.selectedRoles, roleName)) {
                             nodeRoles = _.union(nodeRoles, [roleName]);
                         } else if (!_.contains(this.props.indeterminateRoles, roleName)) {
@@ -1550,7 +1550,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }, this);
         },
         processRestrictions: function(role, models) {
-            var name = role.get('name'),
+            let name = role.get('name'),
                 restrictionsCheck = role.checkRestrictions(models, 'disable'),
                 roleLimitsCheckResults = this.props.processedRoleLimits[name],
                 roles = this.props.cluster.get('roles'),
@@ -1579,7 +1579,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
                     {this.props.cluster.get('roles').map(function(role) {
                         if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
-                            var name = role.get('name'),
+                            let name = role.get('name'),
                                 processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.props.configModels) : {};
                             return (
                                 <controls.Input
@@ -1606,12 +1606,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     SelectAllMixin = {
         componentDidUpdate: function() {
             if (this.refs['select-all']) {
-                var input = this.refs['select-all'].getInputDOMNode();
+                let input = this.refs['select-all'].getInputDOMNode();
                 input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
             }
         },
         renderSelectAllCheckbox: function() {
-            var checked = this.props.mode == 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, function(node) {return !this.props.selectedNodeIds[node.id];}, this));
+            let checked = this.props.mode == 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, function(node) {return !this.props.selectedNodeIds[node.id];}, this));
             return (
                 <controls.Input
                     ref='select-all'
@@ -1633,10 +1633,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     NodeList = React.createClass({
         mixins: [SelectAllMixin],
         groupNodes: function() {
-            var uniqValueSorters = ['name', 'mac', 'ip'];
+            let uniqValueSorters = ['name', 'mac', 'ip'];
 
-            var composeNodeDiskSizesLabel = function(node) {
-                var diskSizes = node.resource('disks');
+            let composeNodeDiskSizesLabel = function(node) {
+                let diskSizes = node.resource('disks');
                 return i18n('node_details.disks_amount', {
                     count: diskSizes.length,
                     size: diskSizes.map(function(size) {
@@ -1645,9 +1645,9 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 });
             };
 
-            var labelNs = 'cluster_page.nodes_tab.node_management_panel.labels.',
+            let labelNs = 'cluster_page.nodes_tab.node_management_panel.labels.',
                 getLabelValue = function(node, label) {
-                    var labelValue = node.getLabel(label);
+                    let labelValue = node.getLabel(label);
                     return labelValue === false ?
                             i18n(labelNs + 'not_assigned_label', {label: label})
                         :
@@ -1657,13 +1657,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                 label + ' "' + labelValue + '"';
                 };
 
-            var groupingMethod = _.bind(function(node) {
+            let groupingMethod = _.bind(function(node) {
                 return _.compact(_.map(this.props.activeSorters, function(sorter) {
                     if (_.contains(uniqValueSorters, sorter.name)) return;
 
                     if (sorter.isLabel) return getLabelValue(node, sorter.name);
 
-                    var result,
+                    let result,
                         ns = 'cluster_page.nodes_tab.node.',
                         cluster = this.props.cluster || this.props.clusters.get(node.get('cluster'));
                     switch (sorter.name) {
@@ -1679,7 +1679,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                             result = node.get('manufacturer') || i18n('common.not_specified');
                             break;
                         case 'group_id':
-                            var nodeNetworkGroup = this.props.nodeNetworkGroups.get(node.get('group_id'));
+                            let nodeNetworkGroup = this.props.nodeNetworkGroups.get(node.get('group_id'));
                             result = nodeNetworkGroup && i18n(ns + 'node_network_group', {
                                     group: nodeNetworkGroup.get('name') + (this.props.cluster ? '' : ' (' + cluster.get('name') + ')')
                                 }) || i18n(ns + 'no_node_network_group');
@@ -1706,10 +1706,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     return result;
                 }, this)).join('; ');
             }, this);
-            var groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
+            let groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
 
             // sort grouped nodes by name, mac or ip
-            var formattedSorters = _.compact(_.map(this.props.activeSorters, function(sorter) {
+            let formattedSorters = _.compact(_.map(this.props.activeSorters, function(sorter) {
                 if (_.contains(uniqValueSorters, sorter.name)) {
                     return {attr: sorter.name, desc: sorter.order == 'desc'};
                 }
@@ -1723,14 +1723,14 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }
 
             // sort grouped nodes by other applied sorters
-            var preferredRolesOrder = this.props.roles.pluck('name');
+            let preferredRolesOrder = this.props.roles.pluck('name');
             return groups.sort(_.bind(function(group1, group2) {
-                var result;
+                let result;
                 _.each(this.props.activeSorters, function(sorter) {
-                    var node1 = group1[1][0], node2 = group2[1][0];
+                    let node1 = group1[1][0], node2 = group2[1][0];
 
                     if (sorter.isLabel) {
-                        var node1Label = node1.getLabel(sorter.name),
+                        let node1Label = node1.getLabel(sorter.name),
                             node2Label = node2.getLabel(sorter.name);
                         if (node1Label && node2Label) {
                             result = utils.natsort(node1Label, node2Label, {insensitive: true});
@@ -1740,7 +1740,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     } else {
                         switch (sorter.name) {
                             case 'roles':
-                                var roles1 = node1.sortedRoles(preferredRolesOrder),
+                                let roles1 = node1.sortedRoles(preferredRolesOrder),
                                     roles2 = node2.sortedRoles(preferredRolesOrder),
                                     order;
                                 if (!roles1.length && !roles2.length) result = 0;
@@ -1763,13 +1763,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                                 result = utils.natsort(composeNodeDiskSizesLabel(node1), composeNodeDiskSizesLabel(node2));
                                 break;
                             case 'group_id':
-                                var nodeGroup1 = node1.get('group_id'),
+                                let nodeGroup1 = node1.get('group_id'),
                                     nodeGroup2 = node2.get('group_id');
                                 result = nodeGroup1 == nodeGroup2 ? 0 :
                                     !nodeGroup1 ? 1 : !nodeGroup2 ? -1 : nodeGroup1 - nodeGroup2;
                                 break;
                             case 'cluster':
-                                var cluster1 = node1.get('cluster'),
+                                let cluster1 = node1.get('cluster'),
                                     cluster2 = node2.get('cluster');
                                 result = cluster1 == cluster2 ? 0 :
                                     !cluster1 ? 1 : !cluster2 ? -1 : utils.natsort(this.props.clusters.get(cluster1).get('name'), this.props.clusters.get(cluster2).get('name'));
@@ -1789,7 +1789,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }, this));
         },
         render: function() {
-            var groups = this.groupNodes(),
+            let groups = this.groupNodes(),
                 rolesWithLimitReached = _.keys(_.omit(this.props.processedRoleLimits, function(roleLimit, roleName) {
                     return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
                 }, this));
@@ -1832,7 +1832,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     NodeGroup = React.createClass({
         mixins: [SelectAllMixin],
         render: function() {
-            var availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
+            let availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
                 nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, function(node) {
                     return _.any(this.props.rolesWithLimitReached, function(role) {return !node.hasRole(role);}, this);
                 }, this), 'id');

@@ -25,7 +25,7 @@ define(
 function(_, i18n, React, models, componentMixins, controls) {
     'use strict';
 
-    var CapacityPage = React.createClass({
+    let CapacityPage = React.createClass({
         mixins: [
             componentMixins.backboneMixin('capacityLog'),
             componentMixins.pollingMixin(2)
@@ -35,7 +35,7 @@ function(_, i18n, React, models, componentMixins, controls) {
             navbarActiveElement: 'support',
             breadcrumbsPath: [['home', '#'], ['support', '#support'], 'capacity'],
             fetchData: function() {
-                var task = new models.Task();
+                let task = new models.Task();
                 return task.save({}, {url: '/api/capacity/', method: 'PUT'}).then(function() {
                     return {capacityLog: new models.CapacityLog()};
                 });
@@ -48,7 +48,7 @@ function(_, i18n, React, models, componentMixins, controls) {
             return this.props.capacityLog.fetch();
         },
         render: function() {
-            var capacityLog = this.props.capacityLog;
+            let capacityLog = this.props.capacityLog;
             return (
                 <div className='capacity-page'>
                     <div className='page-title'>
@@ -66,9 +66,9 @@ function(_, i18n, React, models, componentMixins, controls) {
         }
     });
 
-    var LicenseUsage = React.createClass({
+    let LicenseUsage = React.createClass({
         render: function() {
-            var capacityReport = this.props.capacityLog.get('report'),
+            let capacityReport = this.props.capacityLog.get('report'),
                 tableClassName = 'capacity-audit-table',
                 headClassName = 'name';
             return (

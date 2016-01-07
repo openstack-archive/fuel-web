@@ -29,7 +29,7 @@ define(
 function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, dialogs) {
     'use strict';
 
-    var components = {};
+    let components = {};
 
     components.Navbar = React.createClass({
         mixins: [
@@ -44,8 +44,8 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         togglePopover: function(popoverName) {
             return _.memoize(_.bind(function(visible) {
                 this.setState(function(previousState) {
-                    var nextState = {};
-                    var key = popoverName + 'PopoverVisible';
+                    let nextState = {};
+                    let key = popoverName + 'PopoverVisible';
                     nextState[key] = _.isBoolean(visible) ? visible : !previousState[key];
                     return nextState;
                 });
@@ -96,8 +96,8 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             $('html, body').animate({scrollTop: 0}, 'fast');
         },
         render: function() {
-            var unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
-            var authenticationEnabled = this.props.version.get('auth_required') && this.props.user.get('authenticated');
+            let unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
+            let authenticationEnabled = this.props.version.get('auth_required') && this.props.user.get('authenticated');
             return (
                 <div className='navigation-box'>
                     <div className='navbar-bg'></div>
@@ -197,7 +197,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         }
     });
 
-    var LanguagePopover = React.createClass({
+    let LanguagePopover = React.createClass({
         changeLocale: function(locale, e) {
             e.preventDefault();
             this.props.toggle(false);
@@ -207,7 +207,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             });
         },
         render: function() {
-            var currentLocale = i18n.getCurrentLocale();
+            let currentLocale = i18n.getCurrentLocale();
             return (
                 <controls.Popover {...this.props} className='language-popover'>
                     <ul className='nav nav-pills nav-stacked'>
@@ -226,7 +226,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         }
     });
 
-    var StatisticsPopover = React.createClass({
+    let StatisticsPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('statistics')],
         render: function() {
             return (
@@ -248,7 +248,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         }
     });
 
-    var UserPopover = React.createClass({
+    let UserPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('user')],
         showChangePasswordDialog: function() {
             this.props.toggle(false);
@@ -278,16 +278,16 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         }
     });
 
-    var NotificationsPopover = React.createClass({
+    let NotificationsPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('notifications')],
         showNodeInfo: function(id) {
             this.props.toggle(false);
-            var node = new models.Node({id: id});
+            let node = new models.Node({id: id});
             node.fetch();
             dialogs.ShowNodeInfoDialog.show({node: node});
         },
         markAsRead: function() {
-            var notificationsToMark = new models.Notifications(this.props.notifications.where({status: 'unread'}));
+            let notificationsToMark = new models.Notifications(this.props.notifications.where({status: 'unread'}));
             if (notificationsToMark.length) {
                 this.setState({unreadNotificationsIds: notificationsToMark.pluck('id')});
                 notificationsToMark.toJSON = function() {
@@ -306,7 +306,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             return {unreadNotificationsIds: []};
         },
         renderNotification: function(notification) {
-            var topic = notification.get('topic'),
+            let topic = notification.get('topic'),
                 nodeId = notification.get('node_id'),
                 notificationClasses = {
                     notification: true,
@@ -331,8 +331,8 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             );
         },
         render: function() {
-            var showMore = Backbone.history.getHash() != 'notifications';
-            var notifications = this.props.notifications.take(this.props.displayCount);
+            let showMore = Backbone.history.getHash() != 'notifications';
+            let notifications = this.props.notifications.take(this.props.displayCount);
             return (
                 <controls.Popover {...this.props} className='notifications-popover'>
                     {_.map(notifications, this.renderNotification)}
@@ -349,7 +349,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
     components.Footer = React.createClass({
         mixins: [componentMixins.backboneMixin('version')],
         render: function() {
-            var version = this.props.version;
+            let version = this.props.version;
             return (
                 <div className='footer'>
                     {_.contains(version.get('feature_groups'), 'mirantis') && [
@@ -370,7 +370,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             return {path: this.getBreadcrumbsPath()};
         },
         getBreadcrumbsPath: function() {
-            var page = this.props.Page;
+            let page = this.props.Page;
             return _.isFunction(page.breadcrumbsPath) ? page.breadcrumbsPath(this.props.pageOptions) : page.breadcrumbsPath;
         },
         refresh: function() {
@@ -381,9 +381,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 <ol className='breadcrumb'>
                     {_.map(this.state.path, function(breadcrumb, index) {
                         if (!_.isArray(breadcrumb)) breadcrumb = [breadcrumb, null, {active: true}];
-                        var text = breadcrumb[0];
-                        var link = breadcrumb[1];
-                        var options = breadcrumb[2] || {};
+                        let text = breadcrumb[0];
+                        let link = breadcrumb[1];
+                        let options = breadcrumb[2] || {};
                         if (!options.skipTranslation) {
                             text = i18n('breadcrumbs.' + text, {defaultValue: text});
                         }

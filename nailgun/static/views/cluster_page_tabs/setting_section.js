@@ -26,13 +26,13 @@ define(
 function(_, i18n, utils, React, Expression, controls, customControls) {
     'use strict';
 
-    var SettingSection = React.createClass({
+    let SettingSection = React.createClass({
         processRestrictions: function(sectionName, settingName) {
-            var result = false,
+            let result = false,
                 path = this.props.makePath(sectionName, settingName),
                 messages = [];
 
-            var restrictionsCheck = this.props.checkRestrictions('disable', path),
+            let restrictionsCheck = this.props.checkRestrictions('disable', path),
                 messagesCheck = this.props.checkRestrictions('none', path);
 
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
@@ -52,7 +52,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             };
         },
         checkDependencies: function(sectionName, settingName) {
-            var messages = [],
+            let messages = [],
                 dependentRoles = this.checkDependentRoles(sectionName, settingName),
                 dependentSettings = this.checkDependentSettings(sectionName, settingName);
 
@@ -71,8 +71,8 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) : [!setting[valueAttribute]];
         },
         checkValues: function(values, path, currentValue, restriction) {
-            var extraModels = {settings: this.props.settingsForChecks};
-            var result = _.all(values, function(value) {
+            let extraModels = {settings: this.props.settingsForChecks};
+            let result = _.all(values, function(value) {
                 this.props.settingsForChecks.set(path, value);
                 return new Expression(restriction.condition, this.props.configModels, restriction).evaluate(extraModels);
             }, this);
@@ -81,15 +81,15 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
         },
         checkDependentRoles: function(sectionName, settingName) {
             if (!this.props.allocatedRoles.length) return [];
-            var path = this.props.makePath(sectionName, settingName),
+            let path = this.props.makePath(sectionName, settingName),
                 setting = this.props.settings.get(path);
             if (!this.areCalculationsPossible(setting)) return [];
-            var valueAttribute = this.props.getValueAttribute(settingName),
+            let valueAttribute = this.props.getValueAttribute(settingName),
                 valuesToCheck = this.getValuesToCheck(setting, valueAttribute),
                 pathToCheck = this.props.makePath(path, valueAttribute),
                 roles = this.props.cluster.get('roles');
             return _.compact(this.props.allocatedRoles.map(function(roleName) {
-                var role = roles.findWhere({name: roleName});
+                let role = roles.findWhere({name: roleName});
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
                     if (_.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.props.configModels, restriction).evaluate())) {
                         return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], restriction);
@@ -99,12 +99,12 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             }, this));
         },
         checkDependentSettings: function(sectionName, settingName) {
-            var path = this.props.makePath(sectionName, settingName),
+            let path = this.props.makePath(sectionName, settingName),
                 currentSetting = this.props.settings.get(path);
             if (!this.areCalculationsPossible(currentSetting)) return [];
-            var dependentRestrictions = {};
-            var addDependentRestrictions = _.bind(function(pathToCheck, label) {
-                var result = _.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
+            let dependentRestrictions = {};
+            let addDependentRestrictions = _.bind(function(pathToCheck, label) {
+                let result = _.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
                     return restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path);
                 });
                 if (result.length) {
@@ -117,19 +117,19 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 if (this.props.checkRestrictions('hide', this.props.makePath(sectionName, 'metadata')).result) return;
                 _.each(section, function(setting, settingName) {
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
-                    var pathToCheck = this.props.makePath(sectionName, settingName);
+                    let pathToCheck = this.props.makePath(sectionName, settingName);
                     if (!this.areCalculationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', sectionName, settingName).result) return;
                     if (setting[this.props.getValueAttribute(settingName)] == true) {
                         addDependentRestrictions(pathToCheck, setting.label);
                     } else {
-                        var activeOption = _.find(setting.values, {data: setting.value});
+                        let activeOption = _.find(setting.values, {data: setting.value});
                         if (activeOption) addDependentRestrictions(this.props.makePath(pathToCheck, activeOption.data), setting.label);
                     }
                 }, this);
             }, this);
             // evaluate dependencies
             if (!_.isEmpty(dependentRestrictions)) {
-                var valueAttribute = this.props.getValueAttribute(settingName),
+                let valueAttribute = this.props.getValueAttribute(settingName),
                     pathToCheck = this.props.makePath(path, valueAttribute),
                     valuesToCheck = this.getValuesToCheck(currentSetting, valueAttribute),
                     checkValues = _.partial(this.checkValues, valuesToCheck, pathToCheck, currentSetting[valueAttribute]);
@@ -149,7 +149,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             });
         },
         onPluginVersionChange: function(pluginName, version) {
-            var settings = this.props.settings;
+            let settings = this.props.settings;
             // FIXME: the following hacks cause we can't pass {validate: true} option to set method
             // this form of validation isn't supported in Backbone DeepModel
             settings.validationError = null;
@@ -160,21 +160,21 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
         },
         togglePlugin: function(pluginName, settingName, enabled) {
             this.props.onChange(settingName, enabled);
-            var pluginMetadata = this.props.settings.get(pluginName).metadata;
+            let pluginMetadata = this.props.settings.get(pluginName).metadata;
             if (enabled) {
                 // check for editable plugin version
-                var chosenVersionData = _.find(pluginMetadata.versions, (version) => version.metadata.plugin_id == pluginMetadata.chosen_id);
+                let chosenVersionData = _.find(pluginMetadata.versions, (version) => version.metadata.plugin_id == pluginMetadata.chosen_id);
                 if (this.props.lockedCluster && !chosenVersionData.metadata.always_editable) {
-                    var editableVersion = _.find(pluginMetadata.versions, (version) => version.metadata.always_editable).metadata.plugin_id;
+                    let editableVersion = _.find(pluginMetadata.versions, (version) => version.metadata.always_editable).metadata.plugin_id;
                     this.onPluginVersionChange(pluginName, editableVersion);
                 }
             } else {
-                var initialVersion = this.props.initialAttributes[pluginName].metadata.chosen_id;
+                let initialVersion = this.props.initialAttributes[pluginName].metadata.chosen_id;
                 if (pluginMetadata.chosen_id !== initialVersion) this.onPluginVersionChange(pluginName, initialVersion);
             }
         },
         render: function() {
-            var {settings, sectionName} = this.props,
+            let {settings, sectionName} = this.props,
                 section = settings.get(sectionName),
                 isPlugin = settings.isPlugin(section),
                 metadata = section.metadata,
@@ -223,7 +223,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                             </div>
                         }
                         {_.map(sortedSettings, function(settingName) {
-                            var setting = section[settingName],
+                            let setting = section[settingName],
                                 settingKey = settingName + (isPlugin ? '-' + metadata.chosen_id : ''),
                                 path = this.props.makePath(sectionName, settingName),
                                 error = (settings.validationError || {})[path],
@@ -234,7 +234,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                 settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
 
                             // support of custom controls
-                            var CustomControl = customControls[setting.type];
+                            let CustomControl = customControls[setting.type];
                             if (CustomControl) {
                                 return <CustomControl
                                     {...setting}
@@ -248,9 +248,9 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                             }
 
                             if (setting.values) {
-                                var values = _.chain(_.cloneDeep(setting.values))
+                                let values = _.chain(_.cloneDeep(setting.values))
                                     .map(function(value) {
-                                        var valuePath = this.props.makePath(path, value.data),
+                                        let valuePath = this.props.makePath(path, value.data),
                                             processedValueRestrictions = this.props.checkRestrictions('disable', valuePath);
                                         if (!this.props.checkRestrictions('hide', valuePath).result) {
                                             value.disabled = isSettingDisabled || processedValueRestrictions.result;
@@ -271,7 +271,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                                 />;
                             }
 
-                            var settingDescription = setting.description &&
+                            let settingDescription = setting.description &&
                                     <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
                             return <controls.Input
                                 {... _.pick(setting, 'type', 'label')}

@@ -140,7 +140,7 @@
     no-const-assign: 2
     no-dupe-class-members: 2
     no-this-before-super: 2
-    no-var: 0
+    no-var: 2
     object-shorthand: 0
     prefer-arrow-callback: 0
     prefer-const: 0
@@ -168,6 +168,7 @@
     node: true
     mocha: true
     amd: true
+    es6: true
   globals:
     app: false
     assert: false

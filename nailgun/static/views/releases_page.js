@@ -25,7 +25,7 @@ define(
 function(_, i18n, React, models, controls, componentMixins) {
     'use strict';
 
-    var ReleasesPage = React.createClass({
+    let ReleasesPage = React.createClass({
         mixins: [componentMixins.backboneMixin('releases')],
         getDefaultProps: function() {
             return {columns: ['name', 'version', 'state']};
@@ -35,7 +35,7 @@ function(_, i18n, React, models, controls, componentMixins) {
             navbarActiveElement: 'releases',
             breadcrumbsPath: [['home', '#'], 'releases'],
             fetchData: function() {
-                var releases = app.releases;
+                let releases = app.releases;
                 return releases.fetch({cache: true}).then(() => ({releases}));
             }
         },

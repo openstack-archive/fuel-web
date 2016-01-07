@@ -24,17 +24,17 @@ define([
 ], function($, _, i18n, React, utils, controls) {
     'use strict';
 
-    var customControls = {};
+    let customControls = {};
 
     customControls.custom_repo_configuration = React.createClass({
         statics: {
             // validate method represented as static method to support cluster settings validation
             validate: function(setting, models) {
-                var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
+                let ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
                     nameRegexp = /^[\w-.]+$/,
                     os = models.release.get('operating_system');
-                var errors = setting.value.map(function(repo) {
-                    var error = {},
+                let errors = setting.value.map(function(repo) {
+                    let error = {},
                         value = this.repoToString(repo, os);
                     if (!repo.name) {
                         error.name = i18n(ns + 'empty_name');
@@ -44,7 +44,7 @@ define([
                     if (!value || !value.match(this.defaultProps.repoRegexes[os])) {
                         error.uri = i18n(ns + 'invalid_repo');
                     }
-                    var priority = repo.priority;
+                    let priority = repo.priority;
                     if (_.isNaN(priority) || !_.isNull(priority) && (!(priority == _.parseInt(priority, 10)) || os == 'CentOS' && (priority < 1 || priority > 99))) {
                         error.priority = i18n(ns + 'invalid_priority');
                     }
@@ -53,7 +53,7 @@ define([
                 return _.compact(errors).length ? errors : null;
             },
             repoToString: function(repo, os) {
-                var repoData = _.compact(this.defaultProps.repoAttributes[os].map(function(attribute) {return repo[attribute];}));
+                let repoData = _.compact(this.defaultProps.repoAttributes[os].map(function(attribute) {return repo[attribute];}));
                 if (!repoData.length) return ''; // in case of new repo
                 return repoData.join(' ');
             }
@@ -75,11 +75,11 @@ define([
         },
         changeRepos: function(method, index, value) {
             value = _.trim(value).replace(/\s+/g, ' ');
-            var repos = _.cloneDeep(this.props.value),
+            let repos = _.cloneDeep(this.props.value),
                 os = this.props.cluster.get('release').get('operating_system');
             switch (method) {
                 case 'add':
-                    var data = {
+                    let data = {
                         name: '',
                         type: '',
                         uri: '',
@@ -104,7 +104,7 @@ define([
                     repos[index].priority = value == '' ? null : Number(value);
                     break;
                 default:
-                    var repo = repos[index],
+                    let repo = repos[index],
                         match = value.match(this.props.repoRegexes[os]);
                     if (match) {
                         _.each(this.props.repoAttributes[os], function(attribute, index) {
@@ -114,7 +114,7 @@ define([
                         repo.uri = value;
                     }
             }
-            var path = this.props.settings.makePath(this.props.path, 'value');
+            let path = this.props.settings.makePath(this.props.path, 'value');
             this.props.settings.set(path, repos);
             this.props.settings.isValid({models: this.props.configModels});
         },
@@ -130,7 +130,7 @@ define([
             );
         },
         render: function() {
-            var ns = 'cluster_page.settings_tab.custom_repo_configuration.',
+            let ns = 'cluster_page.settings_tab.custom_repo_configuration.',
                 os = this.props.cluster.get('release').get('operating_system');
             return (
                 <div className='repos' key={this.state.key}>
@@ -138,7 +138,7 @@ define([
                         <span className='help-block' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(_.escape(this.props.description)))}} />
                     }
                     {this.props.value.map(function(repo, index) {
-                        var error = (this.props.error || {})[index],
+                        let error = (this.props.error || {})[index],
                             props = {
                                 name: index,
                                 type: 'text',

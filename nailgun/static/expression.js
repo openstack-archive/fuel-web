@@ -32,12 +32,12 @@ define(['underscore', 'expression/parser', 'expression/objects'], function(_, Ex
             ExpressionParser.yy.expression = this;
             this.modelPaths = {};
             this.extraModels = extraModels;
-            var value = this.compiledExpression.evaluate();
+            let value = this.compiledExpression.evaluate();
             delete this.extraModels;
             return value;
         },
         getCompiledExpression: function() {
-            var cacheEntry = this.expressionCache[this.expressionText];
+            let cacheEntry = this.expressionCache[this.expressionText];
             if (!cacheEntry) {
                 cacheEntry = this.expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
             }

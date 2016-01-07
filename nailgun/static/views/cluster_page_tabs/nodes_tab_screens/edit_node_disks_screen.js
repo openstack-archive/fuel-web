@@ -29,7 +29,7 @@ define(
 function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, controls) {
     'use strict';
 
-    var EditNodeDisksScreen = React.createClass({
+    let EditNodeDisksScreen = React.createClass({
         mixins: [
             ComponentMixins.backboneMixin('cluster', 'change:status change:nodes sync'),
             ComponentMixins.backboneMixin('nodes', 'change sync'),
@@ -38,20 +38,20 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
         ],
         statics: {
             fetchData: function(options) {
-                var nodes = utils.getNodeListFromTabOptions(options);
+                let nodes = utils.getNodeListFromTabOptions(options);
 
                 if (!nodes || !nodes.areDisksConfigurable()) {
                     return $.Deferred().reject();
                 }
 
-                var volumes = new models.Volumes();
+                let volumes = new models.Volumes();
                 volumes.url = _.result(nodes.at(0), 'url') + '/volumes';
                 return $.when(...nodes.map(function(node) {
                         node.disks = new models.Disks();
                         return node.disks.fetch({url: _.result(node, 'url') + '/disks'});
                     }, this).concat(volumes.fetch()))
                     .then(function() {
-                        var disks = new models.Disks(_.cloneDeep(nodes.at(0).disks.toJSON()), {parse: true});
+                        let disks = new models.Disks(_.cloneDeep(nodes.at(0).disks.toJSON()), {parse: true});
                         return {
                             disks: disks,
                             nodes: nodes,
@@ -80,7 +80,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             this.setState({actionInProgress: true});
             this.props.disks.fetch({url: _.result(this.props.nodes.at(0), 'url') + '/disks/defaults/'})
                 .fail(_.bind(function(response) {
-                    var ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
+                    let ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
                     utils.showErrorDialog({
                         title: i18n(ns + 'title'),
                         message: utils.getResponseText(response) || i18n(ns + 'load_defaults_warning')
@@ -105,7 +105,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                 }, this))
                 .done(this.updateInitialData)
                 .fail(_.bind(function(response) {
-                    var ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
+                    let ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
                     utils.showErrorDialog({
                         title: i18n(ns + 'title'),
                         message: utils.getResponseText(response) || i18n(ns + 'saving_warning')
@@ -116,12 +116,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                 }, this));
         },
         getDiskMetaData: function(disk) {
-            var result,
+            let result,
                 disksMetaData = this.props.nodes.at(0).get('meta').disks;
             // try to find disk metadata by matching "extra" field
             // if at least one entry presents both in disk and metadata entry,
             // this metadata entry is for our disk
-            var extra = disk.get('extra') || [];
+            let extra = disk.get('extra') || [];
             result = _.find(disksMetaData, function(diskMetaData) {
                 return _.isArray(diskMetaData.extra) && _.intersection(diskMetaData.extra, extra).length;
             }, this);
@@ -132,10 +132,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             return result;
         },
         getVolumesInfo: function(disk) {
-            var volumes = {},
+            let volumes = {},
                 unallocatedWidth = 100;
             disk.get('volumes').each(function(volume) {
-                var size = volume.get('size') || 0,
+                let size = volume.get('size') || 0,
                     width = this.getVolumeWidth(disk, size),
                     name = volume.get('name');
                 unallocatedWidth -= width;
@@ -165,7 +165,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             return !this.state.actionInProgress && this.hasChanges() && !this.hasErrors();
         },
         render: function() {
-            var hasChanges = this.hasChanges(),
+            let hasChanges = this.hasChanges(),
                 locked = this.isLocked(),
                 loadDefaultsDisabled = !!this.state.actionInProgress,
                 revertChangesDisabled = !!this.state.actionInProgress || !hasChanges;
@@ -215,7 +215,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
         }
     });
 
-    var NodeDisk = React.createClass({
+    let NodeDisk = React.createClass({
         getInitialState: function() {
             return {collapsed: true};
         },
@@ -225,7 +225,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
         updateDisk: function(name, value) {
-            var size = parseInt(value) || 0,
+            let size = parseInt(value) || 0,
                 volumeInfo = this.props.volumesInfo[name];
             if (size > volumeInfo.max) {
                 size = volumeInfo.max;
@@ -237,7 +237,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             $(ReactDOM.findDOMNode(this.refs[name])).collapse('toggle');
         },
         render: function() {
-            var disk = this.props.disk,
+            let disk = this.props.disk,
                 volumesInfo = this.props.volumesInfo,
                 diskMetaData = this.props.diskMetaData,
                 requiredDiskSize = _.sum(disk.get('volumes').map(function(volume) {
@@ -259,7 +259,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                     </div>
                     <div className='row disk-visual clearfix'>
                         {this.props.volumes.map(function(volume, index) {
-                            var volumeName = volume.get('name');
+                            let volumeName = volume.get('name');
                             return (
                                 <div
                                     key={'volume_' + volumeName}
@@ -313,13 +313,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                             <h5>{i18n(ns + 'volume_groups')}</h5>
                             <div className='form-horizontal disk-utility-box'>
                                 {this.props.volumes.map(function(volume, index) {
-                                    var volumeName = volume.get('name'),
+                                    let volumeName = volume.get('name'),
                                         value = volumesInfo[volumeName].size,
                                         currentMaxSize = volumesInfo[volumeName].max,
                                         currentMinSize = _.max([volumesInfo[volumeName].min, 0]),
                                         validationError = volumesInfo[volumeName].error;
 
-                                    var props = {
+                                    let props = {
                                         name: volumeName,
                                         min: currentMinSize,
                                         max: currentMaxSize,

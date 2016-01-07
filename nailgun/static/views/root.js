@@ -26,7 +26,7 @@ define([
 ], function(_, i18n, React, utils, layoutComponents, dispatcher, componentMixins, DND, HTML5Backend) {
     'use strict';
 
-    var RootComponent = React.createClass({
+    let RootComponent = React.createClass({
         mixins: [
             componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle'),
             componentMixins.dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning'),
@@ -49,7 +49,7 @@ define([
             return this.refs.page;
         },
         updateTitle: function() {
-            var Page = this.state.Page,
+            let Page = this.state.Page,
                 title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
             document.title = i18n('common.title') + (title ? ' - ' + title : '');
         },
@@ -57,11 +57,11 @@ define([
             dispatcher.trigger('updatePageLayout');
         },
         render: function() {
-            var {Page, showDefaultPasswordWarning} = this.state;
-            var {fuelSettings, version} = this.props;
+            let {Page, showDefaultPasswordWarning} = this.state;
+            let {fuelSettings, version} = this.props;
 
             if (!Page) return null;
-            var layoutClasses = {
+            let layoutClasses = {
                 clamp: true,
                 'fixed-width-layout': !Page.hiddenLayout
             };

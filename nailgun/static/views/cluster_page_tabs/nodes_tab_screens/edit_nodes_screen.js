@@ -25,10 +25,10 @@ define(
 function($, _, React, models, utils, NodeListScreen) {
     'use strict';
 
-    var EditNodesScreen = React.createClass({
+    let EditNodesScreen = React.createClass({
         statics: {
             fetchData: function(options) {
-                var cluster = options.cluster,
+                let cluster = options.cluster,
                     nodes = utils.getNodeListFromTabOptions(options);
 
                 if (!nodes) {

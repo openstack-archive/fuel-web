@@ -36,7 +36,7 @@ define(
 function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, DashboardTab, NodesTab, NetworkTab, SettingsTab, LogsTab, HealthCheckTab, vmWare) {
     'use strict';
 
-    var ClusterPage = React.createClass({
+    let ClusterPage = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5),
             componentMixins.backboneMixin('cluster', 'change:name change:is_customized change:release'),
@@ -62,7 +62,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         statics: {
             navbarActiveElement: 'clusters',
             breadcrumbsPath: function(pageOptions) {
-                var cluster = pageOptions.cluster,
+                let cluster = pageOptions.cluster,
                     tabOptions = pageOptions.tabOptions[0],
                     addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/),
                     breadcrumbs = [
@@ -91,9 +91,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 ];
             },
             fetchData: function(id, activeTab, ...tabOptions) {
-                var cluster, promise, currentClusterId;
-                var nodeNetworkGroups = app.nodeNetworkGroups;
-                var tab = _.find(this.getTabs(), {url: activeTab}).tab;
+                let cluster, promise, currentClusterId;
+                let nodeNetworkGroups = app.nodeNetworkGroups;
+                let tab = _.find(this.getTabs(), {url: activeTab}).tab;
                 try {
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}
@@ -105,15 +105,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 } else {
                     cluster = new models.Cluster({id: id});
 
-                    var settings = new models.Settings();
+                    let settings = new models.Settings();
                     settings.url = _.result(cluster, 'url') + '/attributes';
                     cluster.set({settings: settings});
 
-                    var roles = new models.Roles();
+                    let roles = new models.Roles();
                     roles.url = _.result(cluster, 'url') + '/roles';
                     cluster.set({roles: roles});
 
-                    var pluginLinks = new models.PluginLinks();
+                    let pluginLinks = new models.PluginLinks();
                     pluginLinks.url = _.result(cluster, 'url') + '/plugin_links';
                     cluster.set({pluginLinks: pluginLinks});
 
@@ -130,7 +130,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             nodeNetworkGroups.fetch({cache: true})
                         )
                         .then(function() {
-                            var networkConfiguration = new models.NetworkConfiguration();
+                            let networkConfiguration = new models.NetworkConfiguration();
                             networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                             cluster.set({
                                 networkConfiguration: networkConfiguration,
@@ -139,11 +139,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
                         })
                         .then(function() {
-                            var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
+                            let useVcenter = cluster.get('settings').get('common.use_vcenter.value');
                             if (!useVcenter) {
                                 return true;
                             }
-                            var vcenter = new vmWare.vmWareModels.VCenter({id: id});
+                            let vcenter = new vmWare.vmWareModels.VCenter({id: id});
                             cluster.set({vcenter: vcenter});
                             return vcenter.fetch();
                         })
@@ -176,7 +176,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             };
         },
         removeFinishedNetworkTasks: function(callback) {
-            var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
+            let request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
             if (callback) request.always(callback);
             return request;
         },
@@ -184,7 +184,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             return this.removeFinishedTasks(this.props.cluster.tasks({group: 'deployment'}));
         },
         removeFinishedTasks: function(tasks) {
-            var requests = [];
+            let requests = [];
             _.each(tasks, function(task) {
                 if (task.match({active: false})) {
                     this.props.cluster.get('tasks').remove(task);
@@ -197,7 +197,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             return this.props.cluster.task({group: ['deployment', 'network'], active: true});
         },
         fetchData: function() {
-            var task = this.props.cluster.task({group: 'deployment', active: true});
+            let task = this.props.cluster.task({group: 'deployment', active: true});
             if (task) {
                 return task.fetch()
                     .done(_.bind(function() {
@@ -221,7 +221,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         componentWillMount: function() {
             this.props.cluster.on('change:release_id', function() {
-                var release = new models.Release({id: this.props.cluster.get('release_id')});
+                let release = new models.Release({id: this.props.cluster.get('release_id')});
                 release.fetch().done(_.bind(function() {
                     this.props.cluster.set({release: release});
                 }, this));
@@ -236,7 +236,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             // FIXME: the following logs-related logic should be moved to Logs tab code
             // to keep parent component tightly coupled to its children
             if (props.activeTab == 'logs') {
-                var selectedLogs;
+                let selectedLogs;
                 if (props.tabOptions[0]) {
                     selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
                     selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() : props.defaultLogLevel;
@@ -265,7 +265,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         selectNodes: function(ids, checked) {
             if (ids && ids.length) {
-                var nodeSelection = this.state.selectedNodeIds;
+                let nodeSelection = this.state.selectedNodeIds;
                 _.each(ids, function(id) {
                     if (checked) {
                         nodeSelection[id] = true;
@@ -279,12 +279,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }
         },
         render: function() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
                 tabUrls = _.pluck(availableTabs, 'url'),
                 tab = _.find(availableTabs, {url: this.props.activeTab});
             if (!tab) return null;
-            var Tab = tab.tab;
+            let Tab = tab.tab;
 
             return (
                 <div className='cluster-page' key={cluster.id}>

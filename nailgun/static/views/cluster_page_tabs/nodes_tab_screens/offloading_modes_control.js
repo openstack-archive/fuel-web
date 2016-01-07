@@ -24,7 +24,7 @@ define(
 function($, _, React, i18n, utils) {
     'use strict';
 
-    var ns = 'cluster_page.nodes_tab.configure_interfaces.',
+    let ns = 'cluster_page.nodes_tab.configure_interfaces.',
         OffloadingModesControl = React.createClass({
         propTypes: {
             interface: React.PropTypes.object
@@ -42,7 +42,7 @@ function($, _, React, i18n, utils) {
             _.each(mode.sub, function(mode) {this.setModeState(mode, state);}, this);
         },
         checkModes: function(mode, sub) {
-            var changedState = sub.reduce(
+            let changedState = sub.reduce(
                     (function(state, childMode) {
                         if (!_.isEmpty(childMode.sub)) {
                             this.checkModes(childMode, childMode.sub);
@@ -59,7 +59,7 @@ function($, _, React, i18n, utils) {
             }
         },
         findMode: function(name, modes) {
-            var result,
+            let result,
                 mode,
                 index = 0,
                 modesLength = modes.length;
@@ -77,7 +77,7 @@ function($, _, React, i18n, utils) {
             return result;
         },
         onModeStateChange: function(name, state) {
-            var modes = _.cloneDeep(this.props.interface.get('offloading_modes') || []),
+            let modes = _.cloneDeep(this.props.interface.get('offloading_modes') || []),
                 mode = this.findMode(name, modes);
 
             return () => {
@@ -94,7 +94,7 @@ function($, _, React, i18n, utils) {
             };
         },
         makeOffloadingModesExcerpt: function() {
-            var states = {
+            let states = {
                     true: i18n(ns + 'offloading_enabled'),
                     false: i18n(ns + 'offloading_disabled'),
                     null: i18n(ns + 'offloading_default')
@@ -105,7 +105,7 @@ function($, _, React, i18n, utils) {
                 return states[ifcModes[0].state];
             }
 
-            var lastState,
+            let lastState,
                 added = 0,
                 excerpt = [];
             _.each(ifcModes,
@@ -124,11 +124,11 @@ function($, _, React, i18n, utils) {
         },
         renderChildModes: function(modes, level) {
             return modes.map((function(mode) {
-                var lines = [
+                let lines = [
                     <tr key={mode.name} className={'level' + level}>
                         <td>{mode.name}</td>
                         {[true, false, null].map((function(modeState) {
-                            var styles = {
+                            let styles = {
                                 'btn-link': true,
                                 active: mode.state === modeState
                             };
@@ -152,7 +152,7 @@ function($, _, React, i18n, utils) {
             }).bind(this));
         },
         render: function() {
-            var modes = [],
+            let modes = [],
                 ifcModes = this.props.interface.get('offloading_modes');
             if (ifcModes) {
                 modes.push({

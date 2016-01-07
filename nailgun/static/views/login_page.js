@@ -26,7 +26,7 @@ define(
 function($, _, i18n, React, ReactDOM, dispatcher, utils) {
     'use strict';
 
-    var LoginPage = React.createClass({
+    let LoginPage = React.createClass({
         statics: {
             title: i18n('login_page.title'),
             hiddenLayout: true
@@ -54,16 +54,16 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
         }
     });
 
-    var LoginForm = React.createClass({
+    let LoginForm = React.createClass({
         login: function(username, password) {
-            var keystoneClient = app.keystoneClient;
+            let keystoneClient = app.keystoneClient;
 
             return keystoneClient.authenticate(username, password, {force: true})
                 .fail((xhr) => {
                     $(ReactDOM.findDOMNode(this.refs.username)).focus();
 
-                    var status = xhr && xhr.status;
-                    var error = 'login_error';
+                    let status = xhr && xhr.status;
+                    let error = 'login_error';
                     if (status == 401) {
                         error = 'credentials_error';
                     } else if (!status || String(status)[0] == '5') { // no status (connection refused) or 5xx error
@@ -85,7 +85,7 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
                     return app.fuelSettings.fetch({cache: true});
                 })
                 .then(() => {
-                    var nextUrl = '';
+                    let nextUrl = '';
                     if (app.router.returnUrl) {
                         nextUrl = app.router.returnUrl;
                         delete app.router.returnUrl;
@@ -108,8 +108,8 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
         onSubmit: function(e) {
             e.preventDefault();
 
-            var username = ReactDOM.findDOMNode(this.refs.username).value;
-            var password = ReactDOM.findDOMNode(this.refs.password).value;
+            let username = ReactDOM.findDOMNode(this.refs.username).value;
+            let password = ReactDOM.findDOMNode(this.refs.password).value;
 
             this.setState({actionInProgress: true});
 
@@ -119,9 +119,9 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
                 }, this));
         },
         render: function() {
-            var httpsUsed = location.protocol == 'https:';
-            var httpsPort = 8443;
-            var httpsLink = 'https://' + location.hostname + ':' + httpsPort;
+            let httpsUsed = location.protocol == 'https:';
+            let httpsPort = 8443;
+            let httpsLink = 'https://' + location.hostname + ':' + httpsPort;
 
             return (
                 <form className='form-horizontal' onSubmit={this.onSubmit}>

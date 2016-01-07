@@ -30,9 +30,9 @@ define(
 function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen, ReactTransitionGroup) {
     'use strict';
 
-    var NodesTab = React.createClass({
+    let NodesTab = React.createClass({
         getInitialState: function() {
-            var screen = this.getScreen();
+            let screen = this.getScreen();
             return {
                 loading: this.shouldScreenDataBeLoaded(screen),
                 screen: screen,
@@ -85,9 +85,9 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
             if (this.checkScreenExists() && this.state.loading) this.loadScreenData();
         },
         componentWillReceiveProps: function(newProps) {
-            var screen = this.getScreen(newProps);
+            let screen = this.getScreen(newProps);
             if (this.state.screen != screen && this.checkScreenExists(screen)) {
-                var screenOptions = this.getScreenOptions(newProps),
+                let screenOptions = this.getScreenOptions(newProps),
                     newState = {
                         screen: screen,
                         screenOptions: screenOptions,
@@ -102,7 +102,7 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
             }
         },
         render: function() {
-            var Screen = this.getScreenConstructor(this.state.screen) || {};
+            let Screen = this.getScreenConstructor(this.state.screen) || {};
             return (
                 <ReactTransitionGroup
                     component='div'
@@ -127,7 +127,7 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
 
     // additional screen wrapper to keep ref to screen in the tab component
     // see https://github.com/facebook/react/issues/1950 for more info
-    var ScreenTransitionWrapper = React.createClass({
+    let ScreenTransitionWrapper = React.createClass({
         componentWillEnter: function(cb) {
             $(ReactDOM.findDOMNode(this)).hide().delay('fast').fadeIn('fast', cb);
         },

@@ -52,11 +52,11 @@ define([
                 $('body').off('click.' + this.eventName);
             },
             onLeave: function(e) {
-                var href = $(e.currentTarget).attr('href');
+                let href = $(e.currentTarget).attr('href');
                 if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
                     e.preventDefault();
 
-                    var dialogs = require('views/dialogs');
+                    let dialogs = require('views/dialogs');
                     dialogs.DiscardSettingsChangesDialog
                         .show({
                             isDiscardingPossible: _.result(this, 'isDiscardingPossible'),
@@ -73,13 +73,13 @@ define([
             updateInterval = updateInterval * 1000;
             return {
                 scheduleDataFetch: function() {
-                    var shouldDataBeFetched = !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
+                    let shouldDataBeFetched = !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (this.isMounted() && !this.activeTimeout && shouldDataBeFetched) {
                         this.activeTimeout = _.delay(this.startPolling, updateInterval);
                     }
                 },
                 startPolling: function(force) {
-                    var shouldDataBeFetched = force || !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
+                    let shouldDataBeFetched = force || !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (shouldDataBeFetched) {
                         this.stopPolling();
                         return this.fetchData().always(this.scheduleDataFetch);

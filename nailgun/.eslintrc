@@ -1,4 +1,5 @@
 ---
+  root: true
   plugins:
     - react
   ecmaFeatures:
@@ -165,10 +166,6 @@
     react/sort-comp: 0
   env:
     browser: true
-    node: true
-    mocha: true
     amd: true
   globals:
     app: false
-    assert: false
-    sinon: false

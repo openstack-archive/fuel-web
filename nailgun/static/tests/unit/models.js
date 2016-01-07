@@ -13,12 +13,8 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
-define([
-    'underscore',
-    'models'
-], (_, models) => {
-    'use strict';
+import _ from 'underscore';
+import models from 'models';
 
     suite('Test models', () => {
         suite('Test Task model', () => {
@@ -106,4 +102,3 @@ define([
             });
         });
     });
-});

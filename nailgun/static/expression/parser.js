@@ -118,7 +118,7 @@ this.$ = new yy.SubexpressionWrapper(function() {
 break;
 case 8:
 this.$ = new yy.SubexpressionWrapper(function() {
-            return require('underscore').contains($$[$0].getValue(), $$[$0-2].getValue());
+            return $$[$0].getValue().includes($$[$0-2].getValue());
         })
 break;
 case 9:

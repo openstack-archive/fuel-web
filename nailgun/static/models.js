@@ -13,18 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define([
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'utils',
-    'expression',
-    'expression/objects',
-    'views/custom_controls',
-    'deep-model'
-], ($, _, i18n, Backbone, utils, Expression, expressionObjects, customControls) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import Expression from 'expression';
+import expressionObjects from 'expression/objects';
+import utils from 'utils';
+import customControls from 'views/custom_controls';
+import 'deep-model';
 
     var models = {};
 
@@ -1495,5 +1493,4 @@ define([
         }
     });
 
-    return models;
-});
+    export default models;

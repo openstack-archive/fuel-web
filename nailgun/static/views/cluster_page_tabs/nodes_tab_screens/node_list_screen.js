@@ -13,24 +13,20 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'react-dom',
-    'utils',
-    'models',
-    'dispatcher',
-    'views/controls',
-    'views/dialogs',
-    'component_mixins',
-    'views/cluster_page_tabs/nodes_tab_screens/node'
-],
-($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, dialogs, componentMixins, Node) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import utils from 'utils';
+import models from 'models';
+import dispatcher from 'dispatcher';
+import controls from 'views/controls';
+import dialogs from 'views/dialogs';
+import componentMixins from 'component_mixins';
+import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
+
     var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
 
     class Sorter {
@@ -1851,5 +1847,4 @@ define(
         }
     });
 
-    return NodeListScreen;
-});
+    export default NodeListScreen;

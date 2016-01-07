@@ -64,7 +64,7 @@ e
         })}
     | e IN e
         {$$ = new yy.SubexpressionWrapper(function() {
-            return require('underscore').contains($3.getValue(), $1.getValue());
+            return $3.getValue().includes($1.getValue());
         })}
     | NUMBER
         {$$ = new yy.ScalarWrapper(Number(yytext))}

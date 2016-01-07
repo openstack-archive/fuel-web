@@ -13,20 +13,17 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define([
-    'jquery',
-    'underscore',
-    'backbone',
-    'utils',
-    'i18n',
-    'dispatcher',
-    'react',
-    'react-dom',
-    'react.backbone'
-], ($, _, Backbone, utils, i18n, dispatcher, React, ReactDOM) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import Backbone from 'backbone';
+import i18n from 'i18n';
+import React from 'react';
+import dispatcher from 'dispatcher';
+import ReactDOM from 'react-dom';
+import 'react.backbone';
+import dialogs from 'views/dialogs';
 
-    return {
+    var componentMixins = {
         backboneMixin: React.BackboneMixin,
         dispatcherMixin(events, callback) {
             return {
@@ -56,7 +53,6 @@ define([
                 if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
                     e.preventDefault();
 
-                    var dialogs = require('views/dialogs');
                     dialogs.DiscardSettingsChangesDialog
                         .show({
                             isDiscardingPossible: _.result(this, 'isDiscardingPossible'),
@@ -156,4 +152,5 @@ define([
             };
         }
     };
-});
+
+export default componentMixins;

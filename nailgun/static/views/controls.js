@@ -20,9 +20,13 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'component_mixins'],
-    (i18n, $, _, React, ReactDOM, utils, componentMixins) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import utils from 'utils';
+import componentMixins from 'component_mixins';
 
     var controls = {};
 
@@ -381,5 +385,4 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
         }
     });
 
-    return controls;
-});
+    export default controls;

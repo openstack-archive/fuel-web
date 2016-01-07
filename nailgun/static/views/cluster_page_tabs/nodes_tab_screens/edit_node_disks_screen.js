@@ -13,21 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'react-dom',
-    'utils',
-    'models',
-    'component_mixins',
-    'views/controls'
-],
-($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, controls) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import Backbone from 'backbone';
+import i18n from 'i18n';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import utils from 'utils';
+import models from 'models';
+import ComponentMixins from 'component_mixins';
+import controls from 'views/controls';
 
     var EditNodeDisksScreen = React.createClass({
         mixins: [
@@ -370,5 +365,4 @@ define(
         }
     });
 
-    return EditNodeDisksScreen;
-});
+    export default EditNodeDisksScreen;

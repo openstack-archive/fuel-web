@@ -14,20 +14,16 @@
  * under the License.
 **/
 
-define([
-    'require',
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'classnames',
-    'javascript-natural-sort',
-    'expression',
-    'expression/objects',
-    'react',
-    'ip'
-], (require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React, IP) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import classNames from 'classnames';
+import naturalSort from 'javascript-natural-sort';
+import Expression from 'expression';
+import ModelPath from 'expression/objects';
+import IP from 'ip';
+import dialogs from 'views/dialogs';
+import models from 'models';
 
     var utils = {
         regexes: {
@@ -45,7 +41,6 @@ define([
         getNodeListFromTabOptions(options) {
             var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
                 ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
-                models = require('models'),
                 nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
             if (nodes.length == ids.length) return nodes;
         },
@@ -71,7 +66,7 @@ define([
         },
         classNames: classNames,
         parseModelPath(path, models) {
-            var modelPath = new expressionObjects.ModelPath(path);
+            var modelPath = new ModelPath(path);
             modelPath.setModel(models);
             return modelPath;
         },
@@ -103,7 +98,6 @@ define([
             return result;
         },
         showErrorDialog(options) {
-            var dialogs = require('views/dialogs'); // avoid circular dependencies
             options.message = options.response ? utils.getResponseText(options.response) :
                 options.message || i18n('dialog.error_dialog.server_error');
             dialogs.ErrorDialog.show(options);
@@ -335,7 +329,6 @@ define([
                     'https://docs.fuel-infra.org/openstack/fuel/fuel-';
             return linkStart + release + '/' + link;
         }
-};
+    };
 
-    return utils;
-});
+    export default utils;

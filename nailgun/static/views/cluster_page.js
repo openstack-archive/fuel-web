@@ -13,28 +13,21 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'utils',
-    'models',
-    'dispatcher',
-    'component_mixins',
-    'views/dialogs',
-    'views/cluster_page_tabs/dashboard_tab',
-    'views/cluster_page_tabs/nodes_tab',
-    'views/cluster_page_tabs/network_tab',
-    'views/cluster_page_tabs/settings_tab',
-    'views/cluster_page_tabs/logs_tab',
-    'views/cluster_page_tabs/healthcheck_tab',
-    'plugins/vmware/vmware'
-],
-($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, DashboardTab, NodesTab, NetworkTab, SettingsTab, LogsTab, HealthCheckTab, vmWare) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import dispatcher from 'dispatcher';
+import componentMixins from 'component_mixins';
+import DashboardTab from 'views/cluster_page_tabs/dashboard_tab';
+import NodesTab from 'views/cluster_page_tabs/nodes_tab';
+import NetworkTab from 'views/cluster_page_tabs/network_tab';
+import SettingsTab from 'views/cluster_page_tabs/settings_tab';
+import LogsTab from 'views/cluster_page_tabs/logs_tab';
+import HealthCheckTab from 'views/cluster_page_tabs/healthcheck_tab';
+import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
 
     var ClusterPage = React.createClass({
         mixins: [
@@ -85,7 +78,7 @@ define(
                     {url: 'nodes', tab: NodesTab},
                     {url: 'network', tab: NetworkTab},
                     {url: 'settings', tab: SettingsTab},
-                    {url: 'vmware', tab: vmWare.VmWareTab},
+                    {url: 'vmware', tab: VmWareTab},
                     {url: 'logs', tab: LogsTab},
                     {url: 'healthcheck', tab: HealthCheckTab}
                 ];
@@ -143,7 +136,7 @@ define(
                             if (!useVcenter) {
                                 return true;
                             }
-                            var vcenter = new vmWare.vmWareModels.VCenter({id: id});
+                            var vcenter = new VmWareModels.VCenter({id: id});
                             cluster.set({vcenter: vcenter});
                             return vcenter.fetch();
                         })
@@ -328,5 +321,4 @@ define(
         }
     });
 
-    return ClusterPage;
-});
+    export default ClusterPage;

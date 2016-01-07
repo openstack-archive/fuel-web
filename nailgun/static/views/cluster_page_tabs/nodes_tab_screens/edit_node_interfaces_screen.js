@@ -13,24 +13,18 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'jquery',
-    'underscore',
-    'backbone',
-    'react',
-    'i18n',
-    'utils',
-    'models',
-    'dispatcher',
-    'views/dialogs',
-    'views/controls',
-    'component_mixins',
-    'react-dnd',
-    'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
-],
-($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins, DND, OffloadingModes) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import Backbone from 'backbone';
+import React from 'react';
+import i18n from 'i18n';
+import utils from 'utils';
+import models from 'models';
+import dispatcher from 'dispatcher';
+import controls from 'views/controls';
+import ComponentMixins from 'component_mixins';
+import OffloadingModes from 'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control';
+import {DragSource, DropTarget} from 'react-dnd';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.';
 
@@ -431,7 +425,6 @@ define(
 
             var interfaceSpeeds = this.getIfcProperty('current_speed'),
                 interfaceNames = this.getIfcProperty('name');
-
             return (
                 <div className='row'>
                     <div className='title'>
@@ -809,7 +802,8 @@ define(
             );
         }
     });
-    var NodeInterfaceDropTarget = DND.DropTarget('network', NodeInterface.target, NodeInterface.collect)(NodeInterface);
+
+    var NodeInterfaceDropTarget = DropTarget('network', NodeInterface.target, NodeInterface.collect)(NodeInterface);
 
     var Network = React.createClass({
         statics: {
@@ -857,7 +851,7 @@ define(
             );
         }
     });
-    var DraggableNetwork = DND.DragSource('network', Network.source, Network.collect)(Network);
 
-    return EditNodeInterfacesScreen;
-});
+    var DraggableNetwork = DragSource('network', Network.source, Network.collect)(Network);
+
+    export default EditNodeInterfacesScreen;

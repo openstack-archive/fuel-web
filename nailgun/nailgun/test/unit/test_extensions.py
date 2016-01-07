@@ -15,7 +15,9 @@
 #    under the License.
 
 import mock
+from oslo_serialization import jsonutils
 
+from nailgun.api.v1.validators.extension import ExtensionValidator
 from nailgun import errors
 from nailgun.extensions import BaseExtension
 from nailgun.extensions import BasePipeline
@@ -29,6 +31,7 @@ from nailgun.extensions import get_extension
 from nailgun.extensions import node_extension_call
 from nailgun.extensions import setup_yaql_context
 from nailgun.test.base import BaseTestCase
+from nailgun.test.utils import make_mock_extensions
 
 
 class BaseExtensionCase(BaseTestCase):
@@ -63,20 +66,6 @@ class TestBaseExtension(BaseExtensionCase):
         self.assertEqual(
             self.extension.full_name(),
             'ext_name-1.0.0')
-
-
-def make_mock_extensions(names=('ex1', 'ex2')):
-    mocks = []
-    for name in names:
-        # NOTE(eli): since 'name' is reserved world
-        # for mock constructor, we should assign
-        # name explicitly
-        ex_m = mock.MagicMock()
-        ex_m.name = name
-        ex_m.provides = ['method_call']
-        mocks.append(ex_m)
-
-    return mocks
 
 
 class TestExtensionUtils(BaseTestCase):
@@ -242,3 +231,28 @@ class TestPipeline(BaseExtensionCase):
             @classmethod
             def process_deployment_for_node(cls, cluster, cluster_data):
                 pass
+
+
+class TestExtensionValidator(BaseTestCase):
+
+    def test_validate_extensions(self):
+        global_exts = 'volume_manager', 'bareon', 'ultralogger'
+
+        with mock.patch(
+                'nailgun.api.v1.validators.extension.get_all_extensions',
+                return_value=make_mock_extensions(global_exts)):
+
+            ExtensionValidator.validate(jsonutils.dumps(global_exts))
+
+    def test_invalid_extension(self):
+        global_exts = 'volume_manager', 'bareon', 'ultralogger'
+        data = 'volume_manager', 'baleron'
+
+        with mock.patch(
+                'nailgun.api.v1.validators.extension.get_all_extensions',
+                return_value=make_mock_extensions(global_exts)):
+
+            with self.assertRaisesRegexp(errors.CannotFindExtension,
+                                         'No such extensions: baleron'):
+
+                ExtensionValidator.validate(jsonutils.dumps(data))

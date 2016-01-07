@@ -34,6 +34,7 @@ from nailgun.api.v1.handlers.cluster import \
     ClusterDeploymentGraphCollectionHandler
 from nailgun.api.v1.handlers.cluster import ClusterDeploymentGraphHandler
 from nailgun.api.v1.handlers.cluster import ClusterDeploymentTasksHandler
+from nailgun.api.v1.handlers.cluster import ClusterExtensionsHandler
 from nailgun.api.v1.handlers.cluster import ClusterGeneratedData
 from nailgun.api.v1.handlers.cluster import ClusterHandler
 from nailgun.api.v1.handlers.cluster import \
@@ -296,6 +297,9 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/network_configuration'
     r'/ips/(?P<ip_addr_id>\d+)/vips/?$',
     ClusterVIPHandler,
+
+    r'/clusters/(?P<cluster_id>\d+)/extensions/?$',
+    ClusterExtensionsHandler,
 
     r'/nodegroups/?$',
     NodeGroupCollectionHandler,

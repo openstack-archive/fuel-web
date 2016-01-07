@@ -32,31 +32,31 @@ define([
             componentMixins.dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning'),
             componentMixins.dispatcherMixin('hideDefaultPasswordWarning', 'hideDefaultPasswordWarning')
         ],
-        showDefaultPasswordWarning: function() {
+        showDefaultPasswordWarning() {
             this.setState({showDefaultPasswordWarning: true});
         },
-        hideDefaultPasswordWarning: function() {
+        hideDefaultPasswordWarning() {
             this.setState({showDefaultPasswordWarning: false});
         },
-        getInitialState: function() {
+        getInitialState() {
             return {showDefaultPasswordWarning: false};
         },
-        setPage: function(Page, pageOptions) {
+        setPage(Page, pageOptions) {
             this.setState({
                 Page: Page,
                 pageOptions: pageOptions
             });
             return this.refs.page;
         },
-        updateTitle: function() {
+        updateTitle() {
             var Page = this.state.Page,
                 title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
             document.title = i18n('common.title') + (title ? ' - ' + title : '');
         },
-        componentDidUpdate: function() {
+        componentDidUpdate() {
             dispatcher.trigger('updatePageLayout');
         },
-        render: function() {
+        render() {
             var {Page, showDefaultPasswordWarning} = this.state;
             var {fuelSettings, version} = this.props;
 

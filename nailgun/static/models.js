@@ -29,7 +29,7 @@ define([
     var models = {};
 
     var superMixin = models.superMixin = {
-        _super: function(method, args) {
+        _super(method, args) {
             var object = this;
             while (object[method] === this[method]) object = object.constructor.__super__;
             return object[method].apply(this, args || []);
@@ -43,7 +43,7 @@ define([
     // get functionality -- otherwise model.property always returns undefined.
 
     var collectionMixin = {
-        getByIds: function(ids) {
+        getByIds(ids) {
             return this.filter(function(model) {return _.contains(ids, model.id);});
         }
     };
@@ -79,13 +79,13 @@ define([
     var BaseCollection = models.BaseCollection = Backbone.Collection.extend(collectionMixin).extend(superMixin);
 
     var cacheMixin = {
-        fetch: function(options) {
+        fetch(options) {
             if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {
                 return $.Deferred().resolve();
             }
             return this._super('fetch', arguments);
         },
-        sync: function() {
+        sync() {
             var deferred = this._super('sync', arguments);
             if (this.cacheFor) {
                 deferred.done(_.bind(function() {
@@ -94,18 +94,18 @@ define([
             }
             return deferred;
         },
-        cancelThrottling: function() {
+        cancelThrottling() {
             delete this.lastSyncTime;
         }
     };
     models.cacheMixin = cacheMixin;
 
     var restrictionMixin = models.restrictionMixin = {
-        expandRestrictions: function(restrictions, path = 'restrictions') {
+        expandRestrictions(restrictions, path = 'restrictions') {
             this.expandedRestrictions = this.expandedRestrictions || {};
             this.expandedRestrictions[path] = _.map(restrictions, utils.expandRestriction, this);
         },
-        checkRestrictions: function(models, action, path = 'restrictions') {
+        checkRestrictions(models, action, path = 'restrictions') {
             var restrictions = (this.expandedRestrictions || {})[path];
             if (action) {
                 restrictions = _.where(restrictions, {action: action});
@@ -118,11 +118,11 @@ define([
                 message: _.compact(_.pluck(satisfiedRestrictions, 'message')).join(' ')
             };
         },
-        expandLimits: function(limits) {
+        expandLimits(limits) {
             this.expandedLimits = this.expandedLimits || {};
             this.expandedLimits[this.get('name')] = limits;
         },
-        checkLimits: function(models, nodes, checkLimitIsReached = true, limitTypes = ['min', 'max']) {
+        checkLimits(models, nodes, checkLimitIsReached = true, limitTypes = ['min', 'max']) {
             /*
              *  Check the 'limits' section of configuration.
              *  models -- current models to check the limits
@@ -265,7 +265,7 @@ define([
     models.Role = BaseModel.extend(restrictionMixin).extend({
         idAttribute: 'name',
         constructorName: 'Role',
-        parse: function(response) {
+        parse(response) {
             _.extend(response, _.omit(response.meta, 'name'));
             response.label = response.meta.name;
             delete response.meta;
@@ -277,11 +277,11 @@ define([
         constructorName: 'Roles',
         comparator: 'weight',
         model: models.Role,
-        initialize: function() {
+        initialize() {
             this.processConflictsAndRestrictions();
             this.on('update', this.processConflictsAndRestrictions, this);
         },
-        processConflictsAndRestrictions: function() {
+        processConflictsAndRestrictions() {
             this.each(function(role) {
                 role.expandRestrictions(role.get('restrictions'));
                 role.expandLimits(role.get('limits'));
@@ -328,7 +328,7 @@ define([
     models.Cluster = BaseModel.extend({
         constructorName: 'Cluster',
         urlRoot: '/api/clusters',
-        defaults: function() {
+        defaults() {
             var defaults = {
                 nodes: new models.Nodes(),
                 tasks: new models.Tasks()
@@ -336,7 +336,7 @@ define([
             defaults.nodes.cluster = defaults.tasks.cluster = this;
             return defaults;
         },
-        validate: function(attrs) {
+        validate(attrs) {
             var errors = {};
             if (!_.trim(attrs.name) || _.trim(attrs.name).length == 0) {
                 errors.name = 'Environment name cannot be empty';
@@ -346,24 +346,24 @@ define([
             }
             return _.isEmpty(errors) ? null : errors;
         },
-        task: function(filter1, filter2) {
+        task(filter1, filter2) {
             var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
             return this.get('tasks') && this.get('tasks').findTask(filters);
         },
-        tasks: function(filter1, filter2) {
+        tasks(filter1, filter2) {
             var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
             return this.get('tasks') && this.get('tasks').filterTasks(filters);
         },
-        needsRedeployment: function() {
+        needsRedeployment() {
             return this.get('nodes').any({pending_addition: false, status: 'error'}) && this.get('status') != 'update_error';
         },
-        fetchRelated: function(related, options) {
+        fetchRelated(related, options) {
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
         },
-        isAvailableForSettingsChanges: function() {
+        isAvailableForSettingsChanges() {
             return !this.get('is_locked');
         },
-        isDeploymentPossible: function() {
+        isDeploymentPossible() {
             var nodes = this.get('nodes');
             return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
                 (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', active: true});
@@ -392,7 +392,7 @@ define([
             'offline',
             'removing'
         ],
-        resource: function(resourceName) {
+        resource(resourceName) {
             var resource = 0;
             try {
                 if (resourceName == 'cores') {
@@ -413,17 +413,17 @@ define([
             } catch (ignore) {}
             return _.isNaN(resource) ? 0 : resource;
         },
-        sortedRoles: function(preferredOrder) {
+        sortedRoles(preferredOrder) {
             return _.union(this.get('roles'), this.get('pending_roles')).sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
-        isSelectable: function() {
+        isSelectable() {
             // forbid removing node from adding to environments
             // and useless management of roles, disks, interfaces, etc.
             return this.get('status') != 'removing';
         },
-        hasRole: function(role, onlyDeployedRoles) {
+        hasRole(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
         },
@@ -432,20 +432,20 @@ define([
                 this.get('pending_deletion') ||
                 this.get('cluster') && !!this.get('pending_roles').length;
         },
-        areDisksConfigurable: function() {
+        areDisksConfigurable() {
             var status = this.get('status');
             return status == 'discover' || status == 'error';
         },
-        areInterfacesConfigurable: function() {
+        areInterfacesConfigurable() {
             var status = this.get('status');
             return status == 'discover' || status == 'error' || status == 'provisioned';
         },
-        getRolesSummary: function(releaseRoles) {
+        getRolesSummary(releaseRoles) {
             return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {
                 return releaseRoles.findWhere({name: role}).get('label');
             }).join(', ');
         },
-        getStatusSummary: function() {
+        getStatusSummary() {
             // 'offline' status has higher priority
             if (!this.get('online')) return 'offline';
             var status = this.get('status');
@@ -455,7 +455,7 @@ define([
             if (this.get('pending_deletion')) return 'pending_deletion';
             return status;
         },
-        getLabel: function(label) {
+        getLabel(label) {
             var labelValue = this.get('labels')[label];
             return _.isUndefined(labelValue) ? false : labelValue;
         }
@@ -499,20 +499,20 @@ define([
         hasChanges() {
             return _.any(this.invoke('hasChanges'));
         },
-        nodesAfterDeployment: function() {
+        nodesAfterDeployment() {
             return this.filter(function(node) {return !node.get('pending_deletion');});
         },
-        nodesAfterDeploymentWithRole: function(role) {
+        nodesAfterDeploymentWithRole(role) {
             return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);});
         },
-        resources: function(resourceName) {
+        resources(resourceName) {
             var resources = this.map(function(node) {return node.resource(resourceName);});
             return _.reduce(resources, function(sum, n) {return sum + n;}, 0);
         },
-        getLabelValues: function(label) {
+        getLabelValues(label) {
             return this.invoke('getLabel', label);
         },
-        areDisksConfigurable: function() {
+        areDisksConfigurable() {
             if (!this.length) return false;
             var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles')),
                 disks = this.at(0).resource('disks');
@@ -521,7 +521,7 @@ define([
                 return roleConflict || !_.isEqual(disks, node.resource('disks'));
             });
         },
-        areInterfacesConfigurable: function() {
+        areInterfacesConfigurable() {
             if (!this.length) return false;
             return _.uniq(this.invoke('resource', 'interfaces')).length == 1;
         }
@@ -535,7 +535,7 @@ define([
     models.Task = BaseModel.extend({
         constructorName: 'Task',
         urlRoot: '/api/tasks',
-        releaseId: function() {
+        releaseId() {
             var id;
             try {
                 id = this.get('result').release_info.release_id;
@@ -546,14 +546,14 @@ define([
             network: ['verify_networks', 'check_networks'],
             deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
         },
-        extendGroups: function(filters) {
+        extendGroups(filters) {
             var names = utils.composeList(filters.name);
             if (_.isEmpty(names)) names = _.flatten(_.values(this.groups));
             var groups = utils.composeList(filters.group);
             if (_.isEmpty(groups)) return names;
             return _.intersection(names, _.flatten(_.values(_.pick(this.groups, groups))));
         },
-        extendStatuses: function(filters) {
+        extendStatuses(filters) {
             var activeTaskStatuses = ['running', 'pending'],
                 completedTaskStatuses = ['ready', 'error'],
                 statuses = utils.composeList(filters.status);
@@ -565,7 +565,7 @@ define([
             }
             return statuses;
         },
-        match: function(filters) {
+        match(filters) {
             filters = filters || {};
             if (!_.isEmpty(filters)) {
                 if ((filters.group || filters.name) && !_.contains(this.extendGroups(filters), this.get('name'))) {
@@ -577,10 +577,10 @@ define([
             }
             return true;
         },
-        isInfinite: function() {
+        isInfinite() {
             return this.match({name: ['stop_deployment', 'reset_environment']});
         },
-        isStoppable: function() {
+        isStoppable() {
             return this.match({name: 'deploy', status: 'running'});
         }
     });
@@ -589,18 +589,18 @@ define([
         constructorName: 'Tasks',
         model: models.Task,
         url: '/api/tasks',
-        toJSON: function() {
+        toJSON() {
             return this.pluck('id');
         },
         comparator: 'id',
-        filterTasks: function(filters) {
+        filterTasks(filters) {
             return _.flatten(_.map(this.model.prototype.extendGroups(filters), function(name) {
                 return this.filter(function(task) {
                     return task.match(_.extend(_.omit(filters, 'group'), {name: name}));
                 });
             }, this));
         },
-        findTask: function(filters) {
+        findTask(filters) {
             return this.filterTasks(filters)[0];
         }
     });
@@ -614,7 +614,7 @@ define([
         constructorName: 'Notifications',
         model: models.Notification,
         url: '/api/notifications',
-        comparator: function(notification) {
+        comparator(notification) {
             return -notification.id;
         }
     });
@@ -625,16 +625,16 @@ define([
         root: 'editable',
         cacheFor: 60 * 1000,
         groupList: ['general', 'security', 'compute', 'network', 'storage', 'logging', 'openstack_services', 'other'],
-        isNew: function() {
+        isNew() {
             return false;
         },
-        isPlugin: function(section) {
+        isPlugin(section) {
             return (section.metadata || {}).class == 'plugin';
         },
-        parse: function(response) {
+        parse(response) {
             return response[this.root];
         },
-        mergePluginSettings: function() {
+        mergePluginSettings() {
             _.each(this.attributes, (section, sectionName) => {
                 if (this.isPlugin(section)) {
                     var chosenVersionData = section.metadata.versions.find(
@@ -647,7 +647,7 @@ define([
                 }
             }, this);
         },
-        toJSON: function() {
+        toJSON() {
             var settings = this._super('toJSON', arguments);
             if (!this.root) return settings;
 
@@ -666,7 +666,7 @@ define([
             });
             return {[this.root]: settings};
         },
-        processRestrictions: function() {
+        processRestrictions() {
             _.each(this.attributes, function(section, sectionName) {
                 if (section.metadata) {
                     this.expandRestrictions(section.metadata.restrictions, this.makePath(sectionName, 'metadata'));
@@ -687,7 +687,7 @@ define([
                 }, this);
             }, this);
         },
-        initialize: function() {
+        initialize() {
             // FIXME(vkramskikh): this will work only if there won't be
             // any restrictions added later in the same model
             this.once('change', () => {
@@ -695,7 +695,7 @@ define([
                 this.mergePluginSettings();
             }, this);
         },
-        validate: function(attrs, options) {
+        validate(attrs, options) {
             var errors = {},
                 models = options ? options.models : {},
                 checkRestrictions = (path) => this.checkRestrictions(models, null, path);
@@ -719,13 +719,13 @@ define([
             }, this);
             return _.isEmpty(errors) ? null : errors;
         },
-        makePath: function(...args) {
+        makePath(...args) {
             return args.join('.');
         },
-        getValueAttribute: function(settingName) {
+        getValueAttribute(settingName) {
             return settingName == 'metadata' ? 'enabled' : 'value';
         },
-        hasChanges: function(initialAttributes, models) {
+        hasChanges(initialAttributes, models) {
             return _.any(this.attributes, function(section, sectionName) {
                 var metadata = section.metadata,
                     result = false;
@@ -739,10 +739,10 @@ define([
                 }, this);
             }, this);
         },
-        sanitizeGroup: function(group) {
+        sanitizeGroup(group) {
             return _.contains(this.groupList, group) ? group : 'other';
         },
-        getGroupList: function() {
+        getGroupList() {
             var groups = [];
             _.each(this.attributes, function(section) {
                 if (section.metadata.group) {
@@ -761,7 +761,7 @@ define([
         constructorName: 'FuelSettings',
         url: '/api/settings',
         root: 'settings',
-        parse: function(response) {
+        parse(response) {
             return _.extend(this._super('parse', arguments), {master_node_uid: response.master_node_uid});
         }
     });
@@ -769,21 +769,21 @@ define([
     models.Disk = BaseModel.extend({
         constructorName: 'Disk',
         urlRoot: '/api/nodes/',
-        parse: function(response) {
+        parse(response) {
             response.volumes = new models.Volumes(response.volumes);
             response.volumes.disk = this;
             return response;
         },
-        toJSON: function(options) {
+        toJSON(options) {
             return _.extend(this.constructor.__super__.toJSON.call(this, options), {volumes: this.get('volumes').toJSON()});
         },
-        getUnallocatedSpace: function(options) {
+        getUnallocatedSpace(options) {
             options = options || {};
             var volumes = options.volumes || this.get('volumes');
             var allocatedSpace = volumes.reduce(function(sum, volume) {return volume.get('name') == options.skip ? sum : sum + volume.get('size');}, 0);
             return this.get('size') - allocatedSpace;
         },
-        validate: function(attrs) {
+        validate(attrs) {
             var error;
             var unallocatedSpace = this.getUnallocatedSpace({volumes: attrs.volumes});
             if (unallocatedSpace < 0) {
@@ -803,19 +803,19 @@ define([
     models.Volume = BaseModel.extend({
         constructorName: 'Volume',
         urlRoot: '/api/volumes/',
-        getMinimalSize: function(minimum) {
+        getMinimalSize(minimum) {
             var currentDisk = this.collection.disk,
                 groupAllocatedSpace = 0;
             if (currentDisk && currentDisk.collection)
                 groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
             return minimum - groupAllocatedSpace;
         },
-        getMaxSize: function() {
+        getMaxSize() {
             var volumes = this.collection.disk.get('volumes'),
                 diskAllocatedSpace = volumes.reduce(function(total, volume) {return this.get('name') == volume.get('name') ? total : total + volume.get('size');}, 0, this);
             return this.collection.disk.get('size') - diskAllocatedSpace;
         },
-        validate: function(attrs, options) {
+        validate(attrs, options) {
             var min = this.getMinimalSize(options.minimum);
             if (attrs.size < min) {
                 return i18n('cluster_page.nodes_tab.configure_disks.volume_error', {size: utils.formatNumber(min)});
@@ -832,27 +832,27 @@ define([
 
     models.Interface = BaseModel.extend({
         constructorName: 'Interface',
-        parse: function(response) {
+        parse(response) {
             response.assigned_networks = new models.InterfaceNetworks(response.assigned_networks);
             response.assigned_networks.interface = this;
             return response;
         },
-        toJSON: function(options) {
+        toJSON(options) {
             return _.omit(_.extend(this.constructor.__super__.toJSON.call(this, options), {
                 assigned_networks: this.get('assigned_networks').toJSON()
             }), 'checked');
         },
-        isBond: function() {
+        isBond() {
             return this.get('type') == 'bond';
         },
-        getSlaveInterfaces: function() {
+        getSlaveInterfaces() {
             if (!this.isBond()) {return [this];}
             var slaveInterfaceNames = _.pluck(this.get('slaves'), 'name');
             return this.collection.filter(function(slaveInterface) {
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
             });
         },
-        validate: function(attrs) {
+        validate(attrs) {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));
             var untaggedNetworks = networks.filter(function(network) { return _.isNull(network.getVlanRange(attrs.networkingParameters)); });
@@ -893,14 +893,14 @@ define([
     models.Interfaces = BaseCollection.extend({
         constructorName: 'Interfaces',
         model: models.Interface,
-        generateBondName: function(base) {
+        generateBondName(base) {
             var index, proposedName;
             for (index = 0; ; index += 1) {
                 proposedName = base + index;
                 if (!this.any({name: proposedName})) return proposedName;
             }
         },
-        comparator: function(ifc1, ifc2) {
+        comparator(ifc1, ifc2) {
             return utils.multiSort(ifc1, ifc2, [{attr: 'isBond'}, {attr: 'name'}]);
         }
     });
@@ -909,7 +909,7 @@ define([
 
     models.InterfaceNetwork = BaseModel.extend({
         constructorName: 'InterfaceNetwork',
-        getFullNetwork: function(networks) {
+        getFullNetwork(networks) {
             return networks.findWhere({name: this.get('name')});
         }
     });
@@ -917,14 +917,14 @@ define([
     models.InterfaceNetworks = BaseCollection.extend({
         constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
-        comparator: function(network) {
+        comparator(network) {
             return _.indexOf(networkPreferredOrder, network.get('name'));
         }
     });
 
     models.Network = BaseModel.extend({
         constructorName: 'Network',
-        getVlanRange: function(networkingParameters) {
+        getVlanRange(networkingParameters) {
             if (!this.get('meta').neutron_vlan_range) {
                 var externalNetworkData = this.get('meta').ext_net_data;
                 var vlanStart = externalNetworkData ? networkingParameters.get(externalNetworkData[0]) : this.get('vlan_start');
@@ -937,7 +937,7 @@ define([
     models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
         model: models.Network,
-        comparator: function(network) {
+        comparator(network) {
             return _.indexOf(networkPreferredOrder, network.get('name'));
         }
     });
@@ -949,21 +949,21 @@ define([
     models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
         constructorName: 'NetworkConfiguration',
         cacheFor: 60 * 1000,
-        parse: function(response) {
+        parse(response) {
             response.networks = new models.Networks(response.networks);
             response.networking_parameters = new models.NetworkingParameters(response.networking_parameters);
             return response;
         },
-        toJSON: function() {
+        toJSON() {
             return {
                 networks: this.get('networks').toJSON(),
                 networking_parameters: this.get('networking_parameters').toJSON()
             };
         },
-        isNew: function() {
+        isNew() {
             return false;
         },
-        validate: function(attrs) {
+        validate(attrs) {
             var errors = {},
                 networkingParametersErrors = {},
                 ns = 'cluster_page.network_tab.validation.',
@@ -1218,7 +1218,7 @@ define([
     models.User = BaseModel.extend({
         constructorName: 'User',
         locallyStoredAttributes: ['username', 'token'],
-        initialize: function() {
+        initialize() {
             _.each(this.locallyStoredAttributes, function(attribute) {
                 var locallyStoredValue = localStorage.getItem(attribute);
                 if (locallyStoredValue) {
@@ -1247,7 +1247,7 @@ define([
 
     models.WizardModel = Backbone.DeepModel.extend({
         constructorName: 'WizardModel',
-        parseConfig: function(config) {
+        parseConfig(config) {
             var result = {};
             _.each(config, _.bind(function(paneConfig, paneName) {
                 result[paneName] = {};
@@ -1272,10 +1272,10 @@ define([
             }, this));
             return result;
         },
-        processConfig: function(config) {
+        processConfig(config) {
             this.set(this.parseConfig(config));
         },
-        restoreDefaultValues: function(panesToRestore) {
+        restoreDefaultValues(panesToRestore) {
             var result = {};
             _.each(this.defaults, _.bind(function(paneConfig, paneName) {
                 if (_.contains(panesToRestore, paneName)) {
@@ -1284,7 +1284,7 @@ define([
             }, this));
             this.set(result);
         },
-        validate: function(attrs, options) {
+        validate(attrs, options) {
             var errors = [];
             _.each(options.config, function(attributeConfig, attribute) {
                 if (!(attributeConfig.regex && attributeConfig.regex.source)) {return;}
@@ -1304,7 +1304,7 @@ define([
             }, this);
             return errors.length ? errors : null;
         },
-        initialize: function(config) {
+        initialize(config) {
             this.defaults = this.parseConfig(config);
         }
     });
@@ -1312,7 +1312,7 @@ define([
     models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
         constructorName: 'MirantisCredentials',
         baseUrl: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
-        validate: function(attrs) {
+        validate(attrs) {
             var errors = {};
             _.each(attrs, function(group, groupName) {
                 _.each(group, function(setting, settingName) {
@@ -1323,14 +1323,14 @@ define([
             }, this);
             return _.isEmpty(errors) ? null : errors;
         },
-        makePath: function(...args) {
+        makePath(...args) {
             return args.join('.');
         }
     });
 
     models.MirantisLoginForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisLoginForm',
-        url: function() {
+        url() {
             return this.baseUrl + 'login';
         },
         nailgunUrl: 'api/tracking/login'
@@ -1338,7 +1338,7 @@ define([
 
     models.MirantisRegistrationForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisRegistrationForm',
-        url: function() {
+        url() {
             return this.baseUrl + 'registration';
         },
         nailgunUrl: 'api/tracking/registration'
@@ -1346,7 +1346,7 @@ define([
 
     models.MirantisRetrievePasswordForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisRetrievePasswordForm',
-        url: function() {
+        url() {
             return this.baseUrl + 'restore_password';
         },
         nailgunUrl: 'api/tracking/restore_password'
@@ -1355,7 +1355,7 @@ define([
     models.NodeNetworkGroup = BaseModel.extend({
         constructorName: 'NodeNetworkGroup',
         urlRoot: '/api/nodegroups',
-        validate: function(options = {}) {
+        validate(options = {}) {
             var newName = _.trim(options.name) || '';
             if (!newName) {
                 return i18n('cluster_page.network_tab.node_network_group_empty_name');
@@ -1416,7 +1416,7 @@ define([
     }
 
     models.ComponentModel = BaseModel.extend({
-        initialize: function(component) {
+        initialize(component) {
             var parts = component.name.split(':');
             this.set({
                 id: component.name,
@@ -1431,7 +1431,7 @@ define([
                 weight: component.weight || 100
             });
         },
-        expandWildcards: function(components) {
+        expandWildcards(components) {
             var expandProperty = (propertyName, components) => {
                 var expandedComponents = [];
                 _.each(this.get(propertyName), (patternDescription) => {
@@ -1455,13 +1455,13 @@ define([
                 requires: expandProperty('requires', components)
             });
         },
-        restoreDefaultValue: function() {
+        restoreDefaultValue() {
             this.set({enabled: this.get('default')});
         },
-        toJSON: function() {
+        toJSON() {
             return this.get('enabled') ? this.id : null;
         },
-        isML2Driver: function() {
+        isML2Driver() {
             return /:ml2:\w+$/.test(this.id);
         }
     });
@@ -1469,16 +1469,16 @@ define([
     models.ComponentsCollection = BaseCollection.extend({
         model: models.ComponentModel,
         allTypes: ['hypervisor', 'network', 'storage', 'additional_service'],
-        initialize: function(models, options) {
+        initialize(models, options) {
             this.releaseId = options.releaseId;
         },
-        url: function() {
+        url() {
             return '/api/v1/releases/' + this.releaseId + '/components';
         },
-        parse: function(response) {
+        parse(response) {
             return _.isArray(response) ? response : [];
         },
-        getComponentsByType: function(type, options = {sorted: true}) {
+        getComponentsByType(type, options = {sorted: true}) {
             var components = this.where({type: type});
             if (options.sorted) {
                 components.sort((component1, component2) => {
@@ -1487,12 +1487,12 @@ define([
             }
             return components;
         },
-        restoreDefaultValues: function(types) {
+        restoreDefaultValues(types) {
             types = types || this.allTypes;
             var components = _.filter(this.models, (model) => _.contains(types, model.get('type')));
             _.invoke(components, 'restoreDefaultValue');
         },
-        toJSON: function() {
+        toJSON() {
             return _.compact(_.map(this.models, (model) => model.toJSON()));
         }
     });

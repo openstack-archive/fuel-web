@@ -29,7 +29,7 @@ define(
     'use strict';
 
     var Field = React.createClass({
-        onChange: function(name, value) {
+        onChange(name, value) {
             var currentValue = this.props.model.get(name);
             if (currentValue.current) {
                 currentValue.current.id = value;
@@ -41,7 +41,7 @@ define(
             this.setState({model: this.props.model});
             _.defer(function() {dispatcher.trigger('vcenter_model_update');});
         },
-        render: function() {
+        render() {
             var metadata = this.props.metadata,
                 value = this.props.model.get(metadata.name);
             return (
@@ -63,7 +63,7 @@ define(
     });
 
     var FieldGroup = React.createClass({
-        render: function() {
+        render() {
             var restrictions = this.props.model.testRestrictions();
             var metadata = _.filter(this.props.model.get('metadata'), vmwareModels.isRegularField);
             var fields = metadata.map(function(meta) {
@@ -86,7 +86,7 @@ define(
     });
 
     var GenericSection = React.createClass({
-        render: function() {
+        render() {
             if (!this.props.model) return null;
             return (
                 <div className='col-xs-12 forms-box'>
@@ -105,7 +105,7 @@ define(
     });
 
     var NovaCompute = React.createClass({
-        render: function() {
+        render() {
             if (!this.props.model) return null;
 
             // add nodes of 'compute-vmware' type to targetNode select
@@ -159,7 +159,7 @@ define(
     });
 
     var AvailabilityZone = React.createClass({
-        addNovaCompute: function(current) {
+        addNovaCompute(current) {
             var collection = this.props.model.get('nova_computes'),
                 index = collection.indexOf(current),
                 newItem = current.clone();
@@ -173,13 +173,13 @@ define(
             this.setState({model: this.props.model});
             _.defer(function() {dispatcher.trigger('vcenter_model_update'); });
         },
-        removeNovaCompute: function(current) {
+        removeNovaCompute(current) {
             var collection = this.props.model.get('nova_computes');
             collection.remove(current);
             this.setState({model: this.props.model});
             _.defer(function() { dispatcher.trigger('vcenter_model_update'); });
         },
-        renderFields: function() {
+        renderFields() {
             var model = this.props.model,
                 meta = model.get('metadata');
             meta = _.filter(meta, vmwareModels.isRegularField);
@@ -187,7 +187,7 @@ define(
                 <FieldGroup model={model} disabled={this.props.isLocked || this.props.disabled}/>
             );
         },
-        renderComputes: function(actions) {
+        renderComputes(actions) {
             var novaComputes = this.props.model.get('nova_computes'),
                 isSingleInstance = novaComputes.length == 1,
                 disabled = actions.disable.nova_computes,
@@ -215,7 +215,7 @@ define(
                 </div>
             );
         },
-        render: function() {
+        render() {
             var restrictActions = this.props.model.testRestrictions();
 
             return (
@@ -228,7 +228,7 @@ define(
     });
 
     var AvailabilityZones = React.createClass({
-        render: function() {
+        render() {
             if (!this.props.collection) return null;
             return (
                 <div className='col-xs-12 forms-box'>
@@ -249,7 +249,7 @@ define(
     });
 
     var UnassignedNodesWarning = React.createClass({
-        render: function() {
+        render() {
             if (!this.props.errors || !this.props.errors.unassigned_nodes) return null;
             return (
                 <div className='alert alert-danger'>
@@ -279,10 +279,10 @@ define(
             componentMixins.unsavedChangesMixin
         ],
         statics: {
-            isVisible: function(cluster) {
+            isVisible(cluster) {
                 return cluster.get('settings').get('common.use_vcenter').value;
             },
-            fetchData: function(options) {
+            fetchData(options) {
                 if (!options.cluster.get('vcenter_defaults')) {
                     var defaultModel = new vmwareModels.VCenter({id: options.cluster.id});
                     defaultModel.loadDefaults = true;
@@ -294,7 +294,7 @@ define(
                 );
             }
         },
-        onModelSync: function() {
+        onModelSync() {
             this.model.parseRestrictions();
             this.actions = this.model.testRestrictions();
             if (!this.model.loadDefaults) {
@@ -303,7 +303,7 @@ define(
             this.model.loadDefaults = false;
             this.setState({model: this.model});
         },
-        componentDidMount: function() {
+        componentDidMount() {
             this.clusterId = this.props.cluster.id;
             this.model = this.props.cluster.get('vcenter');
             this.model.on('sync', this.onModelSync, this);
@@ -325,32 +325,32 @@ define(
                 }
             }, this));
         },
-        componentWillUnmount: function() {
+        componentWillUnmount() {
             this.model.off('sync', null, this);
             dispatcher.off('vcenter_model_update');
         },
-        getInitialState: function() {
+        getInitialState() {
             return {model: null};
         },
-        readData: function() {
+        readData() {
             return this.model.fetch();
         },
-        onLoadDefaults: function() {
+        onLoadDefaults() {
             this.model.loadDefaults = true;
             this.model.fetch().done(_.bind(function() {
                 this.model.loadDefaults = false;
             }, this));
         },
-        applyChanges: function() {
+        applyChanges() {
             return this.model.save();
         },
-        revertChanges: function() {
+        revertChanges() {
             return this.readData();
         },
-        hasChanges: function() {
+        hasChanges() {
             return this.detectChanges(this.json, JSON.stringify(this.model.toJSON()));
         },
-        detectChanges: function(oldJson, currentJson) {
+        detectChanges(oldJson, currentJson) {
             var old, current;
             try {
                 old = JSON.parse(oldJson);
@@ -372,10 +372,10 @@ define(
             });
             return oldData != currentData;
         },
-        isSavingPossible: function() {
+        isSavingPossible() {
             return !this.state.model.validationError;
         },
-        render: function() {
+        render() {
             if (!this.state.model || !this.actions) {
                 return null;
             }

@@ -191,7 +191,8 @@ class BaseHandler(object):
             errors.UnavailableRelease,
             errors.CannotCreate,
             errors.CannotUpdate,
-            errors.CannotDelete
+            errors.CannotDelete,
+            errors.CannotFindExtension,
         ) as exc:
             raise cls.http(400, exc.message)
         except (

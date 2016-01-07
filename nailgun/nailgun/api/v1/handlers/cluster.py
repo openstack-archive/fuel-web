@@ -20,6 +20,9 @@ Handlers dealing with clusters
 
 import traceback
 
+import web
+import json
+
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
@@ -32,6 +35,9 @@ from nailgun.api.v1.validators.cluster import ClusterChangesValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 
+from nailgun.extensions.base import get_all_extensions
+
+from nailgun.db import db
 from nailgun.logger import logger
 from nailgun import objects
 
@@ -350,3 +356,44 @@ class VmwareAttributesDefaultsHandler(BaseHandler):
         attributes = objects.Cluster.get_default_vmware_attributes(cluster)
 
         return {"editable": attributes}
+
+
+class ClusterExtensionsHandler(BaseHandler):
+    """Cluster extensions handler"""
+
+    def _get_cluster_obj(self, cluster_id):
+        return self.get_object_or_404(
+            objects.Cluster, cluster_id,
+            log_404=(
+                "error",
+                "There is no cluster with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+
+    @content
+    def GET(self, cluster_id):
+        """There will be doc soon!"""
+        # TODO(sbrzeczkowski): ^^
+        cluster = self._get_cluster_obj(cluster_id)
+        return cluster.extensions
+
+    @content
+    def PUT(self, cluster_id):
+        """There will be doc soon!"""
+        # TODO(sbrzeczkowski): ^^
+        cluster = self._get_cluster_obj(cluster_id)
+        # TODO(sbrzeczkowski): should be moved to validators
+        data = set(json.loads(web.data()))
+        all_extensions = set(ext.name for ext in get_all_extensions())
+        if not data <= all_extensions:
+            raise self.http(
+                400,
+                "No such extensions: {}.".format(
+                    ', '.join(data - all_extensions)))
+
+        # TODO(sbrzeczkowski): should be moved to objects
+        cluster.extensions = list(data)
+        db().flush()
+        db().refresh(cluster)
+
+        return cluster.extensions

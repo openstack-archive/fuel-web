@@ -13,16 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
-define(() => {
-    'use strict';
-
+import controls from 'views/controls';
     var input;
-
     suite('File Control', () => {
         setup(() => {
-            var controls = require('views/controls');
-
             input = new controls.Input({
                 type: 'file',
                 name: 'some_file',
@@ -98,4 +92,3 @@ define(() => {
             }, 'Control sends updated data upon changes');
         });
     });
-});

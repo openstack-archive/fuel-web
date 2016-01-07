@@ -13,17 +13,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'underscore',
-    'i18n',
-    'react',
-    'models',
-    'views/controls',
-    'component_mixins'
-],
-(_, i18n, React, models, controls, componentMixins) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import controls from 'views/controls';
+import componentMixins from 'component_mixins';
 
     var ReleasesPage = React.createClass({
         mixins: [componentMixins.backboneMixin('releases')],
@@ -70,5 +64,4 @@ define(
         }
     });
 
-    return ReleasesPage;
-});
+    export default ReleasesPage;

@@ -13,20 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'utils',
-    'models',
-    'component_mixins',
-    'views/cluster_page_tabs/setting_section',
-    'react-addons-transition-group'
-],
-($, _, i18n, React, utils, models, componentMixins, SettingSection, CSSTransitionGroup) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import componentMixins from 'component_mixins';
+import SettingSection from 'views/cluster_page_tabs/setting_section';
+import CSSTransitionGroup from 'react-addons-transition-group';
 
     var SettingsTab = React.createClass({
         mixins: [
@@ -342,5 +337,4 @@ define(
         }
     });
 
-    return SettingsTab;
-});
+    export default SettingsTab;

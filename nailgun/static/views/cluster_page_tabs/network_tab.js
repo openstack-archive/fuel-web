@@ -13,25 +13,20 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'react-dom',
-    'models',
-    'dispatcher',
-    'utils',
-    'views/dialogs',
-    'component_mixins',
-    'views/controls',
-    'views/cluster_page_tabs/setting_section',
-    'react-addons-transition-group'
-],
-($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialogs, componentMixins, controls, SettingSection, CSSTransitionGroup) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import utils from 'utils';
+import models from 'models';
+import dispatcher from 'dispatcher';
+import dialogs from 'views/dialogs';
+import componentMixins from 'component_mixins';
+import controls from 'views/controls';
+import SettingSection from 'views/cluster_page_tabs/setting_section';
+import CSSTransitionGroup from 'react-addons-transition-group';
 
     var parametersNS = 'cluster_page.network_tab.networking_parameters.',
         networkTabNS = 'cluster_page.network_tab.',
@@ -1634,5 +1629,4 @@ define(
         }
     });
 
-    return NetworkTab;
-});
+    export default NetworkTab;

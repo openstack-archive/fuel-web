@@ -14,36 +14,29 @@
  * under the License.
 **/
 
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'react-dom',
-    'utils',
-    'models',
-    'keystone_client',
-    'views/root',
-    'views/dialogs',
-    'views/login_page',
-    'views/welcome_page',
-    'views/cluster_page',
-    'views/clusters_page',
-    'views/equipment_page',
-    'views/releases_page',
-    'views/plugins_page',
-    'views/notifications_page',
-    'views/support_page',
-    'views/capacity_page',
-
-    'backbone.routefilter',
-    'bootstrap',
-    './styles/main.less'
-],
-($, _, i18n, Backbone, React, ReactDOM, utils, models, KeystoneClient, RootComponent, dialogs, LoginPage, WelcomePage, ClusterPage, ClustersPage, EquipmentPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import models from 'models';
+import KeystoneClient from 'keystone_client';
+import RootComponent from 'views/root';
+import dialogs from 'views/dialogs';
+import LoginPage from 'views/login_page.js';
+import WelcomePage from 'views/welcome_page';
+import ClusterPage from 'views/cluster_page';
+import ClustersPage from 'views/clusters_page';
+import EquipmentPage from 'views/equipment_page';
+import ReleasesPage from 'views/releases_page';
+import PluginsPage from 'views/plugins_page';
+import NotificationsPage from 'views/notifications_page';
+import SupportPage from 'views/support_page';
+import CapacityPage from 'views/capacity_page';
+import 'backbone.routefilter';
+import 'bootstrap';
+import './styles/main.less';
 
     class Router extends Backbone.Router {
         routes() {
@@ -283,5 +276,4 @@ define(
 
     $(() => app.initialize());
 
-    return app;
-});
+    export default app;

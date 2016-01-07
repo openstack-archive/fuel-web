@@ -13,17 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'models'
-],
-($, _, i18n, Backbone, models) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import models from 'models';
 
     function isRegularField(field) {
         return _.contains(['text', 'password', 'checkbox', 'select'], field.type);
@@ -327,12 +320,4 @@ define(
         }
     });
 
-    return {
-        VCenter: VCenter,
-        AvailabilityZone: AvailabilityZone,
-        Network: Network,
-        Glance: Glance,
-        NovaCompute: NovaCompute,
-        isRegularField: isRegularField
-    };
-});
+    export {VCenter, AvailabilityZone, Network, Glance, NovaCompute, isRegularField};

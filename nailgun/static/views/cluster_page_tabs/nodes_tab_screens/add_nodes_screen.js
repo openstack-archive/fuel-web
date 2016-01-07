@@ -13,16 +13,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'react',
-    'models',
-    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
-],
-($, _, React, models, NodeListScreen) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import React from 'react';
+import models from 'models';
+import NodeListScreen from 'views/cluster_page_tabs/nodes_tab_screens/node_list_screen';
 
     var AddNodesScreen = React.createClass({
         statics: {
@@ -56,5 +51,4 @@ define(
         }
     });
 
-    return AddNodesScreen;
-});
+    export default AddNodesScreen;

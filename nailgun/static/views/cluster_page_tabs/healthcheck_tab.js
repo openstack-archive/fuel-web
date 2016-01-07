@@ -13,20 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'models',
-    'utils',
-    'component_mixins',
-    'views/controls'
-],
-($, _, i18n, Backbone, React, models, utils, componentMixins, controls) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import controls from 'views/controls';
+import componentMixins from 'component_mixins';
 
     var HealthCheckTab = React.createClass({
         mixins: [
@@ -444,5 +439,4 @@ define(
             );
         }
     });
-    return HealthCheckTab;
-});
+    export default HealthCheckTab;

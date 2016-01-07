@@ -13,17 +13,13 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'underscore',
-    'i18n',
-    'react',
-    'models',
-    'component_mixins',
-    'views/controls'
-],
-(_, i18n, React, models, componentMixins, controls) => {
-    'use strict';
+
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import models from 'models';
+import componentMixins from 'component_mixins';
+import controls from 'views/controls';
 
     var CapacityPage = React.createClass({
         mixins: [
@@ -108,5 +104,4 @@ define(
         }
     });
 
-    return CapacityPage;
-});
+    export default CapacityPage;

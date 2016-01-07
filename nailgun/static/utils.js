@@ -13,23 +13,20 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import React from 'react';
+import classNames from 'classnames';
+import 'javascript-natural-sort';
+import Expression from 'expression';
+import expressionObjects from 'expression/objects';
+import IP from 'ip';
+import Dialogs from 'views/dialogs.js';
+import Models from 'models.js';
 
-define([
-    'require',
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'classnames',
-    'javascript-natural-sort',
-    'expression',
-    'expression/objects',
-    'react',
-    'ip'
-], (require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React, IP) => {
-    'use strict';
-
-    var utils = {
+module.exports = {
         regexes: {
             url: /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?[\w\/_\-\.&%]*)?(#[\w\/_\-\.&%]*)?)?)?)/,
             ip: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
@@ -43,10 +40,10 @@ define([
             return _.object(_.map((serializedOptions || '').split(';'), (option) => option.split(':')));
         },
         getNodeListFromTabOptions(options) {
+            //import models from 'models';
             var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
                 ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
-                models = require('models'),
-                nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
+                nodes = new Models.Nodes(options.cluster.get('nodes').getByIds(ids));
             if (nodes.length == ids.length) return nodes;
         },
         renderMultilineText(text) {
@@ -103,10 +100,10 @@ define([
             return result;
         },
         showErrorDialog(options) {
-            var dialogs = require('views/dialogs'); // avoid circular dependencies
+            //import dialogs from 'views/dialogs.js'; // avoid circular dependencies
             options.message = options.response ? utils.getResponseText(options.response) :
                 options.message || i18n('dialog.error_dialog.server_error');
-            dialogs.ErrorDialog.show(options);
+            Dialogs.ErrorDialog.show(options);
         },
         showBandwidth(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);
@@ -336,6 +333,3 @@ define([
             return linkStart + release + '/' + link;
         }
 };
-
-    return utils;
-});

@@ -19,6 +19,7 @@ from itertools import chain
 
 from stevedore.extension import ExtensionManager
 
+from nailgun.db import db
 from nailgun import errors
 from nailgun.extensions import consts
 
@@ -58,6 +59,11 @@ def get_extension(name):
 
     raise errors.CannotFindExtension(
         "Cannot find extension with name '{0}'".format(name))
+
+
+def set_extensions_for_object(obj, extensions_list):
+    obj.extensions = list(extensions_list)
+    db().flush()
 
 
 def callback_wrapper(name, pass_args=None):

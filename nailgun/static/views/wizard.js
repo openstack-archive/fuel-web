@@ -37,10 +37,10 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
     };
 
     var ComponentCheckboxGroup = React.createClass({
-        hasEnabledComponents: function() {
+        hasEnabledComponents() {
             return _.any(this.props.components, (component) => component.get('enabled'));
         },
-        render: function() {
+        render() {
             return (
                 <div>
                     {
@@ -70,22 +70,22 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
     });
 
     var ComponentRadioGroup = React.createClass({
-        getInitialState: function() {
+        getInitialState() {
             var activeComponent = _.find(this.props.components, (component) => component.get('enabled'));
             return {
                 value: activeComponent && activeComponent.id
             };
         },
-        hasEnabledComponents: function() {
+        hasEnabledComponents() {
             return _.any(this.props.components, (component) => component.get('enabled'));
         },
-        onChange: function(name, value) {
+        onChange(name, value) {
             _.each(this.props.components, (component) => {
                 this.props.onChange(component.id, component.id == value);
             });
             this.setState({value: value});
         },
-        render: function() {
+        render() {
             return (
                 <div>
                     {
@@ -115,16 +115,16 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
     });
 
     var ClusterWizardPanesMixin = {
-        componentWillMount: function() {
+        componentWillMount() {
             if (this.props.allComponents) {
                 this.components = this.props.allComponents.getComponentsByType(this.constructor.componentType, {sorted: true});
                 this.processRestrictions(this.components);
             }
         },
-        componentDidMount: function() {
+        componentDidMount() {
             $(ReactDOM.findDOMNode(this)).find('input:enabled').first().focus();
         },
-        areComponentsMutuallyExclusive: function(components) {
+        areComponentsMutuallyExclusive(components) {
             if (components.length <= 1) {
                 return false;
             }
@@ -136,11 +136,11 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             });
             return allComponentsExclusive;
         },
-        processRestrictions: function(paneComponents, types, stopList = []) {
+        processRestrictions(paneComponents, types, stopList = []) {
             this.processIncompatible(paneComponents, types, stopList);
             this.processRequires(paneComponents, types);
         },
-        processCompatible: function(allComponents, paneComponents, types, stopList = []) {
+        processCompatible(allComponents, paneComponents, types, stopList = []) {
             // all previously enabled components
             // should be compatible with the current component
             _.each(paneComponents, (component) => {
@@ -178,7 +178,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 });
             });
         },
-        processIncompatible: function(paneComponents, types, stopList) {
+        processIncompatible(paneComponents, types, stopList) {
             // disable components that have
             // incompatible components already enabled
             _.each(paneComponents, (component) => {
@@ -205,7 +205,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 });
             });
         },
-        processRequires: function(paneComponents, types) {
+        processRequires(paneComponents, types) {
             // if component has requires,
             // it is disabled until all requires are already enabled
             _.each(paneComponents, (component) => {
@@ -237,7 +237,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 });
             });
         },
-        selectActiveComponent: function(components) {
+        selectActiveComponent(components) {
             var active = _.find(components, (component) => component.get('enabled'));
             if (active && !active.get('disabled')) {
                 return;
@@ -257,11 +257,11 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
         statics: {
             paneName: 'NameAndRelease',
             title: i18n('dialog.create_cluster_wizard.name_release.title'),
-            hasErrors: function(wizard) {
+            hasErrors(wizard) {
                 return !!wizard.get('name_error');
             }
         },
-        isValid: function() {
+        isValid() {
             var wizard = this.props.wizard;
             var [name, cluster, clusters] = [wizard.get('name'), wizard.get('cluster'), wizard.get('clusters')];
             // test cluster name is already taken
@@ -278,7 +278,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             }
             return true;
         },
-        render: function() {
+        render() {
             var releases = this.props.releases,
                 name = this.props.wizard.get('name'),
                 nameError = this.props.wizard.get('name_error'),
@@ -333,13 +333,13 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             paneName: 'Compute',
             componentType: 'hypervisor',
             title: i18n('dialog.create_cluster_wizard.compute.title'),
-            hasErrors: function(wizard) {
+            hasErrors(wizard) {
                 var allComponents = wizard.get('components'),
                     components = allComponents.getComponentsByType(this.componentType, {sorted: true});
                 return !_.any(components, (component) => component.get('enabled'));
             }
         },
-        render: function() {
+        render() {
             this.processRestrictions(this.components, ['hypervisor']);
             return (
                 <div className='wizard-compute-pane'>
@@ -364,7 +364,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             componentType: 'network',
             title: i18n('dialog.create_cluster_wizard.network.title'),
             ml2CorePath: 'network:neutron:core:ml2',
-            hasErrors: function(wizard) {
+            hasErrors(wizard) {
                 var allComponents = wizard.get('components'),
                     components = allComponents.getComponentsByType(this.componentType, {sorted: true});
                 var ml2core = _.find(components, (component) => component.id == this.ml2CorePath);
@@ -375,7 +375,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 return false;
             }
         },
-        onChange: function(name, value) {
+        onChange(name, value) {
             this.props.onChange(name, value);
             // reset all ml2 drivers if ml2 core unselected
             var component = _.find(this.components, (component) => component.id == name);
@@ -387,7 +387,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 });
             }
         },
-        renderMonolithicDriverControls: function() {
+        renderMonolithicDriverControls() {
             var monolithic = _.filter(this.components, (component) => !component.isML2Driver());
             var hasMl2 = _.any(this.components, (component) => component.isML2Driver());
             if (!hasMl2) {
@@ -404,7 +404,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 />
             );
         },
-        renderML2DriverControls: function() {
+        renderML2DriverControls() {
             var ml2 = _.filter(this.components, (component) => component.isML2Driver());
             this.processRestrictions(ml2, this.constructor.panesForRestrictions);
             this.processCompatible(this.props.allComponents, ml2, this.constructor.panesForRestrictions);
@@ -416,7 +416,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 />
             );
         },
-        render: function() {
+        render() {
             return (
                 <div className='wizard-network-pane'>
                     {this.renderMonolithicDriverControls()}
@@ -436,7 +436,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             componentType: 'storage',
             title: i18n('dialog.create_cluster_wizard.storage.title')
         },
-        renderSection: function(components, type) {
+        renderSection(components, type) {
             var sectionComponents = _.filter(components, (component) => component.get('subtype') == type);
             var isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
             this.processRestrictions(sectionComponents, this.constructor.panesForRestrictions, (isRadio ? sectionComponents : []));
@@ -449,7 +449,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 })
             );
         },
-        render: function() {
+        render() {
             this.processRestrictions(this.components, this.constructor.panesForRestrictions);
             this.processCompatible(this.props.allComponents, this.components, this.constructor.panesForRestrictions);
             return (
@@ -487,7 +487,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             componentType: 'additional_service',
             title: i18n('dialog.create_cluster_wizard.additional.title')
         },
-        render: function() {
+        render() {
             this.processRestrictions(this.components, this.constructor.panesForRestrictions);
             this.processCompatible(this.props.allComponents, this.components, this.constructor.panesForRestrictions);
             return (
@@ -507,7 +507,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             paneName: 'Finish',
             title: i18n('dialog.create_cluster_wizard.ready.title')
         },
-        render: function() {
+        render() {
             return (
                 <p>
                     <span>{i18n('dialog.create_cluster_wizard.ready.env_select_deploy')} </span>
@@ -531,7 +531,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
 
     var CreateClusterWizard = React.createClass({
         mixins: [dialogs.dialogMixin],
-        getInitialState: function() {
+        getInitialState() {
             return {
                 title: i18n('dialog.create_cluster_wizard.title'),
                 loading: true,
@@ -544,7 +544,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 createEnabled: false
             };
         },
-        componentWillMount: function() {
+        componentWillMount() {
             this.stopHandlingKeys = false;
 
             this.wizard = new Backbone.DeepModel();
@@ -553,7 +553,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             this.cluster = new models.Cluster();
             this.wizard.set({cluster: this.cluster, clusters: this.props.clusters});
         },
-        componentDidMount: function() {
+        componentDidMount() {
             this.releases.fetch().done(_.bind(function() {
                 var defaultRelease = this.releases.findWhere({is_deployable: true});
                 this.wizard.set('release', defaultRelease.id);
@@ -563,7 +563,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
 
             this.updateState({activePaneIndex: 0});
         },
-        getListOfTypesToRestore: function(currentIndex, maxIndex) {
+        getListOfTypesToRestore(currentIndex, maxIndex) {
             var panesTypes = [];
             _.each(clusterWizardPanes, function(pane, paneIndex) {
                 if ((paneIndex <= maxIndex) && (paneIndex > currentIndex) && pane.componentType) {
@@ -572,7 +572,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             }, this);
             return panesTypes;
         },
-        updateState: function(nextState) {
+        updateState(nextState) {
             var numberOfPanes = this.getEnabledPanes().length;
             var nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex : this.state.activePaneIndex;
             var pane = clusterWizardPanes[nextActivePaneIndex];
@@ -588,14 +588,14 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             });
             this.setState(newState);
         },
-        getEnabledPanes: function() {
+        getEnabledPanes() {
             return _.reject(this.state.panes, 'hidden');
         },
-        getActivePane: function() {
+        getActivePane() {
             var panes = this.getEnabledPanes();
             return panes[this.state.activePaneIndex];
         },
-        isCurrentPaneValid: function() {
+        isCurrentPaneValid() {
             var pane = this.refs.pane;
             if (pane && _.isFunction(pane.isValid) && !pane.isValid()) {
                 this.updateState({paneHasErrors: true});
@@ -603,7 +603,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             }
             return true;
         },
-        prevPane: function() {
+        prevPane() {
             // check for pane's validation errors
             if (!this.isCurrentPaneValid()) {
                 return;
@@ -611,7 +611,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
 
             this.updateState({activePaneIndex: this.state.activePaneIndex - 1});
         },
-        nextPane: function() {
+        nextPane() {
             // check for pane's validation errors
             if (!this.isCurrentPaneValid()) {
                 return;
@@ -623,7 +623,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 maxAvailablePaneIndex: _.max([nextIndex, this.state.maxAvailablePaneIndex])
             });
         },
-        goToPane: function(index) {
+        goToPane(index) {
             if (index > this.state.maxAvailablePaneIndex) {
                 return;
             }
@@ -635,7 +635,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
 
             this.updateState({activePaneIndex: index});
         },
-        saveCluster: function() {
+        saveCluster() {
             if (this.stopHandlingKeys) {
                 return;
             }
@@ -668,7 +668,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                     });
             }
         },
-        selectRelease: function(releaseId) {
+        selectRelease(releaseId) {
             var release = this.releases.findWhere({id: releaseId});
             this.wizard.set({release: release});
             this.cluster.set({release: releaseId});
@@ -683,7 +683,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 this.setState({loading: false});
             });
         },
-        onChange: function(name, value) {
+        onChange(name, value) {
             var maxAvailablePaneIndex = this.state.maxAvailablePaneIndex;
             switch (name) {
                 case 'name':
@@ -706,7 +706,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
             }
             this.updateState({maxAvailablePaneIndex: maxAvailablePaneIndex});
         },
-        onKeyDown: function(e) {
+        onKeyDown(e) {
             if (this.state.actionInProgress) {
                 return;
             }
@@ -720,7 +720,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 }
             }
         },
-        renderBody: function() {
+        renderBody() {
             var activeIndex = this.state.activePaneIndex;
             var Pane = this.getActivePane();
             return (
@@ -768,7 +768,7 @@ function($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, 
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter() {
             var actionInProgress = this.state.actionInProgress;
             return (
                 <div className='wizard-footer'>

@@ -37,7 +37,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             ComponentMixins.unsavedChangesMixin
         ],
         statics: {
-            fetchData: function(options) {
+            fetchData(options) {
                 var nodes = utils.getNodeListFromTabOptions(options);
 
                 if (!nodes || !nodes.areDisksConfigurable()) {
@@ -60,23 +60,23 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                     });
             }
         },
-        getInitialState: function() {
+        getInitialState() {
             return {actionInProgress: false};
         },
-        componentWillMount: function() {
+        componentWillMount() {
             this.updateInitialData();
         },
-        isLocked: function() {
+        isLocked() {
             return !!this.props.cluster.task({group: 'deployment', active: true}) ||
                 !_.all(this.props.nodes.invoke('areDisksConfigurable'));
         },
-        updateInitialData: function() {
+        updateInitialData() {
             this.setState({initialDisks: _.cloneDeep(this.props.nodes.at(0).disks.toJSON())});
         },
-        hasChanges: function() {
+        hasChanges() {
             return !this.isLocked() && !_.isEqual(_.pluck(this.props.disks.toJSON(), 'volumes'), _.pluck(this.state.initialDisks, 'volumes'));
         },
-        loadDefaults: function() {
+        loadDefaults() {
             this.setState({actionInProgress: true});
             this.props.disks.fetch({url: _.result(this.props.nodes.at(0), 'url') + '/disks/defaults/'})
                 .fail(_.bind(function(response) {
@@ -90,10 +90,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                     this.setState({actionInProgress: false});
                 }, this));
         },
-        revertChanges: function() {
+        revertChanges() {
             this.props.disks.reset(_.cloneDeep(this.state.initialDisks), {parse: true});
         },
-        applyChanges: function() {
+        applyChanges() {
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             this.setState({actionInProgress: true});
@@ -115,7 +115,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
                     this.setState({actionInProgress: false});
                 }, this));
         },
-        getDiskMetaData: function(disk) {
+        getDiskMetaData(disk) {
             var result,
                 disksMetaData = this.props.nodes.at(0).get('meta').disks;
             // try to find disk metadata by matching "extra" field
@@ -131,7 +131,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             }
             return result;
         },
-        getVolumesInfo: function(disk) {
+        getVolumesInfo(disk) {
             var volumes = {},
                 unallocatedWidth = 100;
             disk.get('volumes').each(function(volume) {
@@ -153,18 +153,18 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             };
             return volumes;
         },
-        getVolumeWidth: function(disk, size) {
+        getVolumeWidth(disk, size) {
             return disk.get('size') ? utils.floor(size / disk.get('size') * 100, 2) : 0;
         },
-        hasErrors: function() {
+        hasErrors() {
             return this.props.disks.any(function(disk) {
                 return disk.get('volumes').any('validationError');
             });
         },
-        isSavingPossible: function() {
+        isSavingPossible() {
             return !this.state.actionInProgress && this.hasChanges() && !this.hasErrors();
         },
-        render: function() {
+        render() {
             var hasChanges = this.hasChanges(),
                 locked = this.isLocked(),
                 loadDefaultsDisabled = !!this.state.actionInProgress,
@@ -216,15 +216,15 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
     });
 
     var NodeDisk = React.createClass({
-        getInitialState: function() {
+        getInitialState() {
             return {collapsed: true};
         },
-        componentDidMount: function() {
+        componentDidMount() {
             $('.disk-details', ReactDOM.findDOMNode(this))
                 .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
-        updateDisk: function(name, value) {
+        updateDisk(name, value) {
             var size = parseInt(value) || 0,
                 volumeInfo = this.props.volumesInfo[name];
             if (size > volumeInfo.max) {
@@ -233,10 +233,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, ComponentMixins, 
             this.props.disk.get('volumes').findWhere({name: name}).set({size: size}).isValid({minimum: volumeInfo.min});
             this.props.disk.trigger('change', this.props.disk);
         },
-        toggleDisk: function(name) {
+        toggleDisk(name) {
             $(ReactDOM.findDOMNode(this.refs[name])).collapse('toggle');
         },
-        render: function() {
+        render() {
             var disk = this.props.disk,
                 volumesInfo = this.props.volumesInfo,
                 diskMetaData = this.props.diskMetaData,

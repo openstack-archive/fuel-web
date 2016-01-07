@@ -27,7 +27,7 @@ function($, _, React, models, utils, NodeListScreen) {
 
     var EditNodesScreen = React.createClass({
         statics: {
-            fetchData: function(options) {
+            fetchData(options) {
                 var cluster = options.cluster,
                     nodes = utils.getNodeListFromTabOptions(options);
 
@@ -46,7 +46,7 @@ function($, _, React, models, utils, NodeListScreen) {
                 });
             }
         },
-        render: function() {
+        render() {
             return (
                 <NodeListScreen
                     {... _.omit(this.props, 'screenOptions')}

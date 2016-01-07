@@ -34,18 +34,18 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
             title: i18n('notifications_page.title'),
             navbarActiveElement: null,
             breadcrumbsPath: [['home', '#'], 'notifications'],
-            fetchData: function() {
+            fetchData() {
                 var notifications = app.notifications;
                 return notifications.fetch().then(function() {
                     return {notifications: notifications};
                 });
             }
         },
-        checkDateIsToday: function(date) {
+        checkDateIsToday(date) {
             var today = new Date();
             return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
         },
-        render: function() {
+        render() {
             var notificationGroups = this.props.notifications.groupBy('date');
             return (
                 <div className='notifications-page'>
@@ -76,19 +76,19 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
 
     Notification = React.createClass({
         mixins: [componentMixins.backboneMixin('notification')],
-        showNodeInfo: function(id) {
+        showNodeInfo(id) {
             var node = new models.Node({id: id});
             node.fetch();
             dialogs.ShowNodeInfoDialog.show({node: node});
         },
-        markAsRead: function() {
+        markAsRead() {
             var notification = this.props.notification;
             notification.toJSON = function() {
                 return notification.pick('id', 'status');
             };
             notification.save({status: 'read'});
         },
-        onNotificationClick: function() {
+        onNotificationClick() {
             if (this.props.notification.get('status') == 'unread') {
                 this.markAsRead();
             }
@@ -97,7 +97,7 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
                 this.showNodeInfo(nodeId);
             }
         },
-        render: function() {
+        render() {
             var topic = this.props.notification.get('topic'),
                 notificationClasses = {
                     'col-xs-12 notification': true,

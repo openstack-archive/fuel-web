@@ -33,10 +33,10 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
         mixins: [
             componentMixins.pollingMixin(5)
         ],
-        shouldDataBeFetched: function() {
+        shouldDataBeFetched() {
             return this.state.to && this.state.logsEntries;
         },
-        fetchData: function() {
+        fetchData() {
             var request,
                 logsEntries = this.state.logsEntries,
                 from = this.state.from,
@@ -51,7 +51,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 }, this));
             return $.when(request);
         },
-        getInitialState: function() {
+        getInitialState() {
             return {
                 showMoreLogsLink: false,
                 loading: 'loading',
@@ -60,7 +60,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 to: 0
             };
         },
-        fetchLogs: function(data) {
+        fetchLogs(data) {
             return $.ajax({
                 url: '/api/logs',
                 dataType: 'json',
@@ -70,7 +70,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 }
             });
         },
-        showLogs: function(params) {
+        showLogs(params) {
             this.stopPolling();
             var logOptions = this.props.selectedLogs.type == 'remote' ? _.extend({}, this.props.selectedLogs) : _.omit(this.props.selectedLogs, 'node');
             logOptions.level = logOptions.level.toLowerCase();
@@ -96,16 +96,16 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                     });
                 });
         },
-        onShowButtonClick: function() {
+        onShowButtonClick() {
             this.setState({
                 loading: 'loading',
                 loadingError: null
             }, this.showLogs);
         },
-        onShowMoreClick: function(value) {
+        onShowMoreClick(value) {
             this.showLogs({max_entries: value, fetch_older: true, from: this.state.from});
         },
-        render: function() {
+        render() {
             return (
                 <div className='row'>
                     <div className='title'>{i18n('cluster_page.logs_tab.title')}</div>
@@ -138,7 +138,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
     var LogFilterBar = React.createClass({
         // PureRenderMixin added for prevention the rerender LogFilterBar (because of polling) in Mozilla browser
         mixins: [PureRenderMixin],
-        getInitialState: function() {
+        getInitialState() {
             return _.extend({}, this.props.selectedLogs, {
                 sourcesLoadingState: 'loading',
                 sourcesLoadingError: null,
@@ -146,7 +146,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 locked: true
             });
         },
-        fetchSources: function(type, nodeId) {
+        fetchSources(type, nodeId) {
             var nodes = this.props.nodes,
                 chosenNodeId = nodeId || (nodes.length ? nodes.first().id : null);
             this.sources = new models.LogSources();
@@ -179,39 +179,39 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             });
             return this.sources.deferred;
         },
-        componentDidMount: function() {
+        componentDidMount() {
             this.fetchSources(this.state.type, this.state.node)
                 .done(_.bind(function() {
                     this.setState({locked: true});
                     this.props.showLogs();
                 }, this));
         },
-        onTypeChange: function(name, value) {
+        onTypeChange(name, value) {
             this.fetchSources(value);
         },
-        onNodeChange: function(name, value) {
+        onNodeChange(name, value) {
             this.fetchSources('remote', value);
         },
-        onLevelChange: function(name, value) {
+        onLevelChange(name, value) {
             this.setState({
                 level: value,
                 locked: false
             });
         },
-        onSourceChange: function(name, value) {
+        onSourceChange(name, value) {
             var levels = this.state.sources.get(value).get('levels'),
                 data = {locked: false, source: value};
             if (!_.contains(levels, this.state.level)) data.level = _.first(levels);
             this.setState(data);
         },
-        getLocalSources: function() {
+        getLocalSources() {
             return this.state.sources.map(function(source) {
                 if (!source.get('remote')) {
                     return <option value={source.id} key={source.id}>{source.get('name')}</option>;
                 }
             }, this);
         },
-        getRemoteSources: function() {
+        getRemoteSources() {
             var options = {},
                 groups = [''],
                 sourcesByGroup = {'': []},
@@ -236,12 +236,12 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             }
             return ReactFragment(options);
         },
-        handleShowButtonClick: function() {
+        handleShowButtonClick() {
             this.setState({locked: true});
             this.props.changeLogSelection(_.pick(this.state, 'type', 'node', 'source', 'level'));
             this.props.onShowButtonClick();
         },
-        render: function() {
+        render() {
             var isRemote = this.state.type == 'remote';
             return (
                 <div className='well well-sm'>
@@ -260,7 +260,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 </div>
             );
         },
-        renderFilterButton: function(isRemote) {
+        renderFilterButton(isRemote) {
             return <div className={utils.classNames({
                 'form-group': true,
                 'col-md-4 col-sm-12': isRemote,
@@ -276,7 +276,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 </button>
             </div>;
         },
-        renderTypeSelect: function() {
+        renderTypeSelect() {
             var types = [['local', 'Fuel Master']];
             if (this.props.nodes.length) {
                 types.push(['remote', 'Other servers']);
@@ -296,7 +296,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 />
             </div>;
         },
-        renderNodeSelect: function() {
+        renderNodeSelect() {
             var sortedNodes = this.props.nodes.models.sort(_.partialRight(utils.compare, {attr: 'name'})),
                 nodeOptions = sortedNodes.map(function(node) {
                     return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
@@ -314,7 +314,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 />
             </div>;
         },
-        renderSourceSelect: function() {
+        renderSourceSelect() {
             var sourceOptions = this.state.type == 'local' ? this.getLocalSources() : this.getRemoteSources();
             return <div className='col-md-2 col-sm-3'>
                 <controls.Input
@@ -329,7 +329,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 />
             </div>;
         },
-        renderLevelSelect: function() {
+        renderLevelSelect() {
             var levelOptions = [];
             if (this.state.source && this.state.sources.length) {
                 levelOptions = this.state.sources.get(this.state.source).get('levels').map(function(level) {
@@ -352,8 +352,8 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
     });
 
     var LogsTable = React.createClass({
-        handleShowMoreClick: function(value) { return this.props.onShowMoreClick(value); },
-        getLevelClass: function(level) {
+        handleShowMoreClick(value) { return this.props.onShowMoreClick(value); },
+        getLevelClass(level) {
             return {
                 DEBUG: 'debug',
                 INFO: 'info',
@@ -367,7 +367,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 EMERG: 'emerg'
             }[level];
         },
-        render: function() {
+        render() {
             var tabRows = [],
                 logsEntries = this.props.logsEntries;
             if (logsEntries && logsEntries.length) {

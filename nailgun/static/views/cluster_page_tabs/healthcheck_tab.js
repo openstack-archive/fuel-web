@@ -31,13 +31,13 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
     var HealthCheckTab = React.createClass({
         mixins: [
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster.get('tasks');},
+                modelOrCollection(props) {return props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
             componentMixins.backboneMixin('cluster', 'change:status')
         ],
         statics: {
-            fetchData: function(options) {
+            fetchData(options) {
                 if (!options.cluster.get('ostf')) {
                     var ostf = {},
                         clusterId = options.cluster.id;
@@ -57,7 +57,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 return $.Deferred().resolve();
             }
         },
-        render: function() {
+        render() {
             var ostf = this.props.cluster.get('ostf');
             return (
                 <div className='row'>
@@ -91,38 +91,38 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             componentMixins.backboneMixin('testruns', 'update change'),
             componentMixins.pollingMixin(3)
         ],
-        shouldDataBeFetched: function() {
+        shouldDataBeFetched() {
             return this.props.testruns.any({status: 'running'});
         },
-        fetchData: function() {
+        fetchData() {
             return this.props.testruns.fetch();
         },
-        getInitialState: function() {
+        getInitialState() {
             return {
                 actionInProgress: false,
                 credentialsVisible: null,
                 credentials: _.transform(this.props.cluster.get('settings').get('access'), function(result, value, key) {result[key] = value.value;})
             };
         },
-        isLocked: function() {
+        isLocked() {
             var cluster = this.props.cluster;
             return cluster.get('status') != 'operational' || !!cluster.task({group: 'deployment', active: true});
         },
-        getNumberOfCheckedTests: function() {
+        getNumberOfCheckedTests() {
             return this.props.tests.where({checked: true}).length;
         },
-        toggleCredentials: function() {
+        toggleCredentials() {
             this.setState({credentialsVisible: !this.state.credentialsVisible});
         },
-        handleSelectAllClick: function(name, value) {
+        handleSelectAllClick(name, value) {
             this.props.tests.invoke('set', {checked: value});
         },
-        handleInputChange: function(name, value) {
+        handleInputChange(name, value) {
             var credentials = this.state.credentials;
             credentials[name] = value;
             this.setState({credentials: credentials});
         },
-        runTests: function() {
+        runTests() {
             var testruns = new models.TestRuns(),
                 oldTestruns = new models.TestRuns(),
                 testsetIds = this.props.testsets.pluck('id');
@@ -182,10 +182,10 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     this.setState({actionInProgress: false});
                 }, this));
         },
-        getActiveTestRuns: function() {
+        getActiveTestRuns() {
             return this.props.testruns.where({status: 'running'});
         },
-        stopTests: function() {
+        stopTests() {
             var testruns = new models.TestRuns(this.getActiveTestRuns());
             if (testruns.length) {
                 this.setState({actionInProgress: true});
@@ -201,7 +201,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 }, this));
             }
         },
-        render: function() {
+        render() {
             var disabledState = this.isLocked(),
                 hasRunningTests = !!this.props.testruns.where({status: 'running'}).length;
             return (
@@ -272,7 +272,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
     });
 
     var HealthcheckCredentials = React.createClass({
-        render: function() {
+        render() {
             var inputFields = ['user', 'password', 'tenant'];
             return (
                 <div className='credentials collapse col-xs-12'>
@@ -305,20 +305,20 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             componentMixins.backboneMixin('tests'),
             componentMixins.backboneMixin('testset')
         ],
-        handleTestSetCheck: function(name, value) {
+        handleTestSetCheck(name, value) {
             this.props.testset.set('checked', value);
             this.props.tests.invoke('set', {checked: value});
         },
-        componentWillUnmount: function() {
+        componentWillUnmount() {
             this.props.tests.invoke('off', 'change:checked', this.updateTestsetCheckbox, this);
         },
-        componentWillMount: function() {
+        componentWillMount() {
             this.props.tests.invoke('on', 'change:checked', this.updateTestsetCheckbox, this);
         },
-        updateTestsetCheckbox: function() {
+        updateTestsetCheckbox() {
             this.props.testset.set('checked', this.props.tests.where({checked: true}).length == this.props.tests.length);
         },
-        render: function() {
+        render() {
             var classes = {
                 'table healthcheck-table': true,
                 disabled: this.props.disabled
@@ -376,10 +376,10 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         mixins: [
             componentMixins.backboneMixin('test')
         ],
-        handleTestCheck: function(name, value) {
+        handleTestCheck(name, value) {
             this.props.test.set('checked', value);
         },
-        render: function() {
+        render() {
             var test = this.props.test,
                 result = this.props.result,
                 description = _.escape(_.trim(test.get('description'))),

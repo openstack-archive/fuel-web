@@ -13,8 +13,9 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'js-cookie'], ($, _, Cookies) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import Cookies from 'js-cookie';
 
     class KeystoneClient {
         constructor(url, options) {
@@ -120,5 +121,4 @@ define(['jquery', 'underscore', 'js-cookie'], ($, _, Cookies) => {
         }
     }
 
-    return KeystoneClient;
-});
+    export default KeystoneClient;

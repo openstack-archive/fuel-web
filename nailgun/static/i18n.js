@@ -13,12 +13,9 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define([
-    'underscore',
-    'i18next-client',
-    './translations/core.json'
-], (_, i18next, translations) => {
-    'use strict';
+import _ from 'underscore';
+import i18next from 'i18next-client';
+import translations from './translations/core.json';
 
     var defaultLocale = 'en-US';
 
@@ -53,5 +50,4 @@ define([
     // export global i18n variable to use in templates
     window.i18n = i18n;
 
-    return i18n;
-});
+    export default i18n;

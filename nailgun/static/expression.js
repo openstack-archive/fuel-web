@@ -13,8 +13,9 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore', 'expression/parser', 'expression/objects'], (_, ExpressionParser, expressionObjects) => {
-    'use strict';
+import _ from 'underscore';
+import ExpressionParser from 'expression/parser';
+import * as expressionObjects from 'expression/objects';
 
     var expressionCache = {};
 
@@ -50,5 +51,4 @@ define(['underscore', 'expression/parser', 'expression/objects'], (_, Expression
 
     _.extend(ExpressionParser.yy, expressionObjects);
 
-    return Expression;
-});
+    export default Expression;

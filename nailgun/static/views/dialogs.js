@@ -13,23 +13,19 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'react-dom',
-    'utils',
-    'models',
-    'dispatcher',
-    'views/controls',
-    'component_mixins',
-    'react-addons-linked-state-mixin'
-],
-($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, controls, componentMixins, LinkedStateMixin) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import Backbone from 'backbone';
+import utils from 'utils';
+import models from 'models';
+import dispatcher from 'dispatcher';
+import controls from 'views/controls';
+import componentMixins from 'component_mixins';
+import LinkedStateMixin from 'react-addons-linked-state-mixin';
 
     var dialogs = {};
 
@@ -1570,5 +1566,4 @@ define(
         }
     });
 
-    return dialogs;
-});
+    export default dialogs;

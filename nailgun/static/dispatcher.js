@@ -13,11 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore', 'backbone'], (_, Backbone) => {
-    'use strict';
+import _ from 'underscore';
+import Backbone from 'backbone';
 
     var dispatcher = _.clone(Backbone.Events);
     _.bindAll(dispatcher);
 
-    return dispatcher;
-});
+    export default dispatcher;

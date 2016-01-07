@@ -13,22 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'utils',
-    'models',
-    'dispatcher',
-    'views/controls',
-    'views/dialogs',
-    'component_mixins'
-],
-($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import dispatcher from 'dispatcher';
+import controls from 'views/controls';
+import dialogs from 'views/dialogs';
+import componentMixins from 'component_mixins';
 
     var Node = React.createClass({
         mixins: [componentMixins.renamingMixin('name')],
@@ -470,5 +464,4 @@ define(
         }
     });
 
-    return Node;
-});
+    export default Node;

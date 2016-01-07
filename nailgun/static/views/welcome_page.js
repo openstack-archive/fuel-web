@@ -33,7 +33,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
         statics: {
             title: i18n('welcome_page.title'),
             hiddenLayout: true,
-            fetchData: function() {
+            fetchData: () => {
                 return app.fuelSettings.fetch().then(function() {
                     var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
                     tracking.processRestrictions();
@@ -44,7 +44,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                 });
             }
         },
-        onStartButtonClick: function() {
+        onStartButtonClick: () => {
             this.clearRegistrationForm();
             var statistics = this.props.tracking.get('statistics'),
                 currentAttributes = _.cloneDeep(this.props.settings.attributes);
@@ -62,7 +62,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                     this.setState({locked: false});
                 }, this));
         },
-        render: function() {
+        render: () => {
             var ns = 'welcome_page.',
                 featureGroups = app.version.get('feature_groups'),
                 isMirantisIso = _.contains(featureGroups, 'mirantis'),

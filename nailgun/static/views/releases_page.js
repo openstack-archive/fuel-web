@@ -27,19 +27,19 @@ function(_, i18n, React, models, controls, componentMixins) {
 
     var ReleasesPage = React.createClass({
         mixins: [componentMixins.backboneMixin('releases')],
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {columns: ['name', 'version', 'state']};
         },
         statics: {
             title: i18n('release_page.title'),
             navbarActiveElement: 'releases',
             breadcrumbsPath: [['home', '#'], 'releases'],
-            fetchData: function() {
+            fetchData: () => {
                 var releases = app.releases;
                 return releases.fetch({cache: true}).then(() => ({releases}));
             }
         },
-        getReleaseData: function(release) {
+        getReleaseData: (release) => {
             return _.map(this.props.columns, function(attr) {
                 if (attr == 'state') {
                     return i18n('release_page.release.' + (release.get(attr)));
@@ -47,7 +47,7 @@ function(_, i18n, React, models, controls, componentMixins) {
                 return release.get(attr) || i18n('common.not_available');
             });
         },
-        render: function() {
+        render: () => {
             return (
                 <div className='releases-page'>
                     <div className='page-title'>

@@ -32,27 +32,27 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
         mixins: [
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
+                modelOrCollection: (props) => {
                     return props.cluster.get('settings');
                 },
                 renderOn: 'change invalid'
             }),
-            componentMixins.backboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: (props) => {
                 return props.cluster.get('tasks');
             }}),
-            componentMixins.backboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: (props) => {
                 return props.cluster.task({group: 'deployment', active: true});
             }}),
             componentMixins.unsavedChangesMixin
         ],
         statics: {
-            fetchData: function(options) {
+            fetchData: (options) => {
                 return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
                     return {};
                 });
             }
         },
-        getInitialState: function() {
+        getInitialState: () => {
             var settings = this.props.cluster.get('settings');
             return {
                 configModels: {
@@ -68,16 +68,16 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                 actionInProgress: false
             };
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             this.props.cluster.get('settings').isValid({models: this.state.configModels});
         },
-        componentWillUnmount: function() {
+        componentWillUnmount: () => {
             this.loadInitialSettings();
         },
-        hasChanges: function() {
+        hasChanges: () => {
             return this.props.cluster.get('settings').hasChanges(this.state.initialAttributes, this.state.configModels);
         },
-        applyChanges: function() {
+        applyChanges: () => {
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             // collecting data to save
@@ -113,7 +113,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
             }
             return deferred;
         },
-        loadDefaults: function() {
+        loadDefaults: () => {
             var settings = this.props.cluster.get('settings'),
                 lockedCluster = !this.props.cluster.isAvailableForSettingsChanges(),
                 defaultSettings = new models.Settings(),
@@ -150,17 +150,17 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
                     );
             }
         },
-        revertChanges: function() {
+        revertChanges: () => {
             this.loadInitialSettings();
             this.setState({key: _.now()});
         },
-        loadInitialSettings: function() {
+        loadInitialSettings: () => {
             var settings = this.props.cluster.get('settings');
             settings.set(_.cloneDeep(this.state.initialAttributes), {silent: true, validate: false});
             settings.mergePluginSettings();
             settings.isValid({models: this.state.configModels});
         },
-        onChange: function(groupName, settingName, value) {
+        onChange: (groupName, settingName, value) => {
             var settings = this.props.cluster.get('settings'),
                 name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
             this.state.settingsForChecks.set(name, value);
@@ -170,16 +170,16 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
             settings.set(name, value);
             settings.isValid({models: this.state.configModels});
         },
-        checkRestrictions: function(action, path) {
+        checkRestrictions: (action, path) => {
             return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, path);
         },
-        isSavingPossible: function() {
+        isSavingPossible: () => {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true});
             return !locked && this.hasChanges() && _.isNull(settings.validationError);
         },
-        render: function() {
+        render: () => {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 settingsGroupList = settings.getGroupList(),
@@ -316,7 +316,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection, CSST
     });
 
     var SettingSubtabs = React.createClass({
-        render: function() {
+        render: () => {
             return (
                 <div className='col-xs-2'>
                     <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>

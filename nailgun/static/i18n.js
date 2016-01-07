@@ -23,22 +23,22 @@ define([
     var defaultLocale = 'en-US';
 
     var i18n = _.extend(_.bind(i18next.t, i18next), {
-        getLocaleName: function(locale) {
+        getLocaleName: (locale) => {
             return i18n('language', {lng: locale});
         },
-        getLanguageName: function(locale) {
+        getLanguageName: (locale) => {
             return i18n('language_name', {lng: locale});
         },
-        getAvailableLocales: function() {
+        getAvailableLocales: () => {
             return _.keys(translations).sort();
         },
-        getCurrentLocale: function() {
+        getCurrentLocale: () => {
             return i18next.lng();
         },
-        setLocale: function(locale) {
+        setLocale: (locale) => {
             i18next.setLng(locale, {});
         },
-        addTranslations: function(extraTranslations) {
+        addTranslations: (extraTranslations) => {
             _.merge(i18next.options.resStore, extraTranslations);
         }
     });

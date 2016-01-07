@@ -32,19 +32,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
     var Node = React.createClass({
         mixins: [componentMixins.renamingMixin('name')],
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 actionInProgress: false,
                 extendedView: false,
                 labelsPopoverVisible: false
             };
         },
-        componentDidUpdate: function() {
+        componentDidUpdate: () => {
             if (!this.props.node.get('cluster') && !this.props.checked) {
                 this.props.node.set({pending_roles: []}, {assign: true});
             }
         },
-        getNodeLogsLink: function() {
+        getNodeLogsLink: () => {
             var status = this.props.node.get('status'),
                 error = this.props.node.get('error_type'),
                 options = {type: 'remote', node: this.props.node.id};
@@ -57,7 +57,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
             return '#cluster/' + this.props.node.get('cluster') + '/logs/' + utils.serializeTabOptions(options);
         },
-        applyNewNodeName: function(newName) {
+        applyNewNodeName: (newName) => {
             if (newName && newName != this.props.node.get('name')) {
                 this.setState({actionInProgress: true});
                 this.props.node.save({name: newName}, {patch: true, wait: true}).always(this.endRenaming);
@@ -65,7 +65,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 this.endRenaming();
             }
         },
-        onNodeNameInputKeydown: function(e) {
+        onNodeNameInputKeydown: (e) => {
             if (e.key == 'Enter') {
                 this.applyNewNodeName(this.refs.name.getInputDOMNode().value);
             } else if (e.key == 'Escape') {
@@ -91,7 +91,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     });
                 });
         },
-        removeNode: function(e) {
+        removeNode: (e) => {
             e.preventDefault();
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
             dialogs.RemoveOfflineNodeDialog
@@ -124,7 +124,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         );
                 });
         },
-        showNodeDetails: function(e) {
+        showNodeDetails: (e) => {
             e.preventDefault();
             if (this.state.extendedView) this.toggleExtendedNodePanel();
             dialogs.ShowNodeInfoDialog.show({
@@ -134,11 +134,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 renderActionButtons: this.props.renderActionButtons
             });
         },
-        toggleExtendedNodePanel: function() {
+        toggleExtendedNodePanel: () => {
             var states = this.state.extendedView ? {extendedView: false, isRenaming: false} : {extendedView: true};
             this.setState(states);
         },
-        renderNameControl: function() {
+        renderNameControl: () => {
             if (this.state.isRenaming) return (
                 <controls.Input
                     ref='name'
@@ -161,7 +161,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </controls.Tooltip>
             );
         },
-        renderStatusLabel: function(status) {
+        renderStatusLabel: (status) => {
             return (
                 <span>
                     {i18n('cluster_page.nodes_tab.node.status.' + status, {
@@ -170,7 +170,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </span>
             );
         },
-        renderNodeProgress: function(status) {
+        renderNodeProgress: (status) => {
             var nodeProgress = this.props.node.get('progress');
             return (
                 <div className='progress'>
@@ -184,7 +184,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </div>
             );
         },
-        renderNodeHardwareSummary: function() {
+        renderNodeHardwareSummary: () => {
             var htCores = this.props.node.resource('ht_cores'),
                 hdd = this.props.node.resource('hdd'),
                 ram = this.props.node.resource('ram');
@@ -196,7 +196,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </div>
             );
         },
-        renderLogsLink: function(iconRepresentation) {
+        renderLogsLink: (iconRepresentation) => {
             return (
                 <controls.Tooltip key='logs' text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
                     <a className={'btn-view-logs ' + (iconRepresentation ? 'icon icon-logs' : 'btn')} href={this.getNodeLogsLink()}>
@@ -205,7 +205,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </controls.Tooltip>
             );
         },
-        renderNodeCheckbox: function() {
+        renderNodeCheckbox: () => {
             return (
                 <controls.Input
                     type='checkbox'
@@ -217,14 +217,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 />
             );
         },
-        renderRemoveButton: function() {
+        renderRemoveButton: () => {
             return (
                 <button onClick={this.removeNode} className='btn node-remove-button'>
                     {i18n('cluster_page.nodes_tab.node.remove')}
                 </button>
             );
         },
-        renderRoleList: function(roles) {
+        renderRoleList: (roles) => {
             return (
                 <ul>
                     {_.map(roles, function(role) {
@@ -250,7 +250,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 })
                 .done(this.props.onNodeSelection);
         },
-        renderLabels: function() {
+        renderLabels: () => {
             var labels = this.props.node.get('labels');
             if (_.isEmpty(labels)) return null;
             return (
@@ -266,12 +266,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 </ul>
             );
         },
-        toggleLabelsPopover: function(visible) {
+        toggleLabelsPopover: (visible) => {
             this.setState({
                 labelsPopoverVisible: _.isBoolean(visible) ? visible : !this.state.labelsPopoverVisible
             });
         },
-        render: function() {
+        render: () => {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
                 isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',

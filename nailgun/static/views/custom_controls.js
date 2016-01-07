@@ -29,7 +29,7 @@ define([
     customControls.custom_repo_configuration = React.createClass({
         statics: {
             // validate method represented as static method to support cluster settings validation
-            validate: function(setting, models) {
+            validate: (setting, models) => {
                 var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
                     nameRegexp = /^[\w-.]+$/,
                     os = models.release.get('operating_system');
@@ -52,16 +52,16 @@ define([
                 }, this);
                 return _.compact(errors).length ? errors : null;
             },
-            repoToString: function(repo, os) {
+            repoToString: (repo, os) => {
                 var repoData = _.compact(this.defaultProps.repoAttributes[os].map(function(attribute) {return repo[attribute];}));
                 if (!repoData.length) return ''; // in case of new repo
                 return repoData.join(' ');
             }
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {};
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 repoRegexes: {
                     Ubuntu: /^(deb|deb-src)\s+(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
@@ -73,7 +73,7 @@ define([
                 }
             };
         },
-        changeRepos: function(method, index, value) {
+        changeRepos: (method, index, value) => {
             value = _.trim(value).replace(/\s+/g, ' ');
             var repos = _.cloneDeep(this.props.value),
                 os = this.props.cluster.get('release').get('operating_system');
@@ -118,7 +118,7 @@ define([
             this.props.settings.set(path, repos);
             this.props.settings.isValid({models: this.props.configModels});
         },
-        renderDeleteButton: function(index) {
+        renderDeleteButton: (index) => {
             return (
                 <button
                     className='btn btn-link'
@@ -129,7 +129,7 @@ define([
                 </button>
             );
         },
-        render: function() {
+        render: () => {
             var ns = 'cluster_page.settings_tab.custom_repo_configuration.',
                 os = this.props.cluster.get('release').get('operating_system');
             return (

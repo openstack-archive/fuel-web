@@ -26,7 +26,7 @@ function($, _, React, models, NodeListScreen) {
 
     var AddNodesScreen = React.createClass({
         statics: {
-            fetchData: function(options) {
+            fetchData: (options) => {
                 var nodes = new models.Nodes();
                 nodes.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
@@ -36,7 +36,7 @@ function($, _, React, models, NodeListScreen) {
                 });
             }
         },
-        render: function() {
+        render: () => {
             return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
                 ref='screen'
                 mode='add'

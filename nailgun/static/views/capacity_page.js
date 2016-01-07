@@ -34,20 +34,20 @@ function(_, i18n, React, models, componentMixins, controls) {
             title: i18n('capacity_page.title'),
             navbarActiveElement: 'support',
             breadcrumbsPath: [['home', '#'], ['support', '#support'], 'capacity'],
-            fetchData: function() {
+            fetchData: () => {
                 var task = new models.Task();
                 return task.save({}, {url: '/api/capacity/', method: 'PUT'}).then(function() {
                     return {capacityLog: new models.CapacityLog()};
                 });
             }
         },
-        shouldDataBeFetched: function() {
+        shouldDataBeFetched: () => {
             return this.props.capacityLog.isNew();
         },
-        fetchData: function() {
+        fetchData: () => {
             return this.props.capacityLog.fetch();
         },
-        render: function() {
+        render: () => {
             var capacityLog = this.props.capacityLog;
             return (
                 <div className='capacity-page'>
@@ -67,7 +67,7 @@ function(_, i18n, React, models, componentMixins, controls) {
     });
 
     var LicenseUsage = React.createClass({
-        render: function() {
+        render: () => {
             var capacityReport = this.props.capacityLog.get('report'),
                 tableClassName = 'capacity-audit-table',
                 headClassName = 'name';

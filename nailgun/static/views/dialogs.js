@@ -60,7 +60,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             ])
         },
         statics: {
-            show: function(dialogOptions = {}, showOptions = {}) {
+            show: (dialogOptions = {}, showOptions = {}) => {
                 var activeDialog = getActiveDialog();
                 if (activeDialog) {
                     var result = $.Deferred();
@@ -77,16 +77,16 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }
             }
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 actionInProgress: false,
                 result: $.Deferred()
             };
         },
-        getResult: function() {
+        getResult: () => {
             return this.state.result;
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             setActiveDialog(this);
             Backbone.history.on('route', this.close, this);
             var $el = $(ReactDOM.findDOMNode(this));
@@ -98,43 +98,43 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 {background: true, backdrop: true}
             ));
         },
-        rejectResult: function() {
+        rejectResult: () => {
             if (this.state.result.state() == 'pending') this.state.result.reject();
         },
-        componentWillUnmount: function() {
+        componentWillUnmount: () => {
             Backbone.history.off(null, null, this);
             $(ReactDOM.findDOMNode(this)).off('shown.bs.modal hidden.bs.modal');
             this.rejectResult();
             setActiveDialog(null);
         },
-        handleHidden: function() {
+        handleHidden: () => {
             ReactDOM.unmountComponentAtNode(ReactDOM.findDOMNode(this).parentNode);
         },
-        close: function() {
+        close: () => {
             $(ReactDOM.findDOMNode(this)).modal('hide');
             this.rejectResult();
         },
-        closeOnLinkClick: function(e) {
+        closeOnLinkClick: (e) => {
             // close dialogs on click of any internal link inside it
             if (e.target.tagName == 'A' && !e.target.target && e.target.href) this.close();
         },
-        closeOnEscapeKey: function(e) {
+        closeOnEscapeKey: (e) => {
             if (this.props.keyboard !== false && this.props.closeable !== false && e.key == 'Escape') this.close();
             if (_.isFunction(this.onKeyDown)) this.onKeyDown(e);
         },
-        showError: function(response, message) {
+        showError: (response, message) => {
             var props = {error: true};
             props.message = utils.getResponseText(response) || message;
             this.setProps(props);
         },
-        renderImportantLabel: function() {
+        renderImportantLabel: () => {
             return <span className='label label-danger'>{i18n('common.important')}</span>;
         },
-        submitAction: function() {
+        submitAction: () => {
             this.state.result.resolve();
             this.close();
         },
-        render: function() {
+        render: () => {
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
             return (
@@ -171,7 +171,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     };
 
     var registrationResponseErrorMixin = {
-        showResponseErrors: function(response, form) {
+        showResponseErrors: (response, form) => {
             var jsonObj,
                 error = '';
             try {
@@ -192,7 +192,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.ErrorDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {error: true};
         }
     });
@@ -229,7 +229,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             if (this.activeTimeout) clearTimeout(this.activeTimeout);
             delete this.activeTimeout;
         },
-        countdown: function() {
+        countdown: () => {
             var {currentDelay} = this.state;
             currentDelay--;
             if (!currentDelay) {
@@ -345,15 +345,15 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             dialogMixin,
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
+                modelOrCollection: (props) => {
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change:status'
             })
         ],
-        getDefaultProps: function() {return {title: i18n('dialog.display_changes.title')};},
+        getDefaultProps: () => {return {title: i18n('dialog.display_changes.title')};},
         ns: 'dialog.display_changes.',
-        deployCluster: function() {
+        deployCluster: () => {
             this.setState({actionInProgress: true});
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
@@ -364,7 +364,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }.bind(this))
                 .fail(this.showError);
         },
-        renderBody: function() {
+        renderBody: () => {
             var cluster = this.props.cluster;
             return (
                 <div className='display-changes-dialog'>
@@ -397,7 +397,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
@@ -411,8 +411,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.ProvisionVMsDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.provision_vms.title')};},
-        startProvisioning: function() {
+        getDefaultProps: () => {return {title: i18n('dialog.provision_vms.title')};},
+        startProvisioning: () => {
             this.setState({actionInProgress: true});
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/spawn_vms', type: 'PUT'})
@@ -424,13 +424,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     this.showError(response, i18n('dialog.provision_vms.provision_vms_error'));
                 }, this));
         },
-        renderBody: function() {
+        renderBody: () => {
             var vmsCount = this.props.cluster.get('nodes').where(function(node) {
                 return node.get('pending_addition') && node.hasRole('virt');
             }).length;
             return i18n('dialog.provision_vms.text', {count: vmsCount});
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='provision' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.startProvisioning}>{i18n('common.start_button')}</button>
@@ -440,8 +440,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.StopDeploymentDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.stop_deployment.title')};},
-        stopDeployment: function() {
+        getDefaultProps: () => {return {title: i18n('dialog.stop_deployment.title')};},
+        stopDeployment: () => {
             this.setState({actionInProgress: true});
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/stop_deployment', type: 'PUT'})
@@ -453,7 +453,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     this.showError(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
                 }, this));
         },
-        renderBody: function() {
+        renderBody: () => {
             return (
                 <div className='text-danger'>
                     {this.renderImportantLabel()}
@@ -461,7 +461,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{i18n('common.stop_button')}</button>
@@ -471,13 +471,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.RemoveClusterDialog = React.createClass({
         mixins: [dialogMixin],
-        getInitialState: function() {
+        getInitialState: () => {
             return {confirmation: false};
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {title: i18n('dialog.remove_cluster.title')};
         },
-        removeCluster: function() {
+        removeCluster: () => {
             this.setState({actionInProgress: true});
             this.props.cluster
                 .destroy({wait: true})
@@ -490,10 +490,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     this.showError
                 );
         },
-        showConfirmationForm: function() {
+        showConfirmationForm: () => {
             this.setState({confirmation: true});
         },
-        getText: function() {
+        getText: () => {
             var ns = 'dialog.remove_cluster.',
                 runningTask = this.props.cluster.task({active: true});
             if (runningTask) {
@@ -507,7 +507,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }
             return i18n(ns + 'default_text');
         },
-        renderBody: function() {
+        renderBody: () => {
             var clusterName = this.props.cluster.get('name');
             return (
                 <div>
@@ -530,7 +530,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button
@@ -549,13 +549,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     // extra confirmation logic should be moved out to dialog mixin
     dialogs.ResetEnvironmentDialog = React.createClass({
         mixins: [dialogMixin],
-        getInitialState: function() {
+        getInitialState: () => {
             return {confirmation: false};
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {title: i18n('dialog.reset_environment.title')};
         },
-        resetEnvironment: function() {
+        resetEnvironment: () => {
             this.setState({actionInProgress: true});
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
@@ -566,7 +566,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }.bind(this))
                 .fail(this.showError);
         },
-        renderBody: function() {
+        renderBody: () => {
             var clusterName = this.props.cluster.get('name');
             return (
                 <div>
@@ -592,10 +592,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        showConfirmationForm: function() {
+        showConfirmationForm: () => {
             this.setState({confirmation: true});
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return ([
                 <button key='cancel' className='btn btn-default' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button
@@ -616,10 +616,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             componentMixins.backboneMixin('node'),
             componentMixins.renamingMixin('hostname')
         ],
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {modalClass: 'always-show-scrollbar'};
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 title: i18n('dialog.show_node.default_dialog_title'),
                 VMsConf: null,
@@ -627,11 +627,11 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 hostnameChangingError: null
             };
         },
-        goToConfigurationScreen: function(url) {
+        goToConfigurationScreen: (url) => {
             this.close();
             app.navigate('#cluster/' + this.props.node.get('cluster') + '/nodes/' + url + '/' + utils.serializeTabOptions({nodes: this.props.node.id}), {trigger: true});
         },
-        showSummary: function(meta, group) {
+        showSummary: (meta, group) => {
             var summary = '';
             try {
                 switch (group) {
@@ -662,10 +662,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             } catch (ignore) {}
             return summary;
         },
-        showPropertyName: function(propertyName) {
+        showPropertyName: (propertyName) => {
             return String(propertyName).replace(/_/g, ' ');
         },
-        showPropertyValue: function(group, name, value) {
+        showPropertyValue: (group, name, value) => {
             try {
                 if (group == 'memory' && (name == 'total' || name == 'maximum_capacity' || name == 'size')) {
                     value = utils.showMemorySize(value);
@@ -683,10 +683,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             } catch (ignore) {}
             return !_.isNumber(value) && _.isEmpty(value) ? '\u00A0' : value;
         },
-        componentDidUpdate: function() {
+        componentDidUpdate: () => {
             this.assignAccordionEvents();
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             this.assignAccordionEvents();
             this.setDialogTitle();
             if (this.props.node.get('pending_addition') && this.props.node.hasRole('virt')) {
@@ -702,23 +702,23 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }, this));
             }
         },
-        setDialogTitle: function() {
+        setDialogTitle: () => {
             var name = this.props.node && this.props.node.get('name');
             if (name && name != this.state.title) this.setState({title: name});
         },
-        assignAccordionEvents: function() {
+        assignAccordionEvents: () => {
             $('.panel-collapse', ReactDOM.findDOMNode(this))
                 .on('show.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus');})
                 .on('hide.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus');})
                 .on('hidden.bs.collapse', function(e) {e.stopPropagation();});
         },
-        toggle: function(groupIndex) {
+        toggle: (groupIndex) => {
             $(ReactDOM.findDOMNode(this.refs['togglable_' + groupIndex])).collapse('toggle');
         },
-        onVMsConfChange: function() {
+        onVMsConfChange: () => {
             this.setState({VMsConfValidationError: null});
         },
-        saveVMsConf: function() {
+        saveVMsConf: () => {
             var parsedVMsConf;
             try {
                 parsedVMsConf = JSON.parse(this.refs['vms-config'].getInputDOMNode().value);
@@ -736,11 +736,11 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     }, this));
             }
         },
-        startHostnameRenaming: function(e) {
+        startHostnameRenaming: (e) => {
             this.setState({hostnameChangingError: null});
             this.startRenaming(e);
         },
-        onHostnameInputKeydown: function(e) {
+        onHostnameInputKeydown: (e) => {
             this.setState({hostnameChangingError: null});
             if (e.key == 'Enter') {
                 this.setState({actionInProgress: true});
@@ -763,7 +763,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 ReactDOM.findDOMNode(this).focus();
             }
         },
-        renderBody: function() {
+        renderBody: () => {
             var node = this.props.node,
                 meta = node.get('meta');
             if (!meta) return <controls.ProgressBar />;
@@ -904,7 +904,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return (
                 <div>
                     {this.props.renderActionButtons && this.props.node.get('cluster') &&
@@ -923,7 +923,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderNodeInfo: function(name, value) {
+        renderNodeInfo: (name, value) => {
             return (
                 <div key={name + value} className='node-details-row'>
                     <label>{i18n('dialog.show_node.' + name, {defaultValue: this.showPropertyName(name)})}</label>
@@ -935,26 +935,26 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.DiscardSettingsChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title')};},
-        proceedWith: function(method) {
+        getDefaultProps: () => {return {title: i18n('dialog.dismiss_settings.title')};},
+        proceedWith: (method) => {
             this.setState({actionInProgress: true});
             $.when(method ? method() : $.Deferred().resolve())
                 .done(this.state.result.resolve)
                 .done(this.close)
                 .fail(_.partial(this.showError, null, i18n('dialog.dismiss_settings.saving_failed_message')));
         },
-        discard: function() {
+        discard: () => {
             this.proceedWith(this.props.revertChanges);
         },
-        save: function() {
+        save: () => {
             this.proceedWith(this.props.applyChanges);
         },
-        getMessage: function() {
+        getMessage: () => {
             if (this.props.isDiscardingPossible === false) return 'no_discard_message';
             if (this.props.isSavingPossible === false) return 'no_saving_message';
             return 'default_message';
         },
-        renderBody: function() {
+        renderBody: () => {
             return (
                 <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
@@ -962,7 +962,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             var buttons = [
                 <button
                     key='stay'
@@ -1022,8 +1022,8 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.DeleteNodesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.delete_nodes.title')};},
-        renderBody: function() {
+        getDefaultProps: () => {return {title: i18n('dialog.delete_nodes.title')};},
+        renderBody: () => {
             var ns = 'dialog.delete_nodes.',
                 notDeployedNodesAmount = this.props.nodes.reject({status: 'ready'}).length,
                 deployedNodesAmount = this.props.nodes.length - notDeployedNodesAmount;
@@ -1038,13 +1038,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return [
                 <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{i18n('common.delete_button')}</button>
             ];
         },
-        deleteNodes: function() {
+        deleteNodes: () => {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
                 // mark deployed node as pending deletion
@@ -1080,13 +1080,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             dialogMixin,
             LinkedStateMixin
         ],
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 title: i18n('dialog.change_password.title'),
                 modalClass: 'change-password'
             };
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 currentPassword: '',
                 confirmationPassword: '',
@@ -1094,7 +1094,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 validationError: false
             };
         },
-        getError: function(name) {
+        getError: (name) => {
             var ns = 'dialog.change_password.';
             if (name == 'currentPassword' && this.state.validationError) return i18n(ns + 'wrong_current_password');
             if (this.state.newPassword != this.state.confirmationPassword) {
@@ -1103,7 +1103,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }
             return null;
         },
-        renderBody: function() {
+        renderBody: () => {
             var ns = 'dialog.change_password.',
                 fields = ['currentPassword', 'newPassword', 'confirmationPassword'],
                 translationKeys = ['current_password', 'new_password', 'confirm_new_password'];
@@ -1128,7 +1128,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return [
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
@@ -1139,11 +1139,11 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </button>
             ];
         },
-        isPasswordChangeAvailable: function() {
+        isPasswordChangeAvailable: () => {
             return this.state.newPassword.length && !this.state.validationError &&
                 (this.state.newPassword == this.state.confirmationPassword);
         },
-        handleKeyDown: function(e) {
+        handleKeyDown: (e) => {
             if (e.key == 'Enter') {
                 e.preventDefault();
                 this.changePassword();
@@ -1153,7 +1153,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 return false;
             }
         },
-        handleChange: function(clearError, name, value) {
+        handleChange: (clearError, name, value) => {
             var newState = {};
             newState[name] = value.trim();
             if (clearError) {
@@ -1161,7 +1161,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }
             this.setState(newState);
         },
-        changePassword: function() {
+        changePassword: () => {
             if (this.isPasswordChangeAvailable()) {
                 var keystoneClient = app.keystoneClient;
                 this.setState({actionInProgress: true});
@@ -1185,19 +1185,19 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             registrationResponseErrorMixin,
             componentMixins.backboneMixin('registrationForm', 'change invalid')
         ],
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 loading: true
             };
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 title: i18n('dialog.registration.title'),
                 modalClass: 'registration',
                 backdrop: 'static'
             };
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             var registrationForm = this.props.registrationForm;
             registrationForm.fetch()
                 .then(null, function() {
@@ -1210,13 +1210,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }, this))
                 .always(_.bind(function() {this.setState({loading: false});}, this));
         },
-        onChange: function(inputName, value) {
+        onChange: (inputName, value) => {
             var registrationForm = this.props.registrationForm,
                 name = registrationForm.makePath('credentials', inputName, 'value');
             if (registrationForm.validationError) delete registrationForm.validationError['credentials.' + inputName];
             registrationForm.set(name, value);
         },
-        composeOptions: function(values) {
+        composeOptions: (values) => {
             return _.map(values, function(value, index) {
                 return (
                     <option key={index} value={value.data}>
@@ -1225,10 +1225,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 );
             });
         },
-        getAgreementLink: function(link) {
+        getAgreementLink: (link) => {
             return (<span>{i18n('dialog.registration.i_agree')} <a href={link} target='_blank'>{i18n('dialog.registration.terms_and_conditions')}</a></span>);
         },
-        validateRegistrationForm: function() {
+        validateRegistrationForm: () => {
             var registrationForm = this.props.registrationForm,
                 isValid = registrationForm.isValid();
             if (!registrationForm.attributes.credentials.agree.value) {
@@ -1242,7 +1242,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             });
             if (isValid) this.createAccount();
         },
-        createAccount: function() {
+        createAccount: () => {
             var registrationForm = this.props.registrationForm;
             this.setState({actionInProgress: true});
             registrationForm.save(registrationForm.attributes, {type: 'POST'})
@@ -1269,11 +1269,11 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     this.showResponseErrors(response, registrationForm);
                 }, this));
         },
-        checkCountry: function() {
+        checkCountry: () => {
             var country = this.props.registrationForm.attributes.credentials.country.value;
             return !(country == 'Canada' || country == 'United States' || country == 'us');
         },
-        renderBody: function() {
+        renderBody: () => {
             var registrationForm = this.props.registrationForm;
             if (this.state.loading) return <controls.ProgressBar />;
             var fieldsList = registrationForm.attributes.credentials,
@@ -1327,7 +1327,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             var buttons = [
                 <button key='cancel' className='btn btn-default' onClick={this.close}>
                     {i18n('common.cancel_button')}
@@ -1348,16 +1348,16 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             registrationResponseErrorMixin,
             componentMixins.backboneMixin('remoteRetrievePasswordForm', 'change invalid')
         ],
-        getInitialState: function() {
+        getInitialState: () => {
             return {loading: true};
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 title: i18n('dialog.retrieve_password.title'),
                 modalClass: 'retrieve-password-form'
             };
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
             remoteRetrievePasswordForm.fetch()
                 .then(null, function() {
@@ -1370,12 +1370,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }, this))
                 .always(_.bind(function() {this.setState({loading: false});}, this));
         },
-        onChange: function(inputName, value) {
+        onChange: (inputName, value) => {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
             if (remoteRetrievePasswordForm.validationError) delete remoteRetrievePasswordForm.validationError['credentials.email'];
             remoteRetrievePasswordForm.set('credentials.email.value', value);
         },
-        retrievePassword: function() {
+        retrievePassword: () => {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
             if (remoteRetrievePasswordForm.isValid()) {
                 this.setState({actionInProgress: true});
@@ -1387,10 +1387,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     }, this));
             }
         },
-        passwordSent: function() {
+        passwordSent: () => {
             this.setState({passwordSent: true});
         },
-        renderBody: function() {
+        renderBody: () => {
             var ns = 'dialog.retrieve_password.',
                 remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
             if (this.state.loading) return <controls.ProgressBar />;
@@ -1431,7 +1431,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             if (this.state.passwordSent) return [
                 <button key='close' className='btn btn-default' onClick={this.close}>
                     {i18n('common.close_button')}
@@ -1453,18 +1453,18 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.CreateNodeNetworkGroupDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 title: i18n('cluster_page.network_tab.add_node_network_group'),
                 ns: 'cluster_page.network_tab.'
             };
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 error: null
             };
         },
-        renderBody: function() {
+        renderBody: () => {
             return (
                 <div className='node-network-group-creation'>
                     <controls.Input
@@ -1482,7 +1482,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return [
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
@@ -1492,19 +1492,19 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </button>
             ];
         },
-        onKeyDown: function(e) {
+        onKeyDown: (e) => {
             if (e.key == 'Enter') {
                 e.preventDefault();
                 this.createNodeNetworkGroup();
             }
         },
-        onChange: function(name, value) {
+        onChange: (name, value) => {
             this.setState({
                 error: null,
                 name: value
             });
         },
-        createNodeNetworkGroup: function() {
+        createNodeNetworkGroup: () => {
             var error = (new models.NodeNetworkGroup()).validate({
                 name: this.state.name,
                 nodeNetworkGroups: this.props.nodeNetworkGroups
@@ -1534,10 +1534,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     dialogs.RemoveNodeNetworkGroupDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {title: i18n('dialog.remove_node_network_group.title')};
         },
-        renderBody: function() {
+        renderBody: () => {
             return (
                 <div>
                     <div className='text-danger'>
@@ -1548,7 +1548,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 </div>
             );
         },
-        renderFooter: function() {
+        renderFooter: () => {
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close}>
                     {i18n('common.cancel_button')}

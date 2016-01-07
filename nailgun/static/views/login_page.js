@@ -31,7 +31,7 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
             title: i18n('login_page.title'),
             hiddenLayout: true
         },
-        render: function() {
+        render: () => {
             return (
                 <div className='login-page'>
                     <div className='container col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
@@ -55,7 +55,7 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
     });
 
     var LoginForm = React.createClass({
-        login: function(username, password) {
+        login: (username, password) => {
             var keystoneClient = app.keystoneClient;
 
             return keystoneClient.authenticate(username, password, {force: true})
@@ -93,19 +93,19 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
                     app.navigate(nextUrl, {trigger: true});
                 });
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             $(ReactDOM.findDOMNode(this.refs.username)).focus();
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 actionInProgress: false,
                 error: null
             };
         },
-        onChange: function() {
+        onChange: () => {
             this.setState({error: null});
         },
-        onSubmit: function(e) {
+        onSubmit: (e) => {
             e.preventDefault();
 
             var username = ReactDOM.findDOMNode(this.refs.username).value;
@@ -118,7 +118,7 @@ function($, _, i18n, React, ReactDOM, dispatcher, utils) {
                     this.setState({actionInProgress: false});
                 }, this));
         },
-        render: function() {
+        render: () => {
             var httpsUsed = location.protocol == 'https:';
             var httpsPort = 8443;
             var httpsLink = 'https://' + location.hostname + ':' + httpsPort;

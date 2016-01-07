@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
+/*eslint object-shorthand: 0*/
 define([
     'intern!object',
     'tests/functional/pages/common',

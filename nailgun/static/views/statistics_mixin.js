@@ -29,10 +29,10 @@ define([
         propTypes: {
             settings: React.PropTypes.object.isRequired
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {statsCheckboxes: ['send_anonymous_statistic', 'send_user_info']};
         },
-        getInitialState: function() {
+        getInitialState: () => {
             var tracking = this.props.settings.get('tracking');
             return {
                 isConnected: !!(tracking.email.value && tracking.password.value),
@@ -42,10 +42,10 @@ define([
                 remoteRetrievePasswordForm: new models.MirantisRetrievePasswordForm()
             };
         },
-        setConnected: function() {
+        setConnected: () => {
             this.setState({isConnected: true});
         },
-        saveSettings: function(initialAttributes) {
+        saveSettings: (initialAttributes) => {
             var settings = this.props.settings;
             this.setState({actionInProgress: true});
             return settings.save(null, {patch: true, wait: true, validate: false})
@@ -57,7 +57,7 @@ define([
                     this.setState({actionInProgress: false});
                 }, this));
         },
-        prepareStatisticsToSave: function() {
+        prepareStatisticsToSave: () => {
             var currentAttributes = _.cloneDeep(this.props.settings.attributes);
             // We're saving only two checkboxes
             _.each(this.props.statsCheckboxes, function(field) {
@@ -66,7 +66,7 @@ define([
             }, this);
             return this.saveSettings(currentAttributes);
         },
-        prepareTrackingToSave: function(response) {
+        prepareTrackingToSave: (response) => {
             var currentAttributes = _.cloneDeep(this.props.settings.attributes);
             // Saving user contact data to Statistics section
             _.each(response, function(value, name) {
@@ -83,7 +83,7 @@ define([
             }, this);
             this.saveSettings(currentAttributes).done(this.setConnected);
         },
-        showResponseErrors: function(response) {
+        showResponseErrors: (response) => {
             var jsonObj,
                 error = '';
             try {
@@ -94,7 +94,7 @@ define([
             }
             this.setState({error: error});
         },
-        connectToMirantis: function() {
+        connectToMirantis: () => {
             this.setState({error: null});
             var tracking = this.props.tracking.get('tracking');
             if (this.props.tracking.isValid({models: this.configModels})) {
@@ -112,11 +112,11 @@ define([
                     }, this));
             }
         },
-        checkRestrictions: function(name, action) {
+        checkRestrictions: (name, action) => {
             action = action || 'disable';
             return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.makePath('statistics', name));
         },
-        componentWillMount: function() {
+        componentWillMount: () => {
             var model = this.props.statistics || this.props.tracking;
             this.configModels = {
                 fuel_settings: model,
@@ -124,14 +124,14 @@ define([
                 default: model
             };
         },
-        getError: function(model, name) {
+        getError: (model, name) => {
             return (model.validationError || {})[model.makePath('statistics', name)];
         },
-        getText: function(key) {
+        getText: (key) => {
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n(key);
             return i18n(key + '_community');
         },
-        renderInput: function(settingName, wrapperClassName, disabledState) {
+        renderInput: (settingName, wrapperClassName, disabledState) => {
             var model = this.props.statistics || this.props.tracking,
                 setting = model.get(model.makePath('statistics', settingName));
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
@@ -151,7 +151,7 @@ define([
                 error={error && i18n(error)}
             />;
         },
-        renderList: function(list, key) {
+        renderList: (list, key) => {
             return (
                 <div key={key}>
                     {i18n('statistics.' + key + '_title')}
@@ -163,7 +163,7 @@ define([
                 </div>
             );
         },
-        renderIntro: function() {
+        renderIntro: () => {
             var ns = 'statistics.',
                 isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
                 lists = {
@@ -214,17 +214,17 @@ define([
                 </div>
             );
         },
-        onCheckboxChange: function(name, value) {
+        onCheckboxChange: (name, value) => {
             var model = this.props.statistics || this.props.tracking;
             model.set(model.makePath('statistics', name, 'value'), value);
         },
-        onTrackingSettingChange: function(name, value) {
+        onTrackingSettingChange: (name, value) => {
             this.setState({error: null});
             var path = this.props.tracking.makePath('tracking', name);
             delete (this.props.tracking.validationError || {})[path];
             this.props.tracking.set(this.props.tracking.makePath(path, 'value'), value);
         },
-        clearRegistrationForm: function() {
+        clearRegistrationForm: () => {
             if (!this.state.isConnected) {
                 var tracking = this.props.tracking,
                     initialData = this.props.settings.get('tracking');
@@ -235,7 +235,7 @@ define([
                 tracking.validationError = null;
             }
         },
-        renderRegistrationForm: function(model, disabled, error, showProgressBar) {
+        renderRegistrationForm: (model, disabled, error, showProgressBar) => {
             var tracking = model.get('tracking'),
                 sortedFields = _.chain(_.keys(tracking))
                     .without('metadata')
@@ -274,7 +274,7 @@ define([
                 </div>
             );
         },
-        showRegistrationDialog: function() {
+        showRegistrationDialog: () => {
             dialogs.RegistrationDialog.show({
                 registrationForm: this.state.registrationForm,
                 setConnected: this.setConnected,
@@ -283,7 +283,7 @@ define([
                 saveSettings: this.saveSettings
             });
         },
-        showRetrievePasswordDialog: function() {
+        showRetrievePasswordDialog: () => {
             dialogs.RetrievePasswordDialog.show({
                 remoteRetrievePasswordForm: this.state.remoteRetrievePasswordForm
             });

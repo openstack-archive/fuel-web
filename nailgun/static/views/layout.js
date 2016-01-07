@@ -41,7 +41,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             componentMixins.backboneMixin('notifications', 'update change:status'),
             componentMixins.pollingMixin(20)
         ],
-        togglePopover: function(popoverName) {
+        togglePopover: (popoverName) => {
             return _.memoize(_.bind(function(visible) {
                 this.setState(function(previousState) {
                     var nextState = {};
@@ -51,22 +51,22 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 });
             }, this));
         },
-        setActive: function(url) {
+        setActive: (url) => {
             this.setState({activeElement: url});
         },
-        shouldDataBeFetched: function() {
+        shouldDataBeFetched: () => {
             return this.props.user.get('authenticated');
         },
-        fetchData: function() {
+        fetchData: () => {
             return $.when(this.props.statistics.fetch(), this.props.notifications.fetch({limit: this.props.notificationsDisplayCount}));
         },
-        updateNodeStats: function() {
+        updateNodeStats: () => {
             return this.props.statistics.fetch();
         },
-        updateNotifications: function() {
+        updateNotifications: () => {
             return this.props.notifications.fetch({limit: this.props.notificationsDisplayCount});
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             this.props.user.on('change:authenticated', function(model, value) {
                 if (value) {
                     this.startPolling();
@@ -77,7 +77,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 }
             }, this);
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 notificationsDisplayCount: 5,
                 elements: [
@@ -89,13 +89,13 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 ]
             };
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {};
         },
-        scrollToTop: function() {
+        scrollToTop: () => {
             $('html, body').animate({scrollTop: 0}, 'fast');
         },
-        render: function() {
+        render: () => {
             var unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
             var authenticationEnabled = this.props.version.get('auth_required') && this.props.user.get('authenticated');
             return (
@@ -198,7 +198,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
     });
 
     var LanguagePopover = React.createClass({
-        changeLocale: function(locale, e) {
+        changeLocale: (locale, e) => {
             e.preventDefault();
             this.props.toggle(false);
             _.defer(() => {
@@ -206,7 +206,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 location.reload();
             });
         },
-        render: function() {
+        render: () => {
             var currentLocale = i18n.getCurrentLocale();
             return (
                 <controls.Popover {...this.props} className='language-popover'>
@@ -228,7 +228,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
 
     var StatisticsPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('statistics')],
-        render: function() {
+        render: () => {
             return (
                 <controls.Popover {...this.props} className='statistics-popover'>
                     <div className='list-group'>
@@ -250,15 +250,15 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
 
     var UserPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('user')],
-        showChangePasswordDialog: function() {
+        showChangePasswordDialog: () => {
             this.props.toggle(false);
             dialogs.ChangePasswordDialog.show();
         },
-        logout: function() {
+        logout: () => {
             this.props.toggle(false);
             app.logout();
         },
-        render: function() {
+        render: () => {
             return (
                 <controls.Popover {...this.props} className='user-popover'>
                     <div className='username'>{i18n('common.username')}:</div>
@@ -280,13 +280,13 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
 
     var NotificationsPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('notifications')],
-        showNodeInfo: function(id) {
+        showNodeInfo: (id) => {
             this.props.toggle(false);
             var node = new models.Node({id: id});
             node.fetch();
             dialogs.ShowNodeInfoDialog.show({node: node});
         },
-        markAsRead: function() {
+        markAsRead: () => {
             var notificationsToMark = new models.Notifications(this.props.notifications.where({status: 'unread'}));
             if (notificationsToMark.length) {
                 this.setState({unreadNotificationsIds: notificationsToMark.pluck('id')});
@@ -299,13 +299,13 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 Backbone.sync('update', notificationsToMark);
             }
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             this.markAsRead();
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {unreadNotificationsIds: []};
         },
-        renderNotification: function(notification) {
+        renderNotification: (notification) => {
             var topic = notification.get('topic'),
                 nodeId = notification.get('node_id'),
                 notificationClasses = {
@@ -330,7 +330,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 </div>
             );
         },
-        render: function() {
+        render: () => {
             var showMore = Backbone.history.getHash() != 'notifications';
             var notifications = this.props.notifications.take(this.props.displayCount);
             return (
@@ -348,7 +348,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
 
     components.Footer = React.createClass({
         mixins: [componentMixins.backboneMixin('version')],
-        render: function() {
+        render: () => {
             var version = this.props.version;
             return (
                 <div className='footer'>
@@ -366,17 +366,17 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         mixins: [
             componentMixins.dispatcherMixin('updatePageLayout', 'refresh')
         ],
-        getInitialState: function() {
+        getInitialState: () => {
             return {path: this.getBreadcrumbsPath()};
         },
-        getBreadcrumbsPath: function() {
+        getBreadcrumbsPath: () => {
             var page = this.props.Page;
             return _.isFunction(page.breadcrumbsPath) ? page.breadcrumbsPath(this.props.pageOptions) : page.breadcrumbsPath;
         },
-        refresh: function() {
+        refresh: () => {
             this.setState({path: this.getBreadcrumbsPath()});
         },
-        render: function() {
+        render: () => {
             return (
                 <ol className='breadcrumb'>
                     {_.map(this.state.path, function(breadcrumb, index) {
@@ -399,7 +399,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
     });
 
     components.DefaultPasswordWarning = React.createClass({
-        render: function() {
+        render: () => {
             return (
                 <div className='alert global-alert alert-warning'>
                     <button className='close' onClick={this.props.close}>&times;</button>
@@ -410,7 +410,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
     });
 
     components.BootstrapError = React.createClass({
-        render: function() {
+        render: () => {
             return (
                 <div className='alert global-alert alert-danger'>
                     {this.props.text}

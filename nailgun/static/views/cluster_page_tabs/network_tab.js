@@ -38,7 +38,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
         defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
 
     var NetworkModelManipulationMixin = {
-        setValue: function(attribute, value, options) {
+        setValue: (attribute, value, options) => {
             function convertToStringIfNaN(value) {
                 var convertedValue = parseInt(value, 10);
                 return _.isNaN(convertedValue) ? '' : convertedValue;
@@ -56,14 +56,14 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             dispatcher.trigger('hideNetworkVerificationResult');
             networkConfiguration.isValid();
         },
-        getModel: function() {
+        getModel: () => {
             return this.props.network ||
                 this.props.cluster.get('networkConfiguration').get('networking_parameters');
         }
     };
 
     var NetworkInputsMixin = {
-        composeProps: function(attribute, isRange, isInteger) {
+        composeProps: (attribute, isRange, isInteger) => {
             var network = this.props.network,
                 ns = network ? networkTabNS + 'network.' : parametersNS,
                 error = this.getError(attribute) || null;
@@ -86,7 +86,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 error: error
             };
         },
-        renderInput: function(attribute, isInteger, additionalProps = {}) {
+        renderInput: (attribute, isInteger, additionalProps = {}) => {
             return (
                 <controls.Input
                     {...additionalProps}
@@ -96,7 +96,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 />
             );
         },
-        getError: function(attribute) {
+        getError: (attribute) => {
             var validationErrors = this.props.cluster.get('networkConfiguration').validationError;
             if (!validationErrors) return null;
 
@@ -127,7 +127,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
         mixins: [
             NetworkModelManipulationMixin
         ],
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 extendable: true,
                 placeholder: '127.0.0.1',
@@ -144,10 +144,10 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             hiddenControls: React.PropTypes.bool,
             mini: React.PropTypes.bool
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {elementToFocus: null};
         },
-        componentDidUpdate: function() {
+        componentDidUpdate: () => {
             // this glitch is needed to fix
             // when pressing '+' or '-' buttons button remains focused
             if (this.props.extendable && this.state.elementToFocus && this.getModel().get(this.props.name).length) {
@@ -155,7 +155,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 this.setState({elementToFocus: null});
             }
         },
-        autoCompleteIPRange: function(error, rangeStart, event) {
+        autoCompleteIPRange: (error, rangeStart, event) => {
             var input = event.target;
             if (input.value) return;
             if (_.isUndefined(error)) input.value = rangeStart;
@@ -165,7 +165,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 input.setSelectionRange(startPos, endPos);
             }
         },
-        onRangeChange: function(name, newValue, attribute, rowIndex) {
+        onRangeChange: (name, newValue, attribute, rowIndex) => {
             var model = this.getModel(),
                 valuesToSet = _.cloneDeep(model.get(attribute)),
                 valuesToModify = this.props.extendable ? valuesToSet[rowIndex] : valuesToSet;
@@ -182,7 +182,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
 
             this.setValue(attribute, valuesToSet, {isInteger: this.props.integerValue});
         },
-        addRange: function(attribute, rowIndex) {
+        addRange: (attribute, rowIndex) => {
             var newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(rowIndex + 1, 0, ['', '']);
             this.setValue(attribute, newValue);
@@ -190,7 +190,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 elementToFocus: 'start' + (rowIndex + 1)
             });
         },
-        removeRange: function(attribute, rowIndex) {
+        removeRange: (attribute, rowIndex) => {
             var newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(rowIndex, 1);
             this.setValue(attribute, newValue);
@@ -198,7 +198,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 elementToFocus: 'start' + _.min([newValue.length - 1, rowIndex])
             });
         },
-        getRangeProps: function(isRangeEnd) {
+        getRangeProps: (isRangeEnd) => {
             var error = this.props.error || null,
                 attributeName = this.props.name;
             return {
@@ -210,7 +210,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 name: (isRangeEnd ? 'range-end_' : 'range-start_') + attributeName
             };
         },
-        renderRangeControls: function(attributeName, index, length) {
+        renderRangeControls: (attributeName, index, length) => {
             return (
                 <div className='ip-ranges-control'>
                     <button
@@ -232,7 +232,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 </div>
             );
         },
-        render: function() {
+        render: () => {
             var error = this.props.error || null,
                 attributeName = this.props.name,
                 attribute = this.getModel().get(attributeName),
@@ -319,24 +319,24 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
 
     var VlanTagInput = React.createClass({
         mixins: [NetworkModelManipulationMixin],
-        getInitialState: function() {
+        getInitialState: () => {
             return {pendingFocus: false};
         },
-        componentDidUpdate: function() {
+        componentDidUpdate: () => {
             var value = this.props.value;
             if (!_.isNull(value) && this.state.pendingFocus) {
                 $(this.refs[this.props.name].getInputDOMNode()).focus();
                 this.setState({pendingFocus: false});
             }
         },
-        onTaggingChange: function(attribute, value) {
+        onTaggingChange: (attribute, value) => {
             this.setValue(attribute, value ? '' : null);
             this.setState({pendingFocus: true});
         },
-        onInputChange: function(attribute, value) {
+        onInputChange: (attribute, value) => {
             this.setValue(attribute, value, {isInteger: true});
         },
-        render: function() {
+        render: () => {
             return (
                 <div className={'vlan-tagging form-group ' + this.props.name}>
                     <label className='vlan-tag-label'>{this.props.label}</label>
@@ -362,13 +362,13 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
 
     var CidrControl = React.createClass({
         mixins: [NetworkModelManipulationMixin],
-        onCidrChange: function(name, cidr) {
+        onCidrChange: (name, cidr) => {
             this.props.onChange(name, cidr);
             if (this.props.network.get('meta').notation == 'cidr') {
                 this.props.autoUpdateParameters(cidr);
             }
         },
-        render: function() {
+        render: () => {
             return (
                 <div className='form-group cidr'>
                     <label>{i18n(networkTabNS + 'network.cidr')}</label>
@@ -405,10 +405,10 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             label: React.PropTypes.string,
             value: React.PropTypes.array
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {elementToFocus: null};
         },
-        componentDidUpdate: function() {
+        componentDidUpdate: () => {
             // this glitch is needed to fix
             // when pressing '+' or '-' buttons button remains focused
             if (this.state.elementToFocus && this.getModel().get(this.props.name).length) {
@@ -416,13 +416,13 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 this.setState({elementToFocus: null});
             }
         },
-        onChange: function(attribute, value, index) {
+        onChange: (attribute, value, index) => {
             var model = this.getModel(),
                 valueToSet = _.cloneDeep(model.get(attribute));
             valueToSet[index] = value;
             this.setValue(attribute, valueToSet);
         },
-        addValue: function(attribute, index) {
+        addValue: (attribute, index) => {
             var newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(index + 1, 0, '');
             this.setValue(attribute, newValue);
@@ -430,7 +430,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 elementToFocus: 'row' + (index + 1)
             });
         },
-        removeValue: function(attribute, index) {
+        removeValue: (attribute, index) => {
             var newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(index, 1);
             this.setValue(attribute, newValue);
@@ -438,7 +438,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 elementToFocus: 'row' + _.min([newValue.length - 1, index])
             });
         },
-        renderControls: function(attributeName, index, length) {
+        renderControls: (attributeName, index, length) => {
             return (
                 <div className='ip-ranges-control'>
                     <button
@@ -460,7 +460,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 </div>
             );
         },
-        render: function() {
+        render: () => {
             var attributeName = this.props.name,
                 values = this.props.value;
             return (
@@ -499,19 +499,19 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin('nodeNetworkGroups', 'change update'),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
+                modelOrCollection: (props) => {
                     return props.cluster.get('networkConfiguration').get('networking_parameters');
                 },
                 renderOn: 'change'
             }),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
+                modelOrCollection: (props) => {
                     return props.cluster.get('networkConfiguration').get('networks');
                 },
                 renderOn: 'change reset update'
             }),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
+                modelOrCollection: (props) => {
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change:status'
@@ -523,7 +523,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 this.setState({hideVerificationResult: false});
             }),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
+                modelOrCollection: (props) => {
                     return props.cluster.get('settings');
                 },
                 renderOn: 'change invalid'
@@ -531,7 +531,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             componentMixins.unsavedChangesMixin
         ],
         statics: {
-            fetchData: function(options) {
+            fetchData: (options) => {
                 var cluster = options.cluster;
                 return $.when(
                     cluster.get('settings').fetch({cache: true}),
@@ -539,7 +539,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 ).then(() => ({}));
             }
         },
-        getInitialState: function() {
+        getInitialState: () => {
             var settings = this.props.cluster.get('settings');
             return {
                 configModels: {
@@ -556,15 +556,15 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 hideVerificationResult: false
             };
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             this.props.cluster.get('tasks').on('change:status change:unsaved', this.destroyUnsavedNetworkVerificationTask, this);
         },
-        componentWillUnmount: function() {
+        componentWillUnmount: () => {
             this.loadInitialConfiguration();
             this.props.cluster.get('tasks').off(null, this.destroyUnsavedNetworkVerificationTask, this);
             this.removeUnsavedTasks();
         },
-        destroyUnsavedNetworkVerificationTask: function(task) {
+        destroyUnsavedNetworkVerificationTask: (task) => {
             // FIXME(vkramskikh): remove tasks which we marked as "unsaved" hacky flag
             // immediately after completion, so they won't be taken into account when
             // we determine cluster verification status. They need to be removed silently
@@ -575,20 +575,20 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 this.props.cluster.get('tasks').add(task, {silent: true});
             }
         },
-        removeUnsavedTasks: function() {
+        removeUnsavedTasks: () => {
             var clusterTasks = this.props.cluster.get('tasks');
             clusterTasks.each((task) => task.get('unsaved') && clusterTasks.remove(task));
         },
-        isNetworkConfigurationChanged: function() {
+        isNetworkConfigurationChanged: () => {
             return !_.isEqual(this.state.initialConfiguration, this.props.cluster.get('networkConfiguration').toJSON());
         },
-        isNetworkSettingsChanged: function() {
+        isNetworkSettingsChanged: () => {
             return this.props.cluster.get('settings').hasChanges(this.state.initialSettingsAttributes, this.state.configModels);
         },
-        hasChanges: function() {
+        hasChanges: () => {
             return this.isNetworkConfigurationChanged() || this.isNetworkSettingsChanged();
         },
-        revertChanges: function() {
+        revertChanges: () => {
             this.loadInitialConfiguration();
             this.loadInitialSettings();
             this.setState({
@@ -596,25 +596,25 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 key: _.now()
             });
         },
-        loadInitialConfiguration: function() {
+        loadInitialConfiguration: () => {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
             networkConfiguration.get('networks').reset(_.cloneDeep(this.state.initialConfiguration.networks));
             networkConfiguration.get('networking_parameters').set(_.cloneDeep(this.state.initialConfiguration.networking_parameters));
         },
-        loadInitialSettings: function() {
+        loadInitialSettings: () => {
             var settings = this.props.cluster.get('settings');
             settings.set(_.cloneDeep(this.state.initialSettingsAttributes), {silent: true, validate: false});
             settings.mergePluginSettings();
             settings.isValid({models: this.state.configModels});
         },
-        updateInitialConfiguration: function() {
+        updateInitialConfiguration: () => {
             this.setState({initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON())});
         },
-        isLocked: function() {
+        isLocked: () => {
             return !!this.props.cluster.task({group: ['deployment', 'network'], active: true}) ||
                 !this.props.cluster.isAvailableForSettingsChanges() || this.state.actionInProgress;
         },
-        prepareIpRanges: function() {
+        prepareIpRanges: () => {
             var removeEmptyRanges = function(ranges) {
                     return _.filter(ranges, function(range) {return _.compact(range).length;});
                 },
@@ -629,7 +629,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
             }
         },
-        onManagerChange: function(name, value) {
+        onManagerChange: (name, value) => {
             var networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 fixedAmount = networkConfiguration.get('networking_parameters').get('fixed_networks_amount') || 1;
@@ -640,12 +640,12 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             networkConfiguration.isValid();
             this.setState({hideVerificationResult: true});
         },
-        verifyNetworks: function() {
+        verifyNetworks: () => {
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
             dispatcher.trigger('networkConfigurationUpdated', this.startVerification);
         },
-        startVerification: function() {
+        startVerification: () => {
             var networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 task = new models.Task(),
                 options = {
@@ -680,10 +680,10 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                     this.setState({actionInProgress: false});
                 });
         },
-        isDiscardingPossible: function() {
+        isDiscardingPossible: () => {
             return !this.props.cluster.task({group: 'network', active: true});
         },
-        applyChanges: function() {
+        applyChanges: () => {
             if (!this.isSavingPossible()) return $.Deferred().reject();
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
@@ -760,14 +760,14 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
 
             return $.when(...requests);
         },
-        isSavingPossible: function() {
+        isSavingPossible: () => {
             return !this.state.actionInProgress &&
                 this.props.cluster.isAvailableForSettingsChanges() &&
                 this.hasChanges() &&
                 _.isNull(this.props.cluster.get('networkConfiguration').validationError) &&
                 _.isNull(this.props.cluster.get('settings').validationError);
         },
-        renderButtons: function() {
+        renderButtons: () => {
             var isCancelChangesDisabled = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true}) || !this.hasChanges();
             return (
                 <div className='well clearfix'>
@@ -792,7 +792,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 </div>
             );
         },
-        getVerificationErrors: function() {
+        getVerificationErrors: () => {
             var task = this.state.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
             // @TODO(morale): soon response format will be changed and this part should be rewritten
@@ -807,7 +807,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             }
             return fieldsWithVerificationErrors;
         },
-        removeNodeNetworkGroup: function() {
+        removeNodeNetworkGroup: () => {
             var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
             dialogs.RemoveNodeNetworkGroupDialog
                 .show({
@@ -827,7 +827,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                         .then(this.updateInitialConfiguration);
                 });
         },
-        addNodeNetworkGroup: function(hasChanges) {
+        addNodeNetworkGroup: (hasChanges) => {
             if (hasChanges) {
                 utils.showErrorDialog({
                     title: i18n(networkTabNS + 'node_network_group_creation_error'),
@@ -852,7 +852,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                         .then(this.updateInitialConfiguration);
                 });
         },
-        render: function() {
+        render: () => {
             var isLocked = this.isLocked(),
                 hasChanges = this.hasChanges(),
                 {activeNetworkSectionName, cluster} = this.props,
@@ -1020,7 +1020,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
     });
 
     var NodeNetworkGroup = React.createClass({
-        render: function() {
+        render: () => {
             var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration');
             return (
@@ -1052,7 +1052,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
     });
 
     var NetworkSubtabs = React.createClass({
-        renderClickablePills: function(sections, isNetworkGroupPill) {
+        renderClickablePills: (sections, isNetworkGroupPill) => {
             var {cluster, nodeNetworkGroups} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration'),
                 errors,
@@ -1118,7 +1118,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 );
             }, this));
         },
-        render: function() {
+        render: () => {
             var {nodeNetworkGroups} = this.props,
                 settingsSections = [],
                 nodeGroupSections = nodeNetworkGroups.pluck('name');
@@ -1163,7 +1163,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
         mixins: [
             componentMixins.renamingMixin('node-group-title-input')
         ],
-        onNodeNetworkGroupNameKeyDown: function(e) {
+        onNodeNetworkGroupNameKeyDown: (e) => {
             this.setState({nodeNetworkGroupNameChangingError: null});
             if (e.key == 'Enter') {
                 this.setState({actionInProgress: true});
@@ -1202,11 +1202,11 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 ReactDOM.findDOMNode(this).focus();
             }
         },
-        startNodeNetworkGroupRenaming: function(e) {
+        startNodeNetworkGroupRenaming: (e) => {
             this.setState({nodeNetworkGroupNameChangingError: null});
             this.startRenaming(e);
         },
-        render: function() {
+        render: () => {
             var {currentNodeNetworkGroup, isRenamingPossible, isDeletionPossible} = this.props,
                 classes = {
                     'network-group-name': true,
@@ -1251,18 +1251,18 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             NetworkInputsMixin,
             NetworkModelManipulationMixin
         ],
-        autoUpdateParameters: function(cidr) {
+        autoUpdateParameters: (cidr) => {
             var useGateway = this.props.network.get('meta').use_gateway;
             if (useGateway) this.setValue('gateway', utils.getDefaultGatewayForCidr(cidr));
             this.setValue('ip_ranges', utils.getDefaultIPRangeForCidr(cidr, useGateway));
         },
-        changeNetworkNotation: function(name, value) {
+        changeNetworkNotation: (name, value) => {
             var meta = _.clone(this.props.network.get('meta'));
             meta.notation = value ? 'cidr' : 'ip_ranges';
             this.setValue('meta', meta);
             if (value) this.autoUpdateParameters(this.props.network.get('cidr'));
         },
-        render: function() {
+        render: () => {
             var meta = this.props.network.get('meta');
             if (!meta.configurable) return null;
 
@@ -1313,7 +1313,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 'fixed_networks_amount', 'fixed_networks_vlan_start', 'dns_nameservers'
             ]
         },
-        render: function() {
+        render: () => {
             var networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 manager = networkingParameters.get('net_manager'),
@@ -1370,7 +1370,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 'vlan_range', 'gre_id_range', 'base_mac'
             ]
         },
-        render: function() {
+        render: () => {
             var networkParameters = this.props.cluster.get('networkConfiguration').get('networking_parameters'),
                 idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id';
             return (
@@ -1404,7 +1404,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
                 'baremetal_gateway', 'dns_nameservers'
             ]
         },
-        render: function() {
+        render: () => {
             var networks = this.props.cluster.get('networkConfiguration').get('networks');
             return (
                 <div key='neutron-l3'>
@@ -1457,7 +1457,7 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
     });
 
     var NetworkSettings = React.createClass({
-        onChange: function(groupName, settingName, value) {
+        onChange: (groupName, settingName, value) => {
             var settings = this.props.cluster.get('settings'),
                 name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
             this.props.settingsForChecks.set(name, value);
@@ -1467,11 +1467,11 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
             settings.set(name, value);
             settings.isValid({models: this.props.configModels});
         },
-        checkRestrictions: function(action, path) {
+        checkRestrictions: (action, path) => {
             var settings = this.props.cluster.get('settings');
             return settings.checkRestrictions(this.props.configModels, action, path);
         },
-        render: function() {
+        render: () => {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 locked = this.props.locked || !!cluster.task({group: ['deployment', 'network'], active: true}),
@@ -1528,13 +1528,13 @@ function($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialo
     });
 
     var NetworkVerificationResult = React.createClass({
-        getConnectionStatus: function(task, isFirstConnectionLine) {
+        getConnectionStatus: (task, isFirstConnectionLine) => {
             if (!task || task.match({status: 'ready'})) return 'stop';
             if (task && task.match({status: 'error'}) && !(isFirstConnectionLine &&
                 !task.get('result').length)) return 'error';
             return 'success';
         },
-        render: function() {
+        render: () => {
             var task = this.props.task,
                 ns = networkTabNS + 'verify_networks.';
 

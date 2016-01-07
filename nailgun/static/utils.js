@@ -36,50 +36,50 @@ define([
             mac: /^([0-9a-f]{1,2}[\.:-]){5}([0-9a-f]{1,2})$/,
             cidr: /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/
         },
-        serializeTabOptions: function(options) {
+        serializeTabOptions: (options) => {
             return _.map(options, function(value, key) {
                 return key + ':' + value;
             }).join(';');
         },
-        deserializeTabOptions: function(serializedOptions) {
+        deserializeTabOptions: (serializedOptions) => {
             return _.object(_.map((serializedOptions || '').split(';'), function(option) {
                 return option.split(':');
             }));
         },
-        getNodeListFromTabOptions: function(options) {
+        getNodeListFromTabOptions: (options) => {
             var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
                 ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
                 models = require('models'),
                 nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
             if (nodes.length == ids.length) return nodes;
         },
-        renderMultilineText: function(text) {
+        renderMultilineText: (text) => {
             if (!text) return null;
             return <div>{text.split('\n').map((str, index) => <p key={index}>{str}</p>)}</div>;
         },
-        linebreaks: function(text) {
+        linebreaks: (text) => {
             return text.replace(/\n/g, '<br/>');
         },
-        composeLink: function(url) {
+        composeLink: (url) => {
             return '<a target="_blank" href="' + url + '">' + url + '</a>';
         },
-        urlify: function(text) {
+        urlify: (text) => {
             return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'), utils.composeLink);
         },
-        composeList: function(value) {
+        composeList: (value) => {
             return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
         },
         // FIXME(vkramskikh): moved here from healthcheck_tab to make testable
-        highlightTestStep: function(text, step) {
+        highlightTestStep: (text, step) => {
             return text.replace(new RegExp('(^|\\s*)(' + step + '\\.[\\s\\S]*?)(\\s*\\d+\\.|$)'), '$1<b>$2</b>$3');
         },
         classNames: classNames,
-        parseModelPath: function(path, models) {
+        parseModelPath: (path, models) => {
             var modelPath = new expressionObjects.ModelPath(path);
             modelPath.setModel(models);
             return modelPath;
         },
-        evaluateExpression: function(expression, models, options) {
+        evaluateExpression: (expression, models, options) => {
             var compiledExpression = new Expression(expression, models, options),
                 value = compiledExpression.evaluate();
             return {
@@ -87,7 +87,7 @@ define([
                 modelPaths: compiledExpression.modelPaths
             };
         },
-        expandRestriction: function(restriction) {
+        expandRestriction: (restriction) => {
             var result = {
                 action: 'disable',
                 message: null
@@ -106,25 +106,25 @@ define([
             }
             return result;
         },
-        showErrorDialog: function(options) {
+        showErrorDialog: (options) => {
             var dialogs = require('views/dialogs'); // avoid circular dependencies
             options.message = options.response ? utils.getResponseText(options.response) :
                 options.message || i18n('dialog.error_dialog.server_error');
             dialogs.ErrorDialog.show(options);
         },
-        showBandwidth: function(bandwidth) {
+        showBandwidth: (bandwidth) => {
             bandwidth = parseInt(bandwidth, 10);
             if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) {return i18n('common.not_available');}
             return (bandwidth / 1000).toFixed(1) + ' Gbps';
         },
-        showFrequency: function(frequency) {
+        showFrequency: (frequency) => {
             frequency = parseInt(frequency, 10);
             if (!_.isNumber(frequency) || _.isNaN(frequency)) {return i18n('common.not_available');}
             var base = 1000;
             var treshold = 1000;
             return (frequency >= treshold ? (frequency / base).toFixed(2) + ' GHz' : frequency + ' MHz');
         },
-        showSize: function(bytes, treshold) {
+        showSize: (bytes, treshold) => {
             bytes = parseInt(bytes, 10);
             if (!_.isNumber(bytes) || _.isNaN(bytes)) {return i18n('common.not_available');}
             var base = 1024;
@@ -140,28 +140,28 @@ define([
             }
             return (result ? result.toFixed(1) : result) + ' ' + i18n('common.size.' + unit, {count: result});
         },
-        showMemorySize: function(bytes) {
+        showMemorySize: (bytes) => {
             return utils.showSize(bytes, 1024);
         },
-        showDiskSize: function(value, power) {
+        showDiskSize: (value, power) => {
             power = power || 0;
             return utils.showSize(value * Math.pow(1024, power));
         },
-        calculateNetworkSize: function(cidr) {
+        calculateNetworkSize: (cidr) => {
             return Math.pow(2, 32 - parseInt(_.last(cidr.split('/')), 10));
         },
-        formatNumber: function(n) {
+        formatNumber: (n) => {
             return String(n).replace(/\d/g, function(c, i, a) {
                 return i > 0 && c !== '.' && (a.length - i) % 3 === 0 ? ',' + c : c;
             });
         },
-        floor: function(n, decimals) {
+        floor: (n, decimals) => {
             return Math.floor(n * Math.pow(10, decimals)) / Math.pow(10, decimals);
         },
-        isNaturalNumber: function(n) {
+        isNaturalNumber: (n) => {
             return _.isNumber(n) && n > 0 && n % 1 === 0;
         },
-        validateVlan: function(vlan, forbiddenVlans, field, disallowNullValue) {
+        validateVlan: (vlan, forbiddenVlans, field, disallowNullValue) => {
             var error = {};
             if ((_.isNull(vlan) && disallowNullValue) || (!_.isNull(vlan) && (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094))) {
                 error[field] = i18n('cluster_page.network_tab.validation.invalid_vlan');
@@ -172,7 +172,7 @@ define([
             }
             return error[field] ? error : {};
         },
-        validateCidr: function(cidr, field) {
+        validateCidr: (cidr, field) => {
             field = field || 'cidr';
             var error = {}, match;
             if (_.isString(cidr)) {
@@ -192,10 +192,10 @@ define([
             }
             return error[field] ? error : {};
         },
-        validateIP: function(ip) {
+        validateIP: (ip) => {
             return _.isString(ip) && !!ip.match(utils.regexes.ip);
         },
-        validateIPRanges: function(ranges, cidr, existingRanges = [], warnings = {}) {
+        validateIPRanges: (ranges, cidr, existingRanges = [], warnings = {}) => {
             var ipRangesErrors = [],
                 ns = 'cluster_page.network_tab.validation.';
             _.defaults(warnings, {
@@ -250,25 +250,25 @@ define([
             }
             return ipRangesErrors;
         },
-        checkIPRangesIntersection: function([startIP, endIP], existingRanges) {
+        checkIPRangesIntersection: ([startIP, endIP], existingRanges) => {
             var startIPInt = IP.toLong(startIP),
                 endIPInt = IP.toLong(endIP);
             return _.find(existingRanges, ([ip1, ip2]) => IP.toLong(ip2) >= startIPInt && IP.toLong(ip1) <= endIPInt);
         },
-        validateIpCorrespondsToCIDR: function(cidr, ip) {
+        validateIpCorrespondsToCIDR: (cidr, ip) => {
             if (!cidr) return true;
             var networkData = IP.cidrSubnet(cidr),
                 ipInt = IP.toLong(ip);
             return ipInt >= IP.toLong(networkData.firstAddress) && ipInt <= IP.toLong(networkData.lastAddress);
         },
-        validateVlanRange: function(vlanStart, vlanEnd, vlan) {
+        validateVlanRange: (vlanStart, vlanEnd, vlan) => {
             return vlan >= vlanStart && vlan <= vlanEnd;
         },
-        getDefaultGatewayForCidr: function(cidr) {
+        getDefaultGatewayForCidr: (cidr) => {
             if (!_.isEmpty(utils.validateCidr(cidr))) return '';
             return IP.cidrSubnet(cidr).firstAddress;
         },
-        getDefaultIPRangeForCidr: function(cidr, excludeGateway) {
+        getDefaultIPRangeForCidr: (cidr, excludeGateway) => {
             if (!_.isEmpty(utils.validateCidr(cidr))) return [['', '']];
             var networkData = IP.cidrSubnet(cidr);
             if (excludeGateway) {
@@ -278,7 +278,7 @@ define([
             }
             return [[networkData.firstAddress, networkData.lastAddress]];
         },
-        sortEntryProperties: function(entry, sortOrder) {
+        sortEntryProperties: (entry, sortOrder) => {
             sortOrder = sortOrder || ['name'];
             var properties = _.keys(entry);
             return _.sortBy(properties, function(property) {
@@ -286,7 +286,7 @@ define([
                 return index == -1 ? properties.length : index;
             });
         },
-        getResponseText: function(response, defaultText) {
+        getResponseText: (response, defaultText) => {
             var serverErrorMessage = defaultText || i18n('dialog.error_dialog.server_error');
             var serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
             if (response && (!response.status || response.status >= 400)) {
@@ -303,12 +303,12 @@ define([
             }
             return '';
         },
-        natsort: function(str1, str2, options = {}) {
+        natsort: (str1, str2, options = {}) => {
             var {insensitive, desc} = options;
             naturalSort.insensitive = insensitive;
             return naturalSort(str1, str2) * (desc ? -1 : 1);
         },
-        multiSort: function(model1, model2, attributes) {
+        multiSort: (model1, model2, attributes) => {
             var result = utils.compare(model1, model2, attributes[0]);
             if (result === 0 && attributes.length > 1) {
                 attributes.splice(0, 1);
@@ -316,7 +316,7 @@ define([
             }
             return result;
         },
-        compare: function(model1, model2, options) {
+        compare: (model1, model2, options) => {
             var getValue = function(model) {
                 var attr = options.attr;
                 return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
@@ -334,7 +334,7 @@ define([
             }
             return options.desc ? -result : result;
         },
-        composeDocumentationLink: function(link) {
+        composeDocumentationLink: (link) => {
             var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
                 release = app.version.get('release'),
                 linkStart = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-' :

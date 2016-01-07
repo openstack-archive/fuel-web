@@ -28,30 +28,30 @@ define([
 
     return {
         backboneMixin: React.BackboneMixin,
-        dispatcherMixin: function(events, callback) {
+        dispatcherMixin: (events, callback) => {
             return {
-                componentDidMount: function() {
+                componentDidMount: () => {
                     dispatcher.on(events, _.isString(callback) ? this[callback] : callback, this);
                 },
-                componentWillUnmount: function() {
+                componentWillUnmount: () => {
                     dispatcher.off(null, null, this);
                 }
             };
         },
         unsavedChangesMixin: {
-            onBeforeunloadEvent: function() {
+            onBeforeunloadEvent: () => {
                 if (this.hasChanges()) return _.result(this, 'getStayMessage') || i18n('dialog.dismiss_settings.default_message');
             },
-            componentWillMount: function() {
+            componentWillMount: () => {
                 this.eventName = _.uniqueId('unsavedchanges');
                 $(window).on('beforeunload.' + this.eventName, this.onBeforeunloadEvent);
                 $('body').on('click.' + this.eventName, 'a[href^=#]:not(.no-leave-check)', this.onLeave);
             },
-            componentWillUnmount: function() {
+            componentWillUnmount: () => {
                 $(window).off('beforeunload.' + this.eventName);
                 $('body').off('click.' + this.eventName);
             },
-            onLeave: function(e) {
+            onLeave: (e) => {
                 var href = $(e.currentTarget).attr('href');
                 if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
                     e.preventDefault();
@@ -69,34 +69,34 @@ define([
                 }
             }
         },
-        pollingMixin: function(updateInterval, delayedStart) {
+        pollingMixin: (updateInterval, delayedStart) => {
             updateInterval = updateInterval * 1000;
             return {
-                scheduleDataFetch: function() {
+                scheduleDataFetch: () => {
                     var shouldDataBeFetched = !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (this.isMounted() && !this.activeTimeout && shouldDataBeFetched) {
                         this.activeTimeout = _.delay(this.startPolling, updateInterval);
                     }
                 },
-                startPolling: function(force) {
+                startPolling: (force) => {
                     var shouldDataBeFetched = force || !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (shouldDataBeFetched) {
                         this.stopPolling();
                         return this.fetchData().always(this.scheduleDataFetch);
                     }
                 },
-                stopPolling: function() {
+                stopPolling: () => {
                     if (this.activeTimeout) clearTimeout(this.activeTimeout);
                     delete this.activeTimeout;
                 },
-                componentDidMount: function() {
+                componentDidMount: () => {
                     if (delayedStart) {
                         this.scheduleDataFetch();
                     } else {
                         this.startPolling();
                     }
                 },
-                componentWillUnmount: function() {
+                componentWillUnmount: () => {
                     this.stopPolling();
                 }
             };
@@ -105,37 +105,37 @@ define([
             propTypes: {
                 toggle: React.PropTypes.func.isRequired
             },
-            getInitialState: function() {
+            getInitialState: () => {
                 return {
                     clickEventName: 'click.' + _.uniqueId('outer-click')
                 };
             },
-            handleBodyClick: function(e) {
+            handleBodyClick: (e) => {
                 if (!$(e.target).closest(ReactDOM.findDOMNode(this)).length) {
                     _.defer(_.partial(this.props.toggle, false));
                 }
             },
-            componentDidMount: function() {
+            componentDidMount: () => {
                 $('html').on(this.state.clickEventName, this.handleBodyClick);
                 Backbone.history.on('route', _.partial(this.props.toggle, false), this);
             },
-            componentWillUnmount: function() {
+            componentWillUnmount: () => {
                 $('html').off(this.state.clickEventName);
                 Backbone.history.off('route', null, this);
             }
         },
-        renamingMixin: function(refname) {
+        renamingMixin: (refname) => {
             return {
-                getInitialState: function() {
+                getInitialState: () => {
                     return {
                         isRenaming: false,
                         renamingMixinEventName: 'click.' + _.uniqueId('rename')
                     };
                 },
-                componentWillUnmount: function() {
+                componentWillUnmount: () => {
                     $('html').off(this.state.renamingMixinEventName);
                 },
-                startRenaming: function(e) {
+                startRenaming: (e) => {
                     e.preventDefault();
                     $('html').on(this.state.renamingMixinEventName, _.bind(function(e) {
                         if (e && !$(e.target).closest(ReactDOM.findDOMNode(this.refs[refname])).length) {
@@ -146,7 +146,7 @@ define([
                     }, this));
                     this.setState({isRenaming: true});
                 },
-                endRenaming: function() {
+                endRenaming: () => {
                     $('html').off(this.state.renamingMixinEventName);
                     this.setState({
                         isRenaming: false,

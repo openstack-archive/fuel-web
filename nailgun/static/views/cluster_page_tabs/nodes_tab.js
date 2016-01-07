@@ -31,7 +31,7 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
     'use strict';
 
     var NodesTab = React.createClass({
-        getInitialState: function() {
+        getInitialState: () => {
             var screen = this.getScreen();
             return {
                 loading: this.shouldScreenDataBeLoaded(screen),
@@ -40,7 +40,7 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
                 screenData: {}
             };
         },
-        getScreenConstructor: function(screen) {
+        getScreenConstructor: (screen) => {
             return {
                 list: ClusterNodesScreen,
                 add: AddNodesScreen,
@@ -49,14 +49,14 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
                 interfaces: EditNodeInterfacesScreen
             }[screen];
         },
-        checkScreenExists: function(screen) {
+        checkScreenExists: (screen) => {
             if (!this.getScreenConstructor(screen || this.state.screen)) {
                 app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
                 return false;
             }
             return true;
         },
-        loadScreenData: function(screen, screenOptions) {
+        loadScreenData: (screen, screenOptions) => {
             return this.getScreenConstructor(screen || this.state.screen)
                 .fetchData({
                     cluster: this.props.cluster,
@@ -72,19 +72,19 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
                     app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
                 }, this));
         },
-        getScreen: function(props) {
+        getScreen: (props) => {
             return (props || this.props).tabOptions[0] || 'list';
         },
-        getScreenOptions: function(props) {
+        getScreenOptions: (props) => {
             return (props || this.props).tabOptions.slice(1);
         },
-        shouldScreenDataBeLoaded: function(screen) {
+        shouldScreenDataBeLoaded: (screen) => {
             return !!this.getScreenConstructor(screen).fetchData;
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             if (this.checkScreenExists() && this.state.loading) this.loadScreenData();
         },
-        componentWillReceiveProps: function(newProps) {
+        componentWillReceiveProps: (newProps) => {
             var screen = this.getScreen(newProps);
             if (this.state.screen != screen && this.checkScreenExists(screen)) {
                 var screenOptions = this.getScreenOptions(newProps),
@@ -101,7 +101,7 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
                 }
             }
         },
-        render: function() {
+        render: () => {
             var Screen = this.getScreenConstructor(this.state.screen) || {};
             return (
                 <ReactTransitionGroup
@@ -128,13 +128,13 @@ function($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, Ed
     // additional screen wrapper to keep ref to screen in the tab component
     // see https://github.com/facebook/react/issues/1950 for more info
     var ScreenTransitionWrapper = React.createClass({
-        componentWillEnter: function(cb) {
+        componentWillEnter: (cb) => {
             $(ReactDOM.findDOMNode(this)).hide().delay('fast').fadeIn('fast', cb);
         },
-        componentWillLeave: function(cb) {
+        componentWillLeave: (cb) => {
             $(ReactDOM.findDOMNode(this)).fadeOut('fast', cb);
         },
-        render: function() {
+        render: () => {
             if (this.props.loading) return (
                 <div className='row'>
                     <div className='col-xs-12' style={{paddingTop: '40px'}}>

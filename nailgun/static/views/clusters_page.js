@@ -34,7 +34,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
             title: i18n('clusters_page.title'),
             navbarActiveElement: 'clusters',
             breadcrumbsPath: [['home', '#'], 'environments'],
-            fetchData: function() {
+            fetchData: () => {
                 var clusters = new models.Clusters();
                 var nodes = new models.Nodes();
                 var tasks = new models.Tasks();
@@ -48,7 +48,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
                 });
             }
         },
-        render: function() {
+        render: () => {
             return (
                 <div className='clusters-page'>
                     <div className='page-title'>
@@ -62,10 +62,10 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
 
     ClusterList = React.createClass({
         mixins: [componentMixins.backboneMixin('clusters')],
-        createCluster: function() {
+        createCluster: () => {
             CreateClusterWizard.show({clusters: this.props.clusters, modalClass: 'wizard', backdrop: 'static'});
         },
-        render: function() {
+        render: () => {
             return (
                 <div className='row'>
                     {this.props.clusters.map(function(cluster) {
@@ -84,23 +84,23 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
     Cluster = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster'),
-            componentMixins.backboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: (props) => {
                 return props.cluster.get('nodes');
             }}),
-            componentMixins.backboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: (props) => {
                 return props.cluster.get('tasks');
             }}),
-            componentMixins.backboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: (props) => {
                 return props.cluster.task({group: 'deployment', active: true});
             }}),
             componentMixins.pollingMixin(3)
         ],
-        shouldDataBeFetched: function() {
+        shouldDataBeFetched: () => {
             return this.props.cluster.task({group: 'deployment', active: true}) ||
                 this.props.cluster.task({name: 'cluster_deletion', active: true}) ||
                 this.props.cluster.task({name: 'cluster_deletion', status: 'ready'});
         },
-        fetchData: function() {
+        fetchData: () => {
             var request, requests = [];
             var deletionTask = this.props.cluster.task('cluster_deletion');
             if (deletionTask) {
@@ -126,7 +126,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateCl
             }
             return $.when(...requests);
         },
-        render: function() {
+        render: () => {
             var cluster = this.props.cluster;
             var status = cluster.get('status');
             var nodes = cluster.get('nodes');

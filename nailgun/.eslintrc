@@ -146,6 +146,7 @@
     prefer-const: 0
     prefer-spread: 2
     prefer-template: 0
+    object-shorthand: [2, "methods"]
 
     # react
     react/jsx-boolean-value: [2, never]

@@ -36,26 +36,26 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
+                modelOrCollection: (props) => {
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change'
             }),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster.get('nodes');},
+                modelOrCollection: (props) => props.cluster.get('nodes'),
                 renderOn: 'update change'
             }),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster.get('pluginLinks');},
+                modelOrCollection: (props) => props.cluster.get('pluginLinks'),
                 renderOn: 'update change'
             }),
             componentMixins.backboneMixin('cluster', 'change'),
             componentMixins.pollingMixin(20, true)
         ],
-        fetchData: function() {
+        fetchData: () => {
             return this.props.cluster.get('nodes').fetch();
         },
-        render: function() {
+        render: () => {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 release = cluster.get('release'),
@@ -184,10 +184,10 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
     });
 
     var DeploymentInProgressControl = React.createClass({
-        showDialog: function(Dialog) {
+        showDialog: (Dialog) => {
             Dialog.show({cluster: this.props.cluster});
         },
-        render: function() {
+        render: () => {
             var task = this.props.task,
                 taskName = task.get('name'),
                 isInfiniteTask = task.isInfinite(),
@@ -229,19 +229,19 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
     });
 
     var DeploymentResult = React.createClass({
-        getInitialState: function() {
+        getInitialState: () => {
             return {collapsed: false};
         },
-        dismissTaskResult: function() {
+        dismissTaskResult: () => {
             var task = this.props.cluster.task({group: 'deployment'});
             if (task) task.destroy();
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             $('.result-details', ReactDOM.findDOMNode(this))
                 .on('show.bs.collapse', this.setState.bind(this, {collapsed: true}, null))
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
-        render: function() {
+        render: () => {
             var task = this.props.cluster.task({group: 'deployment', active: false});
             if (!task) return null;
             var error = task.match({status: 'error'}),
@@ -273,7 +273,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
     });
 
     var DocumentationLinks = React.createClass({
-        renderDocumentationLinks: function(link, labelKey) {
+        renderDocumentationLinks: (link, labelKey) => {
             return (
                 <div className='documentation-link' key={labelKey}>
                     <span>
@@ -285,7 +285,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 </div>
             );
         },
-        render: function() {
+        render: () => {
             var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
             return (
                 <div className='row content-elements'>
@@ -318,9 +318,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {
-                    return props.cluster.get('tasks');
-                },
+                modelOrCollection: (props) => props.cluster.get('tasks'),
                 renderOn: 'update change'
             }),
             componentMixins.backboneMixin('cluster', 'change')
@@ -537,7 +535,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
 
     var WarningsBlock = React.createClass({
         ns: 'dialog.display_changes.',
-        render: function() {
+        render: () => {
             if (_.isEmpty(this.props.alerts)) return null;
             var className = this.props.severity == 'warning' ? 'warning' : 'danger';
             return (
@@ -563,7 +561,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
 
     var ClusterInfo = React.createClass({
         mixins: [componentMixins.renamingMixin('clustername')],
-        getClusterValue: function(fieldName) {
+        getClusterValue: (fieldName) => {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings');
             switch (fieldName) {
@@ -591,7 +589,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                     return cluster.get(fieldName);
             }
         },
-        renderClusterInfoFields: function() {
+        renderClusterInfoFields: () => {
             return (
                 _.map(['status', 'openstack_release', 'compute', 'network', 'storage_backends'], (field) => {
                     var value = this.getClusterValue(field);
@@ -616,7 +614,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 }, this)
             );
         },
-        renderClusterCapacity: function() {
+        renderClusterCapacity: () => {
             var cores = 0,
                 hdds = 0,
                 ram = 0,
@@ -648,13 +646,13 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 </div>
             );
         },
-        getNumberOfNodesWithRole: function(field) {
+        getNumberOfNodesWithRole: (field) => {
             var nodes = this.props.cluster.get('nodes');
             if (!nodes.length) return 0;
             if (field == 'total') return nodes.length;
             return _.filter(nodes.invoke('hasRole', field)).length;
         },
-        getNumberOfNodesWithStatus: function(field) {
+        getNumberOfNodesWithStatus: (field) => {
             var nodes = this.props.cluster.get('nodes');
             if (!nodes.length) return 0;
             switch (field) {
@@ -671,7 +669,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                     return nodes.where({status: field}).length;
             }
         },
-        renderLegend: function(fieldsData, isRole) {
+        renderLegend: (fieldsData, isRole) => {
             var result = _.map(fieldsData, function(field) {
                 var numberOfNodes = isRole ? this.getNumberOfNodesWithRole(field) : this.getNumberOfNodesWithStatus(field);
                     return numberOfNodes ?
@@ -701,7 +699,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
 
             return result;
         },
-        renderStatistics: function() {
+        renderStatistics: () => {
             var hasNodes = !!this.props.cluster.get('nodes').length,
                 fieldRoles = _.union(['total'], this.props.cluster.get('roles').pluck('name')),
                 fieldStatuses = ['offline', 'error', 'pending_addition', 'pending_deletion', 'ready', 'provisioned',
@@ -735,7 +733,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 </div>
             );
         },
-        render: function() {
+        render: () => {
             var cluster = this.props.cluster;
             return (
                 <div className='cluster-information'>
@@ -794,7 +792,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
     });
 
     var AddNodesButton = React.createClass({
-        render: function() {
+        render: () => {
             var disabled = !!this.props.cluster.task({group: 'deployment', active: true});
             return (
                     <a
@@ -810,7 +808,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
     });
 
     var RenameEnvironmentAction = React.createClass({
-        applyAction: function(e) {
+        applyAction: (e) => {
             e.preventDefault();
             var cluster = this.props.cluster,
                 name = this.state.name;
@@ -843,20 +841,20 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 this.props.endRenaming();
             }
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 name: this.props.cluster.get('name'),
                 disabled: false,
                 error: ''
             };
         },
-        onChange: function(inputName, newValue) {
+        onChange: (inputName, newValue) => {
             this.setState({
                 name: newValue,
                 error: ''
             });
         },
-        handleKeyDown: function(e) {
+        handleKeyDown: (e) => {
             if (e.key == 'Enter') {
                 e.preventDefault();
                 this.applyAction(e);
@@ -866,7 +864,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 this.props.endRenaming();
             }
         },
-        render: function() {
+        render: () => {
             var classes = {
                 'rename-block': true,
                 'has-error': !!this.state.error
@@ -900,7 +898,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             componentMixins.backboneMixin('cluster'),
             componentMixins.backboneMixin('task')
         ],
-        getDescriptionKey: function() {
+        getDescriptionKey: () => {
             if (this.props.task) {
                 if (this.props.task.match({name: 'reset_environment'})) return 'repeated_reset_disabled';
                 return 'reset_disabled_for_deploying_cluster';
@@ -908,11 +906,11 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             if (this.props.cluster.get('status') == 'new') return 'no_changes_to_reset';
             return 'reset_environment_description';
         },
-        applyAction: function(e) {
+        applyAction: (e) => {
             e.preventDefault();
             dialogs.ResetEnvironmentDialog.show({cluster: this.props.cluster});
         },
-        render: function() {
+        render: () => {
             var isLocked = this.props.cluster.get('status') == 'new' || !!this.props.task;
             return (
                 <div className='pull-right reset-environment'>
@@ -936,11 +934,11 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
     });
 
     var DeleteEnvironmentAction = React.createClass({
-        applyAction: function(e) {
+        applyAction: (e) => {
             e.preventDefault();
             dialogs.RemoveClusterDialog.show({cluster: this.props.cluster});
         },
-        render: function() {
+        render: () => {
             return (
                 <div className='delete-environment pull-left'>
                     <button
@@ -962,7 +960,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
     });
 
     var InstructionElement = React.createClass({
-        render: function() {
+        render: () => {
             var link = utils.composeDocumentationLink(this.props.link),
                 classes = {
                     instruction: true

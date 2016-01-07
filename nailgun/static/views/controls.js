@@ -43,37 +43,37 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             onChange: React.PropTypes.func,
             extraContent: React.PropTypes.node
         },
-        getInitialState: function() {
+        getInitialState: () => {
             return {
                 visible: false,
                 fileName: this.props.defaultValue && this.props.defaultValue.name || null,
                 content: this.props.defaultValue && this.props.defaultValue.content || null
             };
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 tooltipIcon: 'glyphicon-warning-sign',
                 tooltipPlacement: 'right'
             };
         },
-        togglePassword: function() {
+        togglePassword: () => {
             this.setState({visible: !this.state.visible});
         },
-        isCheckboxOrRadio: function() {
+        isCheckboxOrRadio: () => {
             return this.props.type == 'radio' || this.props.type == 'checkbox';
         },
-        getInputDOMNode: function() {
+        getInputDOMNode: () => {
             return ReactDOM.findDOMNode(this.refs.input);
         },
         debouncedChange: _.debounce(function() {
             return this.onChange();
         }, 200, {leading: true}),
-        pickFile: function() {
+        pickFile: () => {
             if (!this.props.disabled) {
                 this.getInputDOMNode().click();
             }
         },
-        saveFile: function(fileName, content) {
+        saveFile: (fileName, content) => {
             this.setState({
                 fileName: fileName,
                 content: content
@@ -83,13 +83,13 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
                 {name: fileName, content: content}
             );
         },
-        removeFile: function() {
+        removeFile: () => {
             if (!this.props.disabled) {
                 ReactDOM.findDOMNode(this.refs.form).reset();
                 this.saveFile(null, null);
             }
         },
-        readFile: function() {
+        readFile: () => {
             var reader = new FileReader(),
                 input = this.getInputDOMNode();
 
@@ -100,7 +100,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
                 reader.readAsBinaryString(input.files[0]);
             }
         },
-        onChange: function() {
+        onChange: () => {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
                 return this.props.onChange(
@@ -109,10 +109,10 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
                 );
             }
         },
-        handleFocus: function(e) {
+        handleFocus: (e) => {
             e.target.select();
         },
-        renderInput: function() {
+        renderInput: () => {
             var classes = {'form-control': this.props.type != 'range'};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
@@ -167,7 +167,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
                 </div>
             );
         },
-        renderLabel: function(children) {
+        renderLabel: (children) => {
             if (!this.props.label && !children) return null;
             return (
                 <label key='label' htmlFor={this.props.id}>
@@ -181,11 +181,11 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
                 </label>
             );
         },
-        renderDescription: function() {
+        renderDescription: () => {
             var text = !_.isUndefined(this.props.error) && !_.isNull(this.props.error) ? this.props.error : this.props.description || '';
             return <span key='description' className='help-block'>{text}</span>;
         },
-        renderWrapper: function(children) {
+        renderWrapper: (children) => {
             var isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 classes = {
                     'form-group': !isCheckboxOrRadio,
@@ -196,7 +196,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             classes[this.props.wrapperClassName] = this.props.wrapperClassName;
             return (<div className={utils.classNames(classes)}>{children}</div>);
         },
-        render: function() {
+        render: () => {
             if (this.props.type == 'hidden' && !this.props.description && !this.props.label) return null;
             return this.renderWrapper(this.isCheckboxOrRadio() ?
                 [
@@ -218,7 +218,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             label: React.PropTypes.node,
             tooltipText: React.PropTypes.node
         },
-        render: function() {
+        render: () => {
             return (
                 <div className='radio-group'>
                     {this.props.label &&
@@ -250,7 +250,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             wrapperClassName: React.PropTypes.node,
             progress: React.PropTypes.number
         },
-        render: function() {
+        render: () => {
             var wrapperClasses = {
                 progress: true
             };
@@ -282,7 +282,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             head: React.PropTypes.array,
             body: React.PropTypes.array
         },
-        render: function() {
+        render: () => {
             var tableClasses = {'table table-bordered': true, 'table-striped': !this.props.noStripes};
             tableClasses[this.props.tableClassName] = this.props.tableClassName;
             return (
@@ -316,10 +316,10 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             className: React.PropTypes.node,
             placement: React.PropTypes.node
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {placement: 'bottom'};
         },
-        render: function() {
+        render: () => {
             var classes = {'popover in': true};
             classes[this.props.placement] = true;
             classes[this.props.className] = true;
@@ -338,40 +338,40 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             placement: React.PropTypes.node,
             text: React.PropTypes.node
         },
-        getDefaultProps: function() {
+        getDefaultProps: () => {
             return {
                 placement: 'top',
                 container: 'body',
                 wrapperClassName: 'tooltip-wrapper'
             };
         },
-        componentDidMount: function() {
+        componentDidMount: () => {
             if (this.props.text) this.addTooltip();
         },
-        componentDidUpdate: function() {
+        componentDidUpdate: () => {
             if (this.props.text) {
                 this.updateTooltipTitle();
             } else {
                 this.removeTooltip();
             }
         },
-        componentWillUnmount: function() {
+        componentWillUnmount: () => {
             this.removeTooltip();
         },
-        addTooltip: function() {
+        addTooltip: () => {
             $(ReactDOM.findDOMNode(this.refs.tooltip)).tooltip({
                 container: this.props.container,
                 placement: this.props.placement,
                 title: this.props.text
             });
         },
-        updateTooltipTitle: function() {
+        updateTooltipTitle: () => {
             $(ReactDOM.findDOMNode(this.refs.tooltip)).attr('title', this.props.text).tooltip('fixTitle');
         },
-        removeTooltip: function() {
+        removeTooltip: () => {
             $(ReactDOM.findDOMNode(this.refs.tooltip)).tooltip('destroy');
         },
-        render: function() {
+        render: () => {
             if (!this.props.wrap) return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});
             return (
                 <div className={this.props.wrapperClassName} ref='tooltip'>

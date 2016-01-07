@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from oslo_serialization import jsonutils
 
 from nailgun import consts
@@ -22,6 +23,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.utils import make_mock_extensions
 from nailgun.utils import reverse
 
 
@@ -384,3 +386,64 @@ class TestClusterComponents(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
+
+
+class TestClusterExtension(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestClusterExtension, self).setUp()
+        self.env.create_cluster()
+        self.cluster = self.env.clusters[0]
+
+    def test_get_enabled_extensions(self):
+        enabled_extensions = 'volume_manager', 'bareon'
+        self.cluster.extensions = enabled_extensions
+        self.db.commit()
+        self.db.refresh(self.cluster)
+
+        resp = self.app.get(
+            reverse(
+                'ClusterExtensionsHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertItemsEqual(resp.json_body, enabled_extensions)
+
+    def test_enabling_extensions(self):
+        extensions = 'bareon', 'volume_manager'
+
+        with mock.patch(
+                'nailgun.api.v1.validators.extension.get_all_extensions',
+                return_value=make_mock_extensions(extensions)):
+            resp = self.app.put(
+                reverse(
+                    'ClusterExtensionsHandler',
+                    kwargs={'cluster_id': self.cluster.id}),
+                jsonutils.dumps(extensions),
+                headers=self.default_headers,
+            )
+        self.assertEqual(resp.status_code, 200)
+
+        self.db.refresh(self.cluster)
+        self.assertItemsEqual(self.cluster.extensions, extensions)
+
+    def test_enabling_invalid_extensions(self):
+        extensions = 'bareon', 'volume_manager'
+        set_extensions = 'baleron', 'volume_maanger'
+
+        with mock.patch(
+                'nailgun.api.v1.validators.extension.get_all_extensions',
+                return_value=make_mock_extensions(extensions)):
+            resp = self.app.put(
+                reverse(
+                    'ClusterExtensionsHandler',
+                    kwargs={'cluster_id': self.cluster.id}),
+                jsonutils.dumps(set_extensions),
+                headers=self.default_headers,
+                expect_errors=True,
+            )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(u"No such extensions:", resp.json_body['message'])
+        self.assertIn(set_extensions[0], resp.json_body['message'])
+        self.assertIn(set_extensions[1], resp.json_body['message'])

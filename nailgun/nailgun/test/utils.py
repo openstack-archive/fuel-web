@@ -18,6 +18,8 @@ import random
 import six
 import string
 
+import mock
+
 
 def random_string(lenght, charset=None):
     """Returns a random string of the specified length
@@ -33,3 +35,17 @@ def random_string(lenght, charset=None):
 
     return ''.join([str(random.choice(charset))
                     for i in six.moves.range(lenght)])
+
+
+def make_mock_extensions(names=('ext1', 'ext2')):
+    mocks = []
+    for name in names:
+        # NOTE(eli): since 'name' is reserved word
+        # for mock constructor, we should assign
+        # name explicitly
+        ex_m = mock.MagicMock()
+        ex_m.name = name
+        ex_m.provides = ['method_call']
+        mocks.append(ex_m)
+
+    return mocks

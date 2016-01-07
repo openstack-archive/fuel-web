@@ -127,9 +127,10 @@ class ProvisioningSerializer(MellanoxMixin):
                 'netcfg/choose_interface':
                 objects.Node.get_admin_physical_iface(node).mac,
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
+            'partitioning': node_extension_call('get_node_simple_volumes',
+                                                node),
             'ks_meta': {
                 'pm_data': {
-                    'ks_spaces': node_extension_call('get_node_volumes', node),
                     'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
                 'cloud_init_templates':

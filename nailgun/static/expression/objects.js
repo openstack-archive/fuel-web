@@ -13,8 +13,8 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore', 'expression/parser'], (_, ExpressionParser) => {
-    'use strict';
+import _ from 'underscore';
+import ExpressionParser from 'expression/parser';
 
     class ModelPath {
         constructor(path) {
@@ -105,5 +105,4 @@ define(['underscore', 'expression/parser'], (_, ExpressionParser) => {
         }
     }
 
-    return {ScalarWrapper, SubexpressionWrapper, ModelPathWrapper, ModelPath};
-});
+    export default {ScalarWrapper, SubexpressionWrapper, ModelPathWrapper, ModelPath};

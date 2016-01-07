@@ -13,20 +13,17 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'models',
-    'utils',
-    'dispatcher',
-    'component_mixins',
-    'views/wizard'
-],
-($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateClusterWizard) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import dispatcher from 'dispatcher';
+import componentMixins from 'component_mixins';
+import CreateClusterWizard from 'views/wizard';
+
     var ClustersPage, ClusterList, Cluster;
 
     ClustersPage = React.createClass({
@@ -172,5 +169,4 @@ define(
         }
     });
 
-    return ClustersPage;
-});
+    export default ClustersPage;

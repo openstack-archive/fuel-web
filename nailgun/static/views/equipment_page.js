@@ -13,18 +13,14 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'models',
-    'component_mixins',
-    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
-],
-($, _, i18n, React, models, componentMixins, NodeListScreen) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import models from 'models';
+import componentMixins from 'component_mixins';
+import NodeListScreen from 'views/cluster_page_tabs/nodes_tab_screens/node_list_screen';
 
     var EquipmentPage, PluginLinks;
 
@@ -151,5 +147,4 @@ define(
         }
     });
 
-    return EquipmentPage;
-});
+    export default EquipmentPage;

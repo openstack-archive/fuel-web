@@ -13,21 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import models from 'models';
 
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'models'
-],
-($, _, i18n, Backbone, models) => {
-    'use strict';
+    var VmWareModels = {};
 
-    function isRegularField(field) {
+    VmWareModels.isRegularField = function(field) {
         return _.contains(['text', 'password', 'checkbox', 'select'], field.type);
-    }
+    };
 
     // models for testing restrictions
     var restrictionModels = {};
@@ -51,7 +46,7 @@ define(
             this.expandedRestrictions = this.expandedRestrictions || {};
             var result = {};
             _.each(this.attributes.metadata, function(field) {
-                if (!isRegularField(field) || field.type == 'checkbox') {
+                if (!VmWareModels.isRegularField(field) || field.type == 'checkbox') {
                     return;
                 }
                 var isDisabled = this.checkRestrictions(restrictionModels, undefined, field.name);
@@ -121,7 +116,7 @@ define(
         }
     });
 
-    var NovaCompute = BaseModel.extend({
+    VmWareModels.NovaCompute = BaseModel.extend({
         constructorName: 'NovaCompute',
         checkEmptyTargetNode() {
             var targetNode = this.get('target_node');
@@ -159,7 +154,7 @@ define(
 
     var NovaComputes = BaseCollection.extend({
         constructorName: 'NovaComputes',
-        model: NovaCompute,
+        model: VmWareModels.NovaCompute,
         validate() {
             this._super('validate', arguments);
 
@@ -187,7 +182,7 @@ define(
 
             // regular fields
             _.each(metadata, (field) => {
-                if (isRegularField(field)) {
+                if (VmWareModels.isRegularField(field)) {
                     result[field.name] = response[field.name];
                 }
             }, this);
@@ -197,7 +192,7 @@ define(
             var novaValues = _.clone(response.nova_computes);
             novaValues = _.map(novaValues, (value) => {
                 value.metadata = novaMetadata.fields;
-                return new NovaCompute(value);
+                return new VmWareModels.NovaCompute(value);
             });
             result.nova_computes = new NovaComputes(novaValues);
 
@@ -226,10 +221,10 @@ define(
         model: AvailabilityZone
     });
 
-    var Network = BaseModel.extend({constructorName: 'Network'});
-    var Glance = BaseModel.extend({constructorName: 'Glance'});
+    VmWareModels.Network = BaseModel.extend({constructorName: 'Network'});
+    VmWareModels.Glance = BaseModel.extend({constructorName: 'Glance'});
 
-    var VCenter = BaseModel.extend({
+    VmWareModels.VCenter = BaseModel.extend({
         constructorName: 'VCenter',
         url() {
             return '/api/v1/clusters/' + this.id + '/vmware_attributes' + (this.loadDefaults ? '/defaults' : '');
@@ -260,8 +255,8 @@ define(
             return {
                 metadata: metadata,
                 availability_zones: new AvailabilityZones(azValues),
-                network: new Network(networkValue),
-                glance: new Glance(glanceValue)
+                network: new VmWareModels.Network(networkValue),
+                glance: new VmWareModels.Glance(glanceValue)
             };
         },
         isFilled() {
@@ -327,12 +322,4 @@ define(
         }
     });
 
-    return {
-        VCenter: VCenter,
-        AvailabilityZone: AvailabilityZone,
-        Network: Network,
-        Glance: Glance,
-        NovaCompute: NovaCompute,
-        isRegularField: isRegularField
-    };
-});
+    export default VmWareModels;

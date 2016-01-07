@@ -13,17 +13,13 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'models',
-    'utils'
-],
-($, _, i18n, React, models, utils) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
 
     var PluginsPage = React.createClass({
         statics: {
@@ -143,5 +139,4 @@ define(
         }
     });
 
-    return PluginsPage;
-});
+    export default PluginsPage;

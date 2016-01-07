@@ -30,9 +30,9 @@ define(
 function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, componentMixins, controls) {
     'use strict';
 
-    var namespace = 'cluster_page.dashboard_tab.';
+    let namespace = 'cluster_page.dashboard_tab.';
 
-    var DashboardTab = React.createClass({
+    let DashboardTab = React.createClass({
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
             componentMixins.backboneMixin({
@@ -56,12 +56,12 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             return this.props.cluster.get('nodes').fetch();
         },
         render: function() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 release = cluster.get('release'),
                 runningDeploymentTask = cluster.task({group: 'deployment', active: true});
 
-            var dashboardLinks = [{
+            let dashboardLinks = [{
                     url: '/',
                     title: i18n(namespace + 'horizon'),
                     description: i18n(namespace + 'horizon_description')
@@ -117,7 +117,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var DashboardLinks = React.createClass({
+    let DashboardLinks = React.createClass({
         renderLink(link) {
             return (
                 <DashboardLink
@@ -128,7 +128,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             );
         },
         render() {
-            var {links} = this.props;
+            let {links} = this.props;
             if (!links.length) return null;
             return (
                 <div className='row'>
@@ -149,14 +149,14 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var DashboardLink = React.createClass({
+    let DashboardLink = React.createClass({
         propTypes: {
             title: React.PropTypes.string.isRequired,
             url: React.PropTypes.string.isRequired,
             description: React.PropTypes.node
         },
         processRelativeURL(url) {
-            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
+            let sslSettings = this.props.cluster.get('settings').get('public_ssl');
             if (sslSettings.horizon.value) return 'https://' + sslSettings.hostname.value + url;
             return this.getHTTPLink(url);
         },
@@ -164,7 +164,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             return 'http://' + this.props.cluster.get('networkConfiguration').get('public_vip') + url;
         },
         render() {
-            var isSSLEnabled = this.props.cluster.get('settings').get('public_ssl.horizon.value'),
+            let isSSLEnabled = this.props.cluster.get('settings').get('public_ssl.horizon.value'),
                 isURLRelative = !(/^(?:https?:)?\/\//.test(this.props.url)),
                 url = isURLRelative ? this.processRelativeURL(this.props.url) : this.props.url;
             return (
@@ -183,12 +183,12 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var DeploymentInProgressControl = React.createClass({
+    let DeploymentInProgressControl = React.createClass({
         showDialog: function(Dialog) {
             Dialog.show({cluster: this.props.cluster});
         },
         render: function() {
-            var task = this.props.task,
+            let task = this.props.task,
                 taskName = task.get('name'),
                 isInfiniteTask = task.isInfinite(),
                 taskProgress = task.get('progress'),
@@ -228,12 +228,12 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var DeploymentResult = React.createClass({
+    let DeploymentResult = React.createClass({
         getInitialState: function() {
             return {collapsed: false};
         },
         dismissTaskResult: function() {
-            var task = this.props.cluster.task({group: 'deployment'});
+            let task = this.props.cluster.task({group: 'deployment'});
             if (task) task.destroy();
         },
         componentDidMount: function() {
@@ -242,9 +242,9 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
         render: function() {
-            var task = this.props.cluster.task({group: 'deployment', active: false});
+            let task = this.props.cluster.task({group: 'deployment', active: false});
             if (!task) return null;
-            var error = task.match({status: 'error'}),
+            let error = task.match({status: 'error'}),
                 delimited = task.escape('message').split('\n\n'),
                 summary = delimited.shift(),
                 details = delimited.join('\n\n'),
@@ -272,7 +272,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var DocumentationLinks = React.createClass({
+    let DocumentationLinks = React.createClass({
         renderDocumentationLinks: function(link, labelKey) {
             return (
                 <div className='documentation-link' key={labelKey}>
@@ -286,7 +286,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             );
         },
         render: function() {
-            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
+            let isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
             return (
                 <div className='row content-elements'>
                     <div className='title'>{i18n(namespace + 'documentation')}</div>
@@ -314,7 +314,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
 
     // @FIXME (morale): this component is written in a bad pattern of 'monolith' component
     // it should be refactored to provide proper logics separation and decoupling
-    var DeployReadinessBlock = React.createClass({
+    let DeployReadinessBlock = React.createClass({
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
             componentMixins.backboneMixin({
@@ -327,7 +327,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         ],
         ns: 'dialog.display_changes.',
         getConfigModels() {
-            var {cluster} = this.props;
+            let {cluster} = this.props;
             return {
                 cluster: cluster,
                 settings: cluster.get('settings'),
@@ -352,7 +352,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         validations: [
             // check if TLS settings are not configured
             function(cluster) {
-                var sslSettings = cluster.get('settings').get('public_ssl');
+                let sslSettings = cluster.get('settings').get('public_ssl');
                 if (!sslSettings.horizon.value && !sslSettings.services.value) {
                     return {warning: [i18n(this.ns + 'tls_not_enabled')]};
                 }
@@ -379,7 +379,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             // check VCenter settings
             function(cluster) {
                 if (cluster.get('settings').get('common.use_vcenter.value')) {
-                    var vcenter = cluster.get('vcenter');
+                    let vcenter = cluster.get('vcenter');
                     vcenter.setModels(this.getConfigModels()).parseRestrictions();
                     return !vcenter.isValid() && {
                         blocker: [
@@ -394,7 +394,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             },
             // check cluster settings
             function(cluster) {
-                var configModels = this.getConfigModels(),
+                let configModels = this.getConfigModels(),
                     areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
                 return areSettingsInvalid &&
                     {blocker: [
@@ -409,7 +409,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             },
             // check node amount restrictions according to their roles
             function(cluster) {
-                var configModels = this.getConfigModels(),
+                let configModels = this.getConfigModels(),
                     roleModels = cluster.get('roles'),
                     validRoleModels = roleModels.filter(function(role) {
                         return !role.checkRestrictions(configModels).result;
@@ -423,13 +423,13 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 return {
                     blocker: roleModels.map(_.bind(
                         function(role) {
-                            var name = role.get('name'),
+                            let name = role.get('name'),
                                 limits = limitValidations[name];
                             return limits && !limits.valid && limits.message;
                         }, this)),
                     warning: roleModels.map(_.bind(
                         function(role) {
-                            var name = role.get('name'),
+                            let name = role.get('name'),
                                 recommendation = limitRecommendations[name];
                             return recommendation && !recommendation.valid && recommendation.message;
                         }, this))
@@ -438,9 +438,9 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             // check cluster network configuration
             function(cluster) {
                 if (this.props.nodeNetworkGroups.where({cluster_id: cluster.id}).length > 1) return null;
-                var networkVerificationTask = cluster.task('verify_networks'),
+                let networkVerificationTask = cluster.task('verify_networks'),
                     makeComponent = _.bind(function(text, isError) {
-                        var span = (
+                        let span = (
                             <span key='invalid_networks'>
                                 {text}
                                 {' ' + i18n(this.ns + 'get_more_info') + ' '}
@@ -478,7 +478,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             );
         },
         render() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 alerts = this.validate(cluster),
                 isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length,
@@ -535,11 +535,11 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var WarningsBlock = React.createClass({
+    let WarningsBlock = React.createClass({
         ns: 'dialog.display_changes.',
         render: function() {
             if (_.isEmpty(this.props.alerts)) return null;
-            var className = this.props.severity == 'warning' ? 'warning' : 'danger';
+            let className = this.props.severity == 'warning' ? 'warning' : 'danger';
             return (
                 <div className='warnings-block'>
                     {this.props.severity == 'blocker' &&
@@ -561,10 +561,10 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var ClusterInfo = React.createClass({
+    let ClusterInfo = React.createClass({
         mixins: [componentMixins.renamingMixin('clustername')],
         getClusterValue: function(fieldName) {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 settings = cluster.get('settings');
             switch (fieldName) {
                 case 'status':
@@ -572,14 +572,14 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                 case 'openstack_release':
                     return cluster.get('release').get('name');
                 case 'compute':
-                    var libvirtSettings = settings.get('common').libvirt_type,
+                    let libvirtSettings = settings.get('common').libvirt_type,
                         computeLabel = _.find(libvirtSettings.values, {data: libvirtSettings.value}).label;
                     if (settings.get('common').use_vcenter.value) {
                         return computeLabel + ' ' + i18n(namespace + 'and_vcenter');
                     }
                     return computeLabel;
                 case 'network':
-                    var networkingParameters = cluster.get('networkConfiguration').get('networking_parameters');
+                    let networkingParameters = cluster.get('networkConfiguration').get('networking_parameters');
                     if (cluster.get('net_provider') == 'nova_network') {
                         return i18n(namespace + 'nova_with') + ' ' + networkingParameters.get('net_manager');
                     }
@@ -594,7 +594,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         renderClusterInfoFields: function() {
             return (
                 _.map(['status', 'openstack_release', 'compute', 'network', 'storage_backends'], (field) => {
-                    var value = this.getClusterValue(field);
+                    let value = this.getClusterValue(field);
                     return (
                         <div key={field}>
                             <div className='col-xs-6'>
@@ -617,7 +617,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             );
         },
         renderClusterCapacity: function() {
-            var cores = 0,
+            let cores = 0,
                 hdds = 0,
                 ram = 0,
                 ns = namespace + 'cluster_info_fields.';
@@ -649,13 +649,13 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             );
         },
         getNumberOfNodesWithRole: function(field) {
-            var nodes = this.props.cluster.get('nodes');
+            let nodes = this.props.cluster.get('nodes');
             if (!nodes.length) return 0;
             if (field == 'total') return nodes.length;
             return _.filter(nodes.invoke('hasRole', field)).length;
         },
         getNumberOfNodesWithStatus: function(field) {
-            var nodes = this.props.cluster.get('nodes');
+            let nodes = this.props.cluster.get('nodes');
             if (!nodes.length) return 0;
             switch (field) {
                 case 'offline':
@@ -664,7 +664,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
                     return nodes.where({status: 'error'}).length;
                 case 'pending_addition':
                 case 'pending_deletion':
-                    var searchObject = {};
+                    let searchObject = {};
                     searchObject[field] = true;
                     return nodes.where(searchObject).length;
                 default:
@@ -672,8 +672,8 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             }
         },
         renderLegend: function(fieldsData, isRole) {
-            var result = _.map(fieldsData, function(field) {
-                var numberOfNodes = isRole ? this.getNumberOfNodesWithRole(field) : this.getNumberOfNodesWithStatus(field);
+            let result = _.map(fieldsData, function(field) {
+                let numberOfNodes = isRole ? this.getNumberOfNodesWithRole(field) : this.getNumberOfNodesWithStatus(field);
                     return numberOfNodes ?
                         <div key={field}>
                             <div className='col-xs-10'>
@@ -702,7 +702,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             return result;
         },
         renderStatistics: function() {
-            var hasNodes = !!this.props.cluster.get('nodes').length,
+            let hasNodes = !!this.props.cluster.get('nodes').length,
                 fieldRoles = _.union(['total'], this.props.cluster.get('roles').pluck('name')),
                 fieldStatuses = ['offline', 'error', 'pending_addition', 'pending_deletion', 'ready', 'provisioned',
                     'provisioning', 'deploying', 'removing'];
@@ -736,7 +736,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             );
         },
         render: function() {
-            var cluster = this.props.cluster;
+            let cluster = this.props.cluster;
             return (
                 <div className='cluster-information'>
                     <div className='row'>
@@ -793,9 +793,9 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var AddNodesButton = React.createClass({
+    let AddNodesButton = React.createClass({
         render: function() {
-            var disabled = !!this.props.cluster.task({group: 'deployment', active: true});
+            let disabled = !!this.props.cluster.task({group: 'deployment', active: true});
             return (
                     <a
                         className='btn btn-success btn-add-nodes'
@@ -809,13 +809,13 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             }
     });
 
-    var RenameEnvironmentAction = React.createClass({
+    let RenameEnvironmentAction = React.createClass({
         applyAction: function(e) {
             e.preventDefault();
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 name = this.state.name;
             if (name != cluster.get('name')) {
-                var deferred = cluster.save({name: name}, {patch: true, wait: true});
+                let deferred = cluster.save({name: name}, {patch: true, wait: true});
                 if (deferred) {
                     this.setState({disabled: true});
                     deferred
@@ -867,7 +867,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             }
         },
         render: function() {
-            var classes = {
+            let classes = {
                 'rename-block': true,
                 'has-error': !!this.state.error
             };
@@ -895,7 +895,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var ResetEnvironmentAction = React.createClass({
+    let ResetEnvironmentAction = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster'),
             componentMixins.backboneMixin('task')
@@ -913,7 +913,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
             dialogs.ResetEnvironmentDialog.show({cluster: this.props.cluster});
         },
         render: function() {
-            var isLocked = this.props.cluster.get('status') == 'new' || !!this.props.task;
+            let isLocked = this.props.cluster.get('status') == 'new' || !!this.props.task;
             return (
                 <div className='pull-right reset-environment'>
                     <button
@@ -935,7 +935,7 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var DeleteEnvironmentAction = React.createClass({
+    let DeleteEnvironmentAction = React.createClass({
         applyAction: function(e) {
             e.preventDefault();
             dialogs.RemoveClusterDialog.show({cluster: this.props.cluster});
@@ -961,9 +961,9 @@ function(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, compon
         }
     });
 
-    var InstructionElement = React.createClass({
+    let InstructionElement = React.createClass({
         render: function() {
-            var link = utils.composeDocumentationLink(this.props.link),
+            let link = utils.composeDocumentationLink(this.props.link),
                 classes = {
                     instruction: true
                 };

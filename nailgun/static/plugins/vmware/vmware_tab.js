@@ -28,9 +28,9 @@ define(
 ], function(React, $, i18n, _, dispatcher, utils, controls, componentMixins, vmwareModels) {
     'use strict';
 
-    var Field = React.createClass({
+    let Field = React.createClass({
         onChange: function(name, value) {
-            var currentValue = this.props.model.get(name);
+            let currentValue = this.props.model.get(name);
             if (currentValue.current) {
                 currentValue.current.id = value;
                 currentValue.current.label = value;
@@ -42,7 +42,7 @@ define(
             _.defer(function() {dispatcher.trigger('vcenter_model_update');});
         },
         render: function() {
-            var metadata = this.props.metadata,
+            let metadata = this.props.metadata,
                 value = this.props.model.get(metadata.name);
             return (
                 <controls.Input
@@ -62,11 +62,11 @@ define(
         }
     });
 
-    var FieldGroup = React.createClass({
+    let FieldGroup = React.createClass({
         render: function() {
-            var restrictions = this.props.model.testRestrictions();
-            var metadata = _.filter(this.props.model.get('metadata'), vmwareModels.isRegularField);
-            var fields = metadata.map(function(meta) {
+            let restrictions = this.props.model.testRestrictions();
+            let metadata = _.filter(this.props.model.get('metadata'), vmwareModels.isRegularField);
+            let fields = metadata.map(function(meta) {
                 return (
                     <Field
                         key={meta.name}
@@ -85,7 +85,7 @@ define(
         }
     });
 
-    var GenericSection = React.createClass({
+    let GenericSection = React.createClass({
         render: function() {
             if (!this.props.model) return null;
             return (
@@ -104,13 +104,13 @@ define(
         }
     });
 
-    var NovaCompute = React.createClass({
+    let NovaCompute = React.createClass({
         render: function() {
             if (!this.props.model) return null;
 
             // add nodes of 'compute-vmware' type to targetNode select
-            var targetNode = this.props.model.get('target_node') || {};
-            var nodes = this.props.cluster.get('nodes').filter(function(node) {
+            let targetNode = this.props.model.get('target_node') || {};
+            let nodes = this.props.cluster.get('nodes').filter(function(node) {
                 return node.hasRole('compute-vmware');
             });
 
@@ -158,12 +158,12 @@ define(
         }
     });
 
-    var AvailabilityZone = React.createClass({
+    let AvailabilityZone = React.createClass({
         addNovaCompute: function(current) {
-            var collection = this.props.model.get('nova_computes'),
+            let collection = this.props.model.get('nova_computes'),
                 index = collection.indexOf(current),
                 newItem = current.clone();
-            var targetNode = _.cloneDeep(newItem.get('target_node'));
+            let targetNode = _.cloneDeep(newItem.get('target_node'));
             if (this.props.isLocked) {
                 targetNode.current = {id: 'invalid'};
             }
@@ -174,13 +174,13 @@ define(
             _.defer(function() {dispatcher.trigger('vcenter_model_update'); });
         },
         removeNovaCompute: function(current) {
-            var collection = this.props.model.get('nova_computes');
+            let collection = this.props.model.get('nova_computes');
             collection.remove(current);
             this.setState({model: this.props.model});
             _.defer(function() { dispatcher.trigger('vcenter_model_update'); });
         },
         renderFields: function() {
-            var model = this.props.model,
+            let model = this.props.model,
                 meta = model.get('metadata');
             meta = _.filter(meta, vmwareModels.isRegularField);
             return (
@@ -188,7 +188,7 @@ define(
             );
         },
         renderComputes: function(actions) {
-            var novaComputes = this.props.model.get('nova_computes'),
+            let novaComputes = this.props.model.get('nova_computes'),
                 isSingleInstance = novaComputes.length == 1,
                 disabled = actions.disable.nova_computes,
                 cluster = this.props.cluster;
@@ -216,7 +216,7 @@ define(
             );
         },
         render: function() {
-            var restrictActions = this.props.model.testRestrictions();
+            let restrictActions = this.props.model.testRestrictions();
 
             return (
                 <div>
@@ -227,7 +227,7 @@ define(
         }
     });
 
-    var AvailabilityZones = React.createClass({
+    let AvailabilityZones = React.createClass({
         render: function() {
             if (!this.props.collection) return null;
             return (
@@ -248,7 +248,7 @@ define(
         }
     });
 
-    var UnassignedNodesWarning = React.createClass({
+    let UnassignedNodesWarning = React.createClass({
         render: function() {
             if (!this.props.errors || !this.props.errors.unassigned_nodes) return null;
             return (
@@ -274,7 +274,7 @@ define(
         }
     });
 
-    var VCenter = React.createClass({
+    let VCenter = React.createClass({
         mixins: [
             componentMixins.unsavedChangesMixin
         ],
@@ -284,7 +284,7 @@ define(
             },
             fetchData: function(options) {
                 if (!options.cluster.get('vcenter_defaults')) {
-                    var defaultModel = new vmwareModels.VCenter({id: options.cluster.id});
+                    let defaultModel = new vmwareModels.VCenter({id: options.cluster.id});
                     defaultModel.loadDefaults = true;
                     options.cluster.set({vcenter_defaults: defaultModel});
                 }
@@ -351,20 +351,20 @@ define(
             return this.detectChanges(this.json, JSON.stringify(this.model.toJSON()));
         },
         detectChanges: function(oldJson, currentJson) {
-            var old, current;
+            let old, current;
             try {
                 old = JSON.parse(oldJson);
                 current = JSON.parse(currentJson);
             } catch (error) {
                 return false;
             }
-            var oldData = JSON.stringify(old, function(key, data) {
+            let oldData = JSON.stringify(old, function(key, data) {
                 if (key == 'target_node') {
                     delete data.options;
                 }
                 return data;
             });
-            var currentData = JSON.stringify(current, function(key, data) {
+            let currentData = JSON.stringify(current, function(key, data) {
                 if (key == 'target_node') {
                     delete data.options;
                 }
@@ -380,16 +380,16 @@ define(
                 return null;
             }
 
-            var model = this.state.model,
+            let model = this.state.model,
                 currentJson = JSON.stringify(this.model.toJSON()),
                 editable = this.props.cluster.isAvailableForSettingsChanges(),
                 hide = this.actions.hide || {},
                 disable = this.actions.disable || {};
 
             model.isValid();
-            var hasChanges = this.detectChanges(this.json, currentJson);
-            var hasDefaultsChanges = this.detectChanges(this.defaultsJson, currentJson);
-            var saveDisabled = !hasChanges || !this.isSavingPossible(),
+            let hasChanges = this.detectChanges(this.json, currentJson);
+            let hasDefaultsChanges = this.detectChanges(this.defaultsJson, currentJson);
+            let saveDisabled = !hasChanges || !this.isSavingPossible(),
                 defaultsDisabled = !hasDefaultsChanges;
 
             return (

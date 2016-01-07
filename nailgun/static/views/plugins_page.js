@@ -25,17 +25,17 @@ define(
 function($, _, i18n, React, models, utils) {
     'use strict';
 
-    var PluginsPage = React.createClass({
+    let PluginsPage = React.createClass({
         statics: {
             title: i18n('plugins_page.title'),
             navbarActiveElement: 'plugins',
             breadcrumbsPath: [['home', '#'], 'plugins'],
             fetchData() {
-                var plugins = new models.Plugins();
+                let plugins = new models.Plugins();
                 return plugins.fetch()
                     .then(() => {
                         return $.when(...plugins.map((plugin) => {
-                            var links = new models.PluginLinks();
+                            let links = new models.PluginLinks();
                             links.url = _.result(plugin, 'url') + '/links';
                             plugin.set({links: links});
                             return links.fetch();
@@ -58,7 +58,7 @@ function($, _, i18n, React, models, utils) {
             };
         },
         processPluginData(plugin, attribute) {
-            var data = plugin.get(attribute);
+            let data = plugin.get(attribute);
             if (attribute == 'releases') {
                 return _.map(_.groupBy(data, 'os'), (osReleases, osName) =>
                     <div key={osName}>
@@ -91,7 +91,7 @@ function($, _, i18n, React, models, utils) {
                         </h3>
                     </div>
                     {_.map(this.props.details, (attribute) => {
-                        var data = this.processPluginData(plugin, attribute);
+                        let data = this.processPluginData(plugin, attribute);
                         if (data.length) return (
                             <div className='row' key={attribute}>
                                 <div className='col-xs-2 detail-title text-right'>
@@ -105,7 +105,7 @@ function($, _, i18n, React, models, utils) {
             );
         },
         render() {
-            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+            let isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
                 links = {
                     catalog: isMirantisIso ? 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' : 'http://stackalytics.com/report/driverlog?project_id=openstack%2Ffuel',
                     documentation: utils.composeDocumentationLink('plugin-dev.html')

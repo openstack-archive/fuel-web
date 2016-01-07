@@ -32,9 +32,9 @@ define(
 function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins, DND, OffloadingModes) {
     'use strict';
 
-    var ns = 'cluster_page.nodes_tab.configure_interfaces.';
+    let ns = 'cluster_page.nodes_tab.configure_interfaces.';
 
-    var EditNodeInterfacesScreen = React.createClass({
+    let EditNodeInterfacesScreen = React.createClass({
         mixins: [
             ComponentMixins.backboneMixin('interfaces', 'change reset update'),
             ComponentMixins.backboneMixin('cluster'),
@@ -43,14 +43,14 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         ],
         statics: {
             fetchData: function(options) {
-                var cluster = options.cluster,
+                let cluster = options.cluster,
                     nodes = utils.getNodeListFromTabOptions(options);
 
                 if (!nodes || !nodes.areInterfacesConfigurable()) {
                     return $.Deferred().reject();
                 }
 
-                var networkConfiguration = cluster.get('networkConfiguration'),
+                let networkConfiguration = cluster.get('networkConfiguration'),
                     networksMetadata = new models.ReleaseNetworkProperties();
 
                 return $.when(...nodes.map(function(node) {
@@ -65,7 +65,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         url: '/api/releases/' + cluster.get('release_id') + '/networks'
                     })]))
                     .then(_.bind(function() {
-                        var interfaces = new models.Interfaces();
+                        let interfaces = new models.Interfaces();
                         interfaces.set(_.cloneDeep(nodes.at(0).interfaces.toJSON()), {parse: true});
                         return {
                             interfaces: interfaces,
@@ -103,13 +103,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         interfacesToJSON: function(interfaces, remainingNodesMode) {
             // Sometimes 'state' is sent from the API and sometimes not
             // It's better to just unify all inputs to the one without state.
-            var picker = remainingNodesMode ? this.interfacesPickFromJSON : (json) => _.omit(json, 'state');
+            let picker = remainingNodesMode ? this.interfacesPickFromJSON : (json) => _.omit(json, 'state');
             return interfaces.map((ifc) => picker(ifc.toJSON()));
         },
         hasChangesInRemainingNodes: function() {
-            var initialInterfacesData = _.map(this.state.initialInterfaces, this.interfacesPickFromJSON);
+            let initialInterfacesData = _.map(this.state.initialInterfaces, this.interfacesPickFromJSON);
             return _.any(this.props.nodes.slice(1), (node) => {
-                var interfacesData = this.interfacesToJSON(node.interfaces, true);
+                let interfacesData = this.interfacesToJSON(node.interfaces, true);
                 return _.any(initialInterfacesData, (ifcData, index) => {
                     return _.any(ifcData, (data, attribute) => {
                         if (attribute == 'slaves') {
@@ -135,7 +135,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             }, this)).done(_.bind(function() {
                 this.setState({actionInProgress: false});
             }, this)).fail(_.bind(function(response) {
-                var errorNS = ns + 'configuration_error.';
+                let errorNS = ns + 'configuration_error.';
                 utils.showErrorDialog({
                     title: i18n(errorNS + 'title'),
                     message: i18n(errorNS + 'load_defaults_warning'),
@@ -149,7 +149,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         applyChanges: function() {
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
-            var nodes = this.props.nodes,
+            let nodes = this.props.nodes,
                 interfaces = this.props.interfaces,
                 bonds = interfaces.filter((ifc) => ifc.isBond()),
                 bondsByName = bonds.reduce((result, bond) => {
@@ -160,12 +160,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             // bonding map contains indexes of slave interfaces
             // it is needed to build the same configuration for all the nodes
             // as interface names might be different, so we use indexes
-            var bondingMap = _.map(bonds,
+            let bondingMap = _.map(bonds,
                 (bond) => _.map(bond.get('slaves'), (slave) => interfaces.indexOf(interfaces.find(slave)))
             );
             this.setState({actionInProgress: true});
             return $.when(...nodes.map(function(node) {
-                var oldNodeBonds, nodeBonds;
+                let oldNodeBonds, nodeBonds;
                 // removing previously configured bonds
                 oldNodeBonds = node.interfaces.filter(function(ifc) {return ifc.isBond();});
                 node.interfaces.remove(oldNodeBonds);
@@ -176,20 +176,20 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 node.interfaces.add(nodeBonds);
                 // determining slaves using bonding map
                 _.each(nodeBonds, function(bond, bondIndex) {
-                    var slaveIndexes = bondingMap[bondIndex],
+                    let slaveIndexes = bondingMap[bondIndex],
                         slaveInterfaces = _.map(slaveIndexes, node.interfaces.at, node.interfaces);
                     bond.set({slaves: _.invoke(slaveInterfaces, 'pick', 'name')});
                 });
 
                 // Assigning networks according to user choice and interface properties
                 node.interfaces.each(function(ifc, index) {
-                    var updatedIfc = ifc.isBond() ? bondsByName[ifc.get('name')] : interfaces.at(index);
+                    let updatedIfc = ifc.isBond() ? bondsByName[ifc.get('name')] : interfaces.at(index);
                     ifc.set({
                         assigned_networks: new models.InterfaceNetworks(updatedIfc.get('assigned_networks').toJSON()),
                         interface_properties: updatedIfc.get('interface_properties')
                     });
                     if (ifc.isBond()) {
-                        var bondProperties = ifc.get('bond_properties');
+                        let bondProperties = ifc.get('bond_properties');
                         ifc.set({bond_properties: _.extend(bondProperties, {type__:
                             this.getBondType() == 'linux' ? 'linux' : 'ovs'})});
                     }
@@ -207,7 +207,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     dispatcher.trigger('networkConfigurationUpdated');
                 }, this))
                 .fail(function(response) {
-                    var errorNS = ns + 'configuration_error.';
+                    let errorNS = ns + 'configuration_error.';
 
                     utils.showErrorDialog({
                         title: i18n(errorNS + 'title'),
@@ -222,13 +222,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return !_.isEmpty(this.props.cluster.get('networkConfiguration').get('networking_parameters').get('configuration_template'));
         },
         bondingAvailable: function() {
-            var availableBondTypes = this.getBondType();
+            let availableBondTypes = this.getBondType();
             return !!availableBondTypes && !this.configurationTemplateExists();
         },
         getBondType: function() {
             return _.compact(_.flatten(_.map(this.props.bondingConfig.availability, function(modeAvailabilityData) {
                 return _.map(modeAvailabilityData, function(condition, name) {
-                    var result = utils.evaluateExpression(condition, this.props.configModels).value;
+                    let result = utils.evaluateExpression(condition, this.props.configModels).value;
                     return result && name;
                 }, this);
             }, this)))[0];
@@ -252,7 +252,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 this);
         },
         getIntersectedOffloadingModes: function(interfaces) {
-            var offloadingModes = interfaces.map(function(ifc) {
+            let offloadingModes = interfaces.map(function(ifc) {
                 return ifc.get('offloading_modes') || [];
             });
             if (!offloadingModes.length) return [];
@@ -265,7 +265,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         bondInterfaces: function() {
             this.setState({actionInProgress: true});
-            var interfaces = this.props.interfaces.filter(function(ifc) {
+            let interfaces = this.props.interfaces.filter(function(ifc) {
                     return ifc.get('checked') && !ifc.isBond();
                 }),
                 bonds = this.props.interfaces.find(function(ifc) {
@@ -275,7 +275,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             if (!bonds) {
                 // if no bond selected - create new one
-                var bondMode = _.flatten(_.pluck(bondingProperties[this.getBondType()].mode, 'values'))[0];
+                let bondMode = _.flatten(_.pluck(bondingProperties[this.getBondType()].mode, 'values'))[0];
                 bonds = new models.Interface({
                     type: 'bond',
                     name: this.props.interfaces.generateBondName(this.getBondType() == 'linux' ? 'bond' : 'ovs-bond'),
@@ -316,7 +316,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             this.setState({actionInProgress: false});
         },
         removeInterfaceFromBond: function(bondName, slaveInterfaceName) {
-            var networks = this.props.cluster.get('networkConfiguration').get('networks'),
+            let networks = this.props.cluster.get('networkConfiguration').get('networks'),
                 bond = this.props.interfaces.find({name: bondName}),
                 slaves = bond.get('slaves'),
                 bondHasUnmovableNetwork = bond.get('assigned_networks').any(
@@ -329,7 +329,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             // if PXE interface is being removed - place networks there
             if (bondHasUnmovableNetwork) {
-                var pxeInterface = this.props.interfaces.find(function(ifc) {
+                let pxeInterface = this.props.interfaces.find(function(ifc) {
                     return ifc.get('pxe') && _.contains(slaveInterfaceNames, ifc.get('name'));
                 });
                 if (!slaveInterfaceName || pxeInterface && pxeInterface.get('name') == slaveInterfaceName) {
@@ -339,7 +339,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             // if slaveInterfaceName is set - remove it from slaves, otherwise remove all
             if (slaveInterfaceName) {
-                var slavesUpdated = _.reject(slaves, {name: slaveInterfaceName}),
+                let slavesUpdated = _.reject(slaves, {name: slaveInterfaceName}),
                     names = _.pluck(slavesUpdated, 'name'),
                     bondSlaveInterfaces = this.props.interfaces.filter(function(ifc) {
                         return _.contains(names, ifc.get('name'));
@@ -360,7 +360,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             // move networks if needed
             if (targetInterface !== bond) {
-                var interfaceNetworks = bond.get('assigned_networks').remove(
+                let interfaceNetworks = bond.get('assigned_networks').remove(
                     bond.get('assigned_networks').models
                 );
                 targetInterface.get('assigned_networks').add(interfaceNetworks);
@@ -372,7 +372,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             }
         },
         validate: function() {
-            var interfaceErrors = {},
+            let interfaceErrors = {},
                 validationResult,
                 networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
@@ -394,8 +394,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             }
         },
         validateSpeedsForBonding: function(interfaces) {
-            var slaveInterfaces = _.flatten(_.invoke(interfaces, 'getSlaveInterfaces'), true);
-            var speeds = _.invoke(slaveInterfaces, 'get', 'current_speed');
+            let slaveInterfaces = _.flatten(_.invoke(interfaces, 'getSlaveInterfaces'), true);
+            let speeds = _.invoke(slaveInterfaces, 'get', 'current_speed');
             // warn if not all speeds are the same or there are interfaces with unknown speed
             return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
         },
@@ -403,11 +403,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return !_.chain(this.state.interfaceErrors).values().some().value() && !this.state.actionInProgress && this.hasChanges();
         },
         getIfcProperty: function(property) {
-            var {interfaces, nodes} = this.props,
+            let {interfaces, nodes} = this.props,
                 bondsCount = interfaces.filter((ifc) => ifc.isBond()).length,
                 getPropertyValues = function(ifcIndex) {
                     return _.uniq(nodes.map((node) => {
-                        var nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length,
+                        let nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length,
                             nodeInterface = node.interfaces.at(ifcIndex + nodeBondsCount);
                         if (property == 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
                         return nodeInterface.get(property);
@@ -423,7 +423,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             });
         },
         render: function() {
-            var nodes = this.props.nodes,
+            let nodes = this.props.nodes,
                 nodeNames = nodes.pluck('name'),
                 interfaces = this.props.interfaces,
                 locked = this.isLocked(),
@@ -443,7 +443,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     return ifc.isBond() && this.validateSpeedsForBonding([ifc]);
                 }, this);
 
-            var interfaceSpeeds = this.getIfcProperty('current_speed'),
+            let interfaceSpeeds = this.getIfcProperty('current_speed'),
                 interfaceNames = this.getIfcProperty('name');
 
             return (
@@ -480,7 +480,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     }
                     <div className='ifc-list col-xs-12'>
                         {interfaces.map(_.bind(function(ifc, index) {
-                            var ifcName = ifc.get('name');
+                            let ifcName = ifc.get('name');
                             if (!_.contains(slaveInterfaceNames, ifcName)) return (
                                 <NodeInterfaceDropTarget {...this.props}
                                     key={'interface-' + ifcName}
@@ -526,13 +526,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         }
     });
 
-    var NodeInterface = React.createClass({
+    let NodeInterface = React.createClass({
         statics: {
             target: {
                 drop: function(props, monitor) {
-                    var targetInterface = props.interface;
-                    var sourceInterface = props.interfaces.findWhere({name: monitor.getItem().interfaceName});
-                    var network = sourceInterface.get('assigned_networks').findWhere({name: monitor.getItem().networkName});
+                    let targetInterface = props.interface;
+                    let sourceInterface = props.interfaces.findWhere({name: monitor.getItem().interfaceName});
+                    let network = sourceInterface.get('assigned_networks').findWhere({name: monitor.getItem().networkName});
                     sourceInterface.get('assigned_networks').remove(network);
                     targetInterface.get('assigned_networks').add(network);
                     // trigger 'change' event to update screen buttons state
@@ -569,14 +569,14 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return _.contains(this.getBondPropertyValues('xmit_hash_policy', 'for_modes'), this.getBondMode());
         },
         getBondMode: function() {
-            var ifc = this.props.interface;
+            let ifc = this.props.interface;
             return ifc.get('mode') || (ifc.get('bond_properties') || {}).mode;
         },
         getAvailableBondingModes: function() {
-            var modes = this.props.bondingProperties[this.props.bondType].mode;
-            var configModels = _.clone(this.props.configModels);
-            var availableModes = [];
-            var interfaces = this.props.interface.isBond() ? this.props.interface.getSlaveInterfaces() : [this.props.interface];
+            let modes = this.props.bondingProperties[this.props.bondType].mode;
+            let configModels = _.clone(this.props.configModels);
+            let availableModes = [];
+            let interfaces = this.props.interface.isBond() ? this.props.interface.getSlaveInterfaces() : [this.props.interface];
             _.each(interfaces, function(ifc) {
                 configModels.interface = ifc;
                 availableModes.push(_.reduce(modes, function(result, modeSet) {
@@ -587,11 +587,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return _.intersection(...availableModes);
         },
         getBondPropertyValues: function(propertyName, value) {
-            var bondType = this.props.bondType;
+            let bondType = this.props.bondType;
             return _.flatten(_.pluck(this.props.bondingProperties[bondType][propertyName], value));
         },
         updateBondProperties: function(options) {
-            var bondProperties = _.cloneDeep(this.props.interface.get('bond_properties')) || {};
+            let bondProperties = _.cloneDeep(this.props.interface.get('bond_properties')) || {};
             bondProperties = _.extend(bondProperties, options);
             if (!this.isHashPolicyNeeded()) bondProperties = _.omit(bondProperties, 'xmit_hash_policy');
             if (!this.isLacpRateAvailable()) bondProperties = _.omit(bondProperties, 'lacp_rate');
@@ -628,24 +628,24 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             }, this);
         },
         toggleOffloading: function() {
-            var interfaceProperties = this.props.interface.get('interface_properties'),
+            let interfaceProperties = this.props.interface.get('interface_properties'),
                 name = 'disable_offloading';
             this.onInterfacePropertiesChange(name, !interfaceProperties[name]);
         },
         onInterfacePropertiesChange: function(name, value) {
             function convertToNullIfNaN(value) {
-                var convertedValue = parseInt(value, 10);
+                let convertedValue = parseInt(value, 10);
                 return _.isNaN(convertedValue) ? null : convertedValue;
             }
             if (name == 'mtu') {
                 value = convertToNullIfNaN(value);
             }
-            var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
+            let interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
             interfaceProperties[name] = value;
             this.props.interface.set('interface_properties', interfaceProperties);
         },
         render: function() {
-            var ifc = this.props.interface,
+            let ifc = this.props.interface,
                 cluster = this.props.cluster,
                 locked = this.props.locked,
                 availableBondingModes = ifc.isBond() ? this.getAvailableBondingModes() : [],
@@ -655,7 +655,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 slaveInterfaces = ifc.getSlaveInterfaces(),
                 assignedNetworks = ifc.get('assigned_networks'),
                 connectionStatusClasses = function(slave) {
-                    var slaveDown = slave.get('state') == 'down';
+                    let slaveDown = slave.get('state') == 'down';
                     return {
                         'ifc-connection-status': true,
                         'ifc-online': !slaveDown,
@@ -773,7 +773,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     <div className='ifc-networks'>
                                         {assignedNetworks.length ?
                                             assignedNetworks.map(function(interfaceNetwork) {
-                                                var network = interfaceNetwork.getFullNetwork(networks);
+                                                let network = interfaceNetwork.getFullNetwork(networks);
                                                 if (!network) return;
                                                 return <DraggableNetwork
                                                     key={'network-' + network.id}
@@ -822,9 +822,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             );
         }
     });
-    var NodeInterfaceDropTarget = DND.DropTarget('network', NodeInterface.target, NodeInterface.collect)(NodeInterface);
+    let NodeInterfaceDropTarget = DND.DropTarget('network', NodeInterface.target, NodeInterface.collect)(NodeInterface);
 
-    var Network = React.createClass({
+    let Network = React.createClass({
         statics: {
             source: {
                 beginDrag: function(props) {
@@ -845,7 +845,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             }
         },
         render: function() {
-            var network = this.props.network,
+            let network = this.props.network,
                 interfaceNetwork = this.props.interfaceNetwork,
                 networkingParameters = this.props.networkingParameters,
                 classes = {
@@ -870,7 +870,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             );
         }
     });
-    var DraggableNetwork = DND.DragSource('network', Network.source, Network.collect)(Network);
+    let DraggableNetwork = DND.DragSource('network', Network.source, Network.collect)(Network);
 
     return EditNodeInterfacesScreen;
 });

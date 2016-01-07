@@ -29,7 +29,7 @@ define(
 function($, _, i18n, React, utils, models, componentMixins, controls, PureRenderMixin, ReactFragment) {
     'use strict';
 
-    var LogsTab = React.createClass({
+    let LogsTab = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5)
         ],
@@ -37,7 +37,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             return this.state.to && this.state.logsEntries;
         },
         fetchData: function() {
-            var request,
+            let request,
                 logsEntries = this.state.logsEntries,
                 from = this.state.from,
                 to = this.state.to;
@@ -72,13 +72,13 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
         },
         showLogs: function(params) {
             this.stopPolling();
-            var logOptions = this.props.selectedLogs.type == 'remote' ? _.extend({}, this.props.selectedLogs) : _.omit(this.props.selectedLogs, 'node');
+            let logOptions = this.props.selectedLogs.type == 'remote' ? _.extend({}, this.props.selectedLogs) : _.omit(this.props.selectedLogs, 'node');
             logOptions.level = logOptions.level.toLowerCase();
             app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(logOptions), {trigger: false, replace: true});
             params = params || {};
             this.fetchLogs(params)
                 .done(_.bind(function(data) {
-                    var logsEntries = this.state.logsEntries || [];
+                    let logsEntries = this.state.logsEntries || [];
                     this.setState({
                         showMoreLogsLink: data.has_more || false,
                         logsEntries: params.fetch_older ? logsEntries.concat(data.entries) : data.entries,
@@ -135,7 +135,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
         }
     });
 
-    var LogFilterBar = React.createClass({
+    let LogFilterBar = React.createClass({
         // PureRenderMixin added for prevention the rerender LogFilterBar (because of polling) in Mozilla browser
         mixins: [PureRenderMixin],
         getInitialState: function() {
@@ -147,7 +147,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             });
         },
         fetchSources: function(type, nodeId) {
-            var nodes = this.props.nodes,
+            let nodes = this.props.nodes,
                 chosenNodeId = nodeId || (nodes.length ? nodes.first().id : null);
             this.sources = new models.LogSources();
             this.sources.deferred = (type == 'remote' && chosenNodeId) ?
@@ -155,7 +155,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             :
                 this.sources.fetch();
             this.sources.deferred.done(_.bind(function() {
-                var filteredSources = this.sources.filter(function(source) {return source.get('remote') == (type != 'local');}),
+                let filteredSources = this.sources.filter(function(source) {return source.get('remote') == (type != 'local');}),
                     chosenSource = _.findWhere(filteredSources, {id: this.state.source}) || _.first(filteredSources),
                     chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.level) ? this.state.level : _.first(chosenSource.get('levels')) : null;
                 this.setState({
@@ -199,7 +199,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             });
         },
         onSourceChange: function(name, value) {
-            var levels = this.state.sources.get(value).get('levels'),
+            let levels = this.state.sources.get(value).get('levels'),
                 data = {locked: false, source: value};
             if (!_.contains(levels, this.state.level)) data.level = _.first(levels);
             this.setState(data);
@@ -212,13 +212,13 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             }, this);
         },
         getRemoteSources: function() {
-            var options = {},
+            let options = {},
                 groups = [''],
                 sourcesByGroup = {'': []},
                 sources = this.state.sources;
             if (sources.length) {
                 sources.each(function(source) {
-                    var group = source.get('group') || '';
+                    let group = source.get('group') || '';
                     if (!_.has(sourcesByGroup, group)) {
                         sourcesByGroup[group] = [];
                         groups.push(group);
@@ -227,7 +227,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
                 });
                 _.each(groups, function(group) {
                     if (sourcesByGroup[group].length) {
-                        var option = sourcesByGroup[group].map(function(source) {
+                        let option = sourcesByGroup[group].map(function(source) {
                             return <option value={source.id} key={source.id}>{source.get('name')}</option>;
                         }, this);
                         options[group] = group ? <optgroup label={group}>{option}</optgroup> : option;
@@ -242,7 +242,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             this.props.onShowButtonClick();
         },
         render: function() {
-            var isRemote = this.state.type == 'remote';
+            let isRemote = this.state.type == 'remote';
             return (
                 <div className='well well-sm'>
                     <div className='sticker row'>
@@ -277,11 +277,11 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             </div>;
         },
         renderTypeSelect: function() {
-            var types = [['local', 'Fuel Master']];
+            let types = [['local', 'Fuel Master']];
             if (this.props.nodes.length) {
                 types.push(['remote', 'Other servers']);
             }
-            var typeOptions = types.map(function(type) {
+            let typeOptions = types.map(function(type) {
                 return <option value={type[0]} key={type[0]}>{type[1]}</option>;
             });
             return <div className='col-md-2 col-sm-3'>
@@ -297,7 +297,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             </div>;
         },
         renderNodeSelect: function() {
-            var sortedNodes = this.props.nodes.models.sort(_.partialRight(utils.compare, {attr: 'name'})),
+            let sortedNodes = this.props.nodes.models.sort(_.partialRight(utils.compare, {attr: 'name'})),
                 nodeOptions = sortedNodes.map(function(node) {
                     return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
                 });
@@ -315,7 +315,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             </div>;
         },
         renderSourceSelect: function() {
-            var sourceOptions = this.state.type == 'local' ? this.getLocalSources() : this.getRemoteSources();
+            let sourceOptions = this.state.type == 'local' ? this.getLocalSources() : this.getRemoteSources();
             return <div className='col-md-2 col-sm-3'>
                 <controls.Input
                     type='select'
@@ -330,7 +330,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             </div>;
         },
         renderLevelSelect: function() {
-            var levelOptions = [];
+            let levelOptions = [];
             if (this.state.source && this.state.sources.length) {
                 levelOptions = this.state.sources.get(this.state.source).get('levels').map(function(level) {
                     return <option value={level} key={level}>{level}</option>;
@@ -351,7 +351,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
         }
     });
 
-    var LogsTable = React.createClass({
+    let LogsTable = React.createClass({
         handleShowMoreClick: function(value) { return this.props.onShowMoreClick(value); },
         getLevelClass: function(level) {
             return {
@@ -368,13 +368,13 @@ function($, _, i18n, React, utils, models, componentMixins, controls, PureRender
             }[level];
         },
         render: function() {
-            var tabRows = [],
+            let tabRows = [],
                 logsEntries = this.props.logsEntries;
             if (logsEntries && logsEntries.length) {
                 tabRows = _.map(
                     logsEntries,
                     function(entry, index) {
-                        var key = logsEntries.length - index;
+                        let key = logsEntries.length - index;
                         return <tr key={key} className={this.getLevelClass(entry[1])}>
                             <td>{entry[0]}</td>
                             <td>{entry[1]}</td>

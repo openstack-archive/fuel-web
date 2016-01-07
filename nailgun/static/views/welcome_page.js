@@ -25,7 +25,7 @@ define(
 function(_, i18n, React, models, componentMixins, statisticsMixin) {
     'use strict';
 
-    var WelcomePage = React.createClass({
+    let WelcomePage = React.createClass({
         mixins: [
             statisticsMixin,
             componentMixins.backboneMixin('tracking', 'change invalid')
@@ -35,7 +35,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             hiddenLayout: true,
             fetchData: function() {
                 return app.fuelSettings.fetch().then(function() {
-                    var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
+                    let tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
                     tracking.processRestrictions();
                     return {
                         settings: app.fuelSettings,
@@ -46,7 +46,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
         },
         onStartButtonClick: function() {
             this.clearRegistrationForm();
-            var statistics = this.props.tracking.get('statistics'),
+            let statistics = this.props.tracking.get('statistics'),
                 currentAttributes = _.cloneDeep(this.props.settings.attributes);
             statistics.user_choice_saved.value = true;
             // locked state is similar to actionInProgress but
@@ -63,13 +63,13 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                 }, this));
         },
         render: function() {
-            var ns = 'welcome_page.',
+            let ns = 'welcome_page.',
                 featureGroups = app.version.get('feature_groups'),
                 isMirantisIso = _.contains(featureGroups, 'mirantis'),
                 statsCollectorLink = 'https://stats.fuel-infra.org/',
                 privacyPolicyLink = 'https://www.mirantis.com/company/privacy-policy/',
                 username = this.props.settings.get('statistics').name.value;
-            var disabled = this.state.actionInProgress || this.state.locked,
+            let disabled = this.state.actionInProgress || this.state.locked,
                 buttonProps = {
                     disabled: disabled,
                     onClick: this.onStartButtonClick,

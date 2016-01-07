@@ -28,7 +28,7 @@ define(
 function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) {
     'use strict';
 
-    var SupportPage = React.createClass({
+    let SupportPage = React.createClass({
         mixins: [
             componentMixins.backboneMixin('tasks')
         ],
@@ -37,9 +37,9 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             navbarActiveElement: 'support',
             breadcrumbsPath: [['home', '#'], 'support'],
             fetchData: function() {
-                var tasks = new models.Tasks();
+                let tasks = new models.Tasks();
                 return $.when(app.fuelSettings.fetch({cache: true}), tasks.fetch()).then(function() {
-                    var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes)),
+                    let tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes)),
                         statistics = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
                     return {
                         tasks: tasks,
@@ -51,7 +51,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             }
         },
         render: function() {
-            var elements = [
+            let elements = [
                 <DocumentationLink key='DocumentationLink' />,
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
                 <CapacityAudit key='CapacityAudit' />
@@ -82,7 +82,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var SupportPageElement = React.createClass({
+    let SupportPageElement = React.createClass({
         render: function() {
             return (
                 <div className='support-box'>
@@ -97,9 +97,9 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var DocumentationLink = React.createClass({
+    let DocumentationLink = React.createClass({
         render: function() {
-            var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
+            let ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
             return (
                 <SupportPageElement
                     className='img-documentation-link'
@@ -116,7 +116,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var RegistrationInfo = React.createClass({
+    let RegistrationInfo = React.createClass({
         mixins: [
             statisticsMixin,
             componentMixins.backboneMixin('tracking', 'change invalid')
@@ -161,14 +161,14 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var StatisticsSettings = React.createClass({
+    let StatisticsSettings = React.createClass({
         mixins: [
             statisticsMixin,
             componentMixins.backboneMixin('statistics'),
             componentMixins.unsavedChangesMixin
         ],
         hasChanges: function() {
-            var initialData = this.props.settings.get('statistics'),
+            let initialData = this.props.settings.get('statistics'),
                 currentData = this.props.statistics.get('statistics');
             return _.any(this.props.statsCheckboxes, function(field) {
                 return !_.isEqual(initialData[field].value, currentData[field].value);
@@ -181,7 +181,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             return this.isSavingPossible() ? this.prepareStatisticsToSave() : $.Deferred().resolve();
         },
         render: function() {
-            var statistics = this.props.statistics.get('statistics'),
+            let statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
                     .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
@@ -211,7 +211,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var SupportContacts = React.createClass({
+    let SupportContacts = React.createClass({
         render: function() {
             return (
                 <SupportPageElement
@@ -230,7 +230,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var DiagnosticSnapshot = React.createClass({
+    let DiagnosticSnapshot = React.createClass({
         mixins: [
             componentMixins.backboneMixin('task'),
             componentMixins.pollingMixin(2)
@@ -257,7 +257,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             this.startPolling();
         },
         render: function() {
-            var task = this.props.task,
+            let task = this.props.task,
                 generating = this.state.generating;
             return (
                 <SupportPageElement
@@ -287,7 +287,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
         }
     });
 
-    var CapacityAudit = React.createClass({
+    let CapacityAudit = React.createClass({
         render: function() {
             return (
                 <SupportPageElement

@@ -26,7 +26,7 @@ define(
 function(_, i18n, React, utils, models, dialogs, componentMixins) {
     'use strict';
 
-    var NotificationsPage, Notification;
+    let NotificationsPage, Notification;
 
     NotificationsPage = React.createClass({
         mixins: [componentMixins.backboneMixin('notifications')],
@@ -35,18 +35,18 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
             navbarActiveElement: null,
             breadcrumbsPath: [['home', '#'], 'notifications'],
             fetchData: function() {
-                var notifications = app.notifications;
+                let notifications = app.notifications;
                 return notifications.fetch().then(function() {
                     return {notifications: notifications};
                 });
             }
         },
         checkDateIsToday: function(date) {
-            var today = new Date();
+            let today = new Date();
             return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
         },
         render: function() {
-            var notificationGroups = this.props.notifications.groupBy('date');
+            let notificationGroups = this.props.notifications.groupBy('date');
             return (
                 <div className='notifications-page'>
                     <div className='page-title'>
@@ -77,12 +77,12 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
     Notification = React.createClass({
         mixins: [componentMixins.backboneMixin('notification')],
         showNodeInfo: function(id) {
-            var node = new models.Node({id: id});
+            let node = new models.Node({id: id});
             node.fetch();
             dialogs.ShowNodeInfoDialog.show({node: node});
         },
         markAsRead: function() {
-            var notification = this.props.notification;
+            let notification = this.props.notification;
             notification.toJSON = function() {
                 return notification.pick('id', 'status');
             };
@@ -92,13 +92,13 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
             if (this.props.notification.get('status') == 'unread') {
                 this.markAsRead();
             }
-            var nodeId = this.props.notification.get('node_id');
+            let nodeId = this.props.notification.get('node_id');
             if (nodeId) {
                 this.showNodeInfo(nodeId);
             }
         },
         render: function() {
-            var topic = this.props.notification.get('topic'),
+            let topic = this.props.notification.get('topic'),
                 notificationClasses = {
                     'col-xs-12 notification': true,
                     'text-danger': topic == 'error',

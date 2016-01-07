@@ -24,10 +24,10 @@ define(
 function($, _, React, models, NodeListScreen) {
     'use strict';
 
-    var AddNodesScreen = React.createClass({
+    let AddNodesScreen = React.createClass({
         statics: {
             fetchData: function(options) {
-                var nodes = new models.Nodes();
+                let nodes = new models.Nodes();
                 nodes.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
                 };

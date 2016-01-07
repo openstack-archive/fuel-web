@@ -29,7 +29,7 @@ define([
 ], function(require, $, _, i18n, Backbone, classNames, naturalSort, Expression, expressionObjects, React, IP) {
     'use strict';
 
-    var utils = {
+    let utils = {
         regexes: {
             url: /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?[\w\/_\-\.&%]*)?(#[\w\/_\-\.&%]*)?)?)?)/,
             ip: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
@@ -47,7 +47,7 @@ define([
             }));
         },
         getNodeListFromTabOptions: function(options) {
-            var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
+            let nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
                 ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
                 models = require('models'),
                 nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
@@ -75,12 +75,12 @@ define([
         },
         classNames: classNames,
         parseModelPath: function(path, models) {
-            var modelPath = new expressionObjects.ModelPath(path);
+            let modelPath = new expressionObjects.ModelPath(path);
             modelPath.setModel(models);
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
-            var compiledExpression = new Expression(expression, models, options),
+            let compiledExpression = new Expression(expression, models, options),
                 value = compiledExpression.evaluate();
             return {
                 value: value,
@@ -88,7 +88,7 @@ define([
             };
         },
         expandRestriction: function(restriction) {
-            var result = {
+            let result = {
                 action: 'disable',
                 message: null
             };
@@ -107,7 +107,7 @@ define([
             return result;
         },
         showErrorDialog: function(options) {
-            var dialogs = require('views/dialogs'); // avoid circular dependencies
+            let dialogs = require('views/dialogs'); // avoid circular dependencies
             options.message = options.response ? utils.getResponseText(options.response) :
                 options.message || i18n('dialog.error_dialog.server_error');
             dialogs.ErrorDialog.show(options);
@@ -120,17 +120,17 @@ define([
         showFrequency: function(frequency) {
             frequency = parseInt(frequency, 10);
             if (!_.isNumber(frequency) || _.isNaN(frequency)) {return i18n('common.not_available');}
-            var base = 1000;
-            var treshold = 1000;
+            let base = 1000;
+            let treshold = 1000;
             return (frequency >= treshold ? (frequency / base).toFixed(2) + ' GHz' : frequency + ' MHz');
         },
         showSize: function(bytes, treshold) {
             bytes = parseInt(bytes, 10);
             if (!_.isNumber(bytes) || _.isNaN(bytes)) {return i18n('common.not_available');}
-            var base = 1024;
+            let base = 1024;
             treshold = treshold || 256;
-            var units = ['byte', 'kb', 'mb', 'gb', 'tb'];
-            var i, result, unit = 'tb';
+            let units = ['byte', 'kb', 'mb', 'gb', 'tb'];
+            let i, result, unit = 'tb';
             for (i = 0; i < units.length; i += 1) {
                 result = bytes / Math.pow(base, i);
                 if (result < treshold) {
@@ -162,7 +162,7 @@ define([
             return _.isNumber(n) && n > 0 && n % 1 === 0;
         },
         validateVlan: function(vlan, forbiddenVlans, field, disallowNullValue) {
-            var error = {};
+            let error = {};
             if ((_.isNull(vlan) && disallowNullValue) || (!_.isNull(vlan) && (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094))) {
                 error[field] = i18n('cluster_page.network_tab.validation.invalid_vlan');
                 return error;
@@ -174,11 +174,11 @@ define([
         },
         validateCidr: function(cidr, field) {
             field = field || 'cidr';
-            var error = {}, match;
+            let error = {}, match;
             if (_.isString(cidr)) {
                 match = cidr.match(utils.regexes.cidr);
                 if (match) {
-                    var prefix = parseInt(match[1], 10);
+                    let prefix = parseInt(match[1], 10);
                     if (prefix < 2) {
                         error[field] = i18n('cluster_page.network_tab.validation.large_network');
                     } else if (prefix > 30) {
@@ -196,7 +196,7 @@ define([
             return _.isString(ip) && !!ip.match(utils.regexes.ip);
         },
         validateIPRanges: function(ranges, cidr, existingRanges = [], warnings = {}) {
-            var ipRangesErrors = [],
+            let ipRangesErrors = [],
                 ns = 'cluster_page.network_tab.validation.';
             _.defaults(warnings, {
                 INVALID_IP: i18n(ns + 'invalid_ip'),
@@ -209,7 +209,7 @@ define([
             if (_.any(ranges, (range) => _.compact(range).length)) {
                 _.each(ranges, (range, index) => {
                     if (_.any(range)) {
-                        var error = {};
+                        let error = {};
 
                         if (!utils.validateIP(range[0])) {
                             error.start = warnings.INVALID_IP;
@@ -229,7 +229,7 @@ define([
                             } else if (_.isUndefined(cidr)) {
                                 error.start = error.end = warnings.IP_RANGE_IS_NOT_IN_PUBLIC_CIDR;
                             } else if (existingRanges.length) {
-                                var intersection = utils.checkIPRangesIntersection(range, existingRanges);
+                                let intersection = utils.checkIPRangesIntersection(range, existingRanges);
                                 if (intersection) {
                                     error.start = error.end = warnings.IP_RANGES_INTERSECTION + intersection.join(' - ');
                                 }
@@ -251,13 +251,13 @@ define([
             return ipRangesErrors;
         },
         checkIPRangesIntersection: function([startIP, endIP], existingRanges) {
-            var startIPInt = IP.toLong(startIP),
+            let startIPInt = IP.toLong(startIP),
                 endIPInt = IP.toLong(endIP);
             return _.find(existingRanges, ([ip1, ip2]) => IP.toLong(ip2) >= startIPInt && IP.toLong(ip1) <= endIPInt);
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
             if (!cidr) return true;
-            var networkData = IP.cidrSubnet(cidr),
+            let networkData = IP.cidrSubnet(cidr),
                 ipInt = IP.toLong(ip);
             return ipInt >= IP.toLong(networkData.firstAddress) && ipInt <= IP.toLong(networkData.lastAddress);
         },
@@ -270,9 +270,9 @@ define([
         },
         getDefaultIPRangeForCidr: function(cidr, excludeGateway) {
             if (!_.isEmpty(utils.validateCidr(cidr))) return [['', '']];
-            var networkData = IP.cidrSubnet(cidr);
+            let networkData = IP.cidrSubnet(cidr);
             if (excludeGateway) {
-                var startIPInt = IP.toLong(networkData.firstAddress);
+                let startIPInt = IP.toLong(networkData.firstAddress);
                 startIPInt++;
                 return [[IP.fromLong(startIPInt), networkData.lastAddress]];
             }
@@ -280,15 +280,15 @@ define([
         },
         sortEntryProperties: function(entry, sortOrder) {
             sortOrder = sortOrder || ['name'];
-            var properties = _.keys(entry);
+            let properties = _.keys(entry);
             return _.sortBy(properties, function(property) {
-                var index = _.indexOf(sortOrder, property);
+                let index = _.indexOf(sortOrder, property);
                 return index == -1 ? properties.length : index;
             });
         },
         getResponseText: function(response, defaultText) {
-            var serverErrorMessage = defaultText || i18n('dialog.error_dialog.server_error');
-            var serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
+            let serverErrorMessage = defaultText || i18n('dialog.error_dialog.server_error');
+            let serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
             if (response && (!response.status || response.status >= 400)) {
                 if (!response.status || response.status == 502) return serverUnavailableMessage;
                 if (response.status == 500) return serverErrorMessage;
@@ -304,12 +304,12 @@ define([
             return '';
         },
         natsort: function(str1, str2, options = {}) {
-            var {insensitive, desc} = options;
+            let {insensitive, desc} = options;
             naturalSort.insensitive = insensitive;
             return naturalSort(str1, str2) * (desc ? -1 : 1);
         },
         multiSort: function(model1, model2, attributes) {
-            var result = utils.compare(model1, model2, attributes[0]);
+            let result = utils.compare(model1, model2, attributes[0]);
             if (result === 0 && attributes.length > 1) {
                 attributes.splice(0, 1);
                 result = utils.multiSort(model1, model2, attributes);
@@ -317,16 +317,16 @@ define([
             return result;
         },
         compare: function(model1, model2, options) {
-            var getValue = function(model) {
-                var attr = options.attr;
+            let getValue = function(model) {
+                let attr = options.attr;
                 return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
             };
-            var value1 = getValue(model1),
+            let value1 = getValue(model1),
                 value2 = getValue(model2);
             if (_.isString(value1) && _.isString(value2)) {
                 return utils.natsort(value1, value2, options);
             }
-            var result;
+            let result;
             if (_.isNumber(value1) && _.isNumber(value2)) {
                 result = value1 - value2;
             } else {
@@ -335,7 +335,7 @@ define([
             return options.desc ? -result : result;
         },
         composeDocumentationLink: function(link) {
-            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+            let isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
                 release = app.version.get('release'),
                 linkStart = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-' :
                     'https://docs.fuel-infra.org/openstack/fuel/fuel-';

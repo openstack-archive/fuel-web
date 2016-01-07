@@ -31,7 +31,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
             if (!options.force && this.tokenUpdateTime && (this.cacheTokenFor > (new Date() - this.tokenUpdateTime))) {
                 return $.Deferred().resolve();
             }
-            var data = {auth: {}};
+            let data = {auth: {}};
             if (username && password) {
                 data.auth.passwordCredentials = {
                     username: username,
@@ -70,7 +70,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
         }
 
         changePassword(currentPassword, newPassword) {
-            var data = {
+            let data = {
                 user: {
                     password: newPassword,
                     original_password: currentPassword
@@ -97,7 +97,7 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
         }
 
         deauthenticate() {
-            var token = this.token;
+            let token = this.token;
 
             if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
             if (!token) return $.Deferred().reject();

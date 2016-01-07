@@ -13,21 +13,17 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'utils',
-    'models',
-    'views/controls',
-    'component_mixins',
-    'views/dialogs'
-],
-($, _, i18n, Backbone, React, utils, models, controls, componentMixins, dialogs) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import Backbone from 'backbone';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import componentMixins from 'component_mixins';
+import controls from 'views/controls';
+import dialogs from 'views/dialogs';
 
     var components = {};
 
@@ -419,5 +415,4 @@ define(
         }
     });
 
-    return components;
-});
+    export default components;

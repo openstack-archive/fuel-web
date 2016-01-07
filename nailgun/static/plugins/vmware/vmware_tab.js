@@ -13,20 +13,14 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
-define(
-[
-    'react',
-    'jquery',
-    'i18n',
-    'underscore',
-    'dispatcher',
-    'utils',
-    'views/controls',
-    'component_mixins',
-    'plugins/vmware/vmware_models'
-], (React, $, i18n, _, dispatcher, utils, controls, componentMixins, vmwareModels) => {
-    'use strict';
+import React from 'react';
+import $ from 'jquery';
+import i18n from 'i18n';
+import _ from 'underscore';
+import dispatcher from 'dispatcher';
+import controls from 'views/controls';
+import componentMixins from 'component_mixins';
+import VmWareModels from 'plugins/vmware/vmware_models';
 
     var Field = React.createClass({
         onChange(name, value) {
@@ -65,7 +59,7 @@ define(
     var FieldGroup = React.createClass({
         render() {
             var restrictions = this.props.model.testRestrictions();
-            var metadata = _.filter(this.props.model.get('metadata'), vmwareModels.isRegularField);
+            var metadata = _.filter(this.props.model.get('metadata'), VmWareModels.isRegularField);
             var fields = metadata.map(function(meta) {
                 return (
                     <Field
@@ -180,7 +174,7 @@ define(
         renderFields() {
             var model = this.props.model,
                 meta = model.get('metadata');
-            meta = _.filter(meta, vmwareModels.isRegularField);
+            meta = _.filter(meta, VmWareModels.isRegularField);
             return (
                 <FieldGroup model={model} disabled={this.props.isLocked || this.props.disabled}/>
             );
@@ -274,7 +268,7 @@ define(
         }
     });
 
-    var VCenter = React.createClass({
+    var VmWareTab = React.createClass({
         mixins: [
             componentMixins.unsavedChangesMixin
         ],
@@ -284,7 +278,7 @@ define(
             },
             fetchData(options) {
                 if (!options.cluster.get('vcenter_defaults')) {
-                    var defaultModel = new vmwareModels.VCenter({id: options.cluster.id});
+                    var defaultModel = new VmWareModels.VCenter({id: options.cluster.id});
                     defaultModel.loadDefaults = true;
                     options.cluster.set({vcenter_defaults: defaultModel});
                 }
@@ -440,5 +434,5 @@ define(
             );
         }
     });
-    return VCenter;
-});
+
+    export default VmWareTab;

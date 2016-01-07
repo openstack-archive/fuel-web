@@ -13,16 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'jquery',
-    'underscore',
-    'react',
-    'i18n',
-    'utils'
-],
-($, _, React, i18n, utils) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.',
         OffloadingModesControl = React.createClass({
@@ -188,5 +182,4 @@ define(
         }
     });
 
-    return OffloadingModesControl;
-});
+    export default OffloadingModesControl;

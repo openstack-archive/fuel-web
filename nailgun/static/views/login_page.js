@@ -13,18 +13,14 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'react-dom',
-    'dispatcher',
-    'utils'
-],
-($, _, i18n, React, ReactDOM, dispatcher, utils) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import utils from 'utils';
+import dispatcher from 'dispatcher';
 
     var LoginPage = React.createClass({
         statics: {
@@ -172,5 +168,4 @@ define(
         }
     });
 
-    return LoginPage;
-});
+    export default LoginPage;

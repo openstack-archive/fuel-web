@@ -13,17 +13,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'underscore',
-    'i18n',
-    'react',
-    'models',
-    'component_mixins',
-    'views/statistics_mixin'
-],
-(_, i18n, React, models, componentMixins, statisticsMixin) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import models from 'models';
+import componentMixins from 'component_mixins';
+import statisticsMixin from 'views/statistics_mixin';
 
     var WelcomePage = React.createClass({
         mixins: [
@@ -148,5 +143,4 @@ define(
         }
     });
 
-    return WelcomePage;
-});
+    export default WelcomePage;

@@ -13,20 +13,13 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'backbone',
-    'react',
-    'views/dialogs',
-    'component_mixins',
-    'models',
-    'views/statistics_mixin'
-],
-($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import models from 'models';
+import componentMixins from 'component_mixins';
+import statisticsMixin from 'views/statistics_mixin';
 
     var SupportPage = React.createClass({
         mixins: [
@@ -305,5 +298,4 @@ define(
         }
     });
 
-    return SupportPage;
-});
+    export default SupportPage;

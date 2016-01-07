@@ -13,22 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'underscore',
-    'i18n',
-    'jquery',
-    'react',
-    'react-dom',
-    'utils',
-    'models',
-    'dispatcher',
-    'views/dialogs',
-    'component_mixins',
-    'views/controls'
-],
-(_, i18n, $, React, ReactDOM, utils, models, dispatcher, dialogs, componentMixins, controls) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import utils from 'utils';
+import dispatcher from 'dispatcher';
+import controls from 'views/controls';
+import dialogs from 'views/dialogs';
+import componentMixins from 'component_mixins';
 
     var namespace = 'cluster_page.dashboard_tab.';
 
@@ -968,5 +962,4 @@ define(
         }
     });
 
-    return DashboardTab;
-});
+    export default DashboardTab;

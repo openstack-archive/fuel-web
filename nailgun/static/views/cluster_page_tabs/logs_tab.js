@@ -13,21 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'utils',
-    'models',
-    'component_mixins',
-    'views/controls',
-    'react-addons-pure-render-mixin',
-    'react-addons-create-fragment'
-],
-($, _, i18n, React, utils, models, componentMixins, controls, PureRenderMixin, ReactFragment) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import controls from 'views/controls';
+import componentMixins from 'component_mixins';
+import PureRenderMixin from 'react-addons-pure-render-mixin';
+import ReactFragment from 'react-addons-create-fragment';
 
     var LogsTab = React.createClass({
         mixins: [
@@ -421,5 +416,4 @@ define(
         }
     });
 
-    return LogsTab;
-});
+    export default LogsTab;

@@ -13,19 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define([
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'utils',
-    'models',
-    'views/dialogs',
-    'views/controls'
-], ($, _, i18n, React, utils, models, dialogs, controls) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import controls from 'views/controls';
+import dialogs from 'views/dialogs';
 
-    return {
+    export default {
         propTypes: {
             settings: React.PropTypes.object.isRequired
         },
@@ -289,4 +285,3 @@ define([
             });
         }
     };
-});

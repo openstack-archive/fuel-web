@@ -13,22 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-define(
-[
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'react-dom',
-    'backbone',
-    'utils',
-    'models',
-    'component_mixins',
-    'views/dialogs',
-    'views/controls'
-],
-($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, dialogs, controls) => {
-    'use strict';
+import $ from 'jquery';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import Backbone from 'backbone';
+import models from 'models';
+import utils from 'utils';
+import dialogs from 'views/dialogs';
+import controls from 'views/controls';
 
     var AVAILABILITY_STATUS_ICONS = {
         compatible: 'glyphicon-ok-sign',
@@ -807,5 +801,4 @@ define(
         }
     });
 
-    return CreateClusterWizard;
-});
+    export default CreateClusterWizard;

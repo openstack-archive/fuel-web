@@ -8,6 +8,7 @@
     defaultParams: true
     destructuring: true
     jsx: true
+    modules: true
     objectLiteralComputedProperties: true
     objectLiteralShorthandMethods: true
     objectLiteralShorthandProperties: true
@@ -166,6 +167,5 @@
     react/sort-comp: 0
   env:
     browser: true
-    amd: true
   globals:
     app: false

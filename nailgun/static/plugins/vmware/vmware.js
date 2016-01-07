@@ -13,22 +13,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
-define(
-[
-    './vmware_tab',
-    './vmware_models',
-    './translations.json',
-    'i18n',
-    './styles.less'
-],
-(VmWareTab, vmWareModels, translations, i18n) => {
-    'use strict';
+import VmWareTab from './vmware_tab';
+import vmWareModels from './vmware_models';
+import translations from './translations.json';
+import i18n from 'i18n';
+import './styles.less';
 
     i18n.addTranslations(translations);
 
-    return {
-        VmWareTab: VmWareTab,
-        vmWareModels: vmWareModels
-    };
-});
+    export {VmWareTab, vmWareModels};

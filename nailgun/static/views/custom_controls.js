@@ -13,16 +13,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-
-define([
-    'jquery',
-    'underscore',
-    'i18n',
-    'react',
-    'utils',
-    'views/controls'
-], ($, _, i18n, React, utils, controls) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import controls from 'views/controls';
 
     var customControls = {};
 
@@ -188,5 +183,4 @@ define([
         }
     });
 
-    return customControls;
-});
+    export default customControls;

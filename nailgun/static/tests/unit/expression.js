@@ -13,14 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
-define([
-    'lodash',
-    'models',
-    'expression',
-    'expression/objects'
-], (_, models, Expression, expressionObjects) => {
-    'use strict';
+import _ from 'lodash';
+import models from 'models';
+import Expression from 'expression';
+import expressionObjects from 'expression/objects';
 
     suite('Expression', () => {
         test('Expression parser test', () => {
@@ -97,4 +93,3 @@ define([
             });
         });
     });
-});

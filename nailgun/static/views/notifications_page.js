@@ -13,18 +13,13 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'underscore',
-    'i18n',
-    'react',
-    'utils',
-    'models',
-    'views/dialogs',
-    'component_mixins'
-],
-(_, i18n, React, utils, models, dialogs, componentMixins) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import models from 'models';
+import dialogs from 'views/dialogs';
+import componentMixins from 'component_mixins';
 
     var NotificationsPage, Notification;
 
@@ -122,5 +117,4 @@ define(
         }
     });
 
-    return NotificationsPage;
-});
+    export default NotificationsPage;

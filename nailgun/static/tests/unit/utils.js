@@ -13,14 +13,9 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-
-define([
-    'underscore',
-    'utils',
-    'i18n',
-    'backbone'
-], (_, utils, i18n, Backbone) => {
-    'use strict';
+import utils from 'utils';
+import i18n from 'i18n';
+import Backbone from 'backbone';
 
     suite('Test utils', () => {
         test('Test getResponseText', () => {
@@ -164,4 +159,3 @@ define([
             assert.notOk(validate('192.168.0.0/10', '192.231.255.254'), 'Check IP, that does not correspond to CIDR');
         });
     });
-});

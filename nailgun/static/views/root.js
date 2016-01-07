@@ -13,18 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define([
-    'underscore',
-    'i18n',
-    'react',
-    'utils',
-    'views/layout',
-    'dispatcher',
-    'component_mixins',
-    'react-dnd',
-    'react-dnd-html5-backend'
-], (_, i18n, React, utils, layoutComponents, dispatcher, componentMixins, DND, HTML5Backend) => {
-    'use strict';
+
+import _ from 'underscore';
+import i18n from 'i18n';
+import React from 'react';
+import utils from 'utils';
+import layoutComponents from 'views/layout';
+import dispatcher from 'dispatcher';
+import componentMixins from 'component_mixins';
+import {DragDropContext} from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 
     var RootComponent = React.createClass({
         mixins: [
@@ -65,6 +63,7 @@ define([
                 clamp: true,
                 'fixed-width-layout': !Page.hiddenLayout
             };
+
             return (
                 <div id='content-wrapper'>
                     <div className={utils.classNames(layoutClasses)}>
@@ -85,5 +84,4 @@ define([
         }
     });
 
-    return DND.DragDropContext(HTML5Backend)(RootComponent);
-});
+    export default DragDropContext(HTML5Backend)(RootComponent);

@@ -13,18 +13,13 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'underscore',
-    'i18n',
-    'utils',
-    'react',
-    'expression',
-    'views/controls',
-    'views/custom_controls'
-],
-(_, i18n, utils, React, Expression, controls, customControls) => {
-    'use strict';
+import _ from 'underscore';
+import i18n from 'i18n';
+import utils from 'utils';
+import React from 'react';
+import Expression from 'expression';
+import controls from 'views/controls';
+import customControls from 'views/custom_controls';
 
     var SettingSection = React.createClass({
         processRestrictions(sectionName, settingName) {
@@ -295,5 +290,4 @@ define(
         }
     });
 
-    return SettingSection;
-});
+    export default SettingSection;

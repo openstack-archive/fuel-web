@@ -13,22 +13,18 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'jquery',
-    'underscore',
-    'react',
-    'react-dom',
-    'views/controls',
-    'views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen',
-    'react-addons-transition-group'
-],
-($, _, React, ReactDOM, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen, ReactTransitionGroup) => {
-    'use strict';
+
+import $ from 'jquery';
+import _ from 'underscore';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import controls from 'views/controls';
+import ClusterNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen';
+import AddNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen';
+import EditNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen';
+import EditNodeDisksScreen from 'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen';
+import EditNodeInterfacesScreen from 'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen';
+import ReactTransitionGroup from 'react-addons-transition-group';
 
     var NodesTab = React.createClass({
         getInitialState() {
@@ -146,5 +142,4 @@ define(
         }
     });
 
-    return NodesTab;
-});
+    export default NodesTab;

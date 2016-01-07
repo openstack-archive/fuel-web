@@ -21,6 +21,7 @@ module.exports = {
             },
             {test: /\/expression\/parser\.js$/, loader: 'exports?parser'},
             {test: require.resolve('jquery'), loader: 'expose?jQuery!expose?$'},
+            {test: /\/sinon\.js$/, loader: 'imports?this=>window,define=>false,exports=>false,module=>false,require=>false'},
             {test: /\.css$/, loader: 'style!css!postcss'},
             {test: /\.less$/, loader: 'style!css!postcss!less'},
             {test: /\.html$/, loader: 'raw'},
@@ -34,7 +35,8 @@ module.exports = {
         modulesDirectories: ['static', 'node_modules', 'vendor/custom'],
         extensions: ['', '.js'],
         alias: {
-            underscore: 'lodash'
+            underscore: 'lodash',
+            sinon: 'sinon/pkg/sinon.js'
         }
     },
     node: {},

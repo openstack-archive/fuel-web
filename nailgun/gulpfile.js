@@ -286,6 +286,10 @@ gulp.task('build', function(cb) {
             new webpack.DefinePlugin({'process.env': {NODE_ENV: '"production"'}})
         );
     }
+    if (argv['extra-entries']) {
+        config.entry = config.entry.concat(argv['extra-entries'].split(','));
+    }
+
     if (argv.uglify !== false) {
         config.devtool = 'source-map';
         config.plugins.push(

@@ -20,8 +20,15 @@ import abc
 import six
 from stevedore.extension import ExtensionManager
 
+from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.extensions import consts
+
+
+def set_extensions_for_object(obj, extensions_list):
+    obj.extensions = list(extensions_list)
+    db().flush()
+    db().refresh(obj)
 
 
 def get_all_extensions():

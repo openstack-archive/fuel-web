@@ -19,6 +19,7 @@ from itertools import chain
 
 from stevedore.extension import ExtensionManager
 
+from nailgun.db import db
 from nailgun import errors
 from nailgun.extensions import consts
 
@@ -58,6 +59,11 @@ def get_extension(name):
 
     raise errors.CannotFindExtension(
         "Cannot find extension with name '{0}'".format(name))
+
+
+def set_extensions_for_object(obj, extensions_list):
+    obj.extensions = list(extensions_list)
+    db().flush()
 
 
 def callback_wrapper(name, pass_args=None):
@@ -167,13 +173,13 @@ def fire_callback_on_cluster_delete(cluster):
 
 
 def fire_callback_on_before_deployment_check(cluster, nodes=None):
-    for extension in get_all_extensions():
+    for extension in _collect_extensions_for_cluster(cluster):
         extension.on_before_deployment_check(cluster, nodes or cluster.nodes)
 
 
 def fire_callback_on_before_deployment_serialization(cluster, nodes,
                                                      ignore_customized):
-    for extension in get_all_extensions():
+    for extension in _collect_extensions_for_cluster(cluster):
         extension.on_before_deployment_serialization(
             cluster, nodes, ignore_customized
         )
@@ -181,7 +187,7 @@ def fire_callback_on_before_deployment_serialization(cluster, nodes,
 
 def fire_callback_on_before_provisioning_serialization(cluster, nodes,
                                                        ignore_customized):
-    for extension in get_all_extensions():
+    for extension in _collect_extensions_for_cluster(cluster):
         extension.on_before_provisioning_serialization(
             cluster, nodes, ignore_customized
         )
@@ -191,6 +197,10 @@ def _collect_data_pipelines_for_cluster(cluster):
     extensions = set(cluster.extensions)
     return chain.from_iterable(e.data_pipelines for e in get_all_extensions()
                                if e.name in extensions)
+
+
+def _collect_extensions_for_cluster(cluster):
+    return [get_extension(e) for e in set(cluster.extensions)]
 
 
 def fire_callback_on_node_serialization_for_deployment(node, node_data):

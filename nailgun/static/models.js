@@ -1074,6 +1074,8 @@ define([
                     idRangeErrors[1] = i18n(ns + 'invalid_id_end');
                 } else if (idStart > idEnd) {
                     idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'invalid_id_range');
+                } else if (idStart == idEnd) {
+                    idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'not_enough_id');
                 } else if (segmentation == 'vlan') {
                     _.each(_.compact(networks.pluck('vlan_start')), function(vlan) {
                         if (utils.validateVlanRange(idStart, idEnd, vlan)) {

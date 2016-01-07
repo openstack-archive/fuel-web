@@ -736,6 +736,7 @@
                         "invalid_id_start": "Invalid ID range start",
                         "invalid_id_end": "Invalid ID range end",
                         "invalid_id_range": "The ID range start is greater than ID range end",
+                        "not_enough_id": "The ID range should contain more than one ID",
                         "vlan_intersection": "The VLAN ID range overlaps with the VLAN ID range used in other networks. Please set a different VLAN ID range",
                         "invalid_mac": "Invalid MAC address",
                         "ip_start_is_out_of_ip_range": "The IP start value is out of the selected IP range",

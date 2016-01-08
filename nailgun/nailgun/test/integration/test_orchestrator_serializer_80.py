@@ -41,7 +41,7 @@ from nailgun.test.integration.test_orchestrator_serializer_70 import \
 
 
 class TestSerializer80Mixin(object):
-    env_version = "2015.1.0-8.0"
+    env_version = "liberty-8.0"
 
     def _check_baremetal_neutron_attrs(self, cluster):
         self.env._set_additional_component(cluster, 'ironic', True)
@@ -70,7 +70,7 @@ class TestNetworkTemplateSerializer80(
     TestSerializer80Mixin,
     BaseDeploymentSerializer
 ):
-    env_version = '2015.1.0-8.0'
+    env_version = 'liberty-8.0'
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer80, self).setUp()
@@ -186,7 +186,7 @@ class TestDeploymentAttributesSerialization80(
     TestSerializer80Mixin,
     BaseDeploymentSerializer
 ):
-    env_version = '2015.1.0-8.0'
+    env_version = 'liberty-8.0'
 
     def setUp(self):
         super(TestDeploymentAttributesSerialization80, self).setUp()
@@ -380,7 +380,7 @@ class TestDeploymentAttributesSerialization80(
 
 
 class TestMultiNodeGroupsSerialization80(BaseDeploymentSerializer):
-    env_version = '2015.1.0-8.0'
+    env_version = 'liberty-8.0'
 
     def setUp(self):
         super(TestMultiNodeGroupsSerialization80, self).setUp()
@@ -456,7 +456,7 @@ class TestMultiNodeGroupsSerialization80(BaseDeploymentSerializer):
 
 
 class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
-    env_version = '2015.1.0-8.0'
+    env_version = 'liberty-8.0'
 
     def setUp(self):
         super(TestBlockDeviceDevicesSerialization80, self).setUp()

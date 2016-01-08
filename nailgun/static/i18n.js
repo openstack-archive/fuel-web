@@ -20,9 +20,9 @@ define([
 ], (_, i18next, translations) => {
     'use strict';
 
-    var defaultLocale = 'en-US';
+    let defaultLocale = 'en-US';
 
-    var i18n = _.extend(_.bind(i18next.t, i18next), {
+    let i18n = _.extend(_.bind(i18next.t, i18next), {
         getLocaleName(locale) {
             return i18n('language', {lng: locale});
         },

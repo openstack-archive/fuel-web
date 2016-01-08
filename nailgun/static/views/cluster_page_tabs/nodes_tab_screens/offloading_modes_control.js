@@ -24,7 +24,7 @@ define(
 ($, _, React, i18n, utils) => {
     'use strict';
 
-    var ns = 'cluster_page.nodes_tab.configure_interfaces.',
+    let ns = 'cluster_page.nodes_tab.configure_interfaces.',
         OffloadingModesControl = React.createClass({
         propTypes: {
             interface: React.PropTypes.object
@@ -42,7 +42,7 @@ define(
             _.each(mode.sub, function(mode) {this.setModeState(mode, state);}, this);
         },
         checkModes(mode, sub) {
-            var changedState = sub.reduce((state, childMode) => {
+            let changedState = sub.reduce((state, childMode) => {
                     if (!_.isEmpty(childMode.sub)) {
                         this.checkModes(childMode, childMode.sub);
                     }
@@ -58,7 +58,7 @@ define(
             }
         },
         findMode(name, modes) {
-            var result,
+            let result,
                 mode,
                 index = 0,
                 modesLength = modes.length;
@@ -76,7 +76,7 @@ define(
             return result;
         },
         onModeStateChange(name, state) {
-            var modes = _.cloneDeep(this.props.interface.get('offloading_modes') || []),
+            let modes = _.cloneDeep(this.props.interface.get('offloading_modes') || []),
                 mode = this.findMode(name, modes);
 
             return () => {
@@ -93,7 +93,7 @@ define(
             };
         },
         makeOffloadingModesExcerpt() {
-            var states = {
+            let states = {
                     true: i18n(ns + 'offloading_enabled'),
                     false: i18n(ns + 'offloading_disabled'),
                     null: i18n(ns + 'offloading_default')
@@ -104,7 +104,7 @@ define(
                 return states[ifcModes[0].state];
             }
 
-            var lastState,
+            let lastState,
                 added = 0,
                 excerpt = [];
             _.each(ifcModes,
@@ -123,11 +123,11 @@ define(
         },
         renderChildModes(modes, level) {
             return modes.map((mode) => {
-                var lines = [
+                let lines = [
                     <tr key={mode.name} className={'level' + level}>
                         <td>{mode.name}</td>
                         {[true, false, null].map((modeState) => {
-                            var styles = {
+                            let styles = {
                                 'btn-link': true,
                                 active: mode.state === modeState
                             };
@@ -151,7 +151,7 @@ define(
             });
         },
         render() {
-            var modes = [],
+            let modes = [],
                 ifcModes = this.props.interface.get('offloading_modes');
             if (ifcModes) {
                 modes.push({

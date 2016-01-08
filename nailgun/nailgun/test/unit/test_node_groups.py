@@ -418,6 +418,29 @@ class TestNodeGroups(BaseIntegrationTest):
         self.assertEqual(resp.json_body.get('message'),
                          "'default' flag for node group cannot be changed")
 
+    def test_update_cluster_id_not_allowed(self):
+        ng = objects.NodeGroupCollection.get_by_cluster_id(
+            self.cluster['id'])\
+            .filter_by(name=consts.NODE_GROUPS.default).first()
+
+        resp = self.app.put(
+            reverse(
+                'NodeGroupHandler',
+                kwargs={'obj_id': ng.id}),
+            json.dumps(
+                {'cluster_id': -1,
+                 'name': ng.name}
+            ),
+            headers=self.default_headers,
+            expect_errors=True,
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(
+            resp.json_body.get('message'),
+            "Node group cannot be assigned to other cluster "
+            "after creation."
+        )
+
     def test_assign_nodegroup_to_node_in_another_cluster(self):
         self.env.create(
             cluster_kwargs={

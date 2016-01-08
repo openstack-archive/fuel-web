@@ -65,8 +65,8 @@ define(
 
         // pre-route hook
         before(currentRouteName) {
-            var currentUrl = Backbone.history.getHash();
-            var preventRouting = false;
+            let currentUrl = Backbone.history.getHash();
+            let preventRouting = false;
             // remove trailing slash
             if (_.endsWith(currentUrl, '/')) {
                 this.navigate(currentUrl.substr(0, currentUrl.length - 1), {trigger: true, replace: true});
@@ -74,9 +74,9 @@ define(
             }
             // handle special routes
             if (!preventRouting) {
-                var specialRoutes = [
+                let specialRoutes = [
                     {name: 'login', condition: () => {
-                        var result = app.version.get('auth_required') && !app.user.get('authenticated');
+                        let result = app.version.get('auth_required') && !app.user.get('authenticated');
                         if (result && currentUrl != 'login' && currentUrl != 'logout') this.returnUrl = currentUrl;
                         return result;
                     }},
@@ -119,7 +119,7 @@ define(
         }
 
         showCluster(clusterId, tab) {
-            var tabs = _.pluck(ClusterPage.getTabs(), 'url');
+            let tabs = _.pluck(ClusterPage.getTabs(), 'url');
             if (!tab || !_.contains(tabs, tab)) {
                 this.navigate('cluster/' + clusterId + '/' + tabs[0], {trigger: true, replace: true});
             } else {
@@ -212,7 +212,7 @@ define(
         }
 
         renderLayout() {
-            var wrappedRootComponent = ReactDOM.render(
+            let wrappedRootComponent = ReactDOM.render(
                 React.createElement(
                     RootComponent,
                     _.pick(this, 'version', 'user', 'fuelSettings', 'statistics', 'notifications')
@@ -251,7 +251,7 @@ define(
         }
 
         patchBackboneSync() {
-            var originalSync = Backbone.sync;
+            let originalSync = Backbone.sync;
             if (originalSync.patched) return;
             Backbone.sync = function(method, model, options = {}) {
                 // our server doesn't support PATCH, so use PUT instead

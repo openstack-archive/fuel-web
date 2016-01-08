@@ -33,14 +33,14 @@ define(
 ($, _, i18n, Backbone, React, ReactDOM, models, dispatcher, utils, dialogs, componentMixins, controls, SettingSection, CSSTransitionGroup) => {
     'use strict';
 
-    var parametersNS = 'cluster_page.network_tab.networking_parameters.',
+    let parametersNS = 'cluster_page.network_tab.networking_parameters.',
         networkTabNS = 'cluster_page.network_tab.',
         defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
 
-    var NetworkModelManipulationMixin = {
+    let NetworkModelManipulationMixin = {
         setValue(attribute, value, options) {
             function convertToStringIfNaN(value) {
-                var convertedValue = parseInt(value, 10);
+                let convertedValue = parseInt(value, 10);
                 return _.isNaN(convertedValue) ? '' : convertedValue;
             }
             if (options && options.isInteger && !_.isNull(value)) {
@@ -51,7 +51,7 @@ define(
                     value = convertToStringIfNaN(value);
                 }
             }
-            var networkConfiguration = this.props.cluster.get('networkConfiguration');
+            let networkConfiguration = this.props.cluster.get('networkConfiguration');
             this.getModel().set(attribute, value);
             dispatcher.trigger('hideNetworkVerificationResult');
             networkConfiguration.isValid();
@@ -62,9 +62,9 @@ define(
         }
     };
 
-    var NetworkInputsMixin = {
+    let NetworkInputsMixin = {
         composeProps(attribute, isRange, isInteger) {
-            var network = this.props.network,
+            let network = this.props.network,
                 ns = network ? networkTabNS + 'network.' : parametersNS,
                 error = this.getError(attribute) || null;
 
@@ -97,10 +97,10 @@ define(
             );
         },
         getError(attribute) {
-            var validationErrors = this.props.cluster.get('networkConfiguration').validationError;
+            let validationErrors = this.props.cluster.get('networkConfiguration').validationError;
             if (!validationErrors) return null;
 
-            var network = this.props.network,
+            let network = this.props.network,
                 errors;
 
             if (network) {
@@ -123,7 +123,7 @@ define(
         }
     };
 
-    var Range = React.createClass({
+    let Range = React.createClass({
         mixins: [
             NetworkModelManipulationMixin
         ],
@@ -156,17 +156,17 @@ define(
             }
         },
         autoCompleteIPRange(error, rangeStart, event) {
-            var input = event.target;
+            let input = event.target;
             if (input.value) return;
             if (_.isUndefined(error)) input.value = rangeStart;
             if (input.setSelectionRange) {
-                var startPos = _.lastIndexOf(rangeStart, '.') + 1,
+                let startPos = _.lastIndexOf(rangeStart, '.') + 1,
                     endPos = rangeStart.length;
                 input.setSelectionRange(startPos, endPos);
             }
         },
         onRangeChange(name, newValue, attribute, rowIndex) {
-            var model = this.getModel(),
+            let model = this.getModel(),
                 valuesToSet = _.cloneDeep(model.get(attribute)),
                 valuesToModify = this.props.extendable ? valuesToSet[rowIndex] : valuesToSet;
 
@@ -183,7 +183,7 @@ define(
             this.setValue(attribute, valuesToSet, {isInteger: this.props.integerValue});
         },
         addRange(attribute, rowIndex) {
-            var newValue = _.clone(this.getModel().get(attribute));
+            let newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(rowIndex + 1, 0, ['', '']);
             this.setValue(attribute, newValue);
             this.setState({
@@ -191,7 +191,7 @@ define(
             });
         },
         removeRange(attribute, rowIndex) {
-            var newValue = _.clone(this.getModel().get(attribute));
+            let newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(rowIndex, 1);
             this.setValue(attribute, newValue);
             this.setState({
@@ -199,7 +199,7 @@ define(
             });
         },
         getRangeProps(isRangeEnd) {
-            var error = this.props.error || null,
+            let error = this.props.error || null,
                 attributeName = this.props.name;
             return {
                 type: 'text',
@@ -233,7 +233,7 @@ define(
             );
         },
         render() {
-            var error = this.props.error || null,
+            let error = this.props.error || null,
                 attributeName = this.props.name,
                 attribute = this.getModel().get(attributeName),
                 ranges = this.props.autoIncreaseWith ?
@@ -260,7 +260,7 @@ define(
                         <label>{this.props.label}</label>
                         {this.props.extendable ?
                             _.map(ranges, function(range, index) {
-                                var rangeError = _.findWhere(error, {index: index}) || {};
+                                let rangeError = _.findWhere(error, {index: index}) || {};
                                 return (
                                     <div className='range-row clearfix' key={index}>
                                         <controls.Input
@@ -317,13 +317,13 @@ define(
         }
     });
 
-    var VlanTagInput = React.createClass({
+    let VlanTagInput = React.createClass({
         mixins: [NetworkModelManipulationMixin],
         getInitialState() {
             return {pendingFocus: false};
         },
         componentDidUpdate() {
-            var value = this.props.value;
+            let value = this.props.value;
             if (!_.isNull(value) && this.state.pendingFocus) {
                 $(this.refs[this.props.name].getInputDOMNode()).focus();
                 this.setState({pendingFocus: false});
@@ -360,7 +360,7 @@ define(
         }
     });
 
-    var CidrControl = React.createClass({
+    let CidrControl = React.createClass({
         mixins: [NetworkModelManipulationMixin],
         onCidrChange(name, cidr) {
             this.props.onChange(name, cidr);
@@ -395,7 +395,7 @@ define(
     // FIXME(morale): this component is a lot of copy-paste from Range component
     // and should be rewritten either as a mixin or as separate component for
     // multiplying other components (eg accepting Range, Input etc)
-    var MultipleValuesInput = React.createClass({
+    let MultipleValuesInput = React.createClass({
         mixins: [
             NetworkModelManipulationMixin
         ],
@@ -417,13 +417,13 @@ define(
             }
         },
         onChange(attribute, value, index) {
-            var model = this.getModel(),
+            let model = this.getModel(),
                 valueToSet = _.cloneDeep(model.get(attribute));
             valueToSet[index] = value;
             this.setValue(attribute, valueToSet);
         },
         addValue(attribute, index) {
-            var newValue = _.clone(this.getModel().get(attribute));
+            let newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(index + 1, 0, '');
             this.setValue(attribute, newValue);
             this.setState({
@@ -431,7 +431,7 @@ define(
             });
         },
         removeValue(attribute, index) {
-            var newValue = _.clone(this.getModel().get(attribute));
+            let newValue = _.clone(this.getModel().get(attribute));
             newValue.splice(index, 1);
             this.setValue(attribute, newValue);
             this.setState({
@@ -461,14 +461,14 @@ define(
             );
         },
         render() {
-            var attributeName = this.props.name,
+            let attributeName = this.props.name,
                 values = this.props.value;
             return (
                 <div className={'form-group row multiple-values ' + attributeName}>
                     <div className='col-xs-12'>
                         <label>{this.props.label}</label>
                         {_.map(values, function(value, index) {
-                            var inputError = (this.props.error || {})[index];
+                            let inputError = (this.props.error || {})[index];
                             return (
                                 <div className='range-row clearfix' key={attributeName + index}>
                                     <controls.Input
@@ -492,7 +492,7 @@ define(
         }
     });
 
-    var NetworkTab = React.createClass({
+    let NetworkTab = React.createClass({
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin,
@@ -532,7 +532,7 @@ define(
         ],
         statics: {
             fetchData(options) {
-                var cluster = options.cluster;
+                let cluster = options.cluster;
                 return $.when(
                     cluster.get('settings').fetch({cache: true}),
                     cluster.get('networkConfiguration').fetch({cache: true})
@@ -540,7 +540,7 @@ define(
             }
         },
         getInitialState() {
-            var settings = this.props.cluster.get('settings');
+            let settings = this.props.cluster.get('settings');
             return {
                 configModels: {
                     cluster: this.props.cluster,
@@ -576,7 +576,7 @@ define(
             }
         },
         removeUnsavedTasks() {
-            var clusterTasks = this.props.cluster.get('tasks');
+            let clusterTasks = this.props.cluster.get('tasks');
             clusterTasks.each((task) => task.get('unsaved') && clusterTasks.remove(task));
         },
         isNetworkConfigurationChanged() {
@@ -597,12 +597,12 @@ define(
             });
         },
         loadInitialConfiguration() {
-            var networkConfiguration = this.props.cluster.get('networkConfiguration');
+            let networkConfiguration = this.props.cluster.get('networkConfiguration');
             networkConfiguration.get('networks').reset(_.cloneDeep(this.state.initialConfiguration.networks));
             networkConfiguration.get('networking_parameters').set(_.cloneDeep(this.state.initialConfiguration.networking_parameters));
         },
         loadInitialSettings() {
-            var settings = this.props.cluster.get('settings');
+            let settings = this.props.cluster.get('settings');
             settings.set(_.cloneDeep(this.state.initialSettingsAttributes), {silent: true, validate: false});
             settings.mergePluginSettings();
             settings.isValid({models: this.state.configModels});
@@ -615,7 +615,7 @@ define(
                 !this.props.cluster.isAvailableForSettingsChanges() || this.state.actionInProgress;
         },
         prepareIpRanges() {
-            var removeEmptyRanges = function(ranges) {
+            let removeEmptyRanges = function(ranges) {
                     return _.filter(ranges, (range) => _.compact(range).length);
                 },
                 networkConfiguration = this.props.cluster.get('networkConfiguration');
@@ -624,13 +624,13 @@ define(
                     network.set({ip_ranges: removeEmptyRanges(network.get('ip_ranges'))});
                 }
             });
-            var floatingRanges = networkConfiguration.get('networking_parameters').get('floating_ranges');
+            let floatingRanges = networkConfiguration.get('networking_parameters').get('floating_ranges');
             if (floatingRanges) {
                 networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
             }
         },
         onManagerChange(name, value) {
-            var networkConfiguration = this.props.cluster.get('networkConfiguration'),
+            let networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 fixedAmount = networkConfiguration.get('networking_parameters').get('fixed_networks_amount') || 1;
             networkingParameters.set({
@@ -646,7 +646,7 @@ define(
             dispatcher.trigger('networkConfigurationUpdated', this.startVerification);
         },
         startVerification() {
-            var networkConfiguration = this.props.cluster.get('networkConfiguration'),
+            let networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 task = new models.Task(),
                 options = {
                     method: 'PUT',
@@ -688,7 +688,7 @@ define(
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
 
-            var requests = [],
+            let requests = [],
                 result = $.Deferred();
 
             dispatcher.trigger('networkConfigurationUpdated', () => {
@@ -702,9 +702,9 @@ define(
                             .done(() => {
                                 // FIXME (morale): this hack is needed until backend response
                                 // format is unified https://bugs.launchpad.net/fuel/+bug/1521661
-                                var checkNetworksTask = this.props.cluster.task('check_networks');
+                                let checkNetworksTask = this.props.cluster.task('check_networks');
                                 if (!(checkNetworksTask && checkNetworksTask.get('message'))) {
-                                    var fakeTask = new models.Task({
+                                    let fakeTask = new models.Task({
                                         cluster: this.props.cluster.id,
                                         message: utils.getResponseText(response),
                                         status: 'error',
@@ -728,11 +728,11 @@ define(
 
             if (this.isNetworkSettingsChanged()) {
                 // collecting data to save
-                var settings = this.props.cluster.get('settings'),
+                let settings = this.props.cluster.get('settings'),
                     dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
                         _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
 
-                var options = {url: settings.url, patch: true, wait: true, validate: false},
+                let options = {url: settings.url, patch: true, wait: true, validate: false},
                     deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
                 if (deferred) {
                     this.setState({actionInProgress: true});
@@ -767,7 +767,7 @@ define(
                 _.isNull(this.props.cluster.get('settings').validationError);
         },
         renderButtons() {
-            var isCancelChangesDisabled = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true}) || !this.hasChanges();
+            let isCancelChangesDisabled = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true}) || !this.hasChanges();
             return (
                 <div className='well clearfix'>
                     <div className='btn-group pull-right'>
@@ -792,7 +792,7 @@ define(
             );
         },
         getVerificationErrors() {
-            var task = this.state.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
+            let task = this.state.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
             // @TODO(morale): soon response format will be changed and this part should be rewritten
             if (task && task.get('result').length) {
@@ -807,7 +807,7 @@ define(
             return fieldsWithVerificationErrors;
         },
         removeNodeNetworkGroup() {
-            var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
+            let nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
             dialogs.RemoveNodeNetworkGroupDialog
                 .show({
                     showUnsavedChangesWarning: this.hasChanges()
@@ -843,7 +843,7 @@ define(
                     this.setState({hideVerificationResult: true});
                     return this.nodeNetworkGroups.fetch()
                         .then(() => {
-                            var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+                            let newNodeNetworkGroup = this.nodeNetworkGroups.last();
                             this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
                             this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
                             return this.props.cluster.get('networkConfiguration').fetch();
@@ -852,7 +852,7 @@ define(
                 });
         },
         render() {
-            var isLocked = this.isLocked(),
+            let isLocked = this.isLocked(),
                 hasChanges = this.hasChanges(),
                 {activeNetworkSectionName, cluster} = this.props,
                 networkConfiguration = this.props.cluster.get('networkConfiguration'),
@@ -890,7 +890,7 @@ define(
                     notEnoughOnlineNodesForVerification;
 
             networkConfiguration.isValid();
-            var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}),
+            let currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}),
                 validationErrors = networkConfiguration.validationError,
                 nodeNetworkGroupProps = {
                     cluster: cluster,
@@ -1018,9 +1018,9 @@ define(
         }
     });
 
-    var NodeNetworkGroup = React.createClass({
+    let NodeNetworkGroup = React.createClass({
         render() {
-            var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors} = this.props,
+            let {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration');
             return (
                 <div>
@@ -1050,9 +1050,9 @@ define(
         }
     });
 
-    var NetworkSubtabs = React.createClass({
+    let NetworkSubtabs = React.createClass({
         renderClickablePills(sections, isNetworkGroupPill) {
-            var {cluster, nodeNetworkGroups} = this.props,
+            let {cluster, nodeNetworkGroups} = this.props,
                 networkConfiguration = cluster.get('networkConfiguration'),
                 errors,
                 isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
@@ -1061,11 +1061,11 @@ define(
 
             errors = networkConfiguration.validationError;
 
-            var networkParametersErrors = errors && errors.networking_parameters,
+            let networkParametersErrors = errors && errors.networking_parameters,
                 networksErrors = errors && errors.networks;
 
             return (sections.map(function(groupName) {
-                var tabLabel = groupName,
+                let tabLabel = groupName,
                     isActive = groupName == this.props.activeGroupName,
                     isInvalid;
 
@@ -1077,9 +1077,9 @@ define(
                 } else if (groupName == 'nova_configuration') {
                     isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
                 } else if (groupName == 'network_settings') {
-                    var settings = cluster.get('settings');
+                    let settings = cluster.get('settings');
                     isInvalid = _.any(_.keys(settings.validationError), (settingPath) => {
-                        var settingSection = settingPath.split('.')[0];
+                        let settingSection = settingPath.split('.')[0];
                         return settings.get(settingSection).metadata.group == 'network' ||
                             settings.get(settingPath).group == 'network';
                     });
@@ -1118,7 +1118,7 @@ define(
             }, this));
         },
         render() {
-            var {nodeNetworkGroups} = this.props,
+            let {nodeNetworkGroups} = this.props,
                 settingsSections = [],
                 nodeGroupSections = nodeNetworkGroups.pluck('name');
 
@@ -1158,7 +1158,7 @@ define(
         }
     });
 
-    var NodeNetworkGroupTitle = React.createClass({
+    let NodeNetworkGroupTitle = React.createClass({
         mixins: [
             componentMixins.renamingMixin('node-group-title-input')
         ],
@@ -1166,12 +1166,12 @@ define(
             this.setState({nodeNetworkGroupNameChangingError: null});
             if (e.key == 'Enter') {
                 this.setState({actionInProgress: true});
-                var element = this.refs['node-group-title-input'].getInputDOMNode(),
+                let element = this.refs['node-group-title-input'].getInputDOMNode(),
                     newName = _.trim(element.value),
                     currentNodeNetworkGroup = this.props.currentNodeNetworkGroup;
 
                 if (newName != currentNodeNetworkGroup.get('name')) {
-                    var validationError = currentNodeNetworkGroup.validate({name: newName});
+                    let validationError = currentNodeNetworkGroup.validate({name: newName});
                     if (validationError) {
                         this.setState({
                             nodeNetworkGroupNameChangingError: validationError,
@@ -1206,7 +1206,7 @@ define(
             this.startRenaming(e);
         },
         render() {
-            var {currentNodeNetworkGroup, isRenamingPossible, isDeletionPossible} = this.props,
+            let {currentNodeNetworkGroup, isRenamingPossible, isDeletionPossible} = this.props,
                 classes = {
                     'network-group-name': true,
                     'no-rename': !isRenamingPossible
@@ -1245,29 +1245,29 @@ define(
         }
     });
 
-    var Network = React.createClass({
+    let Network = React.createClass({
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin
         ],
         autoUpdateParameters(cidr) {
-            var useGateway = this.props.network.get('meta').use_gateway;
+            let useGateway = this.props.network.get('meta').use_gateway;
             if (useGateway) this.setValue('gateway', utils.getDefaultGatewayForCidr(cidr));
             this.setValue('ip_ranges', utils.getDefaultIPRangeForCidr(cidr, useGateway));
         },
         changeNetworkNotation(name, value) {
-            var meta = _.clone(this.props.network.get('meta'));
+            let meta = _.clone(this.props.network.get('meta'));
             meta.notation = value ? 'cidr' : 'ip_ranges';
             this.setValue('meta', meta);
             if (value) this.autoUpdateParameters(this.props.network.get('cidr'));
         },
         render() {
-            var meta = this.props.network.get('meta');
+            let meta = this.props.network.get('meta');
             if (!meta.configurable) return null;
 
-            var networkName = this.props.network.get('name');
+            let networkName = this.props.network.get('name');
 
-            var ipRangeProps = this.composeProps('ip_ranges', true),
+            let ipRangeProps = this.composeProps('ip_ranges', true),
                 gatewayProps = this.composeProps('gateway');
             return (
                 <div className={'forms-box ' + networkName}>
@@ -1301,7 +1301,7 @@ define(
         }
     });
 
-    var NovaParameters = React.createClass({
+    let NovaParameters = React.createClass({
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin
@@ -1313,7 +1313,7 @@ define(
             ]
         },
         render() {
-            var networkConfiguration = this.props.cluster.get('networkConfiguration'),
+            let networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 manager = networkingParameters.get('net_manager'),
                 fixedNetworkSizeValues = _.map(_.range(3, 12), _.partial(Math.pow, 2));
@@ -1359,7 +1359,7 @@ define(
         }
     });
 
-    var NetworkingL2Parameters = React.createClass({
+    let NetworkingL2Parameters = React.createClass({
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin
@@ -1370,7 +1370,7 @@ define(
             ]
         },
         render() {
-            var networkParameters = this.props.cluster.get('networkConfiguration').get('networking_parameters'),
+            let networkParameters = this.props.cluster.get('networkConfiguration').get('networking_parameters'),
                 idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id';
             return (
                 <div className='forms-box' key='neutron-l2'>
@@ -1391,7 +1391,7 @@ define(
         }
     });
 
-    var NetworkingL3Parameters = React.createClass({
+    let NetworkingL3Parameters = React.createClass({
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin
@@ -1404,7 +1404,7 @@ define(
             ]
         },
         render() {
-            var networks = this.props.cluster.get('networkConfiguration').get('networks');
+            let networks = this.props.cluster.get('networkConfiguration').get('networks');
             return (
                 <div key='neutron-l3'>
                     <div className='forms-box' key='floating-net'>
@@ -1455,9 +1455,9 @@ define(
         }
     });
 
-    var NetworkSettings = React.createClass({
+    let NetworkSettings = React.createClass({
         onChange(groupName, settingName, value) {
-            var settings = this.props.cluster.get('settings'),
+            let settings = this.props.cluster.get('settings'),
                 name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
             this.props.settingsForChecks.set(name, value);
             // FIXME: the following hacks cause we can't pass {validate: true} option to set method
@@ -1467,11 +1467,11 @@ define(
             settings.isValid({models: this.props.configModels});
         },
         checkRestrictions(action, path) {
-            var settings = this.props.cluster.get('settings');
+            let settings = this.props.cluster.get('settings');
             return settings.checkRestrictions(this.props.configModels, action, path);
         },
         render() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 locked = this.props.locked || !!cluster.task({group: ['deployment', 'network'], active: true}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
@@ -1483,7 +1483,7 @@ define(
                             .keys()
                             .filter(
                                 (sectionName) => {
-                                    var section = settings.get(sectionName);
+                                    let section = settings.get(sectionName);
                                     return (section.metadata.group == 'network' || _.any(section, {group: 'network'})) &&
                                         !this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
                                 }
@@ -1493,7 +1493,7 @@ define(
                             )
                             .map(
                                 (sectionName) => {
-                                    var section = settings.get(sectionName),
+                                    let section = settings.get(sectionName),
                                         settingsToDisplay = _.compact(_.map(section, (setting, settingName) => {
                                             if (
                                                 (section.metadata.group || setting.group == 'network') &&
@@ -1526,7 +1526,7 @@ define(
         }
     });
 
-    var NetworkVerificationResult = React.createClass({
+    let NetworkVerificationResult = React.createClass({
         getConnectionStatus(task, isFirstConnectionLine) {
             if (!task || task.match({status: 'ready'})) return 'stop';
             if (task && task.match({status: 'error'}) && !(isFirstConnectionLine &&
@@ -1534,7 +1534,7 @@ define(
             return 'success';
         },
         render() {
-            var task = this.props.task,
+            let task = this.props.task,
                 ns = networkTabNS + 'verify_networks.';
 
             if (this.props.hideVerificationResult) task = null;
@@ -1620,7 +1620,7 @@ define(
                                     (attr) => ({label: i18n(ns + attr)}))}
                                 body={
                                     _.map(task.get('result'), (node) => {
-                                        var absentVlans = _.map(node.absent_vlans, (vlan) => {
+                                        let absentVlans = _.map(node.absent_vlans, (vlan) => {
                                             return vlan || i18n(networkTabNS + 'untagged');
                                         });
                                         return [node.name || 'N/A', node.mac || 'N/A', node.interface, absentVlans.join(', ')];

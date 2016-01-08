@@ -30,13 +30,13 @@ define(
 ($, _, i18n, React, ReactDOM, Backbone, utils, models, componentMixins, dialogs, controls) => {
     'use strict';
 
-    var AVAILABILITY_STATUS_ICONS = {
+    let AVAILABILITY_STATUS_ICONS = {
         compatible: 'glyphicon-ok-sign',
         available: 'glyphicon-info-sign',
         incompatible: 'glyphicon-warning-sign'
     };
 
-    var ComponentCheckboxGroup = React.createClass({
+    let ComponentCheckboxGroup = React.createClass({
         hasEnabledComponents() {
             return _.any(this.props.components, (component) => component.get('enabled'));
         },
@@ -45,7 +45,7 @@ define(
                 <div>
                     {
                         _.map(this.props.components, (component) => {
-                            var icon = AVAILABILITY_STATUS_ICONS[component.get('availability')];
+                            let icon = AVAILABILITY_STATUS_ICONS[component.get('availability')];
                             return (
                                 <controls.Input
                                     key={component.id}
@@ -69,9 +69,9 @@ define(
         }
     });
 
-    var ComponentRadioGroup = React.createClass({
+    let ComponentRadioGroup = React.createClass({
         getInitialState() {
-            var activeComponent = _.find(this.props.components, (component) => component.get('enabled'));
+            let activeComponent = _.find(this.props.components, (component) => component.get('enabled'));
             return {
                 value: activeComponent && activeComponent.id
             };
@@ -90,7 +90,7 @@ define(
                 <div>
                     {
                         _.map(this.props.components, (component) => {
-                            var icon = AVAILABILITY_STATUS_ICONS[component.get('availability')];
+                            let icon = AVAILABILITY_STATUS_ICONS[component.get('availability')];
                             return (
                                 <controls.Input
                                     key={component.id}
@@ -114,7 +114,7 @@ define(
         }
     });
 
-    var ClusterWizardPanesMixin = {
+    let ClusterWizardPanesMixin = {
         componentWillMount() {
             if (this.props.allComponents) {
                 this.components = this.props.allComponents.getComponentsByType(this.constructor.componentType, {sorted: true});
@@ -128,9 +128,9 @@ define(
             if (components.length <= 1) {
                 return false;
             }
-            var allComponentsExclusive = _.all(components, (component) => {
-                var peerIds = _.pluck(_.reject(components, {id: component.id}), 'id');
-                var incompatibleIds = _.pluck(_.pluck(component.get('incompatible'), 'component'), 'id');
+            let allComponentsExclusive = _.all(components, (component) => {
+                let peerIds = _.pluck(_.reject(components, {id: component.id}), 'id');
+                let incompatibleIds = _.pluck(_.pluck(component.get('incompatible'), 'component'), 'id');
                 // peerIds should be subset of incompatibleIds to have exclusiveness property
                 return peerIds.length == _.intersection(peerIds, incompatibleIds).length;
             });
@@ -150,17 +150,17 @@ define(
                 }
 
                 // index of compatible elements
-                var compatibleComponents = {};
+                let compatibleComponents = {};
                 _.each(component.get('compatible'), (compatible) => {
                     compatibleComponents[compatible.component.id] = compatible;
                 });
 
                 // scan all components to find enabled
                 // and not present in the index
-                var isCompatible = true;
-                var warnings = [];
+                let isCompatible = true;
+                let warnings = [];
                 allComponents.each((testedComponent) => {
-                    var type = testedComponent.get('type'),
+                    let type = testedComponent.get('type'),
                         isInStopList = _.find(stopList, (component) => component.id == testedComponent.id);
                     if (component.id == testedComponent.id || !_.contains(types, type) || isInStopList) {
                         // ignore self or forward compatibilities
@@ -182,11 +182,11 @@ define(
             // disable components that have
             // incompatible components already enabled
             _.each(paneComponents, (component) => {
-                var incompatibles = component.get('incompatible') || [];
-                var isDisabled = false;
-                var warnings = [];
+                let incompatibles = component.get('incompatible') || [];
+                let isDisabled = false;
+                let warnings = [];
                 _.each(incompatibles, (incompatible) => {
-                    var type = incompatible.component.get('type'),
+                    let type = incompatible.component.get('type'),
                         isInStopList = _.find(stopList, (component) => component.id == incompatible.component.id);
                     if (!_.contains(types, type) || isInStopList) {
                         // ignore forward incompatibilities
@@ -209,16 +209,16 @@ define(
             // if component has requires,
             // it is disabled until all requires are already enabled
             _.each(paneComponents, (component) => {
-                var requires = component.get('requires') || [];
+                let requires = component.get('requires') || [];
                 if (requires.length == 0) {
                     // no requires
                     component.set({isRequired: false});
                     return;
                 }
-                var isDisabled = false;
-                var warnings = [];
+                let isDisabled = false;
+                let warnings = [];
                 _.each(requires, (require) => {
-                    var type = require.component.get('type');
+                    let type = require.component.get('type');
                     if (!_.contains(types, type)) {
                         // ignore forward requires
                         return;
@@ -238,11 +238,11 @@ define(
             });
         },
         selectActiveComponent(components) {
-            var active = _.find(components, (component) => component.get('enabled'));
+            let active = _.find(components, (component) => component.get('enabled'));
             if (active && !active.get('disabled')) {
                 return;
             }
-            var newActive = _.find(components, (component) => !component.get('disabled'));
+            let newActive = _.find(components, (component) => !component.get('disabled'));
             if (newActive) {
                 newActive.set({enabled: true});
             }
@@ -252,7 +252,7 @@ define(
         }
     };
 
-    var NameAndRelease = React.createClass({
+    let NameAndRelease = React.createClass({
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'NameAndRelease',
@@ -262,11 +262,11 @@ define(
             }
         },
         isValid() {
-            var wizard = this.props.wizard;
-            var [name, cluster, clusters] = [wizard.get('name'), wizard.get('cluster'), wizard.get('clusters')];
+            let wizard = this.props.wizard;
+            let [name, cluster, clusters] = [wizard.get('name'), wizard.get('cluster'), wizard.get('clusters')];
             // test cluster name is already taken
             if (clusters.findWhere({name: name})) {
-                var error = i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name});
+                let error = i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name});
                 wizard.set({name_error: error});
                 return false;
             }
@@ -279,7 +279,7 @@ define(
             return true;
         },
         render() {
-            var releases = this.props.releases,
+            let releases = this.props.releases,
                 name = this.props.wizard.get('name'),
                 nameError = this.props.wizard.get('name_error'),
                 release = this.props.wizard.get('release');
@@ -287,7 +287,7 @@ define(
             if (this.props.loading) {
                 return null;
             }
-            var os = release.get('operating_system'),
+            let os = release.get('operating_system'),
                 connectivityAlert = i18n('dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert');
             return (
                 <div className='create-cluster-form name-and-release'>
@@ -327,14 +327,14 @@ define(
         }
     });
 
-    var Compute = React.createClass({
+    let Compute = React.createClass({
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'Compute',
             componentType: 'hypervisor',
             title: i18n('dialog.create_cluster_wizard.compute.title'),
             hasErrors(wizard) {
-                var allComponents = wizard.get('components'),
+                let allComponents = wizard.get('components'),
                     components = allComponents.getComponentsByType(this.componentType, {sorted: true});
                 return !_.any(components, (component) => component.get('enabled'));
             }
@@ -356,7 +356,7 @@ define(
         }
     });
 
-    var Network = React.createClass({
+    let Network = React.createClass({
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'Network',
@@ -365,11 +365,11 @@ define(
             title: i18n('dialog.create_cluster_wizard.network.title'),
             ml2CorePath: 'network:neutron:core:ml2',
             hasErrors(wizard) {
-                var allComponents = wizard.get('components'),
+                let allComponents = wizard.get('components'),
                     components = allComponents.getComponentsByType(this.componentType, {sorted: true});
-                var ml2core = _.find(components, (component) => component.id == this.ml2CorePath);
+                let ml2core = _.find(components, (component) => component.id == this.ml2CorePath);
                 if (ml2core && ml2core.get('enabled')) {
-                    var ml2 = _.filter(components, (component) => component.isML2Driver());
+                    let ml2 = _.filter(components, (component) => component.isML2Driver());
                     return !_.any(ml2, (ml2driver) => ml2driver.get('enabled'));
                 }
                 return false;
@@ -378,7 +378,7 @@ define(
         onChange(name, value) {
             this.props.onChange(name, value);
             // reset all ml2 drivers if ml2 core unselected
-            var component = _.find(this.components, (component) => component.id == name);
+            let component = _.find(this.components, (component) => component.id == name);
             if (!component.isML2Driver() && component.id != this.constructor.ml2CorePath) {
                 _.each(this.components, (component) => {
                     if (component.isML2Driver()) {
@@ -388,8 +388,8 @@ define(
             }
         },
         renderMonolithicDriverControls() {
-            var monolithic = _.filter(this.components, (component) => !component.isML2Driver());
-            var hasMl2 = _.any(this.components, (component) => component.isML2Driver());
+            let monolithic = _.filter(this.components, (component) => !component.isML2Driver());
+            let hasMl2 = _.any(this.components, (component) => component.isML2Driver());
             if (!hasMl2) {
                 monolithic = _.filter(monolithic, (component) => component.id != this.constructor.ml2CorePath);
             }
@@ -405,7 +405,7 @@ define(
             );
         },
         renderML2DriverControls() {
-            var ml2 = _.filter(this.components, (component) => component.isML2Driver());
+            let ml2 = _.filter(this.components, (component) => component.isML2Driver());
             this.processRestrictions(ml2, this.constructor.panesForRestrictions);
             this.processCompatible(this.props.allComponents, ml2, this.constructor.panesForRestrictions);
             return (
@@ -428,7 +428,7 @@ define(
         }
     });
 
-    var Storage = React.createClass({
+    let Storage = React.createClass({
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'Storage',
@@ -437,8 +437,8 @@ define(
             title: i18n('dialog.create_cluster_wizard.storage.title')
         },
         renderSection(components, type) {
-            var sectionComponents = _.filter(components, (component) => component.get('subtype') == type);
-            var isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
+            let sectionComponents = _.filter(components, (component) => component.get('subtype') == type);
+            let isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
             this.processRestrictions(sectionComponents, this.constructor.panesForRestrictions, (isRadio ? sectionComponents : []));
             this.processCompatible(this.props.allComponents, sectionComponents, this.constructor.panesForRestrictions, isRadio ? sectionComponents : []);
             return (
@@ -479,7 +479,7 @@ define(
         }
     });
 
-    var AdditionalServices = React.createClass({
+    let AdditionalServices = React.createClass({
         mixins: [ClusterWizardPanesMixin],
         statics: {
             paneName: 'AdditionalServices',
@@ -502,7 +502,7 @@ define(
         }
     });
 
-    var Finish = React.createClass({
+    let Finish = React.createClass({
         statics: {
             paneName: 'Finish',
             title: i18n('dialog.create_cluster_wizard.ready.title')
@@ -520,7 +520,7 @@ define(
         }
     });
 
-    var clusterWizardPanes = [
+    let clusterWizardPanes = [
         NameAndRelease,
         Compute,
         Network,
@@ -529,7 +529,7 @@ define(
         Finish
     ];
 
-    var CreateClusterWizard = React.createClass({
+    let CreateClusterWizard = React.createClass({
         mixins: [dialogs.dialogMixin],
         getInitialState() {
             return {
@@ -555,7 +555,7 @@ define(
         },
         componentDidMount() {
             this.releases.fetch().done(() => {
-                var defaultRelease = this.releases.findWhere({is_deployable: true});
+                let defaultRelease = this.releases.findWhere({is_deployable: true});
                 this.wizard.set('release', defaultRelease.id);
                 this.selectRelease(defaultRelease.id);
                 this.setState({loading: false});
@@ -564,7 +564,7 @@ define(
             this.updateState({activePaneIndex: 0});
         },
         getListOfTypesToRestore(currentIndex, maxIndex) {
-            var panesTypes = [];
+            let panesTypes = [];
             _.each(clusterWizardPanes, (pane, paneIndex) => {
                 if ((paneIndex <= maxIndex) && (paneIndex > currentIndex) && pane.componentType) {
                     panesTypes.push(pane.componentType);
@@ -573,12 +573,12 @@ define(
             return panesTypes;
         },
         updateState(nextState) {
-            var numberOfPanes = this.getEnabledPanes().length;
-            var nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex : this.state.activePaneIndex;
-            var pane = clusterWizardPanes[nextActivePaneIndex];
-            var paneHasErrors = _.isFunction(pane.hasErrors) ? pane.hasErrors(this.wizard) : false;
+            let numberOfPanes = this.getEnabledPanes().length;
+            let nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex : this.state.activePaneIndex;
+            let pane = clusterWizardPanes[nextActivePaneIndex];
+            let paneHasErrors = _.isFunction(pane.hasErrors) ? pane.hasErrors(this.wizard) : false;
 
-            var newState = _.merge(nextState, {
+            let newState = _.merge(nextState, {
                 activePaneIndex: nextActivePaneIndex,
                 previousEnabled: nextActivePaneIndex > 0,
                 nextEnabled: !paneHasErrors,
@@ -592,11 +592,11 @@ define(
             return _.reject(this.state.panes, 'hidden');
         },
         getActivePane() {
-            var panes = this.getEnabledPanes();
+            let panes = this.getEnabledPanes();
             return panes[this.state.activePaneIndex];
         },
         isCurrentPaneValid() {
-            var pane = this.refs.pane;
+            let pane = this.refs.pane;
             if (pane && _.isFunction(pane.isValid) && !pane.isValid()) {
                 this.updateState({paneHasErrors: true});
                 return false;
@@ -617,7 +617,7 @@ define(
                 return;
             }
 
-            var nextIndex = this.state.activePaneIndex + 1;
+            let nextIndex = this.state.activePaneIndex + 1;
             this.updateState({
                 activePaneIndex: nextIndex,
                 maxAvailablePaneIndex: _.max([nextIndex, this.state.maxAvailablePaneIndex])
@@ -641,9 +641,9 @@ define(
             }
             this.stopHandlingKeys = true;
             this.setState({actionInProgress: true});
-            var cluster = this.cluster;
+            let cluster = this.cluster;
             cluster.set({components: this.components});
-            var deferred = cluster.save();
+            let deferred = cluster.save();
             if (deferred) {
                 this.updateState({disabled: true});
                 deferred.done(() => {
@@ -669,7 +669,7 @@ define(
             }
         },
         selectRelease(releaseId) {
-            var release = this.releases.findWhere({id: releaseId});
+            let release = this.releases.findWhere({id: releaseId});
             this.wizard.set({release: release});
             this.cluster.set({release: releaseId});
 
@@ -684,7 +684,7 @@ define(
             });
         },
         onChange(name, value) {
-            var maxAvailablePaneIndex = this.state.maxAvailablePaneIndex;
+            let maxAvailablePaneIndex = this.state.maxAvailablePaneIndex;
             switch (name) {
                 case 'name':
                     this.wizard.set('name', value);
@@ -696,11 +696,11 @@ define(
                     break;
                 default:
                     maxAvailablePaneIndex = this.state.activePaneIndex;
-                    var panesToRestore = this.getListOfTypesToRestore(this.state.activePaneIndex, this.state.maxAvailablePaneIndex);
+                    let panesToRestore = this.getListOfTypesToRestore(this.state.activePaneIndex, this.state.maxAvailablePaneIndex);
                     if (panesToRestore.length > 0) {
                         this.components.restoreDefaultValues(panesToRestore);
                     }
-                    var component = this.components.findWhere({id: name});
+                    let component = this.components.findWhere({id: name});
                     component.set({enabled: value});
                     break;
             }
@@ -721,8 +721,8 @@ define(
             }
         },
         renderBody() {
-            var activeIndex = this.state.activePaneIndex;
-            var Pane = this.getActivePane();
+            let activeIndex = this.state.activePaneIndex;
+            let Pane = this.getActivePane();
             return (
                 <div className='wizard-body'>
                     <div className='wizard-steps-box'>
@@ -730,7 +730,7 @@ define(
                             <ul className='wizard-step-nav-item nav nav-pills nav-stacked'>
                                 {
                                     this.state.panes.map(function(pane, index) {
-                                        var classes = utils.classNames('wizard-step', {
+                                        let classes = utils.classNames('wizard-step', {
                                             disabled: index > this.state.maxAvailablePaneIndex,
                                             available: index <= this.state.maxAvailablePaneIndex && index != activeIndex,
                                             active: index == activeIndex
@@ -769,7 +769,7 @@ define(
             );
         },
         renderFooter() {
-            var actionInProgress = this.state.actionInProgress;
+            let actionInProgress = this.state.actionInProgress;
             return (
                 <div className='wizard-footer'>
                     <button className={utils.classNames('btn btn-default pull-left', {disabled: actionInProgress})} data-dismiss='modal'>

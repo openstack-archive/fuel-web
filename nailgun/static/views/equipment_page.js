@@ -26,7 +26,7 @@ define(
 ($, _, i18n, React, models, componentMixins, NodeListScreen) => {
     'use strict';
 
-    var EquipmentPage, PluginLinks;
+    let EquipmentPage, PluginLinks;
 
     EquipmentPage = React.createClass({
         mixins: [componentMixins.backboneMixin('nodes')],
@@ -35,7 +35,7 @@ define(
             navbarActiveElement: 'equipment',
             breadcrumbsPath: [['home', '#'], 'equipment'],
             fetchData() {
-                var nodes = new models.Nodes(),
+                let nodes = new models.Nodes(),
                     clusters = new models.Clusters(),
                     plugins = new models.Plugins(),
                     {releases, nodeNetworkGroups, fuelSettings} = app;
@@ -53,8 +53,8 @@ define(
                             release: releases.get(cluster.get('release_id'))
                         })
                     );
-                    var requests = clusters.map((cluster) => {
-                        var roles = new models.Roles();
+                    let requests = clusters.map((cluster) => {
+                        let roles = new models.Roles();
                         roles.url = _.result(cluster, 'url') + '/roles';
                         cluster.set({roles: roles});
                         return roles.fetch();
@@ -63,7 +63,7 @@ define(
                         plugins
                             .filter((plugin) => _.contains(plugin.get('groups'), 'equipment'))
                             .map((plugin) => {
-                                var pluginLinks = new models.PluginLinks();
+                                let pluginLinks = new models.PluginLinks();
                                 pluginLinks.url = _.result(plugin, 'url') + '/links';
                                 plugin.set({links: pluginLinks});
                                 return pluginLinks.fetch();
@@ -72,7 +72,7 @@ define(
                     return $.when(...requests);
                 })
                 .then(() => {
-                    var links = new models.PluginLinks();
+                    let links = new models.PluginLinks();
                     plugins.each(
                         (plugin) => links.add(plugin.get('links') && plugin.get('links').models)
                     );
@@ -87,7 +87,7 @@ define(
             };
         },
         selectNodes(ids = [], checked = false) {
-            var nodeSelection = {};
+            let nodeSelection = {};
             if (ids.length) {
                 nodeSelection = this.state.selectedNodeIds;
                 _.each(ids, (id) => {
@@ -101,7 +101,7 @@ define(
             this.setState({selectedNodeIds: nodeSelection});
         },
         render() {
-            var roles = new models.Roles();
+            let roles = new models.Roles();
             this.props.clusters.each((cluster) => {
                 roles.add(
                     cluster.get('roles').filter((role) => !roles.findWhere({name: role.get('name')}))

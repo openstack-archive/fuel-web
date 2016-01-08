@@ -26,11 +26,11 @@ define([
 ], ($, _, i18n, Backbone, utils, Expression, expressionObjects, customControls) => {
     'use strict';
 
-    var models = {};
+    let models = {};
 
-    var superMixin = models.superMixin = {
+    let superMixin = models.superMixin = {
         _super(method, args) {
-            var object = this;
+            let object = this;
             while (object[method] === this[method]) object = object.constructor.__super__;
             return object[method].apply(this, args || []);
         }
@@ -42,13 +42,13 @@ define([
     // We need to convert predicate objects to functions that use model's
     // get functionality -- otherwise model.property always returns undefined.
 
-    var collectionMixin = {
+    let collectionMixin = {
         getByIds(ids) {
             return this.filter((model) => _.contains(ids, model.id));
         }
     };
 
-    var collectionMethods = [
+    let collectionMethods = [
         'dropRightWhile', 'dropWhile', 'takeRightWhile', 'takeWhile',
         'findIndex', 'findLastIndex',
         'findKey', 'findLastKey',
@@ -60,7 +60,7 @@ define([
 
     _.each(collectionMethods, (method) => {
         collectionMixin[method] = function() {
-            var args = _.toArray(arguments),
+            let args = _.toArray(arguments),
                 source = args[0];
 
             if (_.isPlainObject(source)) {
@@ -75,10 +75,10 @@ define([
         };
     });
 
-    var BaseModel = models.BaseModel = Backbone.Model.extend(superMixin);
-    var BaseCollection = models.BaseCollection = Backbone.Collection.extend(collectionMixin).extend(superMixin);
+    let BaseModel = models.BaseModel = Backbone.Model.extend(superMixin);
+    let BaseCollection = models.BaseCollection = Backbone.Collection.extend(collectionMixin).extend(superMixin);
 
-    var cacheMixin = {
+    let cacheMixin = {
         fetch(options) {
             if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {
                 return $.Deferred().resolve();
@@ -86,7 +86,7 @@ define([
             return this._super('fetch', arguments);
         },
         sync() {
-            var deferred = this._super('sync', arguments);
+            let deferred = this._super('sync', arguments);
             if (this.cacheFor) {
                 deferred.done(() => {
                     this.lastSyncTime = new Date();
@@ -100,17 +100,17 @@ define([
     };
     models.cacheMixin = cacheMixin;
 
-    var restrictionMixin = models.restrictionMixin = {
+    let restrictionMixin = models.restrictionMixin = {
         expandRestrictions(restrictions, path = 'restrictions') {
             this.expandedRestrictions = this.expandedRestrictions || {};
             this.expandedRestrictions[path] = _.map(restrictions, utils.expandRestriction, this);
         },
         checkRestrictions(models, action, path = 'restrictions') {
-            var restrictions = (this.expandedRestrictions || {})[path];
+            let restrictions = (this.expandedRestrictions || {})[path];
             if (action) {
                 restrictions = _.where(restrictions, {action: action});
             }
-            var satisfiedRestrictions = _.filter(restrictions,
+            let satisfiedRestrictions = _.filter(restrictions,
                     (restriction) => new Expression(restriction.condition, models, restriction).evaluate()
                 );
             return {
@@ -137,8 +137,8 @@ define([
              *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
             **/
 
-            var evaluateExpressionHelper = function(expression, models, options) {
-                var ret;
+            let evaluateExpressionHelper = function(expression, models, options) {
+                let ret;
 
                 if (_.isUndefined(expression)) {
                     return {value: undefined, modelPaths: {}};
@@ -155,7 +155,7 @@ define([
                 return ret;
             };
 
-            var checkedLimitTypes = {},
+            let checkedLimitTypes = {},
                 name = this.get('name'),
                 limits = this.expandedLimits[name] || {},
                 overrides = limits.overrides || [],
@@ -168,8 +168,8 @@ define([
                 messages,
                 label = this.get('label');
 
-            var checkOneLimit = function(obj, limitType) {
-                var limitValue,
+            let checkOneLimit = function(obj, limitType) {
+                let limitValue,
                     comparator;
 
                 if (_.isUndefined(obj[limitType])) {
@@ -201,7 +201,7 @@ define([
             // Check the overridden limit types
             messages = _.chain(overrides)
                 .map((override) => {
-                    var exp = evaluateExpressionHelper(override.condition, models).value;
+                    let exp = evaluateExpressionHelper(override.condition, models).value;
 
                     if (exp) {
                         return _.map(limitTypes, _.partial(checkOneLimit, override));
@@ -229,7 +229,7 @@ define([
             // pick one with maximal value, for 'max' type we pick
             // the minimal one.
             messages = _.map(limitTypes, (limitType) => {
-                    var message = _.chain(messages)
+                    let message = _.chain(messages)
                         .filter({type: limitType})
                         .sortBy('value')
                         .value();
@@ -286,7 +286,7 @@ define([
                 role.expandRestrictions(role.get('restrictions'));
                 role.expandLimits(role.get('limits'));
 
-                var roleConflicts = role.get('conflicts'),
+                let roleConflicts = role.get('conflicts'),
                     roleName = role.get('name');
 
                 if (roleConflicts == '*') {
@@ -300,7 +300,7 @@ define([
                 }
 
                 _.each(role.conflicts, function(conflictRoleName) {
-                    var conflictingRole = this.findWhere({name: conflictRoleName});
+                    let conflictingRole = this.findWhere({name: conflictRoleName});
                     if (conflictingRole) conflictingRole.conflicts = _.uniq(_.union(conflictingRole.conflicts || [], [roleName]));
                 }, this);
             }, this);
@@ -327,7 +327,7 @@ define([
         constructorName: 'Cluster',
         urlRoot: '/api/clusters',
         defaults() {
-            var defaults = {
+            let defaults = {
                 nodes: new models.Nodes(),
                 tasks: new models.Tasks()
             };
@@ -335,7 +335,7 @@ define([
             return defaults;
         },
         validate(attrs) {
-            var errors = {};
+            let errors = {};
             if (!_.trim(attrs.name) || _.trim(attrs.name).length == 0) {
                 errors.name = 'Environment name cannot be empty';
             }
@@ -345,11 +345,11 @@ define([
             return _.isEmpty(errors) ? null : errors;
         },
         task(filter1, filter2) {
-            var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
+            let filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
             return this.get('tasks') && this.get('tasks').findTask(filters);
         },
         tasks(filter1, filter2) {
-            var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
+            let filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
             return this.get('tasks') && this.get('tasks').filterTasks(filters);
         },
         needsRedeployment() {
@@ -362,7 +362,7 @@ define([
             return !this.get('is_locked');
         },
         isDeploymentPossible() {
-            var nodes = this.get('nodes');
+            let nodes = this.get('nodes');
             return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
                 (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', active: true});
         }
@@ -391,7 +391,7 @@ define([
             'removing'
         ],
         resource(resourceName) {
-            var resource = 0;
+            let resource = 0;
             try {
                 if (resourceName == 'cores') {
                     resource = this.get('meta').cpu.real;
@@ -422,7 +422,7 @@ define([
             return this.get('status') != 'removing';
         },
         hasRole(role, onlyDeployedRoles) {
-            var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
+            let roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
         },
         hasChanges() {
@@ -431,11 +431,11 @@ define([
                 this.get('cluster') && !!this.get('pending_roles').length;
         },
         areDisksConfigurable() {
-            var status = this.get('status');
+            let status = this.get('status');
             return status == 'discover' || status == 'error';
         },
         areInterfacesConfigurable() {
-            var status = this.get('status');
+            let status = this.get('status');
             return status == 'discover' || status == 'error' || status == 'provisioned';
         },
         getRolesSummary(releaseRoles) {
@@ -446,7 +446,7 @@ define([
         getStatusSummary() {
             // 'offline' status has higher priority
             if (!this.get('online')) return 'offline';
-            var status = this.get('status');
+            let status = this.get('status');
             // 'removing' end 'error' statuses have higher priority
             if (_.contains(['removing', 'error'], status)) return status;
             if (this.get('pending_addition')) return 'pending_addition';
@@ -454,7 +454,7 @@ define([
             return status;
         },
         getLabel(label) {
-            var labelValue = this.get('labels')[label];
+            let labelValue = this.get('labels')[label];
             return _.isUndefined(labelValue) ? false : labelValue;
         }
     });
@@ -504,7 +504,7 @@ define([
             return _.filter(this.nodesAfterDeployment(), (node) => {return node.hasRole(role);});
         },
         resources(resourceName) {
-            var resources = this.map((node) => {return node.resource(resourceName);});
+            let resources = this.map((node) => {return node.resource(resourceName);});
             return _.reduce(resources, (sum, n) => {return sum + n;}, 0);
         },
         getLabelValues(label) {
@@ -512,10 +512,10 @@ define([
         },
         areDisksConfigurable() {
             if (!this.length) return false;
-            var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles')),
+            let roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles')),
                 disks = this.at(0).resource('disks');
             return !this.any((node) => {
-                var roleConflict = _.difference(roles, _.union(node.get('roles'), node.get('pending_roles'))).length;
+                let roleConflict = _.difference(roles, _.union(node.get('roles'), node.get('pending_roles'))).length;
                 return roleConflict || !_.isEqual(disks, node.resource('disks'));
             });
         },
@@ -534,7 +534,7 @@ define([
         constructorName: 'Task',
         urlRoot: '/api/tasks',
         releaseId() {
-            var id;
+            let id;
             try {
                 id = this.get('result').release_info.release_id;
             } catch (ignore) {}
@@ -545,14 +545,14 @@ define([
             deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
         },
         extendGroups(filters) {
-            var names = utils.composeList(filters.name);
+            let names = utils.composeList(filters.name);
             if (_.isEmpty(names)) names = _.flatten(_.values(this.groups));
-            var groups = utils.composeList(filters.group);
+            let groups = utils.composeList(filters.group);
             if (_.isEmpty(groups)) return names;
             return _.intersection(names, _.flatten(_.values(_.pick(this.groups, groups))));
         },
         extendStatuses(filters) {
-            var activeTaskStatuses = ['running', 'pending'],
+            let activeTaskStatuses = ['running', 'pending'],
                 completedTaskStatuses = ['ready', 'error'],
                 statuses = utils.composeList(filters.status);
             if (_.isEmpty(statuses)) {
@@ -635,7 +635,7 @@ define([
         mergePluginSettings() {
             _.each(this.attributes, (section, sectionName) => {
                 if (this.isPlugin(section)) {
-                    var chosenVersionData = section.metadata.versions.find(
+                    let chosenVersionData = section.metadata.versions.find(
                             (version) => version.metadata.plugin_id == section.metadata.chosen_id
                         );
                     // merge metadata of a chosen plugin version
@@ -646,13 +646,13 @@ define([
             }, this);
         },
         toJSON() {
-            var settings = this._super('toJSON', arguments);
+            let settings = this._super('toJSON', arguments);
             if (!this.root) return settings;
 
             // update plugin settings
             _.each(settings, (section, sectionName) => {
                 if (this.isPlugin(section)) {
-                    var chosenVersionData = section.metadata.versions.find(
+                    let chosenVersionData = section.metadata.versions.find(
                             (version) => version.metadata.plugin_id == section.metadata.chosen_id
                         );
                     section.metadata = _.omit(section.metadata, _.without(_.keys(chosenVersionData.metadata), 'plugin_id', 'plugin_version'));
@@ -694,19 +694,19 @@ define([
             }, this);
         },
         validate(attrs, options) {
-            var errors = {},
+            let errors = {},
                 models = options ? options.models : {},
                 checkRestrictions = (path) => this.checkRestrictions(models, null, path);
             _.each(attrs, function(group, groupName) {
                 if ((group.metadata || {}).enabled === false || checkRestrictions(this.makePath(groupName, 'metadata')).result) return;
                 _.each(group, function(setting, settingName) {
-                    var path = this.makePath(groupName, settingName);
+                    let path = this.makePath(groupName, settingName);
                     if (checkRestrictions(path).result) return;
 
                     // support of custom controls
-                    var CustomControl = customControls[setting.type];
+                    let CustomControl = customControls[setting.type];
                     if (CustomControl) {
-                        var error = CustomControl.validate(setting, models);
+                        let error = CustomControl.validate(setting, models);
                         if (error) errors[path] = error;
                         return;
                     }
@@ -725,7 +725,7 @@ define([
         },
         hasChanges(initialAttributes, models) {
             return _.any(this.attributes, function(section, sectionName) {
-                var metadata = section.metadata,
+                let metadata = section.metadata,
                     result = false;
                 if (metadata) {
                     if (this.checkRestrictions(models, null, this.makePath(sectionName, 'metadata')).result) return result;
@@ -741,7 +741,7 @@ define([
             return _.contains(this.groupList, group) ? group : 'other';
         },
         getGroupList() {
-            var groups = [];
+            let groups = [];
             _.each(this.attributes, function(section) {
                 if (section.metadata.group) {
                     groups.push(this.sanitizeGroup(section.metadata.group));
@@ -777,13 +777,13 @@ define([
         },
         getUnallocatedSpace(options) {
             options = options || {};
-            var volumes = options.volumes || this.get('volumes');
-            var allocatedSpace = volumes.reduce((sum, volume) => {return volume.get('name') == options.skip ? sum : sum + volume.get('size');}, 0);
+            let volumes = options.volumes || this.get('volumes');
+            let allocatedSpace = volumes.reduce((sum, volume) => {return volume.get('name') == options.skip ? sum : sum + volume.get('size');}, 0);
             return this.get('size') - allocatedSpace;
         },
         validate(attrs) {
-            var error;
-            var unallocatedSpace = this.getUnallocatedSpace({volumes: attrs.volumes});
+            let error;
+            let unallocatedSpace = this.getUnallocatedSpace({volumes: attrs.volumes});
             if (unallocatedSpace < 0) {
                 error = i18n('cluster_page.nodes_tab.configure_disks.validation_error', {size: utils.formatNumber(unallocatedSpace * -1)});
             }
@@ -802,19 +802,19 @@ define([
         constructorName: 'Volume',
         urlRoot: '/api/volumes/',
         getMinimalSize(minimum) {
-            var currentDisk = this.collection.disk,
+            let currentDisk = this.collection.disk,
                 groupAllocatedSpace = 0;
             if (currentDisk && currentDisk.collection)
                 groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
             return minimum - groupAllocatedSpace;
         },
         getMaxSize() {
-            var volumes = this.collection.disk.get('volumes'),
+            let volumes = this.collection.disk.get('volumes'),
                 diskAllocatedSpace = volumes.reduce(function(total, volume) {return this.get('name') == volume.get('name') ? total : total + volume.get('size');}, 0, this);
             return this.collection.disk.get('size') - diskAllocatedSpace;
         },
         validate(attrs, options) {
-            var min = this.getMinimalSize(options.minimum);
+            let min = this.getMinimalSize(options.minimum);
             if (attrs.size < min) {
                 return i18n('cluster_page.nodes_tab.configure_disks.volume_error', {size: utils.formatNumber(min)});
             }
@@ -845,35 +845,35 @@ define([
         },
         getSlaveInterfaces() {
             if (!this.isBond()) {return [this];}
-            var slaveInterfaceNames = _.pluck(this.get('slaves'), 'name');
+            let slaveInterfaceNames = _.pluck(this.get('slaves'), 'name');
             return this.collection.filter((slaveInterface) => {
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
             });
         },
         validate(attrs) {
-            var errors = [];
-            var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));
-            var untaggedNetworks = networks.filter((network) => _.isNull(network.getVlanRange(attrs.networkingParameters)));
-            var ns = 'cluster_page.nodes_tab.configure_interfaces.validation.';
+            let errors = [];
+            let networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));
+            let untaggedNetworks = networks.filter((network) => _.isNull(network.getVlanRange(attrs.networkingParameters)));
+            let ns = 'cluster_page.nodes_tab.configure_interfaces.validation.';
             // public and floating networks are allowed to be assigned to the same interface
-            var maxUntaggedNetworksCount = networks.any({name: 'public'}) && networks.any({name: 'floating'}) ? 2 : 1;
+            let maxUntaggedNetworksCount = networks.any({name: 'public'}) && networks.any({name: 'floating'}) ? 2 : 1;
             if (untaggedNetworks.length > maxUntaggedNetworksCount) {
                 errors.push(i18n(ns + 'too_many_untagged_networks'));
             }
-            var interfaceProperties = this.get('interface_properties');
+            let interfaceProperties = this.get('interface_properties');
             if (interfaceProperties && interfaceProperties.mtu) {
-                var mtuValue = interfaceProperties.mtu;
+                let mtuValue = interfaceProperties.mtu;
                 if (mtuValue && (mtuValue < 42 || mtuValue > 65536)) {
                     errors.push(i18n(ns + 'invalid_mtu'));
                 }
             }
 
             // check interface networks have the same vlan id
-            var vlans = _.reject(networks.pluck('vlan_start'), _.isNull);
+            let vlans = _.reject(networks.pluck('vlan_start'), _.isNull);
             if (_.uniq(vlans).length < vlans.length) errors.push(i18n(ns + 'networks_with_the_same_vlan'));
 
             // check interface network vlan ids included in Neutron L2 vlan range
-            var vlanRanges = _.reject(networks.map(
+            let vlanRanges = _.reject(networks.map(
                     (network) => network.getVlanRange(attrs.networkingParameters)
                 ), _.isNull);
             if (
@@ -892,7 +892,7 @@ define([
         constructorName: 'Interfaces',
         model: models.Interface,
         generateBondName(base) {
-            var index, proposedName;
+            let index, proposedName;
             for (index = 0; ; index += 1) {
                 proposedName = base + index;
                 if (!this.any({name: proposedName})) return proposedName;
@@ -903,7 +903,7 @@ define([
         }
     });
 
-    var networkPreferredOrder = ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'];
+    let networkPreferredOrder = ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'];
 
     models.InterfaceNetwork = BaseModel.extend({
         constructorName: 'InterfaceNetwork',
@@ -924,8 +924,8 @@ define([
         constructorName: 'Network',
         getVlanRange(networkingParameters) {
             if (!this.get('meta').neutron_vlan_range) {
-                var externalNetworkData = this.get('meta').ext_net_data;
-                var vlanStart = externalNetworkData ? networkingParameters.get(externalNetworkData[0]) : this.get('vlan_start');
+                let externalNetworkData = this.get('meta').ext_net_data;
+                let vlanStart = externalNetworkData ? networkingParameters.get(externalNetworkData[0]) : this.get('vlan_start');
                 return _.isNull(vlanStart) ? vlanStart : [vlanStart, externalNetworkData ? vlanStart + networkingParameters.get(externalNetworkData[1]) - 1 : vlanStart];
             }
             return networkingParameters.get('vlan_range');
@@ -962,7 +962,7 @@ define([
             return false;
         },
         validate(attrs) {
-            var errors = {},
+            let errors = {},
                 networkingParametersErrors = {},
                 ns = 'cluster_page.network_tab.validation.',
                 networks = attrs.networks,
@@ -973,17 +973,17 @@ define([
                 floatingRangesErrors;
 
             nodeNetworkGroups.map(function(nodeNetworkGroup) {
-                var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
-                var nodeNetworkGroupErrors = {};
+                let currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
+                let nodeNetworkGroupErrors = {};
                 // validate networks
                 currentNetworks.each((network) => {
-                    var networkErrors = {};
+                    let networkErrors = {};
                     if (network.get('meta').configurable) {
-                        var cidr = network.get('cidr');
+                        let cidr = network.get('cidr');
                         _.extend(networkErrors, utils.validateCidr(cidr));
-                        var cidrError = _.has(networkErrors, 'cidr');
+                        let cidrError = _.has(networkErrors, 'cidr');
                         if (network.get('meta').notation == 'ip_ranges') {
-                            var ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), cidrError ? null : cidr);
+                            let ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), cidrError ? null : cidr);
                             if (ipRangesErrors.length) {
                                 networkErrors.ip_ranges = ipRangesErrors;
                             }
@@ -996,7 +996,7 @@ define([
                             }
                         }
                         //FIXME (morale): same VLAN IDs are not permitted for nova-network for now
-                        var forbiddenVlans = [];
+                        let forbiddenVlans = [];
                         if (novaNetManager) {
                             forbiddenVlans = currentNetworks.map((net) => {
                                 return net.id != network.id ? net.get('vlan_start') : null;
@@ -1007,16 +1007,16 @@ define([
                             nodeNetworkGroupErrors[network.id] = networkErrors;
                         }
                         if (network.get('name') == 'baremetal') {
-                            var baremetalCidrError = _.has(nodeNetworkGroupErrors[network.id], 'cidr'),
+                            let baremetalCidrError = _.has(nodeNetworkGroupErrors[network.id], 'cidr'),
                                 baremetalGateway = networkParameters.get('baremetal_gateway');
                             if (!utils.validateIP(baremetalGateway)) {
                                 networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
                             } else if (!baremetalCidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
                                 networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
                             }
-                            var baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], baremetalCidrError ? null : cidr);
+                            let baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], baremetalCidrError ? null : cidr);
                             if (baremetalRangeErrors.length) {
-                                var [{start, end}] = baremetalRangeErrors;
+                                let [{start, end}] = baremetalRangeErrors;
                                 networkingParametersErrors.baremetal_range = [start, end];
                             }
                         }
@@ -1034,18 +1034,18 @@ define([
             // validate networking parameters
             if (novaNetManager) {
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(networkParameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
-                var fixedAmount = networkParameters.get('fixed_networks_amount');
-                var fixedVlan = networkParameters.get('fixed_networks_vlan_start');
+                let fixedAmount = networkParameters.get('fixed_networks_amount');
+                let fixedVlan = networkParameters.get('fixed_networks_vlan_start');
                 if (!utils.isNaturalNumber(parseInt(fixedAmount))) {
                     networkingParametersErrors.fixed_networks_amount = i18n(ns + 'invalid_amount');
                 }
-                var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
+                let vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
                 _.extend(networkingParametersErrors, vlanErrors);
                 if (_.isEmpty(vlanErrors)) {
                     if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
                         networkingParametersErrors.fixed_networks_amount = i18n(ns + 'need_more_vlan');
                     }
-                    var vlanIntersection = false;
+                    let vlanIntersection = false;
                     _.each(_.compact(networks.pluck('vlan_start')), (vlan) => {
                         if (utils.validateVlanRange(fixedVlan, fixedVlan + fixedAmount - 1, vlan)) {
                             vlanIntersection = true;
@@ -1060,12 +1060,12 @@ define([
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
                 }
             } else {
-                var idRangeErrors = ['', ''];
-                var segmentation = networkParameters.get('segmentation_type');
-                var idRangeAttr = segmentation == 'vlan' ? 'vlan_range' : 'gre_id_range';
-                var maxId = segmentation == 'vlan' ? 4094 : 65535;
-                var idRange = networkParameters.get(idRangeAttr);
-                var idStart = Number(idRange[0]), idEnd = Number(idRange[1]);
+                let idRangeErrors = ['', ''];
+                let segmentation = networkParameters.get('segmentation_type');
+                let idRangeAttr = segmentation == 'vlan' ? 'vlan_range' : 'gre_id_range';
+                let maxId = segmentation == 'vlan' ? 4094 : 65535;
+                let idRange = networkParameters.get(idRangeAttr);
+                let idStart = Number(idRange[0]), idEnd = Number(idRange[1]);
                 if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {
                     idRangeErrors[0] = i18n(ns + 'invalid_id_start');
                 } else if (!utils.isNaturalNumber(idEnd) || idEnd < 2 || idEnd > maxId) {
@@ -1088,25 +1088,25 @@ define([
                 if (!networkParameters.get('base_mac').match(utils.regexes.mac)) {
                     networkingParametersErrors.base_mac = i18n(ns + 'invalid_mac');
                 }
-                var cidr = networkParameters.get('internal_cidr');
+                let cidr = networkParameters.get('internal_cidr');
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(cidr, 'internal_cidr'));
-                var gateway = networkParameters.get('internal_gateway');
+                let gateway = networkParameters.get('internal_gateway');
                 if (!utils.validateIP(gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'invalid_gateway');
                 } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
                     networkingParametersErrors.internal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
                 }
-                var networkNamesRegExp = /^[a-z][\w\-]*$/i;
+                let networkNamesRegExp = /^[a-z][\w\-]*$/i;
                 _.each(['internal_name', 'floating_name'], (paramName) => {
                     if (!networkParameters.get(paramName).match(networkNamesRegExp)) {
                         networkingParametersErrors[paramName] = i18n(ns + 'invalid_name');
                     }
                 });
 
-                var floatingRanges = networkParameters.get('floating_ranges'),
+                let floatingRanges = networkParameters.get('floating_ranges'),
                     networkToCheckFloatingRange = networks.find((network) => {
                         if (!network.get('meta').floating_range_var) return false;
-                        var cidrError = false;
+                        let cidrError = false;
                         try {
                             cidrError = !!errors.networks[network.get('group_id')][network.id].cidr;
                         } catch (error) {}
@@ -1115,13 +1115,13 @@ define([
                             utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][1]);
                     });
 
-                var networkToCheckFloatingRangeData = networkToCheckFloatingRange ? {
+                let networkToCheckFloatingRangeData = networkToCheckFloatingRange ? {
                         cidr: networkToCheckFloatingRange.get('cidr'),
                         network: _.capitalize(networkToCheckFloatingRange.get('name')),
                         nodeNetworkGroup: nodeNetworkGroups.get(networkToCheckFloatingRange.get('group_id')).get('name')
                     } : {},
                     networkToCheckFloatingRangeIPRanges = networkToCheckFloatingRange ? _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
-                        var ipRangeError = false;
+                        let ipRangeError = false;
                         try {
                             ipRangeError = !_.all(range) || !!_.find(errors.networks[networkToCheckFloatingRange.get('group_id')][networkToCheckFloatingRange.id].ip_ranges, {index: index});
                         } catch (error) {}
@@ -1142,7 +1142,7 @@ define([
                     networkingParametersErrors.floating_ranges = floatingRangesErrors;
                 }
             }
-            var nameserverErrors = [];
+            let nameserverErrors = [];
             _.each(networkParameters.get('dns_nameservers'), (nameserver) => {
                 nameserverErrors.push(!utils.validateIP(nameserver) ? i18n(ns + 'invalid_nameserver') : null);
             });
@@ -1218,7 +1218,7 @@ define([
         locallyStoredAttributes: ['username', 'token'],
         initialize() {
             _.each(this.locallyStoredAttributes, function(attribute) {
-                var locallyStoredValue = localStorage.getItem(attribute);
+                let locallyStoredValue = localStorage.getItem(attribute);
                 if (locallyStoredValue) {
                     this.set(attribute, locallyStoredValue);
                 }
@@ -1246,11 +1246,11 @@ define([
     models.WizardModel = Backbone.DeepModel.extend({
         constructorName: 'WizardModel',
         parseConfig(config) {
-            var result = {};
+            let result = {};
             _.each(config, (paneConfig, paneName) => {
                 result[paneName] = {};
                 _.each(paneConfig, (attributeConfig, attribute) => {
-                    var attributeConfigValue = attributeConfig.value;
+                    let attributeConfigValue = attributeConfig.value;
                     if (_.isUndefined(attributeConfigValue)) {
                         switch (attributeConfig.type) {
                             case 'checkbox':
@@ -1274,7 +1274,7 @@ define([
             this.set(this.parseConfig(config));
         },
         restoreDefaultValues(panesToRestore) {
-            var result = {};
+            let result = {};
             _.each(this.defaults, (paneConfig, paneName) => {
                 if (_.contains(panesToRestore, paneName)) {
                     result[paneName] = this.defaults[paneName];
@@ -1283,15 +1283,15 @@ define([
             this.set(result);
         },
         validate(attrs, options) {
-            var errors = [];
+            let errors = [];
             _.each(options.config, function(attributeConfig, attribute) {
                 if (!(attributeConfig.regex && attributeConfig.regex.source)) {return;}
-                var hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
+                let hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
                     // this probably will be changed when other controls need validation
                     return !utils.evaluateExpression(restriction.condition, {default: this}).value;
                 }, this);
                 if (hasNoSatisfiedRestrictions) {
-                    var regExp = new RegExp(attributeConfig.regex.source);
+                    let regExp = new RegExp(attributeConfig.regex.source);
                     if (!this.get(options.paneName + '.' + attribute).match(regExp)) {
                         errors.push({
                             field: attribute,
@@ -1311,10 +1311,10 @@ define([
         constructorName: 'MirantisCredentials',
         baseUrl: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
         validate(attrs) {
-            var errors = {};
+            let errors = {};
             _.each(attrs, function(group, groupName) {
                 _.each(group, function(setting, settingName) {
-                    var path = this.makePath(groupName, settingName);
+                    let path = this.makePath(groupName, settingName);
                     if (!setting.regex || !setting.regex.source) return;
                     if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
                 }, this);
@@ -1354,7 +1354,7 @@ define([
         constructorName: 'NodeNetworkGroup',
         urlRoot: '/api/nodegroups',
         validate(options = {}) {
-            var newName = _.trim(options.name) || '';
+            let newName = _.trim(options.name) || '';
             if (!newName) {
                 return i18n('cluster_page.network_tab.node_network_group_empty_name');
             }
@@ -1395,11 +1395,11 @@ define([
                 return this.pattern == componentName;
             }
 
-            var componentParts = componentName.split(':');
+            let componentParts = componentName.split(':');
             if (componentParts.length < this.parts.length) {
                 return false;
             }
-            var matched = true;
+            let matched = true;
             _.each(this.parts, (part, index) => {
                 if (part == '*') {
                     return;
@@ -1415,7 +1415,7 @@ define([
 
     models.ComponentModel = BaseModel.extend({
         initialize(component) {
-            var parts = component.name.split(':');
+            let parts = component.name.split(':');
             this.set({
                 id: component.name,
                 enabled: component.enabled,
@@ -1430,11 +1430,11 @@ define([
             });
         },
         expandWildcards(components) {
-            var expandProperty = (propertyName, components) => {
-                var expandedComponents = [];
+            let expandProperty = (propertyName, components) => {
+                let expandedComponents = [];
                 _.each(this.get(propertyName), (patternDescription) => {
-                    var patternName = _.isString(patternDescription) ? patternDescription : patternDescription.name;
-                    var pattern = new ComponentPattern(patternName);
+                    let patternName = _.isString(patternDescription) ? patternDescription : patternDescription.name;
+                    let pattern = new ComponentPattern(patternName);
                     components.each((component) => {
                         if (pattern.match(component.id)) {
                             expandedComponents.push({
@@ -1477,7 +1477,7 @@ define([
             return _.isArray(response) ? response : [];
         },
         getComponentsByType(type, options = {sorted: true}) {
-            var components = this.where({type: type});
+            let components = this.where({type: type});
             if (options.sorted) {
                 components.sort((component1, component2) => {
                     return component1.get('weight') - component2.get('weight');
@@ -1487,7 +1487,7 @@ define([
         },
         restoreDefaultValues(types) {
             types = types || this.allTypes;
-            var components = _.filter(this.models, (model) => _.contains(types, model.get('type')));
+            let components = _.filter(this.models, (model) => _.contains(types, model.get('type')));
             _.invoke(components, 'restoreDefaultValue');
         },
         toJSON() {

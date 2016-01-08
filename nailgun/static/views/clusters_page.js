@@ -27,7 +27,7 @@ define(
 ],
 ($, _, i18n, React, models, utils, dispatcher, componentMixins, CreateClusterWizard) => {
     'use strict';
-    var ClustersPage, ClusterList, Cluster;
+    let ClustersPage, ClusterList, Cluster;
 
     ClustersPage = React.createClass({
         statics: {
@@ -35,9 +35,9 @@ define(
             navbarActiveElement: 'clusters',
             breadcrumbsPath: [['home', '#'], 'environments'],
             fetchData() {
-                var clusters = new models.Clusters();
-                var nodes = new models.Nodes();
-                var tasks = new models.Tasks();
+                let clusters = new models.Clusters();
+                let nodes = new models.Nodes();
+                let tasks = new models.Tasks();
                 return $.when(clusters.fetch(), nodes.fetch(), tasks.fetch()).done(() => {
                     clusters.each((cluster) => {
                         cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
@@ -99,8 +99,8 @@ define(
                 this.props.cluster.task({name: 'cluster_deletion', status: 'ready'});
         },
         fetchData() {
-            var request, requests = [];
-            var deletionTask = this.props.cluster.task('cluster_deletion');
+            let request, requests = [];
+            let deletionTask = this.props.cluster.task('cluster_deletion');
             if (deletionTask) {
                 request = deletionTask.fetch();
                 request.fail((response) => {
@@ -111,7 +111,7 @@ define(
                 });
                 requests.push(request);
             }
-            var deploymentTask = this.props.cluster.task({group: 'deployment', active: true});
+            let deploymentTask = this.props.cluster.task({group: 'deployment', active: true});
             if (deploymentTask) {
                 request = deploymentTask.fetch();
                 request.done(() => {
@@ -125,11 +125,11 @@ define(
             return $.when(...requests);
         },
         render() {
-            var cluster = this.props.cluster;
-            var status = cluster.get('status');
-            var nodes = cluster.get('nodes');
-            var deletionTask = cluster.task({name: 'cluster_deletion', active: true}) || cluster.task({name: 'cluster_deletion', status: 'ready'});
-            var deploymentTask = cluster.task({group: 'deployment', active: true});
+            let cluster = this.props.cluster;
+            let status = cluster.get('status');
+            let nodes = cluster.get('nodes');
+            let deletionTask = cluster.task({name: 'cluster_deletion', active: true}) || cluster.task({name: 'cluster_deletion', status: 'ready'});
+            let deploymentTask = cluster.task({group: 'deployment', active: true});
             return (
                 <div className='col-xs-3'>
                     <a className={utils.classNames({clusterbox: true, 'cluster-disabled': !!deletionTask})} href={!deletionTask ? '#cluster/' + cluster.id : 'javascript:void 0'}>

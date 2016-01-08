@@ -24,8 +24,8 @@ define([
 
     suite('Expression', () => {
         test('Expression parser test', () => {
-            var hypervisor = 'kvm';
-            var testModels = {
+            let hypervisor = 'kvm';
+            let testModels = {
                 cluster: new models.Cluster({mode: 'ha_compact'}),
                 settings: new models.Settings({common: {libvirt_type: {value: hypervisor}}}),
                 release: new models.Release({roles: ['controller', 'compute']})
@@ -33,7 +33,7 @@ define([
 
             // if you change/add test cases, please also modify
             // nailgun/test/unit/test_expression_parser.py
-            var testCases = [
+            let testCases = [
                 // test scalars
                 ['true', true],
                 ['false', false],
@@ -83,12 +83,12 @@ define([
             ];
 
             function evaluate(expression, options) {
-                var result = new Expression(expression, testModels, options).evaluate();
+                let result = new Expression(expression, testModels, options).evaluate();
                 return result instanceof expressionObjects.ModelPath ? result.get() : result;
             }
 
             _.each(testCases, ([expression, result, strict]) => {
-                var options = {strict};
+                let options = {strict};
                 if (result === Error) {
                     assert.throws(_.partial(evaluate, expression, options), Error, '', expression + ' throws an error');
                 } else {

@@ -16,7 +16,7 @@
 define(['underscore', 'backbone'], (_, Backbone) => {
     'use strict';
 
-    var dispatcher = _.clone(Backbone.Events);
+    let dispatcher = _.clone(Backbone.Events);
     _.bindAll(dispatcher);
 
     return dispatcher;

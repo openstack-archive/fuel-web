@@ -18,7 +18,7 @@ define(['underscore', 'expression/parser'], (_, ExpressionParser) => {
 
     class ModelPath {
         constructor(path) {
-            var pathParts = path.split(':');
+            let pathParts = path.split(':');
             if (_.isUndefined(pathParts[1])) {
                 this.modelName = 'default';
                 this.attribute = pathParts[0];
@@ -85,9 +85,9 @@ define(['underscore', 'expression/parser'], (_, ExpressionParser) => {
         }
 
         evaluate() {
-            var expression = ExpressionParser.yy.expression;
+            let expression = ExpressionParser.yy.expression;
             this.modelPath.setModel(expression.models, expression.extraModels);
-            var result = this.modelPath.get();
+            let result = this.modelPath.get();
             if (_.isUndefined(result)) {
                 if (expression.strict) {
                     throw new TypeError('Value of ' + this.modelPathText + ' is undefined. Set options.strict to false to allow undefined values.');

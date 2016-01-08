@@ -36,7 +36,7 @@ define(
 ($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, DashboardTab, NodesTab, NetworkTab, SettingsTab, LogsTab, HealthCheckTab, vmWare) => {
     'use strict';
 
-    var ClusterPage = React.createClass({
+    let ClusterPage = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5),
             componentMixins.backboneMixin('cluster', 'change:name change:is_customized change:release'),
@@ -62,7 +62,7 @@ define(
         statics: {
             navbarActiveElement: 'clusters',
             breadcrumbsPath(pageOptions) {
-                var cluster = pageOptions.cluster,
+                let cluster = pageOptions.cluster,
                     tabOptions = pageOptions.tabOptions[0],
                     addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/),
                     breadcrumbs = [
@@ -91,9 +91,9 @@ define(
                 ];
             },
             fetchData(id, activeTab, ...tabOptions) {
-                var cluster, promise, currentClusterId;
-                var nodeNetworkGroups = app.nodeNetworkGroups;
-                var tab = _.find(this.getTabs(), {url: activeTab}).tab;
+                let cluster, promise, currentClusterId;
+                let nodeNetworkGroups = app.nodeNetworkGroups;
+                let tab = _.find(this.getTabs(), {url: activeTab}).tab;
                 try {
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}
@@ -105,15 +105,15 @@ define(
                 } else {
                     cluster = new models.Cluster({id: id});
 
-                    var settings = new models.Settings();
+                    let settings = new models.Settings();
                     settings.url = _.result(cluster, 'url') + '/attributes';
                     cluster.set({settings: settings});
 
-                    var roles = new models.Roles();
+                    let roles = new models.Roles();
                     roles.url = _.result(cluster, 'url') + '/roles';
                     cluster.set({roles: roles});
 
-                    var pluginLinks = new models.PluginLinks();
+                    let pluginLinks = new models.PluginLinks();
                     pluginLinks.url = _.result(cluster, 'url') + '/plugin_links';
                     cluster.set({pluginLinks: pluginLinks});
 
@@ -130,7 +130,7 @@ define(
                             nodeNetworkGroups.fetch({cache: true})
                         )
                         .then(() => {
-                            var networkConfiguration = new models.NetworkConfiguration();
+                            let networkConfiguration = new models.NetworkConfiguration();
                             networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                             cluster.set({
                                 networkConfiguration: networkConfiguration,
@@ -139,11 +139,11 @@ define(
                             return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
                         })
                         .then(() => {
-                            var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
+                            let useVcenter = cluster.get('settings').get('common.use_vcenter.value');
                             if (!useVcenter) {
                                 return true;
                             }
-                            var vcenter = new vmWare.vmWareModels.VCenter({id: id});
+                            let vcenter = new vmWare.vmWareModels.VCenter({id: id});
                             cluster.set({vcenter: vcenter});
                             return vcenter.fetch();
                         })
@@ -176,7 +176,7 @@ define(
             };
         },
         removeFinishedNetworkTasks(callback) {
-            var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
+            let request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
             if (callback) request.always(callback);
             return request;
         },
@@ -184,7 +184,7 @@ define(
             return this.removeFinishedTasks(this.props.cluster.tasks({group: 'deployment'}));
         },
         removeFinishedTasks(tasks) {
-            var requests = [];
+            let requests = [];
             _.each(tasks, function(task) {
                 if (task.match({active: false})) {
                     this.props.cluster.get('tasks').remove(task);
@@ -197,7 +197,7 @@ define(
             return this.props.cluster.task({group: ['deployment', 'network'], active: true});
         },
         fetchData() {
-            var task = this.props.cluster.task({group: 'deployment', active: true});
+            let task = this.props.cluster.task({group: 'deployment', active: true});
             if (task) {
                 return task.fetch()
                     .done(() => {
@@ -221,7 +221,7 @@ define(
         },
         componentWillMount() {
             this.props.cluster.on('change:release_id', function() {
-                var release = new models.Release({id: this.props.cluster.get('release_id')});
+                let release = new models.Release({id: this.props.cluster.get('release_id')});
                 release.fetch().done(() => {
                     this.props.cluster.set({release: release});
                 });
@@ -236,7 +236,7 @@ define(
             // FIXME: the following logs-related logic should be moved to Logs tab code
             // to keep parent component tightly coupled to its children
             if (props.activeTab == 'logs') {
-                var selectedLogs;
+                let selectedLogs;
                 if (props.tabOptions[0]) {
                     selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
                     selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() : props.defaultLogLevel;
@@ -264,7 +264,7 @@ define(
         },
         selectNodes(ids, checked) {
             if (ids && ids.length) {
-                var nodeSelection = this.state.selectedNodeIds;
+                let nodeSelection = this.state.selectedNodeIds;
                 _.each(ids, (id) => {
                     if (checked) {
                         nodeSelection[id] = true;
@@ -278,12 +278,12 @@ define(
             }
         },
         render() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
                 tabUrls = _.pluck(availableTabs, 'url'),
                 tab = _.find(availableTabs, {url: this.props.activeTab});
             if (!tab) return null;
-            var Tab = tab.tab;
+            let Tab = tab.tab;
 
             return (
                 <div className='cluster-page' key={cluster.id}>

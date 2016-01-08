@@ -24,10 +24,10 @@ define([
 
     suite('Test utils', () => {
         test('Test getResponseText', () => {
-            var response;
-            var getResponseText = utils.getResponseText;
-            var serverErrorMessage = i18n('dialog.error_dialog.server_error');
-            var serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
+            let response;
+            let getResponseText = utils.getResponseText;
+            let serverErrorMessage = i18n('dialog.error_dialog.server_error');
+            let serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
 
             response = {status: 500, responseText: 'Server error occured'};
             assert.equal(getResponseText(response), serverErrorMessage, 'HTTP 500 is treated as a server error');
@@ -46,14 +46,14 @@ define([
         });
 
         test('Test comparison', () => {
-            var compare = utils.compare;
-            var model1 = new Backbone.Model({
+            let compare = utils.compare;
+            let model1 = new Backbone.Model({
                     string: 'bond2',
                     number: 1,
                     boolean: true,
                     booleanFlagWithNull: null
                 });
-            var model2 = new Backbone.Model({
+            let model2 = new Backbone.Model({
                     string: 'bond10',
                     number: 10,
                     boolean: false,
@@ -84,8 +84,8 @@ define([
         });
 
         test('Test highlightTestStep', () => {
-            var text;
-            var highlight = utils.highlightTestStep;
+            let text;
+            let highlight = utils.highlightTestStep;
 
             text = '1. Step 1\n2. Step 2\n3. Step 3';
             assert.equal(
@@ -137,7 +137,7 @@ define([
         });
 
         test('Test getDefaultGatewayForCidr', () => {
-            var getGateway = utils.getDefaultGatewayForCidr;
+            let getGateway = utils.getDefaultGatewayForCidr;
 
             assert.equal(getGateway('172.16.0.0/24'), '172.16.0.1', 'Getting default gateway for CIDR');
             assert.equal(getGateway('192.168.0.0/10'), '192.128.0.1', 'Getting default gateway for CIDR');
@@ -146,7 +146,7 @@ define([
         });
 
         test('Test getDefaultIPRangeForCidr', () => {
-            var getRange = utils.getDefaultIPRangeForCidr;
+            let getRange = utils.getDefaultIPRangeForCidr;
 
             assert.deepEqual(getRange('172.16.0.0/24'), [['172.16.0.1', '172.16.0.254']], 'Getting default IP range for CIDR');
             assert.deepEqual(getRange('192.168.0.0/10', true), [['192.128.0.2', '192.191.255.254']], 'Gateway address excluded from default IP range');
@@ -155,7 +155,7 @@ define([
         });
 
         test('Test validateIpCorrespondsToCIDR', () => {
-            var validate = utils.validateIpCorrespondsToCIDR;
+            let validate = utils.validateIpCorrespondsToCIDR;
 
             assert.ok(validate('172.16.0.0/20', '172.16.0.2'), 'Check IP, that corresponds to CIDR');
             assert.ok(validate('172.16.0.5/24', '172.16.0.2'), 'Check IP, that corresponds to CIDR');

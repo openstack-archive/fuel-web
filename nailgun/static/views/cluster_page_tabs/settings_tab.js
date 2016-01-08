@@ -28,7 +28,7 @@ define(
 ($, _, i18n, React, utils, models, componentMixins, SettingSection, CSSTransitionGroup) => {
     'use strict';
 
-    var SettingsTab = React.createClass({
+    let SettingsTab = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin({
@@ -52,7 +52,7 @@ define(
             }
         },
         getInitialState() {
-            var settings = this.props.cluster.get('settings');
+            let settings = this.props.cluster.get('settings');
             return {
                 configModels: {
                     cluster: this.props.cluster,
@@ -80,10 +80,10 @@ define(
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             // collecting data to save
-            var settings = this.props.cluster.get('settings'),
+            let settings = this.props.cluster.get('settings'),
                 dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
                     _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
-            var options = {url: settings.url, patch: true, wait: true, validate: false},
+            let options = {url: settings.url, patch: true, wait: true, validate: false},
                 deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
             if (deferred) {
                 this.setState({actionInProgress: true});
@@ -112,7 +112,7 @@ define(
             return deferred;
         },
         loadDefaults() {
-            var settings = this.props.cluster.get('settings'),
+            let settings = this.props.cluster.get('settings'),
                 lockedCluster = !this.props.cluster.isAvailableForSettingsChanges(),
                 defaultSettings = new models.Settings(),
                 deferred = defaultSettings.fetch({url: _.result(this.props.cluster, 'url') + '/attributes/defaults'});
@@ -127,7 +127,7 @@ define(
                                     // do not update hidden settings (hack for #1442143),
                                     // the same for settings with group network
                                     if (setting.type == 'hidden' || setting.group == 'network') return;
-                                    var path = settings.makePath(sectionName, settingName);
+                                    let path = settings.makePath(sectionName, settingName);
                                     settings.set(path, defaultSettings.get(path), {silent: true});
                                 });
                             }
@@ -153,13 +153,13 @@ define(
             this.setState({key: _.now()});
         },
         loadInitialSettings() {
-            var settings = this.props.cluster.get('settings');
+            let settings = this.props.cluster.get('settings');
             settings.set(_.cloneDeep(this.state.initialAttributes), {silent: true, validate: false});
             settings.mergePluginSettings();
             settings.isValid({models: this.state.configModels});
         },
         onChange(groupName, settingName, value) {
-            var settings = this.props.cluster.get('settings'),
+            let settings = this.props.cluster.get('settings'),
                 name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
             this.state.settingsForChecks.set(name, value);
             // FIXME: the following hacks cause we can't pass {validate: true} option to set method
@@ -172,13 +172,13 @@ define(
             return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, path);
         },
         isSavingPossible() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true});
             return !locked && this.hasChanges() && _.isNull(settings.validationError);
         },
         render() {
-            var cluster = this.props.cluster,
+            let cluster = this.props.cluster,
                 settings = cluster.get('settings'),
                 settingsGroupList = settings.getGroupList(),
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true}),
@@ -191,18 +191,18 @@ define(
                     'changes-locked': lockedCluster
                 };
 
-            var invalidSections = {};
+            let invalidSections = {};
             _.each(settings.validationError, (error, key) => {
                 invalidSections[_.first(key.split('.'))] = true;
             });
 
             // Prepare list of settings organized by groups
-            var groupedSettings = {};
+            let groupedSettings = {};
             _.each(settingsGroupList, (group) => groupedSettings[group] = {});
             _.each(settings.attributes, function(section, sectionName) {
-                var isHidden = this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
+                let isHidden = this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
                 if (!isHidden) {
-                    var group = section.metadata.group,
+                    let group = section.metadata.group,
                         hasErrors = invalidSections[sectionName];
                     if (group) {
                         if (group != 'network') {
@@ -210,7 +210,7 @@ define(
                         }
                     } else {
                         // Settings like 'Common' can be splitted to different groups
-                        var settingGroups = _.chain(section)
+                        let settingGroups = _.chain(section)
                             .omit('metadata')
                             .pluck('group')
                             .unique()
@@ -223,7 +223,7 @@ define(
                         }
 
                         _.each(settingGroups, function(settingGroup) {
-                            var calculatedGroup = settings.sanitizeGroup(settingGroup),
+                            let calculatedGroup = settings.sanitizeGroup(settingGroup),
                                 pickedSettings = _.compact(_.map(section, function(setting, settingName) {
                                     if (
                                         settingName != 'metadata' &&
@@ -260,11 +260,11 @@ define(
                     {_.map(groupedSettings, function(selectedGroup, groupName) {
                         if (groupName != this.props.activeSettingsSectionName) return null;
 
-                        var sortedSections = _.sortBy(_.keys(selectedGroup), (name) => settings.get(name + '.metadata.weight'));
+                        let sortedSections = _.sortBy(_.keys(selectedGroup), (name) => settings.get(name + '.metadata.weight'));
                         return (
                             <div className={'col-xs-10 forms-box ' + groupName} key={groupName}>
                                 {_.map(sortedSections, function(sectionName) {
-                                    var settingsToDisplay = selectedGroup[sectionName].settings ||
+                                    let settingsToDisplay = selectedGroup[sectionName].settings ||
                                         _.compact(_.map(settings.get(sectionName), function(setting, settingName) {
                                             if (
                                                 settingName != 'metadata' &&
@@ -311,7 +311,7 @@ define(
         }
     });
 
-    var SettingSubtabs = React.createClass({
+    let SettingSubtabs = React.createClass({
         render() {
             return (
                 <div className='col-xs-2'>
@@ -320,7 +320,7 @@ define(
                         this.props.settingsGroupList.map(function(groupName) {
                             if (!this.props.groupedSettings[groupName]) return null;
 
-                            var hasErrors = _.any(_.pluck(this.props.groupedSettings[groupName], 'invalid'));
+                            let hasErrors = _.any(_.pluck(this.props.groupedSettings[groupName], 'invalid'));
                             return (
                                 <li
                                     key={groupName}

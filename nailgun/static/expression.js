@@ -16,7 +16,7 @@
 define(['underscore', 'expression/parser', 'expression/objects'], (_, ExpressionParser, expressionObjects) => {
     'use strict';
 
-    var expressionCache = {};
+    let expressionCache = {};
 
     class Expression {
         constructor(expressionText, models = {}, {strict = true} = {}) {
@@ -34,13 +34,13 @@ define(['underscore', 'expression/parser', 'expression/objects'], (_, Expression
             ExpressionParser.yy.expression = this;
             this.modelPaths = {};
             this.extraModels = extraModels;
-            var value = this.compiledExpression.evaluate();
+            let value = this.compiledExpression.evaluate();
             delete this.extraModels;
             return value;
         }
 
         getCompiledExpression() {
-            var cacheEntry = expressionCache[this.expressionText];
+            let cacheEntry = expressionCache[this.expressionText];
             if (!cacheEntry) {
                 cacheEntry = expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
             }

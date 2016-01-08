@@ -23,7 +23,7 @@ define([
     suite('Test models', () => {
         suite('Test Task model', () => {
             test('Test extendStatuses method', () => {
-                var task = new models.Task(),
+                let task = new models.Task(),
                     filters, result;
 
                 filters = {status: []};
@@ -64,7 +64,7 @@ define([
             });
 
             test('Test extendGroups method', () => {
-                var task = new models.Task(),
+                let task = new models.Task(),
                     allTaskNames = _.flatten(_.values(task.groups)),
                     filters, result;
 

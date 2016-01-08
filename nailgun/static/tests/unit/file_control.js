@@ -17,11 +17,11 @@
 define(() => {
     'use strict';
 
-    var input;
+    let input;
 
     suite('File Control', () => {
         setup(() => {
-            var controls = require('views/controls');
+            let controls = require('views/controls');
 
             input = new controls.Input({
                 type: 'file',
@@ -38,7 +38,7 @@ define(() => {
         });
 
         test('Initialization', () => {
-            var initialState = input.getInitialState();
+            let initialState = input.getInitialState();
 
             assert.equal(input.props.type, 'file', 'Input type should be equal to file');
             assert.equal(initialState.fileName, 'certificate.crt', 'Default file name must correspond to provided one');
@@ -46,7 +46,7 @@ define(() => {
         });
 
         test('File selection', () => {
-            var clickSpy = sinon.spy();
+            let clickSpy = sinon.spy();
 
             sinon.stub(input, 'getInputDOMNode').returns({
                 click: clickSpy
@@ -57,7 +57,7 @@ define(() => {
         });
 
         test('File fetching', () => {
-            var readMethod = sinon.mock(),
+            let readMethod = sinon.mock(),
                 readerObject = {
                     readAsBinaryString: readMethod,
                     result: 'File contents'
@@ -82,7 +82,7 @@ define(() => {
         });
 
         test('File saving', () => {
-            var setState = sinon.spy(input, 'setState'),
+            let setState = sinon.spy(input, 'setState'),
                 dummyName = 'dummy.ext',
                 dummyContent = 'Lorem ipsum dolores';
             input.saveFile(dummyName, dummyContent);

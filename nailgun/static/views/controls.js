@@ -24,7 +24,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
     (i18n, $, _, React, ReactDOM, utils, componentMixins) => {
     'use strict';
 
-    var controls = {};
+    let controls = {};
 
     controls.Input = React.createClass({
         propTypes: {
@@ -90,7 +90,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             }
         },
         readFile() {
-            var reader = new FileReader(),
+            let reader = new FileReader(),
                 input = this.getInputDOMNode();
 
             if (input.files.length) {
@@ -102,7 +102,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
         },
         onChange() {
             if (this.props.onChange) {
-                var input = this.getInputDOMNode();
+                let input = this.getInputDOMNode();
                 return this.props.onChange(
                     this.props.name,
                     this.props.type == 'checkbox' ? input.checked : input.value
@@ -113,9 +113,9 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             e.target.select();
         },
         renderInput() {
-            var classes = {'form-control': this.props.type != 'range'};
+            let classes = {'form-control': this.props.type != 'range'};
             classes[this.props.inputClassName] = this.props.inputClassName;
-            var props = {
+            let props = {
                 ref: 'input',
                 key: 'input',
                 onFocus: this.props.selectOnFocus && this.handleFocus,
@@ -127,7 +127,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             } else {
                 props.onChange = this.props.debounce ? this.debouncedChange : this.onChange;
             }
-            var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
+            let Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,
                 isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 inputWrapperClasses = {
@@ -182,11 +182,11 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             );
         },
         renderDescription() {
-            var text = !_.isUndefined(this.props.error) && !_.isNull(this.props.error) ? this.props.error : this.props.description || '';
+            let text = !_.isUndefined(this.props.error) && !_.isNull(this.props.error) ? this.props.error : this.props.description || '';
             return <span key='description' className='help-block'>{text}</span>;
         },
         renderWrapper(children) {
-            var isCheckboxOrRadio = this.isCheckboxOrRadio(),
+            let isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 classes = {
                     'form-group': !isCheckboxOrRadio,
                     'checkbox-group': isCheckboxOrRadio,
@@ -251,13 +251,13 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             progress: React.PropTypes.number
         },
         render() {
-            var wrapperClasses = {
+            let wrapperClasses = {
                 progress: true
             };
             wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
 
-            var isInfinite = !_.isNumber(this.props.progress);
-            var progressClasses = {
+            let isInfinite = !_.isNumber(this.props.progress);
+            let progressClasses = {
                 'progress-bar': true,
                 'progress-bar-striped active': isInfinite
             };
@@ -283,14 +283,14 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             body: React.PropTypes.array
         },
         render() {
-            var tableClasses = {'table table-bordered': true, 'table-striped': !this.props.noStripes};
+            let tableClasses = {'table table-bordered': true, 'table-striped': !this.props.noStripes};
             tableClasses[this.props.tableClassName] = this.props.tableClassName;
             return (
                 <table className={utils.classNames(tableClasses)}>
                     <thead>
                         <tr>
                             {_.map(this.props.head, (column, index) => {
-                                var classes = {};
+                                let classes = {};
                                 classes[column.className] = column.className;
                                 return <th key={index} className={utils.classNames(classes)}>{column.label}</th>;
                             })}
@@ -320,7 +320,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'react-dom', 'utils', 'componen
             return {placement: 'bottom'};
         },
         render() {
-            var classes = {'popover in': true};
+            let classes = {'popover in': true};
             classes[this.props.placement] = true;
             classes[this.props.className] = true;
             return (

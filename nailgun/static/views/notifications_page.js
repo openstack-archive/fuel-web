@@ -26,7 +26,7 @@ define(
 (_, i18n, React, utils, models, dialogs, componentMixins) => {
     'use strict';
 
-    var NotificationsPage, Notification;
+    let NotificationsPage, Notification;
 
     NotificationsPage = React.createClass({
         mixins: [componentMixins.backboneMixin('notifications')],
@@ -35,18 +35,18 @@ define(
             navbarActiveElement: null,
             breadcrumbsPath: [['home', '#'], 'notifications'],
             fetchData() {
-                var notifications = app.notifications;
+                let notifications = app.notifications;
                 return notifications.fetch().then(() =>
                     ({notifications: notifications})
                 );
             }
         },
         checkDateIsToday(date) {
-            var today = new Date();
+            let today = new Date();
             return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
         },
         render() {
-            var notificationGroups = this.props.notifications.groupBy('date');
+            let notificationGroups = this.props.notifications.groupBy('date');
             return (
                 <div className='notifications-page'>
                     <div className='page-title'>
@@ -77,12 +77,12 @@ define(
     Notification = React.createClass({
         mixins: [componentMixins.backboneMixin('notification')],
         showNodeInfo(id) {
-            var node = new models.Node({id: id});
+            let node = new models.Node({id: id});
             node.fetch();
             dialogs.ShowNodeInfoDialog.show({node: node});
         },
         markAsRead() {
-            var notification = this.props.notification;
+            let notification = this.props.notification;
             notification.toJSON = function() {
                 return notification.pick('id', 'status');
             };
@@ -92,13 +92,13 @@ define(
             if (this.props.notification.get('status') == 'unread') {
                 this.markAsRead();
             }
-            var nodeId = this.props.notification.get('node_id');
+            let nodeId = this.props.notification.get('node_id');
             if (nodeId) {
                 this.showNodeInfo(nodeId);
             }
         },
         render() {
-            var topic = this.props.notification.get('topic'),
+            let topic = this.props.notification.get('topic'),
                 notificationClasses = {
                     'col-xs-12 notification': true,
                     'text-danger': topic == 'error',

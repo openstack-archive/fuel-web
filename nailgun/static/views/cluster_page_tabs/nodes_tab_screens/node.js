@@ -30,7 +30,7 @@ define(
 ($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins) => {
     'use strict';
 
-    var Node = React.createClass({
+    let Node = React.createClass({
         mixins: [componentMixins.renamingMixin('name')],
         getInitialState() {
             return {
@@ -45,7 +45,7 @@ define(
             }
         },
         getNodeLogsLink() {
-            var status = this.props.node.get('status'),
+            let status = this.props.node.get('status'),
                 error = this.props.node.get('error_type'),
                 options = {type: 'remote', node: this.props.node.id};
             if (status == 'discover') {
@@ -76,7 +76,7 @@ define(
             e.preventDefault();
             if (this.state.actionInProgress) return;
             this.setState({actionInProgress: true});
-            var node = new models.Node(this.props.node.attributes),
+            let node = new models.Node(this.props.node.attributes),
                 data = {pending_deletion: false};
             node.save(data, {patch: true})
                 .done(() => {
@@ -135,7 +135,7 @@ define(
             });
         },
         toggleExtendedNodePanel() {
-            var states = this.state.extendedView ? {extendedView: false, isRenaming: false} : {extendedView: true};
+            let states = this.state.extendedView ? {extendedView: false, isRenaming: false} : {extendedView: true};
             this.setState(states);
         },
         renderNameControl() {
@@ -171,7 +171,7 @@ define(
             );
         },
         renderNodeProgress(status) {
-            var nodeProgress = this.props.node.get('progress');
+            let nodeProgress = this.props.node.get('progress');
             return (
                 <div className='progress'>
                     {status &&
@@ -185,7 +185,7 @@ define(
             );
         },
         renderNodeHardwareSummary() {
-            var htCores = this.props.node.resource('ht_cores'),
+            let htCores = this.props.node.resource('ht_cores'),
                 hdd = this.props.node.resource('hdd'),
                 ram = this.props.node.resource('ram');
             return (
@@ -251,12 +251,12 @@ define(
                 .done(this.props.onNodeSelection);
         },
         renderLabels() {
-            var labels = this.props.node.get('labels');
+            let labels = this.props.node.get('labels');
             if (_.isEmpty(labels)) return null;
             return (
                 <ul>
                     {_.map(_.keys(labels).sort(_.partialRight(utils.natsort, {insensitive: true})), (key) => {
-                        var value = labels[key];
+                        let value = labels[key];
                         return (
                             <li key={key + value} className='label'>
                                 {key + (_.isNull(value) ? '' : ' "' + value + '"')}
@@ -272,14 +272,14 @@ define(
             });
         },
         render() {
-            var ns = 'cluster_page.nodes_tab.node.',
+            let ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
                 isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
                 status = node.getStatusSummary(),
                 roles = this.props.cluster ? node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
 
             // compose classes
-            var nodePanelClasses = {
+            let nodePanelClasses = {
                 node: true,
                 selected: this.props.checked,
                 'col-xs-12': this.props.viewMode != 'compact',
@@ -287,13 +287,13 @@ define(
             };
             nodePanelClasses[status] = status;
 
-            var manufacturer = node.get('manufacturer') || '',
+            let manufacturer = node.get('manufacturer') || '',
                 logoClasses = {
                     'manufacturer-logo': true
                 };
             logoClasses[manufacturer.toLowerCase()] = manufacturer;
 
-            var statusClasses = {
+            let statusClasses = {
                     'node-status': true
                 },
                 statusClass = {

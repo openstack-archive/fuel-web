@@ -23,7 +23,7 @@ define(
 (_, React, models, NodeListScreen) => {
     'use strict';
 
-    var ClusterNodesScreen = React.createClass({
+    let ClusterNodesScreen = React.createClass({
         render() {
             return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
                 ref='screen'

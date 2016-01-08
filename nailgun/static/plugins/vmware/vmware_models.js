@@ -30,10 +30,10 @@ define(
     }
 
     // models for testing restrictions
-    var restrictionModels = {};
+    let restrictionModels = {};
 
     // Test regex using regex cache
-    var regexCache = {};
+    let regexCache = {};
     function testRegex(regexText, value) {
         if (!regexCache[regexText]) {
             regexCache[regexText] = new RegExp(regexText);
@@ -41,7 +41,7 @@ define(
         return regexCache[regexText].test(value);
     }
 
-    var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixin).extend(models.restrictionMixin).extend({
+    let BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixin).extend(models.restrictionMixin).extend({
         constructorName: 'BaseModel',
         cacheFor: 60 * 1000,
         toJSON() {
@@ -49,16 +49,16 @@ define(
         },
         validate() {
             this.expandedRestrictions = this.expandedRestrictions || {};
-            var result = {};
+            let result = {};
             _.each(this.attributes.metadata, function(field) {
                 if (!isRegularField(field) || field.type == 'checkbox') {
                     return;
                 }
-                var isDisabled = this.checkRestrictions(restrictionModels, undefined, field.name);
+                let isDisabled = this.checkRestrictions(restrictionModels, undefined, field.name);
                 if (isDisabled.result) {
                     return;
                 }
-                var value = this.get(field.name);
+                let value = this.get(field.name);
                 if (field.regex) {
                     if (!testRegex(field.regex.source, value)) {
                         result[field.name] = field.regex.error;
@@ -68,9 +68,9 @@ define(
             return _.isEmpty(result) ? null : result;
         },
         parseRestrictions() {
-            var metadata = this.get('metadata');
+            let metadata = this.get('metadata');
             _.each(metadata, function(field) {
-                var key = field.name,
+                let key = field.name,
                     restrictions = field.restrictions || [],
                     childModel = this.get(key);
                 this.expandRestrictions(restrictions, key);
@@ -81,24 +81,24 @@ define(
             }, this);
         },
         testRestrictions() {
-            var results = {
+            let results = {
                 hide: {},
                 disable: {}
             };
-            var metadata = this.get('metadata');
+            let metadata = this.get('metadata');
             _.each(metadata, function(field) {
-                var key = field.name;
-                var disableResult = this.checkRestrictions(restrictionModels, undefined, key);
+                let key = field.name;
+                let disableResult = this.checkRestrictions(restrictionModels, undefined, key);
                 results.disable[key] = disableResult;
 
-                var hideResult = this.checkRestrictions(restrictionModels, 'hide', key);
+                let hideResult = this.checkRestrictions(restrictionModels, 'hide', key);
                 results.hide[key] = hideResult;
             }, this);
             return results;
         }
     });
 
-    var BaseCollection = Backbone.Collection.extend(models.superMixin).extend(models.cacheMixin).extend({
+    let BaseCollection = Backbone.Collection.extend(models.superMixin).extend(models.cacheMixin).extend({
         constructorName: 'BaseCollection',
         model: BaseModel,
         cacheFor: 60 * 1000,
@@ -107,7 +107,7 @@ define(
             return this.validationError;
         },
         validate() {
-            var errors = _.compact(this.models.map((model) => {
+            let errors = _.compact(this.models.map((model) => {
                 model.isValid();
                 return model.validationError;
             }));
@@ -121,10 +121,10 @@ define(
         }
     });
 
-    var NovaCompute = BaseModel.extend({
+    let NovaCompute = BaseModel.extend({
         constructorName: 'NovaCompute',
         checkEmptyTargetNode() {
-            var targetNode = this.get('target_node');
+            let targetNode = this.get('target_node');
             if (targetNode.current && targetNode.current.id == 'invalid') {
                 this.validationError = this.validationError || {};
                 this.validationError.target_node = i18n('vmware.invalid_target_node');
@@ -132,7 +132,7 @@ define(
         },
         checkDuplicateField(keys, fieldName) {
             /*jshint validthis:true */
-            var fieldValue = this.get(fieldName);
+            let fieldValue = this.get(fieldName);
             if (fieldValue.length > 0 && keys[fieldName] && keys[fieldName][fieldValue]) {
                 this.validationError = this.validationError || {};
                 this.validationError[fieldName] = i18n('vmware.duplicate_value');
@@ -144,7 +144,7 @@ define(
             this.checkDuplicateField(keys, 'vsphere_cluster');
             this.checkDuplicateField(keys, 'service_name');
 
-            var targetNode = this.get('target_node') || {};
+            let targetNode = this.get('target_node') || {};
             if (targetNode.current) {
                 if (targetNode.current.id && targetNode.current.id != 'controllers' &&
                     keys.target_node && keys.target_node[targetNode.current.id]) {
@@ -157,22 +157,22 @@ define(
         }
     });
 
-    var NovaComputes = BaseCollection.extend({
+    let NovaComputes = BaseCollection.extend({
         constructorName: 'NovaComputes',
         model: NovaCompute,
         validate() {
             this._super('validate', arguments);
 
-            var keys = {vsphere_clusters: {}, service_names: {}};
+            let keys = {vsphere_clusters: {}, service_names: {}};
             this.invoke('checkDuplicates', keys);
             this.invoke('checkEmptyTargetNode');
 
-            var errors = _.compact(_.pluck(this.models, 'validationError'));
+            let errors = _.compact(_.pluck(this.models, 'validationError'));
             return _.isEmpty(errors) ? null : errors;
         }
     });
 
-    var AvailabilityZone = BaseModel.extend({
+    let AvailabilityZone = BaseModel.extend({
         constructorName: 'AvailabilityZone',
         constructor(data) {
             Backbone.Model.apply(this, arguments);
@@ -181,8 +181,8 @@ define(
             }
         },
         parse(response) {
-            var result = {};
-            var metadata = response.metadata;
+            let result = {};
+            let metadata = response.metadata;
             result.metadata = metadata;
 
             // regular fields
@@ -193,8 +193,8 @@ define(
             }, this);
 
             // nova_computes
-            var novaMetadata = _.find(metadata, {name: 'nova_computes'});
-            var novaValues = _.clone(response.nova_computes);
+            let novaMetadata = _.find(metadata, {name: 'nova_computes'});
+            let novaValues = _.clone(response.nova_computes);
             novaValues = _.map(novaValues, (value) => {
                 value.metadata = novaMetadata.fields;
                 return new NovaCompute(value);
@@ -204,14 +204,14 @@ define(
             return result;
         },
         toJSON() {
-            var result = _.omit(this.attributes, 'metadata', 'nova_computes');
+            let result = _.omit(this.attributes, 'metadata', 'nova_computes');
             result.nova_computes = this.get('nova_computes').toJSON();
             return result;
         },
         validate() {
-            var errors = _.merge({}, BaseModel.prototype.validate.call(this));
+            let errors = _.merge({}, BaseModel.prototype.validate.call(this));
 
-            var novaComputes = this.get('nova_computes');
+            let novaComputes = this.get('nova_computes');
             novaComputes.isValid();
             if (novaComputes.validationError) {
                 errors.nova_computes = novaComputes.validationError;
@@ -221,15 +221,15 @@ define(
         }
     });
 
-    var AvailabilityZones = BaseCollection.extend({
+    let AvailabilityZones = BaseCollection.extend({
         constructorName: 'AvailabilityZones',
         model: AvailabilityZone
     });
 
-    var Network = BaseModel.extend({constructorName: 'Network'});
-    var Glance = BaseModel.extend({constructorName: 'Glance'});
+    let Network = BaseModel.extend({constructorName: 'Network'});
+    let Glance = BaseModel.extend({constructorName: 'Glance'});
 
-    var VCenter = BaseModel.extend({
+    let VCenter = BaseModel.extend({
         constructorName: 'VCenter',
         url() {
             return '/api/v1/clusters/' + this.id + '/vmware_attributes' + (this.loadDefaults ? '/defaults' : '');
@@ -238,24 +238,24 @@ define(
             if (!response.editable || !response.editable.metadata || !response.editable.value) {
                 return;
             }
-            var metadata = response.editable.metadata || [],
+            let metadata = response.editable.metadata || [],
                 value = response.editable.value || {};
 
             // Availability Zone(s)
-            var azMetadata = _.find(metadata, {name: 'availability_zones'});
-            var azValues = _.clone(value.availability_zones);
+            let azMetadata = _.find(metadata, {name: 'availability_zones'});
+            let azValues = _.clone(value.availability_zones);
             azValues = _.map(azValues, (value) => {
                 value.metadata = azMetadata.fields;
                 return value;
             });
 
             // Network
-            var networkMetadata = _.find(metadata, {name: 'network'});
-            var networkValue = _.extend(_.clone(value.network), {metadata: networkMetadata.fields});
+            let networkMetadata = _.find(metadata, {name: 'network'});
+            let networkValue = _.extend(_.clone(value.network), {metadata: networkMetadata.fields});
 
             // Glance
-            var glanceMetadata = _.find(metadata, {name: 'glance'});
-            var glanceValue = _.extend(_.clone(value.glance), {metadata: glanceMetadata.fields});
+            let glanceMetadata = _.find(metadata, {name: 'glance'});
+            let glanceValue = _.extend(_.clone(value.glance), {metadata: glanceMetadata.fields});
 
             return {
                 metadata: metadata,
@@ -265,7 +265,7 @@ define(
             };
         },
         isFilled() {
-            var result = this.get('availability_zones') && this.get('network') && this.get('glance');
+            let result = this.get('availability_zones') && this.get('network') && this.get('glance');
             return !!result;
         },
         toJSON() {
@@ -287,12 +287,12 @@ define(
                 return null;
             }
 
-            var errors = {};
+            let errors = {};
             _.each(this.get('metadata'), function(field) {
-                var key = field.name;
-                var model = this.get(key);
+                let key = field.name;
+                let model = this.get(key);
                 // do not validate disabled restrictions
-                var isDisabled = this.checkRestrictions(restrictionModels, undefined, key);
+                let isDisabled = this.checkRestrictions(restrictionModels, undefined, key);
                 if (isDisabled.result) {
                     return;
                 }
@@ -303,16 +303,16 @@ define(
             }, this);
 
             // check unassigned nodes exist
-            var assignedNodes = {};
-            var availabilityZones = this.get('availability_zones') || [];
+            let assignedNodes = {};
+            let availabilityZones = this.get('availability_zones') || [];
             availabilityZones.each(function(zone) {
-                var novaComputes = zone.get('nova_computes') || [];
+                let novaComputes = zone.get('nova_computes') || [];
                 novaComputes.each((compute) => {
-                    var targetNode = compute.get('target_node');
+                    let targetNode = compute.get('target_node');
                     assignedNodes[targetNode.current.id] = targetNode.current.label;
                 }, this);
             }, this);
-            var unassignedNodes = restrictionModels.cluster.get('nodes').filter((node) => {
+            let unassignedNodes = restrictionModels.cluster.get('nodes').filter((node) => {
                 return _.contains(node.get('pending_roles'), 'compute-vmware') && !assignedNodes[node.get('hostname')];
             });
             if (unassignedNodes.length > 0) {

@@ -20,9 +20,11 @@ import copy
 import json
 import six
 
+from nailgun.api.v1.validators.node_group import NodeGroupValidator
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -147,18 +149,13 @@ class TestNodeGroups(BaseIntegrationTest):
         self.env.create_nodes(2, group_id=node_group.id)
         self._check_node_group_deleted(node_group.id)
 
-    def test_delete_default_node_group_error(self):
-        group_id = objects.Cluster.get_default_group(self.cluster).id
-        resp = self.app.delete(
-            reverse(
-                'NodeGroupHandler',
-                kwargs={'obj_id': group_id}
-            ),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json_body['message'],
+    def test_validate_delete_default_node_group_error(self):
+        default_ng = objects.Cluster.get_default_group(self.cluster)
+
+        with self.assertRaises(errors.CannotDelete) as err:
+            NodeGroupValidator.validate_delete(data={}, instance=default_ng)
+
+        self.assertEqual(err.exception.message,
                          'Default node group cannot be deleted.')
 
     def test_delete_non_default_node_group_error(self):
@@ -167,16 +164,11 @@ class TestNodeGroups(BaseIntegrationTest):
         self.env.create_node(group_id=node_group.id)
         self.env.create_node(group_id=node_group.id,
                              status=consts.NODE_STATUSES.error)
-        resp = self.app.delete(
-            reverse(
-                'NodeGroupHandler',
-                kwargs={'obj_id': node_group.id}
-            ),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json_body['message'],
+
+        with self.assertRaises(errors.CannotDelete) as err:
+            NodeGroupValidator.validate_delete(data={}, instance=node_group)
+
+        self.assertEqual(err.exception.message,
                          'Node group can be deleted only when all its nodes '
                          'are in bootstrap state.')
 
@@ -407,37 +399,48 @@ class TestNodeGroups(BaseIntegrationTest):
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
 
-    def test_create_node_group_with_default_flag_fail(self):
-        resp = self.env.create_node_group(api=True,
-                                          expect_errors=True,
-                                          is_default=True)
+    def test_validate_create_node_group_with_default_flag_fail(self):
+        data = json.dumps(
+            {'cluster_id': self.cluster['id'],
+             'name': 'test',
+             'is_default': True}
+        )
+        with self.assertRaises(errors.NotAllowed) as err:
+            NodeGroupValidator.validate(data)
 
-        self.assertEqual(resp.status_code, 403)
         self.assertEqual(
-            resp.json_body.get("message"),
+            err.exception.message,
             "Default node group is created only by Nailgun."
         )
 
-    def test_update_node_group_default_flag(self):
-        ng = objects.NodeGroupCollection.get_by_cluster_id(
-            self.cluster['id'])\
-            .filter_by(name=consts.NODE_GROUPS.default).first()
+    def test_validate_updating_node_group_default_flag_not_allowed(self):
+        ng = objects.Cluster.get_default_group(self.cluster)
 
-        resp = self.app.put(
-            reverse(
-                'NodeGroupHandler',
-                kwargs={'obj_id': ng.id}),
-            json.dumps(
-                {'cluster_id': self.cluster['id'],
-                 'name': ng.name,
-                 'is_default': not(ng.is_default)}
-            ),
-            headers=self.default_headers,
-            expect_errors=True,
+        data = json.dumps(
+            {'cluster_id': self.cluster['id'],
+             'name': ng.name,
+             'is_default': not(ng.is_default)}
         )
-        self.assertEqual(resp.status_code, 403)
-        self.assertEqual(resp.json_body.get('message'),
-                         "'default' flag for node group cannot be changed")
+        with self.assertRaises(errors.NotAllowed) as err:
+            NodeGroupValidator.validate_update(data, ng)
+
+        self.assertEqual(
+            err.exception.message,
+            "'default' flag for node group cannot be changed"
+        )
+
+    def test_validate_updating_cluster_id_not_allowed(self):
+        ng = objects.Cluster.get_default_group(self.cluster)
+
+        data = json.dumps({'cluster_id': -1, 'name': ng.name})
+        with self.assertRaises(errors.NotAllowed) as err:
+            NodeGroupValidator.validate_update(data, ng)
+
+        self.assertEqual(
+            err.exception.message,
+            "Node group cannot be assigned to other cluster "
+            "after creation."
+        )
 
     def test_assign_nodegroup_to_node_in_another_cluster(self):
         self.env.create(

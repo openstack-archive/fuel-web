@@ -95,18 +95,18 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin('nodes', 'update change'),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster && props.cluster.get('tasks');},
+                modelOrCollection(props) {return props.cluster && props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
             componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'normalizeAppliedFilters')
         ],
-        getDefaultProps: function() {
+        getDefaultProps() {
             return {
                 sorters: [],
                 filters: []
             };
         },
-        getInitialState: function() {
+        getInitialState() {
             var cluster = this.props.cluster,
                 nodes = this.props.nodes,
                 uiSettings = (cluster || this.props.fuelSettings).get('ui_settings');
@@ -157,10 +157,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
             return _.extend(states, {selectedRoles, indeterminateRoles, configModels});
         },
-        selectNodes: function(ids, name, checked) {
+        selectNodes(ids, name, checked) {
             this.props.selectNodes(ids, checked);
         },
-        selectRoles: function(role, checked) {
+        selectRoles(role, checked) {
             var selectedRoles = this.state.selectedRoles;
             if (checked) {
                 selectedRoles.push(role);
@@ -172,14 +172,14 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 indeterminateRoles: _.without(this.state.indeterminateRoles, role)
             });
         },
-        fetchData: function() {
+        fetchData() {
             return this.props.nodes.fetch();
         },
-        calculateFilterLimits: function() {
+        calculateFilterLimits() {
             _.invoke(this.state.availableFilters, 'updateLimits', this.props.nodes, true);
             _.invoke(this.state.activeFilters, 'updateLimits', this.props.nodes, false);
         },
-        normalizeAppliedFilters: function(checkStandardNodeFilters = false) {
+        normalizeAppliedFilters(checkStandardNodeFilters = false) {
             if (!this.props.cluster || this.props.mode != 'add') {
                 var normalizedFilters = _.map(this.state.activeFilters, (activeFilter) => {
                     var filter = _.clone(activeFilter);
@@ -199,7 +199,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }
             }
         },
-        componentWillMount: function() {
+        componentWillMount() {
             this.updateInitialRoles();
             this.props.nodes.on('update reset', this.updateInitialRoles, this);
             this.props.nodes.on('update reset', this.calculateFilterLimits, this);
@@ -212,12 +212,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 this.props.nodes.on('change:pending_roles', this.checkRoleAssignment, this);
             }
         },
-        componentWillUnmount: function() {
+        componentWillUnmount() {
             this.props.nodes.off('update reset', this.updateInitialRoles, this);
             this.props.nodes.off('update reset', this.calculateFilterLimits, this);
             this.props.nodes.off('change:pending_roles', this.checkRoleAssignment, this);
         },
-        processRoleLimits: function() {
+        processRoleLimits() {
             var cluster = this.props.cluster,
                 maxNumberOfNodes = [],
                 processedRoleLimits = {};
@@ -246,40 +246,40 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 maxNumberOfNodes: maxNumberOfNodes.length ? _.min(maxNumberOfNodes) - _.size(this.props.selectedNodeIds) : null
             };
         },
-        updateInitialRoles: function() {
+        updateInitialRoles() {
             this.initialRoles = _.zipObject(this.props.nodes.pluck('id'), this.props.nodes.pluck('pending_roles'));
         },
-        checkRoleAssignment: function(node, roles, options) {
+        checkRoleAssignment(node, roles, options) {
             if (!options.assign) node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
         },
-        hasChanges: function() {
+        hasChanges() {
             return this.props.mode != 'list' && this.props.nodes.any(function(node) {
                 return !_.isEqual(node.get('pending_roles'), this.initialRoles[node.id]);
             }, this);
         },
-        changeSearch: function(value) {
+        changeSearch(value) {
             this.updateSearch(_.trim(value));
         },
-        clearSearchField: function() {
+        clearSearchField() {
             this.changeSearch.cancel();
             this.updateSearch('');
         },
-        updateSearch: function(value) {
+        updateSearch(value) {
             this.setState({search: value});
             if (!this.props.cluster || this.props.mode != 'add') {
                 this.changeUISettings({search: value});
             }
         },
-        addSorting: function(sorter) {
+        addSorting(sorter) {
             this.updateSorting(this.state.activeSorters.concat(sorter));
         },
-        removeSorting: function(sorter) {
+        removeSorting(sorter) {
             this.updateSorting(_.difference(this.state.activeSorters, [sorter]));
         },
-        resetSorters: function() {
+        resetSorters() {
             this.updateSorting(_.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false)));
         },
-        changeSortingOrder: function(sorterToChange) {
+        changeSortingOrder(sorterToChange) {
             this.updateSorting(this.state.activeSorters.map(function(sorter) {
                 if (sorter.name == sorterToChange.name && sorter.isLabel == sorterToChange.isLabel) {
                     return new Sorter(sorter.name, sorter.order == 'asc' ? 'desc' : 'asc', sorter.isLabel);
@@ -287,7 +287,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 return sorter;
             }));
         },
-        updateSorting: function(sorters) {
+        updateSorting(sorters) {
             this.setState({activeSorters: sorters});
             if (!this.props.cluster || this.props.mode != 'add') {
                 var groupedSorters = _.groupBy(sorters, 'isLabel');
@@ -297,7 +297,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 });
             }
         },
-        updateFilters: function(filters) {
+        updateFilters(filters) {
             this.setState({activeFilters: filters});
             if (!this.props.cluster || this.props.mode != 'add') {
                 var groupedFilters = _.groupBy(filters, 'isLabel');
@@ -307,7 +307,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 });
             }
         },
-        getFilterOptions: function(filter) {
+        getFilterOptions(filter) {
             if (filter.isLabel) {
                 var values = _.uniq(this.props.nodes.getLabelValues(filter.name)),
                     ns = 'cluster_page.nodes_tab.node_management_panel.';
@@ -373,10 +373,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
             return options;
         },
-        addFilter: function(filter) {
+        addFilter(filter) {
             this.updateFilters(this.state.activeFilters.concat(filter));
         },
-        changeFilter: function(filterToChange, values) {
+        changeFilter(filterToChange, values) {
             this.updateFilters(this.state.activeFilters.map(function(filter) {
                 if (filter.name == filterToChange.name && filter.isLabel == filterToChange.isLabel) {
                     var changedFilter = new Filter(filter.name, values, filter.isLabel);
@@ -386,19 +386,19 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 return filter;
             }));
         },
-        removeFilter: function(filter) {
+        removeFilter(filter) {
             this.updateFilters(_.difference(this.state.activeFilters, [filter]));
         },
-        resetFilters: function() {
+        resetFilters() {
             this.updateFilters(Filter.fromObject(this.props.defaultFilters, false));
         },
-        changeViewMode: function(name, value) {
+        changeViewMode(name, value) {
             this.setState({viewMode: value});
             if (!this.props.cluster || this.props.mode != 'add') {
                 this.changeUISettings({view_mode: value});
             }
         },
-        changeUISettings: function(newSettings) {
+        changeUISettings(newSettings) {
             var uiSettings = (this.props.cluster || this.props.fuelSettings).get('ui_settings'),
                 options = {patch: true, wait: true, validate: false};
             _.extend(uiSettings, newSettings);
@@ -408,20 +408,20 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 this.props.fuelSettings.save(null, options);
             }
         },
-        revertChanges: function() {
+        revertChanges() {
             this.props.nodes.each(function(node) {
                 node.set({pending_roles: this.initialRoles[node.id]}, {silent: true});
             }, this);
         },
-        toggleLabelsPanel: function(value) {
+        toggleLabelsPanel(value) {
             this.setState({
                 isLabelsPanelOpen: _.isUndefined(value) ? !this.state.isLabelsPanelOpen : value
             });
         },
-        getNodeLabels: function() {
+        getNodeLabels() {
             return _.chain(this.props.nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
         },
-        render: function() {
+        render() {
             var cluster = this.props.cluster,
                 locked = !!cluster && !!cluster.task({group: 'deployment', active: true}),
                 nodes = this.props.nodes,
@@ -538,13 +538,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             toggle: React.PropTypes.func.isRequired,
             isOpen: React.PropTypes.bool.isRequired
         },
-        getDefaultProps: function() {
+        getDefaultProps() {
             return {
                 values: [],
                 isOpen: false
             };
         },
-        onChange: function(name, checked, isLabel) {
+        onChange(name, checked, isLabel) {
             if (!this.props.dynamicValues) {
                 var values = name == 'all' ?
                         checked ? _.pluck(this.props.options, 'name') : []
@@ -555,10 +555,10 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 this.props.onChange(_.find(this.props.options, {name: name, isLabel: isLabel}));
             }
         },
-        closeOnEscapeKey: function(e) {
+        closeOnEscapeKey(e) {
             if (e.key == 'Escape') this.props.toggle(false);
         },
-        render: function() {
+        render() {
             if (!this.props.options.length) return null;
 
             var valuesAmount = this.props.values.length;
@@ -663,7 +663,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             toggle: React.PropTypes.func.isRequired,
             isOpen: React.PropTypes.bool.isRequired
         },
-        getDefaultProps: function() {
+        getDefaultProps() {
             return {
                 values: [],
                 isOpen: false,
@@ -671,15 +671,15 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 max: 0
             };
         },
-        changeValue: function(name, value, index) {
+        changeValue(name, value, index) {
             var values = this.props.values;
             values[index] = _.max([Number(value), 0]);
             this.props.onChange(values);
         },
-        closeOnEscapeKey: function(e) {
+        closeOnEscapeKey(e) {
             if (e.key == 'Escape') this.props.toggle(this.props.name, false);
         },
-        render: function() {
+        render() {
             var classNames = {'btn-group number-range': true, open: this.props.isOpen};
             if (this.props.className) classNames[this.props.className] = true;
             var props = {
@@ -721,7 +721,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     ManagementPanel = React.createClass({
         mixins: [componentMixins.unsavedChangesMixin],
-        getInitialState: function() {
+        getInitialState() {
             return {
                 actionInProgress: false,
                 isSearchButtonVisible: !!this.props.search,
@@ -731,12 +731,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 isMoreSorterControlVisible: false
             };
         },
-        changeScreen: function(url, passNodeIds) {
+        changeScreen(url, passNodeIds) {
             url = url ? '/' + url : '';
             if (passNodeIds) url += '/' + utils.serializeTabOptions({nodes: this.props.nodes.pluck('id')});
             app.navigate('#cluster/' + this.props.cluster.id + '/nodes' + url, {trigger: true});
         },
-        goToConfigurationScreen: function(action, conflict) {
+        goToConfigurationScreen(action, conflict) {
             if (conflict) {
                 var ns = 'cluster_page.nodes_tab.node_management_panel.node_management_error.';
                 utils.showErrorDialog({
@@ -747,20 +747,20 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             }
             this.changeScreen(action, true);
         },
-        showDeleteNodesDialog: function() {
+        showDeleteNodesDialog() {
             dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster})
                 .done(_.partial(this.props.selectNodes, _.pluck(this.props.nodes.where({status: 'ready'}), 'id'), null, true));
         },
-        hasChanges: function() {
+        hasChanges() {
             return this.props.hasChanges;
         },
-        isSavingPossible: function() {
+        isSavingPossible() {
             return !this.state.actionInProgress && this.hasChanges();
         },
-        revertChanges: function() {
+        revertChanges() {
             return this.props.revertChanges();
         },
-        applyChanges: function() {
+        applyChanges() {
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             this.setState({actionInProgress: true});
@@ -790,20 +790,20 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     });
                 }, this));
         },
-        applyAndRedirect: function() {
+        applyAndRedirect() {
             this.applyChanges().done(this.changeScreen);
         },
-        searchNodes: function(name, value) {
+        searchNodes(name, value) {
             this.setState({isSearchButtonVisible: !!value});
             this.props.changeSearch(value);
         },
-        clearSearchField: function() {
+        clearSearchField() {
             this.setState({isSearchButtonVisible: false});
             this.refs.search.getInputDOMNode().value = '';
             this.refs.search.getInputDOMNode().focus();
             this.props.clearSearchField();
         },
-        activateSearch: function() {
+        activateSearch() {
             this.setState({activeSearch: true});
             $('html').on('click.search', _.bind(function(e) {
                 if (!this.props.search && this.refs.search && !$(e.target).closest(ReactDOM.findDOMNode(this.refs.search)).length) {
@@ -811,23 +811,23 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }
             }, this));
         },
-        onSearchKeyDown: function(e) {
+        onSearchKeyDown(e) {
             if (e.key == 'Escape') {
                 this.clearSearchField();
                 this.setState({activeSearch: false});
             }
         },
-        componentWillUnmount: function() {
+        componentWillUnmount() {
             $('html').off('click.search');
         },
-        removeSorting: function(sorter) {
+        removeSorting(sorter) {
             this.props.removeSorting(sorter);
             this.setState({
                 sortersKey: _.now(),
                 isMoreSorterControlVisible: false
             });
         },
-        resetSorters: function(e) {
+        resetSorters(e) {
             e.stopPropagation();
             this.props.resetSorters();
             this.setState({
@@ -835,38 +835,38 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 isMoreSorterControlVisible: false
             });
         },
-        toggleFilter: function(filter, visible) {
+        toggleFilter(filter, visible) {
             var isFilterOpen = this.isFilterOpen(filter);
             visible = _.isBoolean(visible) ? visible : !isFilterOpen;
             this.setState({
                 openFilter: visible ? filter : isFilterOpen ? null : this.state.openFilter
             });
         },
-        toggleMoreFilterControl: function(visible) {
+        toggleMoreFilterControl(visible) {
             this.setState({
                 isMoreFilterControlVisible: _.isBoolean(visible) ? visible : !this.state.isMoreFilterControlVisible,
                 openFilter: null
             });
         },
-        toggleMoreSorterControl: function(visible) {
+        toggleMoreSorterControl(visible) {
             this.setState({
                 isMoreSorterControlVisible: _.isBoolean(visible) ? visible : !this.state.isMoreSorterControlVisible
             });
         },
-        isFilterOpen: function(filter) {
+        isFilterOpen(filter) {
             return !_.isNull(this.state.openFilter) && this.state.openFilter.name == filter.name && this.state.openFilter.isLabel == filter.isLabel;
         },
-        addFilter: function(filter) {
+        addFilter(filter) {
             this.props.addFilter(filter);
             this.toggleMoreFilterControl();
             this.toggleFilter(filter, true);
         },
-        removeFilter: function(filter) {
+        removeFilter(filter) {
             this.props.removeFilter(filter);
             this.setState({filtersKey: _.now()});
             this.toggleFilter(filter, false);
         },
-        resetFilters: function(e) {
+        resetFilters(e) {
             e.stopPropagation();
             this.props.resetFilters();
             this.setState({
@@ -874,7 +874,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 openFilter: null
             });
         },
-        toggleSorters: function() {
+        toggleSorters() {
             this.setState({
                 newLabels: [],
                 areSortersVisible: !this.state.areSortersVisible,
@@ -883,7 +883,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             });
             this.props.toggleLabelsPanel(false);
         },
-        toggleFilters: function() {
+        toggleFilters() {
             this.setState({
                 newLabels: [],
                 areFiltersVisible: !this.state.areFiltersVisible,
@@ -892,13 +892,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             });
             this.props.toggleLabelsPanel(false);
         },
-        renderDeleteFilterButton: function(filter) {
+        renderDeleteFilterButton(filter) {
             if (!filter.isLabel && _.contains(_.keys(this.props.defaultFilters), filter.name)) return null;
             return (
                 <i className='btn btn-link glyphicon glyphicon-minus-sign btn-remove-filter' onClick={_.partial(this.removeFilter, filter)} />
             );
         },
-        toggleLabelsPanel: function() {
+        toggleLabelsPanel() {
             this.setState({
                 newLabels: [],
                 areFiltersVisible: false,
@@ -906,12 +906,12 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             });
             this.props.toggleLabelsPanel();
         },
-        renderDeleteSorterButton: function(sorter) {
+        renderDeleteSorterButton(sorter) {
             return (
                 <i className='btn btn-link glyphicon glyphicon-minus-sign btn-remove-sorting' onClick={_.partial(this.removeSorting, sorter)} />
             );
         },
-        render: function() {
+        render() {
             var ns = 'cluster_page.nodes_tab.node_management_panel.';
 
             var disksConflict, interfaceConflict;
@@ -1291,7 +1291,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     NodeLabelsPanel = React.createClass({
         mixins: [componentMixins.unsavedChangesMixin],
-        getInitialState: function() {
+        getInitialState() {
             var labels = _.map(this.props.labels, function(label) {
                     var labelValues = this.props.nodes.getLabelValues(label),
                         definedLabelValues = _.reject(labelValues, _.isUndefined);
@@ -1309,15 +1309,15 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 actionInProgress: false
             };
         },
-        hasChanges: function() {
+        hasChanges() {
             return !_.isEqual(this.state.labels, this.state.initialLabels);
         },
-        componentDidMount: function() {
+        componentDidMount() {
             _.each(this.state.labels, function(labelData) {
                 this.refs[labelData.key].getInputDOMNode().indeterminate = labelData.indeterminate;
             }, this);
         },
-        addLabel: function() {
+        addLabel() {
             var labels = this.state.labels;
             labels.push({
                 key: '',
@@ -1327,7 +1327,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             });
             this.setState({labels: labels});
         },
-        changeLabelKey: function(index, oldKey, newKey) {
+        changeLabelKey(index, oldKey, newKey) {
             var labels = this.state.labels,
                 labelData = labels[index];
             labelData.key = newKey;
@@ -1335,7 +1335,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.validateLabels(labels);
             this.setState({labels: labels});
         },
-        changeLabelState: function(index, key, checked) {
+        changeLabelState(index, key, checked) {
             var labels = this.state.labels,
                 labelData = labels[index];
             labelData.checked = checked;
@@ -1343,7 +1343,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.validateLabels(labels);
             this.setState({labels: labels});
         },
-        changeLabelValue: function(index, key, value) {
+        changeLabelValue(index, key, value) {
             var labels = this.state.labels,
                 labelData = labels[index];
             labelData.values = [value || null];
@@ -1351,7 +1351,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
             this.validateLabels(labels);
             this.setState({labels: labels});
         },
-        validateLabels: function(labels) {
+        validateLabels(labels) {
             _.each(labels, (currentLabel, currentIndex) => {
                 currentLabel.error = null;
                 if (currentLabel.checked || currentLabel.indeterminate) {
@@ -1369,13 +1369,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }
             });
         },
-        isSavingPossible: function() {
+        isSavingPossible() {
             return !this.state.actionInProgress && this.hasChanges() && _.all(_.pluck(this.state.labels, 'error'), _.isNull);
         },
-        revertChanges: function() {
+        revertChanges() {
             return this.props.toggleLabelsPanel();
         },
-        applyChanges: function() {
+        applyChanges() {
             if (!this.isSavingPossible()) return $.Deferred().reject();
 
             this.setState({actionInProgress: true});
@@ -1429,7 +1429,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                     });
                 });
         },
-        render: function() {
+        render() {
             var ns = 'cluster_page.nodes_tab.node_management_panel.labels.';
 
             return (
@@ -1520,19 +1520,19 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     });
 
     RolePanel = React.createClass({
-        componentDidMount: function() {
+        componentDidMount() {
             this.updateIndeterminateRolesState();
         },
-        componentDidUpdate: function() {
+        componentDidUpdate() {
             this.updateIndeterminateRolesState();
             this.assignRoles();
         },
-        updateIndeterminateRolesState: function() {
+        updateIndeterminateRolesState() {
             _.each(this.refs, function(roleView, role) {
                 roleView.getInputDOMNode().indeterminate = _.contains(this.props.indeterminateRoles, role);
             }, this);
         },
-        assignRoles: function() {
+        assignRoles() {
             var roles = this.props.cluster.get('roles');
             this.props.nodes.each(function(node) {
                 if (this.props.selectedNodeIds[node.id]) roles.each(function(role) {
@@ -1549,7 +1549,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 }, this);
             }, this);
         },
-        processRestrictions: function(role, models) {
+        processRestrictions(role, models) {
             var name = role.get('name'),
                 restrictionsCheck = role.checkRestrictions(models, 'disable'),
                 roleLimitsCheckResults = this.props.processedRoleLimits[name],
@@ -1573,7 +1573,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 message: messages.join(' ')
             };
         },
-        render: function() {
+        render() {
             return (
                 <div className='well role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
@@ -1604,13 +1604,13 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
     });
 
     SelectAllMixin = {
-        componentDidUpdate: function() {
+        componentDidUpdate() {
             if (this.refs['select-all']) {
                 var input = this.refs['select-all'].getInputDOMNode();
                 input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
             }
         },
-        renderSelectAllCheckbox: function() {
+        renderSelectAllCheckbox() {
             var checked = this.props.mode == 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, function(node) {return !this.props.selectedNodeIds[node.id];}, this));
             return (
                 <controls.Input
@@ -1632,7 +1632,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     NodeList = React.createClass({
         mixins: [SelectAllMixin],
-        groupNodes: function() {
+        groupNodes() {
             var uniqValueSorters = ['name', 'mac', 'ip'];
 
             var composeNodeDiskSizesLabel = function(node) {
@@ -1788,7 +1788,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
                 return result;
             }, this));
         },
-        render: function() {
+        render() {
             var groups = this.groupNodes(),
                 rolesWithLimitReached = _.keys(_.omit(this.props.processedRoleLimits, function(roleLimit, roleName) {
                     return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
@@ -1831,7 +1831,7 @@ function($, _, i18n, Backbone, React, ReactDOM, utils, models, dispatcher, contr
 
     NodeGroup = React.createClass({
         mixins: [SelectAllMixin],
-        render: function() {
+        render() {
             var availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
                 nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, function(node) {
                     return _.any(this.props.rolesWithLimitReached, function(role) {return !node.hasRole(role);}, this);

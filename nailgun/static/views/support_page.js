@@ -36,7 +36,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             title: i18n('support_page.title'),
             navbarActiveElement: 'support',
             breadcrumbsPath: [['home', '#'], 'support'],
-            fetchData: function() {
+            fetchData() {
                 var tasks = new models.Tasks();
                 return $.when(app.fuelSettings.fetch({cache: true}), tasks.fetch()).then(function() {
                     var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes)),
@@ -50,7 +50,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                 });
             }
         },
-        render: function() {
+        render() {
             var elements = [
                 <DocumentationLink key='DocumentationLink' />,
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
@@ -83,7 +83,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     });
 
     var SupportPageElement = React.createClass({
-        render: function() {
+        render() {
             return (
                 <div className='support-box'>
                     <div className={'support-box-cover ' + this.props.className}></div>
@@ -98,7 +98,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     });
 
     var DocumentationLink = React.createClass({
-        render: function() {
+        render() {
             var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
             return (
                 <SupportPageElement
@@ -121,7 +121,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             statisticsMixin,
             componentMixins.backboneMixin('tracking', 'change invalid')
         ],
-        render: function() {
+        render() {
             if (this.state.isConnected)
                 return (
                     <SupportPageElement
@@ -167,20 +167,20 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             componentMixins.backboneMixin('statistics'),
             componentMixins.unsavedChangesMixin
         ],
-        hasChanges: function() {
+        hasChanges() {
             var initialData = this.props.settings.get('statistics'),
                 currentData = this.props.statistics.get('statistics');
             return _.any(this.props.statsCheckboxes, function(field) {
                 return !_.isEqual(initialData[field].value, currentData[field].value);
             });
         },
-        isSavingPossible: function() {
+        isSavingPossible() {
             return !this.state.actionInProgress && this.hasChanges();
         },
-        applyChanges: function() {
+        applyChanges() {
             return this.isSavingPossible() ? this.prepareStatisticsToSave() : $.Deferred().resolve();
         },
-        render: function() {
+        render() {
             var statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
@@ -212,7 +212,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     });
 
     var SupportContacts = React.createClass({
-        render: function() {
+        render() {
             return (
                 <SupportPageElement
                     className='img-contact-support'
@@ -235,28 +235,28 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             componentMixins.backboneMixin('task'),
             componentMixins.pollingMixin(2)
         ],
-        getInitialState: function() {
+        getInitialState() {
             return {generating: this.isDumpTaskActive()};
         },
-        shouldDataBeFetched: function() {
+        shouldDataBeFetched() {
             return this.isDumpTaskActive();
         },
-        fetchData: function() {
+        fetchData() {
             return this.props.task.fetch().done(_.bind(function() {
                 if (!this.isDumpTaskActive()) this.setState({generating: false});
             }, this));
         },
-        isDumpTaskActive: function() {
+        isDumpTaskActive() {
             return this.props.task && this.props.task.match({active: true});
         },
-        downloadLogs: function() {
+        downloadLogs() {
             this.setState({generating: true});
             (new models.LogsPackage()).save({}, {method: 'PUT'}).always(_.bind(this.props.tasks.fetch, this.props.tasks));
         },
-        componentDidUpdate: function() {
+        componentDidUpdate() {
             this.startPolling();
         },
-        render: function() {
+        render() {
             var task = this.props.task,
                 generating = this.state.generating;
             return (
@@ -288,7 +288,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     });
 
     var CapacityAudit = React.createClass({
-        render: function() {
+        render() {
             return (
                 <SupportPageElement
                     className='img-audit-logs'

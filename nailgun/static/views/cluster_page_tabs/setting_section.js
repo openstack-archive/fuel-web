@@ -27,7 +27,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
     'use strict';
 
     var SettingSection = React.createClass({
-        processRestrictions: function(sectionName, settingName) {
+        processRestrictions(sectionName, settingName) {
             var result = false,
                 path = this.props.makePath(sectionName, settingName),
                 messages = [];
@@ -51,7 +51,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 message: messages.join(' ')
             };
         },
-        checkDependencies: function(sectionName, settingName) {
+        checkDependencies(sectionName, settingName) {
             var messages = [],
                 dependentRoles = this.checkDependentRoles(sectionName, settingName),
                 dependentSettings = this.checkDependentSettings(sectionName, settingName);
@@ -64,13 +64,13 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 message: messages.join(' ')
             };
         },
-        areCalculationsPossible: function(setting) {
+        areCalculationsPossible(setting) {
             return setting.toggleable || _.contains(['checkbox', 'radio'], setting.type);
         },
-        getValuesToCheck: function(setting, valueAttribute) {
+        getValuesToCheck(setting, valueAttribute) {
             return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) : [!setting[valueAttribute]];
         },
-        checkValues: function(values, path, currentValue, restriction) {
+        checkValues(values, path, currentValue, restriction) {
             var extraModels = {settings: this.props.settingsForChecks};
             var result = _.all(values, function(value) {
                 this.props.settingsForChecks.set(path, value);
@@ -79,7 +79,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             this.props.settingsForChecks.set(path, currentValue);
             return result;
         },
-        checkDependentRoles: function(sectionName, settingName) {
+        checkDependentRoles(sectionName, settingName) {
             if (!this.props.allocatedRoles.length) return [];
             var path = this.props.makePath(sectionName, settingName),
                 setting = this.props.settings.get(path);
@@ -98,7 +98,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 }, this)) return role.get('label');
             }, this));
         },
-        checkDependentSettings: function(sectionName, settingName) {
+        checkDependentSettings(sectionName, settingName) {
             var path = this.props.makePath(sectionName, settingName),
                 currentSetting = this.props.settings.get(path);
             if (!this.areCalculationsPossible(currentSetting)) return [];
@@ -139,7 +139,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             }
             return [];
         },
-        composeOptions: function(values) {
+        composeOptions(values) {
             return _.map(values, function(value, index) {
                 return (
                     <option key={index} value={value.data} disabled={value.disabled}>
@@ -148,7 +148,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 );
             });
         },
-        onPluginVersionChange: function(pluginName, version) {
+        onPluginVersionChange(pluginName, version) {
             var settings = this.props.settings;
             // FIXME: the following hacks cause we can't pass {validate: true} option to set method
             // this form of validation isn't supported in Backbone DeepModel
@@ -158,7 +158,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
             settings.isValid({models: this.props.configModels});
             this.props.settingsForChecks.set(_.cloneDeep(settings.attributes));
         },
-        togglePlugin: function(pluginName, settingName, enabled) {
+        togglePlugin(pluginName, settingName, enabled) {
             this.props.onChange(settingName, enabled);
             var pluginMetadata = this.props.settings.get(pluginName).metadata;
             if (enabled) {
@@ -173,7 +173,7 @@ function(_, i18n, utils, React, Expression, controls, customControls) {
                 if (pluginMetadata.chosen_id !== initialVersion) this.onPluginVersionChange(pluginName, initialVersion);
             }
         },
-        render: function() {
+        render() {
             var {settings, sectionName} = this.props,
                 section = settings.get(sectionName),
                 isPlugin = settings.isPlugin(section),

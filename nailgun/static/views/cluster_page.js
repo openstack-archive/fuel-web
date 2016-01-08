@@ -41,10 +41,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             componentMixins.pollingMixin(5),
             componentMixins.backboneMixin('cluster', 'change:name change:is_customized change:release'),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster.get('nodes');}
+                modelOrCollection(props) {return props.cluster.get('nodes');}
             }),
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.cluster.get('tasks');},
+                modelOrCollection(props) {return props.cluster.get('tasks');},
                 renderOn: 'update change'
             }),
             componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
@@ -61,7 +61,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         ],
         statics: {
             navbarActiveElement: 'clusters',
-            breadcrumbsPath: function(pageOptions) {
+            breadcrumbsPath(pageOptions) {
                 var cluster = pageOptions.cluster,
                     tabOptions = pageOptions.tabOptions[0],
                     addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/),
@@ -76,10 +76,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 }
                 return breadcrumbs;
             },
-            title: function(pageOptions) {
+            title(pageOptions) {
                 return pageOptions.cluster.get('name');
             },
-            getTabs: function() {
+            getTabs() {
                 return [
                     {url: 'dashboard', tab: DashboardTab},
                     {url: 'nodes', tab: NodesTab},
@@ -90,7 +90,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     {url: 'healthcheck', tab: HealthCheckTab}
                 ];
             },
-            fetchData: function(id, activeTab, ...tabOptions) {
+            fetchData(id, activeTab, ...tabOptions) {
                 var cluster, promise, currentClusterId;
                 var nodeNetworkGroups = app.nodeNetworkGroups;
                 var tab = _.find(this.getTabs(), {url: activeTab}).tab;
@@ -162,12 +162,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 });
             }
         },
-        getDefaultProps: function() {
+        getDefaultProps() {
             return {
                 defaultLogLevel: 'INFO'
             };
         },
-        getInitialState: function() {
+        getInitialState() {
             return {
                 activeSettingsSectionName: this.pickDefaultSettingGroup(),
                 activeNetworkSectionName: this.props.nodeNetworkGroups.find({is_default: true}).get('name'),
@@ -175,15 +175,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
             };
         },
-        removeFinishedNetworkTasks: function(callback) {
+        removeFinishedNetworkTasks(callback) {
             var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
             if (callback) request.always(callback);
             return request;
         },
-        removeFinishedDeploymentTasks: function() {
+        removeFinishedDeploymentTasks() {
             return this.removeFinishedTasks(this.props.cluster.tasks({group: 'deployment'}));
         },
-        removeFinishedTasks: function(tasks) {
+        removeFinishedTasks(tasks) {
             var requests = [];
             _.each(tasks, function(task) {
                 if (task.match({active: false})) {
@@ -193,10 +193,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }, this);
             return $.when(...requests);
         },
-        shouldDataBeFetched: function() {
+        shouldDataBeFetched() {
             return this.props.cluster.task({group: ['deployment', 'network'], active: true});
         },
-        fetchData: function() {
+        fetchData() {
             var task = this.props.cluster.task({group: 'deployment', active: true});
             if (task) {
                 return task.fetch()
@@ -211,7 +211,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return task ? task.fetch() : $.Deferred().resolve();
             }
         },
-        refreshCluster: function() {
+        refreshCluster() {
             return $.when(
                 this.props.cluster.fetch(),
                 this.props.cluster.fetchRelated('nodes'),
@@ -219,7 +219,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 this.props.cluster.get('pluginLinks').fetch()
             );
         },
-        componentWillMount: function() {
+        componentWillMount() {
             this.props.cluster.on('change:release_id', function() {
                 var release = new models.Release({id: this.props.cluster.get('release_id')});
                 release.fetch().done(_.bind(function() {
@@ -228,10 +228,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }, this);
             this.updateLogSettings();
         },
-        componentWillReceiveProps: function(newProps) {
+        componentWillReceiveProps(newProps) {
             this.updateLogSettings(newProps);
         },
-        updateLogSettings: function(props) {
+        updateLogSettings(props) {
             props = props || this.props;
             // FIXME: the following logs-related logic should be moved to Logs tab code
             // to keep parent component tightly coupled to its children
@@ -244,26 +244,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 }
             }
         },
-        changeLogSelection: function(selectedLogs) {
+        changeLogSelection(selectedLogs) {
             this.setState({selectedLogs: selectedLogs});
         },
-        getAvailableTabs: function(cluster) {
+        getAvailableTabs(cluster) {
             return _.filter(this.constructor.getTabs(), function(tabData) {
                 return !tabData.tab.isVisible || tabData.tab.isVisible(cluster);
             });
         },
-        pickDefaultSettingGroup: function() {
+        pickDefaultSettingGroup() {
             return _.first(this.props.cluster.get('settings').getGroupList());
         },
-        setActiveSettingsGroupName: function(value) {
+        setActiveSettingsGroupName(value) {
             if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
             this.setState({activeSettingsSectionName: value});
         },
 
-        setActiveNetworkSectionName: function(name) {
+        setActiveNetworkSectionName(name) {
             this.setState({activeNetworkSectionName: name});
         },
-        selectNodes: function(ids, checked) {
+        selectNodes(ids, checked) {
             if (ids && ids.length) {
                 var nodeSelection = this.state.selectedNodeIds;
                 _.each(ids, function(id) {
@@ -278,7 +278,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 this.setState({selectedNodeIds: {}});
             }
         },
-        render: function() {
+        render() {
             var cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
                 tabUrls = _.pluck(availableTabs, 'url'),

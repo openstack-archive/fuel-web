@@ -28,20 +28,20 @@ define(['underscore', 'expression/parser'], function(_, ExpressionParser) {
         return this;
     }
     _.extend(ModelPath.prototype, {
-        setModel: function(models, extraModels) {
+        setModel(models, extraModels) {
             this.model = extraModels && extraModels[this.modelName] || models[this.modelName];
             if (!this.model) {
                 throw new Error('No model with name "' + this.modelName + '" defined');
             }
             return this;
         },
-        get: function(options) {
+        get(options) {
             return this.model.get(this.attribute, options);
         },
-        set: function(value, options) {
+        set(value, options) {
             return this.model.set(this.attribute, value, options);
         },
-        change: function(callback, context) {
+        change(callback, context) {
             return this.model.on('change:' + this.attribute, callback, context);
         }
     });

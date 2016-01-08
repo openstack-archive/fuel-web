@@ -18,8 +18,6 @@
 Release object and collection
 """
 
-import copy
-
 from distutils.version import StrictVersion
 import yaml
 
@@ -79,24 +77,19 @@ class Release(NailgunObject):
         :param role: a role dict
         :returns: None
         """
-        # mark sqlalchemy's attribute as dirty, so it will be flushed
-        # when needed
-        instance.roles_metadata = copy.deepcopy(instance.roles_metadata)
-        instance.volumes_metadata = copy.deepcopy(instance.volumes_metadata)
-
         instance.roles_metadata[role['name']] = role['meta']
         instance.volumes_metadata['volumes_roles_mapping'][role['name']] = \
             role.get('volumes_roles_mapping', [])
+        # Data was changed in second level, so mark attribute as changed
+        instance.volumes_metadata.changed()
 
     @classmethod
     def remove_role(cls, instance, role_name):
-        # mark sqlalchemy's attribute as dirty, so it will be flushed
-        # when needed
-        instance.roles_metadata = copy.deepcopy(instance.roles_metadata)
-        instance.volumes_metadata = copy.deepcopy(instance.volumes_metadata)
-
         result = instance.roles_metadata.pop(role_name, None)
+
         instance.volumes_metadata['volumes_roles_mapping'].pop(role_name, None)
+        # Data was changed in second level, so mark attribute as changed
+        instance.volumes_metadata.changed()
         return bool(result)
 
     @classmethod

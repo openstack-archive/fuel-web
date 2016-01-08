@@ -21,8 +21,6 @@ from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Release
 
-from nailgun.db.sqlalchemy.models.mutable import MutableList
-
 from nailgun.test.base import BaseTestCase
 from oslo_serialization import jsonutils
 
@@ -247,13 +245,3 @@ class TestNodeInterfacesDbModels(BaseTestCase):
                 {'test_property': 'test_value'})    # str type cause ValueError
         }
         self.assertRaises(ValueError, NodeBondInterface, **sample_bond_data)
-
-    def test_copy_mutable_list(self):
-        mlist = MutableList([{"a": 1, "b": 2}])
-        shallow_copy = copy.copy(mlist)
-        self.assertEqual(mlist, shallow_copy)
-        self.assertIs(mlist[0], shallow_copy[0])
-
-        deep_copy = copy.deepcopy(mlist)
-        self.assertEqual(mlist, deep_copy)
-        self.assertIsNot(mlist[0], deep_copy[0])

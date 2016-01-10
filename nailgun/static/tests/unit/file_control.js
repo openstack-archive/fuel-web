@@ -14,13 +14,13 @@
  * under the License.
  **/
 
-define(function() {
+define(() => {
     'use strict';
 
     var input;
 
-    suite('File Control', function() {
-        setup(function() {
+    suite('File Control', () => {
+        setup(() => {
             var controls = require('views/controls');
 
             input = new controls.Input({
@@ -37,7 +37,7 @@ define(function() {
             });
         });
 
-        test('Initialization', function() {
+        test('Initialization', () => {
             var initialState = input.getInitialState();
 
             assert.equal(input.props.type, 'file', 'Input type should be equal to file');
@@ -45,7 +45,7 @@ define(function() {
             assert.equal(initialState.content, 'CERTIFICATE', 'Content should be equal to the default');
         });
 
-        test('File selection', function() {
+        test('File selection', () => {
             var clickSpy = sinon.spy();
 
             sinon.stub(input, 'getInputDOMNode').returns({
@@ -56,7 +56,7 @@ define(function() {
             assert.ok(clickSpy.calledOnce, 'When icon clicked input control should be clicked too to open select file dialog');
         });
 
-        test('File fetching', function() {
+        test('File fetching', () => {
             var readMethod = sinon.mock(),
                 readerObject = {
                     readAsBinaryString: readMethod,
@@ -64,7 +64,7 @@ define(function() {
                 },
                 saveMethod = sinon.spy(input, 'saveFile');
 
-            window.FileReader = function() {return readerObject;};
+            window.FileReader = () => readerObject;
 
             sinon.stub(input, 'getInputDOMNode').returns({
                 value: '/dummy/path/to/somefile.ext',
@@ -81,7 +81,7 @@ define(function() {
             sinon.assert.calledWith(saveMethod, 'somefile.ext', 'File contents');
         });
 
-        test('File saving', function() {
+        test('File saving', () => {
             var setState = sinon.spy(input, 'setState'),
                 dummyName = 'dummy.ext',
                 dummyContent = 'Lorem ipsum dolores';

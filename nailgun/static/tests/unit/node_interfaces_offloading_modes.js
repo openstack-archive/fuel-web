@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'], function(OffloadingModes) {
+define(['views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'], (OffloadingModes) => {
     'use strict';
 
     var offloadingModesConrol,
@@ -23,18 +23,18 @@ define(['views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'], f
         fakeOffloadingModes,
         fakeInterface = {
             offloading_modes: fakeOffloadingModes,
-            get: function(key) {
+            get(key) {
                 assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to get data');
                 return fakeOffloadingModes;
             },
-            set: function(key, value) {
+            set(key, value) {
                 assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to set data');
                 fakeOffloadingModes = value;
             }
         };
 
-    suite('Offloadning Modes control', function() {
-        setup(function() {
+    suite('Offloadning Modes control', () => {
+        setup(() => {
             TestMode22 = {name: 'TestName22', state: false, sub: []};
             TestMode31 = {name: 'TestName31', state: null, sub: []};
             fakeOffloadingModes = [
@@ -64,26 +64,26 @@ define(['views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'], f
             });
         });
 
-        test('Finding mode by name', function() {
+        test('Finding mode by name', () => {
             var mode = offloadingModesConrol.findMode(TestMode22.name, fakeOffloadingModes);
             assert.deepEqual(mode, TestMode22, 'Mode can be found by name');
         });
-        test('Set mode state logic', function() {
+        test('Set mode state logic', () => {
             offloadingModesConrol.setModeState(TestMode31, true);
             assert.strictEqual(TestMode31.state, true, 'Mode state is changing');
         });
-        test('Set submodes states logic', function() {
+        test('Set submodes states logic', () => {
             var mode = offloadingModesConrol.findMode('TestName1', fakeOffloadingModes);
             offloadingModesConrol.setModeState(mode, false);
             assert.strictEqual(TestMode31.state, false, 'Parent state changing leads to all child modes states changing');
         });
-        test('Disabled reversed logic', function() {
+        test('Disabled reversed logic', () => {
             var mode = offloadingModesConrol.findMode('TestName2', fakeOffloadingModes);
             offloadingModesConrol.setModeState(TestMode22, true);
             offloadingModesConrol.checkModes(null, fakeOffloadingModes);
             assert.strictEqual(mode.state, null, 'Parent state changing leads to all child modes states changing');
         });
-        test('All Modes option logic', function() {
+        test('All Modes option logic', () => {
             var enableAllModes = offloadingModesConrol.onModeStateChange('All Modes', true);
             enableAllModes();
             var mode = offloadingModesConrol.findMode('TestName2', fakeOffloadingModes);

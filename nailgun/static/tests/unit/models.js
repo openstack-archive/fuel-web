@@ -17,12 +17,12 @@
 define([
     'underscore',
     'models'
-], function(_, models) {
+], (_, models) => {
     'use strict';
 
-    suite('Test models', function() {
-        suite('Test Task model', function() {
-            test('Test extendStatuses method', function() {
+    suite('Test models', () => {
+        suite('Test Task model', () => {
+            test('Test extendStatuses method', () => {
                 var task = new models.Task(),
                     filters, result;
 
@@ -63,7 +63,7 @@ define([
                 assert.deepEqual(task.extendStatuses(filters), result, 'False value of \'active\' filter parsed correctly');
             });
 
-            test('Test extendGroups method', function() {
+            test('Test extendGroups method', () => {
                 var task = new models.Task(),
                     allTaskNames = _.flatten(_.values(task.groups)),
                     filters, result;

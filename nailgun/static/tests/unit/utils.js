@@ -19,11 +19,11 @@ define([
     'utils',
     'i18n',
     'backbone'
-], function(_, utils, i18n, Backbone) {
+], (_, utils, i18n, Backbone) => {
     'use strict';
 
-    suite('Test utils', function() {
-        test('Test getResponseText', function() {
+    suite('Test utils', () => {
+        test('Test getResponseText', () => {
             var response;
             var getResponseText = utils.getResponseText;
             var serverErrorMessage = i18n('dialog.error_dialog.server_error');
@@ -45,7 +45,7 @@ define([
             assert.equal(getResponseText(response), '123', 'HTTP 400 with JSON response is treated correctly');
         });
 
-        test('Test comparison', function() {
+        test('Test comparison', () => {
             var compare = utils.compare;
             var model1 = new Backbone.Model({
                     string: 'bond2',
@@ -83,7 +83,7 @@ define([
             assert.equal(compare(model1, model2, {attr: 'booleanFlagWithNull'}), 0, 'Comparison null and false');
         });
 
-        test('Test highlightTestStep', function() {
+        test('Test highlightTestStep', () => {
             var text;
             var highlight = utils.highlightTestStep;
 
@@ -136,7 +136,7 @@ define([
             );
         });
 
-        test('Test getDefaultGatewayForCidr', function() {
+        test('Test getDefaultGatewayForCidr', () => {
             var getGateway = utils.getDefaultGatewayForCidr;
 
             assert.equal(getGateway('172.16.0.0/24'), '172.16.0.1', 'Getting default gateway for CIDR');
@@ -145,7 +145,7 @@ define([
             assert.equal(getGateway('172.16.0.0/'), '', 'No gateway returned for invalid CIDR');
         });
 
-        test('Test getDefaultIPRangeForCidr', function() {
+        test('Test getDefaultIPRangeForCidr', () => {
             var getRange = utils.getDefaultIPRangeForCidr;
 
             assert.deepEqual(getRange('172.16.0.0/24'), [['172.16.0.1', '172.16.0.254']], 'Getting default IP range for CIDR');
@@ -154,7 +154,7 @@ define([
             assert.deepEqual(getRange('172.16.0.0/', true), [['', '']], 'No IP range returned for invalid CIDR');
         });
 
-        test('Test validateIpCorrespondsToCIDR', function() {
+        test('Test validateIpCorrespondsToCIDR', () => {
             var validate = utils.validateIpCorrespondsToCIDR;
 
             assert.ok(validate('172.16.0.0/20', '172.16.0.2'), 'Check IP, that corresponds to CIDR');

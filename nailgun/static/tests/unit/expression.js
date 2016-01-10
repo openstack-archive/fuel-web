@@ -19,11 +19,11 @@ define([
     'models',
     'expression',
     'expression/objects'
-], function(_, models, Expression, expressionObjects) {
+], (_, models, Expression, expressionObjects) => {
     'use strict';
 
-    suite('Expression', function() {
-        test('Expression parser test', function() {
+    suite('Expression', () => {
+        test('Expression parser test', () => {
             var hypervisor = 'kvm';
             var testModels = {
                 cluster: new models.Cluster({mode: 'ha_compact'}),
@@ -87,14 +87,14 @@ define([
                 return result instanceof expressionObjects.ModelPath ? result.get() : result;
             }
 
-            _.each(testCases, _.spread(function(expression, result, strict) {
-                var options = {strict: strict};
+            _.each(testCases, ([expression, result, strict]) => {
+                var options = {strict};
                 if (result === Error) {
                     assert.throws(_.partial(evaluate, expression, options), Error, '', expression + ' throws an error');
                 } else {
                     assert.strictEqual(evaluate(expression, options), result, expression + ' evaluates correctly');
                 }
-            }));
+            });
         });
     });
 });

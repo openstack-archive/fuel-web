@@ -21,7 +21,7 @@ define([
     'tests/functional/pages/modal',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
-    'tests/helpers'
+    'tests/functional/helpers'
 ], function(registerSuite, assert, NodeComponent, ModalWindow, Common, ClusterPage) {
     'use strict';
 

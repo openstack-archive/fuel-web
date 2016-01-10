@@ -16,7 +16,7 @@
 
 define([
     'intern/dojo/node!leadfoot/helpers/pollUntil',
-    '../../helpers'
+    'tests/functional/helpers'
 ], function(pollUntil) {
     'use strict';
         function ModalWindow(remote) {

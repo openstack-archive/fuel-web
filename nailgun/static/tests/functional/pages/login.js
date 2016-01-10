@@ -15,7 +15,7 @@
  **/
 
 define([
-    '../../helpers'
+    'tests/functional/helpers'
 ], function(Helpers) {
     'use strict';
 

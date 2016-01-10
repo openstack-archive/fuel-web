@@ -16,15 +16,17 @@
 define(['underscore', 'expression/parser', 'expression/objects'], (_, ExpressionParser, expressionObjects) => {
     'use strict';
 
-    function Expression(expressionText, models, options) {
-        if (!this) return new Expression(expressionText, models, options);
-        this.strict = options && !_.isUndefined(options.strict) ? options.strict : true;
-        this.expressionText = expressionText;
-        this.models = models || {};
-        this.compiledExpression = this.getCompiledExpression();
-        return this;
-    }
-    _.extend(Expression.prototype, {
+    var expressionCache = {};
+
+    class Expression {
+        constructor(expressionText, models = {}, {strict = true}) {
+            this.strict = strict;
+            this.expressionText = expressionText;
+            this.models = models;
+            this.compiledExpression = this.getCompiledExpression();
+            return this;
+        }
+
         evaluate(extraModels) {
             // FIXME(vkramskikh): currently Jison supports sharing state
             // only via ExpressionParser.yy. It is unsafe and could lead to
@@ -35,16 +37,16 @@ define(['underscore', 'expression/parser', 'expression/objects'], (_, Expression
             var value = this.compiledExpression.evaluate();
             delete this.extraModels;
             return value;
-        },
+        }
+
         getCompiledExpression() {
-            var cacheEntry = this.expressionCache[this.expressionText];
+            var cacheEntry = expressionCache[this.expressionText];
             if (!cacheEntry) {
-                cacheEntry = this.expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
+                cacheEntry = expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
             }
             return cacheEntry;
-        },
-        expressionCache: {}
-    });
+        }
+    }
 
     _.extend(ExpressionParser.yy, expressionObjects);
 

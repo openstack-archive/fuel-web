@@ -16,77 +16,94 @@
 define(['underscore', 'expression/parser'], (_, ExpressionParser) => {
     'use strict';
 
-    function ModelPath(path) {
-        var pathParts = path.split(':');
-        if (_.isUndefined(pathParts[1])) {
-            this.modelName = 'default';
-            this.attribute = pathParts[0];
-        } else {
-            this.modelName = pathParts[0];
-            this.attribute = pathParts[1];
+    class ModelPath {
+        constructor(path) {
+            var pathParts = path.split(':');
+            if (_.isUndefined(pathParts[1])) {
+                this.modelName = 'default';
+                this.attribute = pathParts[0];
+            } else {
+                this.modelName = pathParts[0];
+                this.attribute = pathParts[1];
+            }
+            return this;
         }
-        return this;
-    }
-    _.extend(ModelPath.prototype, {
-        setModel(models, extraModels) {
-            this.model = extraModels && extraModels[this.modelName] || models[this.modelName];
+
+        setModel(models, extraModels = {}) {
+            this.model = extraModels[this.modelName] || models[this.modelName];
             if (!this.model) {
                 throw new Error('No model with name "' + this.modelName + '" defined');
             }
             return this;
-        },
+        }
+
         get(options) {
             return this.model.get(this.attribute, options);
-        },
+        }
+
         set(value, options) {
             return this.model.set(this.attribute, value, options);
-        },
+        }
+
         change(callback, context) {
             return this.model.on('change:' + this.attribute, callback, context);
         }
-    });
-
-    function ScalarWrapper(value) {
-        this.value = value;
     }
-    ScalarWrapper.prototype.evaluate = ScalarWrapper.prototype.getValue = function() {
-        return this.value;
-    };
 
-    function SubexpressionWrapper(subexpression) {
-        this.subexpression = subexpression;
-    }
-    SubexpressionWrapper.prototype.evaluate = SubexpressionWrapper.prototype.getValue = function() {
-        return this.subexpression();
-    };
-
-    function ModelPathWrapper(modelPathText) {
-        this.modelPath = new ModelPath(modelPathText);
-        this.modelPathText = modelPathText;
-    }
-    ModelPathWrapper.prototype.evaluate = function() {
-        var expression = ExpressionParser.yy.expression;
-        this.modelPath.setModel(expression.models, expression.extraModels);
-        var result = this.modelPath.get();
-        if (_.isUndefined(result)) {
-            if (expression.strict) {
-                throw new TypeError('Value of ' + this.modelPathText + ' is undefined. Set options.strict to false to allow undefined values.');
-            }
-            result = null;
+    class ScalarWrapper {
+        constructor(value) {
+            this.value = value;
         }
-        this.lastResult = result;
-        expression.modelPaths[this.modelPathText] = this.modelPath;
-        return this.modelPath;
-    };
-    ModelPathWrapper.prototype.getValue = function() {
-        this.evaluate();
-        return this.lastResult;
-    };
 
-    return {
-        ScalarWrapper: ScalarWrapper,
-        SubexpressionWrapper: SubexpressionWrapper,
-        ModelPathWrapper: ModelPathWrapper,
-        ModelPath: ModelPath
-    };
+        evaluate() {
+            return this.value;
+        }
+
+        getValue() {
+            return this.value;
+        }
+    }
+
+    class SubexpressionWrapper {
+        constructor(subexpression) {
+            this.subexpression = subexpression;
+        }
+
+        evaluate() {
+            return this.subexpression();
+        }
+
+        getValue() {
+            return this.subexpression();
+        }
+    }
+
+    class ModelPathWrapper {
+        constructor(modelPathText) {
+            this.modelPath = new ModelPath(modelPathText);
+            this.modelPathText = modelPathText;
+        }
+
+        evaluate() {
+            var expression = ExpressionParser.yy.expression;
+            this.modelPath.setModel(expression.models, expression.extraModels);
+            var result = this.modelPath.get();
+            if (_.isUndefined(result)) {
+                if (expression.strict) {
+                    throw new TypeError('Value of ' + this.modelPathText + ' is undefined. Set options.strict to false to allow undefined values.');
+                }
+                result = null;
+            }
+            this.lastResult = result;
+            expression.modelPaths[this.modelPathText] = this.modelPath;
+            return this.modelPath;
+        }
+
+        getValue() {
+            this.evaluate();
+            return this.lastResult;
+        }
+    }
+
+    return {ScalarWrapper, SubexpressionWrapper, ModelPathWrapper, ModelPath};
 });

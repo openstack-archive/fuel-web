@@ -83,7 +83,7 @@ define([
             ];
 
             function evaluate(expression, options) {
-                var result = Expression(expression, testModels, options).evaluate();
+                var result = new Expression(expression, testModels, options).evaluate();
                 return result instanceof expressionObjects.ModelPath ? result.get() : result;
             }
 

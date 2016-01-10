@@ -36,7 +36,7 @@ define([
         CommonMethods.prototype = {
             constructor: CommonMethods,
             pickRandomName: function(prefix) {
-                return (prefix || 'Item') + ' #' + _.random(1000, 9999);
+                return _.uniqueId((prefix || 'Item') + ' #');
             },
             getOut: function() {
                 var self = this;

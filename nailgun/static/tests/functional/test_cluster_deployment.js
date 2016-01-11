@@ -18,7 +18,7 @@ define([
     'intern/dojo/node!lodash',
     'intern!object',
     'intern/chai!assert',
-    'tests/helpers',
+    'tests/functional/helpers',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
     'tests/functional/pages/dashboard',

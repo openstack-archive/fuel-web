@@ -16,7 +16,7 @@
 
 define([
     'tests/functional/pages/modal',
-    '../../helpers'
+    'tests/functional/helpers'
 ], function(ModalWindow) {
     'use strict';
 

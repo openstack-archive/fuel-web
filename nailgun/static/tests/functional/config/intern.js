@@ -20,16 +20,9 @@ define(function() {
     return {
         proxyPort: 9057,
         proxyUrl: 'http://localhost:9057/',
-        capabilities: {
-            'selenium-version': '2.45.0'
-        },
         maxConcurrency: 1,
-        useLoader: {
-            'host-node': 'requirejs',
-            'host-browser': '/vendor/npm/requirejs/require.js'
-        },
         grep: /^/,
         excludeInstrumentation: /^/,
-        reporters: ['console', 'tests/screenshot_on_fail']
+        reporters: ['console', 'tests/functional/screenshot_on_fail']
     };
 });

@@ -20,7 +20,7 @@ define([
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
     'tests/functional/pages/dashboard',
-    'tests/helpers'
+    'tests/functional/helpers'
 ], function(registerSuite, assert, Common, ClusterPage, DashboardPage) {
     'use strict';
 

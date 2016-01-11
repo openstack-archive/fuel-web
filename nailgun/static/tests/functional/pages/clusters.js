@@ -17,7 +17,7 @@
 define([
     'intern/dojo/node!lodash',
     'tests/functional/pages/modal',
-    '../../helpers'
+    'tests/functional/helpers'
 ], function(_, ModalWindow) {
     'use strict';
     function ClustersPage(remote) {

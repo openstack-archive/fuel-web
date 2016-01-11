@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-define(['../../helpers'], function() {
+define(['tests/functional/helpers'], function() {
     'use strict';
     function WelcomePage(remote) {
         this.remote = remote;

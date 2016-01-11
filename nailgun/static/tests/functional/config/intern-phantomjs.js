@@ -17,8 +17,5 @@
 define(['./intern'], function(config) {
     'use strict';
     config.environments = [{browserName: 'phantomjs'}];
-    config.loader.shim.react = {
-        deps: ['vendor/npm/es5-shim/es5-shim']
-    };
     return config;
 });

@@ -17,7 +17,7 @@
 define([
     'intern!object',
     'intern/chai!assert',
-    'tests/helpers',
+    'tests/functional/helpers',
     'tests/functional/pages/common'
 ], function(registerSuite, assert, helpers, Common) {
     'use strict';

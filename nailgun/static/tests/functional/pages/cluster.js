@@ -18,7 +18,7 @@ define([
     'intern/dojo/node!lodash',
     'tests/functional/pages/modal',
     'intern/dojo/node!leadfoot/helpers/pollUntil',
-    '../../helpers'
+    'tests/functional/helpers'
 ], function(_, ModalWindow, pollUntil) {
     'use strict';
     function ClusterPage(remote) {

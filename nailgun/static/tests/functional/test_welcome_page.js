@@ -17,7 +17,7 @@
 define([
     'intern!object',
     'intern/chai!assert',
-    'tests/helpers',
+    'tests/functional/helpers',
     'tests/functional/pages/login',
     'tests/functional/pages/welcome'
 ], function(registerSuite, assert, helpers, LoginPage, WelcomePage) {

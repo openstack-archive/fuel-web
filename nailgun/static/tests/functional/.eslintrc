@@ -4,7 +4,5 @@
     object-shorthand: 0
   env:
     node: true
-    mocha: true
   globals:
-    assert: false
     sinon: false

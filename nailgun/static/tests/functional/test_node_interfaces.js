@@ -16,7 +16,7 @@
 
 define([
     'intern!object',
-    'tests/helpers',
+    'tests/functional/helpers',
     'tests/functional/pages/interfaces',
     'tests/functional/pages/common'
 ], function(registerSuite, helpers, InterfacesPage, Common) {

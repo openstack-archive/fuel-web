@@ -17,7 +17,7 @@
 define([
     'intern/dojo/node!lodash',
     'intern/chai!assert',
-    '../../helpers',
+    'tests/functional/helpers',
     'tests/functional/pages/login',
     'tests/functional/pages/welcome',
     'tests/functional/pages/cluster',

@@ -100,7 +100,7 @@ function runIntern(params) {
         var baseDir = 'static';
         var runner = './node_modules/.bin/intern-runner';
         var browser = argv.browser || process.env.BROWSER || 'firefox';
-        var options = [['config', 'tests/intern-' + browser + '.js']];
+        var options = [['config', 'tests/functional/config/intern-' + browser + '.js']];
         var suiteOptions = [];
         ['suites', 'functionalSuites'].forEach(function(suiteType) {
             if (params[suiteType]) {

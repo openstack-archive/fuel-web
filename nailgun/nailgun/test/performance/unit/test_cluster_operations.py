@@ -171,7 +171,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
         func = functools.partial(
             self.put_handler,
             'ClusterAttributesHandler',
-            {'editable': {"foo": "bar"}},
+            {'editable': {'foo': {'bar': None}}},
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
         self.check_time_exec(func)
@@ -181,7 +181,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
         func = functools.partial(
             self.patch_handler,
             'ClusterAttributesHandler',
-            {'editable': {'foo': 'bar'}},
+            {'editable': {'foo': {'bar': None}}},
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
         self.check_time_exec(func)

@@ -85,9 +85,7 @@ class TestPluginCollection(ExtraFunctions):
         plugin_ids = self._create_test_plugins()
         ids = plugin_ids[:2]
         plugins = PluginCollection.get_by_uids(ids)
-        self.assertEqual(len(list(plugins)), 2)
-        self.assertListEqual(
-            [plugin.id for plugin in plugins], ids)
+        self.assertItemsEqual(ids, (plugin.id for plugin in plugins))
 
     def test_get_by_release(self):
         release = self.env.create_release(

@@ -1107,9 +1107,7 @@
             weight: 40
             group: "network"
           ntp_list:
-            value:
-              generator: "from_settings"
-              generator_arg: "NTP_UPSTREAM"
+            value: ""
             label: "NTP server list"
             description: "List of upstream NTP servers, separated by comma"
             weight: 10

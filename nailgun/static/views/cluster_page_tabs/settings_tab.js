@@ -175,10 +175,16 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, path);
         },
         isSavingPossible: function() {
-            var cluster = this.props.cluster,
-                settings = cluster.get('settings'),
-                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true});
-            return !locked && this.hasChanges() && _.isNull(settings.validationError);
+            var settings = this.props.cluster.get('settings'),
+                locked = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true}),
+                // network settings are shown on Networks tab, so they should not block
+                // saving of changes on Settings tab
+                areSettingsValid = !_.any(_.keys(settings.validationError), (settingPath) => {
+                    var settingSection = settingPath.split('.')[0];
+                    return settings.get(settingSection).metadata.group != 'network' &&
+                        settings.get(settingPath).group != 'network';
+                });
+            return !locked && this.hasChanges() && areSettingsValid;
         },
         render: function() {
             var cluster = this.props.cluster,

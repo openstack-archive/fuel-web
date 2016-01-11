@@ -557,6 +557,8 @@ define(
             };
         },
         componentDidMount() {
+            this.props.cluster.get('networkConfiguration').isValid();
+            this.props.cluster.get('settings').isValid({models: this.state.configModels});
             this.props.cluster.get('tasks').on('change:status change:unsaved', this.destroyUnsavedNetworkVerificationTask, this);
         },
         componentWillUnmount() {
@@ -881,17 +883,17 @@ define(
                 networks = networkConfiguration.get('networks'),
                 isMultiRack = nodeNetworkGroups.length > 1,
                 networkVerifyTask = cluster.task('verify_networks'),
-                networkCheckTask = cluster.task('check_networks'),
+                networkCheckTask = cluster.task('check_networks');
+
+            var validationErrors = networkConfiguration.validationError,
                 notEnoughOnlineNodesForVerification = cluster.get('nodes').where({online: true}).length < 2,
-                isVerificationDisabled = networkConfiguration.validationError ||
+                isVerificationDisabled = validationErrors ||
                     this.state.actionInProgress ||
                     !!cluster.task({group: ['deployment', 'network'], active: true}) ||
                     isMultiRack ||
                     notEnoughOnlineNodesForVerification;
 
-            networkConfiguration.isValid();
             var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}),
-                validationErrors = networkConfiguration.validationError,
                 nodeNetworkGroupProps = {
                     cluster: cluster,
                     locked: isLocked,
@@ -912,7 +914,7 @@ define(
                                     </div>
                                 }
                             </div>
-                            <div className='col-xs-5 node-netwrok-groups-controls'>
+                            <div className='col-xs-5 node-network-groups-controls'>
                                 {!isNovaEnvironment &&
                                     <button
                                         key='add_node_group'
@@ -942,6 +944,7 @@ define(
                         <div className='row'>
                             <NetworkSubtabs
                                 cluster={cluster}
+                                validationErrors={validationErrors}
                                 setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                                 nodeNetworkGroups={nodeNetworkGroups}
                                 activeGroupName={activeNetworkSectionName}
@@ -1052,17 +1055,11 @@ define(
 
     var NetworkSubtabs = React.createClass({
         renderClickablePills(sections, isNetworkGroupPill) {
-            var {cluster, nodeNetworkGroups} = this.props,
-                networkConfiguration = cluster.get('networkConfiguration'),
-                errors,
+            var {cluster, nodeNetworkGroups, validationErrors} = this.props,
                 isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
 
-            networkConfiguration.isValid();
-
-            errors = networkConfiguration.validationError;
-
-            var networkParametersErrors = errors && errors.networking_parameters,
-                networksErrors = errors && errors.networks;
+            var networkParametersErrors = (validationErrors || {}).networking_parameters,
+                networksErrors = (validationErrors || {}).networks;
 
             return (sections.map(function(groupName) {
                 var tabLabel = groupName,

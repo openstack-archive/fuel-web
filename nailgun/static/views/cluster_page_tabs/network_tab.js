@@ -97,29 +97,23 @@ define(
             );
         },
         getError(attribute) {
-            var validationErrors = this.props.cluster.get('networkConfiguration').validationError;
-            if (!validationErrors) return null;
+            var validationError = this.props.cluster.get('networkConfiguration').validationError;
+            if (!validationError) return null;
 
-            var network = this.props.network,
-                errors;
-
-            if (network) {
-                errors = (validationErrors.networks &&
-                    validationErrors.networks[this.props.currentNodeNetworkGroup.id] ||
-                    {})[network.id];
-                return errors && errors[attribute] || null;
+            var error;
+            if (this.props.network) {
+                try {
+                    error = validationError.networks[this.props.currentNodeNetworkGroup.id][this.props.network.id][attribute];
+                } catch (e) {}
+                return error || null;
             }
+            error = (validationError.networking_parameters || {})[attribute];
+            if (!error) return null;
 
-            errors = (validationErrors.networking_parameters || {})[attribute];
-            if (!errors) {
-                return null;
-            }
+            // specific format needed for vlan_start error
+            if (attribute == 'fixed_networks_vlan_start') return [error];
 
-            // specific format needed for vlan_start errors
-            if (attribute == 'fixed_networks_vlan_start') {
-                return [errors];
-            }
-            return errors;
+            return error;
         }
     };
 
@@ -557,6 +551,8 @@ define(
             };
         },
         componentDidMount() {
+            this.props.cluster.get('networkConfiguration').isValid();
+            this.props.cluster.get('settings').isValid({models: this.state.configModels});
             this.props.cluster.get('tasks').on('change:status change:unsaved', this.destroyUnsavedNetworkVerificationTask, this);
         },
         componentWillUnmount() {
@@ -881,22 +877,23 @@ define(
                 networks = networkConfiguration.get('networks'),
                 isMultiRack = nodeNetworkGroups.length > 1,
                 networkVerifyTask = cluster.task('verify_networks'),
-                networkCheckTask = cluster.task('check_networks'),
+                networkCheckTask = cluster.task('check_networks');
+
+            var {validationError} = networkConfiguration,
                 notEnoughOnlineNodesForVerification = cluster.get('nodes').where({online: true}).length < 2,
-                isVerificationDisabled = networkConfiguration.validationError ||
+                isVerificationDisabled = validationError ||
                     this.state.actionInProgress ||
                     !!cluster.task({group: ['deployment', 'network'], active: true}) ||
                     isMultiRack ||
                     notEnoughOnlineNodesForVerification;
 
-            networkConfiguration.isValid();
             var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}),
-                validationErrors = networkConfiguration.validationError,
                 nodeNetworkGroupProps = {
                     cluster: cluster,
                     locked: isLocked,
                     actionInProgress: this.state.actionInProgress,
-                    verificationErrors: this.getVerificationErrors()
+                    verificationErrors: this.getVerificationErrors(),
+                    validationError: validationError
                 };
 
             return (
@@ -912,7 +909,7 @@ define(
                                     </div>
                                 }
                             </div>
-                            <div className='col-xs-5 node-netwrok-groups-controls'>
+                            <div className='col-xs-5 node-network-groups-controls'>
                                 {!isNovaEnvironment &&
                                     <button
                                         key='add_node_group'
@@ -942,6 +939,7 @@ define(
                         <div className='row'>
                             <NetworkSubtabs
                                 cluster={cluster}
+                                validationError={validationError}
                                 setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                                 nodeNetworkGroups={nodeNetworkGroups}
                                 activeGroupName={activeNetworkSectionName}
@@ -972,7 +970,7 @@ define(
                                     <NetworkVerificationResult
                                         key='network_verification'
                                         task={networkVerifyTask}
-                                        networks={networkConfiguration.get('networks')}
+                                        networks={networks}
                                         hideVerificationResult={this.state.hideVerificationResult}
                                         isMultirack={isMultiRack}
                                         isVerificationDisabled={isVerificationDisabled}
@@ -983,20 +981,20 @@ define(
                                 {activeNetworkSectionName == 'nova_configuration' &&
                                     <NovaParameters
                                         cluster={cluster}
-                                        validationErrors={validationErrors}
+                                        validationError={validationError}
                                     />
                                 }
                                 {activeNetworkSectionName == 'neutron_l2' &&
                                     <NetworkingL2Parameters
                                         cluster={cluster}
-                                        validationErrors={validationErrors}
+                                        validationError={validationError}
                                         disabled={this.isLocked()}
                                     />
                                 }
                                 {activeNetworkSectionName == 'neutron_l3' &&
                                     <NetworkingL3Parameters
                                         cluster={cluster}
-                                        validationErrors={validationErrors}
+                                        validationError={validationError}
                                         disabled={this.isLocked()}
                                     />
                                 }
@@ -1020,8 +1018,7 @@ define(
 
     var NodeNetworkGroup = React.createClass({
         render() {
-            var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors} = this.props,
-                networkConfiguration = cluster.get('networkConfiguration');
+            var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors, validationError} = this.props;
             return (
                 <div>
                     <NodeNetworkGroupTitle
@@ -1038,7 +1035,7 @@ define(
                                 key={network.id}
                                 network={network}
                                 cluster={cluster}
-                                validationErrors={(networkConfiguration.validationError || {}).networks}
+                                validationError={(validationError || {}).networks}
                                 disabled={this.props.locked}
                                 verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
                                 currentNodeNetworkGroup={nodeNetworkGroup}
@@ -1052,17 +1049,11 @@ define(
 
     var NetworkSubtabs = React.createClass({
         renderClickablePills(sections, isNetworkGroupPill) {
-            var {cluster, nodeNetworkGroups} = this.props,
-                networkConfiguration = cluster.get('networkConfiguration'),
-                errors,
+            var {cluster, nodeNetworkGroups, validationError} = this.props,
                 isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
 
-            networkConfiguration.isValid();
-
-            errors = networkConfiguration.validationError;
-
-            var networkParametersErrors = errors && errors.networking_parameters,
-                networksErrors = errors && errors.networks;
+            var networkParametersErrors = (validationError || {}).networking_parameters,
+                networksErrors = (validationError || {}).networks;
 
             return (sections.map(function(groupName) {
                 var tabLabel = groupName,

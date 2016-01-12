@@ -685,6 +685,18 @@ LOGS:
     <<: *remote_openstack_log_format
     <<: *os_log_group
     path: "swift-proxy-server.log"
+  - id: 'os/ironic-api'
+    name: "ironic-api"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "ironic-api.log"
+  - id: 'os/ironic-conductor'
+    name: "ironic-conductor"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "ironic-conductor.log"
 
 LOGS_TO_PACK_FOR_SUPPORT:
   logs: '/var/log'

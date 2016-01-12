@@ -182,6 +182,8 @@ def make_puppet_task(uids, task):
             'puppet_manifest': task['parameters']['puppet_manifest'],
             'puppet_modules': task['parameters']['puppet_modules'],
             'timeout': task['parameters']['timeout'],
+            'retries': task['parameters'].get(
+                'retries', settings.PUPPET_TASK_RETRIES),
             'cwd': task['parameters'].get('cwd', '/')}}
 
 

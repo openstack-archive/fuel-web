@@ -1215,6 +1215,7 @@
             type: "checkbox"
             restrictions:
               - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
+              - "settings:storage.objects_ceph.value == true" : "When RadosGW is enabled RBD driver can not be used"
           images_vcenter:
             value: false
             label: "VMware vCenter/ESXi datastore for images (Glance)"
@@ -1238,8 +1239,6 @@
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
             weight: 80
             type: "checkbox"
-            restrictions:
-              - "settings:storage.images_ceph.value == false"
           osd_pool_size:
             value: "3"
             label: "Ceph object replication factor"
@@ -1750,7 +1749,9 @@
           - name: network:nova_network
           - name: storage:block:ceph
           - name: storage:ephemeral:ceph
+        incompatible:
           - name: storage:image:ceph
+            message: ""
       - name: storage:ephemeral:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
         description: "dialog.create_cluster_wizard.storage.ceph_ephemeral"
@@ -1779,8 +1780,10 @@
           - name: network:neutron:tun
           - name: network:nova_network
           - name: storage:block:ceph
-          - name: storage:object:ceph
           - name: storage:ephemeral:ceph
+        incompatible:
+          - name: storage:object:ceph
+            message: ""
       - name: additional_service:sahara
         bind:
           - "settings:additional_components.sahara.value"

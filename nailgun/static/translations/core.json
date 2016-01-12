@@ -37,7 +37,7 @@
                 "success": "Success",
                 "error": "Error",
                 "see_logs": "See the logs",
-                "copyright": "Copyright © 2013-2015 Mirantis. All rights reserved.",
+                "copyright": "Copyright © 2013-2016 Mirantis. All rights reserved.",
                 "version": "Version",
                 "username": "Username",
                 "change_password": "Change Password",
@@ -1618,7 +1618,7 @@
                 "success": "成功",
                 "error": "エラー",
                 "see_logs": "ログを参照",
-                "copyright": "Copyright © 2013-2015 Mirantis. All rights reserved.",
+                "copyright": "Copyright © 2013-2016 Mirantis. All rights reserved.",
                 "version": "バージョン",
                 "change_password": "パスワードを変更",
                 "logout": "ログアウト",
@@ -2356,7 +2356,7 @@
                 "success": "성공",
                 "error": "오류",
                 "see_logs": "로그를 참조하십시오",
-                "copyright": "저작권 © 2013-2015 Mirantis. 판권소유",
+                "copyright": "저작권 © 2013-2016 Mirantis. 판권소유",
                 "network": {
                   "neutron_gre": "GRE를 사용하는 Neutron",
                   "neutron_vlan": "VLAN을 사용하는 Neutron"

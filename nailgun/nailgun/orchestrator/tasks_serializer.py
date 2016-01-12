@@ -119,7 +119,11 @@ class PuppetHook(GenericNodeHook):
     hook_type = 'puppet'
 
     def serialize(self):
-        yield templates.make_puppet_task([self.node['uid']], self.task)
+        yield templates.make_puppet_task([
+            self.node['uid']],
+            self.task,
+            objects.Cluster.get_editable_attributes(self.cluster)
+            ['common']['puppet_retries']['value'])
 
 
 class StandartConfigRolesHook(ExpressionBasedTask):
@@ -310,7 +314,11 @@ class CreateVMsOnCompute(GenericRolesHook):
 
     def serialize(self):
         uids = self.get_uids()
-        yield templates.make_puppet_task(uids, self.task)
+        yield templates.make_puppet_task(
+            uids,
+            self.task,
+            objects.Cluster.get_editable_attributes(self.cluster)
+            ['common']['puppet_retries']['value'])
 
 
 class UploadNodesInfo(GenericRolesHook):
@@ -363,7 +371,11 @@ class UpdateHosts(GenericRolesHook):
 
         uids = [n.uid for n in nodes]
 
-        yield templates.make_puppet_task(uids, self.task)
+        yield templates.make_puppet_task(
+            uids,
+            self.task,
+            objects.Cluster.get_editable_attributes(self.cluster)
+            ['common']['puppet_retries']['value'])
 
 
 class UploadConfiguration(GenericRolesHook):

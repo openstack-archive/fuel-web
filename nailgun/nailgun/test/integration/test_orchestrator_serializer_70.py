@@ -29,6 +29,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import stages
+from nailgun.settings import settings
 from nailgun.test import base
 from nailgun.utils import reverse
 
@@ -1116,6 +1117,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                 'puppet_manifest': '/path/to/manifests',
                 'puppet_modules': '/path/to/modules',
                 'timeout': 3600,
+                'retries': settings.PUPPET_TASK_RETRIES,
             },
             'priority': 100,
             'type': 'puppet',
@@ -1151,6 +1153,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                     'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
                                        'modular/netconfig/netconfig.pp',
                     'timeout': 3600,
+                    'retries': settings.PUPPET_TASK_RETRIES,
                     'cwd': '/'},
                 'priority': 100,
                 'type': 'puppet',
@@ -1161,7 +1164,8 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                     'cwd': '/',
                     'puppet_manifest': '/etc/puppet/manifests/site.pp',
                     'puppet_modules': '/etc/puppet/modules',
-                    'timeout': 3600},
+                    'timeout': 3600,
+                    'retries': settings.PUPPET_TASK_RETRIES},
                 'priority': 200,
                 'type': 'puppet',
                 'id': 'deploy_legacy',
@@ -1172,6 +1176,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                     'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
                                        'modular/globals/globals.pp',
                     'timeout': 3600,
+                    'retries': settings.PUPPET_TASK_RETRIES,
                     'cwd': '/'},
                 'priority': 300,
                 'type': 'puppet',

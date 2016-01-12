@@ -56,16 +56,19 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
             navbarActiveElement: 'clusters',
             breadcrumbsPath(pageOptions) {
                 var cluster = pageOptions.cluster,
-                    tabOptions = pageOptions.tabOptions[0],
-                    addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/),
+                    subtab = pageOptions.tabOptions[0],
                     breadcrumbs = [
                         ['home', '#'],
                         ['environments', '#clusters'],
                         [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}],
-                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, {active: !addScreenBreadcrumb}]
+                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, {active: !subtab}]
                     ];
-                if (addScreenBreadcrumb) {
-                    breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null, {active: true}]);
+                if (subtab) {
+                    var translationKey = {
+                            settings: 'cluster_page.settings_tab.groups.',
+                            network: 'cluster_page.network_tab.tabs.'
+                        }[pageOptions.activeTab] || 'cluster_page.nodes_tab.breadcrumbs.';
+                    breadcrumbs.push([i18n(translationKey + subtab, {defaultValue: subtab}), null, {active: true}]);
                 }
                 return breadcrumbs;
             },
@@ -162,8 +165,8 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
         },
         getInitialState() {
             return {
-                activeSettingsSectionName: this.pickDefaultSettingGroup(),
-                activeNetworkSectionName: this.props.nodeNetworkGroups.find({is_default: true}).get('name'),
+                activeSettingsSectionName: this.props.activeTab == 'settings' && this.props.tabOptions[0] || _.first(this.props.cluster.get('settings').getGroupList()),
+                activeNetworkSectionName: this.props.activeTab == 'network' && this.props.tabOptions[0] || this.props.nodeNetworkGroups.find({is_default: true}).get('name'),
                 selectedNodeIds: {},
                 selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
             };
@@ -213,6 +216,8 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
             );
         },
         componentWillMount() {
+            this.checkSubtab(this.props);
+
             this.props.cluster.on('change:release_id', function() {
                 var release = new models.Release({id: this.props.cluster.get('release_id')});
                 release.fetch().done(() => {
@@ -221,8 +226,38 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
             }, this);
             this.updateLogSettings();
         },
+        checkSubtab(props) {
+            var networkSettingSections = [];
+            if (this.props.cluster.get('net_provider') == 'nova_network') {
+                networkSettingSections.push('nova_configuration');
+            } else {
+                networkSettingSections = networkSettingSections.concat(['neutron_l2', 'neutron_l3']);
+            }
+            networkSettingSections.push('network_settings');
+
+            var subtabs = {
+                    settings: props.cluster.get('settings').getGroupList(),
+                    network: _.union(props.nodeNetworkGroups.pluck('name'), networkSettingSections, ['network_verification'])
+                },
+            subtab = props.tabOptions[0];
+            if (subtabs[props.activeTab] && (!subtab || !_.contains(subtabs[props.activeTab], subtab))) {
+                var defaultSubtab = {
+                        settings: subtabs.settings[0],
+                        network: props.nodeNetworkGroups.find({is_default: true}).get('name')
+                    }[props.activeTab];
+                app.navigate('cluster/' + props.cluster.id + '/' + props.activeTab + '/' + defaultSubtab, {trigger: true, replace: true});
+            }
+        },
         componentWillReceiveProps(newProps) {
             this.updateLogSettings(newProps);
+            if (newProps.activeTab == 'settings') {
+                this.checkSubtab(newProps);
+                this.setState({activeSettingsSectionName: newProps.tabOptions[0]});
+            }
+            if (newProps.activeTab == 'network') {
+                this.checkSubtab(newProps);
+                this.setState({activeNetworkSectionName: newProps.tabOptions[0]});
+            }
         },
         updateLogSettings(props) {
             props = props || this.props;
@@ -244,17 +279,6 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
             return _.filter(this.constructor.getTabs(),
                 (tabData) => !tabData.tab.isVisible || tabData.tab.isVisible(cluster));
         },
-        pickDefaultSettingGroup() {
-            return _.first(this.props.cluster.get('settings').getGroupList());
-        },
-        setActiveSettingsGroupName(value) {
-            if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
-            this.setState({activeSettingsSectionName: value});
-        },
-
-        setActiveNetworkSectionName(name) {
-            this.setState({activeNetworkSectionName: name});
-        },
         selectNodes(ids, checked) {
             if (ids && ids.length) {
                 var nodeSelection = this.state.selectedNodeIds;
@@ -274,6 +298,10 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
             var cluster = this.props.cluster,
                 availableTabs = this.getAvailableTabs(cluster),
                 tabUrls = _.pluck(availableTabs, 'url'),
+                subtabs = {
+                    settings: this.state.activeSettingsSectionName,
+                    network: this.state.activeNetworkSectionName
+                },
                 tab = _.find(availableTabs, {url: this.props.activeTab});
             if (!tab) return null;
             var Tab = tab.tab;
@@ -288,18 +316,16 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
                     </div>
                     <div className='tabs-box'>
                         <div className='tabs'>
-                            {tabUrls.map(function(url) {
-                                return (
-                                    <a
-                                        key={url}
-                                        className={url + ' ' + utils.classNames({'cluster-tab': true, active: this.props.activeTab == url})}
-                                        href={'#cluster/' + cluster.id + '/' + url}
-                                    >
-                                        <div className='icon'></div>
-                                        <div className='label'>{i18n('cluster_page.tabs.' + url)}</div>
-                                    </a>
-                                );
-                            }, this)}
+                            {tabUrls.map(
+                                (url) => <a
+                                    key={url}
+                                    className={url + ' ' + utils.classNames({'cluster-tab': true, active: this.props.activeTab == url})}
+                                    href={'#cluster/' + cluster.id + '/' + url + (subtabs[url] ? '/' + subtabs[url] : '')}
+                                >
+                                    <div className='icon'></div>
+                                    <div className='label'>{i18n('cluster_page.tabs.' + url)}</div>
+                                </a>
+                            )}
                         </div>
                     </div>
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
@@ -308,8 +334,6 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
                             cluster={cluster}
                             nodeNetworkGroups={this.props.nodeNetworkGroups}
                             tabOptions={this.props.tabOptions}
-                            setActiveSettingsGroupName={this.setActiveSettingsGroupName}
-                            setActiveNetworkSectionName={this.setActiveNetworkSectionName}
                             selectNodes={this.selectNodes}
                             changeLogSelection={this.changeLogSelection}
                             {...this.state}

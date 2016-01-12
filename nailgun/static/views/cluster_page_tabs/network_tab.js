@@ -29,8 +29,7 @@ import SettingSection from 'views/cluster_page_tabs/setting_section';
 import CSSTransitionGroup from 'react-addons-transition-group';
 
     var parametersNS = 'cluster_page.network_tab.networking_parameters.',
-        networkTabNS = 'cluster_page.network_tab.',
-        defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
+        networkTabNS = 'cluster_page.network_tab.';
 
     var NetworkModelManipulationMixin = {
         setValue(attribute, value, options) {
@@ -804,7 +803,6 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                     showUnsavedChangesWarning: this.hasChanges()
                 })
                 .done(() => {
-                    this.props.setActiveNetworkSectionName(this.nodeNetworkGroups.find({is_default: true}).get('name'));
                     return nodeNetworkGroup
                         .destroy({wait: true})
                         .then(
@@ -814,7 +812,10 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                 response: response
                             })
                         )
-                        .then(this.updateInitialConfiguration);
+                        .then(() => {
+                            this.updateInitialConfiguration();
+                            app.navigate('#cluster/' + this.props.cluster.id + '/network/' + this.nodeNetworkGroups.find({is_default: true}).get('name'), {trigger: true, replace: true});
+                        });
                 });
         },
         addNodeNetworkGroup(hasChanges) {
@@ -832,14 +833,17 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                 })
                 .done(() => {
                     this.setState({hideVerificationResult: true});
+                    var newNodeNetworkGroup;
                     return this.nodeNetworkGroups.fetch()
                         .then(() => {
-                            var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+                            newNodeNetworkGroup = this.nodeNetworkGroups.last();
                             this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
-                            this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
                             return this.props.cluster.get('networkConfiguration').fetch();
                         })
-                        .then(this.updateInitialConfiguration);
+                        .then(() => {
+                            this.updateInitialConfiguration();
+                            app.navigate('#cluster/' + this.props.cluster.id + '/network/' + newNodeNetworkGroup.get('name'), {trigger: true, replace: true});
+                        });
                 });
         },
         render() {
@@ -935,7 +939,6 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                             <NetworkSubtabs
                                 cluster={cluster}
                                 validationError={validationError}
-                                setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                                 nodeNetworkGroups={nodeNetworkGroups}
                                 activeGroupName={activeNetworkSectionName}
                                 isMultiRack={isMultiRack}
@@ -943,14 +946,13 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                 showVerificationResult={!this.state.hideVerificationResult}
                             />
                             <div className='col-xs-10'>
-                                {!_.contains(defaultNetworkSubtabs, activeNetworkSectionName) &&
+                                {currentNodeNetworkGroup &&
                                     <NodeNetworkGroup
                                         {...nodeNetworkGroupProps}
                                         nodeNetworkGroups={nodeNetworkGroups}
                                         nodeNetworkGroup={currentNodeNetworkGroup}
                                         networks={networks.where({group_id: currentNodeNetworkGroup.id})}
                                         removeNodeNetworkGroup={this.removeNodeNetworkGroup}
-                                        setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                                     />
                                 }
                                 {activeNetworkSectionName == 'network_settings' &&
@@ -1013,14 +1015,12 @@ import CSSTransitionGroup from 'react-addons-transition-group';
 
     var NodeNetworkGroup = React.createClass({
         render() {
-            var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors, validationError} = this.props;
+            var {cluster, networks, nodeNetworkGroup, verificationErrors, validationError} = this.props;
             return (
                 <div>
                     <NodeNetworkGroupTitle
-                        nodeNetworkGroups={nodeNetworkGroups}
+                        {... _.pick(this.props, 'cluster', 'nodeNetworkGroups', 'removeNodeNetworkGroup')}
                         currentNodeNetworkGroup={nodeNetworkGroup}
-                        removeNodeNetworkGroup={this.props.removeNodeNetworkGroup}
-                        setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                         isRenamingPossible={cluster.isAvailableForSettingsChanges()}
                         isDeletionPossible={!cluster.task({group: ['deployment', 'network'], active: true})}
                     />
@@ -1093,9 +1093,11 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                             active: isActive,
                             warning: this.props.isMultiRack && groupName == 'network_verification'
                         })}
-                        onClick={_.partial(this.props.setActiveNetworkSectionName, groupName)}
                     >
-                        <a className={'subtab-link-' + groupName}>
+                        <a
+                            className={'subtab-link-' + groupName}
+                            href={'#cluster/' + cluster.id + '/network/' + groupName}
+                        >
                             {isInvalid && <i className='subtab-icon glyphicon-danger-sign' />}
                             {tabLabel}
                         </a>
@@ -1175,7 +1177,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                             })
                             .done(() => {
                                 this.endRenaming();
-                                this.props.setActiveNetworkSectionName(newName, true);
+                                app.navigate('#cluster/' + this.props.cluster.id + '/network/' + newName, {trigger: true, replace: true});
                             });
                     }
                 } else {

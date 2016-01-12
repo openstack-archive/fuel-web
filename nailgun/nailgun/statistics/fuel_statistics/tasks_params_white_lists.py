@@ -212,6 +212,7 @@ _task_output_white_list_template = {
                     }
                 },
                 "debug": "",
+                "puppet_retries": "",
                 "deployment_id": "",
                 "openstack_version_prev": ""
             },

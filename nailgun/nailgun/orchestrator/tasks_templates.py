@@ -173,7 +173,7 @@ def make_apt_update_task(uids):
     return make_shell_task(uids, task)
 
 
-def make_puppet_task(uids, task):
+def make_puppet_task(uids, task, default_retries):
     return {
         'id': task.get('id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
@@ -182,7 +182,7 @@ def make_puppet_task(uids, task):
             'puppet_manifest': task['parameters']['puppet_manifest'],
             'puppet_modules': task['parameters']['puppet_modules'],
             'timeout': task['parameters']['timeout'],
-            'retries': task['parameters'].get('retries'),
+            'retries': task['parameters'].get('retries', default_retries),
             'cwd': task['parameters'].get('cwd', '/')}}
 
 

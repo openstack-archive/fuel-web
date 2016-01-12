@@ -41,6 +41,8 @@ class InstallationInfo(object):
         WhiteListRule(('common', 'libvirt_type', 'value'),
                       'libvirt_type', None),
         WhiteListRule(('common', 'debug', 'value'), 'debug_mode', None),
+        WhiteListRule(('common', 'puppet_retries', 'value'),
+                      'puppet_retries', None),
         WhiteListRule(('common', 'use_cow_images', 'value'),
                       'use_cow_images', None),
         WhiteListRule(('common', 'auto_assign_floating_ip', 'value'),

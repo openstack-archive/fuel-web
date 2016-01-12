@@ -8,24 +8,8 @@ For information on how to get source code see :ref:`getting-source`.
 Preparing Development Environment
 ---------------------------------
 
-.. warning:: Nailgun requires Python 2.6 with development files.  Please check
-    installed Python version using ``python --version``. If the version check
-    does not match, please install Python 2.6 as described in step 1.
-    If Python version matches, skip step 1.
-
-    Please note that these instructions were tested on Ubuntu 12.04.4/14.04.1 (64 bit)
-    that contains Python 2.7 and requires downgrade to Python 2.6.
-    PPA instructions listed below install Python 2.6 but do not remove Python 2.7.
-    The default Python version remains 2.7.
-    You will have to specify Python version when you create virtual environment (see 8.1.1.1. step 5).
-
-
-#. Install Python 2.6 using
-   `PPA <https://launchpad.net/~fkrull/+archive/ubuntu/deadsnakes>`::
-
-     sudo add-apt-repository --yes ppa:fkrull/deadsnakes
-     sudo apt-get update
-     sudo apt-get install --yes python2.6 python2.6-dev
+.. warning:: Nailgun requires Python 2.7. Please check
+    installed Python version using ``python --version``.
 
 #. Nailgun can be found in fuel-web/nailgun
 
@@ -59,17 +43,12 @@ Preparing Development Environment
     sudo apt-get install --yes python-dev python-pip
 
 #. Install virtualenv. This step increases flexibility
-   when dealing with environment settings and package installation.
-   This step is obligatory if you need to downgrade to Python version 2.6
-   (that Nailgun depends on)::
+   when dealing with environment settings and package installation:
 
     sudo pip install virtualenv virtualenvwrapper
     . /usr/local/bin/virtualenvwrapper.sh  # you can save this to .bashrc
-    whereis python2.6 # Prints the intall path of python 2.6, let's say /usr/bin/python2.6.
-                      # Copy the output and paste it in the command below for option -p
-    mkvirtualenv fuel -p /usr/bin/python2.6  # you can use any name instead of 'fuel'
+    mkvirtualenv fuel # you can use any name instead of 'fuel'
     workon fuel  # command selects the particular environment
-    python --version # verify that default Python version inside virtual environment is 2.6
 
 #. Install Python dependencies. This section assumes that you use virtual environment.
    Otherwise, you must install all packages globally.

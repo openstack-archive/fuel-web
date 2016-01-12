@@ -21,6 +21,7 @@ import itertools
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.orchestrator.tasks_serializer import LegacyRoleResolver
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.plugins.manager import PluginManager
@@ -53,23 +54,27 @@ class BasePluginDeploymentHooksSerializer(object):
 
         sorted_tasks = self._sort_by_stage_postfix(plugin_tasks)
         for task in sorted_tasks:
-            make_task = None
+            serialized_task = None
             uids = self.role_resolver.resolve(task['role'])
             if not uids:
                 continue
 
             if task['type'] == 'shell':
-                make_task = templates.make_shell_task
+                serialized_task = templates.make_shell_task(uids, task)
             elif task['type'] == 'puppet':
-                make_task = templates.make_puppet_task
+                serialized_task = templates.make_puppet_task(
+                    uids,
+                    task,
+                    objects.Cluster.get_editable_attributes(self.cluster)
+                    ['common'].get('puppet_retries', {})['value'])
             elif task['type'] == 'reboot':
-                make_task = templates.make_reboot_task
+                serialized_task = templates.make_reboot_task(uids, task)
             else:
                 logger.warn('Task is skipped {0}, because its type is '
                             'not supported').format(task)
 
-            if make_task:
-                yield self._serialize_task(make_task(uids, task), task)
+            if serialized_task:
+                yield self._serialize_task(serialized_task, task)
 
     def _set_tasks_defaults(self, plugin, tasks):
         for task in tasks:

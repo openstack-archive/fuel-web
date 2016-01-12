@@ -894,6 +894,15 @@
             description: "Debug puppet logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
+          puppet_retries:
+            value: "2"
+            label: "Default puppet retries"
+            description: "Configures the default number of puppet retries. This settings do not affect tasks where number of retries are set explicitly"
+            weight: 85
+            type: "text"
+            regex:
+              source: '^[0-9]\d*$'
+              error: "Invalid number"
           nova_quota:
             value: false
             label: "Nova quotas"

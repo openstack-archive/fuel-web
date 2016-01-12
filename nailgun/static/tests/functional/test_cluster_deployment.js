@@ -18,12 +18,13 @@ define([
     'intern/dojo/node!lodash',
     'intern!object',
     'intern/chai!assert',
-    'tests/functional/helpers',
+    'tests/helpers',
     'tests/functional/pages/common',
     'tests/functional/pages/cluster',
     'tests/functional/pages/dashboard',
-    'tests/functional/pages/modal'
-], function(_, registerSuite, assert, helpers, Common, ClusterPage, DashboardPage, ModalWindow) {
+    'tests/functional/pages/modal',
+    'tests/functional/library/networks'
+], function(_, registerSuite, assert, helpers, Common, ClusterPage, DashboardPage, ModalWindow, NetworksLib) {
     'use strict';
 
     registerSuite(function() {
@@ -31,7 +32,8 @@ define([
             clusterPage,
             dashboardPage,
             modal,
-            clusterName;
+            clusterName,
+            networksLib;
 
         return {
             name: 'Cluster deployment',
@@ -40,6 +42,7 @@ define([
                 clusterPage = new ClusterPage(this.remote);
                 dashboardPage = new DashboardPage(this.remote);
                 modal = new ModalWindow(this.remote);
+                networksLib = new NetworksLib(this.remote);
                 clusterName = common.pickRandomName('Test Cluster');
 
                 return this.remote
@@ -54,6 +57,15 @@ define([
                 return this.remote
                     .then(function() {
                         return clusterPage.goToTab('Dashboard');
+                    });
+            },
+            teardown: function() {
+                return this.remote
+                    .then(function() {
+                        return clusterPage.goToTab('Dashboard');
+                    })
+                    .then(function() {
+                        return clusterPage.resetEnvironment(clusterName);
                     });
             },
             'No deployment button when there are no nodes added': function() {
@@ -155,13 +167,18 @@ define([
                     })
                     .then(function(isLocked) {
                         assert.isTrue(isLocked, 'Settings tab should turn locked after deployment');
-                    })
-                    .then(function() {
-                        return clusterPage.goToTab('Dashboard');
-                    })
-                    .then(function() {
-                        return clusterPage.resetEnvironment(clusterName);
                     });
+            },
+            'User can add and cannot rename new network group after deployment': function() {
+                return this.remote
+                    .then(function() {
+                        return clusterPage.goToTab('Networks');
+                    })
+                    .then(function() {
+                        return networksLib.createNetworkGroup('Network_Group_1');
+                    })
+                    .assertElementNotExists('.glyphicon-pencil',
+                        'It is not possible to rename node network group after deployment');
             }
         };
     });

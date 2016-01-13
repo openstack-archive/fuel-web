@@ -29,8 +29,12 @@ from nailgun import notifier
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.logger import logger
 from nailgun.settings import settings
+
+from nailgun.utils import logs
+
+
+logger = logs.prepare_submodule_logger('assassin')
 
 
 def update_nodes_status(timeout):

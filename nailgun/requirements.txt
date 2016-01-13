@@ -19,7 +19,7 @@ oslo.serialization>=1.2.0,<1.5.0
 ply==3.4
 psycopg2==2.5.1
 pycrypto==2.6.1
-requests>=1.2.3
+requests>=2.2.0,!=2.4.0,<2.8.0
 simplejson>=3.3.0
 six>=1.5.2
 urllib3>=1.7

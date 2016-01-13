@@ -14,9 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import six
 
-from nailgun.logger import logger
+
+logger = logging.getLogger('receiverd')
 
 
 def delete_entities(conn, *entities):

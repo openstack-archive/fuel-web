@@ -113,3 +113,7 @@ def delete_node_logs(node, prefix=settings.SYSLOG_DIR):
         if os.path.lexists(log_path):
             logger.debug('delete_node_logs log_path="%s"', log_path)
             remove_silently(log_path)
+
+
+def get_log_path_for_submodule(submodule_name):
+    return [s['path'] for s in settings.LOGS if s['id'] == submodule_name][0]

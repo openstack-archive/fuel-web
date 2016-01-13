@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import six
 import functools
 
@@ -23,9 +24,30 @@ from kombu import Exchange
 from oslo_serialization import jsonutils
 from kombu import Queue
 
-from nailgun.logger import logger
+from nailgun.logger import formatter
 from nailgun.settings import settings
 from nailgun.rpc import utils
+
+from nailgun.utils import logs
+
+
+def prepare_logger():
+    logger = logging.getLogger('receiverd')
+
+    file_path = logs.get_log_path_for_submodule('receiverd')
+
+    handler = logging.FileHandler(file_path)
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.DEBUG)
+
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    return logger
+
+
+logger = prepare_logger()
+
 
 creds = (
     ("userid", "guest"),

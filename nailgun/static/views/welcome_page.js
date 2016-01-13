@@ -35,11 +35,9 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             hiddenLayout: true,
             fetchData: function() {
                 return app.fuelSettings.fetch().then(function() {
-                    var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
-                    tracking.processRestrictions();
                     return {
                         settings: app.fuelSettings,
-                        tracking: tracking
+                        tracking: new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes))
                     };
                 });
             }

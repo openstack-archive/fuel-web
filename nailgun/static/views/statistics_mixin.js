@@ -112,9 +112,8 @@ define([
                     }, this));
             }
         },
-        checkRestrictions: function(name, action) {
-            action = action || 'disable';
-            return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.makePath('statistics', name));
+        checkRestrictions: function(name, action = 'disable') {
+            return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.get('statistics').name);
         },
         componentWillMount: function() {
             var model = this.props.statistics || this.props.tracking;

@@ -171,8 +171,8 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             settings.set(name, value);
             settings.isValid({models: this.state.configModels});
         },
-        checkRestrictions: function(action, path) {
-            return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, path);
+        checkRestrictions: function(action, setting) {
+            return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, setting);
         },
         isSavingPossible: function() {
             var settings = this.props.cluster.get('settings'),
@@ -209,7 +209,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             var groupedSettings = {};
             _.each(settingsGroupList, (group) => groupedSettings[group] = {});
             _.each(settings.attributes, function(section, sectionName) {
-                var isHidden = this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
+                var isHidden = this.checkRestrictions('hide', section.metadata).result;
                 if (!isHidden) {
                     var group = section.metadata.group,
                         hasErrors = invalidSections[sectionName];
@@ -238,7 +238,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                                         settingName != 'metadata' &&
                                         setting.type != 'hidden' &&
                                         settings.sanitizeGroup(setting.group) == calculatedGroup &&
-                                        !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
+                                        !this.checkRestrictions('hide', setting).result
                                     ) return settingName;
                                 }, this)),
                                 hasErrors = _.any(pickedSettings, function(settingName) {
@@ -280,7 +280,7 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
                                             if (
                                                 settingName != 'metadata' &&
                                                 setting.type != 'hidden' &&
-                                                !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
+                                                !this.checkRestrictions('hide', setting).result
                                             ) return settingName;
                                         }, this));
                                     return <SettingSection

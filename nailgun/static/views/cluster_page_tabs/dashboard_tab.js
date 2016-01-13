@@ -378,7 +378,7 @@ define(
             function(cluster) {
                 if (cluster.get('settings').get('common.use_vcenter.value')) {
                     var vcenter = cluster.get('vcenter');
-                    vcenter.setModels(this.getConfigModels()).parseRestrictions();
+                    vcenter.setModels(this.getConfigModels());
                     return !vcenter.isValid() && {
                         blocker: [
                             <span key='vcenter'>{i18n('vmware.has_errors') + ' '}

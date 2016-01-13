@@ -160,7 +160,8 @@ class TestTasksLogging(BaseIntegrationTest):
         )
         deploy = self.env.launch_deployment()
         self.env.wait_until_task_pending(deploy)
-        self.env.stop_deployment()
+        stop_task = self.env.stop_deployment()
+        self.env.wait_ready(stop_task, 60)
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
         self.check_task_name_and_sanitized_data(

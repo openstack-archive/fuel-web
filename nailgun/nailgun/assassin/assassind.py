@@ -29,11 +29,12 @@ from nailgun import notifier
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.logger import logger
 from nailgun.settings import settings
 
+from nailgun.utils import logs
 
-def update_nodes_status(timeout):
+
+def update_nodes_status(timeout, logger):
     to_update = db().query(Node).filter(
         not_(Node.status == 'provisioning')
     ).filter(
@@ -54,10 +55,12 @@ def update_nodes_status(timeout):
 
 
 def run():
+    logger = logs.prepare_submodule_logger('assassin',
+                                           settings.ASSASSIN_LOG_PATH)
     logger.info('Running Assassind...')
     try:
         while True:
-            update_nodes_status(settings.KEEPALIVE['timeout'])
+            update_nodes_status(settings.KEEPALIVE['timeout'], logger)
             time.sleep(settings.KEEPALIVE['interval'])
     except (KeyboardInterrupt, SystemExit):
         logger.info('Stopping Assassind...')

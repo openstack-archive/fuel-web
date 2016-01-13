@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import six
 import functools
 
@@ -23,9 +24,15 @@ from kombu import Exchange
 from oslo_serialization import jsonutils
 from kombu import Queue
 
-from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.rpc import utils
+
+from nailgun.utils import logs
+
+
+logger = logs.prepare_submodule_logger('receiverd',
+                                       settings.RPC_CONSUMER_LOG_PATH)
+
 
 creds = (
     ("userid", "guest"),

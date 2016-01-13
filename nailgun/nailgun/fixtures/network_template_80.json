@@ -786,6 +786,7 @@
                                 "<%if2%>"
                             ],
                             "name": "bond0",
+                            "bridge": "br-aux",
                             "bond_properties": {
                                 "mode": "active-backup"
                             }

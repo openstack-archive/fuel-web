@@ -381,6 +381,9 @@ class NeutronManager70(
         """
         cls.clear_assigned_networks(node)
         interfaces = cls.get_interfaces_from_template(node)
+        # This maps interface names to bridge names, the opposite of the
+        # interfaces dictionary.
+        bridges_by_iface = {v['name']: k for k, v in interfaces.items()}
 
         endpoint_mapping = cls.get_node_network_mapping(node)
         em = dict((reversed(ep) for ep in endpoint_mapping))
@@ -393,7 +396,24 @@ class NeutronManager70(
                 continue
 
             iface, vlan = cls._split_iface_name(values['name'])
-            is_sub_iface = (vlan is not None) and (iface in interfaces)
+
+            # A parent interface can be associated with a bridge so looking it
+            # up by iface won't always work. For example, if bond0 is
+            # associated with br-aux then the key in interfaces will be br-aux,
+            # not bond0. If that lookup fails while processing a
+            # sub-interface then is_sub_iface will have an incorrect value
+            # resulting in an error. This attempts to find a bridge name
+            # associated with an interface. In the case of the bond0 example
+            # iface_key will be 'br-aux' here. A sub-interface will then
+            # correctly find the parent information by looking up
+            # interfaces['br-aux'] instead of failing to find
+            # interfaces['bond0'] resulting in is_sub_iface being False.
+            if iface not in interfaces:
+                iface_key = bridges_by_iface.get(iface)
+            else:
+                iface_key = iface
+
+            is_sub_iface = (vlan is not None) and (iface_key in interfaces)
 
             # If the current interface is a sub-interface (e.g bond0.302) then
             # node_ifaces should be populated with the values of the parent
@@ -402,7 +422,7 @@ class NeutronManager70(
             # transformation (e.g. bond_properties). The only thing the
             # sub-interface actually needs to do is update assigned_networks so
             # populating node_ifaces with the parent data is correct.
-            default = interfaces[iface] if is_sub_iface else values
+            default = interfaces[iface_key] if is_sub_iface else values
 
             node_ifaces.setdefault(iface, default)
             node_ifaces[iface].setdefault('assigned_networks', [])

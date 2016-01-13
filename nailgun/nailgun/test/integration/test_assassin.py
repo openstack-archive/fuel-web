@@ -14,31 +14,34 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
 from nailgun.assassin import assassind
 from nailgun.test.base import BaseIntegrationTest
 
 
+@mock.patch('nailgun.utils.logs.prepare_submodule_logger')
 class TestKeepalive(BaseIntegrationTest):
 
     VERY_LONG_TIMEOUT = 60 * 60  # 1 hour
     ZERO_TIMEOUT = 0
 
-    def test_node_becomes_offline(self):
+    def test_node_becomes_offline(self, m_logger):
         node = self.env.create_node(
             status="discover",
             roles=["controller"],
             name="Dead or alive"
         )
-        assassind.update_nodes_status(self.VERY_LONG_TIMEOUT)
+        assassind.update_nodes_status(self.VERY_LONG_TIMEOUT, m_logger)
         self.assertEqual(node.online, True)
-        assassind.update_nodes_status(self.ZERO_TIMEOUT)
+        assassind.update_nodes_status(self.ZERO_TIMEOUT, m_logger)
         self.assertEqual(node.online, False)
 
-    def test_provisioning_node_not_becomes_offline(self):
+    def test_provisioning_node_not_becomes_offline(self, m_logger):
         node = self.env.create_node(
             status="provisioning",
             roles=["controller"],
             name="Dead or alive"
         )
-        assassind.update_nodes_status(self.ZERO_TIMEOUT)
+        assassind.update_nodes_status(self.ZERO_TIMEOUT, m_logger)
         self.assertEqual(node.online, True)

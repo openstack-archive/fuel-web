@@ -26,15 +26,14 @@ DATEFORMAT = '%Y-%m-%d %H:%M:%S'
 LOGFORMAT = '%(asctime)s.%(msecs)03d %(levelname)s ' + \
             '[%(thread)x] (%(module)s) %(message)s'
 formatter = logging.Formatter(LOGFORMAT, DATEFORMAT)
+LOG_LEVEL = logging.DEBUG
 
 
 def make_nailgun_logger():
     """Make logger for nailgun app writes logs to stdout"""
     logger = logging.getLogger("nailgun")
-    logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    set_logger(logger, handler)
     return logger
 
 
@@ -46,10 +45,15 @@ def make_api_logger():
 
     logger = logging.getLogger("nailgun-api")
     log_file = WatchedFileHandler(settings.API_LOG)
-    log_file.setFormatter(formatter)
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(log_file)
+    set_logger(logger, log_file)
     return logger
+
+
+def set_logger(logger, handler, level=LOG_LEVEL):
+    handler.setFormatter(formatter)
+
+    logger.setLevel(level)
+    logger.addHandler(handler)
 
 
 logger = make_nailgun_logger()

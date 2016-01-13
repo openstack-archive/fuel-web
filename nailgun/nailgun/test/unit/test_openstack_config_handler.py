@@ -13,7 +13,7 @@
 #    under the License.
 
 import mock
-import urllib
+import six.moves.urllib.parse as urlparse
 
 from oslo_serialization import jsonutils
 
@@ -346,4 +346,4 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
     def _make_filter_url(cls, **kwargs):
         return '{0}?{1}'.format(
             reverse('OpenstackConfigCollectionHandler'),
-            urllib.urlencode(kwargs))
+            urlparse.urlencode(kwargs))

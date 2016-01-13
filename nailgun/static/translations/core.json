@@ -1503,7 +1503,7 @@
                         "title": "附加服务",
                         "release_alert": "__releaseName__不支持附加服务",
                         "install_sahara": "安装Sahara",
-                        "install_sahara_description": "利用Sahara能在各大版本厂商的OpenStack上的部署Hadoop集群。",
+                        "install_sahara_description": "利用Sahara能在OpenStack上部署各大厂商的Hadoop集群。",
                         "install_murano": "安装Murano",
                         "install_murano_description": "利用Murano能将基于Windows的数据中心服务，如活动目录、IIS、Microsoft SQL和ASP.NET部署到OpenStack上。"
                     },

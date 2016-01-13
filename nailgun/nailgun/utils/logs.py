@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import os
 import shutil
 
@@ -22,6 +23,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.logger import formatter
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.settings import settings
@@ -113,3 +115,20 @@ def delete_node_logs(node, prefix=settings.SYSLOG_DIR):
         if os.path.lexists(log_path):
             logger.debug('delete_node_logs log_path="%s"', log_path)
             remove_silently(log_path)
+
+
+def prepare_submodule_logger(submodule_name):
+    logger = logging.getLogger(submodule_name)
+
+    file_path = [
+        s['path'] for s in settings.LOGS if s['id'] == submodule_name
+    ][0]
+
+    handler = logging.FileHandler(file_path)
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.DEBUG)
+
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    return logger

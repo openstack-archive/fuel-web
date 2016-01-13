@@ -101,12 +101,8 @@ define([
     models.cacheMixin = cacheMixin;
 
     var restrictionMixin = models.restrictionMixin = {
-        expandRestrictions(restrictions, path = 'restrictions') {
-            this.expandedRestrictions = this.expandedRestrictions || {};
-            this.expandedRestrictions[path] = _.map(restrictions, utils.expandRestriction, this);
-        },
-        checkRestrictions(models, action, path = 'restrictions') {
-            var restrictions = (this.expandedRestrictions || {})[path];
+        checkRestrictions(models, action, setting) {
+            var restrictions = _.map(setting ? setting.restrictions : this.get('restrictions'), utils.expandRestriction);
             if (action) {
                 restrictions = _.where(restrictions, {action: action});
             }
@@ -283,7 +279,6 @@ define([
         },
         processConflictsAndRestrictions() {
             this.each(function(role) {
-                role.expandRestrictions(role.get('restrictions'));
                 role.expandLimits(role.get('limits'));
 
                 var roleConflicts = role.get('conflicts'),
@@ -664,45 +659,18 @@ define([
             });
             return {[this.root]: settings};
         },
-        processRestrictions() {
-            _.each(this.attributes, function(section, sectionName) {
-                if (section.metadata) {
-                    this.expandRestrictions(section.metadata.restrictions, this.makePath(sectionName, 'metadata'));
-                    if (this.isPlugin(section)) {
-                        _.each(section.metadata.versions, (version) => {
-                            this.expandRestrictions(version.metadata.restrictions, this.makePath(sectionName, 'metadata'));
-                            _.each(version,
-                                (setting, settingName) => this.expandRestrictions(setting.restrictions, this.makePath(sectionName, settingName))
-                            );
-                        }, this);
-                    }
-                }
-                _.each(section, (setting, settingName) => {
-                    this.expandRestrictions(setting.restrictions, this.makePath(sectionName, settingName));
-                    _.each(setting.values, (value) => {
-                        this.expandRestrictions(value.restrictions, this.makePath(sectionName, settingName, value.data));
-                    }, this);
-                }, this);
-            }, this);
-        },
         initialize() {
-            // FIXME(vkramskikh): this will work only if there won't be
-            // any restrictions added later in the same model
-            this.once('change', () => {
-                this.processRestrictions();
-                this.mergePluginSettings();
-            }, this);
+            this.once('change', this.mergePluginSettings, this);
         },
         validate(attrs, options) {
             var errors = {},
                 models = options ? options.models : {},
-                checkRestrictions = (path) => this.checkRestrictions(models, null, path);
+                checkRestrictions = (setting) => this.checkRestrictions(models, null, setting);
             _.each(attrs, function(group, groupName) {
-                if ((group.metadata || {}).enabled === false || checkRestrictions(this.makePath(groupName, 'metadata')).result) return;
+                if ((group.metadata || {}).enabled === false || checkRestrictions(group.metadata).result) return;
                 _.each(group, function(setting, settingName) {
+                    if (checkRestrictions(setting).result) return;
                     var path = this.makePath(groupName, settingName);
-                    if (checkRestrictions(path).result) return;
-
                     // support of custom controls
                     var CustomControl = customControls[setting.type];
                     if (CustomControl) {
@@ -728,11 +696,11 @@ define([
                 var metadata = section.metadata,
                     result = false;
                 if (metadata) {
-                    if (this.checkRestrictions(models, null, this.makePath(sectionName, 'metadata')).result) return result;
+                    if (this.checkRestrictions(models, null, metadata).result) return result;
                     if (!_.isUndefined(metadata.enabled)) result = metadata.enabled != initialAttributes[sectionName].metadata.enabled;
                 }
                 return result || (metadata || {}).enabled !== false && _.any(section, (setting, settingName) => {
-                    if (this.checkRestrictions(models, null, this.makePath(sectionName, settingName)).result) return false;
+                    if (this.checkRestrictions(models, null, setting).result) return false;
                     return !_.isEqual(setting.value, (initialAttributes[sectionName][settingName] || {}).value);
                 }, this);
             }, this);

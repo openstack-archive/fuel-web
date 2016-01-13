@@ -13,4 +13,10 @@ DATABASE:
   passwd: "${NAILGUN_DB_PW}"
 API_LOG: ${NAILGUN_LOGS}/api.log
 APP_LOG: ${NAILGUN_LOGS}/app.log
+LOGS:
+  - id: receiverd
+    name: "RPC consumer"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: '${NAILGUN_LOGS}/receiverd.log'
 EOL

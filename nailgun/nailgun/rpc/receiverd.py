@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import os
 import sys
 
@@ -30,10 +31,12 @@ import amqp.exceptions as amqp_exceptions
 
 from nailgun.db import db
 from nailgun.errors import errors
-from nailgun.logger import logger
 import nailgun.rpc as rpc
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.rpc import utils
+
+
+logger = logging.getLogger('receiverd')
 
 
 class RPCConsumer(ConsumerMixin):

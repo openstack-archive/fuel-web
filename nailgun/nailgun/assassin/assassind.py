@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import os
 import sys
 
@@ -29,8 +30,25 @@ from nailgun import notifier
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.logger import logger
 from nailgun.settings import settings
+
+from nailgun.utils import logs
+
+
+def prepare_logger():
+    logger = logging.getLogger('assassin')
+
+    file_path = logs.get_log_path_for_submodule('assassin')
+
+    handler = logging.FileHandler(file_path)
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    return logger
+
+
+logger = prepare_logger()
 
 
 def update_nodes_status(timeout):

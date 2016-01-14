@@ -26,7 +26,7 @@ import {backboneMixin, pollingMixin} from 'component_mixins';
     var HealthCheckTab = React.createClass({
         mixins: [
             backboneMixin({
-                modelOrCollection(props) {return props.cluster.get('tasks');},
+                modelOrCollection: (props) => props.cluster.get('tasks'),
                 renderOn: 'update change:status'
             }),
             backboneMixin('cluster', 'change:status')
@@ -95,7 +95,9 @@ import {backboneMixin, pollingMixin} from 'component_mixins';
             return {
                 actionInProgress: false,
                 credentialsVisible: null,
-                credentials: _.transform(this.props.cluster.get('settings').get('access'), (result, value, key) => {result[key] = value.value;})
+                credentials: _.transform(this.props.cluster.get('settings').get('access'), (result, value, key) => {
+                    result[key] = value.value;
+                })
             };
         },
         isLocked() {

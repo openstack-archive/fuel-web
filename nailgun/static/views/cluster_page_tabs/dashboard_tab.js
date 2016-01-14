@@ -30,17 +30,15 @@ import {backboneMixin, pollingMixin, renamingMixin} from 'component_mixins';
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
             backboneMixin({
-                modelOrCollection(props) {
-                    return props.cluster.get('tasks');
-                },
+                modelOrCollection: (props) => props.cluster.get('tasks'),
                 renderOn: 'update change'
             }),
             backboneMixin({
-                modelOrCollection(props) {return props.cluster.get('nodes');},
+                modelOrCollection: (props) => props.cluster.get('nodes'),
                 renderOn: 'update change'
             }),
             backboneMixin({
-                modelOrCollection(props) {return props.cluster.get('pluginLinks');},
+                modelOrCollection: (props) => props.cluster.get('pluginLinks'),
                 renderOn: 'update change'
             }),
             backboneMixin('cluster', 'change'),

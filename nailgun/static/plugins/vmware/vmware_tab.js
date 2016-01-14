@@ -33,7 +33,7 @@ import VmWareModels from 'plugins/vmware/vmware_models';
             }
             this.props.model.set(name, currentValue);
             this.setState({model: this.props.model});
-            _.defer(() => {dispatcher.trigger('vcenter_model_update');});
+            _.defer(() => dispatcher.trigger('vcenter_model_update'));
         },
         render() {
             var metadata = this.props.metadata,
@@ -128,7 +128,9 @@ import VmWareModels from 'plugins/vmware/vmware_models';
                             <button
                                 className='btn btn-link'
                                 disabled={this.props.disabled}
-                                onClick={() => {this.props.onAdd(this.props.model);}}
+                                onClick={() => {
+                                    this.props.onAdd(this.props.model);
+                                }}
                             >
                                 <i className='glyphicon glyphicon-plus-sign' />
                             </button>
@@ -136,7 +138,9 @@ import VmWareModels from 'plugins/vmware/vmware_models';
                                 <button
                                     className='btn btn-link'
                                     disabled={this.props.disabled}
-                                    onClick={() => {this.props.onRemove(this.props.model);}}
+                                    onClick={() => {
+                                        this.props.onRemove(this.props.model);
+                                    }}
                                 >
                                     <i className='glyphicon glyphicon-minus-sign' />
                                 </button>
@@ -162,13 +166,13 @@ import VmWareModels from 'plugins/vmware/vmware_models';
             newItem.set('target_node', targetNode);
             collection.add(newItem, {at: index + 1});
             this.setState({model: this.props.model});
-            _.defer(() => {dispatcher.trigger('vcenter_model_update'); });
+            _.defer(() => dispatcher.trigger('vcenter_model_update'));
         },
         removeNovaCompute(current) {
             var collection = this.props.model.get('nova_computes');
             collection.remove(current);
             this.setState({model: this.props.model});
-            _.defer(() => { dispatcher.trigger('vcenter_model_update'); });
+            _.defer(() => dispatcher.trigger('vcenter_model_update'));
         },
         renderFields() {
             var model = this.props.model,

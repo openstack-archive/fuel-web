@@ -491,14 +491,14 @@ import 'deep-model';
             return _.any(this.invoke('hasChanges'));
         },
         nodesAfterDeployment() {
-            return this.filter((node) => {return !node.get('pending_deletion');});
+            return this.filter((node) => !node.get('pending_deletion'));
         },
         nodesAfterDeploymentWithRole(role) {
-            return _.filter(this.nodesAfterDeployment(), (node) => {return node.hasRole(role);});
+            return _.filter(this.nodesAfterDeployment(), (node) => node.hasRole(role));
         },
         resources(resourceName) {
-            var resources = this.map((node) => {return node.resource(resourceName);});
-            return _.reduce(resources, (sum, n) => {return sum + n;}, 0);
+            var resources = this.map((node) => node.resource(resourceName));
+            return _.reduce(resources, (sum, n) => sum + n, 0);
         },
         getLabelValues(label) {
             return this.invoke('getLabel', label);
@@ -744,7 +744,9 @@ import 'deep-model';
         getUnallocatedSpace(options) {
             options = options || {};
             var volumes = options.volumes || this.get('volumes');
-            var allocatedSpace = volumes.reduce((sum, volume) => {return volume.get('name') == options.skip ? sum : sum + volume.get('size');}, 0);
+            var allocatedSpace = volumes.reduce((sum, volume) => {
+                return volume.get('name') == options.skip ? sum : sum + volume.get('size');
+            }, 0);
             return this.get('size') - allocatedSpace;
         },
         validate(attrs) {
@@ -771,12 +773,16 @@ import 'deep-model';
             var currentDisk = this.collection.disk,
                 groupAllocatedSpace = 0;
             if (currentDisk && currentDisk.collection)
-                groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
+                groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {
+                    return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');
+                }, 0, this);
             return minimum - groupAllocatedSpace;
         },
         getMaxSize() {
             var volumes = this.collection.disk.get('volumes'),
-                diskAllocatedSpace = volumes.reduce(function(total, volume) {return this.get('name') == volume.get('name') ? total : total + volume.get('size');}, 0, this);
+                diskAllocatedSpace = volumes.reduce(function(total, volume) {
+                    return this.get('name') == volume.get('name') ? total : total + volume.get('size');
+                }, 0, this);
             return this.collection.disk.get('size') - diskAllocatedSpace;
         },
         validate(attrs, options) {
@@ -810,7 +816,7 @@ import 'deep-model';
             return this.get('type') == 'bond';
         },
         getSlaveInterfaces() {
-            if (!this.isBond()) {return [this];}
+            if (!this.isBond()) return [this];
             var slaveInterfaceNames = _.pluck(this.get('slaves'), 'name');
             return this.collection.filter((slaveInterface) => {
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
@@ -1251,7 +1257,7 @@ import 'deep-model';
         validate(attrs, options) {
             var errors = [];
             _.each(options.config, function(attributeConfig, attribute) {
-                if (!(attributeConfig.regex && attributeConfig.regex.source)) {return;}
+                if (!(attributeConfig.regex && attributeConfig.regex.source)) return;
                 var hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
                     // this probably will be changed when other controls need validation
                     return !utils.evaluateExpression(restriction.condition, {default: this}).value;

@@ -33,7 +33,7 @@ import utils from 'utils';
         },
         setModeState(mode, state) {
             mode.state = state;
-            _.each(mode.sub, function(mode) {this.setModeState(mode, state);}, this);
+            _.each(mode.sub, (mode) => this.setModeState(mode, state));
         },
         checkModes(mode, sub) {
             var changedState = sub.reduce((state, childMode) => {

@@ -30,11 +30,17 @@ define(['tests/functional/helpers'], function() {
                         .clickByCssSelector('.welcome-button-box button')
                         .waitForDeletedByCssSelector('.welcome-button-box button', 2000)
                         .then(
-                            function() {return true;},
-                            function() {return !strictCheck;}
+                            function() {
+                                return true;
+                            },
+                            function() {
+                                return !strictCheck;
+                            }
                         );
                     },
-                    function() {return !strictCheck;}
+                    function() {
+                        return !strictCheck;
+                    }
                 );
         }
     };

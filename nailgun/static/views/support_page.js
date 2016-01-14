@@ -187,7 +187,7 @@ import statisticsMixin from 'views/statistics_mixin';
                     <div className='tracking'>
                         {this.renderIntro()}
                         <div className='statistics-settings'>
-                            {_.map(sortedSettings, function(name) {return this.renderInput(name);}, this)}
+                            {_.map(sortedSettings, (name) => this.renderInput(name))}
                         </div>
                         <p>
                             <button

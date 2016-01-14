@@ -91,7 +91,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
             backboneMixin('cluster', 'change:status'),
             backboneMixin('nodes', 'update change'),
             backboneMixin({
-                modelOrCollection(props) {return props.cluster && props.cluster.get('tasks');},
+                modelOrCollection: (props) => props.cluster && props.cluster.get('tasks'),
                 renderOn: 'update change:status'
             }),
             dispatcherMixin('labelsConfigurationUpdated', 'normalizeAppliedFilters')
@@ -1591,11 +1591,11 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
         componentDidUpdate() {
             if (this.refs['select-all']) {
                 var input = this.refs['select-all'].getInputDOMNode();
-                input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
+                input.indeterminate = !input.checked && _.any(this.props.nodes, (node) => this.props.selectedNodeIds[node.id]);
             }
         },
         renderSelectAllCheckbox() {
-            var checked = this.props.mode == 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, function(node) {return !this.props.selectedNodeIds[node.id];}, this));
+            var checked = this.props.mode == 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, (node) => !this.props.selectedNodeIds[node.id]));
             return (
                 <Input
                     ref='select-all'

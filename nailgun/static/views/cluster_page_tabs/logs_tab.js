@@ -347,7 +347,9 @@ import ReactFragment from 'react-addons-create-fragment';
     });
 
     var LogsTable = React.createClass({
-        handleShowMoreClick(value) { return this.props.onShowMoreClick(value); },
+        handleShowMoreClick(value) {
+            return this.props.onShowMoreClick(value);
+        },
         getLevelClass(level) {
             return {
                 DEBUG: 'debug',

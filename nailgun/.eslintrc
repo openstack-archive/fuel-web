@@ -35,7 +35,6 @@
     no-script-url: 0 # FIXME(vkramskikh): needs to be enabled
     no-useless-call: 2 # extra rule
     no-warning-comments: 0 # we're ok with FIXMEs
-    radix: 0 # FIXME(vkramskikh): needs to be enabled
     yoda: 2 # extra rule
 
     # variables
@@ -44,7 +43,6 @@
     no-use-before-define: 2 # extra rule
 
     # node.js
-    no-mixed-requires: 0 # FIXME(vkramskikh): needs to be enabled
     no-process-env: 0 # we use it in a few places and are ok with it
     no-sync: 0 # it affects our browser code with Sync in function names, like "onModelSync"
 

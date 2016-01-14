@@ -179,7 +179,7 @@ import 'deep-model';
                     default:
                         comparator = (a, b) => a < b;
                 }
-                limitValue = parseInt(evaluateExpressionHelper(obj[limitType], models).value);
+                limitValue = parseInt(evaluateExpressionHelper(obj[limitType], models).value, 10);
                 // Update limitValue with overrides, this way at the end we have a flattened limitValues with overrides having priority
                 limitValues[limitType] = limitValue;
                 checkedLimitTypes[limitType] = true;
@@ -1002,7 +1002,7 @@ import 'deep-model';
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(networkParameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
                 var fixedAmount = networkParameters.get('fixed_networks_amount');
                 var fixedVlan = networkParameters.get('fixed_networks_vlan_start');
-                if (!utils.isNaturalNumber(parseInt(fixedAmount))) {
+                if (!utils.isNaturalNumber(parseInt(fixedAmount, 10))) {
                     networkingParametersErrors.fixed_networks_amount = i18n(ns + 'invalid_amount');
                 }
                 var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');

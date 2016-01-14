@@ -163,8 +163,8 @@ import CSSTransitionGroup from 'react-addons-transition-group';
             settings.set(name, value);
             settings.isValid({models: this.state.configModels});
         },
-        checkRestrictions(action, path) {
-            return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, path);
+        checkRestrictions(action, setting) {
+            return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, setting);
         },
         isSavingPossible() {
             var settings = this.props.cluster.get('settings'),
@@ -201,7 +201,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
             var groupedSettings = {};
             _.each(settingsGroupList, (group) => groupedSettings[group] = {});
             _.each(settings.attributes, function(section, sectionName) {
-                var isHidden = this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
+                var isHidden = this.checkRestrictions('hide', section.metadata).result;
                 if (!isHidden) {
                     var group = section.metadata.group,
                         hasErrors = invalidSections[sectionName];
@@ -230,7 +230,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                         settingName != 'metadata' &&
                                         setting.type != 'hidden' &&
                                         settings.sanitizeGroup(setting.group) == calculatedGroup &&
-                                        !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
+                                        !this.checkRestrictions('hide', setting).result
                                     ) return settingName;
                                 }, this)),
                                 hasErrors = _.any(pickedSettings, (settingName) => {
@@ -270,7 +270,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                             if (
                                                 settingName != 'metadata' &&
                                                 setting.type != 'hidden' &&
-                                                !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
+                                                !this.checkRestrictions('hide', setting).result
                                             ) return settingName;
                                         }, this));
                                     return <SettingSection

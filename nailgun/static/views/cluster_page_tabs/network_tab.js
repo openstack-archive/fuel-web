@@ -1452,9 +1452,8 @@ import CSSTransitionGroup from 'react-addons-transition-group';
             settings.set(name, value);
             settings.isValid({models: this.props.configModels});
         },
-        checkRestrictions(action, path) {
-            var settings = this.props.cluster.get('settings');
-            return settings.checkRestrictions(this.props.configModels, action, path);
+        checkRestrictions(action, setting) {
+            return this.props.cluster.get('settings').checkRestrictions(this.props.configModels, action, setting);
         },
         render() {
             var cluster = this.props.cluster,
@@ -1471,7 +1470,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                 (sectionName) => {
                                     var section = settings.get(sectionName);
                                     return (section.metadata.group == 'network' || _.any(section, {group: 'network'})) &&
-                                        !this.checkRestrictions('hide', settings.makePath(sectionName, 'metadata')).result;
+                                        !this.checkRestrictions('hide', section.metadata).result;
                                 }
                             )
                             .sortBy(
@@ -1485,7 +1484,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                                 (section.metadata.group || setting.group == 'network') &&
                                                 settingName != 'metadata' &&
                                                 setting.type != 'hidden' &&
-                                                !this.checkRestrictions('hide', settings.makePath(sectionName, settingName)).result
+                                                !this.checkRestrictions('hide', setting).result
                                             ) return settingName;
                                         }));
                                     if (_.isEmpty(settingsToDisplay) && !settings.isPlugin(section)) return null;

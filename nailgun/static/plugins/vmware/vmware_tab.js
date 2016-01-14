@@ -161,7 +161,6 @@ import VmWareModels from 'plugins/vmware/vmware_models';
             }
             newItem.set('target_node', targetNode);
             collection.add(newItem, {at: index + 1});
-            collection.parseRestrictions();
             this.setState({model: this.props.model});
             _.defer(() => {dispatcher.trigger('vcenter_model_update'); });
         },
@@ -289,7 +288,6 @@ import VmWareModels from 'plugins/vmware/vmware_models';
             }
         },
         onModelSync() {
-            this.model.parseRestrictions();
             this.actions = this.model.testRestrictions();
             if (!this.model.loadDefaults) {
                 this.json = JSON.stringify(this.model.toJSON());
@@ -302,7 +300,6 @@ import VmWareModels from 'plugins/vmware/vmware_models';
             this.model = this.props.cluster.get('vcenter');
             this.model.on('sync', this.onModelSync, this);
             this.defaultModel = this.props.cluster.get('vcenter_defaults');
-            this.defaultModel.parseRestrictions();
             this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
             this.setState({model: this.model, defaultModel: this.defaultModel});
 

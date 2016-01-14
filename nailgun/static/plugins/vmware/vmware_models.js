@@ -43,13 +43,12 @@ import models from 'models';
             return _.omit(this.attributes, 'metadata');
         },
         validate() {
-            this.expandedRestrictions = this.expandedRestrictions || {};
             var result = {};
             _.each(this.attributes.metadata, function(field) {
                 if (!VmWareModels.isRegularField(field) || field.type == 'checkbox') {
                     return;
                 }
-                var isDisabled = this.checkRestrictions(restrictionModels, undefined, field.name);
+                var isDisabled = this.checkRestrictions(restrictionModels, undefined, field);
                 if (isDisabled.result) {
                     return;
                 }
@@ -62,19 +61,6 @@ import models from 'models';
             }, this);
             return _.isEmpty(result) ? null : result;
         },
-        parseRestrictions() {
-            var metadata = this.get('metadata');
-            _.each(metadata, function(field) {
-                var key = field.name,
-                    restrictions = field.restrictions || [],
-                    childModel = this.get(key);
-                this.expandRestrictions(restrictions, key);
-
-                if (_.isFunction(childModel.parseRestrictions)) {
-                    childModel.parseRestrictions();
-                }
-            }, this);
-        },
         testRestrictions() {
             var results = {
                 hide: {},
@@ -82,12 +68,11 @@ import models from 'models';
             };
             var metadata = this.get('metadata');
             _.each(metadata, function(field) {
-                var key = field.name;
-                var disableResult = this.checkRestrictions(restrictionModels, undefined, key);
-                results.disable[key] = disableResult;
+                var disableResult = this.checkRestrictions(restrictionModels, undefined, field);
+                results.disable[field.name] = disableResult;
 
-                var hideResult = this.checkRestrictions(restrictionModels, 'hide', key);
-                results.hide[key] = hideResult;
+                var hideResult = this.checkRestrictions(restrictionModels, 'hide', field);
+                results.hide[field.name] = hideResult;
             }, this);
             return results;
         }
@@ -107,9 +92,6 @@ import models from 'models';
                 return model.validationError;
             }));
             return _.isEmpty(errors) ? null : errors;
-        },
-        parseRestrictions() {
-            _.invoke(this.models, 'parseRestrictions');
         },
         testRestrictions() {
             _.invoke(this.models, 'testRestrictions', restrictionModels);
@@ -284,16 +266,15 @@ import models from 'models';
 
             var errors = {};
             _.each(this.get('metadata'), function(field) {
-                var key = field.name;
-                var model = this.get(key);
+                var model = this.get(field.name);
                 // do not validate disabled restrictions
-                var isDisabled = this.checkRestrictions(restrictionModels, undefined, key);
+                var isDisabled = this.checkRestrictions(restrictionModels, undefined, field);
                 if (isDisabled.result) {
                     return;
                 }
                 model.isValid();
                 if (model.validationError) {
-                    errors[key] = model.validationError;
+                    errors[field.name] = model.validationError;
                 }
             }, this);
 

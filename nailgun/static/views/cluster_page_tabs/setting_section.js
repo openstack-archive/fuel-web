@@ -22,16 +22,11 @@ import controls from 'views/controls';
 import customControls from 'views/custom_controls';
 
     var SettingSection = React.createClass({
-        processRestrictions(sectionName, settingName) {
+        processRestrictions(setting, settingName) {
             var result = false,
-                path = this.props.makePath(sectionName, settingName),
-                messages = [];
-
-            var restrictionsCheck = this.props.checkRestrictions('disable', path),
-                messagesCheck = this.props.checkRestrictions('none', path);
-
-            if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
-            if (messagesCheck.message) messages.push(messagesCheck.message);
+                restrictionsCheck = this.props.checkRestrictions('disable', setting),
+                messagesCheck = this.props.checkRestrictions('none', setting),
+                messages = _.compact([restrictionsCheck.message, messagesCheck.message]);
 
             // FIXME: hack for #1442475 to lock images_ceph in env with controllers
             if (settingName == 'images_ceph') {
@@ -85,12 +80,12 @@ import customControls from 'views/custom_controls';
                 roles = this.props.cluster.get('roles');
             return _.compact(this.props.allocatedRoles.map(function(roleName) {
                 var role = roles.findWhere({name: roleName});
-                if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
+                if (_.any(role.get('restrictions'), (restriction) => {
+                    restriction = utils.expandRestriction(restriction);
                     if (_.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.props.configModels, restriction).evaluate())) {
                         return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], restriction);
                     }
-                    return false;
-                }, this)) return role.get('label');
+                })) return role.get('label');
             }, this));
         },
         checkDependentSettings(sectionName, settingName) {
@@ -98,10 +93,10 @@ import customControls from 'views/custom_controls';
                 currentSetting = this.props.settings.get(path);
             if (!this.areCalculationsPossible(currentSetting)) return [];
             var dependentRestrictions = {};
-            var addDependentRestrictions = (pathToCheck, label) => {
-                var result = _.filter(this.props.settings.expandedRestrictions[pathToCheck], (restriction) => {
-                    return restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path);
-                });
+            var addDependentRestrictions = (setting, label) => {
+                var result = _.filter(_.map(setting.restrictions, utils.expandRestriction),
+                        (restriction) => restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path)
+                    );
                 if (result.length) {
                     dependentRestrictions[label] = result.concat(dependentRestrictions[label] || []);
                 }
@@ -109,16 +104,18 @@ import customControls from 'views/custom_controls';
             // collect dependencies
             _.each(this.props.settings.attributes, function(section, sectionName) {
                 // don't take into account hidden dependent settings
-                if (this.props.checkRestrictions('hide', this.props.makePath(sectionName, 'metadata')).result) return;
+                if (this.props.checkRestrictions('hide', section.metadata).result) return;
                 _.each(section, function(setting, settingName) {
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
-                    var pathToCheck = this.props.makePath(sectionName, settingName);
-                    if (!this.areCalculationsPossible(setting) || pathToCheck == path || this.props.checkRestrictions('hide', sectionName, settingName).result) return;
+                    if (!this.areCalculationsPossible(setting) ||
+                        this.props.makePath(sectionName, settingName) == path ||
+                        this.props.checkRestrictions('hide', setting).result
+                    ) return;
                     if (setting[this.props.getValueAttribute(settingName)] == true) {
-                        addDependentRestrictions(pathToCheck, setting.label);
+                        addDependentRestrictions(setting, setting.label);
                     } else {
                         var activeOption = _.find(setting.values, {data: setting.value});
-                        if (activeOption) addDependentRestrictions(this.props.makePath(pathToCheck, activeOption.data), setting.label);
+                        if (activeOption) addDependentRestrictions(activeOption, setting.label);
                     }
                 }, this);
             }, this);
@@ -174,7 +171,7 @@ import customControls from 'views/custom_controls';
                 isPlugin = settings.isPlugin(section),
                 metadata = section.metadata,
                 sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => section[settingName].weight),
-                processedGroupRestrictions = this.processRestrictions(sectionName, 'metadata'),
+                processedGroupRestrictions = this.processRestrictions(metadata),
                 processedGroupDependencies = this.checkDependencies(sectionName, 'metadata'),
                 isGroupAlwaysEditable = isPlugin ? _.any(metadata.versions, (version) => version.metadata.always_editable) : metadata.always_editable,
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !isGroupAlwaysEditable) || processedGroupRestrictions.result,
@@ -222,7 +219,7 @@ import customControls from 'views/custom_controls';
                                 settingKey = settingName + (isPlugin ? '-' + metadata.chosen_id : ''),
                                 path = this.props.makePath(sectionName, settingName),
                                 error = (settings.validationError || {})[path],
-                                processedSettingRestrictions = this.processRestrictions(sectionName, settingName),
+                                processedSettingRestrictions = this.processRestrictions(setting, settingName),
                                 processedSettingDependencies = this.checkDependencies(sectionName, settingName),
                                 isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
                                 showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
@@ -245,9 +242,8 @@ import customControls from 'views/custom_controls';
                             if (setting.values) {
                                 var values = _.chain(_.cloneDeep(setting.values))
                                     .map(function(value) {
-                                        var valuePath = this.props.makePath(path, value.data),
-                                            processedValueRestrictions = this.props.checkRestrictions('disable', valuePath);
-                                        if (!this.props.checkRestrictions('hide', valuePath).result) {
+                                        var processedValueRestrictions = this.props.checkRestrictions('disable', value);
+                                        if (!this.props.checkRestrictions('hide', value).result) {
                                             value.disabled = isSettingDisabled || processedValueRestrictions.result;
                                             value.defaultChecked = value.data == setting.value;
                                             value.tooltipText = showSettingWarning && processedValueRestrictions.message;

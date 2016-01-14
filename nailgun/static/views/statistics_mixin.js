@@ -108,9 +108,8 @@ import dialogs from 'views/dialogs';
                     });
             }
         },
-        checkRestrictions(name, action) {
-            action = action || 'disable';
-            return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.makePath('statistics', name));
+        checkRestrictions(name, action = 'disable') {
+            return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.get('statistics').name);
         },
         componentWillMount() {
             var model = this.props.statistics || this.props.tracking;

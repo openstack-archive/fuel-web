@@ -20,7 +20,6 @@
     # disabled rules from openstack config
     no-empty: 0 # we use empty blocks with try-catch
     no-extra-parens: 0 # extra parens are preferred with JSX
-    valid-jsdoc: 0 # eslint treats multiline comments as JSDoc
     consistent-return: 0 # we have lots of code where consistent return isn't needed
     curly: 0 # we're ok with one-line if
     operator-linebreak: 0 # disabled due to heavy use of ternary operator in JSX

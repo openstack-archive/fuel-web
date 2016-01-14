@@ -101,10 +101,9 @@ define([
                         .end();
             });
         },
-        /**
-         * Drag-n-drop helpers
-         * Taken from not yet accepted pull request to leadfoot from https://github.com/theintern/leadfoot/pull/16
-         */
+        // Drag-n-drop helpers
+        // Taken from not yet accepted pull request to leadfoot from
+        // https://github.com/theintern/leadfoot/pull/16
         dragFrom: function(element, x, y) {
             if (typeof element === 'number') {
                 y = x;

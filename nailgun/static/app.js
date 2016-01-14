@@ -21,9 +21,9 @@ import Backbone from 'backbone';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import models from 'models';
+import {NailgunUnavailabilityDialog} from 'views/dialogs';
 import KeystoneClient from 'keystone_client';
 import RootComponent from 'views/root';
-import dialogs from 'views/dialogs';
 import LoginPage from 'views/login_page.js';
 import WelcomePage from 'views/welcome_page';
 import ClusterPage from 'views/cluster_page';
@@ -198,7 +198,7 @@ import './styles/main.less';
                         return $.Deferred().resolve();
                     } else {
                         this.mountNode.empty();
-                        dialogs.NailgunUnavailabilityDialog.show({}, {preventDuplicate: true});
+                        NailgunUnavailabilityDialog.show({}, {preventDuplicate: true});
                     }
                 })
                 .then(() => Backbone.history.start());

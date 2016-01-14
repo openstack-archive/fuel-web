@@ -18,7 +18,7 @@ import i18n from 'i18n';
 import utils from 'utils';
 import React from 'react';
 import Expression from 'expression';
-import controls from 'views/controls';
+import {Input, RadioGroup} from 'views/controls';
 import customControls from 'views/custom_controls';
 
     var SettingSection = React.createClass({
@@ -182,7 +182,7 @@ import customControls from 'views/custom_controls';
                 <div className={'setting-section setting-section-' + sectionName}>
                     <h3>
                         {metadata.toggleable ?
-                            <controls.Input
+                            <Input
                                 type='checkbox'
                                 name='metadata'
                                 label={metadata.label || sectionName}
@@ -198,7 +198,7 @@ import customControls from 'views/custom_controls';
                     <div>
                         {isPlugin &&
                             <div className='plugin-versions clearfix'>
-                                <controls.RadioGroup
+                                <RadioGroup
                                     key={metadata.chosen_id}
                                     name={sectionName}
                                     label={i18n('cluster_page.settings_tab.plugin_versions')}
@@ -252,7 +252,7 @@ import customControls from 'views/custom_controls';
                                     }, this)
                                     .compact()
                                     .value();
-                                if (setting.type == 'radio') return <controls.RadioGroup {...this.props}
+                                if (setting.type == 'radio') return <RadioGroup {...this.props}
                                     key={settingKey}
                                     name={settingName}
                                     label={setting.label}
@@ -264,7 +264,7 @@ import customControls from 'views/custom_controls';
 
                             var settingDescription = setting.description &&
                                     <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
-                            return <controls.Input
+                            return <Input
                                 {... _.pick(setting, 'type', 'label')}
                                 key={settingKey}
                                 name={settingName}

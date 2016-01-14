@@ -17,13 +17,13 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import models from 'models';
-import componentMixins from 'component_mixins';
+import {backboneMixin} from 'component_mixins';
 import statisticsMixin from 'views/statistics_mixin';
 
     var WelcomePage = React.createClass({
         mixins: [
             statisticsMixin,
-            componentMixins.backboneMixin('tracking', 'change invalid')
+            backboneMixin('tracking', 'change invalid')
         ],
         statics: {
             title: i18n('welcome_page.title'),

@@ -20,16 +20,16 @@ import Backbone from 'backbone';
 import React from 'react';
 import utils from 'utils';
 import models from 'models';
-import controls from 'views/controls';
-import componentMixins from 'component_mixins';
+import {Input} from 'views/controls';
+import {backboneMixin, pollingMixin} from 'component_mixins';
 
     var HealthCheckTab = React.createClass({
         mixins: [
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {return props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
-            componentMixins.backboneMixin('cluster', 'change:status')
+            backboneMixin('cluster', 'change:status')
         ],
         statics: {
             fetchData(options) {
@@ -80,10 +80,10 @@ import componentMixins from 'component_mixins';
 
     var HealthcheckTabContent = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('tests', 'update change'),
-            componentMixins.backboneMixin('testsets', 'update change:checked'),
-            componentMixins.backboneMixin('testruns', 'update change'),
-            componentMixins.pollingMixin(3)
+            backboneMixin('tests', 'update change'),
+            backboneMixin('testsets', 'update change:checked'),
+            backboneMixin('testruns', 'update change'),
+            pollingMixin(3)
         ],
         shouldDataBeFetched() {
             return this.props.testruns.any({status: 'running'});
@@ -203,7 +203,7 @@ import componentMixins from 'component_mixins';
                     {!disabledState &&
                         <div className='healthcheck-controls row well well-sm'>
                             <div className='pull-left'>
-                                <controls.Input
+                                <Input
                                     type='checkbox'
                                     name='selectAll'
                                     onChange={this.handleSelectAllClick}
@@ -275,7 +275,7 @@ import componentMixins from 'component_mixins';
                             {i18n('cluster_page.healthcheck_tab.credentials_description')}
                         </div>
                         {_.map(inputFields, function(name) {
-                            return (<controls.Input
+                            return (<Input
                                 key={name}
                                 type={(name == 'password') ? 'password' : 'text'}
                                 name={name}
@@ -296,8 +296,8 @@ import componentMixins from 'component_mixins';
 
     var TestSet = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('tests'),
-            componentMixins.backboneMixin('testset')
+            backboneMixin('tests'),
+            backboneMixin('testset')
         ],
         handleTestSetCheck(name, value) {
             this.props.testset.set('checked', value);
@@ -322,7 +322,7 @@ import componentMixins from 'component_mixins';
                     <thead>
                         <tr>
                             <th>
-                                <controls.Input
+                                <Input
                                     type='checkbox'
                                     id={'testset-checkbox-' + this.props.testset.id}
                                     name={this.props.testset.get('name')}
@@ -368,7 +368,7 @@ import componentMixins from 'component_mixins';
 
     var Test = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('test')
+            backboneMixin('test')
         ],
         handleTestCheck(name, value) {
             this.props.test.set('checked', value);
@@ -390,7 +390,7 @@ import componentMixins from 'component_mixins';
             return (
                 <tr>
                     <td>
-                        <controls.Input
+                        <Input
                             type='checkbox'
                             id={'test-checkbox-' + test.id}
                             name={test.get('name')}

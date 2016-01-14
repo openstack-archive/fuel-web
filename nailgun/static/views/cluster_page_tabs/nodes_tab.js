@@ -18,7 +18,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import controls from 'views/controls';
+import {ProgressBar} from 'views/controls';
 import ClusterNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen';
 import AddNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen';
 import EditNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen';
@@ -134,7 +134,7 @@ import ReactTransitionGroup from 'react-addons-transition-group';
             if (this.props.loading) return (
                 <div className='row'>
                     <div className='col-xs-12' style={{paddingTop: '40px'}}>
-                        <controls.ProgressBar />
+                        <ProgressBar />
                     </div>
                 </div>
             );

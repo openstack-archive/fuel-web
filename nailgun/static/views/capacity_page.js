@@ -18,13 +18,13 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import models from 'models';
-import componentMixins from 'component_mixins';
-import controls from 'views/controls';
+import {backboneMixin, pollingMixin} from 'component_mixins';
+import {ProgressBar, Table} from 'views/controls';
 
     var CapacityPage = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('capacityLog'),
-            componentMixins.pollingMixin(2)
+            backboneMixin('capacityLog'),
+            pollingMixin(2)
         ],
         statics: {
             title: i18n('capacity_page.title'),
@@ -53,7 +53,7 @@ import controls from 'views/controls';
                         {!capacityLog.isNew() ?
                             <LicenseUsage capacityLog={capacityLog} />
                             :
-                            <controls.ProgressBar />
+                            <ProgressBar />
                         }
                     </div>
                 </div>
@@ -69,26 +69,26 @@ import controls from 'views/controls';
             return (
                 <div>
                     <h3>{i18n('capacity_page.license_usage')}</h3>
-                    <controls.Table
+                    <Table
                         head={[{label: i18n('capacity_page.fuel_version'), className: headClassName},
                                 {label: i18n('capacity_page.fuel_uuid')}]}
                         body={[[capacityReport.fuel_data.release, capacityReport.fuel_data.uuid]]}
                         tableClassName={tableClassName}
                     />
-                    <controls.Table
+                    <Table
                         head={[{label: i18n('capacity_page.env_name'), className: headClassName},
                             {label: i18n('capacity_page.node_count')}]}
                         body={_.map(capacityReport.environment_stats, _.values)}
                         tableClassName={tableClassName}
                     />
-                    <controls.Table
+                    <Table
                         head={[{label: i18n('capacity_page.total_number_alloc_nodes'), className: headClassName},
                                 {label: i18n('capacity_page.total_number_unalloc_nodes')}]}
                         body={[[capacityReport.allocation_stats.allocated,
                                 capacityReport.allocation_stats.unallocated]]}
                         tableClassName={tableClassName}
                     />
-                    <controls.Table
+                    <Table
                         head={[{label: i18n('capacity_page.node_role'), className: headClassName},
                                 {label: i18n('capacity_page.nodes_with_config')}]}
                         body={_.zip(_.keys(capacityReport.roles_stat),

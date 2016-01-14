@@ -20,7 +20,7 @@ import React from 'react';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
-import componentMixins from 'component_mixins';
+import {backboneMixin, pollingMixin, dispatcherMixin} from 'component_mixins';
 import DashboardTab from 'views/cluster_page_tabs/dashboard_tab';
 import NodesTab from 'views/cluster_page_tabs/nodes_tab';
 import NetworkTab from 'views/cluster_page_tabs/network_tab';
@@ -31,24 +31,24 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
 
     var ClusterPage = React.createClass({
         mixins: [
-            componentMixins.pollingMixin(5),
-            componentMixins.backboneMixin('cluster', 'change:name change:is_customized change:release'),
-            componentMixins.backboneMixin({
+            pollingMixin(5),
+            backboneMixin('cluster', 'change:name change:is_customized change:release'),
+            backboneMixin({
                 modelOrCollection(props) {return props.cluster.get('nodes');}
             }),
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {return props.cluster.get('tasks');},
                 renderOn: 'update change'
             }),
-            componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
-            componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),
-            componentMixins.dispatcherMixin('deploymentTaskStarted', function() {
+            dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
+            dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),
+            dispatcherMixin('deploymentTaskStarted', function() {
                 this.refreshCluster().always(this.startPolling);
             }),
-            componentMixins.dispatcherMixin('networkVerificationTaskStarted', function() {
+            dispatcherMixin('networkVerificationTaskStarted', function() {
                 this.startPolling();
             }),
-            componentMixins.dispatcherMixin('deploymentTaskFinished', function() {
+            dispatcherMixin('deploymentTaskFinished', function() {
                 this.refreshCluster().always(() => dispatcher.trigger('updateNotifications'));
             })
         ],

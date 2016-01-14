@@ -18,8 +18,8 @@ import i18n from 'i18n';
 import React from 'react';
 import utils from 'utils';
 import models from 'models';
-import controls from 'views/controls';
-import dialogs from 'views/dialogs';
+import {Input, ProgressBar} from 'views/controls';
+import {RegistrationDialog, RetrievePasswordDialog} from 'views/dialogs';
 
     export default {
         propTypes: {
@@ -132,7 +132,7 @@ import dialogs from 'views/dialogs';
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
             var error = this.getError(model, settingName),
                 disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result || disabledState;
-            return <controls.Input
+            return <Input
                 key={settingName}
                 type={setting.type}
                 name={settingName}
@@ -245,9 +245,9 @@ import dialogs from 'views/dialogs';
                         </div>
                     }
                     <div className='connection-form'>
-                        {showProgressBar && <controls.ProgressBar />}
+                        {showProgressBar && <ProgressBar />}
                         {_.map(sortedFields, function(inputName) {
-                            return <controls.Input
+                            return <Input
                                 ref={inputName}
                                 key={inputName}
                                 name={inputName}
@@ -270,7 +270,7 @@ import dialogs from 'views/dialogs';
             );
         },
         showRegistrationDialog() {
-            dialogs.RegistrationDialog.show({
+            RegistrationDialog.show({
                 registrationForm: this.state.registrationForm,
                 setConnected: this.setConnected,
                 settings: this.props.settings,
@@ -279,7 +279,7 @@ import dialogs from 'views/dialogs';
             });
         },
         showRetrievePasswordDialog() {
-            dialogs.RetrievePasswordDialog.show({
+            RetrievePasswordDialog.show({
                 remoteRetrievePasswordForm: this.state.remoteRetrievePasswordForm
             });
         }

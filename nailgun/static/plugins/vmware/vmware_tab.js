@@ -18,8 +18,8 @@ import $ from 'jquery';
 import i18n from 'i18n';
 import _ from 'underscore';
 import dispatcher from 'dispatcher';
-import controls from 'views/controls';
-import componentMixins from 'component_mixins';
+import {Input, Tooltip} from 'views/controls';
+import {unsavedChangesMixin} from 'component_mixins';
 import VmWareModels from 'plugins/vmware/vmware_models';
 
     var Field = React.createClass({
@@ -39,7 +39,7 @@ import VmWareModels from 'plugins/vmware/vmware_models';
             var metadata = this.props.metadata,
                 value = this.props.model.get(metadata.name);
             return (
-                <controls.Input
+                <Input
                     {... _.pick(metadata, 'name', 'type', 'label', 'description')}
                     value={metadata.type == 'select' ? value.current.id : value}
                     checked={value}
@@ -51,7 +51,7 @@ import VmWareModels from 'plugins/vmware/vmware_models';
                     {metadata.type == 'select' && value.options.map((value) => {
                         return <option key={value.id} value={value.id}>{value.label}</option>;
                     })}
-                </controls.Input>
+                </Input>
             );
         }
     });
@@ -87,9 +87,9 @@ import VmWareModels from 'plugins/vmware/vmware_models';
                     <h3>
                         {this.props.title}
                         {this.props.tooltipText &&
-                            <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                            <Tooltip text={this.props.tooltipText} placement='right'>
                                 <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
-                            </controls.Tooltip>
+                            </Tooltip>
                         }
                     </h3>
                     <FieldGroup model={this.props.model} disabled={this.props.disabled}/>
@@ -226,9 +226,9 @@ import VmWareModels from 'plugins/vmware/vmware_models';
                     <h3>
                         {i18n('vmware.availability_zones')}
                         {this.props.tooltipText &&
-                            <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                            <Tooltip text={this.props.tooltipText} placement='right'>
                                 <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
-                            </controls.Tooltip>
+                            </Tooltip>
                         }
                     </h3>
                     {this.props.collection.map(function(model) {
@@ -269,7 +269,7 @@ import VmWareModels from 'plugins/vmware/vmware_models';
 
     var VmWareTab = React.createClass({
         mixins: [
-            componentMixins.unsavedChangesMixin
+            unsavedChangesMixin
         ],
         statics: {
             isVisible(cluster) {

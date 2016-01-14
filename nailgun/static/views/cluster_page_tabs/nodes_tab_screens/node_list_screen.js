@@ -22,9 +22,9 @@ import ReactDOM from 'react-dom';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
-import controls from 'views/controls';
-import dialogs from 'views/dialogs';
-import componentMixins from 'component_mixins';
+import {Input, Popover, Tooltip} from 'views/controls';
+import {DeleteNodesDialog} from 'views/dialogs';
+import {backboneMixin, pollingMixin, dispatcherMixin, unsavedChangesMixin} from 'component_mixins';
 import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
 
     var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, NodeLabelsPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
@@ -87,14 +87,14 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
 
     NodeListScreen = React.createClass({
         mixins: [
-            componentMixins.pollingMixin(20, true),
-            componentMixins.backboneMixin('cluster', 'change:status'),
-            componentMixins.backboneMixin('nodes', 'update change'),
-            componentMixins.backboneMixin({
+            pollingMixin(20, true),
+            backboneMixin('cluster', 'change:status'),
+            backboneMixin('nodes', 'update change'),
+            backboneMixin({
                 modelOrCollection(props) {return props.cluster && props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
-            componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'normalizeAppliedFilters')
+            dispatcherMixin('labelsConfigurationUpdated', 'normalizeAppliedFilters')
         ],
         getDefaultProps() {
             return {
@@ -598,11 +598,11 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                         {label} <span className='caret'></span>
                     </button>
                     {this.props.isOpen &&
-                        <controls.Popover toggle={this.props.toggle}>
+                        <Popover toggle={this.props.toggle}>
                             {!this.props.dynamicValues ?
                                 <div>
                                     <div key='all'>
-                                        <controls.Input
+                                        <Input
                                             type='checkbox'
                                             label={i18n('cluster_page.nodes_tab.node_management_panel.select_all')}
                                             name='all'
@@ -612,7 +612,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                     </div>
                                     <div key='divider' className='divider' />
                                     {_.map(this.props.options, function(option) {
-                                        return <controls.Input {...optionProps(option)}
+                                        return <Input {...optionProps(option)}
                                             label={option.label}
                                             checked={_.contains(this.props.values, option.name)}
                                             onChange={this.onChange}
@@ -622,21 +622,21 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                             :
                                 <div>
                                     {_.map(attributes, function(option) {
-                                        return <controls.Input {...optionProps(option)}
+                                        return <Input {...optionProps(option)}
                                             checked={_.contains(this.props.values, option.name)}
                                             onChange={_.partialRight(this.onChange, false)}
                                         />;
                                     }, this)}
                                     {!!attributes.length && !!labels.length && <div key='divider' className='divider' />}
                                     {_.map(labels, function(option) {
-                                        return <controls.Input {...optionProps(option)}
+                                        return <Input {...optionProps(option)}
                                             key={'label-' + option.name}
                                             onChange={_.partialRight(this.onChange, true)}
                                         />;
                                     }, this)}
                                 </div>
                             }
-                        </controls.Popover>
+                        </Popover>
                     }
                     {this.props.extraContent}
                 </div>
@@ -690,22 +690,22 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                         {this.props.label + ': ' + _.uniq(this.props.values).join(' - ')} <span className='caret'></span>
                     </button>
                     {this.props.isOpen &&
-                        <controls.Popover toggle={this.props.toggle}>
+                        <Popover toggle={this.props.toggle}>
                             <div className='clearfix'>
-                                <controls.Input {...props}
+                                <Input {...props}
                                     name='start'
                                     value={this.props.values[0]}
                                     onChange={_.partialRight(this.changeValue, 0)}
                                     autoFocus
                                 />
                                 <span className='pull-left'> &mdash; </span>
-                                <controls.Input {...props}
+                                <Input {...props}
                                     name='end'
                                     value={this.props.values[1]}
                                     onChange={_.partialRight(this.changeValue, 1)}
                                 />
                             </div>
-                        </controls.Popover>
+                        </Popover>
                     }
                     {this.props.extraContent}
                 </div>
@@ -714,7 +714,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
     });
 
     ManagementPanel = React.createClass({
-        mixins: [componentMixins.unsavedChangesMixin],
+        mixins: [unsavedChangesMixin],
         getInitialState() {
             return {
                 actionInProgress: false,
@@ -742,7 +742,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
             this.changeScreen(action, true);
         },
         showDeleteNodesDialog() {
-            dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster})
+            DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster})
                 .done(_.partial(this.props.selectNodes, _.pluck(this.props.nodes.where({status: 'ready'}), 'id'), null, true));
         },
         hasChanges() {
@@ -947,7 +947,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                 <div className='btn-group' data-toggle='buttons'>
                                     {_.map(models.Nodes.prototype.viewModes, function(mode) {
                                         return (
-                                            <controls.Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
+                                            <Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                                                 <label
                                                     className={utils.classNames(managementButtonClasses(mode == this.props.viewMode, mode))}
                                                     onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
@@ -961,13 +961,13 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                                         })}
                                                     />
                                                 </label>
-                                            </controls.Tooltip>
+                                            </Tooltip>
                                         );
                                     }, this)}
                                 </div>
                             </div>
                             {this.props.mode != 'edit' && [
-                                <controls.Tooltip wrap key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
+                                <Tooltip wrap key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
                                     <button
                                         disabled={!this.props.nodes.length}
                                         onClick={this.props.nodes.length && this.toggleLabelsPanel}
@@ -975,8 +975,8 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                     >
                                         <i className='glyphicon glyphicon-tag' />
                                     </button>
-                                </controls.Tooltip>,
-                                <controls.Tooltip wrap key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
+                                </Tooltip>,
+                                <Tooltip wrap key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
                                     <button
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleSorters}
@@ -984,8 +984,8 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                     >
                                         <i className='glyphicon glyphicon-sort' />
                                     </button>
-                                </controls.Tooltip>,
-                                <controls.Tooltip wrap key='filters-btn' text={i18n(ns + 'filter_tooltip')}>
+                                </Tooltip>,
+                                <Tooltip wrap key='filters-btn' text={i18n(ns + 'filter_tooltip')}>
                                     <button
                                         disabled={!this.props.screenNodes.length}
                                         onClick={this.toggleFilters}
@@ -993,9 +993,9 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                     >
                                         <i className='glyphicon glyphicon-filter' />
                                     </button>
-                                </controls.Tooltip>,
+                                </Tooltip>,
                                 !this.state.activeSearch && (
-                                    <controls.Tooltip wrap key='search-btn' text={i18n(ns + 'search_tooltip')}>
+                                    <Tooltip wrap key='search-btn' text={i18n(ns + 'search_tooltip')}>
                                         <button
                                             disabled={!this.props.screenNodes.length}
                                             onClick={this.activateSearch}
@@ -1003,11 +1003,11 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                         >
                                             <i className='glyphicon glyphicon-search' />
                                         </button>
-                                    </controls.Tooltip>
+                                    </Tooltip>
                                 ),
                                 this.state.activeSearch && (
                                     <div className='search pull-left' key='search'>
-                                        <controls.Input
+                                        <Input
                                             type='text'
                                             name='search'
                                             ref='search'
@@ -1276,7 +1276,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
     });
 
     NodeLabelsPanel = React.createClass({
-        mixins: [componentMixins.unsavedChangesMixin],
+        mixins: [unsavedChangesMixin],
         getInitialState() {
             var labels = _.map(this.props.labels, function(label) {
                     var labelValues = this.props.nodes.getLabelValues(label),
@@ -1445,14 +1445,14 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                 var showControlLabels = index == 0;
                                 return (
                                     <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={index}>
-                                        <controls.Input
+                                        <Input
                                             type='checkbox'
                                             ref={labelData.key}
                                             checked={labelData.checked}
                                             onChange={_.partial(this.changeLabelState, index)}
                                             wrapperClassName='pull-left'
                                         />
-                                        <controls.Input
+                                        <Input
                                             type='text'
                                             maxLength='100'
                                             label={showControlLabels && i18n(ns + 'label_key')}
@@ -1462,7 +1462,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                                             wrapperClassName='label-key-control'
                                             autoFocus={index == this.state.labels.length - 1}
                                         />
-                                        <controls.Input {...labelValueProps}
+                                        <Input {...labelValueProps}
                                             type='text'
                                             maxLength='100'
                                             label={showControlLabels && i18n(ns + 'label_value')}
@@ -1566,7 +1566,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
                             var name = role.get('name'),
                                 processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.props.configModels) : {};
                             return (
-                                <controls.Input
+                                <Input
                                     key={name}
                                     ref={name}
                                     type='checkbox'
@@ -1597,7 +1597,7 @@ import Node from 'views/cluster_page_tabs/nodes_tab_screens/node';
         renderSelectAllCheckbox() {
             var checked = this.props.mode == 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, function(node) {return !this.props.selectedNodeIds[node.id];}, this));
             return (
-                <controls.Input
+                <Input
                     ref='select-all'
                     name='select-all'
                     type='checkbox'

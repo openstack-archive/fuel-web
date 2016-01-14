@@ -18,13 +18,13 @@ import i18n from 'i18n';
 import React from 'react';
 import utils from 'utils';
 import models from 'models';
-import dialogs from 'views/dialogs';
-import componentMixins from 'component_mixins';
+import {ShowNodeInfoDialog} from 'views/dialogs';
+import {backboneMixin} from 'component_mixins';
 
     var NotificationsPage, Notification;
 
     NotificationsPage = React.createClass({
-        mixins: [componentMixins.backboneMixin('notifications')],
+        mixins: [backboneMixin('notifications')],
         statics: {
             title: i18n('notifications_page.title'),
             navbarActiveElement: null,
@@ -70,11 +70,11 @@ import componentMixins from 'component_mixins';
     });
 
     Notification = React.createClass({
-        mixins: [componentMixins.backboneMixin('notification')],
+        mixins: [backboneMixin('notification')],
         showNodeInfo(id) {
             var node = new models.Node({id: id});
             node.fetch();
-            dialogs.ShowNodeInfoDialog.show({node: node});
+            ShowNodeInfoDialog.show({node: node});
         },
         markAsRead() {
             var notification = this.props.notification;

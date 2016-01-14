@@ -18,14 +18,14 @@ import _ from 'underscore';
 import Backbone from 'backbone';
 import i18n from 'i18n';
 import React from 'react';
-import dispatcher from 'dispatcher';
 import ReactDOM from 'react-dom';
+import dispatcher from 'dispatcher';
+import {DiscardSettingsChangesDialog} from 'views/dialogs';
 import 'react.backbone';
-import dialogs from 'views/dialogs';
 
-    var componentMixins = {
-        backboneMixin: React.BackboneMixin,
-        dispatcherMixin(events, callback) {
+        export var backboneMixin = React.BackboneMixin;
+
+        export function dispatcherMixin(events, callback) {
             return {
                 componentDidMount() {
                     dispatcher.on(events, _.isString(callback) ? this[callback] : callback, this);
@@ -34,8 +34,9 @@ import dialogs from 'views/dialogs';
                     dispatcher.off(null, null, this);
                 }
             };
-        },
-        unsavedChangesMixin: {
+        }
+
+        export var unsavedChangesMixin = {
             onBeforeunloadEvent() {
                 if (this.hasChanges()) return _.result(this, 'getStayMessage') || i18n('dialog.dismiss_settings.default_message');
             },
@@ -53,7 +54,7 @@ import dialogs from 'views/dialogs';
                 if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
                     e.preventDefault();
 
-                    dialogs.DiscardSettingsChangesDialog
+                    DiscardSettingsChangesDialog
                         .show({
                             isDiscardingPossible: _.result(this, 'isDiscardingPossible'),
                             isSavingPossible: _.result(this, 'isSavingPossible'),
@@ -64,8 +65,9 @@ import dialogs from 'views/dialogs';
                         });
                 }
             }
-        },
-        pollingMixin(updateInterval, delayedStart) {
+        };
+
+        export function pollingMixin(updateInterval, delayedStart) {
             updateInterval = updateInterval * 1000;
             return {
                 scheduleDataFetch() {
@@ -96,8 +98,9 @@ import dialogs from 'views/dialogs';
                     this.stopPolling();
                 }
             };
-        },
-        outerClickMixin: {
+        }
+
+        export var outerClickMixin = {
             propTypes: {
                 toggle: React.PropTypes.func.isRequired
             },
@@ -119,8 +122,9 @@ import dialogs from 'views/dialogs';
                 $('html').off(this.state.clickEventName);
                 Backbone.history.off('route', null, this);
             }
-        },
-        renamingMixin(refname) {
+        };
+
+        export function renamingMixin(refname) {
             return {
                 getInitialState() {
                     return {
@@ -151,6 +155,3 @@ import dialogs from 'views/dialogs';
                 }
             };
         }
-    };
-
-export default componentMixins;

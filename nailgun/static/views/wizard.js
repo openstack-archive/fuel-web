@@ -21,8 +21,8 @@ import ReactDOM from 'react-dom';
 import Backbone from 'backbone';
 import models from 'models';
 import utils from 'utils';
-import dialogs from 'views/dialogs';
-import controls from 'views/controls';
+import {dialogMixin} from 'views/dialogs';
+import {Input, ProgressBar} from 'views/controls';
 
     var AVAILABILITY_STATUS_ICONS = {
         compatible: 'glyphicon-ok-sign',
@@ -41,7 +41,7 @@ import controls from 'views/controls';
                         _.map(this.props.components, (component) => {
                             var icon = AVAILABILITY_STATUS_ICONS[component.get('availability')];
                             return (
-                                <controls.Input
+                                <Input
                                     key={component.id}
                                     type='checkbox'
                                     name={component.id}
@@ -86,7 +86,7 @@ import controls from 'views/controls';
                         _.map(this.props.components, (component) => {
                             var icon = AVAILABILITY_STATUS_ICONS[component.get('availability')];
                             return (
-                                <controls.Input
+                                <Input
                                     key={component.id}
                                     type='radio'
                                     name={this.props.groupName}
@@ -285,7 +285,7 @@ import controls from 'views/controls';
                 connectivityAlert = i18n('dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert');
             return (
                 <div className='create-cluster-form name-and-release'>
-                    <controls.Input
+                    <Input
                         type='text'
                         name='name'
                         autoComplete='off'
@@ -294,7 +294,7 @@ import controls from 'views/controls';
                         error={nameError}
                         onChange={this.props.onChange}
                     />
-                    <controls.Input
+                    <Input
                         type='select'
                         name='release'
                         label={i18n('dialog.create_cluster_wizard.name_release.release_label')}
@@ -309,7 +309,7 @@ import controls from 'views/controls';
                                 return <option key={release.id} value={release.id}>{release.get('name')}</option>;
                             })
                         }
-                    </controls.Input>
+                    </Input>
                     <div className='help-block'>
                         {connectivityAlert &&
                             <div className='alert alert-warning'>{connectivityAlert}</div>
@@ -524,7 +524,7 @@ import controls from 'views/controls';
     ];
 
     var CreateClusterWizard = React.createClass({
-        mixins: [dialogs.dialogMixin],
+        mixins: [dialogMixin],
         getInitialState() {
             return {
                 title: i18n('dialog.create_cluster_wizard.title'),
@@ -741,7 +741,7 @@ import controls from 'views/controls';
                         </div>
                         {!this.components &&
                             <div className='pane-content col-xs-9 pane-progress-bar'>
-                                <controls.ProgressBar/>
+                                <ProgressBar/>
                             </div>
                         }
                         {this.components &&

@@ -19,35 +19,28 @@ from nailgun.orchestrator import plugins_serializers
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
 
 
-def stage_serialize(serializer, graph_tasks, cluster, nodes):
+def stage_serialize(tasks, serializer):
     """Serialize tasks for given stage
 
+    :param tasks: list of serialized tasks from graph
     :param serializer: plugins_serializers.BasePluginDeploymentHooksSerializer
-    :param graph_tasks: list of tasks
-    :param cluster: cluster db object
-    :param nodes: list of node db objects
     """
-    priority = PriorityStrategy()
-    tasks = []
 
-    tasks.extend(graph_tasks)
-
-    plugins = serializer(cluster, nodes)
-    tasks.extend(plugins.serialize())
-    priority.one_by_one(tasks)
-
+    tasks[0:0] = list(serializer.serialize_begin_tasks())
+    tasks.extend(serializer.serialize_end_tasks())
+    PriorityStrategy().one_by_one(tasks)
     return tasks
 
 
 def pre_deployment_serialize(orchestrator_graph, cluster, nodes):
-    graph_tasks = orchestrator_graph.pre_tasks_serialize(nodes)
     return stage_serialize(
-        plugins_serializers.PluginsPreDeploymentHooksSerializer,
-        graph_tasks, cluster, nodes)
+        orchestrator_graph.pre_tasks_serialize(nodes),
+        plugins_serializers.PluginsPreDeploymentHooksSerializer(
+            cluster, nodes))
 
 
 def post_deployment_serialize(orchestrator_graph, cluster, nodes):
-    graph_tasks = orchestrator_graph.post_tasks_serialize(nodes)
     return stage_serialize(
-        plugins_serializers.PluginsPostDeploymentHooksSerializer,
-        graph_tasks, cluster, nodes)
+        orchestrator_graph.post_tasks_serialize(nodes),
+        plugins_serializers.PluginsPostDeploymentHooksSerializer(
+            cluster, nodes))

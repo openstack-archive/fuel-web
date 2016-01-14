@@ -31,7 +31,7 @@ class TestPluginManager(base.BaseIntegrationTest):
         super(TestPluginManager, self).setUp()
         self.env.create(
             release_kwargs={
-                'version': '2015.1-8.0',
+                'version': 'liberty-8.0',
                 'operating_system': 'Ubuntu'})
 
         self.release = self.env.releases[0]
@@ -445,7 +445,7 @@ class TestClusterPluginIntegration(base.BaseTestCase):
         'releases': [{
             'os': 'ubuntu',
             'mode': 'ha',
-            'version': '2015.1-8.0',
+            'version': 'liberty-8.0',
         }]
     }
 
@@ -463,7 +463,7 @@ class TestClusterPluginIntegration(base.BaseTestCase):
         self.env.create(
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': '2015.1-8.0'},
+                'version': 'liberty-8.0'},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
             })

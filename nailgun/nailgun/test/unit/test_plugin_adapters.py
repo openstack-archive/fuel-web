@@ -65,7 +65,7 @@ class TestPluginBase(base.BaseTestCase):
         self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={
-                'version': '2015.1-8.0',
+                'version': 'liberty-8.0',
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
                           consts.CLUSTER_MODES.ha_compact]})
@@ -81,7 +81,7 @@ class TestPluginBase(base.BaseTestCase):
         """Should return set of all versions this plugin is applicable to"""
         self.assertEqual(
             self.plugin_adapter.plugin_release_versions,
-            set(['2014.2-6.0', '2015.1-8.0'])
+            set(['2014.2-6.0', 'liberty-8.0'])
         )
 
     def test_full_name(self):

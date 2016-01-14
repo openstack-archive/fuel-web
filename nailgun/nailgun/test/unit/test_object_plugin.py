@@ -53,7 +53,7 @@ class ExtraFunctions(base.BaseTestCase):
             cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={
                 'name': uuid.uuid4().get_hex(),
-                'version': '2015.1-8.0',
+                'version': 'liberty-8.0',
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
                           consts.CLUSTER_MODES.ha_compact]})
@@ -91,7 +91,7 @@ class TestPluginCollection(ExtraFunctions):
 
     def test_get_by_release(self):
         release = self.env.create_release(
-            version='2015.1-8.0',
+            version='liberty-8.0',
             operating_system='Ubuntu',
             modes=[consts.CLUSTER_MODES.ha_compact])
         for plugin in PluginCollection.get_by_release(release):

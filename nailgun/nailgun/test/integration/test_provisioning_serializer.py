@@ -81,7 +81,7 @@ class TestGetSerializerForCluster(BaseIntegrationTest):
         self.assertIs(serializer, ps.ProvisioningSerializer70)
 
     def test_env_8_0(self):
-        cluster = self._get_cluster('2015.1-8.0')
+        cluster = self._get_cluster('liberty-8.0')
         serializer = ps.get_serializer_for_cluster(cluster)
 
         self.assertIs(serializer, ps.ProvisioningSerializer80)

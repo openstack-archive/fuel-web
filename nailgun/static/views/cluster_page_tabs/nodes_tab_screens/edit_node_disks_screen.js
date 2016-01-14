@@ -21,15 +21,15 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import utils from 'utils';
 import models from 'models';
-import ComponentMixins from 'component_mixins';
-import controls from 'views/controls';
+import {backboneMixin, unsavedChangesMixin} from 'component_mixins';
+import {Input} from 'views/controls';
 
     var EditNodeDisksScreen = React.createClass({
         mixins: [
-            ComponentMixins.backboneMixin('cluster', 'change:status change:nodes sync'),
-            ComponentMixins.backboneMixin('nodes', 'change sync'),
-            ComponentMixins.backboneMixin('disks', 'reset change'),
-            ComponentMixins.unsavedChangesMixin
+            backboneMixin('cluster', 'change:status change:nodes sync'),
+            backboneMixin('nodes', 'change sync'),
+            backboneMixin('disks', 'reset change'),
+            unsavedChangesMixin
         ],
         statics: {
             fetchData(options) {
@@ -329,14 +329,14 @@ import controls from 'views/controls';
                                                     {volume.get('label')}
                                                 </label>
                                                 <div className='col-xs-4 volume-group-range'>
-                                                    <controls.Input {...props}
+                                                    <Input {...props}
                                                         type='range'
                                                         ref={'range-' + volumeName}
                                                         onChange={_.partialRight(this.updateDisk)}
                                                         value={value}
                                                     />
                                                 </div>
-                                                <controls.Input {...props}
+                                                <Input {...props}
                                                     type='number'
                                                     wrapperClassName='col-xs-3 volume-group-input'
                                                     onChange={_.partialRight(this.updateDisk)}

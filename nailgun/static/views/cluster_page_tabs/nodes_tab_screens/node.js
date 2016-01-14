@@ -20,12 +20,12 @@ import React from 'react';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
-import controls from 'views/controls';
-import dialogs from 'views/dialogs';
-import componentMixins from 'component_mixins';
+import {Input, Popover, Tooltip} from 'views/controls';
+import {DeleteNodesDialog, RemoveOfflineNodeDialog, ShowNodeInfoDialog} from 'views/dialogs';
+import {renamingMixin} from 'component_mixins';
 
     var Node = React.createClass({
-        mixins: [componentMixins.renamingMixin('name')],
+        mixins: [renamingMixin('name')],
         getInitialState() {
             return {
                 actionInProgress: false,
@@ -88,7 +88,7 @@ import componentMixins from 'component_mixins';
         removeNode(e) {
             e.preventDefault();
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
-            dialogs.RemoveOfflineNodeDialog
+            RemoveOfflineNodeDialog
                 .show()
                 .done(() => {
                     // sync('delete') is used instead of node.destroy() because we want
@@ -121,7 +121,7 @@ import componentMixins from 'component_mixins';
         showNodeDetails(e) {
             e.preventDefault();
             if (this.state.extendedView) this.toggleExtendedNodePanel();
-            dialogs.ShowNodeInfoDialog.show({
+            ShowNodeInfoDialog.show({
                 node: this.props.node,
                 cluster: this.props.cluster,
                 nodeNetworkGroup: this.props.nodeNetworkGroups.get(this.props.node.get('group_id')),
@@ -134,7 +134,7 @@ import componentMixins from 'component_mixins';
         },
         renderNameControl() {
             if (this.state.isRenaming) return (
-                <controls.Input
+                <Input
                     ref='name'
                     type='text'
                     name='node-name'
@@ -148,11 +148,11 @@ import componentMixins from 'component_mixins';
                 />
             );
             return (
-                <controls.Tooltip text={i18n('cluster_page.nodes_tab.node.edit_name')}>
+                <Tooltip text={i18n('cluster_page.nodes_tab.node.edit_name')}>
                     <p onClick={!this.state.actionInProgress && this.startRenaming}>
                         {this.props.node.get('name') || this.props.node.get('mac')}
                     </p>
-                </controls.Tooltip>
+                </Tooltip>
             );
         },
         renderStatusLabel(status) {
@@ -192,16 +192,16 @@ import componentMixins from 'component_mixins';
         },
         renderLogsLink(iconRepresentation) {
             return (
-                <controls.Tooltip key='logs' text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
+                <Tooltip key='logs' text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
                     <a className={'btn-view-logs ' + (iconRepresentation ? 'icon icon-logs' : 'btn')} href={this.getNodeLogsLink()}>
                         {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
                     </a>
-                </controls.Tooltip>
+                </Tooltip>
             );
         },
         renderNodeCheckbox() {
             return (
-                <controls.Input
+                <Input
                     type='checkbox'
                     name={this.props.node.id}
                     checked={this.props.checked}
@@ -237,7 +237,7 @@ import componentMixins from 'component_mixins';
         showDeleteNodesDialog(e) {
             e.preventDefault();
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
-            dialogs.DeleteNodesDialog
+            DeleteNodesDialog
                 .show({
                     nodes: new models.Nodes(this.props.node),
                     cluster: this.props.cluster
@@ -340,7 +340,7 @@ import componentMixins from 'component_mixins';
                         </label>
                     </div>
                     {this.state.extendedView &&
-                        <controls.Popover className='node-popover' toggle={this.toggleExtendedNodePanel}>
+                        <Popover className='node-popover' toggle={this.toggleExtendedNodePanel}>
                             <div>
                                 <div className='node-name clearfix'>
                                     {this.renderNodeCheckbox()}
@@ -400,7 +400,7 @@ import componentMixins from 'component_mixins';
                                     <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>Details</button>
                                 </div>
                             </div>
-                        </controls.Popover>
+                        </Popover>
                     }
                 </div>
             );
@@ -426,16 +426,16 @@ import componentMixins from 'component_mixins';
                                 </button>
                             }
                             {this.state.labelsPopoverVisible &&
-                                <controls.Popover className='node-labels-popover' toggle={this.toggleLabelsPopover}>
+                                <Popover className='node-labels-popover' toggle={this.toggleLabelsPopover}>
                                     {this.renderLabels()}
-                                </controls.Popover>
+                                </Popover>
                             }
                         </div>
                         <div className='node-action'>
                             {[
                                 !!node.get('cluster') && this.renderLogsLink(true),
                                 this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
-                                    <controls.Tooltip
+                                    <Tooltip
                                         key={'pending_addition_' + node.id}
                                         text={i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))}
                                     >
@@ -443,7 +443,7 @@ import componentMixins from 'component_mixins';
                                             className='icon btn-discard'
                                             onClick={node.get('pending_deletion') ? this.discardNodeDeletion : this.showDeleteNodesDialog}
                                         />
-                                    </controls.Tooltip>
+                                    </Tooltip>
                             ]}
                         </div>
                         <div className={utils.classNames(statusClasses)}>

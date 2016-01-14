@@ -22,9 +22,9 @@ import ReactDOM from 'react-dom';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
-import dialogs from 'views/dialogs';
-import componentMixins from 'component_mixins';
-import controls from 'views/controls';
+import {CreateNodeNetworkGroupDialog, RemoveNodeNetworkGroupDialog} from 'views/dialogs';
+import {backboneMixin, dispatcherMixin, unsavedChangesMixin, renamingMixin} from 'component_mixins';
+import {Input, RadioGroup, Table} from 'views/controls';
 import SettingSection from 'views/cluster_page_tabs/setting_section';
 import CSSTransitionGroup from 'react-addons-transition-group';
 
@@ -83,7 +83,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
         },
         renderInput(attribute, isInteger, additionalProps = {}) {
             return (
-                <controls.Input
+                <Input
                     {...additionalProps}
                     {...this.composeProps(attribute, false, isInteger)}
                     type='text'
@@ -252,7 +252,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                 var rangeError = _.findWhere(error, {index: index}) || {};
                                 return (
                                     <div className='range-row clearfix' key={index}>
-                                        <controls.Input
+                                        <Input
                                             {...this.getRangeProps()}
                                             error={(rangeError.start || verificationError) ? '' : null}
                                             value={range[0]}
@@ -261,7 +261,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                             inputClassName='start'
                                             placeholder={rangeError.start ? '' : this.props.placeholder}
                                         />
-                                        <controls.Input
+                                        <Input
                                             {...this.getRangeProps(true)}
                                             error={rangeError.end ? '' : null}
                                             value={range[1]}
@@ -281,13 +281,13 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                             }, this)
                         :
                             <div className='range-row clearfix'>
-                                <controls.Input
+                                <Input
                                     {...this.getRangeProps()}
                                     value={ranges[0]}
                                     error={startInputError ? '' : null}
                                     inputClassName='start'
                                 />
-                                <controls.Input
+                                <Input
                                     {...this.getRangeProps(true)}
                                     disabled={this.props.disabled || !!this.props.autoIncreaseWith}
                                     value={ranges[1]}
@@ -329,7 +329,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
             return (
                 <div className={'vlan-tagging form-group ' + this.props.name}>
                     <label className='vlan-tag-label'>{this.props.label}</label>
-                    <controls.Input {...this.props}
+                    <Input {...this.props}
                         onChange={this.onTaggingChange}
                         type='checkbox'
                         checked={!_.isNull(this.props.value)}
@@ -337,7 +337,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                         label={null}
                     />
                     {!_.isNull(this.props.value) &&
-                        <controls.Input {...this.props}
+                        <Input {...this.props}
                             ref={this.props.name}
                             onChange={this.onInputChange}
                             type='text'
@@ -361,14 +361,14 @@ import CSSTransitionGroup from 'react-addons-transition-group';
             return (
                 <div className='form-group cidr'>
                     <label>{i18n(networkTabNS + 'network.cidr')}</label>
-                    <controls.Input
+                    <Input
                         {...this.props}
                         type='text'
                         label={null}
                         onChange={this.onCidrChange}
                         wrapperClassName='pull-left'
                     />
-                    <controls.Input
+                    <Input
                         type='checkbox'
                         checked={this.props.network.get('meta').notation == 'cidr'}
                         label={i18n(networkTabNS + 'network.use_whole_cidr')}
@@ -460,7 +460,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                             var inputError = (this.props.error || {})[index];
                             return (
                                 <div className='range-row clearfix' key={attributeName + index}>
-                                    <controls.Input
+                                    <Input
                                         type='text'
                                         disabled={this.props.disabled}
                                         name={attributeName}
@@ -485,39 +485,39 @@ import CSSTransitionGroup from 'react-addons-transition-group';
         mixins: [
             NetworkInputsMixin,
             NetworkModelManipulationMixin,
-            componentMixins.backboneMixin('cluster', 'change:status'),
-            componentMixins.backboneMixin('nodeNetworkGroups', 'change update'),
-            componentMixins.backboneMixin({
+            backboneMixin('cluster', 'change:status'),
+            backboneMixin('nodeNetworkGroups', 'change update'),
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('networkConfiguration').get('networking_parameters');
                 },
                 renderOn: 'change'
             }),
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('networkConfiguration').get('networks');
                 },
                 renderOn: 'change reset update'
             }),
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change:status'
             }),
-            componentMixins.dispatcherMixin('hideNetworkVerificationResult', function() {
+            dispatcherMixin('hideNetworkVerificationResult', function() {
                 this.setState({hideVerificationResult: true});
             }),
-            componentMixins.dispatcherMixin('networkConfigurationUpdated', function() {
+            dispatcherMixin('networkConfigurationUpdated', function() {
                 this.setState({hideVerificationResult: false});
             }),
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('settings');
                 },
                 renderOn: 'change invalid'
             }),
-            componentMixins.unsavedChangesMixin
+            unsavedChangesMixin
         ],
         statics: {
             fetchData(options) {
@@ -799,7 +799,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
         },
         removeNodeNetworkGroup() {
             var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
-            dialogs.RemoveNodeNetworkGroupDialog
+            RemoveNodeNetworkGroupDialog
                 .show({
                     showUnsavedChangesWarning: this.hasChanges()
                 })
@@ -825,7 +825,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                 });
                 return;
             }
-            dialogs.CreateNodeNetworkGroupDialog
+            CreateNodeNetworkGroupDialog
                 .show({
                     clusterId: this.props.cluster.id,
                     nodeNetworkGroups: this.nodeNetworkGroups
@@ -921,7 +921,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                     </div>
                     {isNovaEnvironment &&
                         <div className='col-xs-12 forms-box nova-managers'>
-                            <controls.RadioGroup
+                            <RadioGroup
                                 key='net_provider'
                                 name='net_provider'
                                 values={managers}
@@ -1146,7 +1146,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
 
     var NodeNetworkGroupTitle = React.createClass({
         mixins: [
-            componentMixins.renamingMixin('node-group-title-input')
+            renamingMixin('node-group-title-input')
         ],
         onNodeNetworkGroupNameKeyDown(e) {
             this.setState({nodeNetworkGroupNameChangingError: null});
@@ -1200,7 +1200,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
             return (
                 <div className={utils.classNames(classes)} key={currentNodeNetworkGroup.id}>
                     {this.state.isRenaming ?
-                        <controls.Input
+                        <Input
                             type='text'
                             ref='node-group-title-input'
                             name='new-name'
@@ -1271,7 +1271,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                         verificationError={_.contains(this.props.verificationErrorField, 'ip_ranges')}
                     />
                     {meta.use_gateway &&
-                        <controls.Input
+                        <Input
                             {...gatewayProps}
                             type='text'
                             disabled={gatewayProps.disabled || meta.notation == 'cidr'}
@@ -1313,7 +1313,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                     {this.renderInput('fixed_networks_cidr')}
                     {(manager == 'VlanManager') ?
                         <div>
-                            <controls.Input
+                            <Input
                                 {...this.composeProps('fixed_network_size', false, true)}
                                 type='select'
                                 children={_.map(fixedNetworkSizeValues, (value) => {
@@ -1599,7 +1599,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                     }
                     {(task && !!task.get('result').length) &&
                         <div className='verification-result-table col-xs-12'>
-                            <controls.Table
+                            <Table
                                 tableClassName='table table-condensed enable-selection'
                                 noStripes
                                 head={_.map(['node_name', 'node_mac_address', 'node_interface', 'expected_vlan'],

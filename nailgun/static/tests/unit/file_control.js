@@ -13,11 +13,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-import controls from 'views/controls';
+import {Input} from 'views/controls';
+
     var input;
     suite('File Control', () => {
         setup(() => {
-            input = new controls.Input({
+            input = new Input({
                 type: 'file',
                 name: 'some_file',
                 label: 'Please select some file',

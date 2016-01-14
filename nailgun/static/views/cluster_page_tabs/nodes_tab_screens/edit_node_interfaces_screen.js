@@ -21,19 +21,19 @@ import i18n from 'i18n';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
-import controls from 'views/controls';
-import ComponentMixins from 'component_mixins';
 import OffloadingModes from 'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control';
+import {Input} from 'views/controls';
+import {backboneMixin, unsavedChangesMixin} from 'component_mixins';
 import {DragSource, DropTarget} from 'react-dnd';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.';
 
     var EditNodeInterfacesScreen = React.createClass({
         mixins: [
-            ComponentMixins.backboneMixin('interfaces', 'change reset update'),
-            ComponentMixins.backboneMixin('cluster'),
-            ComponentMixins.backboneMixin('nodes', 'change reset update'),
-            ComponentMixins.unsavedChangesMixin
+            backboneMixin('interfaces', 'change reset update'),
+            backboneMixin('cluster'),
+            backboneMixin('nodes', 'change reset update'),
+            unsavedChangesMixin
         ],
         statics: {
             fetchData(options) {
@@ -530,8 +530,8 @@ import {DragSource, DropTarget} from 'react-dnd';
             }
         },
         mixins: [
-            ComponentMixins.backboneMixin('interface'),
-            ComponentMixins.backboneMixin({
+            backboneMixin('interface'),
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.interface.get('assigned_networks');
                 }
@@ -661,7 +661,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                                     'no-checkbox': !bondingPossible
                                 })}>
                                     {bondingPossible ?
-                                        <controls.Input
+                                        <Input
                                             type='checkbox'
                                             label={ifc.get('name')}
                                             onChange={this.bondingChanged}
@@ -671,7 +671,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                                         : ifc.get('name')
                                     }
                                 </div>
-                                <controls.Input
+                                <Input
                                     type='select'
                                     disabled={!bondingPossible}
                                     onChange={this.bondingModeChanged}
@@ -681,7 +681,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                                     wrapperClassName='pull-right'
                                 />
                                 {this.isHashPolicyNeeded() &&
-                                    <controls.Input
+                                    <Input
                                         type='select'
                                         value={bondProperties.xmit_hash_policy}
                                         disabled={!bondingPossible}
@@ -692,7 +692,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                                     />
                                 }
                                 {this.isLacpRateAvailable() &&
-                                    <controls.Input
+                                    <Input
                                         type='select'
                                         value={bondProperties.lacp_rate}
                                         disabled={!bondingPossible}
@@ -709,7 +709,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                             <div className='col-xs-3'>
                                 <div className='ifc-checkbox pull-left'>
                                     {!ifc.isBond() && bondingPossible ?
-                                        <controls.Input
+                                        <Input
                                             type='checkbox'
                                             onChange={this.bondingChanged}
                                             checked={ifc.get('checked')}
@@ -773,7 +773,7 @@ import {DragSource, DropTarget} from 'react-dnd';
 
                         {interfaceProperties &&
                             <div className='ifc-properties clearfix forms-box'>
-                                <controls.Input
+                                <Input
                                     type='text'
                                     label={i18n(ns + 'mtu')}
                                     value={interfaceProperties.mtu || ''}

@@ -19,26 +19,26 @@ import i18n from 'i18n';
 import React from 'react';
 import utils from 'utils';
 import models from 'models';
-import componentMixins from 'component_mixins';
+import {backboneMixin, unsavedChangesMixin} from 'component_mixins';
 import SettingSection from 'views/cluster_page_tabs/setting_section';
 import CSSTransitionGroup from 'react-addons-transition-group';
 
     var SettingsTab = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('cluster', 'change:status'),
-            componentMixins.backboneMixin({
+            backboneMixin('cluster', 'change:status'),
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('settings');
                 },
                 renderOn: 'change invalid'
             }),
-            componentMixins.backboneMixin({modelOrCollection(props) {
+            backboneMixin({modelOrCollection(props) {
                 return props.cluster.get('tasks');
             }}),
-            componentMixins.backboneMixin({modelOrCollection(props) {
+            backboneMixin({modelOrCollection(props) {
                 return props.cluster.task({group: 'deployment', active: true});
             }}),
-            componentMixins.unsavedChangesMixin
+            unsavedChangesMixin
         ],
         statics: {
             fetchData(options) {

@@ -26,11 +26,9 @@ import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import utils from 'utils';
-import componentMixins from 'component_mixins';
+import {outerClickMixin} from 'component_mixins';
 
-    var controls = {};
-
-    controls.Input = React.createClass({
+    export var Input = React.createClass({
         propTypes: {
             type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
             name: React.PropTypes.node,
@@ -150,7 +148,7 @@ import componentMixins from 'component_mixins';
                             <input
                                 className='form-control file-name'
                                 type='text'
-                                placeholder={i18n('controls.file.placeholder')}
+                                placeholder={i18n('file.placeholder')}
                                 value={this.state.fileName && '[' + utils.showSize(this.state.content.length) + '] ' + this.state.fileName}
                                 onClick={this.pickFile}
                                 disabled={this.props.disabled}
@@ -178,9 +176,9 @@ import componentMixins from 'component_mixins';
                     {children}
                     {this.props.label}
                     {this.props.tooltipText &&
-                        <controls.Tooltip text={this.props.tooltipText} placement={this.props.tooltipPlacement}>
+                        <Tooltip text={this.props.tooltipText} placement={this.props.tooltipPlacement}>
                             <i className={utils.classNames('glyphicon tooltip-icon', this.props.tooltipIcon)} />
-                        </controls.Tooltip>
+                        </Tooltip>
                     }
                 </label>
             );
@@ -215,7 +213,7 @@ import componentMixins from 'component_mixins';
         }
     });
 
-    controls.RadioGroup = React.createClass({
+    export var RadioGroup = React.createClass({
         propTypes: {
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
@@ -229,14 +227,14 @@ import componentMixins from 'component_mixins';
                         <h4>
                             {this.props.label}
                             {this.props.tooltipText &&
-                                <controls.Tooltip text={this.props.tooltipText} placement='right'>
+                                <Tooltip text={this.props.tooltipText} placement='right'>
                                     <i className='glyphicon glyphicon-warning-sign tooltip-icon' />
-                                </controls.Tooltip>
+                                </Tooltip>
                             }
                         </h4>
                     }
                     {_.map(this.props.values, function(value) {
-                        return <controls.Input
+                        return <Input
                             {...this.props}
                             {...value}
                             type='radio'
@@ -249,7 +247,7 @@ import componentMixins from 'component_mixins';
         }
     });
 
-    controls.ProgressBar = React.createClass({
+    export var ProgressBar = React.createClass({
         propTypes: {
             wrapperClassName: React.PropTypes.node,
             progress: React.PropTypes.number
@@ -280,7 +278,7 @@ import componentMixins from 'component_mixins';
         }
     });
 
-    controls.Table = React.createClass({
+    export var Table = React.createClass({
         propTypes: {
             tableClassName: React.PropTypes.node,
             head: React.PropTypes.array,
@@ -314,8 +312,8 @@ import componentMixins from 'component_mixins';
         }
     });
 
-    controls.Popover = React.createClass({
-        mixins: [componentMixins.outerClickMixin],
+    export var Popover = React.createClass({
+        mixins: [outerClickMixin],
         propTypes: {
             className: React.PropTypes.node,
             placement: React.PropTypes.node
@@ -336,7 +334,7 @@ import componentMixins from 'component_mixins';
         }
     });
 
-    controls.Tooltip = React.createClass({
+    export var Tooltip = React.createClass({
         propTypes: {
             container: React.PropTypes.node,
             placement: React.PropTypes.node,
@@ -384,5 +382,3 @@ import componentMixins from 'component_mixins';
             );
         }
     });
-
-    export default controls;

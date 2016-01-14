@@ -16,11 +16,11 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
-import controls from 'views/controls';
-import componentMixins from 'component_mixins';
+import {Table} from 'views/controls';
+import {backboneMixin} from 'component_mixins';
 
     var ReleasesPage = React.createClass({
-        mixins: [componentMixins.backboneMixin('releases')],
+        mixins: [backboneMixin('releases')],
         getDefaultProps() {
             return {columns: ['name', 'version', 'state']};
         },
@@ -50,7 +50,7 @@ import componentMixins from 'component_mixins';
                     <div className='content-box'>
                         <div className='row'>
                             <div className='col-xs-12 content-elements'>
-                                <controls.Table
+                                <Table
                                     head={_.map(this.props.columns, (column) => {
                                         return ({label: i18n('release_page.' + column), className: column});
                                     })}

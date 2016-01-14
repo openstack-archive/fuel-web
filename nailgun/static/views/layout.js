@@ -21,21 +21,19 @@ import Backbone from 'backbone';
 import React from 'react';
 import utils from 'utils';
 import models from 'models';
-import componentMixins from 'component_mixins';
-import controls from 'views/controls';
-import dialogs from 'views/dialogs';
+import {backboneMixin, pollingMixin, dispatcherMixin} from 'component_mixins';
+import {Popover} from 'views/controls';
+import {ChangePasswordDialog, ShowNodeInfoDialog} from 'views/dialogs';
 
-    var components = {};
-
-    components.Navbar = React.createClass({
+    export var Navbar = React.createClass({
         mixins: [
-            componentMixins.dispatcherMixin('updateNodeStats', 'updateNodeStats'),
-            componentMixins.dispatcherMixin('updateNotifications', 'updateNotifications'),
-            componentMixins.backboneMixin('user'),
-            componentMixins.backboneMixin('version'),
-            componentMixins.backboneMixin('statistics'),
-            componentMixins.backboneMixin('notifications', 'update change:status'),
-            componentMixins.pollingMixin(20)
+            dispatcherMixin('updateNodeStats', 'updateNodeStats'),
+            dispatcherMixin('updateNotifications', 'updateNotifications'),
+            backboneMixin('user'),
+            backboneMixin('version'),
+            backboneMixin('statistics'),
+            backboneMixin('notifications', 'update change:status'),
+            pollingMixin(20)
         ],
         togglePopover(popoverName) {
             return _.memoize((visible) => {
@@ -205,7 +203,7 @@ import dialogs from 'views/dialogs';
         render() {
             var currentLocale = i18n.getCurrentLocale();
             return (
-                <controls.Popover {...this.props} className='language-popover'>
+                <Popover {...this.props} className='language-popover'>
                     <ul className='nav nav-pills nav-stacked'>
                         {_.map(i18n.getAvailableLocales(), function(locale) {
                             return (
@@ -217,16 +215,16 @@ import dialogs from 'views/dialogs';
                             );
                         }, this)}
                     </ul>
-                </controls.Popover>
+                </Popover>
             );
         }
     });
 
     var StatisticsPopover = React.createClass({
-        mixins: [componentMixins.backboneMixin('statistics')],
+        mixins: [backboneMixin('statistics')],
         render() {
             return (
-                <controls.Popover {...this.props} className='statistics-popover'>
+                <Popover {...this.props} className='statistics-popover'>
                     <div className='list-group'>
                         <li className='list-group-item'>
                             <span className='badge'>{this.props.statistics.get('unallocated')}</span>
@@ -239,16 +237,16 @@ import dialogs from 'views/dialogs';
                             </a>
                         </li>
                     </div>
-                </controls.Popover>
+                </Popover>
             );
         }
     });
 
     var UserPopover = React.createClass({
-        mixins: [componentMixins.backboneMixin('user')],
+        mixins: [backboneMixin('user')],
         showChangePasswordDialog() {
             this.props.toggle(false);
-            dialogs.ChangePasswordDialog.show();
+            ChangePasswordDialog.show();
         },
         logout() {
             this.props.toggle(false);
@@ -256,7 +254,7 @@ import dialogs from 'views/dialogs';
         },
         render() {
             return (
-                <controls.Popover {...this.props} className='user-popover'>
+                <Popover {...this.props} className='user-popover'>
                     <div className='username'>{i18n('common.username')}:</div>
                     <h3 className='name'>{this.props.user.get('username')}</h3>
                     <div className='clearfix'>
@@ -269,18 +267,18 @@ import dialogs from 'views/dialogs';
                             {i18n('common.logout')}
                         </button>
                     </div>
-                </controls.Popover>
+                </Popover>
             );
         }
     });
 
     var NotificationsPopover = React.createClass({
-        mixins: [componentMixins.backboneMixin('notifications')],
+        mixins: [backboneMixin('notifications')],
         showNodeInfo(id) {
             this.props.toggle(false);
             var node = new models.Node({id: id});
             node.fetch();
-            dialogs.ShowNodeInfoDialog.show({node: node});
+            ShowNodeInfoDialog.show({node: node});
         },
         markAsRead() {
             var notificationsToMark = new models.Notifications(this.props.notifications.where({status: 'unread'}));
@@ -330,20 +328,20 @@ import dialogs from 'views/dialogs';
             var showMore = Backbone.history.getHash() != 'notifications';
             var notifications = this.props.notifications.take(this.props.displayCount);
             return (
-                <controls.Popover {...this.props} className='notifications-popover'>
+                <Popover {...this.props} className='notifications-popover'>
                     {_.map(notifications, this.renderNotification)}
                     {showMore &&
                         <div className='show-more'>
                             <a href='#notifications'>{i18n('notifications_popover.view_all_button')}</a>
                         </div>
                     }
-                </controls.Popover>
+                </Popover>
             );
         }
     });
 
-    components.Footer = React.createClass({
-        mixins: [componentMixins.backboneMixin('version')],
+    export var Footer = React.createClass({
+        mixins: [backboneMixin('version')],
         render() {
             var version = this.props.version;
             return (
@@ -358,9 +356,9 @@ import dialogs from 'views/dialogs';
         }
     });
 
-    components.Breadcrumbs = React.createClass({
+    export var Breadcrumbs = React.createClass({
         mixins: [
-            componentMixins.dispatcherMixin('updatePageLayout', 'refresh')
+            dispatcherMixin('updatePageLayout', 'refresh')
         ],
         getInitialState() {
             return {path: this.getBreadcrumbsPath()};
@@ -394,7 +392,7 @@ import dialogs from 'views/dialogs';
         }
     });
 
-    components.DefaultPasswordWarning = React.createClass({
+    export var DefaultPasswordWarning = React.createClass({
         render() {
             return (
                 <div className='alert global-alert alert-warning'>
@@ -405,7 +403,7 @@ import dialogs from 'views/dialogs';
         }
     });
 
-    components.BootstrapError = React.createClass({
+    export var BootstrapError = React.createClass({
         render() {
             return (
                 <div className='alert global-alert alert-danger'>
@@ -414,5 +412,3 @@ import dialogs from 'views/dialogs';
             );
         }
     });
-
-    export default components;

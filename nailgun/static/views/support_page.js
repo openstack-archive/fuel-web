@@ -18,12 +18,12 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import models from 'models';
-import componentMixins from 'component_mixins';
+import {backboneMixin, pollingMixin, unsavedChangesMixin} from 'component_mixins';
 import statisticsMixin from 'views/statistics_mixin';
 
     var SupportPage = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('tasks')
+            backboneMixin('tasks')
         ],
         statics: {
             title: i18n('support_page.title'),
@@ -112,7 +112,7 @@ import statisticsMixin from 'views/statistics_mixin';
     var RegistrationInfo = React.createClass({
         mixins: [
             statisticsMixin,
-            componentMixins.backboneMixin('tracking', 'change invalid')
+            backboneMixin('tracking', 'change invalid')
         ],
         render() {
             if (this.state.isConnected)
@@ -157,8 +157,8 @@ import statisticsMixin from 'views/statistics_mixin';
     var StatisticsSettings = React.createClass({
         mixins: [
             statisticsMixin,
-            componentMixins.backboneMixin('statistics'),
-            componentMixins.unsavedChangesMixin
+            backboneMixin('statistics'),
+            unsavedChangesMixin
         ],
         hasChanges() {
             var initialData = this.props.settings.get('statistics'),
@@ -225,8 +225,8 @@ import statisticsMixin from 'views/statistics_mixin';
 
     var DiagnosticSnapshot = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('task'),
-            componentMixins.pollingMixin(2)
+            backboneMixin('task'),
+            pollingMixin(2)
         ],
         getInitialState() {
             return {generating: this.isDumpTaskActive()};

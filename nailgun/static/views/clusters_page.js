@@ -21,7 +21,7 @@ import React from 'react';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
-import componentMixins from 'component_mixins';
+import {backboneMixin, pollingMixin} from 'component_mixins';
 import CreateClusterWizard from 'views/wizard';
 
     var ClustersPage, ClusterList, Cluster;
@@ -56,7 +56,7 @@ import CreateClusterWizard from 'views/wizard';
     });
 
     ClusterList = React.createClass({
-        mixins: [componentMixins.backboneMixin('clusters')],
+        mixins: [backboneMixin('clusters')],
         createCluster() {
             CreateClusterWizard.show({clusters: this.props.clusters, modalClass: 'wizard', backdrop: 'static'});
         },
@@ -78,17 +78,17 @@ import CreateClusterWizard from 'views/wizard';
 
     Cluster = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('cluster'),
-            componentMixins.backboneMixin({modelOrCollection(props) {
+            backboneMixin('cluster'),
+            backboneMixin({modelOrCollection(props) {
                 return props.cluster.get('nodes');
             }}),
-            componentMixins.backboneMixin({modelOrCollection(props) {
+            backboneMixin({modelOrCollection(props) {
                 return props.cluster.get('tasks');
             }}),
-            componentMixins.backboneMixin({modelOrCollection(props) {
+            backboneMixin({modelOrCollection(props) {
                 return props.cluster.task({group: 'deployment', active: true});
             }}),
-            componentMixins.pollingMixin(3)
+            pollingMixin(3)
         ],
         shouldDataBeFetched() {
             return this.props.cluster.task({group: 'deployment', active: true}) ||

@@ -17,18 +17,18 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
-import utils from 'utils';
-import layoutComponents from 'views/layout';
 import dispatcher from 'dispatcher';
-import componentMixins from 'component_mixins';
+import utils from 'utils';
+import {dispatcherMixin} from 'component_mixins';
+import {Navbar, Breadcrumbs, DefaultPasswordWarning, BootstrapError, Footer} from 'views/layout';
 import {DragDropContext} from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 
     var RootComponent = React.createClass({
         mixins: [
-            componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle'),
-            componentMixins.dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning'),
-            componentMixins.dispatcherMixin('hideDefaultPasswordWarning', 'hideDefaultPasswordWarning')
+            dispatcherMixin('updatePageLayout', 'updateTitle'),
+            dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning'),
+            dispatcherMixin('hideDefaultPasswordWarning', 'hideDefaultPasswordWarning')
         ],
         showDefaultPasswordWarning() {
             this.setState({showDefaultPasswordWarning: true});
@@ -68,17 +68,17 @@ import HTML5Backend from 'react-dnd-html5-backend';
                 <div id='content-wrapper'>
                     <div className={utils.classNames(layoutClasses)}>
                         {!Page.hiddenLayout && [
-                            <layoutComponents.Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
-                            <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
-                            showDefaultPasswordWarning && <layoutComponents.DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />,
-                            fuelSettings.get('bootstrap.error.value') && <layoutComponents.BootstrapError key='bootstrap-error' text={fuelSettings.get('bootstrap.error.value')} />
+                            <Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
+                            <Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
+                            showDefaultPasswordWarning && <DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />,
+                            fuelSettings.get('bootstrap.error.value') && <BootstrapError key='bootstrap-error' text={fuelSettings.get('bootstrap.error.value')} />
                         ]}
                         <div id='content'>
                             <Page ref='page' {...this.state.pageOptions} />
                         </div>
                         {!Page.hiddenLayout && <div id='footer-spacer'></div>}
                     </div>
-                    {!Page.hiddenLayout && <layoutComponents.Footer version={version} />}
+                    {!Page.hiddenLayout && <Footer version={version} />}
                 </div>
             );
         }

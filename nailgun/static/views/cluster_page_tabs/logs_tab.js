@@ -19,14 +19,14 @@ import i18n from 'i18n';
 import React from 'react';
 import utils from 'utils';
 import models from 'models';
-import controls from 'views/controls';
-import componentMixins from 'component_mixins';
+import {Input, ProgressBar} from 'views/controls';
+import {pollingMixin} from 'component_mixins';
 import PureRenderMixin from 'react-addons-pure-render-mixin';
 import ReactFragment from 'react-addons-create-fragment';
 
     var LogsTab = React.createClass({
         mixins: [
-            componentMixins.pollingMixin(5)
+            pollingMixin(5)
         ],
         shouldDataBeFetched() {
             return this.state.to && this.state.logsEntries;
@@ -116,7 +116,7 @@ import ReactFragment from 'react-addons-create-fragment';
                                 {this.state.loadingError}
                             </div>
                         }
-                        {this.state.loading == 'loading' && <controls.ProgressBar />}
+                        {this.state.loading == 'loading' && <ProgressBar />}
                         {this.state.logsEntries &&
                             <LogsTable
                                 logsEntries={this.state.logsEntries}
@@ -280,7 +280,7 @@ import ReactFragment from 'react-addons-create-fragment';
                 return <option value={type[0]} key={type[0]}>{type[1]}</option>;
             });
             return <div className='col-md-2 col-sm-3'>
-                <controls.Input
+                <Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.logs')}
                     value={this.state.type}
@@ -298,7 +298,7 @@ import ReactFragment from 'react-addons-create-fragment';
                 });
 
             return <div className='col-md-2 col-sm-3'>
-                <controls.Input
+                <Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.node')}
                     value={this.state.node}
@@ -312,7 +312,7 @@ import ReactFragment from 'react-addons-create-fragment';
         renderSourceSelect() {
             var sourceOptions = this.state.type == 'local' ? this.getLocalSources() : this.getRemoteSources();
             return <div className='col-md-2 col-sm-3'>
-                <controls.Input
+                <Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.source')}
                     value={this.state.source}
@@ -332,7 +332,7 @@ import ReactFragment from 'react-addons-create-fragment';
                 });
             }
             return <div className='col-md-2 col-sm-3'>
-                <controls.Input
+                <Input
                     type='select'
                     label={i18n('cluster_page.logs_tab.min_level')}
                     value={this.state.level}

@@ -17,7 +17,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import utils from 'utils';
-import controls from 'views/controls';
+import {Input} from 'views/controls';
 
     var customControls = {};
 
@@ -141,7 +141,7 @@ import controls from 'views/controls';
                             };
                         return (
                             <div className='form-inline' key={'repo-' + index}>
-                                <controls.Input
+                                <Input
                                     {...props}
                                     defaultValue={repo.name}
                                     error={error && error.name}
@@ -150,7 +150,7 @@ import controls from 'views/controls';
                                     label={index == 0 && i18n(ns + 'labels.name')}
                                     debounce
                                 />
-                                <controls.Input
+                                <Input
                                     {...props}
                                     defaultValue={this.constructor.repoToString(repo, os)}
                                     error={error && (error.uri ? error.name ? '' : error.uri : null)}
@@ -159,7 +159,7 @@ import controls from 'views/controls';
                                     wrapperClassName='repo-uri'
                                     debounce
                                 />
-                                <controls.Input
+                                <Input
                                     {...props}
                                     defaultValue={repo.priority}
                                     error={error && (error.priority ? (error.name || error.uri) ? '' : error.priority : null)}

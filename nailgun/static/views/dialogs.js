@@ -23,11 +23,9 @@ import Backbone from 'backbone';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
-import controls from 'views/controls';
-import componentMixins from 'component_mixins';
+import {Input, ProgressBar} from 'views/controls';
+import {backboneMixin, renamingMixin} from 'component_mixins';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
-
-    var dialogs = {};
 
     function getActiveDialog() {
         return app.dialog;
@@ -41,7 +39,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     }
 
-    var dialogMixin = dialogs.dialogMixin = {
+    export var dialogMixin = {
         propTypes: {
             title: React.PropTypes.node,
             message: React.PropTypes.node,
@@ -191,14 +189,14 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     };
 
-    dialogs.ErrorDialog = React.createClass({
+    export var ErrorDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {
             return {error: true};
         }
     });
 
-    dialogs.NailgunUnavailabilityDialog = React.createClass({
+    export var NailgunUnavailabilityDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {
             return {
@@ -293,7 +291,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.DiscardNodeChangesDialog = React.createClass({
+    export var DiscardNodeChangesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {
             return {
@@ -341,11 +339,11 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.DeployChangesDialog = React.createClass({
+    export var DeployChangesDialog = React.createClass({
         mixins: [
             dialogMixin,
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('tasks');
                 },
@@ -410,7 +408,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.ProvisionVMsDialog = React.createClass({
+    export var ProvisionVMsDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {return {title: i18n('dialog.provision_vms.title')};},
         startProvisioning() {
@@ -439,7 +437,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.StopDeploymentDialog = React.createClass({
+    export var StopDeploymentDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {return {title: i18n('dialog.stop_deployment.title')};},
         stopDeployment() {
@@ -470,7 +468,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.RemoveClusterDialog = React.createClass({
+    export var RemoveClusterDialog = React.createClass({
         mixins: [dialogMixin],
         getInitialState() {
             return {confirmation: false};
@@ -519,7 +517,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                     {this.state.confirmation &&
                         <div className='confirm-deletion-form'>
                             {i18n('dialog.remove_cluster.enter_environment_name', {name: clusterName})}
-                            <controls.Input
+                            <Input
                                 type='text'
                                 disabled={this.state.actionInProgress}
                                 onChange={(name, value) => this.setState({confirmationError: value != clusterName})}
@@ -548,7 +546,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
 
     // FIXME: the code below neeeds deduplication
     // extra confirmation logic should be moved out to dialog mixin
-    dialogs.ResetEnvironmentDialog = React.createClass({
+    export var ResetEnvironmentDialog = React.createClass({
         mixins: [dialogMixin],
         getInitialState() {
             return {confirmation: false};
@@ -578,7 +576,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                     {this.state.confirmation &&
                         <div className='confirm-reset-form'>
                             {i18n('dialog.reset_environment.enter_environment_name', {name: clusterName})}
-                            <controls.Input
+                            <Input
                                 type='text'
                                 name='name'
                                 disabled={this.state.actionInProgress}
@@ -611,11 +609,11 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.ShowNodeInfoDialog = React.createClass({
+    export var ShowNodeInfoDialog = React.createClass({
         mixins: [
             dialogMixin,
-            componentMixins.backboneMixin('node'),
-            componentMixins.renamingMixin('hostname')
+            backboneMixin('node'),
+            renamingMixin('hostname')
         ],
         getDefaultProps() {
             return {modalClass: 'always-show-scrollbar'};
@@ -768,7 +766,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         renderBody() {
             var node = this.props.node,
                 meta = node.get('meta');
-            if (!meta) return <controls.ProgressBar />;
+            if (!meta) return <ProgressBar />;
             var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
                 groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group)),
                 sortOrder = {
@@ -797,7 +795,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                             <div className='change-hostname'>
                                 <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
                                 {this.state.isRenaming ?
-                                    <controls.Input
+                                    <Input
                                         ref='hostname'
                                         type='text'
                                         defaultValue={node.get('hostname')}
@@ -880,7 +878,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                                             }
                                             {group == 'config' &&
                                                 <div className='vms-config'>
-                                                    <controls.Input
+                                                    <Input
                                                         ref='vms-config'
                                                         type='textarea'
                                                         label={i18n('node_details.vms_config_msg')}
@@ -935,7 +933,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.DiscardSettingsChangesDialog = React.createClass({
+    export var DiscardSettingsChangesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {return {title: i18n('dialog.dismiss_settings.title')};},
         proceedWith(method) {
@@ -994,7 +992,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.RemoveOfflineNodeDialog = React.createClass({
+    export var RemoveOfflineNodeDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {
             return {
@@ -1022,7 +1020,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.DeleteNodesDialog = React.createClass({
+    export var DeleteNodesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {return {title: i18n('dialog.delete_nodes.title')};},
         renderBody() {
@@ -1077,7 +1075,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.ChangePasswordDialog = React.createClass({
+    export var ChangePasswordDialog = React.createClass({
         mixins: [
             dialogMixin,
             LinkedStateMixin
@@ -1112,7 +1110,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
             return (
                 <div className='forms-box'>
                     {_.map(fields, function(name, index) {
-                        return <controls.Input
+                        return <Input
                             key={name}
                             name={name}
                             ref={name}
@@ -1181,11 +1179,11 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.RegistrationDialog = React.createClass({
+    export var RegistrationDialog = React.createClass({
         mixins: [
             dialogMixin,
             registrationResponseErrorMixin,
-            componentMixins.backboneMixin('registrationForm', 'change invalid')
+            backboneMixin('registrationForm', 'change invalid')
         ],
         getInitialState() {
             return {
@@ -1277,7 +1275,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         },
         renderBody() {
             var registrationForm = this.props.registrationForm;
-            if (this.state.loading) return <controls.ProgressBar />;
+            if (this.state.loading) return <ProgressBar />;
             var fieldsList = registrationForm.attributes.credentials,
                 actionInProgress = this.state.actionInProgress,
                 error = this.state.error,
@@ -1288,7 +1286,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                 halfWidthField = ['first_name', 'last_name', 'company', 'phone', 'country', 'region'];
             return (
                 <div className='registration-form tracking'>
-                    {actionInProgress && <controls.ProgressBar />}
+                    {actionInProgress && <ProgressBar />}
                     {error &&
                         <div className='text-danger'>
                             <i className='glyphicon glyphicon-danger-sign' />
@@ -1310,7 +1308,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                                     'col-md-6': _.contains(halfWidthField, inputName),
                                     'text-center': inputName == 'agree'
                                 };
-                            return <controls.Input
+                            return <Input
                                 ref={inputName}
                                 key={inputName}
                                 name={inputName}
@@ -1344,11 +1342,11 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.RetrievePasswordDialog = React.createClass({
+    export var RetrievePasswordDialog = React.createClass({
         mixins: [
             dialogMixin,
             registrationResponseErrorMixin,
-            componentMixins.backboneMixin('remoteRetrievePasswordForm', 'change invalid')
+            backboneMixin('remoteRetrievePasswordForm', 'change invalid')
         ],
         getInitialState() {
             return {loading: true};
@@ -1395,7 +1393,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         renderBody() {
             var ns = 'dialog.retrieve_password.',
                 remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
-            if (this.state.loading) return <controls.ProgressBar />;
+            if (this.state.loading) return <ProgressBar />;
             var error = this.state.error,
                 actionInProgress = this.state.actionInProgress,
                 input = (remoteRetrievePasswordForm.get('credentials') || {}).email,
@@ -1404,7 +1402,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                 <div className='retrieve-password-content'>
                     {!this.state.passwordSent ?
                         <div>
-                            {actionInProgress && <controls.ProgressBar />}
+                            {actionInProgress && <ProgressBar />}
                             {error &&
                                 <div className='text-danger'>
                                     <i className='glyphicon glyphicon-danger-sign' />
@@ -1414,7 +1412,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                             {input &&
                                 <div>
                                     <p>{i18n(ns + 'submit_email')}</p>
-                                    <controls.Input
+                                    <Input
                                         {... _.pick(input, 'type', 'value', 'description')}
                                         onChange={this.onChange}
                                         error={inputError}
@@ -1453,7 +1451,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.CreateNodeNetworkGroupDialog = React.createClass({
+    export var CreateNodeNetworkGroupDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {
             return {
@@ -1469,7 +1467,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         renderBody() {
             return (
                 <div className='node-network-group-creation'>
-                    <controls.Input
+                    <Input
                         name='node-network-group-name'
                         type='text'
                         label={i18n(this.props.ns + 'node_network_group_name')}
@@ -1534,7 +1532,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         }
     });
 
-    dialogs.RemoveNodeNetworkGroupDialog = React.createClass({
+    export var RemoveNodeNetworkGroupDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps() {
             return {title: i18n('dialog.remove_node_network_group.title')};
@@ -1565,5 +1563,3 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
             ]);
         }
     });
-
-    export default dialogs;

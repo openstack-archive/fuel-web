@@ -20,31 +20,31 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import utils from 'utils';
 import dispatcher from 'dispatcher';
-import controls from 'views/controls';
-import dialogs from 'views/dialogs';
-import componentMixins from 'component_mixins';
+import {Input, ProgressBar, Tooltip} from 'views/controls';
+import {DiscardNodeChangesDialog, DeployChangesDialog, ProvisionVMsDialog, RemoveClusterDialog, ResetEnvironmentDialog, StopDeploymentDialog} from 'views/dialogs';
+import {backboneMixin, pollingMixin, renamingMixin} from 'component_mixins';
 
     var namespace = 'cluster_page.dashboard_tab.';
 
     var DashboardTab = React.createClass({
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change'
             }),
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {return props.cluster.get('nodes');},
                 renderOn: 'update change'
             }),
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {return props.cluster.get('pluginLinks');},
                 renderOn: 'update change'
             }),
-            componentMixins.backboneMixin('cluster', 'change'),
-            componentMixins.pollingMixin(20, true)
+            backboneMixin('cluster', 'change'),
+            pollingMixin(20, true)
         ],
         fetchData() {
             return this.props.cluster.get('nodes').fetch();
@@ -202,17 +202,17 @@ import componentMixins from 'component_mixins';
                                     </strong>
                                     {i18n('cluster_page.' + taskName) + '...'}
                                 </h4>
-                                <controls.ProgressBar progress={!isInfiniteTask && taskProgress} />
+                                <ProgressBar progress={!isInfiniteTask && taskProgress} />
                                 {showStopButton &&
-                                    <controls.Tooltip text={i18n('cluster_page.stop_deployment_button')}>
+                                    <Tooltip text={i18n('cluster_page.stop_deployment_button')}>
                                         <button
                                             className='btn btn-danger btn-xs pull-right stop-deployment-btn'
-                                            onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                            onClick={_.partial(this.showDialog, StopDeploymentDialog)}
                                             disabled={!task.isStoppable()}
                                         >
                                             {i18n(namespace + 'stop')}
                                         </button>
-                                    </controls.Tooltip>
+                                    </Tooltip>
                                 }
                             </div>
                         </div>
@@ -311,13 +311,13 @@ import componentMixins from 'component_mixins';
     var DeployReadinessBlock = React.createClass({
         mixins: [
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
-            componentMixins.backboneMixin({
+            backboneMixin({
                 modelOrCollection(props) {
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'update change'
             }),
-            componentMixins.backboneMixin('cluster', 'change')
+            backboneMixin('cluster', 'change')
         ],
         ns: 'dialog.display_changes.',
         getConfigModels() {
@@ -454,7 +454,7 @@ import componentMixins from 'component_mixins';
                     {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
                     <button
                         className='btn btn-link btn-discard-changes'
-                        onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog, {nodes: nodes})}
+                        onClick={_.partial(this.showDialog, DiscardNodeChangesDialog, {nodes: nodes})}
                     >
                         <i className='discard-changes-icon' />
                     </button>
@@ -485,7 +485,7 @@ import componentMixins from 'component_mixins';
                             {isVMsProvisioningAvailable ?
                                 <button
                                     className='btn btn-primary deploy-btn'
-                                    onClick={_.partial(this.showDialog, dialogs.ProvisionVMsDialog)}
+                                    onClick={_.partial(this.showDialog, ProvisionVMsDialog)}
                                 >
                                     <div className='deploy-icon' />
                                     {i18n('cluster_page.provision_vms')}
@@ -496,7 +496,7 @@ import componentMixins from 'component_mixins';
                                         'btn btn-primary deploy-btn': true,
                                         'btn-warning': _.isEmpty(alerts.blocker) && (!_.isEmpty(alerts.error) || !_.isEmpty(alerts.warning))
                                     })}
-                                    onClick={_.partial(this.showDialog, dialogs.DeployChangesDialog)}
+                                    onClick={_.partial(this.showDialog, DeployChangesDialog)}
                                     disabled={!isDeploymentPossible}
                                 >
                                     <div className='deploy-icon' />
@@ -546,7 +546,7 @@ import componentMixins from 'component_mixins';
     });
 
     var ClusterInfo = React.createClass({
-        mixins: [componentMixins.renamingMixin('clustername')],
+        mixins: [renamingMixin('clustername')],
         getClusterValue(fieldName) {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings');
@@ -858,7 +858,7 @@ import componentMixins from 'component_mixins';
             return (
                 <div className={utils.classNames(classes)}>
                     <div className='action-body' onKeyDown={this.handleKeyDown}>
-                        <controls.Input
+                        <Input
                             type='text'
                             disabled={this.state.disabled}
                             className={utils.classNames({'form-control': true, error: this.state.error})}
@@ -881,8 +881,8 @@ import componentMixins from 'component_mixins';
 
     var ResetEnvironmentAction = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('cluster'),
-            componentMixins.backboneMixin('task')
+            backboneMixin('cluster'),
+            backboneMixin('task')
         ],
         getDescriptionKey() {
             if (this.props.task) {
@@ -894,7 +894,7 @@ import componentMixins from 'component_mixins';
         },
         applyAction(e) {
             e.preventDefault();
-            dialogs.ResetEnvironmentDialog.show({cluster: this.props.cluster});
+            ResetEnvironmentDialog.show({cluster: this.props.cluster});
         },
         render() {
             var isLocked = this.props.cluster.get('status') == 'new' || !!this.props.task;
@@ -907,13 +907,13 @@ import componentMixins from 'component_mixins';
                     >
                         {i18n(namespace + 'reset_environment')}
                     </button>
-                    <controls.Tooltip
+                    <Tooltip
                         key='reset-tooltip'
                         placement='right'
                         text={!isLocked ? i18n(namespace + 'reset_environment_warning') : i18n(namespace + this.getDescriptionKey())}
                     >
                         <i className='glyphicon glyphicon-info-sign' />
-                    </controls.Tooltip>
+                    </Tooltip>
                 </div>
             );
         }
@@ -922,7 +922,7 @@ import componentMixins from 'component_mixins';
     var DeleteEnvironmentAction = React.createClass({
         applyAction(e) {
             e.preventDefault();
-            dialogs.RemoveClusterDialog.show({cluster: this.props.cluster});
+            RemoveClusterDialog.show({cluster: this.props.cluster});
         },
         render() {
             return (
@@ -933,13 +933,13 @@ import componentMixins from 'component_mixins';
                     >
                         {i18n(namespace + 'delete_environment')}
                     </button>
-                    <controls.Tooltip
+                    <Tooltip
                         key='delete-tooltip'
                         placement='right'
                         text={i18n(namespace + 'alert_delete')}
                     >
                         <i className='glyphicon glyphicon-info-sign' />
-                    </controls.Tooltip>
+                    </Tooltip>
                 </div>
             );
         }

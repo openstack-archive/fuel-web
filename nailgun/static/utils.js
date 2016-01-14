@@ -22,7 +22,7 @@ import naturalSort from 'javascript-natural-sort';
 import Expression from 'expression';
 import ModelPath from 'expression/objects';
 import IP from 'ip';
-import dialogs from 'views/dialogs';
+import {ErrorDialog} from 'views/dialogs';
 import models from 'models';
 
     var utils = {
@@ -100,7 +100,7 @@ import models from 'models';
         showErrorDialog(options) {
             options.message = options.response ? utils.getResponseText(options.response) :
                 options.message || i18n('dialog.error_dialog.server_error');
-            dialogs.ErrorDialog.show(options);
+            ErrorDialog.show(options);
         },
         showBandwidth(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);

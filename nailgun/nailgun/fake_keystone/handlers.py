@@ -103,3 +103,55 @@ class VersionHandler(BaseHandler):
                 ],
             },
         }
+
+
+class ServicesHandler(BaseHandler):
+
+    @content
+    def GET(self):
+        return {
+            'OS-KSADM:services': [{'type': 'ostf', 'enabled': True,
+                                   'id': '8022ba1deb954c358168a84334bd69c3',
+                                   'name': 'ostf', 'description': 'OSTF'},
+                                  {'type': 'identity', 'enabled': True,
+                                   'id': '832897e705d74c289d9b2250b8013740',
+                                   'name': 'keystone',
+                                   'description': 'OpenStack Identity Service'},
+                                  {'type': 'fuel', 'enabled': True,
+                                   'id': 'b192638664804529b455cf2a1aacf661',
+                                   'name': 'nailgun',
+                                   'description': 'Nailgun API'}],
+        }
+
+
+class EndpointsHandler(BaseHandler):
+
+    @content
+    def GET(self):
+        keystone_href = 'http://{ip_addr}:{port}/keystone/v2.0'.format(
+            ip_addr=settings.AUTH['auth_host'], port=settings.LISTEN_PORT)
+        nailgun_href = 'http://{ip_addr}:{port}/api'.format(
+            ip_addr=settings.AUTH['auth_host'], port=settings.LISTEN_PORT)
+        ostf_href = 'http://{ip_addr}:{port}/ostf'.format(
+            ip_addr=settings.AUTH['auth_host'], port=settings.LISTEN_PORT)
+        return {
+            'endpoints': [{'adminurl': keystone_href,
+                           'region': 'RegionOne',
+                           'enabled': True,
+                           'internalurl': keystone_href,
+                           'service_id': '832897e705d74c289d9b2250b8013740',
+                           'id': 'bc231214ba63458e927f9163e9bd291e',
+                           'publicurl': keystone_href},
+                          {'adminurl': nailgun_href,
+                           'region': 'RegionOne', 'enabled': True,
+                           'internalurl': nailgun_href,
+                           'service_id': 'b192638664804529b455cf2a1aacf661',
+                           'id': 'e6c36dd455274e4092c6f959795a9cd0',
+                           'publicurl': nailgun_href},
+                          {'adminurl': ostf_href,
+                           'region': 'RegionOne', 'enabled': True,
+                           'internalurl': ostf_href,
+                           'service_id': '8022ba1deb954c358168a84334bd69c3',
+                           'id': '7c0ab0939231438a83a5b930b88dc7b2',
+                           'publicurl': ostf_href}],
+        }

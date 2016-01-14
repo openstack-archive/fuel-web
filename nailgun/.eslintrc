@@ -28,15 +28,13 @@
     no-process-env: 0 # we use it in a few places and are ok with it
     no-sync: 0 # it affects our browser code with Sync in function names, like "onModelSync"
 
-    # overriden rules from openstack config
-    brace-style: [2, 1tbs, {allowSingleLine: true}] # overriden to set allowSingleLine to true
+    # overridden rules from openstack config
+    brace-style: [2, 1tbs, {allowSingleLine: true}] # overridden to set allowSingleLine to true
 
     # to be fixed and enabled
     complexity: 0
     eqeqeq: 0
     no-script-url: 0
-    radix: 0
-    no-mixed-requires: 0
     indent: [0, 2, {SwitchCase: 1}]
     one-var: [0, {uninitialized: always, initialized: never}]
     operator-linebreak: 0

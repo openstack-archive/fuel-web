@@ -18,8 +18,9 @@ define([
     'intern!object',
     'intern/chai!assert',
     'tests/functional/helpers',
-    'tests/functional/pages/common'
-], function(registerSuite, assert, helpers, Common) {
+    'tests/functional/pages/common',
+    'tests/functional/pages/modal'
+], function(registerSuite, assert, helpers, Common, ModalWindow) {
     'use strict';
 
     registerSuite(function() {
@@ -67,8 +68,7 @@ define([
                             clusterName,
                             {
                                 'Name and Release': function() {
-                                    var ModalWindow = require('tests/functional/pages/modal'),
-                                        modal = new ModalWindow(this.remote);
+                                    var modal = new ModalWindow(this.remote);
                                     return this.remote
                                         .pressKeys('\uE007')
                                         .assertElementTextEquals(

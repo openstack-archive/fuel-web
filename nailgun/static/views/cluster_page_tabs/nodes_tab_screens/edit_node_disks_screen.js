@@ -220,7 +220,7 @@ import {Input} from 'views/controls';
                 .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
         },
         updateDisk(name, value) {
-            var size = parseInt(value) || 0,
+            var size = parseInt(value, 10) || 0,
                 volumeInfo = this.props.volumesInfo[name];
             if (size > volumeInfo.max) {
                 size = volumeInfo.max;

@@ -1327,7 +1327,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                 wrapperClassName='clearfix vlan-id-range'
                                 label={i18n(parametersNS + 'fixed_vlan_range')}
                                 extendable={false}
-                                autoIncreaseWith={parseInt(networkingParameters.get('fixed_networks_amount')) || 0}
+                                autoIncreaseWith={parseInt(networkingParameters.get('fixed_networks_amount'), 10) || 0}
                                 integerValue
                                 placeholder=''
                                 mini

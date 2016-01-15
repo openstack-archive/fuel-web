@@ -16,17 +16,18 @@
 
 from nailgun.db.sqlalchemy.models import cluster_plugin_link \
     as cluster_plugin_link_db_model
-from nailgun.objects import base
+from nailgun.objects.base import NailgunCollection
+from nailgun.objects.base import NailgunObject
 from nailgun.objects.serializers import plugin_link
 
 
-class ClusterPluginLink(base.NailgunObject):
+class ClusterPluginLink(NailgunObject):
 
     model = cluster_plugin_link_db_model.ClusterPluginLink
     serializer = plugin_link.PluginLinkSerializer
 
 
-class ClusterPluginLinkCollection(base.NailgunCollection):
+class ClusterPluginLinkCollection(NailgunCollection):
 
     single = ClusterPluginLink
 

@@ -75,7 +75,7 @@ import {Input, ProgressBar} from 'views/controls';
         },
         onChange(name, value) {
             _.each(this.props.components, (component) => {
-                this.props.onChange(component.id, component.id == value);
+                this.props.onChange(component.id, component.id === value);
             });
             this.setState({value: value});
         },
@@ -93,7 +93,7 @@ import {Input, ProgressBar} from 'views/controls';
                                     label={component.get('label')}
                                     description={component.get('description')}
                                     value={component.id}
-                                    checked={this.state.value == component.id}
+                                    checked={this.state.value === component.id}
                                     disabled={component.get('disabled')}
                                     tooltipPlacement='top'
                                     tooltipIcon={icon}
@@ -126,7 +126,7 @@ import {Input, ProgressBar} from 'views/controls';
                 var peerIds = _.pluck(_.reject(components, {id: component.id}), 'id');
                 var incompatibleIds = _.pluck(_.pluck(component.get('incompatible'), 'component'), 'id');
                 // peerIds should be subset of incompatibleIds to have exclusiveness property
-                return peerIds.length == _.intersection(peerIds, incompatibleIds).length;
+                return peerIds.length === _.intersection(peerIds, incompatibleIds).length;
             });
             return allComponentsExclusive;
         },
@@ -155,8 +155,8 @@ import {Input, ProgressBar} from 'views/controls';
                 var warnings = [];
                 allComponents.each((testedComponent) => {
                     var type = testedComponent.get('type'),
-                        isInStopList = _.find(stopList, (component) => component.id == testedComponent.id);
-                    if (component.id == testedComponent.id || !_.contains(types, type) || isInStopList) {
+                        isInStopList = _.find(stopList, (component) => component.id === testedComponent.id);
+                    if (component.id === testedComponent.id || !_.contains(types, type) || isInStopList) {
                         // ignore self or forward compatibilities
                         return;
                     }
@@ -181,7 +181,7 @@ import {Input, ProgressBar} from 'views/controls';
                 var warnings = [];
                 _.each(incompatibles, (incompatible) => {
                     var type = incompatible.component.get('type'),
-                        isInStopList = _.find(stopList, (component) => component.id == incompatible.component.id);
+                        isInStopList = _.find(stopList, (component) => component.id === incompatible.component.id);
                     if (!_.contains(types, type) || isInStopList) {
                         // ignore forward incompatibilities
                         return;
@@ -204,7 +204,7 @@ import {Input, ProgressBar} from 'views/controls';
             // it is disabled until all requires are already enabled
             _.each(paneComponents, (component) => {
                 var requires = component.get('requires') || [];
-                if (requires.length == 0) {
+                if (requires.length === 0) {
                     // no requires
                     component.set({isRequired: false});
                     return;
@@ -361,7 +361,7 @@ import {Input, ProgressBar} from 'views/controls';
             hasErrors(wizard) {
                 var allComponents = wizard.get('components'),
                     components = allComponents.getComponentsByType(this.componentType, {sorted: true});
-                var ml2core = _.find(components, (component) => component.id == this.ml2CorePath);
+                var ml2core = _.find(components, (component) => component.id === this.ml2CorePath);
                 if (ml2core && ml2core.get('enabled')) {
                     var ml2 = _.filter(components, (component) => component.isML2Driver());
                     return !_.any(ml2, (ml2driver) => ml2driver.get('enabled'));
@@ -372,8 +372,8 @@ import {Input, ProgressBar} from 'views/controls';
         onChange(name, value) {
             this.props.onChange(name, value);
             // reset all ml2 drivers if ml2 core unselected
-            var component = _.find(this.components, (component) => component.id == name);
-            if (!component.isML2Driver() && component.id != this.constructor.ml2CorePath) {
+            var component = _.find(this.components, (component) => component.id === name);
+            if (!component.isML2Driver() && component.id !== this.constructor.ml2CorePath) {
                 _.each(this.components, (component) => {
                     if (component.isML2Driver()) {
                         component.set({enabled: false});
@@ -385,7 +385,7 @@ import {Input, ProgressBar} from 'views/controls';
             var monolithic = _.filter(this.components, (component) => !component.isML2Driver());
             var hasMl2 = _.any(this.components, (component) => component.isML2Driver());
             if (!hasMl2) {
-                monolithic = _.filter(monolithic, (component) => component.id != this.constructor.ml2CorePath);
+                monolithic = _.filter(monolithic, (component) => component.id !== this.constructor.ml2CorePath);
             }
             this.processRestrictions(monolithic, this.constructor.panesForRestrictions);
             this.processCompatible(this.props.allComponents, monolithic, this.constructor.panesForRestrictions, monolithic);
@@ -431,7 +431,7 @@ import {Input, ProgressBar} from 'views/controls';
             title: i18n('dialog.create_cluster_wizard.storage.title')
         },
         renderSection(components, type) {
-            var sectionComponents = _.filter(components, (component) => component.get('subtype') == type);
+            var sectionComponents = _.filter(components, (component) => component.get('subtype') === type);
             var isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
             this.processRestrictions(sectionComponents, this.constructor.panesForRestrictions, (isRadio ? sectionComponents : []));
             this.processCompatible(this.props.allComponents, sectionComponents, this.constructor.panesForRestrictions, isRadio ? sectionComponents : []);
@@ -577,7 +577,7 @@ import {Input, ProgressBar} from 'views/controls';
                 previousEnabled: nextActivePaneIndex > 0,
                 nextEnabled: !paneHasErrors,
                 nextVisible: (nextActivePaneIndex < numberOfPanes - 1),
-                createVisible: nextActivePaneIndex == numberOfPanes - 1,
+                createVisible: nextActivePaneIndex === numberOfPanes - 1,
                 paneHasErrors: paneHasErrors
             });
             this.setState(newState);
@@ -649,7 +649,7 @@ import {Input, ProgressBar} from 'views/controls';
                     .fail((response) => {
                         this.stopHandlingKeys = false;
                         this.setState({actionInProgress: false});
-                        if (response.status == 409) {
+                        if (response.status === 409) {
                             this.updateState({disabled: false, activePaneIndex: 0});
                             cluster.trigger('invalid', cluster, {name: utils.getResponseText(response)});
                         } else {
@@ -704,10 +704,10 @@ import {Input, ProgressBar} from 'views/controls';
             if (this.state.actionInProgress) {
                 return;
             }
-            if (e.key == 'Enter') {
+            if (e.key === 'Enter') {
                 e.preventDefault();
 
-                if (this.getActivePane().paneName == 'Finish') {
+                if (this.getActivePane().paneName === 'Finish') {
                     this.saveCluster();
                 } else {
                     this.nextPane();
@@ -726,8 +726,8 @@ import {Input, ProgressBar} from 'views/controls';
                                     this.state.panes.map(function(pane, index) {
                                         var classes = utils.classNames('wizard-step', {
                                             disabled: index > this.state.maxAvailablePaneIndex,
-                                            available: index <= this.state.maxAvailablePaneIndex && index != activeIndex,
-                                            active: index == activeIndex
+                                            available: index <= this.state.maxAvailablePaneIndex && index !== activeIndex,
+                                            active: index === activeIndex
                                         });
                                         return (
                                             <li key={pane.title} role='wizard-step'

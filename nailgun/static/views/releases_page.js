@@ -35,7 +35,7 @@ import {backboneMixin} from 'component_mixins';
         },
         getReleaseData(release) {
             return _.map(this.props.columns, (attr) => {
-                if (attr == 'state') {
+                if (attr === 'state') {
                     return i18n('release_page.release.' + (release.get(attr)));
                 }
                 return release.get(attr) || i18n('common.not_available');

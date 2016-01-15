@@ -42,7 +42,7 @@ import models from 'models';
             var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
                 ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
                 nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
-            if (nodes.length == ids.length) return nodes;
+            if (nodes.length === ids.length) return nodes;
         },
         renderMultilineText(text) {
             if (!text) return null;
@@ -271,15 +271,15 @@ import models from 'models';
             var properties = _.keys(entry);
             return _.sortBy(properties, (property) => {
                 var index = _.indexOf(sortOrder, property);
-                return index == -1 ? properties.length : index;
+                return index === -1 ? properties.length : index;
             });
         },
         getResponseText(response, defaultText) {
             var serverErrorMessage = defaultText || i18n('dialog.error_dialog.server_error');
             var serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
             if (response && (!response.status || response.status >= 400)) {
-                if (!response.status || response.status == 502) return serverUnavailableMessage;
-                if (response.status == 500) return serverErrorMessage;
+                if (!response.status || response.status === 502) return serverUnavailableMessage;
+                if (response.status === 500) return serverErrorMessage;
                 // parsing new backend response format in responseText
                 response = response.responseText || response;
                 try {

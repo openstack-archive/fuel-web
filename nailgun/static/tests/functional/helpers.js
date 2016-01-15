@@ -85,7 +85,7 @@ define([
                     .waitForDeletedByCssSelector(cssSelector)
                     .catch(function(error) {
                         self.parent.setFindTimeout(currentTimeout);
-                        if (error.name != 'Timeout') throw error;
+                        if (error.name !== 'Timeout') throw error;
                     })
                     .then(function() {
                         self.parent.setFindTimeout(currentTimeout);

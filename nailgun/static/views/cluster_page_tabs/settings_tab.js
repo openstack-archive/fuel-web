@@ -117,11 +117,11 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                 deferred
                     .done(() => {
                         _.each(settings.attributes, (section, sectionName) => {
-                            if ((!lockedCluster || section.metadata.always_editable) && section.metadata.group != 'network') {
+                            if ((!lockedCluster || section.metadata.always_editable) && section.metadata.group !== 'network') {
                                 _.each(section, (setting, settingName) => {
                                     // do not update hidden settings (hack for #1442143),
                                     // the same for settings with group network
-                                    if (setting.type == 'hidden' || setting.group == 'network') return;
+                                    if (setting.type === 'hidden' || setting.group === 'network') return;
                                     var path = settings.makePath(sectionName, settingName);
                                     settings.set(path, defaultSettings.get(path), {silent: true});
                                 });
@@ -173,8 +173,8 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                 // saving of changes on Settings tab
                 areSettingsValid = !_.any(_.keys(settings.validationError), (settingPath) => {
                     var settingSection = settingPath.split('.')[0];
-                    return settings.get(settingSection).metadata.group != 'network' &&
-                        settings.get(settingPath).group != 'network';
+                    return settings.get(settingSection).metadata.group !== 'network' &&
+                        settings.get(settingPath).group !== 'network';
                 });
             return !locked && this.hasChanges() && areSettingsValid;
         },
@@ -206,7 +206,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                     var group = section.metadata.group,
                         hasErrors = invalidSections[sectionName];
                     if (group) {
-                        if (group != 'network') {
+                        if (group !== 'network') {
                             groupedSettings[settings.sanitizeGroup(group)][sectionName] = {invalid: hasErrors};
                         }
                     } else {
@@ -227,9 +227,9 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                             var calculatedGroup = settings.sanitizeGroup(settingGroup),
                                 pickedSettings = _.compact(_.map(section, function(setting, settingName) {
                                     if (
-                                        settingName != 'metadata' &&
-                                        setting.type != 'hidden' &&
-                                        settings.sanitizeGroup(setting.group) == calculatedGroup &&
+                                        settingName !== 'metadata' &&
+                                        setting.type !== 'hidden' &&
+                                        settings.sanitizeGroup(setting.group) === calculatedGroup &&
                                         !this.checkRestrictions('hide', setting).result
                                     ) return settingName;
                                 }, this)),
@@ -259,7 +259,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                         checkRestrictions={this.checkRestrictions}
                     />
                     {_.map(groupedSettings, function(selectedGroup, groupName) {
-                        if (groupName != this.props.activeSettingsSectionName) return null;
+                        if (groupName !== this.props.activeSettingsSectionName) return null;
 
                         var sortedSections = _.sortBy(_.keys(selectedGroup), (name) => settings.get(name + '.metadata.weight'));
                         return (
@@ -268,8 +268,8 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                     var settingsToDisplay = selectedGroup[sectionName].settings ||
                                         _.compact(_.map(settings.get(sectionName), function(setting, settingName) {
                                             if (
-                                                settingName != 'metadata' &&
-                                                setting.type != 'hidden' &&
+                                                settingName !== 'metadata' &&
+                                                setting.type !== 'hidden' &&
                                                 !this.checkRestrictions('hide', setting).result
                                             ) return settingName;
                                         }, this));
@@ -326,7 +326,7 @@ import CSSTransitionGroup from 'react-addons-transition-group';
                                 <li
                                     key={groupName}
                                     role='presentation'
-                                    className={utils.classNames({active: groupName == this.props.activeSettingsSectionName})}
+                                    className={utils.classNames({active: groupName === this.props.activeSettingsSectionName})}
                                     onClick={_.partial(this.props.setActiveSettingsGroupName, groupName)}
                                 >
                                     <a className={'subtab-link-' + groupName}>

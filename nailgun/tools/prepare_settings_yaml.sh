@@ -15,4 +15,5 @@ API_LOG: ${NAILGUN_LOGS}/api.log
 APP_LOG: ${NAILGUN_LOGS}/app.log
 RPC_CONSUMER_LOG_PATH: "/var/log/nailgun/receiverd.log"
 ASSASSIN_LOG_PATH: "/var/log/nailgun/assassind.log"
+STATS_LOGS_PATH: ${NAILGUN_LOGS}
 EOL

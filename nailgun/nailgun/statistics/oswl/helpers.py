@@ -11,6 +11,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import six
 
 from cinderclient import client as cinder_client
@@ -21,12 +22,14 @@ from novaclient import client as nova_client
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.logger import logger
 from nailgun import objects
 from nailgun.settings import settings
 from nailgun.statistics.oswl.resources_description \
     import resources_description
 from nailgun.statistics import utils
+
+
+logger = logging.getLogger('statistics')
 
 
 class ClientProvider(object):

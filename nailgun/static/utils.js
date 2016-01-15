@@ -305,7 +305,7 @@ var utils = {
     return result;
   },
   compare(model1, model2, options) {
-    var getValue = function(model) {
+    var getValue = (model) => {
       var attr = options.attr;
       return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
     };

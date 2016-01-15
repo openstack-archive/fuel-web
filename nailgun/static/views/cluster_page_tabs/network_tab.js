@@ -248,7 +248,7 @@ var Range = React.createClass({
         <div className='col-xs-12'>
           <label>{this.props.label}</label>
           {this.props.extendable ?
-            _.map(ranges, function(range, index) {
+            _.map(ranges, (range, index) => {
               var rangeError = _.findWhere(error, {index: index}) || {};
               return (
                 <div className='range-row clearfix' key={index}>
@@ -278,7 +278,7 @@ var Range = React.createClass({
                   </div>
                 </div>
               );
-            }, this)
+            })
           :
             <div className='range-row clearfix'>
               <Input
@@ -456,7 +456,7 @@ var MultipleValuesInput = React.createClass({
       <div className={'form-group row multiple-values ' + attributeName}>
         <div className='col-xs-12'>
           <label>{this.props.label}</label>
-          {_.map(values, function(value, index) {
+          {_.map(values, (value, index) => {
             var inputError = (this.props.error || {})[index];
             return (
               <div className='range-row clearfix' key={attributeName + index}>
@@ -474,7 +474,7 @@ var MultipleValuesInput = React.createClass({
                 <div className='validation-error text-danger pull-left'>{inputError}</div>
               </div>
             );
-          }, this)}
+          })}
         </div>
       </div>
     );
@@ -606,7 +606,7 @@ var NetworkTab = React.createClass({
       !this.props.cluster.isAvailableForSettingsChanges() || this.state.actionInProgress;
   },
   prepareIpRanges() {
-    var removeEmptyRanges = function(ranges) {
+    var removeEmptyRanges = (ranges) => {
         return _.filter(ranges, (range) => _.compact(range).length);
       },
       networkConfiguration = this.props.cluster.get('networkConfiguration');
@@ -1023,7 +1023,7 @@ var NodeNetworkGroup = React.createClass({
           isRenamingPossible={cluster.isAvailableForSettingsChanges()}
           isDeletionPossible={!cluster.task({group: ['deployment', 'network'], active: true})}
         />
-        {networks.map(function(network) {
+        {networks.map((network) => {
           return (
             <Network
               key={network.id}
@@ -1035,7 +1035,7 @@ var NodeNetworkGroup = React.createClass({
               currentNodeNetworkGroup={nodeNetworkGroup}
             />
           );
-        }, this)}
+        })}
       </div>
     );
   }
@@ -1049,7 +1049,7 @@ var NetworkSubtabs = React.createClass({
     var networkParametersErrors = (validationError || {}).networking_parameters,
       networksErrors = (validationError || {}).networks;
 
-    return (sections.map(function(groupName) {
+    return (sections.map((groupName) => {
       var tabLabel = groupName,
         isActive = groupName == this.props.activeGroupName,
         isInvalid;
@@ -1100,7 +1100,7 @@ var NetworkSubtabs = React.createClass({
           </a>
         </li>
       );
-    }, this));
+    }));
   },
   render() {
     var {nodeNetworkGroups} = this.props,

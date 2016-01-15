@@ -332,11 +332,8 @@ var DeployReadinessBlock = React.createClass({
   validate(cluster) {
     return _.reduce(
       this.validations,
-      function(accumulator, validator) {
-        return _.merge(accumulator, validator.call(this, cluster), (a, b) => a.concat(_.compact(b)));
-      },
-      {blocker: [], error: [], warning: []},
-      this
+      (accumulator, validator) => _.merge(accumulator, validator.call(this, cluster), (a, b) => a.concat(_.compact(b))),
+      {blocker: [], error: [], warning: []}
     );
   },
   validations: [
@@ -654,7 +651,7 @@ var ClusterInfo = React.createClass({
     }
   },
   renderLegend(fieldsData, isRole) {
-    var result = _.map(fieldsData, function(field) {
+    var result = _.map(fieldsData, (field) => {
       var numberOfNodes = isRole ? this.getNumberOfNodesWithRole(field) : this.getNumberOfNodesWithStatus(field);
       return numberOfNodes ?
         <div key={field}>
@@ -679,7 +676,7 @@ var ClusterInfo = React.createClass({
         </div>
       :
         null;
-    }, this);
+    });
 
     return result;
   },

@@ -80,9 +80,7 @@ var OffloadingModesControl = React.createClass({
         this.checkModes(null, modes);
       } else {
         // handle All Modes click
-        _.each(modes, function(mode) {
-          return this.setModeState(mode, state);
-        }, this);
+        _.each(modes, (mode) => this.setModeState(mode, state));
       }
       this.props.interface.set('offloading_modes', modes);
     };

@@ -123,7 +123,7 @@ var HealthcheckTabContent = React.createClass({
       oldTestruns = new models.TestRuns(),
       testsetIds = this.props.testsets.pluck('id');
     this.setState({actionInProgress: true});
-    _.each(testsetIds, function(testsetId) {
+    _.each(testsetIds, (testsetId) => {
       var testsToRun = _.pluck(this.props.tests.where({
         testset: testsetId,
         checked: true
@@ -158,7 +158,7 @@ var HealthcheckTabContent = React.createClass({
           testruns.add(new models.TestRun(testrunConfig));
         }
       }
-    }, this);
+    });
 
     var requests = [];
     if (testruns.length) {
@@ -276,7 +276,7 @@ var HealthcheckCredentials = React.createClass({
           <div className='alert alert-warning'>
             {i18n('cluster_page.healthcheck_tab.credentials_description')}
           </div>
-          {_.map(inputFields, function(name) {
+          {_.map(inputFields, (name) => {
             return (<Input
               key={name}
               type={(name == 'password') ? 'password' : 'text'}
@@ -289,7 +289,7 @@ var HealthcheckCredentials = React.createClass({
               disabled={this.props.disabled}
               inputClassName='col-xs-3'
             />);
-          }, this)}
+          })}
         </div>
       </div>
     );
@@ -350,7 +350,7 @@ var TestSet = React.createClass({
           </tr>
         </thead>
         <tbody>
-          {this.props.tests.map(function(test) {
+          {this.props.tests.map((test) => {
             var result = this.props.testrun &&
               _.find(this.props.testrun.get('tests'), {id: test.id});
             var status = result && result.status || 'unknown';
@@ -361,7 +361,7 @@ var TestSet = React.createClass({
               status={status}
               disabled={this.props.disabled}
             />;
-          }, this)}
+          })}
         </tbody>
       </table>
     );

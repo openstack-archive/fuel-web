@@ -60,7 +60,7 @@ var FieldGroup = React.createClass({
   render() {
     var restrictions = this.props.model.testRestrictions();
     var metadata = _.filter(this.props.model.get('metadata'), VmWareModels.isRegularField);
-    var fields = metadata.map(function(meta) {
+    var fields = metadata.map((meta) => {
       return (
         <Field
           key={meta.name}
@@ -70,7 +70,7 @@ var FieldGroup = React.createClass({
           disableWarning={restrictions.disable[meta.name]}
         />
       );
-    }, this);
+    });
     return (
       <div>
         {fields}
@@ -193,7 +193,7 @@ var AvailabilityZone = React.createClass({
         <h3>
           {i18n('vmware.nova_computes')}
         </h3>
-        {novaComputes.map(function(compute) {
+        {novaComputes.map((compute) => {
           return (
             <NovaCompute
               key={compute.cid}
@@ -206,7 +206,7 @@ var AvailabilityZone = React.createClass({
               cluster={cluster}
             />
           );
-        }, this)}
+        })}
       </div>
     );
   },
@@ -235,9 +235,9 @@ var AvailabilityZones = React.createClass({
             </Tooltip>
           }
         </h3>
-        {this.props.collection.map(function(model) {
+        {this.props.collection.map((model) => {
           return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled} cluster={this.props.cluster} isLocked={this.props.isLocked}/>;
-        }, this)}
+        })}
       </div>
     );
   }

@@ -92,12 +92,12 @@ var EditNodeDisksScreen = React.createClass({
     if (!this.isSavingPossible()) return $.Deferred().reject();
 
     this.setState({actionInProgress: true});
-    return $.when(...this.props.nodes.map(function(node) {
-      node.disks.each(function(disk, index) {
+    return $.when(...this.props.nodes.map((node) => {
+      node.disks.each((disk, index) => {
         disk.set({volumes: new models.Volumes(this.props.disks.at(index).get('volumes').toJSON())});
-      }, this);
+      });
       return Backbone.sync('update', node.disks, {url: _.result(node, 'url') + '/disks'});
-    }, this))
+    }))
       .done(this.updateInitialData)
       .fail((response) => {
         var ns = 'cluster_page.nodes_tab.configure_disks.configuration_error.';
@@ -129,7 +129,7 @@ var EditNodeDisksScreen = React.createClass({
   getVolumesInfo(disk) {
     var volumes = {},
       unallocatedWidth = 100;
-    disk.get('volumes').each(function(volume) {
+    disk.get('volumes').each((volume) => {
       var size = volume.get('size') || 0,
         width = this.getVolumeWidth(disk, size),
         name = volume.get('name');
@@ -141,7 +141,7 @@ var EditNodeDisksScreen = React.createClass({
         min: volume.getMinimalSize(this.props.volumes.findWhere({name: name}).get('min_size')),
         error: volume.validationError
       };
-    }, this);
+    });
     volumes.unallocated = {
       size: disk.getUnallocatedSpace(),
       width: unallocatedWidth
@@ -172,7 +172,7 @@ var EditNodeDisksScreen = React.createClass({
           </div>
           <div className='col-xs-12 node-disks'>
             {this.props.disks.length ?
-              this.props.disks.map(function(disk, index) {
+              this.props.disks.map((disk, index) => {
                 return (<NodeDisk
                   disk={disk}
                   key={index}
@@ -181,7 +181,7 @@ var EditNodeDisksScreen = React.createClass({
                   volumesInfo={this.getVolumesInfo(disk)}
                   diskMetaData={this.getDiskMetaData(disk)}
                 />);
-              }, this)
+              })
             :
               <div className='alert alert-warning'>
                 {i18n('cluster_page.nodes_tab.configure_disks.no_disks', {count: this.props.nodes.length})}
@@ -235,9 +235,9 @@ var NodeDisk = React.createClass({
     var disk = this.props.disk,
       volumesInfo = this.props.volumesInfo,
       diskMetaData = this.props.diskMetaData,
-      requiredDiskSize = _.sum(disk.get('volumes').map(function(volume) {
+      requiredDiskSize = _.sum(disk.get('volumes').map((volume) => {
         return volume.getMinimalSize(this.props.volumes.findWhere({name: volume.get('name')}).get('min_size'));
-      }, this)),
+      })),
       diskError = disk.get('size') < requiredDiskSize,
       sortOrder = ['name', 'model', 'size'],
       ns = 'cluster_page.nodes_tab.configure_disks.';
@@ -253,7 +253,7 @@ var NodeDisk = React.createClass({
           </h4>
         </div>
         <div className='row disk-visual clearfix'>
-          {this.props.volumes.map(function(volume, index) {
+          {this.props.volumes.map((volume, index) => {
             var volumeName = volume.get('name');
             return (
               <div
@@ -274,7 +274,7 @@ var NodeDisk = React.createClass({
                 }
               </div>
             );
-          }, this)}
+          })}
           <div className='volume-group pull-left' data-volume='unallocated' style={{width: volumesInfo.unallocated.width + '%'}}>
             <div className='text-center toggle' onClick={_.partial(this.toggleDisk, disk.get('name'))}>
               <div className='volume-group-name'>{i18n(ns + 'unallocated')}</div>
@@ -307,7 +307,7 @@ var NodeDisk = React.createClass({
           <div className='col-xs-7'>
             <h5>{i18n(ns + 'volume_groups')}</h5>
             <div className='form-horizontal disk-utility-box'>
-              {this.props.volumes.map(function(volume, index) {
+              {this.props.volumes.map((volume, index) => {
                 var volumeName = volume.get('name'),
                   value = volumesInfo[volumeName].size,
                   currentMaxSize = volumesInfo[volumeName].max,
@@ -353,7 +353,7 @@ var NodeDisk = React.createClass({
                     }
                   </div>
                 );
-              }, this)}
+              })}
               {diskError &&
                 <div className='volume-group-notice text-danger'>{i18n(ns + 'not_enough_space')}</div>
               }

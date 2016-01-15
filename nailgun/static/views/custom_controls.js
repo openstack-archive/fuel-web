@@ -28,7 +28,7 @@ customControls.custom_repo_configuration = React.createClass({
       var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
         nameRegexp = /^[\w-.]+$/,
         os = models.release.get('operating_system');
-      var errors = setting.value.map(function(repo) {
+      var errors = setting.value.map((repo) => {
         var error = {},
           value = this.repoToString(repo, os);
         if (!repo.name) {
@@ -44,7 +44,7 @@ customControls.custom_repo_configuration = React.createClass({
           error.priority = i18n(ns + 'invalid_priority');
         }
         return _.isEmpty(error) ? null : error;
-      }, this);
+      });
       return _.compact(errors).length ? errors : null;
     },
     repoToString(repo, os) {
@@ -132,7 +132,7 @@ customControls.custom_repo_configuration = React.createClass({
         {this.props.description &&
           <span className='help-block' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(_.escape(this.props.description)))}} />
         }
-        {this.props.value.map(function(repo, index) {
+        {this.props.value.map((repo, index) => {
           var error = (this.props.error || {})[index],
             props = {
               name: index,
@@ -172,7 +172,7 @@ customControls.custom_repo_configuration = React.createClass({
               />
             </div>
           );
-        }, this)}
+        })}
         <div className='buttons'>
           <button key='addExtraRepo' className='btn btn-default btn-add-repo' onClick={this.changeRepos.bind(this, 'add')} disabled={this.props.disabled}>
             {i18n(ns + 'add_repo_button')}

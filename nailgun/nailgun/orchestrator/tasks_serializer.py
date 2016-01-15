@@ -377,6 +377,23 @@ class UploadConfiguration(GenericRolesHook):
         )
         self.configs = configs
 
+    @staticmethod
+    def _merge_configs(dest, src):
+        """Merge configuration parameters within groups.
+
+        Configuration uploaded to node has format:
+
+        ::
+          --
+          config_group:
+            param_name: {'value': '<some_value>'}
+
+        Merge should happen on 2nd nesting level to merge parameters
+        within groups.
+        """
+        for group, value in six.iteritems(src):
+            dest.setdefault(group, {}).update(value)
+
     def serialize(self):
         configs = self.configs
         if configs is None:
@@ -395,8 +412,8 @@ class UploadConfiguration(GenericRolesHook):
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.role:
                 for node in self.nodes:
                     if config.node_role in node.roles:
-                        node_configs[node.id]['role'].update(
-                            config.configuration)
+                        self._merge_configs(node_configs[node.id]['role'],
+                                            config.configuration)
 
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:
                 if config.node_id in nodes_to_update:

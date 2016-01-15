@@ -19,6 +19,8 @@ import six
 from distutils.version import LooseVersion
 from itertools import groupby
 
+from nailgun import consts
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
@@ -123,6 +125,12 @@ class ClusterPlugins(NailgunObject):
     model = models.ClusterPlugins
 
     @classmethod
+    def _get_cluster_class(cls):
+        # lazy class proxy created to avoid dependency hell
+        from nailgun.objects import Cluster
+        return Cluster
+
+    @classmethod
     def validate_compatibility(cls, cluster, plugin):
         """Validates if plugin is compatible with cluster.
 
@@ -137,6 +145,20 @@ class ClusterPlugins(NailgunObject):
         :return: True if compatible, False if not
         :rtype: bool
         """
+
+        # check task-based deployment support
+        # FIXME(ikutukov): compare semver correctly, not only major
+        def major_ver(version):
+            return int(version.split('.', 1)[0])
+
+        plugin_major_version = major_ver(plugin.package_version)
+        task_deploy_strict_from = major_ver(consts.TASK_DEPLOY_STRICT_FROM_VER)
+        task_deploy_required = task_deploy_strict_from <= plugin_major_version
+        task_deploy_enabled = \
+            cls._get_cluster_class().is_task_deploy_enabled(cluster)
+        if task_deploy_required and not task_deploy_enabled:
+            return False
+
         cluster_os = cluster.release.operating_system.lower()
         for release in plugin.releases:
             if cluster_os != release['os'].lower():

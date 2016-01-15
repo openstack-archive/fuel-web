@@ -12,16 +12,20 @@
 #    under the License.
 
 from collections import namedtuple
+import logging
 import os
 import random
 
 from contextlib import contextmanager
 
 from nailgun import consts
-from nailgun.logger import logger
+from nailgun.logger import set_logger
 from nailgun.network import manager
 from nailgun.settings import settings
 from nailgun.statistics import errors
+
+
+logger = logging.getLogger('statistics')
 
 
 WhiteListRule = namedtuple(
@@ -159,3 +163,12 @@ def get_version_info(cluster):
     except Exception:
         logger.exception("Fetching version info for cluster '%s' failed",
                          cluster)
+
+
+def prepare_logger(logger, file_name):
+    handler = logging.FileHandler(
+        os.path.join(settings.STATS_LOGS_PATH, file_name)
+    )
+    set_logger(logger, handler)
+
+    return logger

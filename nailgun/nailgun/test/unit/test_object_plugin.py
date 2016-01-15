@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import copy
 
 from nailgun import consts
 from nailgun.objects import ClusterPlugins
@@ -27,7 +28,7 @@ class ExtraFunctions(base.BaseTestCase):
 
     def _create_test_plugins(self):
         plugin_ids = []
-        for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0']:
+        for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0', '4.0.0', '5.0.0']:
             plugin_data = self.env.get_default_plugin_metadata(
                 version=version,
                 name='multiversion_plugin')
@@ -60,6 +61,12 @@ class ExtraFunctions(base.BaseTestCase):
 
         return self.env.clusters[0]
 
+    def _set_task_based_state(self, cluster, state=True):
+        cluster_attrs = copy.deepcopy(cluster.attributes.editable)
+        cluster_attrs['common']['task_deploy']['value'] = state
+        cluster.attributes.editable = cluster_attrs
+        self.db().flush()
+
 
 class TestPluginCollection(ExtraFunctions):
 
@@ -79,7 +86,7 @@ class TestPluginCollection(ExtraFunctions):
         self.assertEqual(len(single_plugin), 1)
         self.assertEqual(len(multiversion_plugin), 1)
 
-        self.assertEqual(multiversion_plugin[0].version, '3.0.0')
+        self.assertEqual(multiversion_plugin[0].version, '5.0.0')
 
     def test_get_by_uids(self):
         plugin_ids = self._create_test_plugins()
@@ -107,7 +114,7 @@ class TestClusterPlugins(ExtraFunctions):
         cluster_plugins = self.db.execute(
             meta.tables['cluster_plugins'].select()
         ).fetchall()
-        self.assertEqual(len(cluster_plugins), 5)
+        self.assertEqual(len(cluster_plugins), 7)
 
     def test_set_plugin_attributes(self):
         meta = base.reflect_db_metadata()
@@ -130,14 +137,14 @@ class TestClusterPlugins(ExtraFunctions):
         cluster = self._create_test_cluster()
         number_of_connected_plugins_data_items =\
             ClusterPlugins.get_connected_plugins_data(cluster.id).count()
-        self.assertEqual(5, number_of_connected_plugins_data_items)
+        self.assertEqual(7, number_of_connected_plugins_data_items)
 
     def test_get_all_connected_plugins(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
         number_of_connected_plugins =\
             ClusterPlugins.get_connected_plugins(cluster).count()
-        self.assertEqual(5, number_of_connected_plugins)
+        self.assertEqual(7, number_of_connected_plugins)
 
     def test_get_connected_for_specific_plugins(self):
         plugin_ids = self._create_test_plugins()
@@ -145,7 +152,7 @@ class TestClusterPlugins(ExtraFunctions):
         number_of_connected_plugins =\
             ClusterPlugins.get_connected_plugins(
                 cluster, plugin_ids[1:]).count()
-        self.assertEqual(4, number_of_connected_plugins)
+        self.assertEqual(6, number_of_connected_plugins)
 
     def test_get_connected_clusters(self):
         plugin_id = self._create_test_plugins()[0]
@@ -173,3 +180,69 @@ class TestClusterPlugins(ExtraFunctions):
         self.assertFalse(ClusterPlugins.is_plugin_used(plugin.id))
         ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
         self.assertTrue(ClusterPlugins.is_plugin_used(plugin.id))
+
+    def test_task_based_affects_5_0_compatibility(self):
+        task_based_plugin_data = self.env.get_default_plugin_metadata(
+            name='task_based',
+            package_version='5.0.0'
+        )
+        Plugin.create(task_based_plugin_data)
+
+        self.env.create(
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.multinode,
+            },
+            release_kwargs={
+                'name': uuid.uuid4().get_hex(),
+                'version': '2015.1-8.0',
+                'operating_system': 'Ubuntu',
+                'modes': [consts.CLUSTER_MODES.multinode,
+                          consts.CLUSTER_MODES.ha_compact]
+            }
+        )
+        cluster = self.env.clusters[0]
+
+        self._set_task_based_state(cluster, False)
+        self.assertEqual(
+            0,
+            len(ClusterPlugins.get_compatible_plugins(cluster))
+        )
+
+        self._set_task_based_state(cluster, True)
+        self.assertEqual(
+            1,
+            len(ClusterPlugins.get_compatible_plugins(cluster))
+        )
+
+    def test_task_dont_affect_4_0_compatibility(self):
+        task_based_plugin_data = self.env.get_default_plugin_metadata(
+            name='task_based',
+            package_version='4.0.0'
+        )
+        Plugin.create(task_based_plugin_data)
+
+        self.env.create(
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.multinode,
+            },
+            release_kwargs={
+                'name': uuid.uuid4().get_hex(),
+                'version': '2015.1-8.0',
+                'operating_system': 'Ubuntu',
+                'modes': [consts.CLUSTER_MODES.multinode,
+                          consts.CLUSTER_MODES.ha_compact]
+            }
+        )
+        cluster = self.env.clusters[0]
+
+        self._set_task_based_state(cluster, False)
+        self.assertEqual(
+            1,
+            len(ClusterPlugins.get_compatible_plugins(cluster))
+        )
+
+        self._set_task_based_state(cluster, True)
+        self.assertEqual(
+            1,
+            len(ClusterPlugins.get_compatible_plugins(cluster))
+        )

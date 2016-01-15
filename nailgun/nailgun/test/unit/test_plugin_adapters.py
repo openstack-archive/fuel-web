@@ -331,8 +331,10 @@ class TestClusterCompatibilityValidation(base.BaseTestCase):
         cluster = mock.Mock(mode=mode, release=release)
         return cluster
 
-    def validate_with_cluster(self, **kwargs):
+    @mock.patch('nailgun.objects.plugin.ClusterPlugins._get_cluster_class')
+    def validate_with_cluster(self, cluster_class, **kwargs):
         cluster = self.cluster_mock(**kwargs)
+        cluster_class.return_value = cluster
         return ClusterPlugins.validate_compatibility(cluster, self.plugin)
 
     def test_validation_ubuntu_ha(self):

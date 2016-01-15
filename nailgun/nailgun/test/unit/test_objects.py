@@ -1393,6 +1393,19 @@ class TestClusterObject(BaseTestCase):
         self.db().refresh(config)
         self.assertFalse(config.is_active)
 
+    def test_set_netgroups_ids(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips(
+            cluster, [node], consts.NETWORKS.management
+        )
+        admin_ng_id = \
+            objects.NetworkGroup.get_admin_network_group(node.id).id
+        node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
+        objects.Node.set_netgroups_ids(node, node_ng_ids)
+        for ip in node.ip_addrs:
+            self.assertEquals(admin_ng_id, ip.network)
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 

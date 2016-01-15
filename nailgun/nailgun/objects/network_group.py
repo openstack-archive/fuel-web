@@ -26,11 +26,17 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.network_group import NetworkGroupSerializer
 
+from sqlalchemy.sql import or_
+
 
 class NetworkGroup(NailgunObject):
 
     model = models.NetworkGroup
     serializer = NetworkGroupSerializer
+
+    @classmethod
+    def fields(cls):
+        return cls.model.__mapper__.columns.keys() + ["meta"]
 
     @classmethod
     def get_from_node_group_by_name(cls, node_group_id, network_name):
@@ -44,6 +50,62 @@ class NetworkGroup(NailgunObject):
             .filter_by(name=consts.NETWORKS.fuelweb_admin)\
             .filter_by(group_id=None)\
             .first()
+
+    @classmethod
+    def get_by_node_group(cls, node_group_id):
+        """Method for receiving Admin NetworkGroup.
+
+        :param node_group_id: NodeGroup ID
+        :type node_group_id: int
+        :returns: list of NetworkGroup instances
+        """
+        return db().query(models.NetworkGroup).filter_by(
+            group_id=node_group_id,
+        ).filter(
+            NetworkGroup.name != consts.NETWORKS.fuelweb_admin
+        ).order_by(models.NetworkGroup.id).all()
+
+    @classmethod
+    def get_admin_network_group(cls, node_id=None):
+        """Method for receiving Admin NetworkGroup.
+
+        :returns: Admin NetworkGroup.
+        :raises: errors.AdminNetworkNotFound
+        """
+        admin_ng = None
+        admin_ngs = db().query(models.NetworkGroup).filter_by(
+            name=consts.NETWORKS.fuelweb_admin,
+        )
+        if node_id:
+            node_db = db().query(models.Node).get(node_id)
+            admin_ng = admin_ngs.filter_by(group_id=node_db.group_id).first()
+
+        admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
+
+        if not admin_ng:
+            raise errors.AdminNetworkNotFound()
+        return admin_ng
+
+    @classmethod
+    def get_assigned_ips(cls, network_id):
+        """Get all IPs assigned to specified network group.
+
+        :param network_id: NetworkGroup ID
+        :type network_id: int
+        :returns: list of IPAddr instances
+        """
+        ips = [
+            x[0] for x in db().query(
+                models.IPAddr.ip_addr
+            ).filter(
+                models.IPAddr.network == network_id,
+                or_(
+                    models.IPAddr.node.isnot(None),
+                    models.IPAddr.vip_type.isnot(None)
+                )
+            )]
+
+        return ips
 
     @classmethod
     def create(cls, data):

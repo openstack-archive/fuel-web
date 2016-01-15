@@ -30,7 +30,6 @@
 
     # to be fixed and enabled
     complexity: 0
-    no-script-url: 0
     indent: [0, 2, {SwitchCase: 1}]
     one-var: [0, {uninitialized: always, initialized: never}]
     max-len: [0, 120]

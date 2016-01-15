@@ -300,11 +300,16 @@ class PluginAdapterV4(PluginAdapterV3):
         self._update_plugin(db_config_metadata_mapping)
 
 
+class PluginAdapterV5(PluginAdapterV4):
+    """Plugin wrapper class for package version 5.0.0"""
+
+
 __version_mapping = {
     '1.0.': PluginAdapterV1,
     '2.0.': PluginAdapterV2,
     '3.0.': PluginAdapterV3,
-    '4.0.': PluginAdapterV4
+    '4.0.': PluginAdapterV4,
+    '5.0.': PluginAdapterV5,
 }
 
 

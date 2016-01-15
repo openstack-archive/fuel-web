@@ -19,6 +19,8 @@ import six
 from distutils.version import LooseVersion
 from itertools import groupby
 
+from nailgun import consts
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection

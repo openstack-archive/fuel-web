@@ -1393,6 +1393,20 @@ class TestClusterObject(BaseTestCase):
         self.db().refresh(config)
         self.assertFalse(config.is_active)
 
+    def test_set_netgroups_ids(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips(
+            cluster, [node], consts.NETWORKS.management
+        )
+        admin_ng_id = \
+            objects.NetworkGroup.get_admin_network_group(node.id).id
+        node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
+        objects.Node.set_netgroups_ids(node, node_ng_ids)
+        for ip in node.ip_addrs:
+            self.assertEquals(admin_ng_id, ip.network)
+
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 
@@ -1619,6 +1633,15 @@ class TestNetworkGroup(BaseTestCase):
         self.assertTrue(objects.NetworkGroup.is_untagged(admin_net))
         self.assertFalse(objects.NetworkGroup.is_untagged(mgmt_net))
 
+    def test_get_by_node_group(self):
+        cluster = self.env.create_cluster(api=False)
+        new_ng = self.env.create_node_group(api=False, cluster_id=cluster.id)
+
+        networks = objects.NetworkGroup.get_by_node_group(new_ng.id)
+        expected_nets = [n for n in new_ng.networks if n.name !=
+                consts.NETWORKS.fuelweb_admin]
+        self.assertItemsEqual(networks, expected_nets)
+
 
 class TestRelease(BaseTestCase):
 
@@ -1736,3 +1759,83 @@ class TestOpenstackConfig(BaseTestCase):
 
         objects.OpenstackConfig.disable(config)
         self.assertFalse(config.is_active)
+
+
+class TestBondObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestBondObject, self).setUp()
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}])
+        self.node = self.env.nodes[0]
+
+    def test_assign_networks(self):
+        data = {
+            'name': 'bond0',
+            'slaves': self.node.nic_interfaces,
+            'node': self.node
+        }
+        bond = objects.Bond.create(data)
+        self.node.bond_interfaces.append(bond)
+        networks = objects.NetworkGroup.get_by_node_group(self.node.group_id)
+        objects.Bond.assign_networks(bond, networks)
+
+        expected_networks = [{'id': n.id, 'name': n.name} for n in networks]
+        self.assertItemsEqual(bond.assigned_networks, expected_networks)
+
+    def test_update_bond(self):
+        data = {
+            'name': 'bond0',
+            'slaves': self.node.nic_interfaces,
+            'node': self.node,
+        }
+        bond = objects.Bond.create(data)
+        offloading_modes = bond.offloading_modes
+        offloading_modes[0]['state'] = 'test'
+
+        data = {
+            'offloading_modes': offloading_modes
+        }
+        objects.Bond.update(bond, data)
+        self.assertEqual(data['offloading_modes'], bond.offloading_modes)
+
+
+class TestNICObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestNICObject, self).setUp()
+
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}])
+        self.cluster = self.env.clusters[0]
+
+    def test_replace_assigned_networks(self):
+        node = self.env.nodes[0]
+        nic_1 = node.interfaces[0]
+        nic_2 = node.interfaces[1]
+
+        self.assertEqual(len(nic_1.assigned_networks), 4)
+        self.assertEqual(len(nic_2.assigned_networks), 1)
+
+        new_nets = nic_1.assigned_networks + nic_2.assigned_networks
+        objects.NIC.replace_assigned_networks(nic_1, new_nets)
+        objects.NIC.replace_assigned_networks(nic_2, [])
+
+        self.assertEqual(len(nic_1.assigned_networks), 5)
+        self.assertEqual(len(nic_2.assigned_networks), 0)
+
+    def test_get_interfaces_not_in_mac_list(self):
+        node = self.env.nodes[0]
+
+        self.assertEqual(len(node.interfaces), 2)
+        macs = [i.mac for i in node.interfaces]
+        expected_mac = macs[0]
+
+        interfaces = objects.NICCollection.get_interfaces_not_in_mac_list(
+            node.id, [macs[1]])
+
+        mac_list = [iface.mac for iface in interfaces]
+        self.assertEqual(len(mac_list), 1)
+        self.assertEqual(mac_list[0], expected_mac)

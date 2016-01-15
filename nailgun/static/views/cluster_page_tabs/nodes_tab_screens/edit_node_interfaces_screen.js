@@ -106,11 +106,11 @@ import {DragSource, DropTarget} from 'react-dnd';
                 var interfacesData = this.interfacesToJSON(node.interfaces, true);
                 return _.any(initialInterfacesData, (ifcData, index) => {
                     return _.any(ifcData, (data, attribute) => {
-                        if (attribute == 'slaves') {
+                        if (attribute === 'slaves') {
                             // bond 'slaves' attribute contains information about slave name only
                             // but interface names can be different between nodes
                             // and can not be used for the comparison
-                            return data.length != (interfacesData[index].slaves || {}).length;
+                            return data.length !== (interfacesData[index].slaves || {}).length;
                         }
                         return !_.isEqual(data, interfacesData[index][attribute]);
                     });
@@ -185,7 +185,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                     if (ifc.isBond()) {
                         var bondProperties = ifc.get('bond_properties');
                         ifc.set({bond_properties: _.extend(bondProperties, {type__:
-                            this.getBondType() == 'linux' ? 'linux' : 'ovs'})});
+                            this.getBondType() === 'linux' ? 'linux' : 'ovs'})});
                     }
                     if (ifc.get('offloading_modes')) {
                         ifc.set({
@@ -262,7 +262,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                 var bondMode = _.flatten(_.pluck(bondingProperties[this.getBondType()].mode, 'values'))[0];
                 bonds = new models.Interface({
                     type: 'bond',
-                    name: this.props.interfaces.generateBondName(this.getBondType() == 'linux' ? 'bond' : 'ovs-bond'),
+                    name: this.props.interfaces.generateBondName(this.getBondType() === 'linux' ? 'bond' : 'ovs-bond'),
                     mode: bondMode,
                     assigned_networks: new models.InterfaceNetworks(),
                     slaves: _.invoke(interfaces, 'pick', 'name'),
@@ -314,7 +314,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                 var pxeInterface = this.props.interfaces.find((ifc) => {
                     return ifc.get('pxe') && _.contains(slaveInterfaceNames, ifc.get('name'));
                 });
-                if (!slaveInterfaceName || pxeInterface && pxeInterface.get('name') == slaveInterfaceName) {
+                if (!slaveInterfaceName || pxeInterface && pxeInterface.get('name') === slaveInterfaceName) {
                     targetInterface = pxeInterface;
                 }
             }
@@ -389,7 +389,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                     return _.uniq(nodes.map((node) => {
                         var nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length,
                             nodeInterface = node.interfaces.at(ifcIndex + nodeBondsCount);
-                        if (property == 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
+                        if (property === 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
                         return nodeInterface.get(property);
                     }));
                 };
@@ -412,7 +412,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                 checkedInterfaces = interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond()),
                 checkedBonds = interfaces.filter((ifc) => ifc.get('checked') && ifc.isBond()),
                 creatingNewBond = checkedInterfaces.length >= 2 && !checkedBonds.length,
-                addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length == 1,
+                addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length === 1,
                 bondingPossible = creatingNewBond || addingInterfacesToExistingBond,
                 unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length,
                 hasChanges = this.hasChanges(),
@@ -518,7 +518,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                     targetInterface.trigger('change', targetInterface);
                 },
                 canDrop(props, monitor) {
-                    return monitor.getItem().interfaceName != props.interface.get('name');
+                    return monitor.getItem().interfaceName !== props.interface.get('name');
                 }
             },
             collect(connect, monitor) {
@@ -617,7 +617,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                 var convertedValue = parseInt(value, 10);
                 return _.isNaN(convertedValue) ? null : convertedValue;
             }
-            if (name == 'mtu') {
+            if (name === 'mtu') {
                 value = convertToNullIfNaN(value);
             }
             var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
@@ -635,7 +635,7 @@ import {DragSource, DropTarget} from 'react-dnd';
                 slaveInterfaces = ifc.getSlaveInterfaces(),
                 assignedNetworks = ifc.get('assigned_networks'),
                 connectionStatusClasses = function(slave) {
-                    var slaveDown = slave.get('state') == 'down';
+                    var slaveDown = slave.get('state') === 'down';
                     return {
                         'ifc-connection-status': true,
                         'ifc-online': !slaveDown,
@@ -726,12 +726,12 @@ import {DragSource, DropTarget} from 'react-dnd';
                                                     <div className={utils.classNames(connectionStatusClasses(slaveInterface))} />
                                                 </div>
                                                 <div className='ifc-info pull-left'>
-                                                    {this.props.interfaceNames[index].length == 1 &&
+                                                    {this.props.interfaceNames[index].length === 1 &&
                                                         <div>
                                                             {i18n(ns + 'name')}: <span className='ifc-name'>{this.props.interfaceNames[index]}</span>
                                                         </div>
                                                     }
-                                                    {this.props.nodes.length == 1 &&
+                                                    {this.props.nodes.length === 1 &&
                                                         <div>{i18n(ns + 'mac')}: {slaveInterface.get('mac')}</div>
                                                     }
                                                     <div>

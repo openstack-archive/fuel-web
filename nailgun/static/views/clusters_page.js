@@ -101,7 +101,7 @@ import CreateClusterWizard from 'views/wizard';
             if (deletionTask) {
                 request = deletionTask.fetch();
                 request.fail((response) => {
-                    if (response.status == 404) {
+                    if (response.status === 404) {
                         this.props.cluster.collection.remove(this.props.cluster);
                         dispatcher.trigger('updateNodeStats');
                     }
@@ -156,8 +156,8 @@ import CreateClusterWizard from 'views/wizard';
                                 </div>
                             :
                                 <span className={utils.classNames({
-                                    'text-danger': status == 'error' || status == 'update_error',
-                                    'text-success': status == 'operational'
+                                    'text-danger': status === 'error' || status === 'update_error',
+                                    'text-success': status === 'operational'
                                 })}>
                                     {i18n('cluster.status.' + status, {defaultValue: status})}
                                 </span>

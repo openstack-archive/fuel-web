@@ -82,7 +82,7 @@ import ReactTransitionGroup from 'react-addons-transition-group';
         },
         componentWillReceiveProps(newProps) {
             var screen = this.getScreen(newProps);
-            if (this.state.screen != screen && this.checkScreenExists(screen)) {
+            if (this.state.screen !== screen && this.checkScreenExists(screen)) {
                 var screenOptions = this.getScreenOptions(newProps),
                     newState = {
                         screen: screen,

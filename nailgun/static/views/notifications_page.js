@@ -38,7 +38,7 @@ import {backboneMixin} from 'component_mixins';
         },
         checkDateIsToday(date) {
             var today = new Date();
-            return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
+            return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') === date;
         },
         render() {
             var notificationGroups = this.props.notifications.groupBy('date');
@@ -84,7 +84,7 @@ import {backboneMixin} from 'component_mixins';
             notification.save({status: 'read'});
         },
         onNotificationClick() {
-            if (this.props.notification.get('status') == 'unread') {
+            if (this.props.notification.get('status') === 'unread') {
                 this.markAsRead();
             }
             var nodeId = this.props.notification.get('node_id');
@@ -96,9 +96,9 @@ import {backboneMixin} from 'component_mixins';
             var topic = this.props.notification.get('topic'),
                 notificationClasses = {
                     'col-xs-12 notification': true,
-                    'text-danger': topic == 'error',
-                    'text-warning': topic == 'warning',
-                    unread: this.props.notification.get('status') == 'unread'
+                    'text-danger': topic === 'error',
+                    'text-warning': topic === 'warning',
+                    unread: this.props.notification.get('status') === 'unread'
                 },
                 iconClass = {
                     error: 'glyphicon-exclamation-sign',

@@ -46,7 +46,7 @@ import utils from 'utils';
                 ),
                 oldState;
 
-            if (mode && mode.state != changedState) {
+            if (mode && mode.state !== changedState) {
                 oldState = mode.state;
                 mode.state = oldState === false ? null : (changedState === false ? false : oldState);
             }
@@ -58,7 +58,7 @@ import utils from 'utils';
                 modesLength = modes.length;
             for (; index < modesLength; index++) {
                 mode = modes[index];
-                if (mode.name == name) {
+                if (mode.name === name) {
                     return mode;
                 } else if (!_.isEmpty(mode.sub)) {
                     result = this.findMode(name, mode.sub);
@@ -94,7 +94,7 @@ import utils from 'utils';
                 },
                 ifcModes = this.props.interface.get('offloading_modes');
 
-            if (_.uniq(_.pluck(ifcModes, 'state')).length == 1) {
+            if (_.uniq(_.pluck(ifcModes, 'state')).length === 1) {
                 return states[ifcModes[0].state];
             }
 
@@ -109,7 +109,7 @@ import utils from 'utils';
                             excerpt.push((added > 1 ? ', ' : '') + mode.name + ' ' + states[mode.state]);
                         }
                         // show no more than two modes in the button
-                        if (added == 2) return false;
+                        if (added === 2) return false;
                     }
                 );
             if (added < ifcModes.length) excerpt.push(', ...');
@@ -150,7 +150,7 @@ import utils from 'utils';
             if (ifcModes) {
                 modes.push({
                     name: i18n(ns + 'all_modes'),
-                    state: _.uniq(_.pluck(ifcModes, 'state')).length == 1 ? ifcModes[0].state : undefined,
+                    state: _.uniq(_.pluck(ifcModes, 'state')).length === 1 ? ifcModes[0].state : undefined,
                     sub: ifcModes
                 });
             }

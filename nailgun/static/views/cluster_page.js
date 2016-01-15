@@ -91,7 +91,7 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}
 
-                if (currentClusterId == id) {
+                if (currentClusterId === id) {
                     // just another tab has been chosen, do not load cluster again
                     cluster = app.page.props.cluster;
                     promise = tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
@@ -228,7 +228,7 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
             props = props || this.props;
             // FIXME: the following logs-related logic should be moved to Logs tab code
             // to keep parent component tightly coupled to its children
-            if (props.activeTab == 'logs') {
+            if (props.activeTab === 'logs') {
                 var selectedLogs;
                 if (props.tabOptions[0]) {
                     selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
@@ -292,7 +292,7 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
                                 return (
                                     <a
                                         key={url}
-                                        className={url + ' ' + utils.classNames({'cluster-tab': true, active: this.props.activeTab == url})}
+                                        className={url + ' ' + utils.classNames({'cluster-tab': true, active: this.props.activeTab === url})}
                                         href={'#cluster/' + cluster.id + '/' + url}
                                     >
                                         <div className='icon'></div>

@@ -104,19 +104,19 @@ import models from 'models';
         },
         showBandwidth(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);
-            if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) {return i18n('common.not_available');}
+            if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) return i18n('common.not_available');
             return (bandwidth / 1000).toFixed(1) + ' Gbps';
         },
         showFrequency(frequency) {
             frequency = parseInt(frequency, 10);
-            if (!_.isNumber(frequency) || _.isNaN(frequency)) {return i18n('common.not_available');}
+            if (!_.isNumber(frequency) || _.isNaN(frequency)) return i18n('common.not_available');
             var base = 1000;
             var treshold = 1000;
             return (frequency >= treshold ? (frequency / base).toFixed(2) + ' GHz' : frequency + ' MHz');
         },
         showSize(bytes, treshold) {
             bytes = parseInt(bytes, 10);
-            if (!_.isNumber(bytes) || _.isNaN(bytes)) {return i18n('common.not_available');}
+            if (!_.isNumber(bytes) || _.isNaN(bytes)) return i18n('common.not_available');
             var base = 1024;
             treshold = treshold || 256;
             var units = ['byte', 'kb', 'mb', 'gb', 'tb'];

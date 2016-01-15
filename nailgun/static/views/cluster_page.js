@@ -34,10 +34,10 @@ import {VmWareTab, VmWareModels} from 'plugins/vmware/vmware';
             pollingMixin(5),
             backboneMixin('cluster', 'change:name change:is_customized change:release'),
             backboneMixin({
-                modelOrCollection(props) {return props.cluster.get('nodes');}
+                modelOrCollection: (props) => props.cluster.get('nodes')
             }),
             backboneMixin({
-                modelOrCollection(props) {return props.cluster.get('tasks');},
+                modelOrCollection: (props) => props.cluster.get('tasks'),
                 renderOn: 'update change'
             }),
             dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),

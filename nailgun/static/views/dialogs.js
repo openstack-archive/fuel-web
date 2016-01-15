@@ -350,7 +350,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                 renderOn: 'update change:status'
             })
         ],
-        getDefaultProps() {return {title: i18n('dialog.display_changes.title')};},
+        getDefaultProps() {
+            return {title: i18n('dialog.display_changes.title')};
+        },
         ns: 'dialog.display_changes.',
         deployCluster() {
             this.setState({actionInProgress: true});
@@ -410,7 +412,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
 
     export var ProvisionVMsDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps() {return {title: i18n('dialog.provision_vms.title')};},
+        getDefaultProps() {
+            return {title: i18n('dialog.provision_vms.title')};
+        },
         startProvisioning() {
             this.setState({actionInProgress: true});
             var task = new models.Task();
@@ -439,7 +443,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
 
     export var StopDeploymentDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps() {return {title: i18n('dialog.stop_deployment.title')};},
+        getDefaultProps() {
+            return {title: i18n('dialog.stop_deployment.title')};
+        },
         stopDeployment() {
             this.setState({actionInProgress: true});
             var task = new models.Task();
@@ -583,7 +589,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                                 onChange={(name, value) => {
                                     this.setState({confirmationError: value != clusterName});
                                 }}
-                                onPaste={function(e) {e.preventDefault();}}
+                                onPaste={(e) => e.preventDefault()}
                                 autoFocus
                             />
                         </div>
@@ -708,9 +714,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
         },
         assignAccordionEvents() {
             $('.panel-collapse', ReactDOM.findDOMNode(this))
-                .on('show.bs.collapse', (e) => {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus');})
-                .on('hide.bs.collapse', (e) => {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus');})
-                .on('hidden.bs.collapse', (e) => {e.stopPropagation();});
+                .on('show.bs.collapse', (e) => $(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus'))
+                .on('hide.bs.collapse', (e) => $(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus'))
+                .on('hidden.bs.collapse', (e) => e.stopPropagation());
         },
         toggle(groupIndex) {
             $(ReactDOM.findDOMNode(this.refs['togglable_' + groupIndex])).collapse('toggle');
@@ -935,7 +941,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
 
     export var DiscardSettingsChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps() {return {title: i18n('dialog.dismiss_settings.title')};},
+        getDefaultProps() {
+            return {title: i18n('dialog.dismiss_settings.title')};
+        },
         proceedWith(method) {
             this.setState({actionInProgress: true});
             $.when(method ? method() : $.Deferred().resolve())
@@ -1022,7 +1030,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
 
     export var DeleteNodesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps() {return {title: i18n('dialog.delete_nodes.title')};},
+        getDefaultProps() {
+            return {title: i18n('dialog.delete_nodes.title')};
+        },
         renderBody() {
             var ns = 'dialog.delete_nodes.',
                 notDeployedNodesAmount = this.props.nodes.reject({status: 'ready'}).length,
@@ -1208,7 +1218,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                     this.showResponseErrors(response);
                     this.setState({connectionError: true});
                 })
-                .always(() => {this.setState({loading: false});});
+                .always(() => {
+                    this.setState({loading: false});
+                });
         },
         onChange(inputName, value) {
             var registrationForm = this.props.registrationForm,
@@ -1368,7 +1380,9 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
                     this.showResponseErrors(response);
                     this.setState({connectionError: true});
                 })
-                .always(() => {this.setState({loading: false});});
+                .always(() => {
+                    this.setState({loading: false});
+                });
         },
         onChange(inputName, value) {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;

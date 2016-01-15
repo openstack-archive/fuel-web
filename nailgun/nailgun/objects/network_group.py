@@ -26,11 +26,17 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.network_group import NetworkGroupSerializer
 
+from sqlalchemy.sql import or_
+
 
 class NetworkGroup(NailgunObject):
 
     model = models.NetworkGroup
     serializer = NetworkGroupSerializer
+
+    @classmethod
+    def fields(cls):
+        return cls.model.__mapper__.columns.keys() + ["meta"]
 
     @classmethod
     def get_from_node_group_by_name(cls, node_group_id, network_name):
@@ -44,6 +50,62 @@ class NetworkGroup(NailgunObject):
             .filter_by(name=consts.NETWORKS.fuelweb_admin)\
             .filter_by(group_id=None)\
             .first()
+
+    @classmethod
+    def get_by_node_group(cls, node_group_id):
+        """Get all non-admin networks belonging to specified node group.
+
+        :param node_group_id: NodeGroup ID
+        :type node_group_id: int
+        :returns: list of NetworkGroup instances
+        """
+        return db().query(models.NetworkGroup).filter_by(
+            group_id=node_group_id,
+        ).filter(
+            models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin
+        ).order_by(models.NetworkGroup.id).all()
+
+    @classmethod
+    def get_admin_network_group(cls, node_id=None):
+        """Method for receiving Admin NetworkGroup.
+
+        :returns: Admin NetworkGroup.
+        :raises: errors.AdminNetworkNotFound
+        """
+        admin_ng = None
+        admin_ngs = db().query(models.NetworkGroup).filter_by(
+            name=consts.NETWORKS.fuelweb_admin,
+        )
+        if node_id:
+            node_db = db().query(models.Node).get(node_id)
+            admin_ng = admin_ngs.filter_by(group_id=node_db.group_id).first()
+
+        admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
+
+        if not admin_ng:
+            raise errors.AdminNetworkNotFound()
+        return admin_ng
+
+    @classmethod
+    def get_assigned_ips(cls, network_id):
+        """Get all IPs assigned to specified network group.
+
+        :param network_id: NetworkGroup ID
+        :type network_id: int
+        :returns: list of IPAddr instances
+        """
+        ips = [
+            x[0] for x in db().query(
+                models.IPAddr.ip_addr
+            ).filter(
+                models.IPAddr.network == network_id,
+                or_(
+                    models.IPAddr.node.isnot(None),
+                    models.IPAddr.vip_type.isnot(None)
+                )
+            )]
+
+        return ips
 
     @classmethod
     def create(cls, data):
@@ -90,6 +152,25 @@ class NetworkGroup(NailgunObject):
         return (instance.vlan_start is None) \
             and not instance.meta.get('neutron_vlan_range') \
             and not instance.meta.get('ext_net_data')
+
+    @classmethod
+    def get_by_group(cls, cluster_id):
+        """Get network groups for all node groups in specified cluster.
+
+        :param cluster_id: Cluster ID
+        :type cluster_id: int
+        :return: Network groups for all node groups in cluster
+        """
+        return db().query(
+            models.NetworkGroup.id,
+            models.NetworkGroup.name,
+            models.NetworkGroup.meta,
+        ).join(
+            models.NetworkGroup.nodegroup
+        ).filter(
+            models.NodeGroup.cluster_id == cluster_id,
+            models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin
+        )
 
     @classmethod
     def _create_ip_ranges_on_notation(cls, instance):

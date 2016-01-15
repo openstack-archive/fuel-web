@@ -1287,8 +1287,6 @@
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
             weight: 80
             type: "checkbox"
-            restrictions:
-              - "settings:storage.images_ceph.value == false"
           osd_pool_size:
             value: "3"
             label: "Ceph object replication factor"

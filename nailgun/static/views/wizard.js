@@ -203,6 +203,10 @@ import {Input, ProgressBar} from 'views/controls';
             // if component has requires,
             // it is disabled until all requires are already enabled
             _.each(paneComponents, (component) => {
+                // skip already disabled components
+                if (component.get('disabled')) {
+                    return;
+                }
                 var requires = component.get('requires') || [];
                 if (requires.length == 0) {
                     // no requires
@@ -417,6 +421,9 @@ import {Input, ProgressBar} from 'views/controls';
                     <div className='ml2'>
                         {this.renderML2DriverControls()}
                     </div>
+                    {this.constructor.hasErrors(this.props.wizard) &&
+                        <div className='alert alert-warning'>{i18n('dialog.create_cluster_wizard.network.ml2_empty_choice')}</div>
+                    }
                 </div>
             );
         }

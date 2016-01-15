@@ -105,6 +105,8 @@ REMOVE_IMAGES_TIMEOUT: 60
 # statistics send interval
 STATS_SEND_INTERVAL: 3600
 
+STATS_LOGS_PATH: "/var/log/nailgun/"
+
 # statistics send enabled check interval
 STATS_ENABLE_CHECK_INTERVAL: 300
 

@@ -686,7 +686,7 @@ import {Input, ProgressBar} from 'views/controls';
                     this.wizard.unset('name_error');
                     break;
                 case 'release':
-                    this.selectRelease(parseInt(value));
+                    this.selectRelease(parseInt(value, 10));
                     break;
                 default:
                     maxAvailablePaneIndex = this.state.activePaneIndex;

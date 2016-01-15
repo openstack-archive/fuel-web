@@ -26,6 +26,7 @@ ALLOWED_LOCKS_CHAINS = [
     ('attributes', 'ip_addr_ranges'),
     ('attributes', 'ip_addrs'),
     ('attributes', 'ip_addrs', 'network_groups'),
+    ('attributes', 'ip_addr_ranges', 'node_nic_interfaces'),
     ('clusters', 'nodes'),
     ('tasks', 'clusters'),
     ('tasks', 'clusters', 'nodes'),

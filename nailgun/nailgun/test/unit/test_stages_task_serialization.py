@@ -229,16 +229,16 @@ class TestHooksSerializers(BaseTaskSerializationTest):
 
         configs = [
             mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.cluster,
-                      configuration={'cluster': 'foo'}),
+                      configuration={'cluster': {'value': 'foo'}}),
             mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.role,
                       node_role='compute',
-                      configuration={'compute': 'bar'}),
+                      configuration={'compute': {'value': 'bar'}}),
             mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.role,
                       node_role='cinder',
-                      configuration={'cinder': 'buzz'}),
+                      configuration={'cinder': {'value': 'buzz'}}),
             mock.Mock(config_type=consts.OPENSTACK_CONFIG_TYPES.node,
                       node_id=self.env.nodes[0].id,
-                      configuration={'node_0': 'quux'})
+                      configuration={'node_0': {'value': 'quux'}})
         ]
 
         task = tasks_serializer.UploadConfiguration(
@@ -271,12 +271,26 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             cluster_id=self.cluster.id,
             config_type=consts.OPENSTACK_CONFIG_TYPES.role,
             node_role='compute',
-            configuration={'value_a': 'compute', 'value_b': 'compute'}),
+            configuration={
+                'nova_config': {
+                    'DEFAULT/param_a': {'value': 'value_compute'},
+                },
+                'keystone_config': {
+                    'DEFAULT/param_a': {'value': 'value_compute'},
+                }
+            }),
         self.env.create_openstack_config(
             cluster_id=self.cluster.id,
             config_type=consts.OPENSTACK_CONFIG_TYPES.role,
             node_role='cinder',
-            configuration={'value_a': 'cinder', 'value_c': 'cinder'})
+            configuration={
+                'nova_config': {
+                    'DEFAULT/param_b': {'value': 'value_cinder'}
+                },
+                'keystone_config': {
+                    'DEFAULT/param_a': {'value': 'value_cinder'},
+                }
+            })
 
         task = tasks_serializer.UploadConfiguration(
             task_config, self.cluster, self.nodes)
@@ -285,9 +299,13 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             serialized_task['parameters']['data'])
         self.assertEqual(config, {
             'configuration': {
-                'value_a': 'compute',
-                'value_b': 'compute',
-                'value_c': 'cinder'
+                'nova_config': {
+                    'DEFAULT/param_a': {'value': 'value_compute'},
+                    'DEFAULT/param_b': {'value': 'value_cinder'}
+                },
+                'keystone_config': {
+                    'DEFAULT/param_a': {'value': 'value_compute'},
+                }
             }})
 
     def test_update_hosts(self):

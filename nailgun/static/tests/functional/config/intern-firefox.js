@@ -15,7 +15,7 @@
  **/
 
 define(['./intern'], function(config) {
-    'use strict';
-    config.environments = [{browserName: 'firefox'}];
-    return config;
+  'use strict';
+  config.environments = [{browserName: 'firefox'}];
+  return config;
 });

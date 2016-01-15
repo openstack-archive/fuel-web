@@ -15,42 +15,42 @@
  **/
 
 define([
-    'intern!object',
-    'intern/chai!assert',
-    'tests/functional/helpers',
-    'tests/functional/pages/login',
-    'tests/functional/pages/common'
+  'intern!object',
+  'intern/chai!assert',
+  'tests/functional/helpers',
+  'tests/functional/pages/login',
+  'tests/functional/pages/common'
 ], function(registerSuite, assert, helpers, LoginPage, Common) {
-    'use strict';
+  'use strict';
 
-    registerSuite(function() {
-        var loginPage, common;
-        return {
-            name: 'Login page',
-            setup: function() {
-                loginPage = new LoginPage(this.remote);
-                common = new Common(this.remote);
-            },
-            beforeEach: function() {
-                this.remote
-                    .then(function() {
-                        return common.getOut();
-                    });
-            },
-            'Login with incorrect credentials': function() {
-                return this.remote
-                    .then(function() {
-                        return loginPage.login('login', '*****');
-                    })
-                    .assertElementExists('div.login-error', 'Error message is expected to get displayed');
-            },
-            'Login with proper credentials': function() {
-                return this.remote
-                    .then(function() {
-                        return loginPage.login();
-                    })
-                    .assertElementDisappears('.login-btn', 2000, 'Login button disappears after successful login');
-            }
-        };
-    });
+  registerSuite(function() {
+    var loginPage, common;
+    return {
+      name: 'Login page',
+      setup: function() {
+        loginPage = new LoginPage(this.remote);
+        common = new Common(this.remote);
+      },
+      beforeEach: function() {
+        this.remote
+          .then(function() {
+            return common.getOut();
+          });
+      },
+      'Login with incorrect credentials': function() {
+        return this.remote
+          .then(function() {
+            return loginPage.login('login', '*****');
+          })
+          .assertElementExists('div.login-error', 'Error message is expected to get displayed');
+      },
+      'Login with proper credentials': function() {
+        return this.remote
+          .then(function() {
+            return loginPage.login();
+          })
+          .assertElementDisappears('.login-btn', 2000, 'Login button disappears after successful login');
+      }
+    };
+  });
 });

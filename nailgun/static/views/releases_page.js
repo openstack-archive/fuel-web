@@ -19,49 +19,49 @@ import React from 'react';
 import {Table} from 'views/controls';
 import {backboneMixin} from 'component_mixins';
 
-    var ReleasesPage = React.createClass({
-        mixins: [backboneMixin('releases')],
-        getDefaultProps() {
-            return {columns: ['name', 'version', 'state']};
-        },
-        statics: {
-            title: i18n('release_page.title'),
-            navbarActiveElement: 'releases',
-            breadcrumbsPath: [['home', '#'], 'releases'],
-            fetchData() {
-                var releases = app.releases;
-                return releases.fetch({cache: true}).then(() => ({releases}));
-            }
-        },
-        getReleaseData(release) {
-            return _.map(this.props.columns, (attr) => {
-                if (attr == 'state') {
-                    return i18n('release_page.release.' + (release.get(attr)));
-                }
-                return release.get(attr) || i18n('common.not_available');
-            });
-        },
-        render() {
-            return (
-                <div className='releases-page'>
-                    <div className='page-title'>
-                        <h1 className='title'>{i18n('release_page.title')}</h1>
-                    </div>
-                    <div className='content-box'>
-                        <div className='row'>
-                            <div className='col-xs-12 content-elements'>
-                                <Table
-                                    head={_.map(this.props.columns, (column) => {
-                                        return ({label: i18n('release_page.' + column), className: column});
-                                    })}
-                                    body={this.props.releases.map(this.getReleaseData)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
+var ReleasesPage = React.createClass({
+  mixins: [backboneMixin('releases')],
+  getDefaultProps() {
+    return {columns: ['name', 'version', 'state']};
+  },
+  statics: {
+    title: i18n('release_page.title'),
+    navbarActiveElement: 'releases',
+    breadcrumbsPath: [['home', '#'], 'releases'],
+    fetchData() {
+      var releases = app.releases;
+      return releases.fetch({cache: true}).then(() => ({releases}));
+    }
+  },
+  getReleaseData(release) {
+    return _.map(this.props.columns, (attr) => {
+      if (attr == 'state') {
+        return i18n('release_page.release.' + (release.get(attr)));
+      }
+      return release.get(attr) || i18n('common.not_available');
     });
+  },
+  render() {
+    return (
+      <div className='releases-page'>
+        <div className='page-title'>
+          <h1 className='title'>{i18n('release_page.title')}</h1>
+        </div>
+        <div className='content-box'>
+          <div className='row'>
+            <div className='col-xs-12 content-elements'>
+              <Table
+                head={_.map(this.props.columns, (column) => {
+                  return ({label: i18n('release_page.' + column), className: column});
+                })}
+                body={this.props.releases.map(this.getReleaseData)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+});
 
-    export default ReleasesPage;
+export default ReleasesPage;

@@ -19,6 +19,6 @@ import translations from 'plugins/vmware/translations.json';
 import i18n from 'i18n';
 import './styles.less';
 
-    i18n.addTranslations(translations);
+i18n.addTranslations(translations);
 
-    export {VmWareTab, VmWareModels};
+export {VmWareTab, VmWareModels};

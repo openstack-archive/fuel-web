@@ -15,7 +15,7 @@
  **/
 
 define(['./intern'], function(config) {
-    'use strict';
-    config.environments = [{browserName: 'phantomjs'}];
-    return config;
+  'use strict';
+  config.environments = [{browserName: 'phantomjs'}];
+  return config;
 });

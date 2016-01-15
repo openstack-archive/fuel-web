@@ -21,100 +21,100 @@ import models from 'models';
 import {ShowNodeInfoDialog} from 'views/dialogs';
 import {backboneMixin} from 'component_mixins';
 
-    var NotificationsPage, Notification;
+var NotificationsPage, Notification;
 
-    NotificationsPage = React.createClass({
-        mixins: [backboneMixin('notifications')],
-        statics: {
-            title: i18n('notifications_page.title'),
-            navbarActiveElement: null,
-            breadcrumbsPath: [['home', '#'], 'notifications'],
-            fetchData() {
-                var notifications = app.notifications;
-                return notifications.fetch().then(() =>
-                    ({notifications: notifications})
-                );
-            }
-        },
-        checkDateIsToday(date) {
-            var today = new Date();
-            return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
-        },
-        render() {
-            var notificationGroups = this.props.notifications.groupBy('date');
+NotificationsPage = React.createClass({
+  mixins: [backboneMixin('notifications')],
+  statics: {
+    title: i18n('notifications_page.title'),
+    navbarActiveElement: null,
+    breadcrumbsPath: [['home', '#'], 'notifications'],
+    fetchData() {
+      var notifications = app.notifications;
+      return notifications.fetch().then(() =>
+        ({notifications: notifications})
+      );
+    }
+  },
+  checkDateIsToday(date) {
+    var today = new Date();
+    return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
+  },
+  render() {
+    var notificationGroups = this.props.notifications.groupBy('date');
+    return (
+      <div className='notifications-page'>
+        <div className='page-title'>
+          <h1 className='title'>{i18n('notifications_page.title')}</h1>
+        </div>
+        <div className='content-box'>
+          {_.map(notificationGroups, function(notifications, date) {
             return (
-                <div className='notifications-page'>
-                    <div className='page-title'>
-                        <h1 className='title'>{i18n('notifications_page.title')}</h1>
-                    </div>
-                    <div className='content-box'>
-                        {_.map(notificationGroups, function(notifications, date) {
-                            return (
-                                <div className='row notification-group' key={date}>
-                                    <div className='title col-xs-12'>
-                                        {this.checkDateIsToday(date) ? i18n('notifications_page.today') : date}
-                                    </div>
-                                    {_.map(notifications, (notification) => {
-                                        return <Notification
-                                            key={notification.id}
-                                            notification={notification}
-                                        />;
-                                    })}
-                                </div>
-                            );
-                        }, this)}
-                    </div>
+              <div className='row notification-group' key={date}>
+                <div className='title col-xs-12'>
+                  {this.checkDateIsToday(date) ? i18n('notifications_page.today') : date}
                 </div>
+                {_.map(notifications, (notification) => {
+                  return <Notification
+                    key={notification.id}
+                    notification={notification}
+                  />;
+                })}
+              </div>
             );
-        }
-    });
+          }, this)}
+        </div>
+      </div>
+    );
+  }
+});
 
-    Notification = React.createClass({
-        mixins: [backboneMixin('notification')],
-        showNodeInfo(id) {
-            var node = new models.Node({id: id});
-            node.fetch();
-            ShowNodeInfoDialog.show({node: node});
-        },
-        markAsRead() {
-            var notification = this.props.notification;
-            notification.toJSON = function() {
-                return notification.pick('id', 'status');
-            };
-            notification.save({status: 'read'});
-        },
-        onNotificationClick() {
-            if (this.props.notification.get('status') == 'unread') {
-                this.markAsRead();
-            }
-            var nodeId = this.props.notification.get('node_id');
-            if (nodeId) {
-                this.showNodeInfo(nodeId);
-            }
-        },
-        render() {
-            var topic = this.props.notification.get('topic'),
-                notificationClasses = {
-                    'col-xs-12 notification': true,
-                    'text-danger': topic == 'error',
-                    'text-warning': topic == 'warning',
-                    unread: this.props.notification.get('status') == 'unread'
-                },
-                iconClass = {
-                    error: 'glyphicon-exclamation-sign',
-                    warning: 'glyphicon-warning-sign',
-                    discover: 'glyphicon-bell'
-                }[topic] || 'glyphicon-info-sign';
-            return (
-                <div className={utils.classNames(notificationClasses)} onClick={this.onNotificationClick}>
-                    <div className='notification-time'>{this.props.notification.get('time')}</div>
-                    <div className='notification-type'><i className={'glyphicon ' + iconClass} /></div>
-                    <div className='notification-message'>
-                        <span className={this.props.notification.get('node_id') && 'btn btn-link'} dangerouslySetInnerHTML={{__html: utils.urlify(this.props.notification.escape('message'))}}></span>
-                    </div>
-                </div>
-            );
-        }
-    });
+Notification = React.createClass({
+  mixins: [backboneMixin('notification')],
+  showNodeInfo(id) {
+    var node = new models.Node({id: id});
+    node.fetch();
+    ShowNodeInfoDialog.show({node: node});
+  },
+  markAsRead() {
+    var notification = this.props.notification;
+    notification.toJSON = function() {
+      return notification.pick('id', 'status');
+    };
+    notification.save({status: 'read'});
+  },
+  onNotificationClick() {
+    if (this.props.notification.get('status') == 'unread') {
+      this.markAsRead();
+    }
+    var nodeId = this.props.notification.get('node_id');
+    if (nodeId) {
+      this.showNodeInfo(nodeId);
+    }
+  },
+  render() {
+    var topic = this.props.notification.get('topic'),
+      notificationClasses = {
+        'col-xs-12 notification': true,
+        'text-danger': topic == 'error',
+        'text-warning': topic == 'warning',
+        unread: this.props.notification.get('status') == 'unread'
+      },
+      iconClass = {
+        error: 'glyphicon-exclamation-sign',
+        warning: 'glyphicon-warning-sign',
+        discover: 'glyphicon-bell'
+      }[topic] || 'glyphicon-info-sign';
+    return (
+      <div className={utils.classNames(notificationClasses)} onClick={this.onNotificationClick}>
+        <div className='notification-time'>{this.props.notification.get('time')}</div>
+        <div className='notification-type'><i className={'glyphicon ' + iconClass} /></div>
+        <div className='notification-message'>
+          <span className={this.props.notification.get('node_id') && 'btn btn-link'} dangerouslySetInnerHTML={{__html: utils.urlify(this.props.notification.escape('message'))}}></span>
+        </div>
+      </div>
+    );
+  }
+});
 
-    export default NotificationsPage;
+export default NotificationsPage;

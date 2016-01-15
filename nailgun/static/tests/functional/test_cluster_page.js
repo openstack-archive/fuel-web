@@ -15,101 +15,101 @@
  **/
 
 define([
-    'intern/dojo/node!lodash',
-    'intern!object',
-    'intern/chai!assert',
-    'tests/functional/helpers',
-    'tests/functional/pages/common',
-    'tests/functional/pages/cluster'
+  'intern/dojo/node!lodash',
+  'intern!object',
+  'intern/chai!assert',
+  'tests/functional/helpers',
+  'tests/functional/pages/common',
+  'tests/functional/pages/cluster'
 ], function(_, registerSuite, assert, helpers, Common, ClusterPage) {
-    'use strict';
+  'use strict';
 
-    registerSuite(function() {
-        var common,
-            clusterPage,
-            clusterName,
-            nodesAmount = 3,
-            applyButtonSelector = 'button.btn-apply';
+  registerSuite(function() {
+    var common,
+      clusterPage,
+      clusterName,
+      nodesAmount = 3,
+      applyButtonSelector = 'button.btn-apply';
 
-        return {
-            name: 'Cluster page',
-            setup: function() {
-                common = new Common(this.remote);
-                clusterPage = new ClusterPage(this.remote);
-                clusterName = common.pickRandomName('Test Cluster');
+    return {
+      name: 'Cluster page',
+      setup: function() {
+        common = new Common(this.remote);
+        clusterPage = new ClusterPage(this.remote);
+        clusterName = common.pickRandomName('Test Cluster');
 
-                return this.remote
-                    .then(function() {
-                        return common.getIn();
-                    })
-                    .then(function() {
-                        return common.createCluster(clusterName);
-                    })
-                    .then(function() {
-                        return clusterPage.goToTab('Nodes');
-                    });
-            },
-            'Add Cluster Nodes': function() {
-                return this.remote
-                    .assertElementExists('.node-list .alert-warning', 'Node list shows warning if there are no nodes in environment')
-                    .clickByCssSelector('.btn-add-nodes')
-                    .assertElementsAppear('.node', 2000, 'Unallocated nodes loaded')
-                    .assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen')
-                    .assertElementDisabled('.role-panel [type=checkbox][name=mongo]', 'Unavailable role has locked checkbox')
-                    .assertElementExists('.role-panel .mongo i.tooltip-icon', 'Unavailable role has warning tooltip')
-                    .then(function() {
-                        return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
-                    })
-                    .assertElementDisabled('.role-panel [type=checkbox][name=compute]', 'Compute role can not be added together with selected roles')
-                    .assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen')
-                    .then(function() {
-                        return clusterPage.checkNodes(nodesAmount);
-                    })
-                    .clickByCssSelector(applyButtonSelector)
-                    .waitForElementDeletion(applyButtonSelector, 2000)
-                    .assertElementAppears('.nodes-group', 2000, 'Cluster node list loaded')
-                    .assertElementsExist('.node-list .node', nodesAmount, nodesAmount + ' nodes were successfully added to the cluster')
-                    .assertElementExists('.nodes-group', 'One node group is present');
-            },
-            'Edit cluster node roles': function() {
-                return this.remote
-                    .then(function() {
-                        return common.addNodesToCluster(1, ['Storage - Cinder']);
-                    })
-                    .assertElementsExist('.nodes-group', 2, 'Two node groups are present')
-                    // select all nodes
-                    .clickByCssSelector('.select-all label')
-                    .clickByCssSelector('.btn-edit-roles')
-                    .assertElementDisappears('.btn-edit-roles', 2000, 'Cluster nodes screen unmounted')
-                    .assertElementNotExists('.node-box [type=checkbox]:not(:disabled)', 'Node selection is locked on Edit Roles screen')
-                    .assertElementNotExists('[name=select-all]:not(:disabled)', 'Select All checkboxes are locked on Edit Roles screen')
-                    .assertElementExists('.role-panel [type=checkbox][name=controller]:indeterminate', 'Controller role checkbox has indeterminate state')
-                    .then(function() {
-                        // uncheck Cinder role
-                        return clusterPage.checkNodeRoles(['Storage - Cinder', 'Storage - Cinder']);
-                    })
-                    .clickByCssSelector(applyButtonSelector)
-                    .assertElementDisappears('.btn-apply', 2000, 'Role editing screen unmounted')
-                    .assertElementsExist('.node-list .node', nodesAmount, 'One node was removed from cluster after editing roles');
-            },
-            'Remove Cluster': function() {
-                return this.remote
-                    .then(function() {
-                        return common.doesClusterExist(clusterName);
-                    })
-                    .then(function(result) {
-                        assert.ok(result, 'Cluster exists');
-                    })
-                    .then(function() {
-                        return common.removeCluster(clusterName);
-                    })
-                    .then(function() {
-                        return common.doesClusterExist(clusterName);
-                    })
-                    .then(function(result) {
-                        assert.notOk(result, 'Cluster removed successfully');
-                    });
-            }
-        };
-    });
+        return this.remote
+          .then(function() {
+            return common.getIn();
+          })
+          .then(function() {
+            return common.createCluster(clusterName);
+          })
+          .then(function() {
+            return clusterPage.goToTab('Nodes');
+          });
+      },
+      'Add Cluster Nodes': function() {
+        return this.remote
+          .assertElementExists('.node-list .alert-warning', 'Node list shows warning if there are no nodes in environment')
+          .clickByCssSelector('.btn-add-nodes')
+          .assertElementsAppear('.node', 2000, 'Unallocated nodes loaded')
+          .assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen')
+          .assertElementDisabled('.role-panel [type=checkbox][name=mongo]', 'Unavailable role has locked checkbox')
+          .assertElementExists('.role-panel .mongo i.tooltip-icon', 'Unavailable role has warning tooltip')
+          .then(function() {
+            return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
+          })
+          .assertElementDisabled('.role-panel [type=checkbox][name=compute]', 'Compute role can not be added together with selected roles')
+          .assertElementDisabled(applyButtonSelector, 'Apply button is disabled until both roles and nodes chosen')
+          .then(function() {
+            return clusterPage.checkNodes(nodesAmount);
+          })
+          .clickByCssSelector(applyButtonSelector)
+          .waitForElementDeletion(applyButtonSelector, 2000)
+          .assertElementAppears('.nodes-group', 2000, 'Cluster node list loaded')
+          .assertElementsExist('.node-list .node', nodesAmount, nodesAmount + ' nodes were successfully added to the cluster')
+          .assertElementExists('.nodes-group', 'One node group is present');
+      },
+      'Edit cluster node roles': function() {
+        return this.remote
+          .then(function() {
+            return common.addNodesToCluster(1, ['Storage - Cinder']);
+          })
+          .assertElementsExist('.nodes-group', 2, 'Two node groups are present')
+          // select all nodes
+          .clickByCssSelector('.select-all label')
+          .clickByCssSelector('.btn-edit-roles')
+          .assertElementDisappears('.btn-edit-roles', 2000, 'Cluster nodes screen unmounted')
+          .assertElementNotExists('.node-box [type=checkbox]:not(:disabled)', 'Node selection is locked on Edit Roles screen')
+          .assertElementNotExists('[name=select-all]:not(:disabled)', 'Select All checkboxes are locked on Edit Roles screen')
+          .assertElementExists('.role-panel [type=checkbox][name=controller]:indeterminate', 'Controller role checkbox has indeterminate state')
+          .then(function() {
+            // uncheck Cinder role
+            return clusterPage.checkNodeRoles(['Storage - Cinder', 'Storage - Cinder']);
+          })
+          .clickByCssSelector(applyButtonSelector)
+          .assertElementDisappears('.btn-apply', 2000, 'Role editing screen unmounted')
+          .assertElementsExist('.node-list .node', nodesAmount, 'One node was removed from cluster after editing roles');
+      },
+      'Remove Cluster': function() {
+        return this.remote
+          .then(function() {
+            return common.doesClusterExist(clusterName);
+          })
+          .then(function(result) {
+            assert.ok(result, 'Cluster exists');
+          })
+          .then(function() {
+            return common.removeCluster(clusterName);
+          })
+          .then(function() {
+            return common.doesClusterExist(clusterName);
+          })
+          .then(function(result) {
+            assert.notOk(result, 'Cluster removed successfully');
+          });
+      }
+    };
+  });
 });

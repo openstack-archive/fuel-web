@@ -15,20 +15,20 @@
  **/
 
 define(function() {
-    'use strict';
+  'use strict';
 
-    var remotes = {};
+  var remotes = {};
 
-    function saveScreenshot(testOrSuite) {
-        var remote = remotes[testOrSuite.sessionId];
-        if (remote && remote.takeScreenshotAndSave) remote.takeScreenshotAndSave(testOrSuite.id);
-    }
+  function saveScreenshot(testOrSuite) {
+    var remote = remotes[testOrSuite.sessionId];
+    if (remote && remote.takeScreenshotAndSave) remote.takeScreenshotAndSave(testOrSuite.id);
+  }
 
-    return {
-        '/session/start': function(remote) {
-            remotes[remote.sessionId] = remote;
-        },
-        '/suite/error': saveScreenshot,
-        '/test/fail': saveScreenshot
-    };
+  return {
+    '/session/start': function(remote) {
+      remotes[remote.sessionId] = remote;
+    },
+    '/suite/error': saveScreenshot,
+    '/test/fail': saveScreenshot
+  };
 });

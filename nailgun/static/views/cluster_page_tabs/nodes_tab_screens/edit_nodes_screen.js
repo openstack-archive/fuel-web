@@ -19,36 +19,36 @@ import React from 'react';
 import utils from 'utils';
 import NodeListScreen from 'views/cluster_page_tabs/nodes_tab_screens/node_list_screen';
 
-    var EditNodesScreen = React.createClass({
-        statics: {
-            fetchData(options) {
-                var cluster = options.cluster,
-                    nodes = utils.getNodeListFromTabOptions(options);
+var EditNodesScreen = React.createClass({
+  statics: {
+    fetchData(options) {
+      var cluster = options.cluster,
+        nodes = utils.getNodeListFromTabOptions(options);
 
-                if (!nodes) {
-                    return $.Deferred().reject();
-                }
+      if (!nodes) {
+        return $.Deferred().reject();
+      }
 
-                nodes.fetch = function(options) {
-                    return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: cluster.id}}, options));
-                };
-                nodes.parse = function() {
-                    return this.getByIds(nodes.pluck('id'));
-                };
-                return $.when(options.cluster.get('roles').fetch(),
-                    cluster.get('settings').fetch({cache: true})).then(() => ({nodes: nodes}));
-            }
-        },
-        render() {
-            return (
-                <NodeListScreen
-                    {... _.omit(this.props, 'screenOptions')}
-                    ref='screen'
-                    mode='edit'
-                    roles={this.props.cluster.get('roles')}
-                />
-            );
-        }
-    });
+      nodes.fetch = function(options) {
+        return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: cluster.id}}, options));
+      };
+      nodes.parse = function() {
+        return this.getByIds(nodes.pluck('id'));
+      };
+      return $.when(options.cluster.get('roles').fetch(),
+        cluster.get('settings').fetch({cache: true})).then(() => ({nodes: nodes}));
+    }
+  },
+  render() {
+    return (
+      <NodeListScreen
+        {... _.omit(this.props, 'screenOptions')}
+        ref='screen'
+        mode='edit'
+        roles={this.props.cluster.get('roles')}
+      />
+    );
+  }
+});
 
-    export default EditNodesScreen;
+export default EditNodesScreen;

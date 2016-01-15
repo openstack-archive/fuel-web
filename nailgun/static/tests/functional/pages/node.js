@@ -15,73 +15,73 @@
  **/
 
 define([
-    'tests/functional/pages/modal',
-    'tests/functional/helpers'
+  'tests/functional/pages/modal',
+  'tests/functional/helpers'
 ], function(ModalWindow) {
-    'use strict';
+  'use strict';
 
-    function NodeComponent(remote) {
-        this.remote = remote;
-        this.modal = new ModalWindow(this.remote);
+  function NodeComponent(remote) {
+    this.remote = remote;
+    this.modal = new ModalWindow(this.remote);
+  }
+
+  NodeComponent.prototype = {
+    constructor: NodeComponent,
+    openCompactNodeExtendedView: function() {
+      var self = this;
+      return this.remote
+        .findByCssSelector('div.compact-node .node-hardware p:not(.btn)')
+          .then(function(element) {
+            return self.remote.moveMouseTo(element);
+          })
+          .end()
+        // the following timeout as we have 0.3s transition for the button
+        .sleep(500)
+        .clickByCssSelector('div.compact-node .node-hardware p.btn')
+        .waitForCssSelector('.node-popover', 1000);
+    },
+    openNodePopup: function(fromExtendedView) {
+      var self = this,
+        cssSelector = fromExtendedView ? '.node-popover' : '.node';
+      return this.remote
+        .findByCssSelector(cssSelector)
+          .clickByCssSelector('.node-settings')
+          .end()
+        .then(function() {
+          return self.modal.waitToOpen();
+        });
+    },
+    discardNode: function(fromExtendedView) {
+      var self = this,
+        cssSelector = fromExtendedView ? '.node-popover' : '.node';
+      return this.remote
+        .findByCssSelector(cssSelector)
+          .clickByCssSelector('.btn-discard')
+          .end()
+        .then(function() {
+          // deletion confirmation shows up
+          return self.modal.waitToOpen();
+        })
+        // confirm deletion
+        .clickByCssSelector('div.modal-content button.btn-delete')
+        .then(function() {
+          return self.modal.waitToClose();
+        });
+    },
+    renameNode: function(newName, fromExtendedView) {
+      var cssSelector = fromExtendedView ? '.node-popover' : '.node';
+      return this.remote
+        .findByCssSelector(cssSelector)
+          .clickByCssSelector('.name p')
+          .findByCssSelector('input.node-name-input')
+            // node name gets editable upon clicking on it
+            .clearValue()
+            .type(newName)
+            .pressKeys('\uE007')
+            .end()
+          .waitForCssSelector('.name p', 1000)
+          .end();
     }
-
-    NodeComponent.prototype = {
-        constructor: NodeComponent,
-        openCompactNodeExtendedView: function() {
-            var self = this;
-            return this.remote
-                .findByCssSelector('div.compact-node .node-hardware p:not(.btn)')
-                    .then(function(element) {
-                        return self.remote.moveMouseTo(element);
-                    })
-                    .end()
-                // the following timeout as we have 0.3s transition for the button
-                .sleep(500)
-                .clickByCssSelector('div.compact-node .node-hardware p.btn')
-                .waitForCssSelector('.node-popover', 1000);
-        },
-        openNodePopup: function(fromExtendedView) {
-            var self = this,
-                cssSelector = fromExtendedView ? '.node-popover' : '.node';
-            return this.remote
-                .findByCssSelector(cssSelector)
-                    .clickByCssSelector('.node-settings')
-                    .end()
-                .then(function() {
-                    return self.modal.waitToOpen();
-                });
-        },
-        discardNode: function(fromExtendedView) {
-            var self = this,
-                cssSelector = fromExtendedView ? '.node-popover' : '.node';
-            return this.remote
-                .findByCssSelector(cssSelector)
-                    .clickByCssSelector('.btn-discard')
-                    .end()
-                .then(function() {
-                    // deletion confirmation shows up
-                    return self.modal.waitToOpen();
-                })
-                // confirm deletion
-                .clickByCssSelector('div.modal-content button.btn-delete')
-                .then(function() {
-                    return self.modal.waitToClose();
-                });
-        },
-        renameNode: function(newName, fromExtendedView) {
-            var cssSelector = fromExtendedView ? '.node-popover' : '.node';
-            return this.remote
-                .findByCssSelector(cssSelector)
-                    .clickByCssSelector('.name p')
-                    .findByCssSelector('input.node-name-input')
-                        // node name gets editable upon clicking on it
-                        .clearValue()
-                        .type(newName)
-                        .pressKeys('\uE007')
-                        .end()
-                    .waitForCssSelector('.name p', 1000)
-                    .end();
-        }
-    };
-    return NodeComponent;
+  };
+  return NodeComponent;
 });

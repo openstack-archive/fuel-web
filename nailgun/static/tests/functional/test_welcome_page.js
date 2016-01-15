@@ -15,34 +15,34 @@
  **/
 
 define([
-    'intern!object',
-    'intern/chai!assert',
-    'tests/functional/helpers',
-    'tests/functional/pages/login',
-    'tests/functional/pages/welcome'
+  'intern!object',
+  'intern/chai!assert',
+  'tests/functional/helpers',
+  'tests/functional/pages/login',
+  'tests/functional/pages/welcome'
 ], function(registerSuite, assert, helpers, LoginPage, WelcomePage) {
-    'use strict';
+  'use strict';
 
-    registerSuite(function() {
-        var loginPage,
-            welcomePage;
+  registerSuite(function() {
+    var loginPage,
+      welcomePage;
 
-        return {
-            name: 'Welcome page',
-            setup: function() {
-                loginPage = new LoginPage(this.remote);
-                welcomePage = new WelcomePage(this.remote);
-            },
-            'Skip welcome page': function() {
-                return this.remote
-                .then(function() {
-                    return loginPage.login();
-                })
-                .then(function() {
-                    return welcomePage.skip(true);
-                })
-                .assertElementNotExists('.welcome-button-box button', 'Welcome screen skipped');
-            }
-        };
-    });
+    return {
+      name: 'Welcome page',
+      setup: function() {
+        loginPage = new LoginPage(this.remote);
+        welcomePage = new WelcomePage(this.remote);
+      },
+      'Skip welcome page': function() {
+        return this.remote
+        .then(function() {
+          return loginPage.login();
+        })
+        .then(function() {
+          return welcomePage.skip(true);
+        })
+        .assertElementNotExists('.welcome-button-box button', 'Welcome screen skipped');
+      }
+    };
+  });
 });

@@ -15,70 +15,70 @@
  **/
 
 define([
-    'intern!object',
-    'tests/functional/pages/common',
-    'tests/functional/pages/cluster'
+  'intern!object',
+  'tests/functional/pages/common',
+  'tests/functional/pages/cluster'
 ], function(registerSuite, Common, ClusterPage) {
-    'use strict';
+  'use strict';
 
-    registerSuite(function() {
-        var common,
-            clusterPage,
-            clusterName;
+  registerSuite(function() {
+    var common,
+      clusterPage,
+      clusterName;
 
-        return {
-            name: 'Logs Tab',
-            setup: function() {
-                common = new Common(this.remote);
-                clusterPage = new ClusterPage(this.remote);
-                clusterName = common.pickRandomName('Test Cluster');
+    return {
+      name: 'Logs Tab',
+      setup: function() {
+        common = new Common(this.remote);
+        clusterPage = new ClusterPage(this.remote);
+        clusterName = common.pickRandomName('Test Cluster');
 
-                return this.remote
-                    .then(function() {
-                        return common.getIn();
-                    })
-                    .then(function() {
-                        return common.createCluster(clusterName);
-                    })
-                    .then(function() {
-                        return common.addNodesToCluster(1, ['Controller']);
-                    })
-                    .then(function() {
-                        return clusterPage.goToTab('Logs');
-                    });
-            },
-            '"Show" button availability and logs displaying': function() {
-                var showLogsButtonSelector = '.sticker button';
-                return this.remote
-                    .assertElementsExist('.sticker select[name=source] > option', 'Check if "Source" dropdown exist')
-                    .assertElementDisabled(showLogsButtonSelector, '"Show" button is disabled until source change')
-                    // Change the selected value for the "Source" dropdown to Rest API
-                    .clickByCssSelector('.sticker select[name=source] option[value=api]')
-                    // Change the selected value for the "Level" dropdown to DEBUG
-                    .clickByCssSelector('.sticker select[name=level] option[value=DEBUG]')
-                    .assertElementEnabled(showLogsButtonSelector, '"Show" button is enabled after source change')
-                    .execute(function() {
-                        window.fakeServer = sinon.fakeServer.create();
-                        window.fakeServer.autoRespond = true;
-                        window.fakeServer.autoRespondAfter = 1000;
-                        window.fakeServer.respondWith(/\/api\/logs.*/, [
-                            200, {'Content-Type': 'application/json'},
-                            JSON.stringify({
-                                from: 1,
-                                entries: [['Date', 'INFO', 'Test Log Entry']]
-                            })
-                        ]);
-                    })
-                    .clickByCssSelector(showLogsButtonSelector)
-                    .assertElementDisappears('.logs-tab div.progress', 5000, 'Wait till Progress bar disappears')
-                    .assertElementsAppear('.log-entries > tbody > tr', 5000, 'Log entries are shown')
-                    .execute(function() {
-                        window.fakeServer.restore();
-                    })
-                    // "Other servers" option is present in "Logs" dropdown
-                    .clickByCssSelector('.sticker select[name=type] > option[value=remote]')
-                    .assertElementExists('.sticker select[name=node] > option', '"Node" dropdown is present');
-            }
-        };
-    });
+        return this.remote
+          .then(function() {
+            return common.getIn();
+          })
+          .then(function() {
+            return common.createCluster(clusterName);
+          })
+          .then(function() {
+            return common.addNodesToCluster(1, ['Controller']);
+          })
+          .then(function() {
+            return clusterPage.goToTab('Logs');
+          });
+      },
+      '"Show" button availability and logs displaying': function() {
+        var showLogsButtonSelector = '.sticker button';
+        return this.remote
+          .assertElementsExist('.sticker select[name=source] > option', 'Check if "Source" dropdown exist')
+          .assertElementDisabled(showLogsButtonSelector, '"Show" button is disabled until source change')
+          // Change the selected value for the "Source" dropdown to Rest API
+          .clickByCssSelector('.sticker select[name=source] option[value=api]')
+          // Change the selected value for the "Level" dropdown to DEBUG
+          .clickByCssSelector('.sticker select[name=level] option[value=DEBUG]')
+          .assertElementEnabled(showLogsButtonSelector, '"Show" button is enabled after source change')
+          .execute(function() {
+            window.fakeServer = sinon.fakeServer.create();
+            window.fakeServer.autoRespond = true;
+            window.fakeServer.autoRespondAfter = 1000;
+            window.fakeServer.respondWith(/\/api\/logs.*/, [
+              200, {'Content-Type': 'application/json'},
+              JSON.stringify({
+                from: 1,
+                entries: [['Date', 'INFO', 'Test Log Entry']]
+              })
+            ]);
+          })
+          .clickByCssSelector(showLogsButtonSelector)
+          .assertElementDisappears('.logs-tab div.progress', 5000, 'Wait till Progress bar disappears')
+          .assertElementsAppear('.log-entries > tbody > tr', 5000, 'Log entries are shown')
+          .execute(function() {
+            window.fakeServer.restore();
+          })
+          // "Other servers" option is present in "Logs" dropdown
+          .clickByCssSelector('.sticker select[name=type] > option[value=remote]')
+          .assertElementExists('.sticker select[name=node] > option', '"Node" dropdown is present');
+      }
+    };
+  });
 });

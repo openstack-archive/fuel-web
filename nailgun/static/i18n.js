@@ -17,37 +17,37 @@ import _ from 'underscore';
 import i18next from 'i18next-client';
 import translations from './translations/core.json';
 
-    var defaultLocale = 'en-US';
+var defaultLocale = 'en-US';
 
-    var i18n = _.extend(_.bind(i18next.t, i18next), {
-        getLocaleName(locale) {
-            return i18n('language', {lng: locale});
-        },
-        getLanguageName(locale) {
-            return i18n('language_name', {lng: locale});
-        },
-        getAvailableLocales() {
-            return _.keys(translations).sort();
-        },
-        getCurrentLocale() {
-            return i18next.lng();
-        },
-        setLocale(locale) {
-            i18next.setLng(locale, {});
-        },
-        addTranslations(extraTranslations) {
-            _.merge(i18next.options.resStore, extraTranslations);
-        }
-    });
+var i18n = _.extend(_.bind(i18next.t, i18next), {
+  getLocaleName(locale) {
+    return i18n('language', {lng: locale});
+  },
+  getLanguageName(locale) {
+    return i18n('language_name', {lng: locale});
+  },
+  getAvailableLocales() {
+    return _.keys(translations).sort();
+  },
+  getCurrentLocale() {
+    return i18next.lng();
+  },
+  setLocale(locale) {
+    i18next.setLng(locale, {});
+  },
+  addTranslations(extraTranslations) {
+    _.merge(i18next.options.resStore, extraTranslations);
+  }
+});
 
-    i18next.init({resStore: translations, fallbackLng: defaultLocale});
+i18next.init({resStore: translations, fallbackLng: defaultLocale});
 
-    // reset locale to default if current locale is not available
-    if (!_.contains(i18n.getAvailableLocales(), i18n.getCurrentLocale())) {
-        i18n.setLocale(defaultLocale);
-    }
+// reset locale to default if current locale is not available
+if (!_.contains(i18n.getAvailableLocales(), i18n.getCurrentLocale())) {
+  i18n.setLocale(defaultLocale);
+}
 
-    // export global i18n variable to use in templates
-    window.i18n = i18n;
+// export global i18n variable to use in templates
+window.i18n = i18n;
 
-    export default i18n;
+export default i18n;

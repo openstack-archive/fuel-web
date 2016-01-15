@@ -17,108 +17,108 @@ import $ from 'jquery';
 import _ from 'underscore';
 import Cookies from 'js-cookie';
 
-    class KeystoneClient {
-        constructor(url, options) {
-            this.DEFAULT_PASSWORD = 'admin';
-            _.extend(this, {
-                url: url,
-                cacheTokenFor: 10 * 60 * 1000
-            }, options);
-        }
+class KeystoneClient {
+  constructor(url, options) {
+    this.DEFAULT_PASSWORD = 'admin';
+    _.extend(this, {
+      url: url,
+      cacheTokenFor: 10 * 60 * 1000
+    }, options);
+  }
 
-        authenticate(username, password, options = {}) {
-            if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
+  authenticate(username, password, options = {}) {
+    if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
 
-            if (!options.force && this.tokenUpdateTime && (this.cacheTokenFor > (new Date() - this.tokenUpdateTime))) {
-                return $.Deferred().resolve();
-            }
-            var data = {auth: {}};
-            if (username && password) {
-                data.auth.passwordCredentials = {
-                    username: username,
-                    password: password
-                };
-            } else if (this.token) {
-                data.auth.token = {id: this.token};
-            } else {
-                return $.Deferred().reject();
-            }
-            if (this.tenant) {
-                data.auth.tenantName = this.tenant;
-            }
-            this.tokenUpdateRequest = $.ajax(this.url + '/v2.0/tokens', {
-                type: 'POST',
-                dataType: 'json',
-                contentType: 'application/json',
-                data: JSON.stringify(data)
-            }).then((result, state, deferred) => {
-                try {
-                    this.userId = result.access.user.id;
-                    this.token = result.access.token.id;
-                    this.tokenUpdateTime = new Date();
-
-                    Cookies.set('token', result.access.token.id);
-
-                    return deferred;
-                } catch (e) {
-                    return $.Deferred().reject();
-                }
-            })
-            .fail(() => delete this.tokenUpdateTime)
-            .always(() => delete this.tokenUpdateRequest);
-
-            return this.tokenUpdateRequest;
-        }
-
-        changePassword(currentPassword, newPassword) {
-            var data = {
-                user: {
-                    password: newPassword,
-                    original_password: currentPassword
-                }
-            };
-            return $.ajax(this.url + '/v2.0/OS-KSCRUD/users/' + this.userId, {
-                type: 'PATCH',
-                dataType: 'json',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                headers: {'X-Auth-Token': this.token}
-            }).then((result, state, deferred) => {
-                try {
-                    this.token = result.access.token.id;
-                    this.tokenUpdateTime = new Date();
-
-                    Cookies.set('token', result.access.token.id);
-
-                    return deferred;
-                } catch (e) {
-                    return $.Deferred().reject();
-                }
-            });
-        }
-
-        deauthenticate() {
-            var token = this.token;
-
-            if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
-            if (!token) return $.Deferred().reject();
-
-            delete this.userId;
-            delete this.token;
-            delete this.tokenUpdateTime;
-
-            Cookies.remove('token');
-
-            this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + token, {
-                type: 'DELETE',
-                dataType: 'json',
-                contentType: 'application/json',
-                headers: {'X-Auth-Token': token}
-            })
-            .always(() => delete this.tokenRemoveRequest);
-
-            return this.tokenRemoveRequest;
-        }
+    if (!options.force && this.tokenUpdateTime && (this.cacheTokenFor > (new Date() - this.tokenUpdateTime))) {
+      return $.Deferred().resolve();
     }
+    var data = {auth: {}};
+    if (username && password) {
+      data.auth.passwordCredentials = {
+        username: username,
+        password: password
+      };
+    } else if (this.token) {
+      data.auth.token = {id: this.token};
+    } else {
+      return $.Deferred().reject();
+    }
+    if (this.tenant) {
+      data.auth.tenantName = this.tenant;
+    }
+    this.tokenUpdateRequest = $.ajax(this.url + '/v2.0/tokens', {
+      type: 'POST',
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(data)
+    }).then((result, state, deferred) => {
+      try {
+        this.userId = result.access.user.id;
+        this.token = result.access.token.id;
+        this.tokenUpdateTime = new Date();
 
-    export default KeystoneClient;
+        Cookies.set('token', result.access.token.id);
+
+        return deferred;
+      } catch (e) {
+        return $.Deferred().reject();
+      }
+    })
+    .fail(() => delete this.tokenUpdateTime)
+    .always(() => delete this.tokenUpdateRequest);
+
+    return this.tokenUpdateRequest;
+  }
+
+  changePassword(currentPassword, newPassword) {
+    var data = {
+      user: {
+        password: newPassword,
+        original_password: currentPassword
+      }
+    };
+    return $.ajax(this.url + '/v2.0/OS-KSCRUD/users/' + this.userId, {
+      type: 'PATCH',
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      headers: {'X-Auth-Token': this.token}
+    }).then((result, state, deferred) => {
+      try {
+        this.token = result.access.token.id;
+        this.tokenUpdateTime = new Date();
+
+        Cookies.set('token', result.access.token.id);
+
+        return deferred;
+      } catch (e) {
+        return $.Deferred().reject();
+      }
+    });
+  }
+
+  deauthenticate() {
+    var token = this.token;
+
+    if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
+    if (!token) return $.Deferred().reject();
+
+    delete this.userId;
+    delete this.token;
+    delete this.tokenUpdateTime;
+
+    Cookies.remove('token');
+
+    this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + token, {
+      type: 'DELETE',
+      dataType: 'json',
+      contentType: 'application/json',
+      headers: {'X-Auth-Token': token}
+    })
+    .always(() => delete this.tokenRemoveRequest);
+
+    return this.tokenRemoveRequest;
+  }
+}
+
+export default KeystoneClient;

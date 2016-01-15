@@ -32,7 +32,6 @@
     complexity: 0
     eqeqeq: 0
     no-script-url: 0
-    indent: [0, 2, {SwitchCase: 1}]
     one-var: [0, {uninitialized: always, initialized: never}]
     max-len: [0, 120]
 
@@ -81,7 +80,8 @@
     react/jsx-boolean-value: [2, never]
     react/jsx-closing-bracket-location: [2, {nonEmpty: false, selfClosing: line-aligned}]
     react/jsx-curly-spacing: [2, never]
-    react/jsx-indent-props: [2, 4]
+    react/jsx-indent: [2, 2]
+    react/jsx-indent-props: [2, 2]
     react/jsx-key: 2
     react/jsx-no-duplicate-props: 2
     react/jsx-no-literals: 0

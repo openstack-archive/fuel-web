@@ -15,21 +15,21 @@
  **/
 
 define([
-    'tests/functional/helpers'
+  'tests/functional/helpers'
 ], function() {
-    'use strict';
+  'use strict';
 
-    function NetworksPage(remote) {
-        this.applyButtonSelector = '.apply-btn';
-        this.remote = remote;
+  function NetworksPage(remote) {
+    this.applyButtonSelector = '.apply-btn';
+    this.remote = remote;
+  }
+
+  NetworksPage.prototype = {
+    constructor: NetworksPage,
+    switchNetworkManager: function() {
+      return this.remote
+        .clickByCssSelector('input[name=net_provider]:not(:checked)');
     }
-
-    NetworksPage.prototype = {
-        constructor: NetworksPage,
-        switchNetworkManager: function() {
-            return this.remote
-                .clickByCssSelector('input[name=net_provider]:not(:checked)');
-        }
-    };
-    return NetworksPage;
+  };
+  return NetworksPage;
 });

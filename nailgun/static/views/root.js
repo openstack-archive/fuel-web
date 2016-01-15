@@ -24,64 +24,64 @@ import {Navbar, Breadcrumbs, DefaultPasswordWarning, BootstrapError, Footer} fro
 import {DragDropContext} from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 
-    var RootComponent = React.createClass({
-        mixins: [
-            dispatcherMixin('updatePageLayout', 'updateTitle'),
-            dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning'),
-            dispatcherMixin('hideDefaultPasswordWarning', 'hideDefaultPasswordWarning')
-        ],
-        showDefaultPasswordWarning() {
-            this.setState({showDefaultPasswordWarning: true});
-        },
-        hideDefaultPasswordWarning() {
-            this.setState({showDefaultPasswordWarning: false});
-        },
-        getInitialState() {
-            return {showDefaultPasswordWarning: false};
-        },
-        setPage(Page, pageOptions) {
-            this.setState({
-                Page: Page,
-                pageOptions: pageOptions
-            });
-            return this.refs.page;
-        },
-        updateTitle() {
-            var Page = this.state.Page,
-                title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
-            document.title = i18n('common.title') + (title ? ' - ' + title : '');
-        },
-        componentDidUpdate() {
-            dispatcher.trigger('updatePageLayout');
-        },
-        render() {
-            var {Page, showDefaultPasswordWarning} = this.state;
-            var {fuelSettings, version} = this.props;
-
-            if (!Page) return null;
-            var layoutClasses = {
-                clamp: true,
-                'fixed-width-layout': !Page.hiddenLayout
-            };
-
-            return (
-                <div id='content-wrapper'>
-                    <div className={utils.classNames(layoutClasses)}>
-                        {!Page.hiddenLayout && [
-                            <Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
-                            <Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
-                            showDefaultPasswordWarning && <DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />,
-                            fuelSettings.get('bootstrap.error.value') && <BootstrapError key='bootstrap-error' text={fuelSettings.get('bootstrap.error.value')} />
-                        ]}
-                        <div id='content'>
-                            <Page ref='page' {...this.state.pageOptions} />
-                        </div>
-                        {!Page.hiddenLayout && <div id='footer-spacer'></div>}
-                    </div>
-                    {!Page.hiddenLayout && <Footer version={version} />}
-                </div>
-            );
-        }
+var RootComponent = React.createClass({
+  mixins: [
+    dispatcherMixin('updatePageLayout', 'updateTitle'),
+    dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning'),
+    dispatcherMixin('hideDefaultPasswordWarning', 'hideDefaultPasswordWarning')
+  ],
+  showDefaultPasswordWarning() {
+    this.setState({showDefaultPasswordWarning: true});
+  },
+  hideDefaultPasswordWarning() {
+    this.setState({showDefaultPasswordWarning: false});
+  },
+  getInitialState() {
+    return {showDefaultPasswordWarning: false};
+  },
+  setPage(Page, pageOptions) {
+    this.setState({
+      Page: Page,
+      pageOptions: pageOptions
     });
+    return this.refs.page;
+  },
+  updateTitle() {
+    var Page = this.state.Page,
+      title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
+    document.title = i18n('common.title') + (title ? ' - ' + title : '');
+  },
+  componentDidUpdate() {
+    dispatcher.trigger('updatePageLayout');
+  },
+  render() {
+    var {Page, showDefaultPasswordWarning} = this.state;
+    var {fuelSettings, version} = this.props;
 
-    export default DragDropContext(HTML5Backend)(RootComponent);
+    if (!Page) return null;
+    var layoutClasses = {
+      clamp: true,
+      'fixed-width-layout': !Page.hiddenLayout
+    };
+
+    return (
+      <div id='content-wrapper'>
+        <div className={utils.classNames(layoutClasses)}>
+          {!Page.hiddenLayout && [
+            <Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
+            <Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
+            showDefaultPasswordWarning && <DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />,
+            fuelSettings.get('bootstrap.error.value') && <BootstrapError key='bootstrap-error' text={fuelSettings.get('bootstrap.error.value')} />
+          ]}
+          <div id='content'>
+            <Page ref='page' {...this.state.pageOptions} />
+          </div>
+          {!Page.hiddenLayout && <div id='footer-spacer'></div>}
+        </div>
+        {!Page.hiddenLayout && <Footer version={version} />}
+      </div>
+    );
+  }
+});
+
+export default DragDropContext(HTML5Backend)(RootComponent);

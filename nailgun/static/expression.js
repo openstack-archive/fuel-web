@@ -17,38 +17,38 @@ import _ from 'underscore';
 import ExpressionParser from 'expression/parser';
 import * as expressionObjects from 'expression/objects';
 
-    var expressionCache = {};
+var expressionCache = {};
 
-    class Expression {
-        constructor(expressionText, models = {}, {strict = true} = {}) {
-            this.strict = strict;
-            this.expressionText = expressionText;
-            this.models = models;
-            this.compiledExpression = this.getCompiledExpression();
-            return this;
-        }
+class Expression {
+  constructor(expressionText, models = {}, {strict = true} = {}) {
+    this.strict = strict;
+    this.expressionText = expressionText;
+    this.models = models;
+    this.compiledExpression = this.getCompiledExpression();
+    return this;
+  }
 
-        evaluate(extraModels) {
-            // FIXME(vkramskikh): currently Jison supports sharing state
-            // only via ExpressionParser.yy. It is unsafe and could lead to
-            // issues in case we start to use webworkers
-            ExpressionParser.yy.expression = this;
-            this.modelPaths = {};
-            this.extraModels = extraModels;
-            var value = this.compiledExpression.evaluate();
-            delete this.extraModels;
-            return value;
-        }
+  evaluate(extraModels) {
+    // FIXME(vkramskikh): currently Jison supports sharing state
+    // only via ExpressionParser.yy. It is unsafe and could lead to
+    // issues in case we start to use webworkers
+    ExpressionParser.yy.expression = this;
+    this.modelPaths = {};
+    this.extraModels = extraModels;
+    var value = this.compiledExpression.evaluate();
+    delete this.extraModels;
+    return value;
+  }
 
-        getCompiledExpression() {
-            var cacheEntry = expressionCache[this.expressionText];
-            if (!cacheEntry) {
-                cacheEntry = expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
-            }
-            return cacheEntry;
-        }
+  getCompiledExpression() {
+    var cacheEntry = expressionCache[this.expressionText];
+    if (!cacheEntry) {
+      cacheEntry = expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
     }
+    return cacheEntry;
+  }
+}
 
-    _.extend(ExpressionParser.yy, expressionObjects);
+_.extend(ExpressionParser.yy, expressionObjects);
 
-    export default Expression;
+export default Expression;

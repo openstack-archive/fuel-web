@@ -15,80 +15,80 @@
  **/
 
 define([
-    'intern!object',
-    'intern/chai!assert',
-    'tests/functional/helpers',
-    'tests/functional/pages/common',
-    'tests/functional/pages/modal'
+  'intern!object',
+  'intern/chai!assert',
+  'tests/functional/helpers',
+  'tests/functional/pages/common',
+  'tests/functional/pages/modal'
 ], function(registerSuite, assert, helpers, Common, ModalWindow) {
-    'use strict';
+  'use strict';
 
-    registerSuite(function() {
-        var common,
-            clusterName;
+  registerSuite(function() {
+    var common,
+      clusterName;
 
-        return {
-            name: 'Clusters page',
-            setup: function() {
-                common = new Common(this.remote);
-                clusterName = common.pickRandomName('Test Cluster');
+    return {
+      name: 'Clusters page',
+      setup: function() {
+        common = new Common(this.remote);
+        clusterName = common.pickRandomName('Test Cluster');
 
-                return this.remote
+        return this.remote
+          .then(function() {
+            return common.getIn();
+          });
+      },
+      beforeEach: function() {
+        return this.remote
+          .then(function() {
+            return common.createCluster(clusterName);
+          });
+      },
+      afterEach: function() {
+        return this.remote
+          .then(function() {
+            return common.removeCluster(clusterName);
+          });
+      },
+      'Create Cluster': function() {
+        return this.remote
+          .then(function() {
+            return common.doesClusterExist(clusterName);
+          })
+          .then(function(result) {
+            assert.ok(result, 'Newly created cluster found in the list');
+          });
+      },
+      'Attempt to create cluster with duplicate name': function() {
+        return this.remote
+          .clickLinkByText('Environments')
+          .waitForCssSelector('.clusters-page', 2000)
+          .then(function() {
+            return common.createCluster(
+              clusterName,
+              {
+                'Name and Release': function() {
+                  var modal = new ModalWindow(this.remote);
+                  return this.remote
+                    .pressKeys('\uE007')
+                    .assertElementTextEquals(
+                      '.create-cluster-form span.help-block',
+                      'Environment with name "' + clusterName + '" already exists',
+                      'Error message should say that environment with that name already exists'
+                    )
                     .then(function() {
-                        return common.getIn();
+                      return modal.close();
                     });
-            },
-            beforeEach: function() {
-                return this.remote
-                    .then(function() {
-                        return common.createCluster(clusterName);
-                    });
-            },
-            afterEach: function() {
-                return this.remote
-                    .then(function() {
-                        return common.removeCluster(clusterName);
-                    });
-            },
-            'Create Cluster': function() {
-                return this.remote
-                    .then(function() {
-                        return common.doesClusterExist(clusterName);
-                    })
-                    .then(function(result) {
-                        assert.ok(result, 'Newly created cluster found in the list');
-                    });
-            },
-            'Attempt to create cluster with duplicate name': function() {
-                return this.remote
-                    .clickLinkByText('Environments')
-                    .waitForCssSelector('.clusters-page', 2000)
-                    .then(function() {
-                        return common.createCluster(
-                            clusterName,
-                            {
-                                'Name and Release': function() {
-                                    var modal = new ModalWindow(this.remote);
-                                    return this.remote
-                                        .pressKeys('\uE007')
-                                        .assertElementTextEquals(
-                                            '.create-cluster-form span.help-block',
-                                            'Environment with name "' + clusterName + '" already exists',
-                                            'Error message should say that environment with that name already exists'
-                                        )
-                                        .then(function() {
-                                            return modal.close();
-                                        });
-                                }}
-                            );
-                });
-            },
-            'Testing cluster list page': function() {
-                return this.remote
-                    .clickLinkByText('Environments')
-                    .assertElementAppears('.clusters-page .clusterbox', 2000, 'Cluster container exists')
-                    .assertElementExists('.create-cluster', 'Cluster creation control exists');
-            }
-        };
-    });
+                }}
+              );
+          });
+      },
+      'Testing cluster list page': function() {
+        return this.remote
+          .clickLinkByText('Environments')
+          .assertElementAppears('.clusters-page .clusterbox', 2000, 'Cluster container exists')
+          .assertElementExists('.create-cluster', 'Cluster creation control exists');
+      }
+    };
+  });
 });

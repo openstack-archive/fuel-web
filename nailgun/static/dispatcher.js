@@ -16,7 +16,7 @@
 import _ from 'underscore';
 import Backbone from 'backbone';
 
-    var dispatcher = _.clone(Backbone.Events);
-    _.bindAll(dispatcher);
+var dispatcher = _.clone(Backbone.Events);
+_.bindAll(dispatcher);
 
-    export default dispatcher;
+export default dispatcher;

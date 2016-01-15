@@ -15,14 +15,14 @@
  **/
 
 define(function() {
-    'use strict';
+  'use strict';
 
-    return {
-        proxyPort: 9057,
-        proxyUrl: 'http://localhost:9057/',
-        maxConcurrency: 1,
-        grep: /^/,
-        excludeInstrumentation: /^/,
-        reporters: ['console', 'tests/functional/screenshot_on_fail']
-    };
+  return {
+    proxyPort: 9057,
+    proxyUrl: 'http://localhost:9057/',
+    maxConcurrency: 1,
+    grep: /^/,
+    excludeInstrumentation: /^/,
+    reporters: ['console', 'tests/functional/screenshot_on_fail']
+  };
 });

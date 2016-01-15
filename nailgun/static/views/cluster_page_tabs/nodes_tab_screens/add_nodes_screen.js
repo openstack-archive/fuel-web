@@ -19,36 +19,36 @@ import React from 'react';
 import models from 'models';
 import NodeListScreen from 'views/cluster_page_tabs/nodes_tab_screens/node_list_screen';
 
-    var AddNodesScreen = React.createClass({
-        statics: {
-            fetchData(options) {
-                var nodes = new models.Nodes();
-                nodes.fetch = function(options) {
-                    return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
-                };
-                return $.when(nodes.fetch(), options.cluster.get('roles').fetch(),
-                    options.cluster.get('settings').fetch({cache: true})).then(() => ({nodes: nodes}));
-            }
-        },
-        render() {
-            return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
-                ref='screen'
-                mode='add'
-                roles={this.props.cluster.get('roles')}
-                sorters={_.without(models.Nodes.prototype.sorters, 'cluster', 'roles', 'group_id')}
-                defaultSorting={[{status: 'asc'}]}
-                filters={_.without(models.Nodes.prototype.filters, 'cluster', 'roles', 'group_id')}
-                statusesToFilter={_.without(models.Node.prototype.statuses,
-                    'ready',
-                    'pending_addition',
-                    'pending_deletion',
-                    'provisioned',
-                    'provisioning',
-                    'deploying'
-                )}
-                defaultFilters={{status: []}}
-            />;
-        }
-    });
+var AddNodesScreen = React.createClass({
+  statics: {
+    fetchData(options) {
+      var nodes = new models.Nodes();
+      nodes.fetch = function(options) {
+        return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
+      };
+      return $.when(nodes.fetch(), options.cluster.get('roles').fetch(),
+        options.cluster.get('settings').fetch({cache: true})).then(() => ({nodes: nodes}));
+    }
+  },
+  render() {
+    return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
+      ref='screen'
+      mode='add'
+      roles={this.props.cluster.get('roles')}
+      sorters={_.without(models.Nodes.prototype.sorters, 'cluster', 'roles', 'group_id')}
+      defaultSorting={[{status: 'asc'}]}
+      filters={_.without(models.Nodes.prototype.filters, 'cluster', 'roles', 'group_id')}
+      statusesToFilter={_.without(models.Node.prototype.statuses,
+        'ready',
+        'pending_addition',
+        'pending_deletion',
+        'provisioned',
+        'provisioning',
+        'deploying'
+      )}
+      defaultFilters={{status: []}}
+    />;
+  }
+});
 
-    export default AddNodesScreen;
+export default AddNodesScreen;

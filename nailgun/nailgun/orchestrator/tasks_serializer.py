@@ -16,6 +16,7 @@
 
 import abc
 from collections import defaultdict
+import itertools
 import os
 import six
 import yaml
@@ -377,6 +378,12 @@ class UploadConfiguration(GenericRolesHook):
         )
         self.configs = configs
 
+    @staticmethod
+    def _merge_configs(dest, src):
+        groups = set(itertools.chain(six.iterkeys(dest), six.iterkeys(src)))
+        for group in groups:
+            dest.setdefault(group, {}).update(src.get(group, {}))
+
     def serialize(self):
         configs = self.configs
         if configs is None:
@@ -395,8 +402,8 @@ class UploadConfiguration(GenericRolesHook):
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.role:
                 for node in self.nodes:
                     if config.node_role in node.roles:
-                        node_configs[node.id]['role'].update(
-                            config.configuration)
+                        self._merge_configs(node_configs[node.id]['role'],
+                                            config.configuration)
 
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:
                 if config.node_id in nodes_to_update:

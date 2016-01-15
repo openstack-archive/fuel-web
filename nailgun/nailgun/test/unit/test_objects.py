@@ -21,6 +21,7 @@ import mock
 
 from itertools import cycle
 from itertools import ifilter
+from netaddr import IPNetwork
 import uuid
 
 from sqlalchemy import inspect as sqlalchemy_inspect
@@ -1419,6 +1420,19 @@ class TestClusterObject(BaseTestCase):
         self.db().refresh(config)
         self.assertFalse(config.is_active)
 
+    def test_set_netgroups_ids(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+        self.env.network_manager.assign_ips(
+            cluster, [node], consts.NETWORKS.management
+        )
+        admin_ng_id = \
+            objects.NetworkGroup.get_admin_network_group(node.id).id
+        node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
+        objects.Node.set_netgroups_ids(node, node_ng_ids)
+        for ip in node.ip_addrs:
+            self.assertEquals(admin_ng_id, ip.network)
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 
@@ -1645,6 +1659,15 @@ class TestNetworkGroup(BaseTestCase):
         self.assertTrue(objects.NetworkGroup.is_untagged(admin_net))
         self.assertFalse(objects.NetworkGroup.is_untagged(mgmt_net))
 
+    def test_get_by_node_group(self):
+        cluster = self.env.create_cluster(api=False)
+        new_ng = self.env.create_node_group(api=False, cluster_id=cluster.id)
+
+        networks = objects.NetworkGroup.get_by_node_group(new_ng.id)
+        expected_nets = [n for n in new_ng.networks if n.name !=
+                         consts.NETWORKS.fuelweb_admin]
+        self.assertItemsEqual(networks, expected_nets)
+
 
 class TestRelease(BaseTestCase):
 
@@ -1794,3 +1817,170 @@ class TestOpenstackConfig(BaseTestCase):
 
         objects.OpenstackConfig.disable(config)
         self.assertFalse(config.is_active)
+
+
+class TestBondObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestBondObject, self).setUp()
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}])
+        self.node = self.env.nodes[0]
+
+    def test_assign_networks(self):
+        data = {
+            'name': 'bond0',
+            'slaves': self.node.nic_interfaces,
+            'node': self.node
+        }
+        bond = objects.Bond.create(data)
+        self.node.bond_interfaces.append(bond)
+        networks = objects.NetworkGroup.get_by_node_group(self.node.group_id)
+        objects.Bond.assign_networks(bond, networks)
+
+        expected_networks = [{'id': n.id, 'name': n.name} for n in networks]
+        self.assertItemsEqual(bond.assigned_networks, expected_networks)
+
+    def test_update_bond(self):
+        data = {
+            'name': 'bond0',
+            'slaves': self.node.nic_interfaces,
+            'node': self.node,
+        }
+        bond = objects.Bond.create(data)
+        offloading_modes = bond.offloading_modes
+        offloading_modes[0]['state'] = 'test'
+
+        data = {
+            'offloading_modes': offloading_modes
+        }
+        objects.Bond.update(bond, data)
+        self.assertEqual(data['offloading_modes'], bond.offloading_modes)
+
+
+class TestNICObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestNICObject, self).setUp()
+
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}])
+        self.cluster = self.env.clusters[0]
+
+    def test_replace_assigned_networks(self):
+        node = self.env.nodes[0]
+        nic_1 = node.interfaces[0]
+        nic_2 = node.interfaces[1]
+
+        self.assertEqual(len(nic_1.assigned_networks), 4)
+        self.assertEqual(len(nic_2.assigned_networks), 1)
+
+        new_nets = nic_1.assigned_networks + nic_2.assigned_networks
+        objects.NIC.replace_assigned_networks(nic_1, new_nets)
+        objects.NIC.replace_assigned_networks(nic_2, [])
+
+        self.assertEqual(len(nic_1.assigned_networks), 5)
+        self.assertEqual(len(nic_2.assigned_networks), 0)
+
+    def test_get_interfaces_not_in_mac_list(self):
+        node = self.env.nodes[0]
+
+        self.assertEqual(len(node.interfaces), 2)
+        macs = [i.mac for i in node.interfaces]
+        expected_mac = macs[0]
+
+        interfaces = objects.NICCollection.get_interfaces_not_in_mac_list(
+            node.id, [macs[1]])
+
+        mac_list = [iface.mac for iface in interfaces]
+        self.assertEqual(len(mac_list), 1)
+        self.assertEqual(mac_list[0], expected_mac)
+
+
+class TestIPAddrObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestIPAddrObject, self).setUp()
+
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}])
+        self.cluster = self.env.clusters[0]
+
+    def test_get_ips_except_admin(self):
+        node = self.env.nodes[0]
+        self.env.network_manager.assign_admin_ips([node])
+        self.env.network_manager.assign_ips(
+            self.cluster, [node], consts.NETWORKS.management
+        )
+        for ip in objects.IPAddr.get_ips_except_admin(node.id):
+            self.assertEqual(ip.network_data.name, consts.NETWORKS.management)
+
+    def test_delete_by_node(self):
+        self.env.create_node(api=False, cluster_id=self.cluster.id)
+        self.env.network_manager.assign_ips(
+            self.cluster, self.env.nodes, consts.NETWORKS.management
+        )
+
+        all_ips = list(objects.IPAddr.get_ips_except_admin())
+        self.assertEqual(len(all_ips), 2)
+
+        node = self.env.nodes[0]
+        objects.IPAddr.delete_by_node(node.id)
+
+        all_ips = list(objects.IPAddr.get_ips_except_admin())
+        self.assertEqual(len(all_ips), 1)
+        self.assertEqual(all_ips[0].node, self.env.nodes[1].id)
+
+    def test_delete_by_network(self):
+        node = self.env.nodes[0]
+        self.env.network_manager.assign_ips(
+            self.cluster, [node], consts.NETWORKS.management
+        )
+        ips = list(objects.IPAddr.get_ips_except_admin())
+        self.assertEqual(len(ips), 1)
+
+        mgmt_ng = self.env.network_manager.get_network_by_netname(
+            consts.NETWORKS.management, self.cluster.network_groups)
+        storage_ng = self.env.network_manager.get_network_by_netname(
+            consts.NETWORKS.storage, self.cluster.network_groups)
+
+        # Create db record with same IP but different network group
+        node_ip = node.ip_addrs[0].ip_addr
+        new_ip = {
+            'network_data': storage_ng,
+            'ip_addr': node_ip,
+            'node': node.id
+        }
+        objects.IPAddr.create(new_ip)
+        ips = list(objects.IPAddr.get_ips_except_admin())
+        self.assertEqual(len(ips), 2)
+
+        # Delete newly created IP, existing IP in mgmt ng should remain
+        objects.IPAddr.delete_by_network(node_ip, storage_ng.id)
+
+        ips = list(objects.IPAddr.get_ips_except_admin())
+        self.assertEqual(len(ips), 1)
+        self.assertEqual(ips[0].network, mgmt_ng.id)
+
+    def test_get_distinct_in_list(self):
+        self.env.create_node(api=False, cluster_id=self.cluster.id)
+        self.env.network_manager.assign_ips(
+            self.cluster, self.env.nodes, consts.NETWORKS.management
+        )
+
+        mgmt_ng = self.env.network_manager.get_network_by_netname(
+            consts.NETWORKS.management, self.cluster.network_groups)
+        mgmt_cidr = mgmt_ng.cidr
+
+        mgmt_ips = [str(ip) for ip in IPNetwork(mgmt_cidr)]
+        assigned_ips = [
+            ip.ip_addr for ip in list(objects.IPAddr.get_ips_except_admin())
+        ]
+
+        db_ips = [
+            ip[0] for ip in objects.IPAddr.get_distinct_in_list(mgmt_ips)
+        ]
+        self.assertItemsEqual(db_ips, assigned_ips)

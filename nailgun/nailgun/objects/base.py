@@ -104,6 +104,12 @@ class NailgunObject(object):
         db().flush()
 
     @classmethod
+    def bulk_delete(cls, instance_ids):
+        db().query(cls.model).filter(
+            cls.model.id.in_(instance_ids)).delete(synchronize_session='fetch')
+        db().flush()
+
+    @classmethod
     def save(cls, instance=None):
         """Save current changes for instance in DB.
 

@@ -21,6 +21,7 @@ from oslo_serialization import jsonutils
 import six
 
 from nailgun import consts
+from nailgun import objects
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -569,9 +570,11 @@ class TestHandlers(BaseIntegrationTest):
             nodes_data = get_nodes()
             self.assertEqual(len(nodes_data), 1)
 
+            node_db = objects.Node.get_by_uid(nodes_data[0]['id'])
+
             # remove all interfaces except admin one
             adm_eth = self.env.network_manager._get_interface_by_network_name(
-                nodes_data[0]['id'], 'fuelweb_admin')
+                node_db, 'fuelweb_admin')
             ifaces = list(nodes_data[0]['meta']['interfaces'])
             nodes_data[0]['meta']['interfaces'] = \
                 [i for i in ifaces if i['name'] == adm_eth.name]
@@ -647,9 +650,11 @@ class TestHandlers(BaseIntegrationTest):
             nodes_data = get_nodes()
             self.assertEqual(len(nodes_data), 1)
 
+            node_db = objects.Node.get_by_uid(nodes_data[0]['id'])
+
             # change mac address of interfaces except admin one
             adm_eth = self.env.network_manager._get_interface_by_network_name(
-                nodes_data[0]['id'], 'fuelweb_admin')
+                node_db, 'fuelweb_admin')
             for iface in nodes_data[0]['meta']['interfaces']:
                 if iface['name'] != adm_eth.name:
                     iface['mac'] = self.env.generate_random_mac()

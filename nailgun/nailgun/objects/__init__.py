@@ -38,6 +38,13 @@ from nailgun.objects.task import TaskCollection
 from nailgun.objects.notification import Notification
 from nailgun.objects.notification import NotificationCollection
 
+from nailgun.objects.network_group import NetworkGroup
+from nailgun.objects.network_group import NetworkGroupCollection
+
+from nailgun.objects.ip_address import IPAddr
+from nailgun.objects.ip_address import IPAddrCollection
+from nailgun.objects.ip_address import IPAddrRange
+
 from nailgun.objects.node import Node
 from nailgun.objects.node import NodeCollection
 
@@ -55,10 +62,13 @@ from nailgun.objects.plugin import ClusterPlugins
 from nailgun.objects.plugin_link import PluginLink
 from nailgun.objects.plugin_link import PluginLinkCollection
 
-from nailgun.objects.network_group import NetworkGroup
-from nailgun.objects.network_group import NetworkGroupCollection
-
 from nailgun.objects.cluster_plugin_link import ClusterPluginLink
 from nailgun.objects.cluster_plugin_link import ClusterPluginLinkCollection
 from nailgun.objects.openstack_config import OpenstackConfig
 from nailgun.objects.openstack_config import OpenstackConfigCollection
+
+from nailgun.objects.interface import NIC
+from nailgun.objects.interface import NICCollection
+
+from nailgun.objects.bond import Bond
+from nailgun.objects.bond import BondCollection

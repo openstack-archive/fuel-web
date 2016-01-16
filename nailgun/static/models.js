@@ -695,7 +695,12 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
         result = false;
       if (metadata) {
         if (this.checkRestrictions(models, null, metadata).result) return result;
-        if (!_.isUndefined(metadata.enabled)) result = metadata.enabled != initialAttributes[sectionName].metadata.enabled;
+        if (!_.isUndefined(metadata.enabled)) {
+          result = metadata.enabled != initialAttributes[sectionName].metadata.enabled;
+        }
+        if (!result && this.isPlugin(section)) {
+          result = metadata.chosen_id != initialAttributes[sectionName].metadata.chosen_id;
+        }
       }
       return result || (metadata || {}).enabled !== false && _.any(section, (setting, settingName) => {
         if (this.checkRestrictions(models, null, setting).result) return false;

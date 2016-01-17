@@ -1,6 +1,7 @@
+/*eslint-disable strict*/
+
 'use strict';
 
-var fs = require('fs');
 var gutil = require('gulp-util');
 var _ = require('lodash');
 

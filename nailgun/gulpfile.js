@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-/*eslint-env node*/
+/*eslint-disable strict*/
 
 'use strict';
 
@@ -92,7 +92,7 @@ gulp.task('selenium', ['selenium:fetch'], function(cb) {
 gulp.task('karma', function(cb) {
   var Server = require('karma').Server;
   new Server({
-    configFile: __dirname + '/karma.config.js',
+    configFile: path.join(__dirname, '/karma.config.js'),
     browsers: [argv.browser || process.env.BROWSER || 'firefox']
   }, cb).start();
 });
@@ -148,7 +148,7 @@ gulp.task('jison', function() {
 
 gulp.task('license', function(cb) {
   require('nlf').find({production: true, depth: 0}, function(err, data) {
-    if (err) cb(err);
+    if (err) return cb(err);
     // https://github.com/openstack/requirements#for-new-requirements
     // Is the library license compatible?
     // Preferably Apache2, BSD, MIT licensed. LGPL is ok.
@@ -171,25 +171,25 @@ gulp.task('license', function(cb) {
       _.each(errors, function(error) {
         gutil.log(gutil.colors.red(error.libraryName, 'has', error.license, 'license'));
       });
-      cb('Issues with licenses found');
+      return cb('Issues with licenses found');
     } else {
-      cb();
+      return cb();
     }
   });
 });
 
 var jsFiles = [
+  '*.js',
+  'gulp/*.js',
   'static/**/*.js',
   '!static/build/**',
   '!static/vendor/**',
-  '!static/expression/parser.js',
-  'static/tests/**/*.js'
+  '!static/expression/parser.js'
 ];
 var styleFiles = [
   'static/**/*.less',
   'static/**/*.css',
-  '!static/build/**',
-  '!static/vendor/**'
+  '!static/build/**'
 ];
 
 gulp.task('eslint', function() {
@@ -323,7 +323,7 @@ gulp.task('build', function(cb) {
         .pipe(gulp.dest(targetDir))
         .on('end', cb);
     } else if (!config.watch) {
-      cb();
+      return cb();
     }
   });
 });

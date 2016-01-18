@@ -1,0 +1,11 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Andrey Danin <gcon.monolake@gmail.com>
+Code-Review+1: Andriy Popovych <apopovych@mirantis.com>
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Workflow+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 18 Jan 2016 14:58:09 +0000
+Reviewed-on: https://review.openstack.org/268164
+Project: openstack/fuel-web
+Branch: refs/heads/stable/8.0
